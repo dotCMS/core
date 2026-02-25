@@ -1,20 +1,31 @@
 package com.dotcms.rest.api.v1.publishing;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.bundle.business.BundleDeleteResult;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.Pagination;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -36,6 +47,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,6 +76,8 @@ public class PublishingResource {
     private final WebResource webResource;
     private final Lazy<PublishAuditAPI> publishAuditAPI;
     private final Lazy<BundleAPI> bundleAPI;
+    private final Lazy<com.dotcms.publishing.PublisherAPI> publisherAPI;
+    private final Lazy<com.dotcms.publisher.business.PublisherAPI> publisherQueueAPI;
     private final PublishingJobsHelper publishingJobsHelper;
 
     /**
@@ -72,6 +87,8 @@ public class PublishingResource {
         this(new WebResource(),
              Lazy.of(PublishAuditAPI::getInstance),
              Lazy.of(APILocator::getBundleAPI),
+             Lazy.of(APILocator::getPublisherAPI),
+             Lazy.of(com.dotcms.publisher.business.PublisherAPI::getInstance),
              new PublishingJobsHelper());
     }
 
@@ -81,16 +98,22 @@ public class PublishingResource {
      * @param webResource          Web resource for authentication
      * @param publishAuditAPI      Audit API for retrieving publishing status
      * @param bundleAPI            Bundle API for bundle operations
+     * @param publisherAPI         Publisher API for filter lookup
+     * @param publisherQueueAPI    Publisher Queue API for bundle queue operations
      * @param publishingJobsHelper Helper for transforming data to views
      */
     @VisibleForTesting
     public PublishingResource(final WebResource webResource,
                               final Lazy<PublishAuditAPI> publishAuditAPI,
                               final Lazy<BundleAPI> bundleAPI,
+                              final Lazy<com.dotcms.publishing.PublisherAPI> publisherAPI,
+                              final Lazy<com.dotcms.publisher.business.PublisherAPI> publisherQueueAPI,
                               final PublishingJobsHelper publishingJobsHelper) {
         this.webResource = webResource;
         this.publishAuditAPI = publishAuditAPI;
         this.bundleAPI = bundleAPI;
+        this.publisherAPI = publisherAPI;
+        this.publisherQueueAPI = publisherQueueAPI;
         this.publishingJobsHelper = publishingJobsHelper;
     }
 
@@ -445,5 +468,390 @@ public class PublishingResource {
                 bundleId, user.getUserId()));
 
         return Response.ok(Map.of("message", "Bundle deleted successfully")).build();
+    }
+
+    /**
+     * Pushes a bundle to specified environments for publishing.
+     *
+     * <p>This endpoint schedules an existing bundle (with assets already added)
+     * for push publishing to one or more environments. Supports three operations:
+     * publish, expire, and publishexpire (publish then auto-expire).</p>
+     *
+     * <h3>Operations:</h3>
+     * <ul>
+     *   <li><b>publish</b> - Publish content to target environments</li>
+     *   <li><b>expire</b> - Unpublish/expire content from target environments</li>
+     *   <li><b>publishexpire</b> - Publish now and schedule automatic expiration</li>
+     * </ul>
+     *
+     * <h3>Date Format:</h3>
+     * <p>All dates must be in ISO 8601 format with timezone offset:
+     * {@code YYYY-MM-DDTHH:mm:ss±HH:MM} (e.g., {@code 2025-03-15T14:30:00-05:00})</p>
+     *
+     * @param request   The HTTP request
+     * @param response  The HTTP response
+     * @param bundleId  The existing bundle identifier
+     * @param form      Push configuration (operation, dates, environments, filter)
+     * @return Push result with confirmation of queued bundle
+     */
+    @Operation(
+            summary = "Push bundle to environments",
+            description = "Queues an existing bundle for publishing to specified environments. " +
+                    "The bundle must exist and have assets already added. Supports publish, " +
+                    "expire, and publishexpire operations with ISO 8601 date/time format."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Bundle successfully queued for publishing",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityPushBundleResultView.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request (missing required fields, invalid operation, invalid date format)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - no permission to use specified environments",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Bundle or environment not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            )
+    })
+    @POST
+    @Path("/push/{bundleId}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityPushBundleResultView pushBundle(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Bundle identifier",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathParam("bundleId") final String bundleId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Push configuration including operation type, dates, environments, and filter",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = PushBundleForm.class)
+                    )
+            )
+            final PushBundleForm form) throws DotDataException, DotPublisherException {
+
+        // 1. Authenticate backend user
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initData.getUser();
+
+        // 2. Validate bundleId
+        if (!UtilMethods.isSet(bundleId)) {
+            throw new BadRequestException("Bundle ID is required");
+        }
+
+        // 3. Validate form inputs
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
+        form.checkValid();
+
+        // 4. Get and validate bundle exists
+        final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
+        if (bundle == null) {
+            throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
+        }
+
+        // 5. Validate environments and permissions
+        final List<Environment> validEnvs = publishingJobsHelper.validateEnvironmentPermissions(
+                form.getEnvironments(), user);
+        if (validEnvs.isEmpty()) {
+            throw new NotFoundException("No valid environments found or user lacks permission");
+        }
+
+        // 6. Get filter and extract forcePush (falls back to default filter if not found)
+        final FilterDescriptor filter = publisherAPI.get().getFilterDescriptorByKey(form.getFilterKey());
+        final boolean forcePush = (boolean) filter.getFilters()
+                .getOrDefault(FilterDescriptor.FORCE_PUSH_KEY, false);
+
+        // 7. Update bundle with settings
+        bundle.setForcePush(forcePush);
+        bundle.setFilterKey(form.getFilterKey());
+        bundleAPI.get().saveBundleEnvironments(bundle, validEnvs);
+
+        // 8. Execute operation based on type — parse only the dates required per operation
+        final String operation = form.getOperation().toLowerCase();
+        switch (operation) {
+            case "publish": {
+                final Date publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
+                bundle.setPublishDate(publishDate);
+                bundleAPI.get().updateBundle(bundle);
+                publisherQueueAPI.get().publishBundleAssets(bundleId, publishDate);
+                break;
+            }
+            case "expire": {
+                final Date expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+                bundle.setExpireDate(expireDate);
+                bundleAPI.get().updateBundle(bundle);
+                publisherQueueAPI.get().unpublishBundleAssets(bundleId, expireDate);
+                break;
+            }
+            case "publishexpire": {
+                final Date publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
+                final Date expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+                bundle.setPublishDate(publishDate);
+                bundle.setExpireDate(expireDate);
+                bundleAPI.get().updateBundle(bundle);
+                publisherQueueAPI.get().publishAndExpireBundleAssets(bundleId, publishDate, expireDate, user);
+                break;
+            }
+            default:
+                throw new BadRequestException(String.format(
+                        "Invalid operation: '%s'. Valid values: publish, expire, publishexpire",
+                        form.getOperation()));
+        }
+
+        // 10. Fire publisher queue immediately (2-second delay for responsive UX)
+        publisherQueueAPI.get().firePublisherQueueNow(
+                Map.of("deliveryStrategy", DeliveryStrategy.ALL_ENDPOINTS));
+
+        // 11. Build and return result (return actual valid environments, not requested)
+        final List<String> validEnvIds = validEnvs.stream()
+                .map(Environment::getId)
+                .collect(Collectors.toList());
+        final PushBundleResultView result = PushBundleResultView.builder()
+                .bundleId(bundleId)
+                .operation(operation)
+                .publishDate(form.getPublishDate())
+                .expireDate(form.getExpireDate())
+                .environments(validEnvIds)
+                .filterKey(form.getFilterKey())
+                .build();
+
+        Logger.info(this, String.format("Pushed bundle '%s' to %d environment(s) by user '%s'",
+                bundleId, validEnvs.size(), user.getUserId()));
+
+        return new ResponseEntityPushBundleResultView(result);
+    }
+
+    /**
+     * Bulk deletes publishing jobs by status.
+     *
+     * <p>This endpoint is designed for cleaning up terminal state bundles (completed/failed)
+     * or canceling queued bundles. It CANNOT purge in-progress bundles to prevent data
+     * corruption.</p>
+     *
+     * <h3>Safe to Purge:</h3>
+     * <ul>
+     *   <li>Terminal: SUCCESS, FAILED_TO_PUBLISH, FAILED_TO_BUNDLE, etc.</li>
+     *   <li>Queued: WAITING_FOR_PUBLISHING (cancels scheduled publishes)</li>
+     * </ul>
+     *
+     * <h3>Cannot Purge (400 Bad Request):</h3>
+     * <ul>
+     *   <li>BUNDLING - Creating bundle archive</li>
+     *   <li>SENDING_TO_ENDPOINTS - Transmitting to targets</li>
+     *   <li>PUBLISHING_BUNDLE - Applying at receiver</li>
+     * </ul>
+     *
+     * @param request  The HTTP request
+     * @param response The HTTP response
+     * @param status   Comma-separated status values to purge (optional)
+     * @return Acknowledgment message with purge details
+     */
+    @Operation(
+            summary = "Bulk delete publishing jobs by status",
+            description = "Removes all bundles matching the specified status filter. " +
+                    "Cannot purge in-progress bundles (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE). " +
+                    "If no status specified, uses safe defaults (all terminal + queued statuses)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Purge operation initiated (processes in background)",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityPurgeView.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid status value or attempted to purge in-progress statuses",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            )
+    })
+    @DELETE
+    @Path("/purge")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityPurgeView purgePublishingJobs(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Comma-separated status values to purge. If omitted, uses safe defaults " +
+                            "(all terminal + queued, excludes in-progress). " +
+                            "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE",
+                    example = "SUCCESS,FAILED_TO_PUBLISH"
+            )
+            @QueryParam("status") final String status) throws DotDataException {
+
+        // Initialize request context and authenticate user (requires backend user)
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final User user = initData.getUser();
+
+        // Determine statuses to purge
+        final List<Status> statusList;
+        if (UtilMethods.isSet(status)) {
+            // Validate provided statuses
+            final List<String> invalidStatuses = publishingJobsHelper.getInvalidStatuses(status);
+            if (!invalidStatuses.isEmpty()) {
+                throw new BadRequestException(
+                        String.format("Invalid status value(s): %s. Valid values: %s",
+                                String.join(", ", invalidStatuses),
+                                String.join(", ", publishingJobsHelper.getValidStatusNames())));
+            }
+            statusList = publishingJobsHelper.parseStatuses(status);
+        } else {
+            // Use safe defaults
+            statusList = new ArrayList<>(PublishingJobsHelper.SAFE_PURGE_STATUSES);
+        }
+
+        // Check for in-progress statuses (400 Bad Request)
+        final List<Status> inProgressFound = publishingJobsHelper.getInProgressStatuses(statusList);
+        if (!inProgressFound.isEmpty()) {
+            throw new BadRequestException(
+                    String.format("Cannot purge bundles with in-progress statuses: %s. " +
+                                    "These statuses are excluded to prevent data corruption.",
+                            inProgressFound.stream()
+                                    .map(Status::name)
+                                    .collect(Collectors.joining(", "))));
+        }
+
+        Logger.info(this, String.format("Purging publishing jobs with statuses: %s by user: %s",
+                statusList.stream().map(Status::name).collect(Collectors.joining(", ")),
+                user.getUserId()));
+
+        // Execute purge asynchronously (consistent with legacy bulk delete pattern)
+        final DotSubmitter dotSubmitter = DotConcurrentFactory
+                .getInstance().getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+        dotSubmitter.execute(() -> {
+            try {
+                final BundleDeleteResult result = bundleAPI.get()
+                        .deleteAllBundles(user, statusList.toArray(new Status[0]));
+
+                sendPurgeResultMessage(initData, result);
+
+            } catch (DotDataException e) {
+                Logger.error(this, "Error purging publishing jobs", e);
+                sendPurgeErrorMessage(initData, e);
+            }
+        });
+
+        // Return immediate acknowledgment
+        final List<String> statusNames = statusList.stream()
+                .map(Status::name)
+                .collect(Collectors.toList());
+
+        return new ResponseEntityPurgeView(PurgeResultView.builder()
+                .message("Purge operation started. Results will be notified when complete.")
+                .statusesRequested(statusNames)
+                .build());
+    }
+
+    /**
+     * Sends success/warning message after purge completes.
+     */
+    private void sendPurgeResultMessage(final InitDataObject initData,
+                                         final BundleDeleteResult result) {
+        try {
+            final int deletedCount = result.getDeleteBundleSet().size();
+            final int failedCount = result.getFailedBundleSet().size();
+            final String userId = initData.getUser().getUserId();
+
+            final String message;
+            final MessageSeverity severity;
+
+            if (failedCount == 0) {
+                message = String.format("%d bundles purged successfully", deletedCount);
+                severity = MessageSeverity.INFO;
+            } else {
+                message = String.format("%d bundles purged successfully, %d failed", deletedCount, failedCount);
+                severity = MessageSeverity.WARNING;
+            }
+
+            final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+            systemMessageEventUtil.pushMessage(
+                    new SystemMessageBuilder()
+                            .setMessage(message)
+                            .setLife(DateUtil.SEVEN_SECOND_MILLIS)
+                            .setSeverity(severity)
+                            .create(),
+                    List.of(userId));
+
+            Logger.info(this, String.format("Purge completed: %s (user: %s)", message, userId));
+
+        } catch (Exception e) {
+            Logger.error(this, "Error sending purge result message", e);
+        }
+    }
+
+    /**
+     * Sends error message if purge fails.
+     */
+    private void sendPurgeErrorMessage(final InitDataObject initData,
+                                        final Exception e) {
+        try {
+            final String userId = initData.getUser().getUserId();
+            final String message = String.format("Purge operation failed: %s", e.getMessage());
+
+            final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+            systemMessageEventUtil.pushMessage(
+                    new SystemMessageBuilder()
+                            .setMessage(message)
+                            .setLife(DateUtil.TEN_SECOND_MILLIS)
+                            .setSeverity(MessageSeverity.ERROR)
+                            .create(),
+                    List.of(userId));
+
+        } catch (Exception ex) {
+            Logger.error(this, "Error sending purge error message", ex);
+        }
     }
 }

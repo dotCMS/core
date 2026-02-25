@@ -182,7 +182,8 @@ export class DotEmaShellComponent implements OnInit {
         if (page) {
             this.#globalStore.addNewBreadcrumb({
                 label: page?.title,
-                url: this.uveStore.pageParams().url
+                url: this.uveStore.pageParams().url,
+                id: `${page?.identifier}`
             });
         }
     });

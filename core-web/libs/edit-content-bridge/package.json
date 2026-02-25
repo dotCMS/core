@@ -1,20 +1,22 @@
 {
-    "name": "edit-content-bridge",
-    "version": "1.0.0",
-    "dependencies": {
-        "rxjs": "~6.6.3",
-        "vite": "7.2.7",
-        "primeng": "17.18.11",
-        "@nx/vite": "21.6.9"
-    },
-    "type": "module",
-    "main": "./index.js",
-    "module": "./index.js",
-    "exports": {
-        ".": {
-            "import": "./index.js",
-            "require": "./index.cjs"
-        }
-    },
-    "private": true
+  "name": "edit-content-bridge",
+  "version": "1.0.0",
+  "dependencies": {
+    "@angular/core": "20.3.16",
+    "@angular/forms": "20.3.16",
+    "rxjs": "~6.6.3",
+    "vite": "7.2.7",
+    "primeng": "17.18.11",
+    "@nx/vite": "21.6.9"
+  },
+  "type": "module",
+  "main": "./index.js",
+  "module": "./index.js",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.cjs"
+    }
+  },
+  "private": true
 }

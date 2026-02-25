@@ -1,35 +1,35 @@
 import { of } from 'rxjs';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, CONTAINER_SOURCE, FeaturedFlags } from '@dotcms/dotcms-models';
+import { CONTAINER_SOURCE, DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
-    DotCMSLayout,
-    DotCMSPageAsset,
-    DotCMSSite,
-    DotCMSViewAsPersona,
-    DotCMSPageAssetContainers,
-    DotCMSPage,
-    DotCMSTemplate,
-    DotCMSContainerStructure,
     DotCMSContainer,
+    DotCMSContainerStructure,
+    DotCMSLayout,
+    DotCMSPage,
+    DotCMSPageAsset,
+    DotCMSPageAssetContainers,
+    DotCMSSite,
+    DotCMSTemplate,
+    DotCMSURLContentMap,
     DotCMSVanityUrl,
-    DotCMSURLContentMap
+    DotCMSViewAsPersona
 } from '@dotcms/types';
 import {
-    mockSites,
+    dotcmsContentletMock,
+    mockDotContainers,
     mockDotLayout,
     mockDotTemplate,
-    mockDotContainers,
-    dotcmsContentletMock
+    mockSites
 } from '@dotcms/utils-testing';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from './consts';
 import { ActionPayload, ClientData } from './models';
 
 import {
-    EmaDragItem,
+    Container,
     ContentletArea,
-    Container
+    EmaDragItem
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 
 export const HEADLESS_BASE_QUERY_PARAMS = {
@@ -1044,7 +1044,8 @@ export const dotPropertiesServiceMock = {
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,
             [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK]: false,
-            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: false
+            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: false,
+            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false
         })
 };
 

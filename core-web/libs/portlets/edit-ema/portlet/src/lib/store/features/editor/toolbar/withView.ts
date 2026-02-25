@@ -70,7 +70,10 @@ export function withView(_deps?: WithViewDeps) {
             viewMode: computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN),
 
             $urlContentMap: computed<DotCMSURLContentMap | null>(() => {
-                return store.pageAsset()?.urlContentMap ?? null;
+                const urlContentMap = store.pageAsset()?.urlContentMap;
+                // GQL may return an empty object; treat it as null when there are no entries
+                if (!urlContentMap || Object.keys(urlContentMap).length === 0) return null;
+                return urlContentMap;
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
                 const page = store.pageAsset()?.page;
