@@ -23,7 +23,9 @@
 #
 #   release: {version}           ← mutable, e.g. 25.02.16-01  (omit-environment-prefix=true)
 #            {version}_{sha}     ← immutable
-#            latest              ← mutable, points to the latest release (when latest=true)
+#            latest              ← mutable, points to the latest release (when latest=true).
+#                                 ONLY when latest=true; never set by nightly/trunk/feature/manual.
+#                                 Applies to both main (dotcms) and dev (dotcms-dev) images.
 #
 #   manual:  manual              ← mutable, always latest manual build
 #            manual_{sha}        ← immutable
@@ -290,7 +292,7 @@ jobs:
           ref: ${{ inputs.environment }}
           docker-use-ref: false
           version: ${{ steps.docker-tags.outputs.base_tag }}
-          latest: ${{ steps.get-sdkman-version.outputs.docker_suffix == '' }}
+          latest: ${{ inputs.latest && steps.get-sdkman-version.outputs.docker_suffix == '' }}
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}

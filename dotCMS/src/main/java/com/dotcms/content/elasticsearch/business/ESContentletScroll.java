@@ -29,7 +29,7 @@ import java.util.List;
  * }
  * </pre>
  *
- * @see ContentletFactory#createScrollQuery(String, com.liferay.portal.model.User, boolean, int)
+ * @see com.dotmarketing.portlets.contentlet.business.ContentletFactory#createScrollQuery(String, com.liferay.portal.model.User, boolean, int)
  */
 public interface ESContentletScroll extends AutoCloseable {
 
