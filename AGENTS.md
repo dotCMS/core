@@ -24,7 +24,7 @@ See `justfile` for the full list of convenient aliases.
 
 ### Frontend commands
 
-- **Install deps**: `cd core-web && yarn install --frozen-lockfile`
+- **Install deps**: Handled automatically by `./mvnw install` via `frontend-maven-plugin` in the `dotcms-core-web` module. For standalone use: `cd core-web && yarn install --frozen-lockfile`
 - **Build**: `cd core-web && npx nx run-many -t build --exclude='tag:skip:build' --parallel=2`
 - **Lint**: `cd core-web && npx nx lint dotcms-ui`
 - **Test (targeted)**: `cd core-web && npx nx test sdk-client`
