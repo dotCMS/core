@@ -4523,9 +4523,10 @@
 					"listen": "prerequest",
 					"script": {
 						"exec": [
-							"pm.collectionVariables.set('siteSpecificTag1', 'site-tag-' + _.random(1000, 9999));",
-							"pm.collectionVariables.set('siteSpecificTag2', 'site-tag-' + _.random(1000, 9999));",
-							"pm.collectionVariables.set('specialCharTag', 'tag_with%special' + _.random(100, 999));"
+							"var ts = Date.now();",
+							"pm.collectionVariables.set('siteSpecificTag1', 'site-tag-a-' + ts);",
+							"pm.collectionVariables.set('siteSpecificTag2', 'site-tag-b-' + ts);",
+							"pm.collectionVariables.set('specialCharTag', 'tag_with%special' + ts);"
 						],
 						"type": "text/javascript"
 					}
