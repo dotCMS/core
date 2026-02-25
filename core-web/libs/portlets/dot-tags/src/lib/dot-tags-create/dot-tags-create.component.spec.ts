@@ -7,6 +7,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 @Component({
@@ -56,6 +57,10 @@ describe('DotTagsCreateComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({})
+                },
+                {
+                    provide: GlobalStore,
+                    useValue: { currentSiteId: () => '' }
                 }
             ]
         });
@@ -91,6 +96,31 @@ describe('DotTagsCreateComponent', () => {
         });
     });
 
+    describe('create mode with current site', () => {
+        const createComponentWithCurrentSite = createComponentFactory({
+            component: DotTagsCreateComponent,
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            providers: [
+                { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+                { provide: DynamicDialogConfig, useValue: { data: {} } },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({})
+                },
+                {
+                    provide: GlobalStore,
+                    useValue: { currentSiteId: () => 'site-1' }
+                }
+            ]
+        });
+
+        it('should pre-select current site when in create mode', () => {
+            const spectatorWithSite = createComponentWithCurrentSite();
+            expect(spectatorWithSite.component.form.value.name).toBe('');
+            expect(spectatorWithSite.component.form.value.siteId).toBe('site-1');
+        });
+    });
+
     describe('edit mode', () => {
         let spectator: Spectator<DotTagsCreateComponent>;
         const mockRef = { close: jest.fn() };
@@ -104,6 +134,10 @@ describe('DotTagsCreateComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({})
+                },
+                {
+                    provide: GlobalStore,
+                    useValue: { currentSiteId: () => '' }
                 }
             ]
         });
