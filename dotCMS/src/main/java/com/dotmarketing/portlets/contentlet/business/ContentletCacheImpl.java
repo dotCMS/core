@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.TranslatedQuery;
+import com.dotcms.content.elasticsearch.business.TranslatedQuery;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.services.SiteLoader;
