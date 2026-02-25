@@ -15,8 +15,8 @@ With powerful visual editing tools, multi-tenancy and a tech-agnostic architectu
 - **BSL Licensed** - Generous BSL 1.1 licensing terms makes dotCMS free to use in many cases.
 - **Universal Visual Editing** - Full featured page editing that works both headlessly and for SSR content, in your SPA or for web page rendering and delivery.
 - **Multi-tenancy** - Manage multiple sites in multiple languages, from microsites to brand sites to intranet/extranets or knowledge centers all from a single instance.
-- **REST & GraphQL APIs** - instant endpoints for your all your content
-- **Search & RAG Built in** - dotCMS indexes all content and assets in Elasticsearch for real time search-abiliity and facet based searches.  dotCMS can also vectorize all content and assets, offering semantic content searching to power AI applications such as chatbots or knowledge centers.
+- **REST & GraphQL APIs** - Instant endpoints for all your content
+- **Search & RAG Built in** - dotCMS indexes all content and assets in Elasticsearch for real-time searchability and facet-based searches. dotCMS can also vectorize content and assets, offering semantic search to power AI applications such as chatbots or knowledge centers.
 - **Personalization, Rules & A/B Testing** - Empower your marketing teams with targeting and content optimizations.
 - **Cloud, Cloud Anywhere or Self-Hosted** - Flexible deployment works with your IT/cloud strategies. 
 - **Feature Rich** - Custom content workflows, scriptable APIs, push and static publishing, custom roles and permissions, osgi based plugin architecture.  Do more with more.
@@ -32,7 +32,7 @@ dotCMS is available as a docker image or as a cloud based product.
 
 ## Licensing
 
-dotCMS is licensed under the terms of the BSL 1.1 license and all features are free to use by companies, individuals and organizations whose total finances are below $5,000,000 USD.  For more information about the BSL license terms, see the [dotCMS BSL FAQ](http://www.dotcms.com/bsl-faq). 
+dotCMS is licensed under the terms of the BSL 1.1 license and all features are free to use by companies, individuals, and organizations whose total finances are below $5,000,000 USD. For more information about the BSL license terms, see the [dotCMS BSL FAQ](https://www.dotcms.com/bsl-faq).
 
 ## Contributing
 
@@ -40,7 +40,7 @@ dotCMS is licensed under the terms of the BSL 1.1 license and all features are f
 
 ## Requirements
 
-For a complete list of requirements, see [this page](http://www.dotcms.com/docs/latest/dotcms-technology-requirements).
+For a complete list of requirements, see [this page](https://www.dotcms.com/docs/latest/dotcms-technology-requirements).
 
 ## Getting Help
 
@@ -48,7 +48,7 @@ For a complete list of requirements, see [this page](http://www.dotcms.com/docs/
 | --------------- | ------------------------------------------------------------------- |
 | Installation    | [Installation](https://www.dotcms.com/docs/latest/installation)         |
 | Documentation   | [Documentation](https://www.dotcms.com/docs/latest/table-of-contents)   |
-| Videos          | [Helpful Videos](http://www.dotcms.com/videos/)                         |
+| Videos          | [Helpful Videos](https://www.dotcms.com/videos/)                        |
 | Merge Queue   | [Merge Queue](https://github.com/dotCMS/core/queue/main)                          |
 | Forums/Listserv | [via Google Groups](https://groups.google.com/forum/#!forum/dotCMS) |
 | Twitter         | @dotCMS                                                             |
