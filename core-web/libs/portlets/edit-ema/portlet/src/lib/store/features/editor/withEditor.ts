@@ -146,7 +146,8 @@ export function withEditor() {
             });
 
             const editorCanEditStyles = computed(() => {
-                return styleEditorFeatureEnabled() && hasPermissionToEditStyles() && store.viewMode() === UVE_MODE.EDIT;
+                return true;
+                // return styleEditorFeatureEnabled() && hasPermissionToEditStyles() && store.viewMode() === UVE_MODE.EDIT;
             });
 
             const editorEnableInlineEdit = computed(() => {
@@ -327,6 +328,7 @@ export function withEditor() {
                     });
                 },
                 setActiveContentlet(contentlet: ActionPayload) {
+                    console.log('setActiveContentlet', contentlet);
                     patchState(store, {
                         editorActiveContentlet: contentlet,
                         editorPaletteOpen: true
@@ -334,11 +336,14 @@ export function withEditor() {
                     });
                 },
                 resetActiveContentlet() {
+                    console.log('resetActiveContentlet');
+                    debugger;
                     patchState(store, {
                         editorActiveContentlet: null
                     });
                 },
                 resetContentletArea() {
+                    console.log('resetContentletArea');
                     patchState(store, {
                         editorContentArea: null,
                         editorState: EDITOR_STATE.IDLE
