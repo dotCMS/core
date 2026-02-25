@@ -253,12 +253,23 @@ public class FolderCollectionDataFetcherTest {
         final com.dotmarketing.business.Role limitedRole = new RoleDataGen().nextPersisted();
         final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
 
-        // Break permission inheritance on child2 and then remove ALL its permissions.
-        // permissionIndividually copies parent permissions (including CMS Anonymous READ),
-        // so we must explicitly clear them to make child2 truly inaccessible.
+        // Break permission inheritance on child2 so it gets its own permission set.
+        // permissionIndividually copies parent permissions (including CMS Anonymous READ)
+        // before breaking inheritance, so we must then remove ALL permissions and re-assign
+        // only an admin-only permission. Simply calling removePermissions is not enough
+        // because loadPermissions walks up to the parent when no direct permissions exist.
         APILocator.getPermissionAPI().permissionIndividually(
                 parentFolder, childFolder2, user);
         APILocator.getPermissionAPI().removePermissions(childFolder2);
+
+        // Re-assign only CMS Admin role on child2 so it has individual permissions
+        // (prevents fallback to parent) but limitedUser cannot access it.
+        final com.dotmarketing.business.Role adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
+        APILocator.getPermissionAPI().save(
+                new Permission(childFolder2.getPermissionId(),
+                        adminRole.getId(),
+                        PermissionAPI.PERMISSION_READ),
+                childFolder2, user, false);
 
         // Grant READ on parent folder to the limited user
         APILocator.getPermissionAPI().save(
@@ -267,7 +278,7 @@ public class FolderCollectionDataFetcherTest {
                         PermissionAPI.PERMISSION_READ),
                 parentFolder, user, false);
 
-        // Grant READ on child1 (child2 has no permissions so limitedUser cannot access it)
+        // Grant READ on child1 (child2 only has CMS Admin permission, limitedUser cannot access it)
         APILocator.getPermissionAPI().save(
                 new Permission(childFolder1.getPermissionId(),
                         limitedRole.getId(),
