@@ -54,7 +54,7 @@ RUN apt update && \
         ca-certificates \
         libmimalloc2.0 \
         openssl \
-        libapr1 \
+        libapr1t64 \
         libarchive-tools \
         libpq-dev && \
     rm -rf /var/lib/apt/lists/*
