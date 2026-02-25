@@ -2,7 +2,6 @@
 @let isAllEmpty = $isAllEmpty();
 @let deviceData = $deviceData();
 @let browserData = $browserData();
-@let languageData = $languageData();
 
 <h3 class="text-lg font-bold mb-2">
     {{ 'analytics.engagement.platforms.title' | dm }}
@@ -16,7 +15,6 @@
             <p-tablist>
                 <p-tab value="device">{{ 'analytics.engagement.platforms.device' | dm }}</p-tab>
                 <p-tab value="browser">{{ 'analytics.engagement.platforms.browser' | dm }}</p-tab>
-                <p-tab value="language">{{ 'analytics.engagement.platforms.language' | dm }}</p-tab>
             </p-tablist>
 
             <p-tabpanels>
@@ -98,50 +96,6 @@
                                         </div>
                                     </td>
                                     <td class="text-right">{{ browser.time }}</td>
-                                </tr>
-                            </ng-template>
-                        </p-table>
-                    }
-                </p-tabpanel>
-
-                <!-- Language Tab -->
-                <p-tabpanel value="language">
-                    @if (isLoading) {
-                        <ng-container [ngTemplateOutlet]="skeletonTable" />
-                    } @else if (languageData.length === 0) {
-                        <dot-analytics-empty-state
-                            data-testid="platforms-empty-language"
-                            style="min-height: 12rem" />
-                    } @else {
-                        <p-table [value]="languageData" styleClass="platforms-table">
-                            <ng-template pTemplate="header">
-                                <tr>
-                                    <th>
-                                        {{ 'analytics.engagement.table.headers.language' | dm }}
-                                    </th>
-                                    <th>{{ 'analytics.engagement.table.headers.views' | dm }}</th>
-                                    <th class="text-right">
-                                        {{ 'analytics.engagement.table.headers.time' | dm }}
-                                    </th>
-                                </tr>
-                            </ng-template>
-                            <ng-template pTemplate="body" let-lang>
-                                <tr>
-                                    <td class="font-medium">{{ lang.name }}</td>
-                                    <td>
-                                        <div class="views-cell">
-                                            <div class="views-bar-row">
-                                                <p-progressBar
-                                                    [value]="lang.percentage"
-                                                    [showValue]="false"
-                                                    styleClass="views-progress" />
-                                                <span class="views-percentage">
-                                                    {{ lang.percentage }}%
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-right">{{ lang.time }}</td>
                                 </tr>
                             </ng-template>
                         </p-table>

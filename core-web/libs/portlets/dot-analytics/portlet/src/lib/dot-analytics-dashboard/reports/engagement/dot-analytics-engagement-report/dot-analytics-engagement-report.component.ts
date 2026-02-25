@@ -13,13 +13,19 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    AnalyticsChartColors,
+    DotAnalyticsDashboardStore
+} from '@dotcms/portlets/dot-analytics/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
-import { DotAnalyticsSparklineComponent } from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
+import {
+    DotAnalyticsSparklineComponent,
+    SparklineDataset
+} from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
 import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 
 /**
@@ -80,8 +86,40 @@ export default class DotAnalyticsEngagementReportComponent implements OnInit {
         () => this.store.engagementPlatforms().status ?? ComponentStatus.INIT
     );
 
-    /** Sparkline slice: data and status (fed by the trend chart request) */
-    readonly $sparklineData = computed(() => this.store.engagementSparkline().data ?? []);
+    /** Sparkline: current + optional previous period as datasets for the sparkline component */
+    readonly $sparklineDatasets = computed<SparklineDataset[]>(() => {
+        const slice = this.store.engagementSparkline().data;
+        if (!slice?.current?.length) return [];
+
+        const current: SparklineDataset = {
+            data: slice.current,
+            label:
+                this.#messageService.get('analytics.engagement.sparkline.period-current') ??
+                'This period',
+            color: AnalyticsChartColors.primary.line,
+            dashed: false
+        };
+
+        if (slice.previous?.length) {
+            const len = slice.current.length;
+            const previousData =
+                slice.previous.length >= len ? slice.previous.slice(0, len) : slice.previous;
+            const previous: SparklineDataset = {
+                data: previousData,
+                label:
+                    this.#messageService.get('analytics.engagement.sparkline.period-previous') ??
+                    'Previous period',
+                color: AnalyticsChartColors.neutralDark.line,
+                dashed: false,
+                borderWidth: 1,
+                fillOpacity: 0.35
+            };
+            return [current, previous];
+        }
+
+        return [current];
+    });
+
     readonly $sparklineStatus = computed(
         () => this.store.engagementSparkline().status ?? ComponentStatus.INIT
     );

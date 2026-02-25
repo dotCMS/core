@@ -15,7 +15,7 @@
                 class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
                 (click)="$showCalculationDialog.set(true)"></i>
             <dot-analytics-sparkline
-                [data]="$sparklineData()"
+                [datasets]="$sparklineDatasets()"
                 [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
                 valueSuffix="%"
                 [status]="$sparklineStatus()" />
@@ -37,8 +37,8 @@
             [status]="kpisStatus" />
         <dot-analytics-metric
             [title]="'analytics.engagement.metrics.total-sessions'"
-            [value]="kpis?.conversionRate?.value ?? ''"
-            [trend]="kpis?.conversionRate?.trend ?? 0"
+            [value]="kpis?.totalSessions?.value ?? ''"
+            [trend]="kpis?.totalSessions?.trend ?? 0"
             icon="pi-bullseye"
             [status]="kpisStatus" />
     </div>
@@ -55,7 +55,7 @@
             <div class="flex flex-col flex-1 min-w-0">
                 <dot-analytics-platforms-table
                     class="flex-1"
-                    [platforms]="$platforms() ?? { device: [], browser: [], language: [] }"
+                    [platforms]="$platforms() ?? { device: [], browser: [] }"
                     [status]="$platformsStatus()"
                     [totalSessions]="$totalSessions()" />
             </div>
@@ -67,7 +67,8 @@
 
 <p-dialog
     [header]="'analytics.engagement.dialog.how-calculated.title' | dm"
-    [(visible)]="$showCalculationDialog"
+    [visible]="$showCalculationDialog()"
+    (visibleChange)="$showCalculationDialog.set($event)"
     [modal]="true"
     [dismissableMask]="true"
     [closable]="true"

@@ -4,7 +4,8 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
     DotAnalyticsSparklineComponent,
-    SparklineDataPoint
+    SparklineDataPoint,
+    SparklineDataset
 } from './dot-analytics-sparkline.component';
 
 import { AnalyticsChartColors } from '../../types';
@@ -26,10 +27,12 @@ describe('DotAnalyticsSparklineComponent', () => {
         { date: 'Oct 7', value: 28 }
     ];
 
+    const mockDatasets: SparklineDataset[] = [{ data: mockData }];
+
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                data: mockData,
+                datasets: mockDatasets,
                 status: ComponentStatus.LOADED
             } as unknown,
             detectChanges: false
@@ -80,15 +83,16 @@ describe('DotAnalyticsSparklineComponent', () => {
         it('should have plugins configured', () => {
             spectator.detectChanges();
             expect(spectator.component.chartPlugins).toBeDefined();
-            expect(spectator.component.chartPlugins.length).toBe(2);
+            expect(spectator.component.chartPlugins.length).toBe(3);
             expect(spectator.component.chartPlugins[0].id).toBe('gradientFill');
-            expect(spectator.component.chartPlugins[1].id).toBe('lineDrawAnimation');
+            expect(spectator.component.chartPlugins[1].id).toBe('sparklineCrosshair');
+            expect(spectator.component.chartPlugins[2].id).toBe('lineDrawAnimation');
         });
     });
 
     describe('Custom Inputs', () => {
         it('should apply custom color', () => {
-            spectator.setInput('color', '#FF0000');
+            spectator.setInput('datasets', [{ data: mockData, color: '#FF0000' }]);
             spectator.detectChanges();
 
             const chartData = spectator.component['$chartData']();
@@ -120,6 +124,26 @@ describe('DotAnalyticsSparklineComponent', () => {
             expect(chartData.labels).toEqual(mockData.map((d) => d.date));
         });
 
+        it('should render two datasets when given current and previous period', () => {
+            const previousData: SparklineDataPoint[] = [
+                { date: 'Sep 24', value: 8 },
+                { date: 'Sep 25', value: 20 },
+                { date: 'Sep 26', value: 12 }
+            ];
+            spectator.setInput('datasets', [
+                { data: mockData.slice(0, 3), label: 'This period', color: '#1243e3' },
+                { data: previousData, label: 'Previous period', color: '#E5E7EB', dashed: true }
+            ]);
+            spectator.detectChanges();
+
+            const chartData = spectator.component['$chartData']();
+            expect(chartData.datasets.length).toBe(2);
+            expect(chartData.datasets[0].borderDash).toBeUndefined();
+            expect(chartData.datasets[0].fill).toBe(true);
+            expect(chartData.datasets[1].borderDash).toEqual([4, 2]);
+            expect(chartData.datasets[1].fill).toBe(false);
+        });
+
         it('should have fill enabled', () => {
             spectator.detectChanges();
 
@@ -144,19 +168,12 @@ describe('DotAnalyticsSparklineComponent', () => {
             expect(options.plugins?.legend?.display).toBe(false);
         });
 
-        it('should have tooltip enabled by default (interactive)', () => {
-            spectator.detectChanges();
-
-            const options = spectator.component['$chartOptions']();
-            expect(options.plugins?.tooltip?.enabled).toBe(true);
-        });
-
-        it('should have tooltip disabled when not interactive', () => {
-            spectator.setInput('interactive', false);
+        it('should have tooltip disabled with external handler', () => {
             spectator.detectChanges();
 
             const options = spectator.component['$chartOptions']();
             expect(options.plugins?.tooltip?.enabled).toBe(false);
+            expect(options.plugins?.tooltip?.external).toBeInstanceOf(Function);
         });
 
         it('should have axes hidden', () => {
@@ -176,11 +193,11 @@ describe('DotAnalyticsSparklineComponent', () => {
             expect(options.maintainAspectRatio).toBe(false);
         });
 
-        it('should have hover radius when interactive', () => {
+        it('should have hover radius disabled (drawn by plugin)', () => {
             spectator.detectChanges();
 
             const options = spectator.component['$chartOptions']();
-            expect(options.elements?.point?.hoverRadius).toBe(6);
+            expect(options.elements?.point?.hoverRadius).toBe(0);
         });
 
         it('should have no hover radius when not interactive', () => {
@@ -210,12 +227,22 @@ describe('DotAnalyticsSparklineComponent', () => {
             expect(spectator.query('p-chart')).not.toExist();
         });
 
-        it('should show chart when status is LOADED', () => {
+        it('should show chart when status is LOADED and datasets have data', () => {
+            spectator.setInput('datasets', mockDatasets);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
             expect(spectator.query('p-chart')).toExist();
             expect(spectator.query('.sparkline-skeleton')).not.toExist();
+        });
+
+        it('should show empty state when datasets are empty', () => {
+            spectator.setInput('datasets', []);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            expect(spectator.query('.sparkline-empty')).toExist();
+            expect(spectator.query('p-chart')).not.toExist();
         });
     });
 });

@@ -12,7 +12,8 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import type {
     ChartData,
     EngagementKPIs,
-    EngagementPlatforms
+    EngagementPlatforms,
+    SparklineDataPoint
 } from '@dotcms/portlets/dot-analytics/data-access';
 // eslint-disable-next-line no-duplicate-imports
 import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
@@ -27,6 +28,7 @@ import { DotAnalyticsSparklineComponent } from '../../../shared/components/dot-a
 import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 
 const MOCK_KPIS: EngagementKPIs = {
+    totalSessions: { value: 45000, trend: 5, label: 'Total Sessions' },
     engagementRate: {
         value: 45,
         trend: 8,
@@ -55,11 +57,6 @@ const MOCK_PLATFORMS: EngagementPlatforms = {
         { name: 'Chrome', views: 60000, percentage: 65, time: '2m 50s' },
         { name: 'Safari', views: 20000, percentage: 25, time: '2m 30s' },
         { name: 'Firefox', views: 10000, percentage: 10, time: '2m 40s' }
-    ],
-    language: [
-        { name: 'English', views: 80000, percentage: 80, time: '2m 55s' },
-        { name: 'Spanish', views: 10000, percentage: 10, time: '2m 20s' },
-        { name: 'French', views: 5000, percentage: 5, time: '2m 10s' }
     ]
 };
 
@@ -83,7 +80,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
     });
     const mockSparkline = signal({
         status: ComponentStatus.LOADED,
-        data: [],
+        data: { current: [], previous: null as SparklineDataPoint[] | null },
         error: null
     });
 
@@ -141,7 +138,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
         });
         mockSparkline.set({
             status: ComponentStatus.LOADED,
-            data: [],
+            data: { current: [], previous: null },
             error: null
         });
     });

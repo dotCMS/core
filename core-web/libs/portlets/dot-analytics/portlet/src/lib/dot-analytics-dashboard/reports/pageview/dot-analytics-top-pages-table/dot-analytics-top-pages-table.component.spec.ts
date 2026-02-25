@@ -1,7 +1,6 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { MockModule } from 'ng-mocks';
 
-import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
@@ -50,13 +49,9 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             [
                 DotAnalyticsTopPagesTableComponent,
                 {
-                    remove: { imports: [CardModule, SkeletonModule, TableModule] },
+                    remove: { imports: [SkeletonModule, TableModule] },
                     add: {
-                        imports: [
-                            MockModule(CardModule),
-                            MockModule(SkeletonModule),
-                            MockModule(TableModule)
-                        ]
+                        imports: [MockModule(SkeletonModule), MockModule(TableModule)]
                     }
                 }
             ]
@@ -295,8 +290,8 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const errorState = spectator.query('.table-error-state');
-            expect(errorState).toExist();
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
         });
 
         it('should not show error state when status is not ERROR', () => {
@@ -306,8 +301,8 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const errorState = spectator.query('.table-error-state');
-            expect(errorState).not.toExist();
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).not.toExist();
         });
 
         it('should show error state message component', () => {

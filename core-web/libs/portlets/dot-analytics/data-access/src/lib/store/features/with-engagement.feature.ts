@@ -34,11 +34,10 @@ import type {
     EngagementDailyEntity,
     EngagementKPIs,
     EngagementPlatforms,
+    EngagementSparklineData,
     RequestState,
     SessionsByBrowserDailyEntity,
     SessionsByDeviceDailyEntity,
-    SessionsByLanguageDailyEntity,
-    SparklineDataPoint,
     TimeRangeInput
 } from '../../types';
 
@@ -53,11 +52,12 @@ const ENGAGEMENT_DAILY_MEASURES = [
 ];
 
 const ENGAGEMENT_TREND_MEASURES = ['totalSessions', 'engagedSessions', 'engagementRate'];
+/** Sparkline uses conversion rate so the trend varies day-to-day (engagement rate is often 100% when engaged_sessions === total_sessions). */
+const ENGAGEMENT_SPARKLINE_MEASURES = ['conversionRate'];
 
 const SESSIONS_BY_MEASURES = ['engagedSessions', 'totalSessions', 'avgEngagedSessionTimeSeconds'];
 const SESSIONS_BY_DEVICE_DIMENSIONS: DimensionField[] = ['deviceCategory'];
 const SESSIONS_BY_BROWSER_DIMENSIONS: DimensionField[] = ['browserFamily'];
-const SESSIONS_BY_LANGUAGE_DIMENSIONS: DimensionField[] = ['languageId'];
 
 /**
  * State interface for the Engagement feature.
@@ -65,7 +65,7 @@ const SESSIONS_BY_LANGUAGE_DIMENSIONS: DimensionField[] = ['languageId'];
  */
 export interface EngagementState {
     engagementKpis: RequestState<EngagementKPIs>;
-    engagementSparkline: RequestState<SparklineDataPoint[]>;
+    engagementSparkline: RequestState<EngagementSparklineData>;
     engagementBreakdown: RequestState<ChartData>;
     engagementPlatforms: RequestState<EngagementPlatforms>;
 }
@@ -251,10 +251,7 @@ export function withEngagement() {
                     ),
 
                     /**
-                     * Loads trend chart data (by day).
-                     */
-                    /**
-                     * Loads sparkline data (engagement rate per day).
+                     * Loads sparkline data (engagement/conversion rate per day) for current and previous period.
                      */
                     _loadEngagementSparkline: rxMethod<{
                         timeRange: TimeRangeInput;
@@ -272,49 +269,79 @@ export function withEngagement() {
                             ),
                             switchMap(({ timeRange, currentSiteId }) => {
                                 const dateRange = toTimeRangeCubeJS(timeRange);
-                                const query = createCubeQuery()
+                                const previousRange = getPreviousPeriod(timeRange);
+
+                                const currentQuery = createCubeQuery()
                                     .fromCube('EngagementDaily')
                                     .siteId(currentSiteId)
-                                    .measures(ENGAGEMENT_TREND_MEASURES)
+                                    .measures([
+                                        ...ENGAGEMENT_TREND_MEASURES,
+                                        ...ENGAGEMENT_SPARKLINE_MEASURES
+                                    ])
                                     .timeRange('day', dateRange, 'day')
                                     .build();
 
-                                return analyticsService
-                                    .cubeQuery<EngagementDailyEntity>(query)
-                                    .pipe(
-                                        tapResponse(
-                                            (rows) => {
+                                const previousQuery = createCubeQuery()
+                                    .fromCube('EngagementDaily')
+                                    .siteId(currentSiteId)
+                                    .measures([
+                                        ...ENGAGEMENT_TREND_MEASURES,
+                                        ...ENGAGEMENT_SPARKLINE_MEASURES
+                                    ])
+                                    .timeRange('day', previousRange, 'day')
+                                    .build();
 
-                                                patchState(store, {
-                                                    engagementSparkline: {
-                                                        status: ComponentStatus.LOADED,
-                                                        data: toEngagementSparklineData(rows ?? []),
-                                                        error: null
-                                                    }
-                                                });
-                                            },
-                                            (error: HttpErrorResponse) => {
-                                                patchState(store, {
-                                                    engagementSparkline: {
-                                                        status: ComponentStatus.ERROR,
-                                                        data: null,
-                                                        error:
-                                                            error?.message ||
-                                                            getErrorMessage(
-                                                                'analytics.error.loading.engagement',
-                                                                'Failed to load sparkline data'
-                                                            )
-                                                    }
-                                                });
-                                            }
-                                        )
-                                    );
+                                return forkJoin({
+                                    current:
+                                        analyticsService.cubeQuery<EngagementDailyEntity>(
+                                            currentQuery
+                                        ),
+                                    previous: analyticsService
+                                        .cubeQuery<EngagementDailyEntity>(previousQuery)
+                                        .pipe(catchError(() => of([])))
+                                }).pipe(
+                                    tapResponse(
+                                        ({ current, previous }) => {
+                                            patchState(store, {
+                                                engagementSparkline: {
+                                                    status: ComponentStatus.LOADED,
+                                                    data: {
+                                                        current: toEngagementSparklineData(
+                                                            current ?? []
+                                                        ),
+                                                        previous:
+                                                            previous?.length > 0
+                                                                ? toEngagementSparklineData(
+                                                                      previous
+                                                                  )
+                                                                : null
+                                                    },
+                                                    error: null
+                                                }
+                                            });
+                                        },
+                                        (error: HttpErrorResponse) => {
+                                            patchState(store, {
+                                                engagementSparkline: {
+                                                    status: ComponentStatus.ERROR,
+                                                    data: null,
+                                                    error:
+                                                        error?.message ||
+                                                        getErrorMessage(
+                                                            'analytics.error.loading.engagement',
+                                                            'Failed to load sparkline data'
+                                                        )
+                                                }
+                                            });
+                                        }
+                                    )
+                                );
                             })
                         )
                     ),
 
                     /**
-                     * Loads platforms (device, browser, language) in parallel.
+                     * Loads platforms (device, browser) in parallel.
                      */
                     _loadEngagementPlatforms: rxMethod<{
                         timeRange: TimeRangeInput;
@@ -349,14 +376,6 @@ export function withEngagement() {
                                     .timeRange('day', dateRange)
                                     .build();
 
-                                const languageQuery = createCubeQuery()
-                                    .fromCube('SessionsByLanguageDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(SESSIONS_BY_MEASURES)
-                                    .dimensions(SESSIONS_BY_LANGUAGE_DIMENSIONS)
-                                    .timeRange('day', dateRange)
-                                    .build();
-
                                 return forkJoin({
                                     device: analyticsService.cubeQuery<SessionsByDeviceDailyEntity>(
                                         deviceQuery
@@ -364,14 +383,10 @@ export function withEngagement() {
                                     browser:
                                         analyticsService.cubeQuery<SessionsByBrowserDailyEntity>(
                                             browserQuery
-                                        ),
-                                    language:
-                                        analyticsService.cubeQuery<SessionsByLanguageDailyEntity>(
-                                            languageQuery
                                         )
                                 }).pipe(
-                                    map(({ device, browser, language }) =>
-                                        toEngagementPlatforms(device, browser, language)
+                                    map(({ device, browser }) =>
+                                        toEngagementPlatforms(device, browser)
                                     ),
                                     tapResponse(
                                         (platforms) =>

@@ -8,11 +8,11 @@ import type {
     EngagementPlatforms,
     SessionsByBrowserDailyEntity,
     SessionsByDeviceDailyEntity,
-    SessionsByLanguageDailyEntity,
     SparklineDataPoint
 } from '../../types';
 
 const EMPTY_KPIS: EngagementKPIs = {
+    totalSessions: { value: 0, trend: 0, label: 'Total Sessions' },
     engagementRate: {
         value: 0,
         trend: 0,
@@ -71,6 +71,7 @@ export function toEngagementKPIs(
         return null;
     }
 
+    const totalSessionsPrev = parseNum(previous['EngagementDaily.totalSessions']);
     const engagedSessionsCur = parseNum(current['EngagementDaily.engagedSessions']);
     const engagementRateCur = parseNum(current['EngagementDaily.engagementRate']);
     const conversionRateCur = parseNum(current['EngagementDaily.conversionRate']);
@@ -87,6 +88,7 @@ export function toEngagementKPIs(
     const avgSessionTimePrev = parseNum(previous['EngagementDaily.avgSessionTimeSeconds']);
 
     const engagementRateTrend = computeTrendPercent(engagementRateCur, engagementRatePrev);
+    const totalSessionsTrend = computeTrendPercent(totalSessionsCur, totalSessionsPrev);
     const conversionRateTrend = computeTrendPercent(conversionRateCur, conversionRatePrev);
     const avgInteractionsTrend = computeTrendPercent(avgInteractionsCur, avgInteractionsPrev);
     const avgSessionTimeTrend = computeTrendPercent(avgSessionTimeCur, avgSessionTimePrev);
@@ -95,6 +97,11 @@ export function toEngagementKPIs(
     const conversionRateValue = `${Math.round(conversionRateCur * 1000) / 10}%`;
 
     return {
+        totalSessions: {
+            value: totalSessionsCur,
+            trend: totalSessionsTrend,
+            label: 'Total Sessions'
+        },
         engagementRate: {
             value: engagementRateValue,
             trend: engagementRateTrend,
@@ -121,16 +128,16 @@ export function toEngagementKPIs(
 
 /**
  * Map EngagementDaily trend-by-day rows to SparklineDataPoint[].
- * Shows engagement rate (%) per day for the sparkline chart.
- * When only 1 point exists, prepends a synthetic point at the same value
- * so Chart.js draws a flat line across the full width.
+ * Uses conversion rate (engaged_conversion_sessions / total_sessions) per day so the trend
+ * varies meaningfully; engagement rate per day is often 100% when engaged_sessions === total_sessions.
+ * When only 1 point exists, prepends a synthetic point at 0 so Chart.js draws a line.
  */
 export function toEngagementSparklineData(rows: EngagementDailyEntity[]): SparklineDataPoint[] {
     if (!rows?.length) return [];
 
     const points = rows.map((row) => {
         const day = row['EngagementDaily.day.day'] ?? row['EngagementDaily.day'] ?? '';
-        const rate = parseNum(row['EngagementDaily.engagementRate']);
+        const rate = parseNum(row['EngagementDaily.conversionRate']);
         return {
             date: typeof day === 'string' ? day.slice(0, 10) : '',
             value: Math.round(rate * 100)
@@ -262,37 +269,15 @@ export function toEngagementPlatformsFromBrowser(
 }
 
 /**
- * Map SessionsByLanguageDaily rows to language platform metrics.
- * Uses languageId as name if no display-name API is available.
- */
-export function toEngagementPlatformsFromLanguage(
-    rows: SessionsByLanguageDailyEntity[] | null
-): EngagementPlatformMetrics[] {
-    if (!rows?.length) return [];
-    const total = rows.reduce(
-        (sum, r) => sum + parseNum(r['SessionsByLanguageDaily.engagedSessions']),
-        0
-    );
-    return rows.map((row) => {
-        const views = parseNum(row['SessionsByLanguageDaily.engagedSessions']);
-        const avgSec = parseNum(row['SessionsByLanguageDaily.avgEngagedSessionTimeSeconds']);
-        const name = row['SessionsByLanguageDaily.languageId'] ?? 'Unknown';
-        return toPlatformMetrics(name, views, total, avgSec);
-    });
-}
-
-/**
- * Build full EngagementPlatforms from device, browser, and language arrays.
+ * Build full EngagementPlatforms from device and browser arrays.
  */
 export function toEngagementPlatforms(
     deviceRows: SessionsByDeviceDailyEntity[] | null,
-    browserRows: SessionsByBrowserDailyEntity[] | null,
-    languageRows: SessionsByLanguageDailyEntity[] | null
+    browserRows: SessionsByBrowserDailyEntity[] | null
 ): EngagementPlatforms {
     return {
         device: toEngagementPlatformsFromDevice(deviceRows),
-        browser: toEngagementPlatformsFromBrowser(browserRows),
-        language: toEngagementPlatformsFromLanguage(languageRows)
+        browser: toEngagementPlatformsFromBrowser(browserRows)
     };
 }
 
@@ -314,5 +299,5 @@ export function getEmptyEngagementChartData(): ChartData {
  * Default empty EngagementPlatforms when no data.
  */
 export function getEmptyEngagementPlatforms(): EngagementPlatforms {
-    return { device: [], browser: [], language: [] };
+    return { device: [], browser: [] };
 }
