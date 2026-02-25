@@ -14161,12 +14161,12 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"// Test that the response status is 200 (GraphQL usa 200 incluso para errores de aplicación)",
+									"// Test that the response status is 200 (GraphQL usa 200 incluso para errores de aplicaci\u00f3n)",
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"// Test que la respuesta tiene una estructura válida con errores",
+									"// Test que la respuesta tiene una estructura v\u00e1lida con errores",
 									"pm.test(\"Response contains errors and null data for Navigation\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    pm.expect(jsonData).to.have.property('errors');",
@@ -14203,7 +14203,7 @@
 									"    pm.expect(extensions).to.have.property('classification').equal('DataFetchingException');",
 									"});",
 									"",
-									"// Test la localización del error",
+									"// Test la localizaci\u00f3n del error",
 									"pm.test(\"Error location is correct\", function () {",
 									"    const locations = pm.response.json().errors[0].locations;",
 									"    pm.expect(locations).to.be.an('array').with.lengthOf(1);",
@@ -14360,6 +14360,267 @@
 							]
 						},
 						"description": "Check the Pagination field in a simple collection query, the collection does not have parameters."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DotFolderByPath Tests",
+			"item": [
+				{
+					"name": "Success: Query folder by path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has expected structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('DotFolderByPath');",
+									"    pm.expect(jsonData).to.not.have.property('errors');",
+									"});",
+									"",
+									"pm.test(\"Folder has all expected properties\", function () {",
+									"    const folder = pm.response.json().data.DotFolderByPath;",
+									"    pm.expect(folder).to.have.property('folderTitle');",
+									"    pm.expect(folder).to.have.property('folderPath');",
+									"    pm.expect(folder).to.have.property('folderName');",
+									"    pm.expect(folder).to.have.property('folderId');",
+									"    pm.expect(folder).to.have.property('children');",
+									"});",
+									"",
+									"pm.test(\"Folder path matches requested path\", function () {",
+									"    const folder = pm.response.json().data.DotFolderByPath;",
+									"    pm.expect(folder.folderPath).to.equal('/application/');",
+									"});",
+									"",
+									"pm.test(\"Children is an array\", function () {",
+									"    const folder = pm.response.json().data.DotFolderByPath;",
+									"    pm.expect(folder.children).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  DotFolderByPath(path: \"/application/\") {\n    folderId\n    folderTitle\n    folderPath\n    folderName\n    folderFileMask\n    folderSortOrder\n    folderDefaultFileType\n    children {\n      folderTitle\n      folderPath\n      folderName\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Queries the DotFolderByPath endpoint with a valid path and verifies the response structure."
+					},
+					"response": []
+				},
+				{
+					"name": "Success: Query folder with site parameter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has expected structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('DotFolderByPath');",
+									"    pm.expect(jsonData).to.not.have.property('errors');",
+									"});",
+									"",
+									"pm.test(\"Folder has all expected properties\", function () {",
+									"    const folder = pm.response.json().data.DotFolderByPath;",
+									"    pm.expect(folder).to.have.property('folderTitle');",
+									"    pm.expect(folder).to.have.property('folderPath');",
+									"    pm.expect(folder).to.have.property('folderName');",
+									"    pm.expect(folder).to.have.property('children');",
+									"});",
+									"",
+									"pm.test(\"Folder path matches requested path\", function () {",
+									"    const folder = pm.response.json().data.DotFolderByPath;",
+									"    pm.expect(folder.folderPath).to.equal('/application/');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  DotFolderByPath(path: \"/application/\", site: \"demo.dotcms.com\") {\n    folderId\n    folderTitle\n    folderPath\n    folderName\n    children {\n      folderTitle\n      folderPath\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Queries the DotFolderByPath endpoint with the optional site parameter to resolve the host explicitly."
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Non-existent path returns error",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains errors and null data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('DotFolderByPath');",
+									"    pm.expect(jsonData.data.DotFolderByPath).to.be.null;",
+									"});",
+									"",
+									"pm.test(\"Response has exactly one error\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors).to.be.an('array').with.lengthOf(1);",
+									"});",
+									"",
+									"pm.test(\"Error message indicates resource not found\", function () {",
+									"    const errorMessage = pm.response.json().errors[0].message;",
+									"    pm.expect(errorMessage).to.include('not found');",
+									"    pm.expect(errorMessage).to.include('Folder');",
+									"});",
+									"",
+									"pm.test(\"Error path points to DotFolderByPath\", function () {",
+									"    const errorPath = pm.response.json().errors[0].path;",
+									"    pm.expect(errorPath).to.be.an('array').with.lengthOf(1);",
+									"    pm.expect(errorPath[0]).to.equal('DotFolderByPath');",
+									"});",
+									"",
+									"pm.test(\"Error extensions have NOT_FOUND code\", function () {",
+									"    const extensions = pm.response.json().errors[0].extensions;",
+									"    pm.expect(extensions).to.have.property('code').equal('NOT_FOUND');",
+									"    pm.expect(extensions).to.have.property('status').equal(404);",
+									"    pm.expect(extensions).to.have.property('classification').equal('DataFetchingException');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  DotFolderByPath(path: \"/this-folder-does-not-exist-12345/\") {\n    folderId\n    folderTitle\n    folderPath\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Queries with a non-existent folder path and verifies the response contains proper error information in the GraphQL errors array."
+					},
+					"response": []
+				},
+				{
+					"name": "Error: Non-existent site returns error",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains errors and null data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('DotFolderByPath');",
+									"    pm.expect(jsonData.data.DotFolderByPath).to.be.null;",
+									"});",
+									"",
+									"pm.test(\"Response has exactly one error\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors).to.be.an('array').with.lengthOf(1);",
+									"});",
+									"",
+									"pm.test(\"Error message indicates resource not found\", function () {",
+									"    const errorMessage = pm.response.json().errors[0].message;",
+									"    pm.expect(errorMessage).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  DotFolderByPath(path: \"/application/\", site: \"nonexistent.site.example\") {\n    folderId\n    folderTitle\n    folderPath\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"description": "Queries with a non-existent site parameter and verifies the error response."
 					},
 					"response": []
 				}
