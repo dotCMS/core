@@ -108,7 +108,9 @@ export class DotTagsListComponent {
             header: this.dotMessageService.get('tags.add.tag'),
             width: '400px',
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            draggable: false,
+            position: 'center'
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {
@@ -124,7 +126,9 @@ export class DotTagsListComponent {
             width: '400px',
             data: { tag },
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            draggable: false,
+            position: 'center'
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {
@@ -140,11 +144,14 @@ export class DotTagsListComponent {
         this.confirmationService.confirm({
             message: this.dotMessageService.get('tags.confirm.delete.message', `${count}`),
             header: this.dotMessageService.get('tags.confirm.delete.header'),
-            acceptButtonStyleClass: 'p-button-outlined',
-            rejectButtonStyleClass: 'p-button-primary',
+            acceptLabel: this.dotMessageService.get('tags.delete'),
+            rejectLabel: this.dotMessageService.get('tags.cancel'),
+            acceptButtonStyleClass: 'p-button-primary',
+            rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
             closable: true,
             closeOnEscape: true,
+            position: 'center',
             accept: () => this.store.deleteTags()
         });
     }
@@ -154,7 +161,9 @@ export class DotTagsListComponent {
             header: this.dotMessageService.get('tags.import.header'),
             width: '500px',
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            draggable: false,
+            position: 'center'
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {

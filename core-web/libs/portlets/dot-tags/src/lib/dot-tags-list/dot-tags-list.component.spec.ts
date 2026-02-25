@@ -71,7 +71,11 @@ describe('DotTagsListComponent', () => {
                     'tags.export': 'Export',
                     'tags.export.all': 'Export All',
                     'tags.empty.state.title': 'No tags yet',
-                    'tags.empty.state.description': 'Create a tag to get started.'
+                    'tags.empty.state.description': 'Create a tag to get started.',
+                    'tags.delete': 'Delete',
+                    'tags.cancel': 'Cancel',
+                    'tags.confirm.delete.message': 'tags.confirm.delete.message',
+                    'tags.confirm.delete.header': 'tags.confirm.delete.header'
                 })
             }
         ]
@@ -326,7 +330,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
 
@@ -336,7 +340,9 @@ describe('DotTagsListComponent', () => {
                     header: 'tags.add.tag',
                     width: '400px',
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    draggable: false,
+                    position: 'center'
                 })
             );
         });
@@ -346,7 +352,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
             onClose.next({ name: 'new-tag', siteId: 'site1' });
@@ -360,7 +366,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
             onClose.next(undefined);
@@ -376,7 +382,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             const tag = MOCK_TAGS[0];
             spectator.component.openEditDialog(tag);
@@ -388,7 +394,9 @@ describe('DotTagsListComponent', () => {
                     width: '400px',
                     data: { tag },
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    draggable: false,
+                    position: 'center'
                 })
             );
         });
@@ -398,7 +406,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             const tag = MOCK_TAGS[0];
             spectator.component.openEditDialog(tag);
@@ -425,7 +433,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openEditDialog(MOCK_TAGS[0]);
             onClose.next(undefined);
@@ -446,9 +454,12 @@ describe('DotTagsListComponent', () => {
                 expect.objectContaining({
                     message: 'tags.confirm.delete.message',
                     header: 'tags.confirm.delete.header',
+                    acceptLabel: 'Delete',
+                    rejectLabel: 'Cancel',
                     defaultFocus: 'reject',
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    position: 'center'
                 })
             );
         });
@@ -480,7 +491,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
 
@@ -490,7 +501,9 @@ describe('DotTagsListComponent', () => {
                     header: 'tags.import.header',
                     width: '500px',
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    draggable: false,
+                    position: 'center'
                 })
             );
         });
@@ -500,7 +513,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
             onClose.next(true);
@@ -514,7 +527,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
             onClose.next(undefined);
