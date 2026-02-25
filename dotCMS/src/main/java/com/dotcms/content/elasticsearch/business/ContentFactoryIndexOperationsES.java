@@ -22,8 +22,10 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.lucene.search.TotalHits;
@@ -65,14 +67,10 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         this.queryCache = queryCache;
     }
 
-    private boolean useQueryCache = false;
+    private final boolean useQueryCache = Config.getBooleanProperty(
+            "ES_CACHE_SEARCH_QUERIES", true);
 
     private boolean shouldQueryCache() {
-        if (!useQueryCache) {
-            useQueryCache =
-                    LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty(
-                            "ES_CACHE_SEARCH_QUERIES", true);
-        }
         return useQueryCache;
     }
 
@@ -98,7 +96,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         }
         try {
             APILocator.getRequestCostAPI()
-                    .incrementCost(Price.ES_QUERY, ESContentFactoryImpl.class, "cachedIndexSearch",
+                    .incrementCost(Price.ES_QUERY, ContentFactoryIndexOperationsES.class, "cachedIndexSearch",
                             new Object[]{searchRequest});
             SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
             SearchHits hits  = response.getHits();
@@ -120,7 +118,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             return ERROR_HIT;
         } catch(final IllegalStateException e) {
             ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
-            Logger.warnAndDebug(ESContentFactoryImpl.class, e);
+            Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
             if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
@@ -128,7 +126,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     searchRequest.source().toString(), e.getMessage());
-            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
     }
@@ -162,7 +160,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         }
         try {
 
-            APILocator.getRequestCostAPI().incrementCost(Price.ES_COUNT, ESContentFactoryImpl.class, "cachedIndexCount",
+            APILocator.getRequestCostAPI().incrementCost(Price.ES_COUNT, ContentFactoryIndexOperationsES.class, "cachedIndexCount",
                     new Object[]{countRequest});
 
 
@@ -185,7 +183,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             return -1L;
         } catch(final IllegalStateException e) {
             ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
-            Logger.warnAndDebug(ESContentFactoryImpl.class, e);
+            Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
             if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
@@ -193,7 +191,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     countRequest.source().toString(), e.getMessage());
-            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
     }
@@ -439,7 +437,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             return new PaginatedArrayList<>();
         } catch (final IllegalStateException e) {
             ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
-            Logger.warnAndDebug(ESContentFactoryImpl.class, e);
+            Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
             if (ExceptionUtil.causedBy(e, IllegalStateException.class)) {
@@ -447,7 +445,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     query, e.getMessage());
-            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
 
