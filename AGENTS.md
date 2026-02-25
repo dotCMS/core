@@ -6,18 +6,17 @@ dotCMS is a headless CMS with a Java backend (Maven) and Angular frontend (Nx/Ya
 
 | Service | How to run | Port |
 |---------|-----------|------|
-| **dotCMS Backend** (Maven Docker plugin) | `just dev-run` | Dynamic (printed in Maven output) |
-| **dotCMS Backend** (fixed port) | `just dev-start-on-port 8082` | 8082 (HTTP) |
+| **dotCMS Backend** (Maven Docker plugin) | `just dev-start-on-port 8082` | 8082 (HTTP) |
 | **Frontend dev server** (Angular) | `cd core-web && npx nx serve dotcms-ui` | 4200 (proxies API to 8080) |
 
-The Maven `docker-start` profile builds and runs dotCMS from source in a Docker container alongside PostgreSQL and OpenSearch, matching CI/CD. This is preferred over `docker-compose` examples which use pre-built images. Ports for all services (DB, OpenSearch, Glowroot, etc.) are printed in the Maven output at startup.
+The Maven `docker-start` profile builds and runs dotCMS from source in a Docker container alongside PostgreSQL and OpenSearch, matching CI/CD. This is preferred over `docker-compose` examples which use pre-built images. Use `-Dtomcat.port=8082` for consistent port usage in Cloud VMs.
 
 Default admin credentials: `admin@dotcms.com` / `admin`
 
 ### Build and run
 
 1. **Build everything** (includes Docker image): `./mvnw install -DskipTests` or `just build`
-2. **Start dotCMS**: `just dev-run` (dynamic ports) or `just dev-start-on-port 8082` (fixed port)
+2. **Start dotCMS**: `just dev-start-on-port 8082`
 3. **Stop dotCMS**: `just dev-stop` (runs `./mvnw -pl :dotcms-core -Pdocker-stop`)
 4. **Quick core rebuild** (after code changes): `just build-quicker` (runs `./mvnw -pl :dotcms-core -DskipTests install`)
 
