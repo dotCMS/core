@@ -27,15 +27,19 @@
 #                                 ONLY when latest=true; never set by nightly/trunk/feature/manual.
 #                                 Applies to both main (dotcms) and dev (dotcms-dev) images.
 #
+#   release (Java variant):     Same as release, plus:
+#            {suffix}            ← mutable floating tag (e.g. java-25), variant equivalent of latest.
+#                                 Pushed unconditionally when raw_suffix is non-empty; not gated on latest.
+#
 #   manual:  manual              ← mutable, always latest manual build
 #            manual_{sha}        ← immutable
 #            manual_{ref}        ← mutable alias (tag-identifier = sanitized ref branch)
 #            {custom-tag}        ← optional exact alias chosen by the developer
 #
-#   Java variant suffix (_java25 etc.) is part of the base tag; in identifier aliases
-#   the identifier comes first (matching the release pattern 25.02.16-01_java25):
-#     nightly_java25, nightly_java25_{sha}, nightly_{date}_java25
-#     manual_java25,  manual_java25_{sha},  manual_{ref}_java25
+#   Java variant suffix (_java-25 etc.) is part of the base tag; in identifier aliases
+#   the identifier comes first (matching the release pattern 25.02.16-01_java-25):
+#     nightly_java-25, nightly_java-25_{sha}, nightly_{date}_java-25
+#     manual_java-25,  manual_java-25_{sha},  manual_{ref}_java-25
 #
 #   All tags (base, sha, identifier alias, custom) are applied in a single docker build.
 #   The deploy-docker action accepts semantic inputs (identifier-tag, custom-tag); the
@@ -69,7 +73,7 @@ on:
         type: boolean
         default: false
       custom-tag:
-        description: 'Optional exact alias tag, used by manual workflow for developer-chosen tag names (e.g., modernization, java25-testing). Pulled from the immutable SHA tag for reliability.'
+        description: 'Optional exact alias tag, used by manual workflow for developer-chosen tag names (e.g., modernization, java-25-testing). Pulled from the immutable SHA tag for reliability.'
         required: false
         type: string
         default: ''
@@ -97,7 +101,7 @@ on:
         type: string
         default: ''
       artifact-suffix:
-        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java-25).'
         required: false
         type: string
         default: ''
@@ -151,13 +155,13 @@ jobs:
         shell: bash
         run: |
           # Naming Convention for Java Variants:
-          # - User input: suffix without leading separator (e.g., "java25" or "java25-ms")
-          # - Maven artifacts: use dash separator (e.g., "-java25")
-          # - Docker tags: use underscore separator (e.g., "_java25")
+          # - User input: suffix without leading separator (e.g., "java-25" or "java-25-ms")
+          # - Maven artifacts: use dash separator (e.g., "-java-25")
+          # - Docker tags: use underscore separator (e.g., "_java-25")
           #
           # Note: Underscore in Docker tags is non-standard but follows existing dotCMS convention.
           # Docker typically uses dash or no separator, but we use underscore to distinguish from
-          # version dashes (e.g., "25.02.16-01_java25_abc123" vs "25.02.16-01-java25-abc123").
+          # version dashes (e.g., "25.02.16-01_java-25_abc123" vs "25.02.16-01-java-25-abc123").
           # This convention may be revisited in future.
 
           # Use provided java-version if set, otherwise read from .sdkmanrc
@@ -172,7 +176,7 @@ jobs:
               echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
             else
               JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
-              RAW_SUFFIX="java${JAVA_MAJOR}"
+              RAW_SUFFIX="java-${JAVA_MAJOR}"
               echo "Using derived artifact suffix: ${RAW_SUFFIX}"
             fi
 
@@ -215,10 +219,10 @@ jobs:
       # Compute Docker tags for this build.
       #
       # base_tag:       primary mutable tag — {identifier|environment}{suffix}
-      #                 e.g. nightly_java25, 25.02.16-01_java25, manual_java25
+      #                 e.g. nightly_java-25, 25.02.16-01_java-25, manual_java-25
       #
       # identifier_tag: mutable alias — {environment}_{identifier}{suffix}
-      #                 e.g. nightly_20250218_java25, manual_issue-123_java25
+      #                 e.g. nightly_20250218_java-25, manual_issue-123_java-25
       #                 Empty (disabled) when:
       #                   - no tag-identifier (trunk has none)
       #                   - omit-environment-prefix=true (release: identifier IS the primary tag)
@@ -261,6 +265,7 @@ jobs:
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
           identifier-tag: ${{ steps.docker-tags.outputs.identifier_tag }}
           custom-tag: ${{ inputs.custom-tag }}
+          extra-tags: ${{ steps.get-sdkman-version.outputs.raw_suffix != '' && format('type=raw,value={0},enable=true', steps.get-sdkman-version.outputs.raw_suffix) || '' }}
 
       # Format tags for Slack notifications
       - name: Format Tags
@@ -301,7 +306,9 @@ jobs:
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+          artifact_suffix: ${{ steps.get-sdkman-version.outputs.maven_suffix }}
           identifier-tag: ${{ steps.docker-tags.outputs.identifier_tag }}
+          extra-tags: ${{ steps.get-sdkman-version.outputs.raw_suffix != '' && format('type=raw,value={0},enable=true', steps.get-sdkman-version.outputs.raw_suffix) || '' }}
 
       # Deploy CLI artifacts to JFrog Artifactory
       # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
