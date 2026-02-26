@@ -15,3 +15,4 @@ export {
     TOOLTIP_STYLE,
     TooltipOptions
 } from './tooltip-config.plugin';
+export { createSparklineCrosshairPlugin } from './sparkline-crosshair.plugin';

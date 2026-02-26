@@ -38,6 +38,7 @@ import {
     ComboChartDataset,
     getAnalyticsChartColors
 } from '../../types';
+import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
@@ -69,6 +70,7 @@ const CHART_TYPE_HEIGHTS = {
         ChartModule,
         SkeletonModule,
         DotMessagePipe,
+        DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -328,7 +330,7 @@ export class DotAnalyticsChartComponent {
                 (dataset) =>
                     !dataset.data ||
                     dataset.data.length === 0 ||
-                    dataset.data.every((value) => value === null || value === undefined)
+                    dataset.data.every((value) => !value)
             )
         );
     });

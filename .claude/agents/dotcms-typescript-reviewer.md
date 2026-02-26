@@ -1,5 +1,5 @@
 ---
-name: typescript-reviewer
+name: dotcms-typescript-reviewer
 description: TypeScript type safety specialist. Use proactively after writing or modifying TypeScript code to catch type issues early before code review. Focuses on type safety, generics, null handling without checking Angular patterns or tests.
 model: sonnet
 color: blue
@@ -56,7 +56,7 @@ Read(core-web/libs/dotcms-models/src/lib/my.model.ts)
 ## Review Scope
 
 Analyze these TypeScript files from the PR diff:
-- `.ts` files (but NOT `.spec.ts` - tests are handled by test-reviewer)
+- `.ts` files (but NOT `.spec.ts` - tests are handled by dotcms-test-reviewer)
 - `.tsx` files if React components exist
 - Focus on type definitions, interfaces, generics, type guards
 
@@ -328,8 +328,8 @@ getData(): Observable<ContentData> {
 ## What NOT to Flag
 
 **Pre-existing issues** - Only flag issues in changed lines
-**Angular patterns** - Component structure, lifecycle, etc. (angular-reviewer handles this)
-**Test files** - `*.spec.ts` files (test-reviewer handles this)
+**Angular patterns** - Component structure, lifecycle, etc. (dotcms-angular-reviewer handles this)
+**Test files** - `*.spec.ts` files (dotcms-test-reviewer handles this)
 **Legitimate any usage** - With `// eslint-disable-next-line @typescript-eslint/no-explicit-any` and comment
 **Third-party types** - Issues in node_modules or external libraries
 **Configuration files** - Type issues in `.json`, `.js` config files (not TypeScript source)
@@ -346,7 +346,7 @@ getData(): Observable<ContentData> {
 ## Integration with Main Review
 
 You are invoked by the main `review` skill when TypeScript files are changed. You work alongside:
-- `angular-reviewer` - Handles component patterns, Angular syntax
-- `test-reviewer` - Handles test quality and Spectator patterns
+- `dotcms-angular-reviewer` - Handles component patterns, Angular syntax
+- `dotcms-test-reviewer` - Handles test quality and Spectator patterns
 
 Your output is merged into the final review under "TypeScript Type Safety" section.

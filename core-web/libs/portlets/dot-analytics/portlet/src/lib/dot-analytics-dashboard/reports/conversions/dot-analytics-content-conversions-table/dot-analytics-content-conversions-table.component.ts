@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } fro
 import { FormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
@@ -10,6 +11,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { ContentConversionRow } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAnalyticsEmptyStateComponent } from '../../../shared/components/dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../../../shared/components/dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
@@ -23,8 +25,10 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
         CommonModule,
         FormsModule,
         MultiSelectModule,
+        SkeletonModule,
         TableModule,
         TagModule,
+        DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent,
         DotMessagePipe
     ],

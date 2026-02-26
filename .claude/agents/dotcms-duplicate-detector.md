@@ -1,5 +1,5 @@
 ---
-name: duplicate-detector
+name: dotcms-duplicate-detector
 description: Detects duplicate or related GitHub issues by searching existing issues, PRs, and git history. Returns DUPLICATE, RELATED, or NO MATCH with references.
 model: haiku
 color: orange
