@@ -1,10 +1,8 @@
 package com.dotcms.content.index.opensearch;
 
-import static com.dotcms.content.index.ContentFactoryIndexOperationsOS.addBuilderSort;
-
+import static com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOS.addBuilderSort;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.TranslatedQuery;
-import com.dotcms.content.index.ContentFactoryIndexOperationsOS;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -85,7 +83,7 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
         this.osClient = new OpenSearchDefaultClientProvider().getClient();
         this.indexOperations = new ContentFactoryIndexOperationsOS();
 
-        // Initialize scroll and fetch first batch
+        // Initialize scroll- and fetch-first batch
         this.firstBatch = Try.of(() -> {
             // Translate query to OpenSearch format using the service
             final TranslatedQuery translatedQuery = TranslatedQuery.translateQuery(luceneQuery, sortBy);
@@ -97,7 +95,7 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
             // Build search request for OpenSearch
             SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder()
                     .index(indexToHit)
-                    .query(createQuery(formattedQuery, sortBy))
+                    .query(createQuery(formattedQuery))
                     .size(batchSize)
                     .scroll(Time.of(t -> t.time(SCROLL_KEEP_ALIVE_MINUTES.get() + "m")))
                     .source(src -> src.filter(f -> f.includes(List.of("inode", "identifier"))));
@@ -236,22 +234,13 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
     }
 
     /**
-     * Creates a Query object from the query string and sort parameters.
+     * Creates a Query object from the query string.
+     * All sorting logic is handled in applySorting() method.
      */
-    private Query createQuery(final String query, final String sortBy) {
-        if (Config.getBooleanProperty("OPENSEARCH_USE_FILTERS_FOR_SEARCHING", false)
-                && sortBy != null && !sortBy.toLowerCase().startsWith("score")) {
-
-            if ("random".equals(sortBy)) {
-                // OpenSearch random scoring - simplified for scroll context
-                return Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
-            } else {
-                return Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
-            }
-        } else {
-            return Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
-        }
+    private Query createQuery(final String query) {
+        return Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
     }
+
 
     /**
      * Applies sorting to the search request builder based on sortBy parameter.

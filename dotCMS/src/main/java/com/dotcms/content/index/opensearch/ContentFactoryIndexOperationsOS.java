@@ -3,7 +3,6 @@ package com.dotcms.content.index.opensearch;
 import static com.dotcms.content.index.opensearch.OpenSearchIndexAPI.INDEX_OPERATIONS_TIMEOUT;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.ContentFactoryIndexOperationsES;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.VersionedIndices;
@@ -49,7 +48,7 @@ import org.opensearch.client.opensearch.core.search.HitsMetadata;
 import org.opensearch.client.opensearch.core.search.TotalHitsRelation;
 
 /**
- * Class that centralize all the index related operations used in ContentFactoryIndex
+ * Class that centralize all the index-related operations used in ContentFactoryIndex
  */
 public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOperations {
 
@@ -437,12 +436,12 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warn(this.getClass(), "----------------------------------------------");
             return new PaginatedArrayList<>();
         } catch (final IllegalStateException e) {
-            Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, e);
+            Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     query, e.getMessage());
-            Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, errorMsg, e);
+            Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
 
