@@ -65,7 +65,7 @@ export class DotContentDriveDialogFolderComponent {
 
     #hostName = this.#store.currentSite().hostname;
 
-    $folder = input<DotContentDriveFolder>(null, { alias: 'folder' });
+    $folder = input<DotContentDriveFolder | undefined>(undefined, { alias: 'folder' });
 
     readonly $fileAssetTypes = toSignal(
         this.#dotContentTypeService.getContentTypes({ type: 'FILEASSET' })
