@@ -38,6 +38,6 @@ invalidCredentials.forEach((credentials) => {
         await loginPage.login(username, password);
 
         const errorMessageLocator = page.getByTestId('message');
-        await expect(errorMessageLocator).toBeVisible({ timeout: 30000 });
+        await expect(errorMessageLocator).toBeVisible();
     });
 });
