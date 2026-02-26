@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.elasticsearch.business.ESContentletScroll;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
@@ -684,7 +684,7 @@ public interface ContentletFactory {
 	 * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
 	 * @return ESContentletScroll instance for iterating through results
 	 */
-	ESContentletScroll createScrollQuery(
+	IndexContentletScroll createScrollQuery(
 			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy);
 
 	/**
@@ -696,7 +696,7 @@ public interface ContentletFactory {
 	 * @param batchSize Number of results to retrieve per batch (page size)
 	 * @return ESContentletScroll instance for iterating through results
 	 */
-	ESContentletScroll createScrollQuery(
+	IndexContentletScroll createScrollQuery(
 			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize);
 
     static void rebuildRestHighLevelClientIfNeeded(final Exception e) {

@@ -1,4 +1,4 @@
-package com.dotcms.content.elasticsearch.business;
+package com.dotcms.content.index;
 
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -31,7 +31,7 @@ import java.util.List;
  *
  * @see com.dotmarketing.portlets.contentlet.business.ContentletFactory#createScrollQuery(String, com.liferay.portal.model.User, boolean, int)
  */
-public interface ESContentletScroll extends AutoCloseable {
+public interface IndexContentletScroll extends AutoCloseable {
 
     /**
      * Retrieves the next batch of results from the scroll context.
