@@ -56,6 +56,47 @@ export const GridBlock = Node.create({
 
     addKeyboardShortcuts() {
         return {
+            Backspace: ({ editor }) => {
+                const { state } = editor;
+                const { $from } = state.selection;
+
+                // Find the gridBlock ancestor
+                for (let depth = $from.depth; depth > 0; depth--) {
+                    if ($from.node(depth).type.name === 'gridBlock') {
+                        const gridNode = $from.node(depth);
+                        const gridPos = $from.before(depth);
+
+                        // Check if both columns are empty (each has a single empty paragraph)
+                        const bothEmpty =
+                            gridNode.childCount === 2 &&
+                            gridNode.child(0).childCount === 1 &&
+                            gridNode.child(0).child(0).type.name === 'paragraph' &&
+                            gridNode.child(0).child(0).textContent === '' &&
+                            gridNode.child(1).childCount === 1 &&
+                            gridNode.child(1).child(0).type.name === 'paragraph' &&
+                            gridNode.child(1).child(0).textContent === '';
+
+                        if (bothEmpty) {
+                            // Replace the grid block with an empty paragraph
+                            const { tr } = state;
+                            const from = gridPos;
+                            const to = gridPos + gridNode.nodeSize;
+                            const paragraph = state.schema.nodes.paragraph.create();
+                            tr.replaceWith(from, to, paragraph);
+                            tr.setSelection(
+                                TextSelection.near(tr.doc.resolve(from + 1))
+                            );
+                            editor.view.dispatch(tr);
+
+                            return true;
+                        }
+
+                        return false;
+                    }
+                }
+
+                return false;
+            },
             Tab: ({ editor }) => {
                 const { state } = editor;
                 const { $from } = state.selection;
