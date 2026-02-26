@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { getUVEState } from '@dotcms/uve';
-
 import { DotCMSImpressionTracker } from './dot-analytics.impression-tracker';
 
 import {
-    ANALYTICS_CONTENTLET_CLASS,
+    CONTENTLET_CLASS,
     DEFAULT_IMPRESSION_CONFIG,
     IMPRESSION_EVENT_TYPE
 } from '../../shared/constants/dot-analytics.constants';
@@ -13,7 +11,6 @@ import { DotCMSAnalyticsConfig } from '../../shared/models';
 import { INITIAL_SCAN_DELAY_MS } from '../../shared/utils/dot-analytics.utils';
 
 // Mock dependencies
-jest.mock('@dotcms/uve');
 jest.mock('./dot-analytics.impression.utils', () => ({
     ...jest.requireActual('./dot-analytics.impression.utils'),
     createDebounce: jest.fn((callback) => callback) // Execute immediately for testing
@@ -41,12 +38,12 @@ describe('DotCMSImpressionTracker', () => {
         } = {}
     ): HTMLElement => {
         const element = document.createElement('div');
-        element.className = ANALYTICS_CONTENTLET_CLASS;
-        element.dataset.dotAnalyticsIdentifier = identifier;
-        element.dataset.dotAnalyticsInode = options.inode || 'inode-123';
-        element.dataset.dotAnalyticsContenttype = options.contentType || 'Blog';
-        element.dataset.dotAnalyticsTitle = options.title || 'Test Content';
-        element.dataset.dotAnalyticsBasetype = options.baseType || 'CONTENT';
+        element.className = CONTENTLET_CLASS;
+        element.dataset.dotIdentifier = identifier;
+        element.dataset.dotInode = options.inode || 'inode-123';
+        element.dataset.dotType = options.contentType || 'Blog';
+        element.dataset.dotTitle = options.title || 'Test Content';
+        element.dataset.dotBasetype = options.baseType || 'CONTENT';
 
         // Mock getBoundingClientRect
         element.getBoundingClientRect = jest.fn(() => ({
@@ -68,9 +65,6 @@ describe('DotCMSImpressionTracker', () => {
         // Reset mocks
         jest.clearAllMocks();
         jest.useFakeTimers();
-
-        // Mock getUVEState (not in editor by default)
-        (getUVEState as jest.Mock).mockReturnValue(false);
 
         // Setup config
         mockConfig = {
@@ -147,16 +141,6 @@ describe('DotCMSImpressionTracker', () => {
 
             // Restore
             (global as any).window = originalWindow;
-        });
-
-        it('should NOT initialize in UVE editor mode', () => {
-            (getUVEState as jest.Mock).mockReturnValue(true);
-
-            tracker = new DotCMSImpressionTracker(mockConfig);
-            tracker.initialize();
-
-            expect(global.IntersectionObserver).not.toHaveBeenCalled();
-            expect(getUVEState).toHaveBeenCalled();
         });
 
         it('should setup MutationObserver for dynamic content', () => {
@@ -304,8 +288,8 @@ describe('DotCMSImpressionTracker', () => {
 
         it('should skip elements without identifier', () => {
             const element = document.createElement('div');
-            element.className = ANALYTICS_CONTENTLET_CLASS;
-            // No data-dot-analytics-identifier
+            element.className = CONTENTLET_CLASS;
+            // No data-dot-identifier
             document.body.appendChild(element);
 
             tracker = new DotCMSImpressionTracker(mockConfig);

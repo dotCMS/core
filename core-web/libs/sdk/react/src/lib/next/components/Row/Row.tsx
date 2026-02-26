@@ -24,11 +24,11 @@ type DotCMSRowRendererProps = {
  * @return {JSX.Element} Rendered rows with columns
  */
 export const Row = ({ row }: DotCMSRowRendererProps) => {
-    const customRowClass = combineClasses([row.styleClass || '', styles.row]);
+    const customRowClass = combineClasses(['dot-row-container', row.styleClass || '']);
 
     return (
-        <div className="dot-row-container">
-            <div className={customRowClass} data-dot-object={'row'}>
+        <div className={customRowClass}>
+            <div className={styles.row} data-dot-object={'row'}>
                 {row.columns.map((column, index) => (
                     <Column key={index} column={column} />
                 ))}

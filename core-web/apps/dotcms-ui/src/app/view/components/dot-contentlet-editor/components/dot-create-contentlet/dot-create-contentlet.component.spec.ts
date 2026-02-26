@@ -20,8 +20,8 @@ import {
 import {
     CoreWebService,
     DotcmsEventsService,
-    LoginService,
     LoggerService,
+    LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
 import {
@@ -33,6 +33,7 @@ import {
 
 import { DotCreateContentletComponent } from './dot-create-contentlet.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -96,6 +97,12 @@ describe('DotCreateContentletComponent', () => {
                     snapshot: {
                         queryParams: {}
                     }
+                }
+            },
+            {
+                provide: DotCustomEventHandlerService,
+                useValue: {
+                    handle: jest.fn()
                 }
             }
         ],

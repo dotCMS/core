@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
@@ -22,14 +23,14 @@ public class PersonalizedContentlet implements Serializable{
         this.contentletId    = contentletId;
         this.personalization = personalization;
         this.treeOrder = treeOrder;
-        this.styleProperties = styleProperties;
+        this.styleProperties = UtilMethods.isSet(styleProperties) ? Map.copyOf(styleProperties) : Map.of();
     }
 
     public PersonalizedContentlet(final String contentletId, final String personalization) {
         this.contentletId    = contentletId;
         this.personalization = personalization;
         this.treeOrder = 0;
-        this.styleProperties = null;
+        this.styleProperties = Map.of();
     }
 
     public String getContentletId() {
@@ -42,6 +43,10 @@ public class PersonalizedContentlet implements Serializable{
 
     public Object getTreeOrder() {
         return treeOrder;
+    }
+
+    public Map<String, Object> getStyleProperties() {
+        return styleProperties;
     }
 
     @Override

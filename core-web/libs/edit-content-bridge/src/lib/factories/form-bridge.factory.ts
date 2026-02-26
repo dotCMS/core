@@ -1,6 +1,8 @@
 import { NgZone } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { AngularFormBridge } from '../bridges/angular-form-bridge';
 import { DojoFormBridge } from '../bridges/dojo-form-bridge';
 import { FormBridge } from '../interfaces/form-bridge.interface';
@@ -13,6 +15,7 @@ interface AngularConfig {
     type: 'angular';
     form: FormGroup;
     zone: NgZone;
+    dialogService: DialogService;
 }
 
 /**
@@ -36,7 +39,7 @@ type BridgeConfig = AngularConfig | DojoConfig;
  */
 export function createFormBridge(config: BridgeConfig): FormBridge {
     if (config.type === 'angular') {
-        return AngularFormBridge.getInstance(config.form, config.zone);
+        return AngularFormBridge.getInstance(config.form, config.zone, config.dialogService);
     }
 
     return new DojoFormBridge();

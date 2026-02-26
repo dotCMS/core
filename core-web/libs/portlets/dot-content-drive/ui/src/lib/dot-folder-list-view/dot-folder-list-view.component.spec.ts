@@ -1244,4 +1244,108 @@ describe('DotFolderListViewComponent', () => {
             expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
         });
     });
+
+    describe('Scroll Events', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should emit scroll event when table body is scrolled', () => {
+            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const tableBody = spectator.query('.p-datatable-wrapper') as HTMLElement;
+
+            const scrollEvent = new Event('scroll');
+            tableBody.dispatchEvent(scrollEvent);
+
+            expect(scrollSpy).toHaveBeenCalledWith(scrollEvent);
+        });
+
+        it('should add scroll event listener on ngAfterViewInit and emit scroll events', () => {
+            const tableBody = spectator.query('.p-datatable-wrapper') as HTMLElement;
+            const addListenerSpy = jest.spyOn(tableBody, 'addEventListener');
+
+            spectator.component.ngAfterViewInit();
+
+            expect(addListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+
+            // Verify the listener emits scroll events
+            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollEvent = new Event('scroll');
+            tableBody.dispatchEvent(scrollEvent);
+
+            expect(scrollSpy).toHaveBeenCalledWith(scrollEvent);
+        });
+
+        it('should remove scroll event listener on ngOnDestroy and stop emitting', () => {
+            const tableBody = spectator.query('.p-datatable-wrapper') as HTMLElement;
+            const removeListenerSpy = jest.spyOn(tableBody, 'removeEventListener');
+
+            spectator.component.ngOnDestroy();
+
+            expect(removeListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+
+            // Verify scroll events are no longer emitted after destroy
+            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollEvent = new Event('scroll');
+            tableBody.dispatchEvent(scrollEvent);
+
+            expect(scrollSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not throw when ngOnDestroy is called without table body', () => {
+            // Mock dataTable to return null for el.nativeElement.querySelector
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => ({
+                    el: {
+                        nativeElement: {
+                            querySelector: () => null
+                        }
+                    }
+                }),
+                writable: true
+            });
+
+            expect(() => spectator.component.ngOnDestroy()).not.toThrow();
+        });
+
+        it('should not throw when ngAfterViewInit is called without table body', () => {
+            // Mock dataTable to return null for el.nativeElement.querySelector
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => ({
+                    el: {
+                        nativeElement: {
+                            querySelector: () => null
+                        }
+                    }
+                }),
+                writable: true
+            });
+
+            expect(() => spectator.component.ngAfterViewInit()).not.toThrow();
+        });
+
+        it('should not add event listener when dataTable is undefined', () => {
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => undefined,
+                writable: true
+            });
+
+            expect(() => spectator.component.ngAfterViewInit()).not.toThrow();
+        });
+
+        it('should not remove event listener when dataTable is undefined', () => {
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => undefined,
+                writable: true
+            });
+
+            expect(() => spectator.component.ngOnDestroy()).not.toThrow();
+        });
+    });
 });

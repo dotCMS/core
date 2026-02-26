@@ -23,6 +23,7 @@ import { LoginServiceMock } from '@dotcms/utils-testing';
 import { DotNavigationService } from './dot-navigation.service';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
 class RouterMock {
     _events: Subject<any> = new Subject();
@@ -37,7 +38,7 @@ class RouterMock {
 
     url = '';
 
-    currentNavigation() {
+    getCurrentNavigation() {
         return this._currentNavigation;
     }
 
@@ -253,6 +254,13 @@ describe('DotNavigationService', () => {
                 {
                     provide: DotSystemConfigService,
                     useValue: { getSystemConfig: () => of({}) }
+                },
+                {
+                    provide: DynamicRouteService,
+                    useValue: {
+                        registerRoutesFromMenuItems: jest.fn().mockReturnValue(0),
+                        getRegisteredRoutes: jest.fn().mockReturnValue([])
+                    }
                 },
                 GlobalStore,
                 provideHttpClient(),

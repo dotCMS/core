@@ -1,5 +1,6 @@
 /**
  * API entity types for analytics responses
+ * TODO: Move dashboard specific types here (e.g. Engagement types)
  */
 
 /**
@@ -81,8 +82,8 @@ export interface ContentAttributionEntity {
     'ContentAttribution.eventType': string;
     'ContentAttribution.identifier': string;
     'ContentAttribution.title': string;
-    'ContentAttribution.conversions': string;
-    'ContentAttribution.events': string;
+    'ContentAttribution.sumConversions': string;
+    'ContentAttribution.sumEvents': string;
 }
 
 /**

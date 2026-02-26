@@ -2,7 +2,7 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 
 import { computed, Signal } from '@angular/core';
 
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
 import { withFlags } from './flags/withFlags';
@@ -58,7 +58,7 @@ export function withPageContext() {
                     return flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
                 });
                 const $isPageLocked = computed(() => {
-                    return computeIsPageLocked(page(), currentUser(), $isLockFeatureEnabled());
+                    return computeIsPageLocked(page(), currentUser());
                 });
                 const $hasAccessToEditMode = computed(() => {
                     const isPageEditable = page()?.canEdit;
@@ -79,7 +79,7 @@ export function withPageContext() {
                     $hasAccessToEditMode,
                     $languageId: computed(() => viewAs()?.language?.id || 1),
                     $pageURI: computed(() => page()?.pageURI ?? ''),
-                    $variantId: computed(() => pageParams()?.variantId ?? ''),
+                    $variantId: computed(() => pageParams()?.variantName ?? DEFAULT_VARIANT_ID),
                     $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
                 } satisfies PageContextComputed;
             }

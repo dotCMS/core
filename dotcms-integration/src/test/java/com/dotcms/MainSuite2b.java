@@ -38,7 +38,6 @@ import com.dotcms.content.business.json.LegacyJSONObjectRenderTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
-import com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
@@ -102,7 +101,6 @@ import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderIntegrationTest;
-import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.apps.SiteViewPaginatorIntegrationTest;
 import com.dotcms.rest.api.v1.apps.view.AppsInterpolationTest;
 import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
@@ -110,6 +108,7 @@ import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
+import com.dotcms.rest.api.v1.publishing.PublishingResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
@@ -152,7 +151,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegration
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
-import com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
@@ -257,7 +255,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
-        HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         Task05380ChangeContainerPathToAbsoluteTest.class,
         DotTemplateToolTest.class,
         Task05370AddAppsPortletToLayoutTest.class,
@@ -393,7 +390,6 @@ import org.junit.runners.Suite.SuiteClasses;
         BrowserAjaxTest.class,
         PopulateContentletAsJSONUtilTest.class,
         PopulateContentletAsJSONJobTest.class,
-        ContentTypeDestroyAPIImplTest.class,
         Task230328AddMarkedForDeletionColumnTest.class,
         StartupTasksExecutorDataTest.class,
         Task230426AlterVarcharLengthOfLockedByColTest.class,
@@ -444,8 +440,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task250113CreatePostgresJobQueueTablesTest.class,
         UniqueFieldDataBaseUtilTest.class,
         DBUniqueFieldValidationStrategyTest.class,
-        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
-        Task241013RemoveFullPathLcColumnFromIdentifierTest.class,
         Task241015ReplaceLanguagesWithLocalesPortletTest.class,
         Task241016AddCustomLanguageVariablesPortletToLayoutTest.class,
         WebEventsCollectorServiceImplTest.class,
@@ -484,18 +478,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
-        AppsResourceTest.class,
         AppsCacheImplTest.class,
         VelocityServletIntegrationTest.class,
-        DotAssetAPITest.class,
-        DotAssetBaseTypeToContentTypeStrategyImplTest.class,
-        FileAssetAPIImplIntegrationTest.class,
-        FileAssetFactoryIntegrationTest.class,
-        UserResourceIntegrationTest.class,
-        IntegrationResourceLinkTest.class,
-        HashBuilderTest.class,
-        LanguageUtilTest.class,
-        FolderResourceTest.class,
         com.dotmarketing.common.reindex.ReindexThreadTest.class,
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
@@ -537,6 +521,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PublisherFilterImplTest.class,
         PushPublishFiltersInitializerTest.class,
         PushPublishFilterResourceTest.class,
+        PublishingResourceIntegrationTest.class,
         PushNowActionletTest.class,
         Task05305AddPushPublishFilterColumnTest.class,
         CMSMaintenanceFactoryTest.class,

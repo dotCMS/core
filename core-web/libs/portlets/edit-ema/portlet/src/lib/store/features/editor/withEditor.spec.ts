@@ -7,7 +7,7 @@ import { computed, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
-import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
@@ -27,8 +27,10 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
+import { ActionPayload } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
+import { withPageContext } from '../withPageContext';
 
 const emptyParams = {} as DotPageApiParams;
 
@@ -63,6 +65,7 @@ const mockCanEditPage = signal(true);
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
+    withPageContext(),
     withComputed(() => {
         return {
             $canEditPage: computed(() => mockCanEditPage())
@@ -256,10 +259,21 @@ describe('withEditor', () => {
             it('should return undefined when styleSchemas is empty', () => {
                 patchState(store, {
                     activeContentlet: {
-                        identifier: 'test-id',
-                        inode: 'test-inode',
-                        title: 'Test',
-                        contentType: 'testContentType'
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testType'
+                        }
                     },
                     styleSchemas: []
                 });
@@ -275,10 +289,21 @@ describe('withEditor', () => {
 
                 patchState(store, {
                     activeContentlet: {
-                        identifier: 'test-id',
-                        inode: 'test-inode',
-                        title: 'Test',
-                        contentType: 'testContentType'
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testContentType'
+                        }
                     },
                     styleSchemas: [mockSchema]
                 });
@@ -293,10 +318,21 @@ describe('withEditor', () => {
 
                 patchState(store, {
                     activeContentlet: {
-                        identifier: 'test-id',
-                        inode: 'test-inode',
-                        title: 'Test',
-                        contentType: 'type2'
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'type2'
+                        }
                     },
                     styleSchemas: [schema1, schema2, schema3]
                 });
@@ -312,10 +348,21 @@ describe('withEditor', () => {
 
                 patchState(store, {
                     activeContentlet: {
-                        identifier: 'test-id',
-                        inode: 'test-inode',
-                        title: 'Test',
-                        contentType: 'testContentType'
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testType'
+                        }
                     },
                     styleSchemas: [mockSchema]
                 });
@@ -725,11 +772,22 @@ describe('withEditor', () => {
 
         describe('setActiveContentlet', () => {
             it('should set the active contentlet', () => {
-                const mockContentlet = {
-                    identifier: 'test-contentlet-id',
-                    inode: 'test-inode',
-                    title: 'Test Contentlet',
-                    contentType: 'testType'
+                const mockContentlet: ActionPayload = {
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: '123',
+                    container: {
+                        identifier: 'test-container-id',
+                        uuid: 'test-container-uuid',
+                        acceptTypes: 'test',
+                        maxContentlets: 1
+                    },
+                    contentlet: {
+                        identifier: 'test-contentlet-id',
+                        inode: 'test-inode',
+                        title: 'Test Contentlet',
+                        contentType: 'testType'
+                    }
                 };
 
                 store.setActiveContentlet(mockContentlet);
@@ -738,11 +796,22 @@ describe('withEditor', () => {
             });
 
             it('should open palette and set current tab to STYLE_EDITOR', () => {
-                const mockContentlet = {
-                    identifier: 'test-contentlet-id',
-                    inode: 'test-inode',
-                    title: 'Test Contentlet',
-                    contentType: 'testType'
+                const mockContentlet: ActionPayload = {
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: '123',
+                    container: {
+                        identifier: 'test-container-id',
+                        uuid: 'test-container-uuid',
+                        acceptTypes: 'test',
+                        maxContentlets: 1
+                    },
+                    contentlet: {
+                        identifier: 'test-contentlet-id',
+                        inode: 'test-inode',
+                        title: 'Test Contentlet',
+                        contentType: 'testType'
+                    }
                 };
 
                 store.setActiveContentlet(mockContentlet);
@@ -754,11 +823,22 @@ describe('withEditor', () => {
             });
 
             it('should switch to STYLE_EDITOR tab even if palette was on different tab', () => {
-                const mockContentlet = {
-                    identifier: 'test-contentlet-id',
-                    inode: 'test-inode',
-                    title: 'Test Contentlet',
-                    contentType: 'testType'
+                const mockContentlet: ActionPayload = {
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: '123',
+                    container: {
+                        identifier: 'test-container-id',
+                        uuid: 'test-container-uuid',
+                        acceptTypes: 'test',
+                        maxContentlets: 1
+                    },
+                    contentlet: {
+                        identifier: 'test-contentlet-id',
+                        inode: 'test-inode',
+                        title: 'Test Contentlet',
+                        contentType: 'testType'
+                    }
                 };
 
                 // Set palette to a different tab first
@@ -807,8 +887,7 @@ describe('withEditor', () => {
                         contentletsId: [],
                         identifier: 'container-identifier-123',
                         maxContentlets: 1,
-                        uuid: 'uuid-123',
-                        variantId: '123'
+                        uuid: 'uuid-123'
                     },
                     contentlet: {
                         contentType: 'test',
@@ -848,9 +927,10 @@ describe('withEditor', () => {
         });
 
         describe('getCurrentTreeNode', () => {
-            it('should return the current TreeNode', () => {
+            it('should return the current TreeNode with variantId from store.$variantId()', () => {
                 const { container, contentlet } = ACTION_PAYLOAD_MOCK;
 
+                // When variantId is not set in pageParams, $variantId() returns DEFAULT_VARIANT_ID
                 expect(store.getCurrentTreeNode(container, contentlet)).toEqual({
                     containerId: 'container-identifier-123',
                     contentId: 'contentlet-identifier-123',
@@ -858,7 +938,33 @@ describe('withEditor', () => {
                     personalization: 'dot:persona:dot:persona',
                     relationType: 'uuid-123',
                     treeOrder: '-1',
-                    variantId: '123'
+                    variantId: DEFAULT_VARIANT_ID
+                });
+            });
+
+            it('should use variantId from store.$variantId() when variantId is set in pageParams', () => {
+                const { container, contentlet } = ACTION_PAYLOAD_MOCK;
+                const testVariantName = 'test-variant-name-123';
+
+                // Set variantName in pageParams
+                patchState(store, {
+                    pageParams: {
+                        ...store.pageParams(),
+                        variantName: testVariantName
+                    }
+                });
+
+                const result = store.getCurrentTreeNode(container, contentlet);
+
+                expect(result.variantId).toBe(testVariantName);
+                expect(result).toEqual({
+                    containerId: 'container-identifier-123',
+                    contentId: 'contentlet-identifier-123',
+                    pageId: '123',
+                    personalization: 'dot:persona:dot:persona',
+                    relationType: 'uuid-123',
+                    treeOrder: '-1',
+                    variantId: testVariantName
                 });
             });
         });

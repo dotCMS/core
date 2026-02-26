@@ -6,7 +6,7 @@ import { pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -27,7 +27,11 @@ import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
     aggregateTotalConversions,
     ConversionTrendEntity,
+    createEmptyAnalyticsEntity,
+    createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
+    determineGranularityForTimeRange,
+    fillMissingDates,
     toTimeRangeCubeJS,
     TrafficVsConversionsEntity
 } from '../../utils/data/analytics-data.utils';
@@ -176,13 +180,23 @@ export function withConversions() {
                                 .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
                                 .build();
 
+                            const granularity = determineGranularityForTimeRange(timeRange);
+
                             return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
+                                map((entities) =>
+                                    fillMissingDates<ConversionTrendEntity>(
+                                        entities,
+                                        timeRange,
+                                        granularity,
+                                        createEmptyAnalyticsEntity
+                                    )
+                                ),
                                 tapResponse(
-                                    (entities) => {
+                                    (data) => {
                                         patchState(store, {
                                             conversionTrend: {
                                                 status: ComponentStatus.LOADED,
-                                                data: entities,
+                                                data,
                                                 error: null
                                             }
                                         });
@@ -289,9 +303,19 @@ export function withConversions() {
                                 .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
                                 .build();
 
+                            const granularity = determineGranularityForTimeRange(timeRange);
+
                             return analyticsService
                                 .cubeQuery<TrafficVsConversionsEntity>(query)
                                 .pipe(
+                                    map((entities) =>
+                                        fillMissingDates(
+                                            entities,
+                                            timeRange,
+                                            granularity,
+                                            createEmptyTrafficVsConversionsEntity
+                                        )
+                                    ),
                                     tapResponse(
                                         (entities) => {
                                             patchState(store, {
@@ -343,13 +367,8 @@ export function withConversions() {
                         switchMap(({ timeRange, currentSiteId }) => {
                             const query = createCubeQuery()
                                 .fromCube('ContentAttribution')
-                                .dimensions([
-                                    'eventType',
-                                    'identifier',
-                                    'title',
-                                    'conversions',
-                                    'events'
-                                ])
+                                .dimensions(['eventType', 'identifier', 'title'])
+                                .measures(['sumConversions', 'sumEvents'])
                                 .siteId(currentSiteId)
                                 .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
@@ -403,7 +422,7 @@ export function withConversions() {
                                 }
                             })
                         ),
-                        switchMap(({ currentSiteId }) => {
+                        switchMap(({ timeRange, currentSiteId }) => {
                             const query = createCubeQuery()
                                 .fromCube('Conversion')
                                 .dimensions([
@@ -413,8 +432,7 @@ export function withConversions() {
                                     'topAttributedContent'
                                 ])
                                 .siteId(currentSiteId)
-                                // TODO: Uncomment this when the time range is implemented
-                                // .timeRange('day', toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService

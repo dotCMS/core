@@ -1,13 +1,5 @@
 package com.dotcms.browser;
 
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.getDotRawMetadataFields;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.isWriteMetadataOnReindex;
-import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.liferay.util.StringPool.BLANK;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -20,7 +12,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionAPI.Type;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -54,9 +45,9 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.io.File;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -64,17 +55,23 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
+
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.getDotRawMetadataFields;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.isWriteMetadataOnReindex;
+import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * Default implementation for the {@link BrowserAPI} class.
@@ -201,8 +198,8 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return a set of strings representing the filtered results from the Elasticsearch query
      * @throws DotDataException if an error occurs during the query execution
      */
-    private Set<String> doElasticSearchTextFiltering(BrowserQuery browserQuery, AtomicInteger count, int startRow, int maxRows,
-            SelectAndCountQueries sqlQuery) throws DotDataException {
+    private Set<String> doElasticSearchTextFiltering(final BrowserQuery browserQuery, final AtomicInteger count, final int startRow, final int maxRows,
+                                                     final SelectAndCountQueries sqlQuery) throws DotDataException {
 
         // Get the heuristic strategy from a lazy configuration
         final SearchHeuristicType heuristicType = HEURISTIC_TYPE.get();
@@ -247,8 +244,8 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Single Query Chunked: Fetches all inodes in a single database query without pagination,
      * then processes them in optimally-sized ES chunks based on total count percentage.
      */
-    Set<String> doHybridSingleChunkedQueryES(BrowserQuery browserQuery,  AtomicInteger count, int startRow, int maxRows,
-            SelectAndCountQueries sqlQuery) throws DotDataException {
+    Set<String> doHybridSingleChunkedQueryES(final BrowserQuery browserQuery, final AtomicInteger count, final int startRow, final int maxRows,
+                                             final SelectAndCountQueries sqlQuery) throws DotDataException {
         final Set<String> collectedInodes = new LinkedHashSet<>();
 
         Logger.debug(this, "::::: Using Single Query Chunked for text filtering ::::");
@@ -673,9 +670,17 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Processes a single ES query when inode count is under the limit.
+     * Generates a single ES query with the specified list of Inodes, filtered by specific
+     * parameters specified in the {@link BrowserQuery} object. Then, it processes the query
+     * and returns the list of Inodes that match the query.
+     *
+     * @param browserQuery The {@link BrowserQuery} object with all the filtering options.
+     * @param inodes       The list of Inodes that will be retrieved from the index.
+     * @param startTime    The time when this method was called, for performance analysis purposes.
+     *
+     * @return A set of Inodes matching the query.
      */
-    private Set<String> processSingleESQuery(BrowserQuery browserQuery, Set<String> inodes, long startTime) {
+    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes, final long startTime) {
         final boolean live = !browserQuery.showWorking;
         final ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
         final List<String> collectedInodes = new ArrayList<>();
@@ -698,8 +703,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.debug(this, String.format("Single ES query completed: %d inodes → %d matches in %d ms",
                 inodes.size(), collectedInodes.size(), duration));
 
-        } catch (Exception e) {
-            Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), e.getMessage()), e);
+        } catch (final Exception e) {
+            Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
         }
 
         return new LinkedHashSet<>(collectedInodes);
@@ -1153,7 +1158,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     @Override
     @CloseDBIfOpened
     public PaginatedContents getPaginatedContents(final BrowserQuery browserQuery)
-            throws DotSecurityException, DotDataException {
+            throws DotDataException {
 
         final Role[] roles = APILocator.getRoleAPI()
                 .loadRolesForUser(browserQuery.user.getUserId())
@@ -1374,7 +1379,6 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return The {@link SelectAndCountQueries} object containing both select and count queries with parameters.
      */
     private SelectAndCountQueries selectAndCountQueries(final BrowserQuery browserQuery) {
-
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
 
@@ -1431,7 +1435,10 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(selectQuery);
             appendExcludeArchivedQuery(countQuery);
         }
-
+        if (UtilMethods.isSet(browserQuery.mimeTypes)) {
+            appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes);
+            appendMIMETypeQuery(countQuery, browserQuery.mimeTypes);
+        }
         if (null != browserQuery.sortBy) {
             appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
         }
@@ -1683,6 +1690,19 @@ public class BrowserAPIImpl implements BrowserAPI {
         } else  {
             sqlQuery.append(" c.mod_date asc");
         }
+    }
+
+    /**
+     * Appends the specified MIME Types to the main SQL query.
+     *
+     * @param sqlQuery  The main SQL query.
+     * @param mimeTypes The list of MIME Types specified by the client.
+     */
+    private void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes) {
+        final String mimeTypesFilter = String.format(" AND (%s)", mimeTypes.stream()
+                .map(mimeType -> String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType))
+                .collect(Collectors.joining(" OR ")));
+        sqlQuery.append(mimeTypesFilter);
     }
 
     /**

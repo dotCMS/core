@@ -21,7 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.util.ArrayList;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -54,17 +54,23 @@ public class ContentDriveHelper {
     }
 
     /**
-     * Drive search functionality for content browsing with advanced filtering.
-     * This endpoint is intended to be used to feed content-drive functionality.
-     * It behaves similarly to BrowserResource but with enhanced capabilities:
-     * - Can take a site/folder path expressed in the form //site/folder/subfolder/
-     * - Supports multiple languages and content-types for more flexible filtering
-     * - Uses Elasticsearch for text filtering while maintaining database reliability
+     * Drive search functionality for content browsing with advanced filtering. This endpoint is
+     * intended to be used to feed content-drive functionality. It behaves similarly to the
+     * {@link com.dotcms.rest.api.v1.browser.BrowserResource} but with enhanced capabilities:
+     * <ul>
+     *     <li>Can take a site/folder path expressed in the form of
+     *     {@code //site/folder/subfolder/}.</li>
+     *     <li>Supports multiple languages and content-types for more flexible filtering.</li>
+     *     <li>Uses Elasticsearch for text filtering while maintaining database reliability.</li>
+     * </ul>
      *
-     * @param requestForm JSON body request with search parameters
-     * @param user Current logged in user
+     * @param requestForm The {@link DriveRequestForm} as the JSON body request with search
+     *                    parameters
+     * @param user        Current logged in {@link User}.
+     *
      * @return a Map with all requested content and metadata
-     * @throws DotDataException any data-related exception
+     *
+     * @throws DotDataException     any data-related exception
      * @throws DotSecurityException any security violation exception
      */
     public PaginatedContents driveSearch(final DriveRequestForm requestForm, final User user)
@@ -75,7 +81,9 @@ public class ContentDriveHelper {
                 .collect(Collectors.toList());
 
         List<BaseContentType> baseContentTypes = BaseContentType.allBaseTypes();
-        if (null != requestForm.baseTypes()) {
+        if (UtilMethods.isSet(requestForm.mimeTypes())) {
+            baseContentTypes = List.of(BaseContentType.FILEASSET, BaseContentType.DOTASSET);
+        } else if (null != requestForm.baseTypes()) {
             baseContentTypes = requestForm.baseTypes().stream()
                     .map(s -> BaseContentType.getBaseContentType(s.toUpperCase()))
                     .collect(Collectors.toList());
@@ -85,7 +93,7 @@ public class ContentDriveHelper {
         List<ContentType> contentTypes = List.of();
         if (null != requestForm.contentTypes()) {
             contentTypes = requestForm.contentTypes().stream()
-                    .map(s -> Try.of(() -> myContentTypeAPI.find(s)).getOrNull())
+                    .map(inodeOrVar -> Try.of(() -> myContentTypeAPI.find(inodeOrVar)).getOrNull())
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         }
@@ -114,40 +122,40 @@ public class ContentDriveHelper {
         final String sortBy = sortBy(requestForm.sortBy());
         final boolean sortDesc = sortDesc(requestForm.sortBy());
         builder.withUser(user)
-        //These are not always present
-        .withContentTypes(
-            contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
-        )
-        //However, these are
-        .excludedContentTypes(
-            excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
-        )
-        .withBaseTypes(List.copyOf(types))
-        .showDotAssets(showDotAssets)
-        .showFiles(showFiles)
-        .showImages(showFiles)
-        .showArchived(showArchived)
-        .showWorking(!live)
-        .showFolders(showFolders)
-        .showLinks(false)
-        .showContent(!baseContentTypes.isEmpty())
-        .withLanguageIds(langIds)
-        .offset(requestForm.offset())
-        .maxResults(requestForm.maxResults())
-        .sortBy(sortBy)
-        .sortByDesc(sortDesc);
+            //These are not always present
+            .withContentTypes(
+                contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
+            )
+            //However, these are
+            .excludedContentTypes(
+                excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
+            )
+            .withBaseTypes(List.copyOf(types))
+            .showDotAssets(showDotAssets)
+            .showFiles(showFiles)
+            .showImages(showFiles)
+            .showArchived(showArchived)
+            .showWorking(!live)
+            .showFolders(showFolders)
+            .showLinks(false)
+            .showContent(!baseContentTypes.isEmpty())
+            .withLanguageIds(langIds)
+            .offset(requestForm.offset())
+            .maxResults(requestForm.maxResults())
+            .sortBy(sortBy)
+            .sortByDesc(sortDesc);
 
         // Determine if we're requesting from a specific folder or host root
         if (folder.isSystemFolder()) {
             builder.withHostOrFolderId(host.getIdentifier())
-             /// if we're setting a site-name directly, we care fore all subfolders
-             /// Therefore, we should skip setting a folder path
-            .skipFolder(true);
+                 /// if we're setting a site-name directly, we care fore all subfolders
+                 /// Therefore, we should skip setting a folder path
+                .skipFolder(true);
         } else {
             builder.withHostOrFolderId(folder.getInode())
-            // When a specific folder is selected, enable ignoreSiteForFolders to allow
-            // folder selection without being limited by site filtering
-            .ignoreSiteForFolders(true);
+                // When a specific folder is selected, enable ignoreSiteForFolders to allow
+                // folder selection without being limited by site filtering
+                .ignoreSiteForFolders(true);
         }
         //This ensures that despite the site passed systemHost will be included too
         builder.forceSystemHost(requestForm.includeSystemHost());
@@ -155,13 +163,14 @@ public class ContentDriveHelper {
         // Enable Elasticsearch filtering for text search when filter is provided
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
              builder.useElasticsearchFiltering(true) // Rely on ES for enhanced text filtering
-             .filterFolderNames(requestForm.filters().filterFolders())
-             .withFilter(requestForm.filters().text());
+                 .filterFolderNames(requestForm.filters().filterFolders())
+                 .withFilter(requestForm.filters().text());
         }
 
         Logger.debug(this, String.format(
-                "Content drive search - User: %s, Path: %s, Languages: %s, ContentTypes: %s, Filter: %s",
-                user.getUserId(), assetPath, requestForm.language(), requestForm.contentTypes(), requestForm.filters()));
+                "Content drive search - User: %s, Path: %s, Languages: %s, ContentTypes: %s, Filter: %s, MIME Types: %s",
+                user.getUserId(), assetPath, requestForm.language(), requestForm.contentTypes(), requestForm.filters(),
+                requestForm.mimeTypes()));
 
         return browserAPI.getPaginatedContents(builder.build());
     }

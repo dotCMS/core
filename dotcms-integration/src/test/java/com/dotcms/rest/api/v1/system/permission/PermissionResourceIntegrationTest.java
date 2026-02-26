@@ -2,19 +2,12 @@ package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.system.permission.SaveUserPermissionsForm;
-import com.dotcms.rest.api.v1.system.permission.PermissionSaveHelper;
-import com.dotcms.rest.api.v1.system.permission.SaveUserPermissionsView;
-import com.dotcms.rest.api.v1.system.permission.UserPermissionAssetView;
-import com.dotcms.rest.api.v1.system.permission.ResponseEntitySaveUserPermissionsView;
-import com.dotcms.rest.api.v1.system.permission.UserPermissionsView;
-import com.dotcms.rest.api.v1.system.permission.UserInfoView;
-import com.dotcms.rest.api.v1.system.permission.PermissionMetadataView;
-import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionMetadataView;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -33,25 +26,30 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.glassfish.jersey.internal.util.Base64;
+import com.liferay.util.Base64;
 import static org.junit.Assert.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration tests for PermissionResource user permissions endpoints.
+ * Integration tests for PermissionResource endpoints.
  * Tests:
  * - GET /api/v1/permissions/ (permission metadata)
  * - GET /api/v1/permissions/user/{userId} (get user permissions)
  * - PUT /api/v1/permissions/user/{userId}/asset/{assetId} (update user permissions)
+ * - PUT /api/v1/permissions/{assetId} (update asset permissions)
  */
 public class PermissionResourceIntegrationTest {
 
@@ -69,6 +67,9 @@ public class PermissionResourceIntegrationTest {
     static User limitedUser;
     static User permissionTestUser;
     static Host permissionTestHost;
+
+    // Test role for updateAssetPermissions tests
+    static Role testRole;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -147,6 +148,9 @@ public class PermissionResourceIntegrationTest {
                 true
         );
         APILocator.getPermissionAPI().save(limitedPerm, updateTestHost, adminUser, false);
+
+        // Create test role for updateAssetPermissions tests
+        testRole = new RoleDataGen().nextPersisted();
     }
 
     @After
@@ -171,6 +175,29 @@ public class PermissionResourceIntegrationTest {
         return request;
     }
 
+    /**
+     * Creates a mock HTTP request with custom credentials.
+     *
+     * @param email User email for authentication
+     * @param password User password for authentication
+     * @return Mock HTTP request with specified credentials
+     */
+    private static HttpServletRequest getHttpRequest(final String email, final String password) {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest(testHost.getHostname(), "/").request())
+                                .request())
+                        .request());
+
+        request.setHeader("Authorization",
+                "Basic " + new String(Base64.encode((email + ":" + password).getBytes())));
+
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
+
+        return request;
+    }
+
     // ==================== PUT Permission Tests ====================
 
     /**
@@ -187,8 +214,8 @@ public class PermissionResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Create form with READ, WRITE, PUBLISH permissions
-        Map<String, Set<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE", "PUBLISH"));
+        Map<String, Set<PermissionAPI.Type>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE, PermissionAPI.Type.PUBLISH));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         // Execute PUT
@@ -226,10 +253,10 @@ public class PermissionResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Create form with INDIVIDUAL, HOST, and FOLDER scopes
-        Map<String, Set<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE"));
-        permissions.put("HOST", Set.of("READ"));
-        permissions.put("FOLDER", Set.of("READ", "CAN_ADD_CHILDREN"));
+        Map<String, Set<PermissionAPI.Type>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE));
+        permissions.put("HOST", EnumSet.of(PermissionAPI.Type.READ));
+        permissions.put("FOLDER", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.CAN_ADD_CHILDREN));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         // Execute PUT on folder
@@ -277,8 +304,8 @@ public class PermissionResourceIntegrationTest {
                 APILocator.getPermissionAPI().isInheritingPermissions(childFolder));
 
         // Execute PUT on inheriting folder
-        Map<String, Set<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE"));
+        Map<String, Set<PermissionAPI.Type>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         ResponseEntitySaveUserPermissionsView response = resource.updateUserPermissions(
@@ -318,8 +345,8 @@ public class PermissionResourceIntegrationTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
         // Create form with cascade=true
-        Map<String, Set<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", Set.of("READ", "WRITE"));
+        Map<String, Set<PermissionAPI.Type>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, true);
 
         // Execute PUT with cascade on parent host
@@ -347,8 +374,8 @@ public class PermissionResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Setup: Give user READ+WRITE+PUBLISH on updateTestHost
-        Map<String, Set<String>> setupPermissions = new HashMap<>();
-        setupPermissions.put("INDIVIDUAL", Set.of("READ", "WRITE", "PUBLISH"));
+        Map<String, Set<PermissionAPI.Type>> setupPermissions = new HashMap<>();
+        setupPermissions.put("INDIVIDUAL", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE, PermissionAPI.Type.PUBLISH));
         SaveUserPermissionsForm setupForm = new SaveUserPermissionsForm(setupPermissions, false);
         resource.updateUserPermissions(
                 request, this.response, updateTestUser.getUserId(), updateTestHost.getIdentifier(), setupForm
@@ -363,8 +390,8 @@ public class PermissionResourceIntegrationTest {
                 hostAsset1.permissions().get("INDIVIDUAL").containsAll(Set.of("READ", "WRITE", "PUBLISH")));
 
         // Action: Update to ONLY READ (should remove WRITE and PUBLISH)
-        Map<String, Set<String>> updatePermissions = new HashMap<>();
-        updatePermissions.put("INDIVIDUAL", Set.of("READ"));
+        Map<String, Set<PermissionAPI.Type>> updatePermissions = new HashMap<>();
+        updatePermissions.put("INDIVIDUAL", EnumSet.of(PermissionAPI.Type.READ));
         SaveUserPermissionsForm updateForm = new SaveUserPermissionsForm(updatePermissions, false);
 
         ResponseEntitySaveUserPermissionsView response = resource.updateUserPermissions(
@@ -395,8 +422,8 @@ public class PermissionResourceIntegrationTest {
         HttpServletRequest request = mockRequest();
 
         // Create form with invalid scope
-        Map<String, Set<String>> permissions = new HashMap<>();
-        permissions.put("INVALID_SCOPE", Set.of("READ"));
+        Map<String, Set<PermissionAPI.Type>> permissions = new HashMap<>();
+        permissions.put("INVALID_SCOPE", EnumSet.of(PermissionAPI.Type.READ));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         try {
@@ -413,35 +440,12 @@ public class PermissionResourceIntegrationTest {
     }
 
     /**
-     * <ul>
-     *     <li><b>Method to test:</b> {@link PermissionResource#updateUserPermissions}</li>
-     *     <li><b>Given Scenario:</b> Admin attempts to update permissions using an invalid
-     *     permission level name that doesn't exist in the system.</li>
-     *     <li><b>Expected Result:</b> A BadRequestException is thrown indicating the invalid
-     *     permission level.</li>
-     * </ul>
+     * NOTE: test_updateUserPermissions_invalidLevel_badRequest has been removed.
+     * Invalid permission levels are now rejected at JSON deserialization time by Jackson
+     * since PermissionAPI.Type is an enum. Invalid enum values cause a JsonMappingException
+     * before the form is even created. This validation happens automatically by the JAX-RS
+     * framework and doesn't need explicit testing here.
      */
-    @Test
-    public void test_updateUserPermissions_invalidLevel_badRequest() throws Exception {
-        HttpServletRequest request = mockRequest();
-
-        // Create form with invalid permission level
-        Map<String, Set<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", Set.of("INVALID_LEVEL"));
-        SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
-
-        try {
-            resource.updateUserPermissions(
-                    request, this.response, updateTestUser.getUserId(),
-                    updateTestHost.getIdentifier(), form
-            );
-            fail("Should have thrown BadRequestException for invalid level");
-        } catch (Exception e) {
-            assertTrue("Should be BadRequestException",
-                    e instanceof BadRequestException ||
-                    e.getMessage().contains("Invalid permission level"));
-        }
-    }
 
     /**
      * <ul>
@@ -469,8 +473,8 @@ public class PermissionResourceIntegrationTest {
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
 
         // Try to update another user's permissions
-        Map<String, Set<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", Set.of("READ"));
+        Map<String, Set<PermissionAPI.Type>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", EnumSet.of(PermissionAPI.Type.READ));
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         try {
@@ -497,9 +501,9 @@ public class PermissionResourceIntegrationTest {
     @Test
     public void test_updateUserPermissions_nullPermissionLevel_badRequest() throws Exception {
         // Create form with null permission level
-        Map<String, Set<String>> permissions = new HashMap<>();
-        Set<String> levels = new HashSet<>();
-        levels.add("READ");
+        Map<String, Set<PermissionAPI.Type>> permissions = new HashMap<>();
+        Set<PermissionAPI.Type> levels = new HashSet<>();
+        levels.add(PermissionAPI.Type.READ);
         levels.add(null);  // Invalid null level
         permissions.put("INDIVIDUAL", levels);
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
@@ -508,9 +512,8 @@ public class PermissionResourceIntegrationTest {
             form.checkValid();
             fail("Should have thrown BadRequestException for null permission level");
         } catch (BadRequestException e) {
-            String entity = e.getResponse().getEntity().toString();
-            assertTrue("Error message should contain 'cannot be null' or scope validation error",
-                    entity.contains("cannot be null") || entity.contains("Invalid permission scope"));
+            assertTrue("Error message should mention null permission level",
+                    e.getResponse().getEntity().toString().contains("cannot be null"));
         }
     }
 
@@ -526,8 +529,8 @@ public class PermissionResourceIntegrationTest {
     @Test
     public void test_updateUserPermissions_emptyPermissionList_badRequest() throws Exception {
         // Create form with empty permission list
-        Map<String, Set<String>> permissions = new HashMap<>();
-        permissions.put("INDIVIDUAL", Set.of());  // Empty list
+        Map<String, Set<PermissionAPI.Type>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", EnumSet.noneOf(PermissionAPI.Type.class));  // Empty set
         SaveUserPermissionsForm form = new SaveUserPermissionsForm(permissions, false);
 
         try {
@@ -715,21 +718,698 @@ public class PermissionResourceIntegrationTest {
         assertNotNull(metadata);
 
         // Verify permission levels
-        Set<String> levels = metadata.levels();
+        Set<PermissionAPI.Type> levels = metadata.levels();
         assertNotNull(levels);
         assertFalse("Should have permission levels", levels.isEmpty());
-        assertTrue("Should include READ level", levels.contains("READ"));
-        assertTrue("Should include WRITE level", levels.contains("WRITE"));
-        assertTrue("Should include PUBLISH level", levels.contains("PUBLISH"));
-        assertTrue("Should include EDIT_PERMISSIONS level", levels.contains("EDIT_PERMISSIONS"));
-        assertTrue("Should include CAN_ADD_CHILDREN level", levels.contains("CAN_ADD_CHILDREN"));
+        assertTrue("Should include READ level", levels.contains(PermissionAPI.Type.READ));
+        assertTrue("Should include WRITE level", levels.contains(PermissionAPI.Type.WRITE));
+        assertTrue("Should include PUBLISH level", levels.contains(PermissionAPI.Type.PUBLISH));
+        assertTrue("Should include EDIT_PERMISSIONS level", levels.contains(PermissionAPI.Type.EDIT_PERMISSIONS));
+        assertTrue("Should include CAN_ADD_CHILDREN level", levels.contains(PermissionAPI.Type.CAN_ADD_CHILDREN));
 
         // Verify permission scopes
-        Set<String> scopes = metadata.scopes();
+        Set<PermissionAPI.Scope> scopes = metadata.scopes();
         assertNotNull(scopes);
         assertFalse("Should have permission scopes", scopes.isEmpty());
-        assertTrue("Should include INDIVIDUAL scope", scopes.contains("INDIVIDUAL"));
-        assertTrue("Should include HOST scope", scopes.contains("HOST"));
-        assertTrue("Should include FOLDER scope", scopes.contains("FOLDER"));
+        assertTrue("Should include INDIVIDUAL scope", scopes.contains(PermissionAPI.Scope.INDIVIDUAL));
+        assertTrue("Should include HOST scope", scopes.contains(PermissionAPI.Scope.HOST));
+        assertTrue("Should include FOLDER scope", scopes.contains(PermissionAPI.Scope.FOLDER));
+    }
+
+    // ==================== PUT Asset Permissions Tests (updateAssetPermissions) ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates permissions for a host asset with
+     *     a single role having READ, WRITE, and PUBLISH individual permissions.</li>
+     *     <li><b>Expected Result:</b> Permissions are saved successfully, response contains
+     *     message, permissionCount, and asset with correct permissions.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateAssetPermissions_basicHostUpdate_success() throws Exception {
+        HttpServletRequest request = mockRequest();
+
+        // Create form with single role having READ, WRITE, PUBLISH permissions
+        List<RolePermissionForm> permissions = new ArrayList<>();
+        permissions.add(new RolePermissionForm(
+                testRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE, PermissionAPI.Type.PUBLISH),
+                null  // no inheritable
+        ));
+        UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(permissions);
+
+        // Execute PUT
+        ResponseEntityUpdatePermissionsView response = resource.updateAssetPermissions(
+                request, this.response, updateTestHost.getIdentifier(), false, form
+        );
+
+        // Assert response metadata
+        assertNotNull(response);
+        UpdateAssetPermissionsView data = response.getEntity();
+        assertNotNull(data);
+        assertEquals("Permissions saved successfully", data.message());
+        assertTrue("Permission count should be > 0", data.permissionCount() > 0);
+
+        // Verify asset metadata in response
+        AssetPermissionsView asset = data.asset();
+        assertNotNull(asset);
+        assertEquals(updateTestHost.getIdentifier(), asset.assetId());
+        assertTrue("Host should be parent permissionable", asset.isParentPermissionable());
+
+        // Verify the permissions were actually saved - check response contains our role with correct permissions
+        assertFalse("Response should contain permissions", asset.permissions().isEmpty());
+        RolePermissionView rolePermission = asset.permissions().stream()
+                .filter(rp -> rp.roleId().equals(testRole.getId()))
+                .findFirst()
+                .orElse(null);
+        assertNotNull("Response should contain permissions for testRole", rolePermission);
+        assertTrue("Should have READ permission", rolePermission.individual().contains(PermissionAPI.Type.READ));
+        assertTrue("Should have WRITE permission", rolePermission.individual().contains(PermissionAPI.Type.WRITE));
+        assertTrue("Should have PUBLISH permission", rolePermission.individual().contains(PermissionAPI.Type.PUBLISH));
+
+        // Verify via PermissionAPI (ground truth) that permissions were actually persisted
+        assertTrue("Role should have READ permission on host via API",
+                APILocator.getPermissionAPI().doesRoleHavePermission(updateTestHost, PermissionAPI.PERMISSION_READ, testRole));
+        assertTrue("Role should have WRITE permission on host via API",
+                APILocator.getPermissionAPI().doesRoleHavePermission(updateTestHost, PermissionAPI.PERMISSION_WRITE, testRole));
+        assertTrue("Role should have PUBLISH permission on host via API",
+                APILocator.getPermissionAPI().doesRoleHavePermission(updateTestHost, PermissionAPI.PERMISSION_PUBLISH, testRole));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates permissions for a folder with
+     *     both individual permissions and inheritable permissions for multiple scopes.</li>
+     *     <li><b>Expected Result:</b> Both individual and inheritable permissions are saved,
+     *     response asset contains permissions with inheritable map.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateAssetPermissions_multipleScopes_success() throws Exception {
+        HttpServletRequest request = mockRequest();
+
+        // Create form with individual and inheritable permissions
+        Map<String, Set<PermissionAPI.Type>> inheritable = new HashMap<>();
+        inheritable.put("FOLDER", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.CAN_ADD_CHILDREN));
+        inheritable.put("CONTENT", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE));
+
+        List<RolePermissionForm> permissions = new ArrayList<>();
+        permissions.add(new RolePermissionForm(
+                testRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE),
+                inheritable
+        ));
+        UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(permissions);
+
+        // Execute PUT on folder (parent permissionable)
+        ResponseEntityUpdatePermissionsView response = resource.updateAssetPermissions(
+                request, this.response, updateTestFolder.getInode(), false, form
+        );
+
+        // Assert response
+        assertNotNull(response);
+        UpdateAssetPermissionsView data = response.getEntity();
+        assertNotNull(data);
+        assertEquals("Permissions saved successfully", data.message());
+        assertTrue("Permission count should be > 0", data.permissionCount() > 0);
+
+        // Verify asset is parent permissionable (can have inheritable)
+        AssetPermissionsView asset = data.asset();
+        assertTrue("Folder should be parent permissionable", asset.isParentPermissionable());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates permissions on a child folder that
+     *     currently inherits permissions from its parent folder.</li>
+     *     <li><b>Expected Result:</b> The permission inheritance is automatically broken,
+     *     inheritanceBroken=true in response, and inheritanceMode is INDIVIDUAL.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateAssetPermissions_breaksInheritance_success() throws Exception {
+        HttpServletRequest request = mockRequest();
+
+        // Create a new child folder that inherits for this test (to avoid test pollution)
+        Folder inheritingChild = new FolderDataGen()
+                .site(updateTestHost)
+                .parent(parentFolder)
+                .title("inheriting-child-" + System.currentTimeMillis())
+                .nextPersisted();
+
+        // Reset to ensure it inherits
+        APILocator.getPermissionAPI().resetPermissionsUnder(parentFolder);
+
+        // VERIFY inheritance before test (critical assertion)
+        assertTrue("Child folder should be inheriting before test",
+                APILocator.getPermissionAPI().isInheritingPermissions(inheritingChild));
+
+        // Create form
+        List<RolePermissionForm> permissions = new ArrayList<>();
+        permissions.add(new RolePermissionForm(
+                testRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE),
+                null
+        ));
+        UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(permissions);
+
+        // Execute PUT on inheriting folder
+        ResponseEntityUpdatePermissionsView response = resource.updateAssetPermissions(
+                request, this.response, inheritingChild.getInode(), false, form
+        );
+
+        // Assert response
+        assertNotNull(response);
+        UpdateAssetPermissionsView data = response.getEntity();
+        assertTrue("inheritanceBroken should be true", data.inheritanceBroken());
+        assertEquals(InheritanceMode.INDIVIDUAL, data.asset().inheritanceMode());
+
+        // VERIFY inheritance broken after PUT (critical assertion)
+        assertFalse("Child folder should NOT be inheriting after PUT",
+                APILocator.getPermissionAPI().isInheritingPermissions(inheritingChild));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UpdateAssetPermissionsForm#checkValid()}</li>
+     *     <li><b>Given Scenario:</b> A form is created with an empty permissions array.</li>
+     *     <li><b>Expected Result:</b> A BadRequestException is thrown during form validation
+     *     indicating that permissions cannot be empty.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateAssetPermissions_emptyPermissions_badRequest() throws Exception {
+        // Create form with empty permissions list
+        UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(new ArrayList<>());
+
+        try {
+            form.checkValid();
+            fail("Should have thrown BadRequestException for empty permissions");
+        } catch (BadRequestException e) {
+            String entity = e.getResponse().getEntity().toString();
+            assertTrue("Error message should contain 'empty'",
+                    entity.toLowerCase().contains("empty"));
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UpdateAssetPermissionsForm#checkValid()}</li>
+     *     <li><b>Given Scenario:</b> A form is created with an invalid permission scope
+     *     in the inheritable map.</li>
+     *     <li><b>Expected Result:</b> A BadRequestException is thrown during form validation
+     *     indicating the invalid scope.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateAssetPermissions_invalidScope_badRequest() throws Exception {
+        // Create form with invalid scope
+        Map<String, Set<PermissionAPI.Type>> inheritable = new HashMap<>();
+        inheritable.put("INVALID_SCOPE", EnumSet.of(PermissionAPI.Type.READ));
+
+        List<RolePermissionForm> permissions = new ArrayList<>();
+        permissions.add(new RolePermissionForm(
+                testRole.getId(),
+                null,  // no individual
+                inheritable
+        ));
+        UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(permissions);
+
+        try {
+            form.checkValid();
+            fail("Should have thrown BadRequestException for invalid scope");
+        } catch (BadRequestException e) {
+            String entity = e.getResponse().getEntity().toString();
+            assertTrue("Error message should contain 'scope'",
+                    entity.toLowerCase().contains("scope"));
+        }
+    }
+
+    /**
+     * NOTE: test_updateAssetPermissions_invalidLevel_badRequest has been removed.
+     * Invalid permission levels are now rejected at JSON deserialization time by Jackson
+     * since PermissionAPI.Type is an enum. Invalid enum values cause a JsonMappingException
+     * before the form is even created. This validation happens automatically by the JAX-RS
+     * framework and doesn't need explicit testing here.
+     */
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UpdateAssetPermissionsForm#checkValid()}</li>
+     *     <li><b>Given Scenario:</b> A form is created with a permission entry missing roleId.</li>
+     *     <li><b>Expected Result:</b> A BadRequestException is thrown during form validation
+     *     indicating roleId is required.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateAssetPermissions_missingRoleId_badRequest() throws Exception {
+        // Create form with missing roleId
+        List<RolePermissionForm> permissions = new ArrayList<>();
+        permissions.add(new RolePermissionForm(
+                null,  // missing roleId
+                EnumSet.of(PermissionAPI.Type.READ),
+                null
+        ));
+        UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(permissions);
+
+        try {
+            form.checkValid();
+            fail("Should have thrown BadRequestException for missing roleId");
+        } catch (BadRequestException e) {
+            String entity = e.getResponse().getEntity().toString();
+            assertTrue("Error message should contain 'roleId'",
+                    entity.toLowerCase().contains("roleid"));
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> A non-admin user attempts to update asset permissions.</li>
+     *     <li><b>Expected Result:</b> A DotSecurityException is thrown indicating that only
+     *     admin users can update asset permissions.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateAssetPermissions_nonAdmin_forbidden() throws Exception {
+        // Setup request as limitedUser (non-admin)
+        MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(
+                                new MockHttpRequestIntegrationTest(testHost.getHostname(), "/").request()
+                        ).request()
+                ).request()
+        );
+
+        request.getSession().setAttribute(WebKeys.USER_ID, limitedUser.getUserId());
+        request.getSession().setAttribute(WebKeys.USER, limitedUser);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
+
+        // Create valid form
+        List<RolePermissionForm> permissions = new ArrayList<>();
+        permissions.add(new RolePermissionForm(
+                testRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ),
+                null
+        ));
+        UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(permissions);
+
+        try {
+            resource.updateAssetPermissions(
+                    request, this.response, updateTestHost.getIdentifier(), false, form
+            );
+            fail("Should have thrown DotSecurityException");
+        } catch (DotSecurityException e) {
+            assertTrue("Error message should indicate admin-only",
+                    e.getMessage().toLowerCase().contains("admin"));
+        }
+    }
+
+    // ==================== PermissionConversionUtils Tests ====================
+
+    /**
+     * Tests PermissionConversionUtils conversion methods for permission bits,
+     * names, and scope mappings used by the REST API.
+     */
+    @Test
+    public void test_PermissionConversionUtils_conversions() {
+        // Test bits to names
+        int bits = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH;
+        List<String> names = PermissionConversionUtils.convertBitsToPermissionNames(bits);
+        assertEquals(3, names.size());
+        assertTrue(names.contains("READ"));
+        assertTrue(names.contains("WRITE"));
+        assertTrue(names.contains("PUBLISH"));
+
+        // Test names to bits (case-insensitive)
+        assertEquals(PermissionAPI.PERMISSION_READ,
+            PermissionConversionUtils.convertPermissionNamesToBits(List.of("read")));
+
+        // Test scope validation
+        assertTrue(PermissionConversionUtils.isValidScope("HOST"));
+        assertTrue(PermissionConversionUtils.isValidScope("folder"));  // case-insensitive
+        assertFalse(PermissionConversionUtils.isValidScope("INVALID"));
+
+        // Test scope to permission type
+        assertEquals(Folder.class.getCanonicalName(),
+            PermissionConversionUtils.convertScopeToPermissionType("FOLDER"));
+        assertEquals(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+            PermissionConversionUtils.convertScopeToPermissionType("INDIVIDUAL"));
+
+        // Test roundtrip
+        int originalBits = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE;
+        List<String> converted = PermissionConversionUtils.convertBitsToPermissionNames(originalBits);
+        int roundtripBits = PermissionConversionUtils.convertPermissionNamesToBits(converted);
+        assertEquals(originalBits, roundtripBits);
+    }
+
+    // ========================================================================
+    // RESET ASSET PERMISSIONS TESTS
+    // ========================================================================
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Reset permissions on a folder with individual permissions
+     * ExpectedResult: Permissions reset successfully, folder now inherits
+     */
+    @Test
+    public void test_resetAssetPermissions_success() throws DotDataException, DotSecurityException {
+        // Create parent and child folder
+        final Folder resetParentFolder = new FolderDataGen().site(testHost).nextPersisted();
+        final Folder resetChildFolder = new FolderDataGen().parent(resetParentFolder).nextPersisted();
+
+        // Create a test role and add individual permissions to child folder
+        final Role resetTestRole = new RoleDataGen().nextPersisted();
+        final RolePermissionForm rolePermissionForm = new RolePermissionForm(
+                resetTestRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE),
+                null
+        );
+        final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(
+                List.of(rolePermissionForm)
+        );
+
+        HttpServletRequest request = mockRequest();
+
+        // First, set individual permissions on child folder
+        resource.updateAssetPermissions(
+                request,
+                response,
+                resetChildFolder.getInode(),
+                false,
+                form
+        );
+
+        // Verify child has individual permissions
+        assertFalse("Child folder should have individual permissions",
+                APILocator.getPermissionAPI().isInheritingPermissions(resetChildFolder));
+
+        // Now reset the permissions
+        final ResponseEntityResetPermissionsView responseView = resource.resetAssetPermissions(
+                request,
+                response,
+                resetChildFolder.getInode()
+        );
+
+        // Verify response
+        assertNotNull("Response should not be null", responseView);
+        final ResetAssetPermissionsView entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
+
+        // Verify response fields
+        assertEquals("Individual permissions removed. Asset now inherits from parent.",
+                entity.message());
+        assertEquals(resetChildFolder.getInode(), entity.assetId());
+        assertTrue("previousPermissionCount should be >= 0",
+                entity.previousPermissionCount() >= 0);
+
+        // Verify folder is now inheriting
+        assertTrue("Child folder should now inherit permissions",
+                APILocator.getPermissionAPI().isInheritingPermissions(resetChildFolder));
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Asset ID does not exist
+     * ExpectedResult: NotFoundInDbException is thrown
+     */
+    @Test(expected = com.dotcms.contenttype.exception.NotFoundInDbException.class)
+    public void test_resetAssetPermissions_assetNotFound_throws404() throws DotDataException, DotSecurityException {
+        HttpServletRequest request = mockRequest();
+        // Call with non-existent asset ID
+        resource.resetAssetPermissions(
+                request,
+                response,
+                "non-existent-asset-id-67890"
+        );
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Asset already inherits permissions
+     * ExpectedResult: ConflictException is thrown (409 Conflict)
+     */
+    @Test(expected = ConflictException.class)
+    public void test_resetAssetPermissions_alreadyInheriting_throws409() throws DotDataException, DotSecurityException {
+        // Create parent and child folder (child inherits by default)
+        final Folder resetParentFolder2 = new FolderDataGen().site(testHost).nextPersisted();
+        final Folder resetChildFolder2 = new FolderDataGen().parent(resetParentFolder2).nextPersisted();
+
+        // Verify child is inheriting
+        assertTrue("Child folder should initially inherit permissions",
+                APILocator.getPermissionAPI().isInheritingPermissions(resetChildFolder2));
+
+        HttpServletRequest request = mockRequest();
+
+        // Try to reset - should throw ConflictException since already inheriting
+        resource.resetAssetPermissions(
+                request,
+                response,
+                resetChildFolder2.getInode()
+        );
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Reset with empty/null asset ID
+     * ExpectedResult: IllegalArgumentException is thrown
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_resetAssetPermissions_emptyAssetId_throws400() throws DotDataException, DotSecurityException {
+        HttpServletRequest request = mockRequest();
+        // Call with empty asset ID - should throw IllegalArgumentException
+        resource.resetAssetPermissions(
+                request,
+                response,
+                ""
+        );
+    }
+
+    // ========================================================================
+    // GET ROLE PERMISSIONS TESTS
+    // ========================================================================
+
+    /**
+     * Method to test: getRolePermissions in the PermissionResource
+     * Given Scenario: Admin user requests permissions for any role
+     * ExpectedResult: Role permissions retrieved successfully with roleId, roleName, and assets
+     */
+    @Test
+    public void test_getRolePermissions_adminCanViewAnyRole() throws DotDataException, DotSecurityException {
+        // Create a test role with some permissions
+        final Role testRole = new RoleDataGen().nextPersisted();
+
+        // Create a folder and add permissions for this role
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
+
+        final RolePermissionForm rolePermissionForm = new RolePermissionForm(
+                testRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE),
+                null
+        );
+        final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(
+                Arrays.asList(rolePermissionForm)
+        );
+
+        // Set up permissions for the role
+        resource.updateAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                testFolder.getInode(),
+                false,
+                form
+        );
+
+        // Call the endpoint as admin
+        final ResponseEntityRolePermissionsView responseView = resource.getRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                testRole.getId()
+        );
+
+        // Verify response
+        assertNotNull("Response should not be null", responseView);
+        final RolePermissionsView entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
+
+        // Verify response fields
+        assertEquals("roleId should match", testRole.getId(), entity.roleId());
+        assertEquals("roleName should match", testRole.getName(), entity.roleName());
+        assertNotNull("assets should be present", entity.assets());
+
+        // Verify assets is a list
+        final List<UserPermissionAssetView> assets = entity.assets();
+        assertNotNull("assets should be a list", assets);
+    }
+
+    /**
+     * Method to test: getRolePermissions in the PermissionResource
+     * Given Scenario: Non-admin user requests permissions for their own role
+     * ExpectedResult: Role permissions retrieved successfully
+     */
+    @Test
+    public void test_getRolePermissions_userCanViewOwnRole() throws DotDataException, DotSecurityException {
+        // Create a test role
+        final Role testRole = new RoleDataGen().nextPersisted();
+
+        // Create a non-admin user and assign them the test role
+        final String knownPassword = "testPassword789";
+        final User testUser = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole(), testRole)
+                .nextPersisted();
+
+        // Call the endpoint - user viewing their own role
+        final ResponseEntityRolePermissionsView responseView = resource.getRolePermissions(
+                getHttpRequest(testUser.getEmailAddress(), knownPassword),
+                response,
+                testRole.getId()
+        );
+
+        // Verify response
+        assertNotNull("Response should not be null", responseView);
+        final RolePermissionsView entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
+
+        // Verify response fields
+        assertEquals("roleId should match", testRole.getId(), entity.roleId());
+        assertEquals("roleName should match", testRole.getName(), entity.roleName());
+        assertNotNull("assets should be present", entity.assets());
+    }
+
+    /**
+     * Method to test: getRolePermissions in the PermissionResource
+     * Given Scenario: Non-admin user requests permissions for a role they don't have
+     * ExpectedResult: ForbiddenException is thrown (403)
+     */
+    @Test(expected = com.dotcms.rest.exception.ForbiddenException.class)
+    public void test_getRolePermissions_userCannotViewOtherRole_throws403() throws DotDataException, DotSecurityException {
+        // Create a test role that the user will NOT have
+        final Role testRole = new RoleDataGen().nextPersisted();
+
+        // Create a non-admin user WITHOUT the test role
+        final String knownPassword = "testPassword101";
+        final User testUser = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        // Call the endpoint - should throw ForbiddenException
+        resource.getRolePermissions(
+                getHttpRequest(testUser.getEmailAddress(), knownPassword),
+                response,
+                testRole.getId()
+        );
+    }
+
+    /**
+     * Method to test: getRolePermissions in the PermissionResource
+     * Given Scenario: Invalid role ID provided
+     * ExpectedResult: BadRequestException is thrown (400)
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_getRolePermissions_invalidRoleId_throws400() throws DotDataException, DotSecurityException {
+        // Call with invalid role ID - should throw BadRequestException
+        resource.getRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                "invalid-role-id-99999"
+        );
+    }
+
+    /**
+     * Method to test: getRolePermissions in the PermissionResource
+     * Given Scenario: Empty role ID provided
+     * ExpectedResult: BadRequestException is thrown (400)
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_getRolePermissions_emptyRoleId_throws400() throws DotDataException, DotSecurityException {
+        // Call with empty role ID - should throw BadRequestException
+        resource.getRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                ""
+        );
+    }
+
+    /**
+     * Method to test: getRolePermissions in the PermissionResource
+     * Given Scenario: Admin user requests permissions and verifies response structure
+     * ExpectedResult: Response contains correct structure with assets containing permissions map
+     */
+    @Test
+    public void test_getRolePermissions_responseStructure() throws DotDataException, DotSecurityException {
+        // Create a test role
+        final Role testRole = new RoleDataGen().nextPersisted();
+
+        // Create a folder and add permissions for this role with inheritable permissions
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
+
+        final Map<String, Set<PermissionAPI.Type>> inheritable = new HashMap<>();
+        inheritable.put("FOLDER", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE));
+        inheritable.put("CONTENT", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE, PermissionAPI.Type.PUBLISH));
+
+        final RolePermissionForm rolePermissionForm = new RolePermissionForm(
+                testRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE, PermissionAPI.Type.PUBLISH),
+                inheritable
+        );
+        final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(
+                Arrays.asList(rolePermissionForm)
+        );
+
+        // Set up permissions for the role
+        resource.updateAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                testFolder.getInode(),
+                false,
+                form
+        );
+
+        // Call the endpoint
+        final ResponseEntityRolePermissionsView responseView = resource.getRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                testRole.getId()
+        );
+
+        // Verify response structure
+        final RolePermissionsView entity = responseView.getEntity();
+        assertEquals("roleId should match", testRole.getId(), entity.roleId());
+        assertEquals("roleName should match", testRole.getName(), entity.roleName());
+
+        final List<UserPermissionAssetView> assets = entity.assets();
+        assertNotNull("assets should be present", assets);
+        assertFalse("assets should not be empty", assets.isEmpty());
+
+        // Find the folder in the assets
+        boolean foundFolder = false;
+        for (UserPermissionAssetView asset : assets) {
+            if (testFolder.getInode().equals(asset.id())) {
+                foundFolder = true;
+
+                // Verify asset structure
+                assertEquals("type should be FOLDER", "FOLDER", asset.type());
+                assertNotNull("name should be present", asset.name());
+                assertNotNull("path should be present", asset.path());
+                assertNotNull("hostId should be present", asset.hostId());
+                assertNotNull("canEditPermissions should be present", asset.canEditPermissions());
+                assertNotNull("inheritsPermissions should be present", asset.inheritsPermissions());
+
+                // Verify permissions map
+                final Map<String, Set<String>> permissions = asset.permissions();
+                assertNotNull("permissions should be present", permissions);
+                assertFalse("permissions should not be empty", permissions.isEmpty());
+
+                break;
+            }
+        }
+        assertTrue("Should find the test folder in assets", foundFolder);
     }
 }

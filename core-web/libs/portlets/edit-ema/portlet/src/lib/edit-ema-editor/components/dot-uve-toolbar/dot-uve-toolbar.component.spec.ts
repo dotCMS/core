@@ -3,6 +3,7 @@ import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngne
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -103,6 +104,7 @@ const baseUVEState = {
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
+    $canEditPage: signal(true),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
@@ -688,6 +690,156 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
+            it('should show backend message from error-message header when personalization API returns HttpErrorResponse', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                const backendMessage =
+                    'Does not exists a Persona with the tag: nonexistent-persona';
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            headers: new HttpHeaders({ 'error-message': backendMessage })
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: backendMessage
+                });
+            });
+
+            it('should show backend message from body error when personalization API returns HttpErrorResponse with error body', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            error: {
+                                error: 'dotcms.api.error.bad_request: Page parameter is missing'
+                            }
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'Page parameter is missing'
+                });
+            });
+
+            it('should show full body error when response has no colon prefix', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                const bodyMessage = 'Something went wrong';
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 500,
+                            error: { error: bodyMessage }
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: bodyMessage
+                });
+            });
+
+            it('should use i18n fallback when error-message header is only whitespace', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            headers: new HttpHeaders({ 'error-message': '   \t  ' })
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
+            it('should use i18n fallback when body error is only whitespace', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            error: { error: '   ' }
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
             it('should despersonalize', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
                     ...personaEventMock,
@@ -892,13 +1044,31 @@ describe('DotUveToolbarComponent', () => {
         describe('palette toggle button', () => {
             it('should not display palette toggle button when not in edit mode', () => {
                 baseUVEState.$isEditMode.set(false);
+                baseUVEState.$canEditPage.set(true);
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
             });
 
-            it('should display palette toggle button when in edit mode', () => {
+            it('should not display palette toggle button when canEditPage is false', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should not display palette toggle button when not in edit mode and canEditPage is false', () => {
+                baseUVEState.$isEditMode.set(false);
+                baseUVEState.$canEditPage.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should display palette toggle button when in edit mode and canEditPage is true', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeTruthy();
@@ -907,6 +1077,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call setPaletteOpen with true when palette is closed', () => {
                 const spy = jest.spyOn(store, 'setPaletteOpen');
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(false);
                 spectator.detectChanges();
 
@@ -919,6 +1090,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call setPaletteOpen with false when palette is open', () => {
                 const spy = jest.spyOn(store, 'setPaletteOpen');
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(true);
                 spectator.detectChanges();
 
@@ -930,6 +1102,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should show close icon and hide open icon when palette is closed', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(false);
                 spectator.detectChanges();
 
@@ -944,6 +1117,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should show open icon and hide close icon when palette is open', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(true);
                 spectator.detectChanges();
 

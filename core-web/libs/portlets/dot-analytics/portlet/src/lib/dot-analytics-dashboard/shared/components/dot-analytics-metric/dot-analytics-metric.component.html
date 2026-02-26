@@ -1,0 +1,137 @@
+@let metricIcon = $icon();
+@let metricSubtitle = $subtitle();
+@let metricTitle = $title();
+@let isLoadingState = $isLoading();
+@let isErrorState = $isError();
+@let isEmptyState = $isEmpty();
+@let hasIcon = !!metricIcon;
+@let hasTitle = !!metricTitle;
+@let hasSubtitle = !!metricSubtitle;
+@let formattedValue = $formattedValue();
+@let iconClasses = $iconClasses();
+@let trendData = $trendData();
+
+@if (hasTitle) {
+    <h3 class="chart-title mb-2" data-testid="metric-title">
+        {{ metricTitle | dm }}
+        <ng-content select="[titleAction]" />
+    </h3>
+}
+
+<p-card
+    class="h-full metric-card"
+    [class.metric-card--loading]="isLoadingState"
+    [class.metric-card--empty]="isEmptyState"
+    [class.metric-card--error]="isErrorState"
+    data-testid="metric-card">
+    @if (isErrorState) {
+        <!-- Error state -->
+        <div
+            class="flex flex-column justify-content-center align-items-center h-full"
+            [@fadeInContent]>
+            <dot-analytics-state-message
+                message="analytics.metrics.error.reload"
+                icon="pi-exclamation-triangle" />
+        </div>
+    } @else if (isEmptyState) {
+        <!-- Empty state -->
+        <div
+            class="flex flex-column justify-content-center align-items-center h-full"
+            [@fadeInContent]>
+            <dot-analytics-state-message
+                message="analytics.metrics.empty.insufficient-data"
+                icon="pi-info-circle" />
+        </div>
+    } @else if (isLoadingState) {
+        <!-- Loading state with skeleton (mirrors loaded structure) -->
+        <div class="flex flex-column justify-content-between h-full w-full gap-2">
+            <!-- Row: value + icon (same layout as loaded state) -->
+            <div class="flex justify-content-between align-items-start w-full gap-1">
+                <p-skeleton width="5rem" height="2.2rem" />
+                @if (hasIcon) {
+                    <span class="flex-shrink-0">
+                        <p-skeleton width="1.5rem" height="1.5rem" shape="circle" />
+                    </span>
+                }
+            </div>
+            <!-- Subtitle skeleton (separate row, same as loaded state) -->
+            <p-skeleton width="4rem" height="1.06rem" />
+        </div>
+    } @else {
+        <!-- Normal content - only shown when LOADED -->
+        <div class="flex flex-column justify-content-between h-full gap-2">
+            @let animated = $animated();
+            @let duration = $animationDuration();
+            <div class="flex justify-content-between align-items-start gap-1" [@fadeInContent]>
+                <div class="flex flex-column gap-1">
+                    @if ($isFraction()) {
+                        @let fractionParts = $fractionParts();
+                        <div class="metric-value metric-value--fraction" data-testid="metric-value">
+                            <span class="metric-value__numerator">
+                                @if (fractionParts && animated) {
+                                    <span
+                                        [dotCountUp]="fractionParts.numeratorValue"
+                                        [duration]="duration"></span>
+                                } @else {
+                                    {{ fractionParts?.numerator }}
+                                }
+                            </span>
+                            <span class="metric-value__separator">/</span>
+                            <span class="metric-value__denominator">
+                                @if (fractionParts && animated) {
+                                    <span
+                                        [dotCountUp]="fractionParts.denominatorValue"
+                                        [duration]="duration"></span>
+                                } @else {
+                                    {{ fractionParts?.denominator }}
+                                }
+                            </span>
+                        </div>
+                    } @else {
+                        @let numericVal = $numericValue();
+                        <div class="metric-value" data-testid="metric-value">
+                            @if (numericVal !== null && animated) {
+                                <span
+                                    [dotCountUp]="numericVal.value"
+                                    [duration]="duration"
+                                    [suffix]="numericVal.suffix"
+                                    [format]="numericVal.format"></span>
+                            } @else {
+                                {{ formattedValue }}
+                            }
+                        </div>
+                    }
+                </div>
+                @if (hasIcon) {
+                    <i
+                        [class]="iconClasses"
+                        class="metric-icon pi icon-md"
+                        data-testid="metric-icon"></i>
+                }
+            </div>
+
+            <!-- Subtítulo -->
+            @if (hasSubtitle || trendData) {
+                <div class="metric-subtitle" data-testid="metric-subtitle" [@fadeInContent]>
+                    @if (trendData) {
+                        <span [class]="trendData.class">
+                            {{ trendData.prefix }}{{ trendData.value }}%
+                            <i
+                                [class]="
+                                    trendData.isPositive ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
+                                "></i>
+                        </span>
+                    }
+                    {{ metricSubtitle | dm }}
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Projected content - visible during loading and loaded (sparkline handles its own skeleton) -->
+    @if (!isErrorState && !isEmptyState) {
+        <div class="metric-projected-content" data-testid="metric-projected-content">
+            <ng-content />
+        </div>
+    }
+</p-card>

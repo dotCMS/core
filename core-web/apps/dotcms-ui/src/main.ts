@@ -15,4 +15,5 @@ if (environment.production) {
 bootstrapApplication(AppComponent, {
     providers: [importProvidersFrom(AppModule, BrowserAnimationsModule)]
 });
+
 defineCustomElements();

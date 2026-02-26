@@ -77,3 +77,17 @@ export interface SiteEntity {
     working: boolean;
     googleMap?: string;
 }
+
+export interface ContentByFolderParams {
+    hostFolderId: string;
+    showLinks?: boolean;
+    showDotAssets?: boolean;
+    showArchived?: boolean;
+    sortByDesc?: boolean;
+    showPages?: boolean;
+    showFiles?: boolean;
+    showFolders?: boolean;
+    showWorking?: boolean;
+    extensions?: string[];
+    mimeTypes?: string[];
+}

@@ -33,37 +33,38 @@
             <!-- Add prepend and append areas to the tabs -->
             <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent" />
 
-            <!-- Tabs are lazy -->
+            <!--
+                WARNING: TABS MUST NOT BE LAZY!
+                Custom fields need to execute code that doesn't depend on whether the tab is active or not.
+                They must load earlier, not lazy. Making tabs lazy will break custom fields functionality.
+            -->
             @for (tab of tabs; track tab) {
                 <p-tabPanel [header]="tab.title" [@fadeIn]>
-                    <ng-template pTemplate="content">
-                        <ng-container *ngTemplateOutlet="tabPanelTemplate; context: { tab: tab }" />
-                    </ng-template>
-                </p-tabPanel>
-            }
-        </p-tabView>
-
-        <!-- Template for the tab tabPanel -->
-        <ng-template #tabPanelTemplate let-tab="tab">
-            <div class="dot-edit-content-form__layout">
-                @for (row of tab.layout; track row) {
-                    <div class="dot-edit-content-form__layout-row" data-testId="row">
-                        @for (column of row.columns; track column) {
-                            <div class="dot-edit-content-form__layout-column" data-testId="column">
-                                @for (field of column.fields; track field) {
-                                    <dot-edit-content-field
-                                        [contentType]="contentType"
-                                        [contentlet]="contentlet"
-                                        [field]="field"
-                                        (disabledWYSIWYGChange)="onDisabledWYSIWYGChange($event)"
-                                        data-testId="field" />
+                    <div class="dot-edit-content-form__layout">
+                        @for (row of tab.layout; track row) {
+                            <div class="dot-edit-content-form__layout-row" data-testId="row">
+                                @for (column of row.columns; track column) {
+                                    <div
+                                        class="dot-edit-content-form__layout-column"
+                                        data-testId="column">
+                                        @for (field of column.fields; track field) {
+                                            <dot-edit-content-field
+                                                [contentType]="contentType"
+                                                [contentlet]="contentlet"
+                                                [field]="field"
+                                                (disabledWYSIWYGChange)="
+                                                    onDisabledWYSIWYGChange($event)
+                                                "
+                                                data-testId="field" />
+                                        }
+                                    </div>
                                 }
                             </div>
                         }
                     </div>
-                }
-            </div>
-        </ng-template>
+                </p-tabPanel>
+            }
+        </p-tabView>
     </form>
 }
 

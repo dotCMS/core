@@ -72,8 +72,7 @@ export function withUVEToolbar() {
 
                 const isPageLocked = computeIsPageLocked(
                     pageAPIResponse?.page,
-                    store.currentUser(),
-                    store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
+                    store.currentUser()
                 );
                 const shouldShowUnlock = isPageLocked && pageAPIResponse?.page.canLock;
                 const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
@@ -110,7 +109,9 @@ export function withUVEToolbar() {
                 };
             }),
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
-                return store.pageAPIResponse()?.urlContentMap;
+                const urlContentMap = store.pageAPIResponse()?.urlContentMap;
+                // Due to GQL it can be an empty object or undefined, so we need to check if it has any keys
+                return Object.keys(urlContentMap ?? {}).length ? urlContentMap : undefined;
             }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
@@ -122,11 +123,7 @@ export function withUVEToolbar() {
                 const pageAPIResponse = store.pageAPIResponse();
                 const currentUser = store.currentUser();
 
-                const isLocked = computeIsPageLocked(
-                    pageAPIResponse.page,
-                    currentUser,
-                    isToggleUnlockEnabled
-                );
+                const isLocked = computeIsPageLocked(pageAPIResponse.page, currentUser);
                 const info = {
                     message: pageAPIResponse.page.canLock
                         ? 'editpage.toolbar.page.release.lock.locked.by.user'

@@ -1,13 +1,13 @@
 services:
   db:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
       POSTGRES_USER: 'dotcmsdbuser'
       POSTGRES_PASSWORD: 'password'
       POSTGRES_DB: 'dotcms'
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql
     networks:
       - db_net
     healthcheck:
@@ -61,7 +61,7 @@ services:
       GLOWROOT_WEB_UI_ENABLED: 'true' # Enable glowroot web ui on localhost.  do not use in production
       #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
       #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
-      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20251006/starter-20251006.zip'
+      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260211/starter-20260211.zip'
     depends_on:
       - db
       - opensearch      

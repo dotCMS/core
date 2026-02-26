@@ -22,6 +22,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
+    DotRenderModes,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
@@ -91,6 +92,10 @@ class TestFieldPropertiesService {
 
     getOrder(propertyName: string): any {
         return propertyName === 'property1' ? 0 : 1;
+    }
+
+    $newRenderModeDefault(): string {
+        return DotRenderModes.IFRAME;
     }
 }
 
@@ -469,7 +474,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 expect(result.fieldVariables[1]).toEqual({
                     clazz: DotCMSClazzes.FIELD_VARIABLE,
                     key: NEW_RENDER_MODE_VARIABLE_KEY,
-                    value: undefined
+                    value: DotRenderModes.IFRAME
                 });
             });
 
@@ -482,7 +487,7 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 expect(result.fieldVariables[0]).toEqual({
                     clazz: DotCMSClazzes.FIELD_VARIABLE,
                     key: NEW_RENDER_MODE_VARIABLE_KEY,
-                    value: null
+                    value: DotRenderModes.IFRAME
                 });
             });
 

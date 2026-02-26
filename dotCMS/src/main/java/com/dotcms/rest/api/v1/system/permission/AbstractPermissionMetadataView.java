@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -26,7 +27,7 @@ public interface AbstractPermissionMetadataView {
     /**
      * Gets the available permission levels.
      *
-     * @return Set of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
+     * @return Set of permission types (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
      */
     @JsonProperty("levels")
     @Schema(
@@ -34,12 +35,12 @@ public interface AbstractPermissionMetadataView {
         example = "[\"READ\", \"WRITE\", \"PUBLISH\", \"EDIT_PERMISSIONS\", \"CAN_ADD_CHILDREN\"]",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    Set<String> levels();
+    Set<PermissionAPI.Type> levels();
 
     /**
      * Gets the available permission scopes.
      *
-     * @return Set of permission scope names (asset types)
+     * @return Set of permission scopes (asset types)
      */
     @JsonProperty("scopes")
     @Schema(
@@ -47,5 +48,5 @@ public interface AbstractPermissionMetadataView {
         example = "[\"INDIVIDUAL\", \"HOST\", \"FOLDER\", \"CONTENT\", \"TEMPLATE\", \"PAGE\", \"CONTAINER\", \"CONTENT_TYPE\", \"CATEGORY\"]",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    Set<String> scopes();
+    Set<PermissionAPI.Scope> scopes();
 }

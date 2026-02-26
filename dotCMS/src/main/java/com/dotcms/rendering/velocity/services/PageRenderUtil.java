@@ -321,6 +321,7 @@ public class PageRenderUtil implements Serializable {
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
                     this.addRelationships(contentlet);
+                    this.addStyles(contentlet, personalizedContentlet);
 
                     if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
 
@@ -525,6 +526,32 @@ public class PageRenderUtil implements Serializable {
         }
     }
 
+    /**
+     * Only applies when the FEATURE_FLAG_UVE_STYLE_EDITOR is enabled.
+     * Adds style properties from the MultiTree to the contentlet's data map.
+     * This ensures that contentlet styling metadata is properly scoped to its specific
+     * personalization and variant context.
+     *
+     * @param contentlet             The {@link Contentlet} to add style properties to
+     * @param personalizedContentlet The {@link PersonalizedContentlet} containing the style
+     *                               properties from the MultiTree relationship
+     */
+    private void addStyles(Contentlet contentlet, PersonalizedContentlet personalizedContentlet) {
+        // NOTE: Safe to modify contentlet.getMap() here because the contentlet is a COPY
+        // created by hydrate(), not the cached original instance.
+        // See: DotContentletTransformerImpl.hydrate() and copy()
+
+        if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true)) {
+            return;
+        }
+
+        final Map<String, Object> styleProperties = personalizedContentlet.getStyleProperties();
+
+        if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
+            contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
+        }
+    }
+
     private boolean needParseContainerPrefix(final Container container, final String uniqueId) {
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
                 (templateLayout == null || !templateLayout.existsContainer(container, uniqueId));
@@ -714,12 +741,28 @@ public class PageRenderUtil implements Serializable {
             // No need to apply the Time Machine date, just return the contentlet based on the mode.showLive
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback(
                     contentletIdentifier, mode.showLive, languageId,
-                    user, true);
+                    user, true, variantName);
 
-            return contentletOpt.isPresent()
-                    ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(
-                    contentletIdentifier,
-                    variantName);
+            if (contentletOpt.isPresent()) {
+                return contentletOpt.get();
+            }
+
+            // If not found with language fallback, try to find in any language with the specified variant
+            // This allows pages to show content from other languages when the content type allows fallback
+            // but the content doesn't exist in the page's language or default language
+            try {
+                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                        contentletIdentifier, variantName);
+
+                // Check if this content type allows language fallback
+                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
+                    return anyLanguageContentlet;
+                }
+            } catch (Exception e) {
+                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
+            }
+
+            return null;
 
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control

@@ -83,5 +83,6 @@ export * from './lib/page-model-change-event.type';
 export * from './lib/shared-models';
 export * from './lib/structure-type-view.model';
 export * from './lib/structure-type.model';
+export * from './lib/dot-browser-selector.model';
 export * from './lib/dot-folder.model';
 export * from './lib/dot-api-response';
