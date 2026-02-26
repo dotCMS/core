@@ -132,17 +132,17 @@ const systemIsLockFeatureEnabledSignal = signal(true);
 
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
-    setDevice: jest.fn(),
-    setSEO: jest.fn(),
-    setOrientation: jest.fn(),
+    viewSetDevice: jest.fn(),
+    viewSetSEO: jest.fn(),
+    viewSetOrientation: jest.fn(),
     pageParams: pageParamsSignal,
     pageAsset: pageSnapshotSignal,
     // View state signal
     view: viewSignal,
     // Computed properties (most are functions, some are mutable signals for test control)
     $apiURL: () => $apiURL,
-    $mode: computed(() => pageParamsSignal()?.mode ?? UVE_MODE.UNKNOWN),  // Compute from pageParams signal
-    $currentLanguage: () => ({
+    viewMode: computed(() => pageParamsSignal()?.mode ?? UVE_MODE.UNKNOWN),
+    pageLanguage: signal({
         id: 1,
         language: 'English',
         languageCode: 'en',
@@ -159,7 +159,41 @@ const baseUVEState = {
     $urlContentMap: urlContentMapSignal,  // Mutable for tests
     $workflowLockOptions: toggleLockOptionsSignal,  // Mutable for tests
     systemIsLockFeatureEnabled: systemIsLockFeatureEnabledSignal,
-    reloadCurrentPage: jest.fn(),
+    pageReload: jest.fn(),
+    editorPaletteOpen: signal(true),
+    editorCanEditContent: signal(true),
+    pageLanguages: signal([
+        {
+            id: 1,
+            language: 'English',
+            languageCode: 'en',
+            countryCode: 'US',
+            country: 'United States',
+            translated: true
+        },
+        {
+            id: 2,
+            language: 'Spanish',
+            languageCode: 'es',
+            countryCode: 'ES',
+            country: 'Spain',
+            translated: false
+        },
+        {
+            id: 3,
+            language: 'French',
+            languageCode: 'fr',
+            countryCode: 'FR',
+            country: 'France',
+            translated: true
+        }
+    ]),
+    pageExperiment: signal(null),
+    viewDevice: deviceSignal,
+    viewSocialMedia: socialMediaSignal,
+    viewDeviceOrientation: orientationSignal,
+    workflowIsLoading: signal(false),
+    workflowLockIsLoading: signal(false),
     pageLoad: jest.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
@@ -196,7 +230,7 @@ const baseUVEState = {
     viewClearDeviceAndSocialMedia: jest.fn(),
     device: deviceSignal,  // Use the shared signal
     lockLoading: signal(false),
-    toggleLock: jest.fn(),
+    workflowToggleLock: jest.fn(),
     socialMedia: socialMediaSignal,  // Use the shared signal
     trackUVECalendarChange: jest.fn(),
     pageType: signal(PageType.TRADITIONAL),
@@ -916,7 +950,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock when unlocked button is clicked', () => {
-                const spy = jest.spyOn(store, 'toggleLock');
+                const spy = jest.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode-unlock',
@@ -934,7 +968,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock when locked button is clicked', () => {
-                const spy = jest.spyOn(store, 'toggleLock');
+                const spy = jest.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode-lock',
@@ -982,7 +1016,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should call store.toggleLock with correct params for page locked by another user', () => {
-                const spy = jest.spyOn(store, 'toggleLock');
+                const spy = jest.spyOn(store, 'workflowToggleLock');
 
                 baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode-other',
@@ -1411,7 +1445,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.setDevice when device event is emitted', () => {
-                        const spy = jest.spyOn(store, 'setDevice');
+                        const spy = jest.spyOn(store, 'viewSetDevice');
                         const testDevice = DEFAULT_DEVICES[1];
 
                         spectator.triggerEventHandler(
@@ -1427,7 +1461,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.setSEO when socialMedia event is emitted', () => {
-                        const spy = jest.spyOn(store, 'setSEO');
+                        const spy = jest.spyOn(store, 'viewSetSEO');
 
                         spectator.triggerEventHandler(
                             DotUveDeviceSelectorComponent,
@@ -1442,7 +1476,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.setOrientation when orientation event is emitted', () => {
-                        const spy = jest.spyOn(store, 'setOrientation');
+                        const spy = jest.spyOn(store, 'viewSetOrientation');
 
                         spectator.triggerEventHandler(
                             DotUveDeviceSelectorComponent,
@@ -1457,9 +1491,9 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should handle all event types correctly in sequence', () => {
-                        const deviceSpy = jest.spyOn(store, 'setDevice');
-                        const seoSpy = jest.spyOn(store, 'setSEO');
-                        const orientationSpy = jest.spyOn(store, 'setOrientation');
+                        const deviceSpy = jest.spyOn(store, 'viewSetDevice');
+                        const seoSpy = jest.spyOn(store, 'viewSetSEO');
+                        const orientationSpy = jest.spyOn(store, 'viewSetOrientation');
 
                         const testDevice = DEFAULT_DEVICES[0];
 
@@ -1653,7 +1687,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should call store.toggleLock with correct parameters', () => {
-                        const spy = jest.spyOn(store, 'toggleLock');
+                        const spy = jest.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,
@@ -1669,7 +1703,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should handle locked state correctly', () => {
-                        const spy = jest.spyOn(store, 'toggleLock');
+                        const spy = jest.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,
@@ -1685,7 +1719,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should handle page locked by another user', () => {
-                        const spy = jest.spyOn(store, 'toggleLock');
+                        const spy = jest.spyOn(store, 'workflowToggleLock');
 
                         spectator.triggerEventHandler(
                             DotToggleLockButtonComponent,

@@ -610,7 +610,7 @@ describe('EditEmaEditorComponent', () => {
 
             it('should reload when Block editor is saved', () => {
                 const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
-                const spy = jest.spyOn(store, 'reloadCurrentPage');
+                const spy = jest.spyOn(store, 'pageReload');
                 blockEditorSidebar.onSaved.emit();
                 expect(spy).toHaveBeenCalled();
             });
@@ -1418,7 +1418,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should reload the page after saving the new navigation order', () => {
-                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+                        const reloadSpy = jest.spyOn(store, 'pageReload');
                         const messageSpy = jest.spyOn(messageService, 'add');
                         const dialog = spectator.debugElement.query(
                             By.css("[data-testId='ema-dialog']")
@@ -3529,8 +3529,8 @@ describe('EditEmaEditorComponent', () => {
             describe('CUSTOMER ACTIONS', () => {
                 describe('CLIENT_READY', () => {
                     it('should set client GraphQL configuration and call the reload', () => {
-                        const setClientConfigurationSpy = jest.spyOn(store, 'setRequestMetadata');
-                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+                        const setClientConfigurationSpy = jest.spyOn(store, 'setCustomClient');
+                        const reloadSpy = jest.spyOn(store, 'pageReload');
 
                         const config = {
                             query: '{ query: { hello } }',
@@ -3552,8 +3552,8 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should set call reloadCurrentPage when client is ready', () => {
-                        const setRequestMetadataSpy = jest.spyOn(store, 'setRequestMetadata');
-                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+                        const setRequestMetadataSpy = jest.spyOn(store, 'setCustomClient');
+                        const reloadSpy = jest.spyOn(store, 'pageReload');
 
                         const config = { params: { depth: '1' } };
 

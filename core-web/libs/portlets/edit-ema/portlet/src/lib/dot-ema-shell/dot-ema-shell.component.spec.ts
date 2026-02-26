@@ -961,7 +961,7 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload if the url is the same', () => {
                 spectator.detectChanges();
-                const spyReload = jest.spyOn(store, 'reloadCurrentPage');
+                const spyReload = jest.spyOn(store, 'pageReload');
                 const spyLocation = jest.spyOn(location, 'go');
 
                 spectator.triggerEventHandler(
@@ -982,7 +982,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should reload content from dialog', () => {
-                const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+                const reloadSpy = jest.spyOn(store, 'pageReload');
 
                 spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
 
@@ -990,10 +990,12 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
-                const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+                const reloadSpy = jest.spyOn(store, 'pageReload');
                 // Spy on normalized properties instead of pageAssetResponse
-                jest.spyOn(store, 'page').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP.page);
-                jest.spyOn(store, 'urlContentMap').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP.urlContentMap);
+                jest.spyOn(store, 'pageAsset').mockReturnValue({
+                    ...PAGE_RESPONSE_URL_CONTENT_MAP,
+                    clientResponse: PAGE_RESPONSE_URL_CONTENT_MAP
+                });
                 store.pageLoad({
                     url: '/test-url',
                     language_id: '1',
@@ -1227,7 +1229,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.component['uveStore'].setUveStatus = jest.fn();
                 // Simulate an error by directly patching the store
                 const store = spectator.component['uveStore'];
-                (store as any).errorCode = jest.fn().mockReturnValue(401);
+                (store as any).pageErrorCode = jest.fn().mockReturnValue(401);
 
                 spectator.detectChanges();
 

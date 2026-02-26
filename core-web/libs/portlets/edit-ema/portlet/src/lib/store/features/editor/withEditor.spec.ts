@@ -395,7 +395,7 @@ describe('withEditor', () => {
             // Unskip this when this discussion is resolved: https://github.com/ngrx/platform/discussions/4627
             describe.skip('page dependency', () => {
                 it('should call page when it is a headless page', () => {
-                    const spy = jest.spyOn(store, 'page');
+                    const spy = jest.spyOn(store, 'pageAsset');
                     patchState(store, { pageType: PageType.HEADLESS });
                     store.$iframeURL();
 
@@ -403,7 +403,7 @@ describe('withEditor', () => {
                 });
 
                 it('should call page when it is a traditional page', () => {
-                    const spy = jest.spyOn(store, 'page');
+                    const spy = jest.spyOn(store, 'pageAsset');
 
                     patchState(store, { pageType: PageType.TRADITIONAL });
 

@@ -176,7 +176,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
             const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
-            const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+            const reloadSpy = jest.spyOn(store, 'pageReload');
 
             templateBuilder.templateChange.emit();
             tick(5000);
