@@ -1,5 +1,7 @@
 package com.dotcms.graphql.exception;
 
+import java.util.Map;
+
 /**
  * Custom exception for permission denial in GraphQL operations.
  * This exception is used to indicate that a user does not have the necessary permissions
@@ -23,5 +25,10 @@ public class PermissionDeniedGraphQLException extends CustomGraphQLException {
      */
     public PermissionDeniedGraphQLException() {
         this(DEFAULT_MESSAGE);
+    }
+
+    @Override
+    public Map<String, Object> getExtensions() {
+        return Map.of("code", "PERMISSION_DENIED");
     }
 }

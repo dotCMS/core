@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, output, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -56,6 +56,8 @@ export class DotFavoriteSelectorComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     readonly #pageContentTypeService = inject(DotPageContentTypeService);
     readonly #favoriteContentTypeService = inject(DotFavoriteContentTypeService);
+
+    readonly hideControls = output<boolean>();
 
     /** Full list of content types matching the current filter. */
     readonly $contenttypes = signal<DotCMSContentType[]>([]);
@@ -120,6 +122,7 @@ export class DotFavoriteSelectorComponent implements OnInit {
      */
     protected onSelectionChange({ value }: { value: DotCMSContentType[] }): void {
         const contenttypes = this.#favoriteContentTypeService.set(value);
+        this.hideControls.emit(contenttypes.length === 0);
         this.#store.setContentTypesFromFavorite(contenttypes);
     }
 
