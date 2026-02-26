@@ -38,7 +38,7 @@ tags:
   name: Authentication
 - description: File and folder browser tree operations
   name: Browser Tree
-- description: "Category hierarchy CRUD, import, and export operations"
+- description: Content categorization and taxonomy
   name: Categories
 - description: Container management and rendering endpoints
   name: Container
@@ -4435,18 +4435,15 @@ paths:
   /v1/categories:
     delete:
       description: Deletes one or more categories and all their children. Accepts
-        a JSON array of category inodes. The user needs Edit permissions over each
-        category. Returns a bulk result indicating how many were deleted and any failures.
+        a JSON array of category inodes.
       operationId: deleteCategories
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               type: array
               items:
                 type: string
-        description: JSON array of category inodes to delete
-        required: true
       responses:
         "200":
           content:
@@ -4455,7 +4452,7 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityBulkResultView"
           description: Bulk delete result returned
         "400":
-          description: Bad request — list of inodes is required
+          description: Bad request
         "401":
           description: Authentication required
         "403":
@@ -4474,7 +4471,7 @@ paths:
         name: filter
         schema:
           type: string
-      - description: Page number for pagination (zero-based)
+      - description: Page number (zero-based)
         in: query
         name: page
         schema:
@@ -4486,20 +4483,19 @@ paths:
         schema:
           type: integer
           format: int32
-      - description: "Field to order results by (default: category_name)"
+      - description: Field to order results by
         in: query
         name: orderby
         schema:
           type: string
           default: category_name
-      - description: "Sort direction: ASC or DESC (default: ASC)"
+      - description: "Sort direction: ASC or DESC"
         in: query
         name: direction
         schema:
           type: string
           default: ASC
-      - description: "If true, include the count of child categories for each result"
-        in: query
+      - in: query
         name: showChildrenCount
         schema:
           type: boolean
@@ -4514,23 +4510,18 @@ paths:
           description: Authentication required
         "403":
           description: Insufficient permissions
-        "500":
-          description: Internal server error
       summary: Get paginated list of categories
       tags:
       - Categories
     post:
       description: Creates a new category using the provided form data. The category
-        name is required. Optionally specify a parent category inode and site ID.
+        name is required.
       operationId: createCategory
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/CategoryForm"
-        description: "Category form data including name, key, keywords, parent, and\
-          \ site ID"
-        required: true
       responses:
         "200":
           content:
@@ -4548,18 +4539,14 @@ paths:
       tags:
       - Categories
     put:
-      description: "Updates a working version of an existing category. The form must\
-        \ contain the inode of the category to update. The category name, key, and\
-        \ keywords can be modified."
+      description: Updates a working version of an existing category. The form must
+        contain the inode of the category to update.
       operationId: updateCategory
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/CategoryForm"
-        description: "Category form data including inode, name, key, keywords, parent,\
-          \ and site ID"
-        required: true
       responses:
         "200":
           content:
@@ -4568,11 +4555,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityCategoryView"
           description: Category updated successfully
         "400":
-          description: Bad request — inode is required
+          description: Bad request
         "401":
           description: Authentication required
-        "403":
-          description: Insufficient permissions
         "404":
           description: Category not found
       summary: Update an existing category
@@ -4580,19 +4565,15 @@ paths:
       - Categories
   /v1/categories/_export:
     get:
-      description: "Exports categories as a CSV file download. Optionally filter by\
-        \ a parent category inode (contextInode) and/or a name filter. The CSV includes\
-        \ columns: name, key, variable, and sort order."
+      description: Exports categories to a CSV file. Optionally filter by name and
+        scope to a parent category inode.
       operationId: exportCategories
       parameters:
-      - description: "Inode of the parent category to export children from; if omitted,\
-          \ exports top-level categories"
-        in: query
+      - in: query
         name: contextInode
         schema:
           type: string
-      - description: Filter string to match against category names
-        in: query
+      - in: query
         name: filter
         schema:
           type: string
@@ -4600,13 +4581,11 @@ paths:
         "200":
           content:
             text/csv: {}
-          description: CSV file downloaded successfully
+          description: CSV file streamed successfully
         "401":
           description: Authentication required
         "403":
           description: Insufficient permissions
-        "500":
-          description: Internal server error
       summary: Export categories as CSV
       tags:
       - Categories
@@ -4614,10 +4593,7 @@ paths:
     post:
       description: "Imports categories from an uploaded CSV file. The 'exportType'\
         \ parameter controls the import strategy: 'replace' deletes existing categories\
-        \ before importing (within the context of the specified parent inode, or all\
-        \ categories if none specified), while 'merge' adds or updates categories\
-        \ without removing existing ones. Returns a bulk result with success/failure\
-        \ counts."
+        \ before importing, 'merge' adds or updates without removing existing ones."
       operationId: importCategories
       requestBody:
         content:
@@ -4637,102 +4613,76 @@ paths:
           description: Authentication required
         "403":
           description: Insufficient permissions
-        "500":
-          description: Internal server error
       summary: Import categories from a CSV file
       tags:
       - Categories
   /v1/categories/_sort:
     put:
-      description: "Updates the sort order of one or more existing categories. The\
-        \ request body must contain a map of category inodes to their new sort order\
-        \ values, and optionally a parent inode. Returns the updated paginated list\
-        \ of categories."
+      description: Updates the sort order of one or more existing categories.
       operationId: updateCategorySortOrder
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/CategoryEditForm"
-        description: "Category edit form containing a map of category inodes to sort\
-          \ order values, optional parent inode, and pagination parameters"
-        required: true
       responses:
         "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityCategoryView"
-          description: Category sort order updated successfully
+          description: Sort order updated successfully
         "400":
-          description: Bad request — category data is required
+          description: Bad request
         "401":
           description: Authentication required
-        "403":
-          description: Insufficient permissions
-        "404":
-          description: Category not found
       summary: Update category sort order
       tags:
       - Categories
   /v1/categories/children:
     get:
       description: "Returns a paginated list of child categories for the specified\
-        \ parent category inode. When 'allLevels' is true, the search includes categories\
-        \ at any depth; otherwise, only immediate children are returned. The 'parentList'\
-        \ flag adds a list of ancestor categories from the top level down to the direct\
-        \ parent."
+        \ parent category inode. When 'allLevels' is true, returns categories at any\
+        \ depth; otherwise only immediate children."
       operationId: getCategoryChildren
       parameters:
-      - description: Filter string to match against category names
-        in: query
+      - in: query
         name: filter
         schema:
           type: string
-      - description: Page number for pagination (zero-based)
-        in: query
+      - in: query
         name: page
         schema:
           type: integer
           format: int32
-      - description: Number of items per page
-        in: query
+      - in: query
         name: per_page
         schema:
           type: integer
           format: int32
-      - description: "Field to order results by (default: category_name)"
-        in: query
+      - in: query
         name: orderby
         schema:
           type: string
           default: category_name
-      - description: "Sort direction: ASC or DESC (default: ASC)"
-        in: query
+      - in: query
         name: direction
         schema:
           type: string
           default: ASC
-      - description: Inode of the parent category (required)
-        in: query
+      - in: query
         name: inode
-        required: true
         schema:
           type: string
-      - description: "If true, include the count of child categories for each result"
-        in: query
+      - in: query
         name: showChildrenCount
         schema:
           type: boolean
-      - description: "If true, search recursively through all descendant levels; if\
-          \ false, only immediate children"
-        in: query
+      - in: query
         name: allLevels
         schema:
           type: boolean
-      - description: "If true, include the list of ancestor categories from top level\
-          \ to direct parent"
-        in: query
+      - in: query
         name: parentList
         schema:
           type: boolean
@@ -4744,13 +4694,11 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityCategoryWithChildCountView"
           description: Children categories retrieved successfully
         "400":
-          description: Bad request — inode parameter is required
+          description: Bad request
         "401":
           description: Authentication required
         "403":
           description: Insufficient permissions
-        "500":
-          description: Internal server error
       summary: Get children of a category
       tags:
       - Categories
@@ -4777,18 +4725,15 @@ paths:
   /v1/categories/{idOrKey}:
     get:
       description: "Retrieves a single category by either its inode (ID) or its unique\
-        \ key. First attempts to find by inode; if not found, searches by key. When\
-        \ 'showChildrenCount' is true, the response includes the child category count."
+        \ key. First attempts to find by inode; if not found, searches by key."
       operationId: getCategoryByIdOrKey
       parameters:
-      - description: Category inode or unique key
-        in: path
+      - in: path
         name: idOrKey
         required: true
         schema:
           type: string
-      - description: "If true, include the count of child categories in the response"
-        in: query
+      - in: query
         name: showChildrenCount
         schema:
           type: boolean
@@ -4800,11 +4745,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityCategoryView"
           description: Category retrieved successfully
         "400":
-          description: Bad request — idOrKey parameter is required
+          description: Bad request — idOrKey is required
         "401":
           description: Authentication required
-        "403":
-          description: Insufficient permissions
         "404":
           description: Category not found
       summary: Get a category by ID or key
