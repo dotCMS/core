@@ -54,7 +54,7 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
 })
 export default class DotAnalyticsEngagementReportComponent implements OnInit {
     /** Analytics dashboard store providing engagement data and actions */
-    readonly store = inject(DotAnalyticsDashboardStore);
+    protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
 

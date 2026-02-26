@@ -38,7 +38,8 @@ export function createSparklineCrosshairPlugin(): Plugin {
             for (const active of activeElements) {
                 const { x: px, y: py } = active.element;
                 const ds = chart.data.datasets[active.datasetIndex];
-                const color = (ds.borderColor as string) ?? '#000';
+                const rawColor = ds.borderColor;
+                const color = typeof rawColor === 'string' ? rawColor : '#000';
 
                 ctx.beginPath();
                 ctx.arc(px, py, POINT_RADIUS, 0, Math.PI * 2);

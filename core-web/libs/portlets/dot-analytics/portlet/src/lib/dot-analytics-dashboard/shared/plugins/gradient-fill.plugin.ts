@@ -59,13 +59,23 @@ export function createGradientFillPlugin(
                 bottomOpacity = DEFAULT_BOTTOM_OPACITY
             } = options;
 
+            /** Extended dataset shape that includes the non-standard _fillOpacity property */
+            interface ExtendedDataset {
+                fill?: boolean | string;
+                /** Per-dataset fill opacity multiplier injected by sparkline component */
+                _fillOpacity?: number;
+                borderColor?: string | CanvasGradient | CanvasPattern;
+                backgroundColor?: string | CanvasGradient;
+            }
+
             for (const dataset of data?.datasets ?? []) {
-                const ds = dataset as { fill?: boolean | string; _fillOpacity?: number };
+                const ds = dataset as ExtendedDataset;
                 if (ds.fill === false || ds.fill === undefined) continue;
                 if (dataset.backgroundColor instanceof CanvasGradient) continue;
 
                 const opacity = ds._fillOpacity ?? 1;
-                const color = (dataset.borderColor as string) ?? fallbackColor;
+                const rawColor = dataset.borderColor;
+                const color = typeof rawColor === 'string' ? rawColor : fallbackColor;
                 const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
 
                 gradient.addColorStop(0, hexToRgba(color, topOpacity * opacity));

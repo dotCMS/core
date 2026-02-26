@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { signal } from '@angular/core';
@@ -206,7 +206,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
         it('should show info icon in engagement rate metric', () => {
             spectator = createComponent();
             spectator.detectChanges();
-            const infoIcon = spectator.query('.pi-info-circle');
+            const infoIcon = spectator.query(byTestId('engagement-info-icon'));
             expect(infoIcon).toBeTruthy();
         });
 
@@ -215,7 +215,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             spectator.detectChanges();
             expect(spectator.component.$showCalculationDialog()).toBe(false);
 
-            spectator.click('.pi-info-circle');
+            spectator.click(byTestId('engagement-info-icon'));
             spectator.detectChanges();
             expect(spectator.component.$showCalculationDialog()).toBe(true);
         });

@@ -1,50 +1,56 @@
-<!-- Metrics -->
-<div class="flex flex-wrap gap-3">
-    @for (metric of $metricsData(); track metric.name) {
-        <div class="flex-1">
-            <dot-analytics-metric
-                [title]="metric.name"
-                [value]="metric.value"
-                [subtitle]="metric.subtitle"
-                [icon]="metric.icon"
-                [status]="metric.status"
-                data-testid="analytics-metric-card" />
+<div class="flex flex-col gap-10">
+    <!-- Metrics -->
+    <div class="flex flex-wrap gap-6">
+        @for (metric of $metricsData(); track metric.name) {
+            <div class="flex-1">
+                <dot-analytics-metric
+                    [title]="metric.name"
+                    [value]="metric.value"
+                    [subtitle]="metric.subtitle"
+                    [icon]="metric.icon"
+                    [status]="metric.status"
+                    data-testid="analytics-metric-card" />
+            </div>
+        }
+    </div>
+
+    <!-- Charts: Conversion Trend + Traffic vs Conversions -->
+    <div class="flex flex-col lg:flex-row gap-6">
+        <div class="flex-1 min-w-0">
+            <dot-analytics-chart
+                [title]="'analytics.charts.conversion-trend.title'"
+                type="line"
+                [data]="$conversionTrendData()"
+                [status]="$conversionTrendStatus()"
+                data-testid="analytics-conversion-trend-chart" />
         </div>
-    }
-</div>
-
-<!-- Charts: Conversion Trend + Traffic vs Conversions -->
-<div class="flex flex-col lg:flex-row gap-3">
-    <div class="flex-1 min-w-0">
-        <dot-analytics-chart
-            [title]="'analytics.charts.conversion-trend.title'"
-            type="line"
-            [data]="$conversionTrendData()"
-            [status]="$conversionTrendStatus()"
-            data-testid="analytics-conversion-trend-chart" />
+        <div class="flex-1 min-w-0">
+            <dot-analytics-chart
+                [title]="$trafficVsConversionsTitle()"
+                type="bar"
+                [data]="$trafficVsConversionsData()"
+                [status]="$trafficVsConversionsStatus()"
+                data-testid="analytics-traffic-conversions-chart" />
+        </div>
     </div>
-    <div class="flex-1 min-w-0">
-        <dot-analytics-chart
-            [title]="$trafficVsConversionsTitle()"
-            type="bar"
-            [data]="$trafficVsConversionsData()"
-            [status]="$trafficVsConversionsStatus()"
-            data-testid="analytics-traffic-conversions-chart" />
+
+    <!-- Content Conversions Table -->
+    <div>
+        <h3 class="text-lg font-bold mb-2">
+            {{ 'analytics.table.content-conversions.title' | dm }}
+        </h3>
+        <dot-analytics-content-conversions-table
+            [data]="$contentConversionsData()"
+            [status]="$contentConversionsStatus()" />
     </div>
-</div>
 
-<!-- Content Conversions Table -->
-<div>
-    <h3 class="text-lg font-bold mb-2">{{ 'analytics.table.content-conversions.title' | dm }}</h3>
-    <dot-analytics-content-conversions-table
-        [data]="$contentConversionsData()"
-        [status]="$contentConversionsStatus()" />
-</div>
-
-<!-- Conversions Overview Table -->
-<div>
-    <h3 class="text-lg font-bold mb-2">{{ 'analytics.table.conversions-overview.title' | dm }}</h3>
-    <dot-analytics-conversions-overview-table
-        [data]="$conversionsOverviewData()"
-        [status]="$conversionsOverviewStatus()" />
+    <!-- Conversions Overview Table -->
+    <div>
+        <h3 class="text-lg font-bold mb-2">
+            {{ 'analytics.table.conversions-overview.title' | dm }}
+        </h3>
+        <dot-analytics-conversions-overview-table
+            [data]="$conversionsOverviewData()"
+            [status]="$conversionsOverviewStatus()" />
+    </div>
 </div>

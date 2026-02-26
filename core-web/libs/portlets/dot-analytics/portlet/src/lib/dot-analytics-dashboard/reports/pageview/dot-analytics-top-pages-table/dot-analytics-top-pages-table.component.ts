@@ -91,14 +91,4 @@ export class DotAnalyticsTopPagesTableComponent {
                 SKELETON_WIDTH_MAP.text
         }));
     });
-
-    /**
-     * Track function for skeleton rows to improve performance
-     */
-    protected trackByIndex = (index: number): number => index;
-
-    /**
-     * Track function for table columns
-     */
-    protected trackByField = (index: number, column: TableColumn): string => column.field;
 }

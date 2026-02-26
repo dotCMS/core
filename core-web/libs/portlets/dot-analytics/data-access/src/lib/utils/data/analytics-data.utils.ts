@@ -613,7 +613,9 @@ type EmptyEntityFactory<T> = (date: Date, dateKey: string) => T;
  * Generic factory for TimelineEntity types.
  * Used for PageViewTimeLineEntity and ConversionTrendEntity which share the same structure.
  */
-export const createEmptyAnalyticsEntity = <T extends TimelineEntity>(
+export const createEmptyAnalyticsEntity = <
+    T extends TimelineEntity & { 'EventSummary.totalEvents': string }
+>(
     date: Date,
     dateKey: string
 ): T =>
@@ -621,7 +623,7 @@ export const createEmptyAnalyticsEntity = <T extends TimelineEntity>(
         'EventSummary.day': dateKey,
         'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
         'EventSummary.totalEvents': '0'
-    }) as unknown as T;
+    }) as T;
 
 /**
  * Factory for TrafficVsConversionsEntity

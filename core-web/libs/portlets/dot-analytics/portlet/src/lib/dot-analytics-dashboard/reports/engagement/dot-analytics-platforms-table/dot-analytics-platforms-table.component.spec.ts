@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -28,24 +28,13 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAnalyticsPlatformsTableComponent,
         imports: [DotMessagePipe],
-        providers: [
-            {
-                provide: DotMessageService,
-                useValue: {
-                    get: (key: string) => key
-                }
-            }
-        ]
+        providers: [mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })]
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                platforms: mockPlatformsData,
-                status: ComponentStatus.LOADED
-            } as unknown,
-            detectChanges: false
-        });
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('platforms', mockPlatformsData);
+        spectator.setInput('status', ComponentStatus.LOADED);
     });
 
     describe('Component Initialization', () => {

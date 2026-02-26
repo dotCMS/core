@@ -21,11 +21,31 @@
                 <!-- Device Tab -->
                 <p-tabpanel value="device">
                     @if (isLoading) {
-                        <ng-container [ngTemplateOutlet]="skeletonTable" />
+                        <div class="skeleton-table" data-testid="platforms-skeleton">
+                            <div class="skeleton-row skeleton-header">
+                                <p-skeleton width="5rem" height="1rem" />
+                                <p-skeleton width="6rem" height="1rem" />
+                                <div class="flex justify-end">
+                                    <p-skeleton width="4rem" height="1rem" />
+                                </div>
+                            </div>
+                            @for (i of [1, 2, 3]; track i) {
+                                <div class="skeleton-row">
+                                    <p-skeleton width="5rem" height="1rem" />
+                                    <div class="flex flex-col gap-1">
+                                        <p-skeleton width="6rem" height="1rem" />
+                                        <p-skeleton width="100%" height="0.5rem" />
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <p-skeleton width="4rem" height="1rem" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
                     } @else if (deviceData.length === 0) {
                         <dot-analytics-empty-state
                             data-testid="platforms-empty-device"
-                            style="min-height: 12rem" />
+                            class="min-h-48" />
                     } @else {
                         <p-table [value]="deviceData" styleClass="platforms-table">
                             <ng-template pTemplate="header">
@@ -63,11 +83,31 @@
                 <!-- Browser Tab -->
                 <p-tabpanel value="browser">
                     @if (isLoading) {
-                        <ng-container [ngTemplateOutlet]="skeletonTable" />
+                        <div class="skeleton-table" data-testid="platforms-skeleton">
+                            <div class="skeleton-row skeleton-header">
+                                <p-skeleton width="5rem" height="1rem" />
+                                <p-skeleton width="6rem" height="1rem" />
+                                <div class="flex justify-end">
+                                    <p-skeleton width="4rem" height="1rem" />
+                                </div>
+                            </div>
+                            @for (i of [1, 2, 3]; track i) {
+                                <div class="skeleton-row">
+                                    <p-skeleton width="5rem" height="1rem" />
+                                    <div class="flex flex-col gap-1">
+                                        <p-skeleton width="6rem" height="1rem" />
+                                        <p-skeleton width="100%" height="0.5rem" />
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <p-skeleton width="4rem" height="1rem" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
                     } @else if (browserData.length === 0) {
                         <dot-analytics-empty-state
                             data-testid="platforms-empty-browser"
-                            style="min-height: 12rem" />
+                            class="min-h-48" />
                     } @else {
                         <p-table [value]="browserData" styleClass="platforms-table">
                             <ng-template pTemplate="header">
@@ -105,30 +145,3 @@
         </p-tabs>
     }
 </p-card>
-
-<!-- Skeleton Table Template -->
-<ng-template #skeletonTable>
-    <div class="skeleton-table">
-        <!-- Header skeleton -->
-        <div class="skeleton-row skeleton-header">
-            <p-skeleton width="5rem" height="1rem" />
-            <p-skeleton width="6rem" height="1rem" />
-            <div class="flex justify-end">
-                <p-skeleton width="4rem" height="1rem" />
-            </div>
-        </div>
-        <!-- Body rows skeleton -->
-        @for (i of [1, 2, 3]; track i) {
-            <div class="skeleton-row">
-                <p-skeleton width="5rem" height="1rem" />
-                <div class="flex flex-col gap-1">
-                    <p-skeleton width="6rem" height="1rem" />
-                    <p-skeleton width="100%" height="0.5rem" />
-                </div>
-                <div class="flex justify-end">
-                    <p-skeleton width="4rem" height="1rem" />
-                </div>
-            </div>
-        }
-    </div>
-</ng-template>

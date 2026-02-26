@@ -24,8 +24,8 @@ const EMPTY_KPIS: EngagementKPIs = {
     conversionRate: { value: '0%', trend: 0, label: 'Conversion Rate' }
 };
 
-function parseNum(s: string | undefined): number {
-    if (s === undefined || s === null || s === '') return 0;
+function parseNum(s: string | undefined | null): number {
+    if (!s) return 0;
     const n = Number(s);
     return Number.isFinite(n) ? n : 0;
 }
@@ -46,7 +46,7 @@ export function formatSecondsToTime(seconds: number): string {
  * - When both 0: returns 0.
  * - Otherwise: normal percentage change.
  */
-export function computeTrendPercent(current: number, previous: number): number {
+export function computeTrendPercent(current: number, previous: number | null | undefined): number {
     const prev = previous ?? 0;
     if (prev === 0) {
         return current > 0 ? 100 : 0;

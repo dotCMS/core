@@ -56,12 +56,8 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
 
     describe('Loading State', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    data: [],
-                    status: ComponentStatus.LOADING
-                } as unknown
-            });
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput({ data: [], status: ComponentStatus.LOADING });
         });
 
         it('should display loading skeleton when isLoading is true', () => {
@@ -76,12 +72,8 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
 
     describe('Error State', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    data: [],
-                    status: ComponentStatus.ERROR
-                } as unknown
-            });
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput({ data: [], status: ComponentStatus.ERROR });
         });
 
         it('should display error message when isError is true', () => {
@@ -96,12 +88,8 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
 
     describe('Empty State', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    data: [],
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput({ data: [], status: ComponentStatus.LOADED });
         });
 
         it('should display empty message when isEmpty is true', () => {
@@ -116,12 +104,8 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
 
     describe('Data Display', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    data: mockData,
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput({ data: mockData, status: ComponentStatus.LOADED });
         });
 
         it('should display table with data', () => {

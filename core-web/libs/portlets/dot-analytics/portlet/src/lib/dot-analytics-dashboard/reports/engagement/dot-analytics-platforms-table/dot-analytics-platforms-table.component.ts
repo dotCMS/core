@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
@@ -33,7 +32,6 @@ export interface PlatformsData {
 @Component({
     selector: 'dot-analytics-platforms-table',
     imports: [
-        CommonModule,
         CardModule,
         TabsModule,
         TableModule,

@@ -36,7 +36,7 @@ import { DotAnalyticsFiltersComponent } from './shared/components/dot-analytics-
 const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-banner';
 
 @Component({
-    selector: 'lib-dot-analytics-dashboard',
+    selector: 'dot-analytics-dashboard',
     imports: [
         CommonModule,
         ButtonModule,
@@ -59,7 +59,7 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
 export default class DotAnalyticsDashboardComponent {
     readonly #globalStore = inject(GlobalStore);
     /** Analytics dashboard store providing data and actions */
-    readonly store = inject(DotAnalyticsDashboardStore);
+    protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #localStorageService = inject(DotLocalstorageService);
 

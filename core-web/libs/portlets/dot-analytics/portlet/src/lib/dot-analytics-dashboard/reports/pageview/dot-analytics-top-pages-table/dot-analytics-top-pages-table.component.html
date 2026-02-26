@@ -11,7 +11,7 @@
     <div class="flex flex-col gap-3">
         <div class="p-datatable p-datatable-sm">
             <div class="p-datatable-header-row flex p-3">
-                @for (columnConfig of columnsConfig; track trackByField($index, columnConfig)) {
+                @for (columnConfig of columnsConfig; track columnConfig.field) {
                     <div
                         [class]="columnConfig.cssClass"
                         class="flex-1"
@@ -21,9 +21,9 @@
                 }
             </div>
 
-            @for (row of skeletonRows; track trackByIndex($index)) {
+            @for (row of skeletonRows; track $index) {
                 <div class="flex p-3">
-                    @for (columnConfig of columnsConfig; track trackByField($index, columnConfig)) {
+                    @for (columnConfig of columnsConfig; track columnConfig.field) {
                         <div
                             [class]="columnConfig.cssClass"
                             class="flex-1"
@@ -53,7 +53,7 @@
         [sortMode]="tableConfig.SORT_MODE">
         <ng-template pTemplate="header" let-columns>
             <tr>
-                @for (columnConfig of columnsConfig; track trackByField($index, columnConfig)) {
+                @for (columnConfig of columnsConfig; track columnConfig.field) {
                     <th
                         [class]="columnConfig.cssClass"
                         [pSortableColumn]="columnConfig.sortable ? columnConfig.field : undefined"
@@ -69,7 +69,7 @@
 
         <ng-template pTemplate="body" let-row let-rowIndex="rowIndex" let-columns="columns">
             <tr>
-                @for (columnConfig of columnsConfig; track trackByField($index, columnConfig)) {
+                @for (columnConfig of columnsConfig; track columnConfig.field) {
                     <td [class]="columnConfig.cssClass">
                         @switch (columnConfig.type) {
                             @case ('link') {

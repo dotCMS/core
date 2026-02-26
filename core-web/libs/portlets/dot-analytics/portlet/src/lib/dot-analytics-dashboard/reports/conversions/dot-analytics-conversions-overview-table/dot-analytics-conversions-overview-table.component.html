@@ -7,15 +7,15 @@
     <div class="skeleton-table" data-testid="conversions-overview-loading">
         <div class="skeleton-table__header">
             <div class="flex-[2]"><p-skeleton height="1rem" width="60%" /></div>
-            <div style="width: 5rem"><p-skeleton height="1rem" width="80%" /></div>
-            <div style="width: 5.5rem"><p-skeleton height="1rem" width="80%" /></div>
+            <div class="w-20"><p-skeleton height="1rem" width="80%" /></div>
+            <div class="w-[5.5rem]"><p-skeleton height="1rem" width="80%" /></div>
             <div class="flex-[2]"><p-skeleton height="1rem" width="50%" /></div>
         </div>
         @for (i of [1, 2, 3, 4, 5]; track i) {
             <div class="skeleton-table__row">
                 <div class="flex-[2]"><p-skeleton height="1rem" width="70%" /></div>
-                <div style="width: 5rem"><p-skeleton height="1rem" width="50%" /></div>
-                <div style="width: 5.5rem"><p-skeleton height="1rem" width="60%" /></div>
+                <div class="w-20"><p-skeleton height="1rem" width="50%" /></div>
+                <div class="w-[5.5rem]"><p-skeleton height="1rem" width="60%" /></div>
                 <div class="flex-[2]"><p-skeleton height="1rem" width="55%" /></div>
             </div>
         }

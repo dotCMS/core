@@ -24,12 +24,19 @@ import {
     SPARKLINE_ANIMATION_DURATION
 } from '../../plugins';
 import { AnalyticsChartColors, ChartData } from '../../types';
+import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';
 import { hexToRgba } from '../../utils/dot-analytics.utils';
 
-/** Data point for sparkline with date and value */
-export interface SparklineDataPoint {
-    date: string;
-    value: number;
+/** Context object passed to the Chart.js external tooltip callback */
+interface SparklineTooltipContext {
+    chart: { width: number };
+    tooltip: {
+        opacity: number;
+        caretX: number;
+        caretY: number;
+        title?: string[];
+        dataPoints?: { datasetIndex: number; parsed: { y: number } }[];
+    };
 }
 
 /** Single series for sparkline (e.g. current or previous period) */
@@ -323,19 +330,7 @@ export class DotAnalyticsSparklineComponent {
                 legend: { display: false },
                 tooltip: {
                     enabled: false,
-                    external: ({
-                        chart,
-                        tooltip
-                    }: {
-                        chart: { width: number };
-                        tooltip: {
-                            opacity: number;
-                            caretX: number;
-                            caretY: number;
-                            title?: string[];
-                            dataPoints?: { datasetIndex: number; parsed: { y: number } }[];
-                        };
-                    }) => {
+                    external: ({ chart, tooltip }: SparklineTooltipContext) => {
                         if (!tooltip.opacity || !tooltip.dataPoints?.length) {
                             this.#ngZone.run(() => this.$hoverInfo.set(null));
                             return;

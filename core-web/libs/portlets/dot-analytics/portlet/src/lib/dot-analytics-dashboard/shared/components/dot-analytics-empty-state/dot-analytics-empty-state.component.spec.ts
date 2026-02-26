@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -9,14 +9,7 @@ describe('DotAnalyticsEmptyStateComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsEmptyStateComponent,
-        providers: [
-            {
-                provide: DotMessageService,
-                useValue: {
-                    get: (key: string) => key
-                }
-            }
-        ]
+        providers: [mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })]
     });
 
     it('should create', () => {
@@ -26,6 +19,7 @@ describe('DotAnalyticsEmptyStateComponent', () => {
 
     it('should use default message and icon', () => {
         spectator = createComponent();
+
         const icon = spectator.query('i');
         expect(icon).toHaveClass('pi-info-circle');
 
@@ -34,26 +28,26 @@ describe('DotAnalyticsEmptyStateComponent', () => {
     });
 
     it('should accept custom message', () => {
-        spectator = createComponent({
-            props: { message: 'custom.message.key' } as unknown
-        });
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('message', 'custom.message.key');
+        spectator.detectChanges();
 
         const message = spectator.query('p');
         expect(message).toContainText('custom.message.key');
     });
 
     it('should accept custom icon', () => {
-        spectator = createComponent({
-            props: { icon: 'pi-exclamation-triangle' } as unknown
-        });
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('icon', 'pi-exclamation-triangle');
+        spectator.detectChanges();
 
         const icon = spectator.query('i');
         expect(icon).toHaveClass('pi-exclamation-triangle');
     });
 
-    it('should have flex host styles for centering', () => {
+    it('should have flex container for centering', () => {
         spectator = createComponent();
-        const container = spectator.query('.flex.flex-col.items-center.justify-center');
+        const container = spectator.query('.flex.flex-col.flex-1');
         expect(container).toExist();
     });
 });

@@ -50,7 +50,7 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
 })
 export default class DotAnalyticsConversionsReportComponent implements OnInit {
     /** Analytics dashboard store providing conversions data and actions */
-    readonly store = inject(DotAnalyticsDashboardStore);
+    protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
 

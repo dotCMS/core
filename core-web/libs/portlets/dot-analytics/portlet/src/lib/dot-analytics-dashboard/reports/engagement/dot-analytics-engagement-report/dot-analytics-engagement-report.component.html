@@ -1,4 +1,4 @@
-<div class="engagement-dashboard flex flex-col gap-4">
+<div class="engagement-dashboard flex flex-col gap-10">
     @let kpis = $kpis();
     @let kpisStatus = $kpisStatus();
 
@@ -12,6 +12,7 @@
             [status]="kpisStatus">
             <i
                 titleAction
+                data-testid="engagement-info-icon"
                 class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
                 (click)="$showCalculationDialog.set(true)"></i>
             <dot-analytics-sparkline
@@ -22,7 +23,7 @@
         </dot-analytics-metric>
     </div>
 
-    <div class="engagement-dashboard__metrics-row grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div class="engagement-dashboard__metrics-row grid grid-cols-1 md:grid-cols-3 gap-6">
         <dot-analytics-metric
             [title]="'analytics.engagement.metrics.avg-interactions'"
             [value]="kpis?.avgInteractions?.value ?? ''"
@@ -44,7 +45,7 @@
     </div>
 
     @defer (on viewport) {
-        <div class="engagement-dashboard__bottom-row flex flex-col lg:flex-row gap-3 items-stretch">
+        <div class="engagement-dashboard__bottom-row flex flex-col lg:flex-row gap-6 items-stretch">
             <div class="flex flex-col lg:w-5/12 shrink-0">
                 <dot-analytics-chart
                     [title]="'analytics.engagement.charts.breakdown.title'"
@@ -61,7 +62,7 @@
             </div>
         </div>
     } @placeholder {
-        <div data-testid="deferred-placeholder" style="min-height: 24rem"></div>
+        <div data-testid="deferred-placeholder" class="min-h-96"></div>
     }
 </div>
 
@@ -91,4 +92,9 @@
     <p class="text-color-secondary mt-3 mb-0">
         {{ 'analytics.engagement.dialog.how-calculated.conclusion' | dm }}
     </p>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'analytics.engagement.dialog.how-calculated.got-it' | dm"
+            (onClick)="$showCalculationDialog.set(false)" />
+    </ng-template>
 </p-dialog>

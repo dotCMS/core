@@ -13,12 +13,8 @@ describe('DotAnalyticsStateMessageComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                message: 'test.message',
-                icon: 'pi-info-circle'
-            }
-        });
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput({ message: 'test.message', icon: 'pi-info-circle' });
     });
 
     it('should create', () => {
@@ -44,6 +40,7 @@ describe('DotAnalyticsStateMessageComponent', () => {
 
     it('should update icon classes when inputs change', () => {
         spectator.setInput('icon', 'pi-exclamation-triangle');
+        spectator.detectChanges();
 
         const iconElement = spectator.query('i');
 
@@ -54,6 +51,7 @@ describe('DotAnalyticsStateMessageComponent', () => {
     it('should apply custom icon size and color', () => {
         spectator.setInput('iconSize', 'text-xl');
         spectator.setInput('iconColor', 'text-red-500');
+        spectator.detectChanges();
 
         const iconElement = spectator.query('i');
 
@@ -65,6 +63,7 @@ describe('DotAnalyticsStateMessageComponent', () => {
 
     it('should apply additional icon classes', () => {
         spectator.setInput('iconClasses', 'custom-class');
+        spectator.detectChanges();
 
         const iconElement = spectator.query('i');
 

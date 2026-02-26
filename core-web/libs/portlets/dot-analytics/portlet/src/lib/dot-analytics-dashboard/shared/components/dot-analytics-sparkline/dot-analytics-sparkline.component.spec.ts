@@ -1,10 +1,10 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';
 
 import {
     DotAnalyticsSparklineComponent,
-    SparklineDataPoint,
     SparklineDataset
 } from './dot-analytics-sparkline.component';
 
@@ -30,13 +30,8 @@ describe('DotAnalyticsSparklineComponent', () => {
     const mockDatasets: SparklineDataset[] = [{ data: mockData }];
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                datasets: mockDatasets,
-                status: ComponentStatus.LOADED
-            } as unknown,
-            detectChanges: false
-        });
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput({ datasets: mockDatasets, status: ComponentStatus.LOADED });
     });
 
     describe('Component Initialization', () => {
