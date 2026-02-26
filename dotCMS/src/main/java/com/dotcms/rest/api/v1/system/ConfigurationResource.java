@@ -4,36 +4,22 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
-import com.dotmarketing.exception.InvalidTimeZoneException;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.vavr.Tuple2;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
-
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -43,7 +29,6 @@ import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Config;
-import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -232,70 +217,6 @@ public class ConfigurationResource implements Serializable {
 		final Tuple2<String, String> mailAndSender = helper.parseMailAndSender(form.getSenderAndEmail());
 		helper.sendValidationEmail(mailAndSender._1, mailAndSender._2, dataObject.getUser());
 		return Response.ok(new ResponseEntityView(OK)).build();
-	}
-
-	/**
-	 * Saves company locale information (language and timezone).
-	 * Updates the default company user's locale, sets the JVM-wide default timezone,
-	 * and flushes the user cache.
-	 *
-	 * @param request  the HTTP request
-	 * @param response the HTTP response
-	 * @param form     the locale form containing languageId and timeZoneId
-	 * @return success response or error
-	 */
-	@Operation(
-			summary = "Save company locale info",
-			description = "Updates the locale (language and timezone) for the current company. "
-					+ "This sets the default language and timezone for the system."
-	)
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200",
-					description = "Locale settings updated successfully",
-					content = @Content(mediaType = "application/json",
-							schema = @Schema(implementation = ResponseEntityStringView.class))),
-			@ApiResponse(responseCode = "400",
-					description = "Invalid locale parameters (e.g. invalid timezone)",
-					content = @Content(mediaType = "application/json")),
-			@ApiResponse(responseCode = "401",
-					description = "Unauthorized - CMS Administrator role required",
-					content = @Content(mediaType = "application/json"))
-	})
-	@POST
-	@Path("/_saveCompanyLocaleInfo")
-	@JSONP
-	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	@Consumes(MediaType.APPLICATION_JSON)
-	public Response saveCompanyLocaleInfo(
-			@Context final HttpServletRequest request,
-			@Context final HttpServletResponse response,
-			@RequestBody(description = "Locale settings to apply", required = true,
-					content = @Content(schema = @Schema(implementation = CompanyLocaleForm.class)))
-			final CompanyLocaleForm form) {
-
-		final InitDataObject initData = new InitBuilder(request, response)
-				.requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-				.requiredPortlet("maintenance")
-				.rejectWhenNoUser(true)
-				.init();
-
-		if (!UtilMethods.isSet(form.getLanguageId()) || !UtilMethods.isSet(form.getTimeZoneId())) {
-			return ExceptionMapperUtil.createResponse(
-					"Both languageId and timeZoneId are required",
-					Response.Status.BAD_REQUEST);
-		}
-
-		try {
-			helper.saveCompanyLocaleInfo(form.getLanguageId(), form.getTimeZoneId(), initData.getUser());
-			return Response.ok(new ResponseEntityView<>(OK)).build();
-		} catch (InvalidTimeZoneException e) {
-			Logger.error(this, "Invalid timezone: " + e.getMessage());
-			return ExceptionMapperUtil.createResponse(e.getMessage(), Response.Status.BAD_REQUEST);
-		} catch (Exception e) {
-			Logger.error(this, "Error saving locale information: " + e.getMessage(), e);
-			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
 	}
 
 }
