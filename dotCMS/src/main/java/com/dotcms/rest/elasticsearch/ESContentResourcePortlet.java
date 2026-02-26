@@ -2,7 +2,7 @@ package com.dotcms.rest.elasticsearch;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.rest.BaseRestPortlet;
-import com.dotcms.rest.ContentResource;
+import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.WebResource;
@@ -18,15 +18,6 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-import io.swagger.v3.oas.annotations.Hidden;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.IOUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,11 +32,19 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static com.dotmarketing.util.NumberUtil.toInt;
 
 @Path("/es")
-@Tag(name = "Elasticsearch Content Search", description = "Elasticsearch-based content search and raw query endpoints")
+@Tag(name = "Elasticsearch Content Search", description = "Backend Elasticsearch search endpoints for portlet context")
 public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	ContentletAPI esapi = APILocator.getContentletAPI();
@@ -70,27 +69,15 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	@Hidden
-	@Operation(
-			operationId = "searchContentByESGet",
-			summary = "Search content via ES (use POST instead)",
-			description = "Performs an Elasticsearch content search using a GET request. " +
-					"This endpoint is hidden from the API documentation because the POST " +
-					"variant should be used instead to properly send the ES query in the request body."
-	)
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search")
+	@Hidden
+	@Operation(hidden = true)
 	public Response search(@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response, final String esQueryStr,
-			@Parameter(description = "Relationship depth for related contentlets. " +
-					"0=identifiers only, 1=related objects, 2=related with their identifiers, " +
-					"3=related with their related objects. Null omits relationships.")
 			@QueryParam("depth") final String depthParam,
-			@Parameter(description = "If true, returns only live content; if false, returns working content")
 			@QueryParam("live") final boolean liveParam,
-			@Parameter(description = "If true, returns full category details (key, name, description) " +
-					"instead of just category names")
 			@QueryParam("allCategoriesInfo") final boolean allCategoriesInfo)
 			throws DotDataException, DotSecurityException {
 
@@ -132,15 +119,15 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			for(Object x : esresult){
 				final Contentlet c = (Contentlet) x;
 				try {
-
-					final JSONObject jsonObject = ContentResource
-							.contentletToJSON(c, request, response,
+					final ContentHelper contentHelper = ContentHelper.getInstance();
+					final JSONObject jsonObject = contentHelper
+							.contentletToJSON(c, response,
 									"false", user, allCategoriesInfo);
 					jsonCons.put(jsonObject);
 
 					//load relationships
 					if (depth!= -1){
-						ContentResource
+						contentHelper
 								.addRelationshipsToJSON(request, response,
 										"false", user, depth, true, c,
 										jsonObject, null, -1, liveParam, allCategoriesInfo);
@@ -173,88 +160,79 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		}
 	}
 
-	@Operation(
-			operationId = "searchContentByES",
-			summary = "Search content using an Elasticsearch query",
-			description = "Performs a content search using a raw Elasticsearch query passed in the " +
-					"request body as JSON. Returns matching contentlets along with the raw ES " +
-					"response metadata. Supports relationship depth control and category info."
-	)
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Search results returned successfully",
-					content = @Content(mediaType = "application/json",
-							schema = @Schema(implementation = Object.class))),
-			@ApiResponse(responseCode = "400", description = "Invalid Elasticsearch query or invalid depth parameter",
-					content = @Content(mediaType = "application/json")),
-			@ApiResponse(responseCode = "401", description = "Authentication required",
-					content = @Content(mediaType = "application/json")),
-			@ApiResponse(responseCode = "403", description = "Insufficient permissions",
-					content = @Content(mediaType = "application/json"))
-	})
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
-	public Response searchPost(@Context final HttpServletRequest request,
-			@Context final HttpServletResponse response,
-			@RequestBody(
-					description = "Elasticsearch query in JSON format",
-					required = true,
+	@Operation(
+			operationId = "searchContentByESPost",
+			summary = "Search content using Elasticsearch query (POST)",
+			description = "Executes an Elasticsearch query against dotCMS content in a portlet context. " +
+					"The request body accepts an Elasticsearch JSON query. " +
+					"Results include matching contentlets and the raw Elasticsearch response metadata."
+	)
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+					description = "Elasticsearch search results returned successfully",
 					content = @Content(mediaType = "application/json",
-							schema = @Schema(implementation = Object.class))
-			)
-			final String esQuery,
-			@Parameter(description = "Relationship depth for related contentlets. " +
-					"0=identifiers only, 1=related objects, 2=related with their identifiers, " +
-					"3=related with their related objects. Null omits relationships.")
+							schema = @Schema(type = "object",
+									description = "Elasticsearch search results containing contentlets matching the query and raw ES response metadata"))),
+			@ApiResponse(responseCode = "400",
+					description = "Invalid Elasticsearch query syntax",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "401",
+					description = "Authentication required",
+					content = @Content(mediaType = "application/json"))
+	})
+	public Response searchPost(@Context final HttpServletRequest request,
+			@Context final HttpServletResponse response, final String esQuery,
+			@Parameter(description = "Depth of related content to include: 0=identifiers only, " +
+					"1=related contentlets, 2=related contentlets with their related identifiers, " +
+					"3=related contentlets with their related contentlets. Omit to exclude relationships.")
 			@QueryParam("depth") final String depthParam,
-			@Parameter(description = "If true, returns only live content; if false, returns working content")
+			@Parameter(description = "If true, search only live content; if false, search working content")
 			@QueryParam("live") final boolean liveParam,
-			@Parameter(description = "If true, returns full category details (key, name, description) " +
-					"instead of just category names")
+			@Parameter(description = "If true, return full category details (key, name, description); " +
+					"if false, return only category names")
 			@QueryParam("allCategoriesInfo") final boolean allCategoriesInfo)
 			throws DotDataException, DotSecurityException {
 		return search(request, response, esQuery, depthParam, liveParam, allCategoriesInfo);
 	}
 	
-	@Hidden
-	@Operation(
-			operationId = "searchRawESGet",
-			summary = "Raw ES search via GET (use POST instead)",
-			description = "Performs a raw Elasticsearch search using a GET request. " +
-					"This endpoint is hidden from the API documentation because the POST " +
-					"variant should be used instead to properly send the ES query in the request body."
-	)
 	@GET
 	@Path("raw")
 	@Produces(MediaType.APPLICATION_JSON)
+	@Hidden
+	@Operation(hidden = true)
 	public Response searchRawGet(@Context HttpServletRequest request) {
 		return searchRaw(request);
 
 	}
 
-	@Operation(
-			operationId = "searchRawES",
-			summary = "Perform a raw Elasticsearch search",
-			description = "Executes a raw Elasticsearch query and returns the unprocessed ES " +
-					"response. The ES query JSON is read from the request body. Unlike the " +
-					"/search endpoint, this returns the raw Elasticsearch response without " +
-					"transforming contentlets into the standard dotCMS JSON format."
-	)
-	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Raw Elasticsearch response returned successfully",
-					content = @Content(mediaType = "application/json",
-							schema = @Schema(implementation = Object.class))),
-			@ApiResponse(responseCode = "400", description = "Invalid Elasticsearch query",
-					content = @Content(mediaType = "application/json")),
-			@ApiResponse(responseCode = "401", description = "Authentication required",
-					content = @Content(mediaType = "application/json")),
-			@ApiResponse(responseCode = "403", description = "Insufficient permissions",
-					content = @Content(mediaType = "application/json"))
-	})
 	@POST
 	@Path("raw")
 	@Produces(MediaType.APPLICATION_JSON)
+	@Operation(
+			operationId = "rawSearchContentByESPost",
+			summary = "Execute raw Elasticsearch query (POST)",
+			description = "Executes a raw Elasticsearch query and returns the unprocessed Elasticsearch response " +
+					"in a portlet context. The request body accepts an Elasticsearch JSON query. " +
+					"Unlike the /search endpoint, results are returned directly from Elasticsearch without " +
+					"additional contentlet processing."
+	)
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+					description = "Raw Elasticsearch response returned successfully",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(type = "object",
+									description = "Raw Elasticsearch response including hits, aggregations, and metadata"))),
+			@ApiResponse(responseCode = "400",
+					description = "Invalid Elasticsearch query",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "401",
+					description = "Authentication required",
+					content = @Content(mediaType = "application/json"))
+	})
 	public Response searchRaw(@Context HttpServletRequest request) {
 
         InitDataObject initData = webResource.init(null, true, request, false, null);

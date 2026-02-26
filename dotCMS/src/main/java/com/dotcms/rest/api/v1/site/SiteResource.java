@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.util.IdentifierValidator;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -145,19 +146,16 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "getCurrentSite",
-            summary = "Get the current site from the user session",
-            description = "Returns the Site currently selected in the user's HTTP session. " +
-                    "In the front-end, this is the site shown in the Site Selector. " +
-                    "The site identifier is also known as hostId or host in other API endpoints."
-    )
+    @Operation(operationId = "getCurrentSite",
+            summary = "Get the current site for the logged-in user",
+            description = "Returns the site currently selected in the user's HTTP session. " +
+                    "Used by the Site Selector component in the UI. If no site is set in the session, " +
+                    "the first available site for the user is returned.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Current site retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityHostView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access sites"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public final Response currentSite(@Context final HttpServletRequest httpServletRequest,
@@ -195,18 +193,14 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "getDefaultSite",
+    @Operation(operationId = "getDefaultSite",
             summary = "Get the default site",
-            description = "Returns the site marked as the default site in dotCMS. " +
-                    "The site identifier is also known as hostId or host in other API endpoints."
-    )
+            description = "Returns the site marked as the default site in the system.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Default site retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityHostView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access sites"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public final Response defaultSite(@Context final HttpServletRequest httpServletRequest,
@@ -250,30 +244,32 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "getSites",
-            summary = "Get a paginated list of sites",
-            description = "Returns a paginated list of sites that the authenticated user has access to. " +
-                    "Results can be filtered by name, archived status, live status, and system site inclusion. " +
-                    "Each site identifier is also known as hostId or host in other API endpoints."
-    )
+    @Operation(operationId = "getSites",
+            summary = "List sites with pagination",
+            description = "Returns a paginated list of sites that the currently logged-in user has access to. " +
+                    "Supports filtering by name, archived status, live status, and system site inclusion.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Sites retrieved successfully",
+            @ApiResponse(responseCode = "200", description = "Paginated list of sites retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityListMapView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access sites"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public final Response sites(
             @Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @Parameter(description = "Filter string to match against site name") @QueryParam(PaginationUtil.FILTER)   final String filterParam,
-            @Parameter(description = "If true, include archived sites") @QueryParam(SitePaginator.ARCHIVED_PARAMETER_NAME) final Boolean showArchived,
-            @Parameter(description = "If true, include only live sites") @QueryParam(SitePaginator.LIVE_PARAMETER_NAME) final Boolean showLive,
-            @Parameter(description = "If true, include the system site") @QueryParam(SitePaginator.SYSTEM_PARAMETER_NAME) final Boolean showSystem,
-            @Parameter(description = "Page number (zero-based)") @QueryParam(PaginationUtil.PAGE) final int page,
-            @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage
+            @Parameter(description = "Filter string for site names. Use '*' suffix for wildcard matching, or 'all' to return all sites")
+            @QueryParam(PaginationUtil.FILTER)   final String filterParam,
+            @Parameter(description = "Include archived sites in the results")
+            @QueryParam(SitePaginator.ARCHIVED_PARAMETER_NAME) final Boolean showArchived,
+            @Parameter(description = "Filter to show only live sites")
+            @QueryParam(SitePaginator.LIVE_PARAMETER_NAME) final Boolean showLive,
+            @Parameter(description = "Include the system site in the results")
+            @QueryParam(SitePaginator.SYSTEM_PARAMETER_NAME) final Boolean showSystem,
+            @Parameter(description = "Page number for pagination (zero-based)")
+            @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of results per page")
+            @QueryParam(PaginationUtil.PER_PAGE) final int perPage
     ) {
 
         Response response = null;
@@ -318,25 +314,23 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "switchSiteById",
-            summary = "Switch the active site by ID",
-            description = "Changes the currently active site in the user session to the site identified by the " +
-                    "given ID. The site ID (also known as hostId or host in other endpoints) must correspond to " +
-                    "a site the user has access to."
-    )
+    @Operation(operationId = "switchSiteById",
+            summary = "Switch to a specific site",
+            description = "Switches the current user's active site to the specified site. " +
+                    "The 'id' path parameter represents the site identifier (also referred to as 'siteId' or 'hostId' in the API).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site switched successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteSwitchView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
-            @ApiResponse(responseCode = "404", description = "Site not found")
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access the specified site"),
+            @ApiResponse(responseCode = "404", description = "Site not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public final Response switchSite(
             @Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @Parameter(description = "Site identifier to switch to (also known as hostId or host)", required = true) @PathParam("id")   final String hostId
+            @Parameter(description = "Identifier of the site to switch to (siteId/hostId are used interchangeably)", required = true)
+            @PathParam("id")   final String hostId
     ) {
 
         Response response = null;
@@ -389,18 +383,14 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "switchToDefaultSite",
+    @Operation(operationId = "switchToDefaultSite",
             summary = "Switch to the user's default site",
-            description = "Switches the currently active site in the user session to the user's default site. " +
-                    "The returned site identifier is also known as hostId or host in other API endpoints."
-    )
+            description = "Switches the current user's active site to their default site.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Switched to default site successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityHostView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public final Response switchSite(
@@ -445,19 +435,15 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "getSiteThumbnails",
-            summary = "Get thumbnail information for all sites",
-            description = "Returns a list of all non-system sites with their thumbnail metadata, including " +
-                    "hostId, hostName, and whether a thumbnail image exists. The hostId in the response is " +
-                    "also known as siteId or host in other API endpoints."
-    )
+    @Operation(operationId = "findAllSiteThumbnails",
+            summary = "Get thumbnails for all sites",
+            description = "Returns a list of all sites with their thumbnail information, including hostId, " +
+                    "hostInode, hostName, hasThumbnail flag, and tagStorage. The system site is excluded from results.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site thumbnails retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityListMapView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access sites"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     public Response findAllSiteThumbnails(@Context final HttpServletRequest httpServletRequest,
@@ -514,24 +500,22 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "publishSite",
+    @Operation(operationId = "publishSite",
             summary = "Publish a site",
-            description = "Publishes the site identified by the given siteId, making it live. " +
-                    "The siteId parameter accepts a site identifier (also known as hostId or host in other endpoints). " +
-                    "Requires access to the Sites portlet."
-    )
+            description = "Publishes the specified site, making it live and accessible. " +
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site published successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request or site does not exist"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "400", description = "Site does not exist"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to publish sites")
     })
     public Response publishSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @Parameter(description = "Site identifier to publish (also known as hostId or host)", required = true) @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
+                                @Parameter(description = "Identifier of the site to publish (siteId/hostId are used interchangeably)", required = true)
+                                @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -570,24 +554,22 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "unpublishSite",
+    @Operation(operationId = "unpublishSite",
             summary = "Unpublish a site",
-            description = "Unpublishes the site identified by the given siteId, removing it from the live state. " +
-                    "The siteId parameter accepts a site identifier (also known as hostId or host in other endpoints). " +
-                    "Requires access to the Sites portlet."
-    )
+            description = "Unpublishes the specified site, removing it from live status. " +
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site unpublished successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to unpublish sites"),
             @ApiResponse(responseCode = "404", description = "Site not found")
     })
     public Response unpublishSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  @Parameter(description = "Site identifier to unpublish (also known as hostId or host)", required = true) @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
+                                  @Parameter(description = "Identifier of the site to unpublish (siteId/hostId are used interchangeably)", required = true)
+                                  @PathParam("siteId") final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -628,26 +610,24 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "archiveSite",
+    @Operation(operationId = "archiveSite",
             summary = "Archive a site",
-            description = "Archives the site identified by the given siteId. The default site cannot be archived. " +
+            description = "Archives the specified site. The default site cannot be archived. " +
                     "If the site is locked, it will be unlocked before archiving. " +
-                    "The siteId parameter accepts a site identifier (also known as hostId or host in other endpoints). " +
-                    "Requires access to the Sites portlet."
-    )
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site archived successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request, site is the default site, or site does not exist"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "400", description = "Cannot archive the default site, or site does not exist"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to archive sites"),
             @ApiResponse(responseCode = "404", description = "Site not found")
     })
     public Response archiveSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @Parameter(description = "Site identifier to archive (also known as hostId or host)", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException{
+                                @Parameter(description = "Identifier of the site to archive (siteId/hostId are used interchangeably)", required = true)
+                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException{
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -704,24 +684,22 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "unarchiveSite",
+    @Operation(operationId = "unarchiveSite",
             summary = "Unarchive a site",
-            description = "Restores a previously archived site to an active state. " +
-                    "The siteId parameter accepts a site identifier (also known as hostId or host in other endpoints). " +
-                    "Requires access to the Sites portlet."
-    )
+            description = "Restores a previously archived site to its active state. " +
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site unarchived successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request or site does not exist"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "400", description = "Site does not exist"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to unarchive sites")
     })
     public Response unarchiveSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  @Parameter(description = "Site identifier to unarchive (also known as hostId or host)", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                                  @Parameter(description = "Identifier of the site to unarchive (siteId/hostId are used interchangeably)", required = true)
+                                  @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -761,26 +739,24 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "deleteSite",
+    @Operation(operationId = "deleteSite",
             summary = "Delete a site",
-            description = "Deletes the site identified by the given siteId. The default site cannot be deleted; " +
-                    "you must designate another site as default before deleting. This is an asynchronous operation. " +
-                    "The siteId parameter accepts a site identifier (also known as hostId or host in other endpoints). " +
-                    "Requires access to the Sites portlet."
-    )
+            description = "Deletes the specified site asynchronously. The default site cannot be deleted; " +
+                    "you must first mark another site as default before deleting. " +
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Site deletion initiated successfully",
+            @ApiResponse(responseCode = "200", description = "Site deleted successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityBooleanView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request, site is the default, or site does not exist"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "400", description = "Cannot delete the default site, or site does not exist"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to delete sites")
     })
     public void deleteSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
                                 @Suspended final AsyncResponse asyncResponse,
-                                @Parameter(description = "Site identifier to delete (also known as hostId or host)", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                                @Parameter(description = "Identifier of the site to delete (siteId/hostId are used interchangeably)", required = true)
+                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -836,25 +812,22 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "makeDefaultSite",
-            summary = "Set a site as the default site",
-            description = "Marks the site identified by the given siteId as the default site in dotCMS. " +
-                    "Only one site can be the default at a time. " +
-                    "The siteId parameter accepts a site identifier (also known as hostId or host in other endpoints). " +
-                    "Requires access to the Sites portlet."
-    )
+    @Operation(operationId = "makeDefaultSite",
+            summary = "Mark a site as the default",
+            description = "Sets the specified site as the default site for the system. " +
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Site set as default successfully",
+            @ApiResponse(responseCode = "200", description = "Site marked as default successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityBooleanView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request or site does not exist"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "400", description = "Site does not exist"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to change the default site")
     })
     public Response makeDefault(@Context final HttpServletRequest httpServletRequest,
                            @Context final HttpServletResponse httpServletResponse,
-                           @Parameter(description = "Site identifier to set as default (also known as hostId or host)", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                           @Parameter(description = "Identifier of the site to mark as default (siteId/hostId are used interchangeably)", required = true)
+                           @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -892,24 +865,22 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "getSiteSetupProgress",
-            summary = "Get site asset copy progress",
-            description = "Returns the progress of the background site asset copy job for the specified site. " +
-                    "This is used during site duplication to track when assets are being copied. " +
-                    "The siteId parameter accepts a site identifier (also known as hostId or host in other endpoints). " +
-                    "Requires access to the Sites portlet."
-    )
+    @Operation(operationId = "getSiteSetupProgress",
+            summary = "Get site setup progress",
+            description = "Returns the progress of a background site asset copy operation. " +
+                    "This is used after a site copy to track the progress of the asset copying job. " +
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Setup progress retrieved successfully",
+            @ApiResponse(responseCode = "200", description = "Site setup progress retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteSetupProgressView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access site setup progress")
     })
     public Response getSiteSetupProgress(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
-                                @Parameter(description = "Site identifier to check setup progress (also known as hostId or host)", required = true) @PathParam("siteId")  final String siteId){
+                                @Parameter(description = "Identifier of the site whose setup progress to retrieve (siteId/hostId are used interchangeably)", required = true)
+                                @PathParam("siteId")  final String siteId){
 
         new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -942,23 +913,22 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "getSiteById",
+    @Operation(operationId = "getSiteById",
             summary = "Get a site by its identifier",
-            description = "Retrieves a site by its identifier. " +
-                    "The siteId parameter accepts a site identifier (also known as hostId or host in other endpoints)."
-    )
+            description = "Retrieves the full details of a site by its identifier. " +
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access this site"),
             @ApiResponse(responseCode = "404", description = "Site not found")
     })
     public Response findHostByIdentifier(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
-                                         @Parameter(description = "Site identifier (also known as hostId or host)", required = true) @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                                         @Parameter(description = "Identifier of the site to retrieve (siteId/hostId are used interchangeably)", required = true)
+                                         @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -998,20 +968,17 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "getSiteByName",
-            summary = "Find a site by its name",
-            description = "Retrieves a site by its hostname. The site name is sent via POST body " +
-                    "to avoid URL encoding issues. " +
-                    "The returned site identifier is also known as hostId or host in other API endpoints."
-    )
+    @Operation(operationId = "findSiteByName",
+            summary = "Find a site by name",
+            description = "Finds a site by its hostname. The site name is sent via POST body to avoid " +
+                    "URL-escaping issues with special characters in hostnames.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Site retrieved successfully",
+            @ApiResponse(responseCode = "200", description = "Site found successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request or site name is null"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "400", description = "Site name is null or invalid"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access sites"),
             @ApiResponse(responseCode = "404", description = "Site not found")
     })
     public Response findHostByName(@Context final HttpServletRequest httpServletRequest,
@@ -1061,22 +1028,18 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "createSite",
+    @Operation(operationId = "createSite",
             summary = "Create a new site",
-            description = "Creates a new site in dotCMS with the provided properties. " +
-                    "The siteName field is required. Optional properties include aliases, tagStorage, " +
-                    "keywords, description, googleMap, googleAnalytics, and others. " +
-                    "The returned site identifier is also known as hostId or host in other API endpoints. " +
-                    "Requires access to the Sites portlet."
-    )
+            description = "Creates a new site with the provided properties including hostname, aliases, " +
+                    "tag storage, SEO settings, and optional site variables.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site created successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request or siteName is null"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "400", description = "Invalid site data (e.g., missing site name, invalid identifier format)"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to create sites"),
+            @ApiResponse(responseCode = "409", description = "Site with the same name already exists")
     })
     public Response createNewSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
@@ -1098,6 +1061,19 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException("siteName can not be Null");
         }
 
+        // SECURITY: Validate site identifier format to prevent injection attacks
+        if (UtilMethods.isSet(newSiteForm.getIdentifier()) && 
+            !IdentifierValidator.isValid(newSiteForm.getIdentifier(), IdentifierValidator.NEW_SITE_PROFILE)) {
+            Logger.warn(this, "Invalid site identifier rejected in createNewSite");
+            throw new IllegalArgumentException("Invalid site identifier format");
+        }
+        
+        // SECURITY: Validate site name format to prevent injection attacks  
+        if (!IdentifierValidator.isValid(newSiteForm.getSiteName(), IdentifierValidator.NEW_SITE_PROFILE)) {
+            Logger.warn(this, "Invalid site name rejected in createNewSite");
+            throw new IllegalArgumentException("Invalid site name format");
+        }
+
         Logger.debug(this, "Creating the site: " + newSiteForm);
         newSite.setHostname(newSiteForm.getSiteName());
         if (UtilMethods.isSet(newSiteForm.getSiteThumbnail())) {
@@ -1117,6 +1093,8 @@ public class SiteResource implements Serializable {
         )).build();
     }
 
+
+
     /**
      * Copy the most common properties from the REST form into the Site object.
      * <p>It's very important to note that copying properties such as the Identifier, the Inode or
@@ -1134,6 +1112,7 @@ public class SiteResource implements Serializable {
 
         if (UtilMethods.isSet(siteForm.getTagStorage())) {
             final Host tagStorageSite =
+                    
                     Try.of(() -> this.siteHelper.getSite(APILocator.systemUser(), siteForm.getTagStorage())).getOrNull();
             if (null == tagStorageSite) {
                 throw new IllegalArgumentException(String.format("Tag Storage Site '%s' was not found", siteForm.getTagStorage()));
@@ -1203,13 +1182,18 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(summary = "Save a Site Variable",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseHostVariableEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "When a required value is not sent")})
+    @Operation(operationId = "saveSiteVariable",
+            summary = "Save a Site Variable",
+            description = "Creates or updates a site variable for the specified site. " +
+                    "If an ID or matching key is provided, the existing variable is updated; otherwise a new one is created.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Site variable saved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseHostVariableEntityView.class))),
+            @ApiResponse(responseCode = "400", description = "When a required value is not sent"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to manage site variables")
+    })
     public Response saveSiteVariable(@Context final HttpServletRequest httpServletRequest,
                                @Context final HttpServletResponse httpServletResponse,
                               final SiteVariableForm siteVariableForm)
@@ -1326,15 +1310,22 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(summary = "Retrieve the Site Variables for a site",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseSiteVariablesEntityView.class))),
-                    @ApiResponse(responseCode = "404", description = "When the site id does not exists")})
+    @Operation(operationId = "getSiteVariables",
+            summary = "Retrieve the Site Variables for a site",
+            description = "Returns all site variables associated with the specified site, including variable " +
+                    "names, keys, values, and last modifier information. " +
+                    "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Site variables retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseSiteVariablesEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access site variables"),
+            @ApiResponse(responseCode = "404", description = "When the site id does not exist")
+    })
     public Response getSiteVariables(@Context final HttpServletRequest httpServletRequest,
                                      @Context final HttpServletResponse httpServletResponse,
+                                     @Parameter(description = "Identifier of the site whose variables to retrieve (siteId/hostId are used interchangeably)", required = true)
                                      @PathParam("siteId")  final String siteId)
             throws DotDataException, DotSecurityException, LanguageException {
 
@@ -1396,26 +1387,24 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "updateSite",
+    @Operation(operationId = "updateSite",
             summary = "Update an existing site",
-            description = "Updates an existing site identified by the 'id' query parameter. " +
-                    "The site identifier (also known as hostId or host in other endpoints) is passed as a query parameter. " +
-                    "The siteName field is required. " +
-                    "Requires access to the Sites portlet."
-    )
+            description = "Updates the properties of an existing site. The site to update is identified by the 'id' " +
+                    "query parameter (also referred to as 'siteId' or 'hostId' in other parts of the API). " +
+                    "Requires access to the Sites portlet.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site updated successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request, missing id, or siteName is null"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "400", description = "Invalid site data (e.g., missing site name or id)"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to update sites"),
             @ApiResponse(responseCode = "404", description = "Site not found")
     })
     public Response updateSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
-                                  @Parameter(description = "Site identifier to update (also known as hostId or host)", required = true) @QueryParam("id") final String  siteIdentifier,
+                                  @Parameter(description = "Identifier of the site to update (siteId/hostId are used interchangeably)", required = true)
+                                  @QueryParam("id") final String  siteIdentifier,
                                   final SiteForm newSiteForm)
             throws DotDataException, DotSecurityException, LanguageException {
 
@@ -1489,22 +1478,19 @@ public class SiteResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-            operationId = "copySite",
+    @Operation(operationId = "copySite",
             summary = "Copy a site",
-            description = "Creates a new site and copies assets from the source site based on the provided copy options. " +
-                    "Assets can be selectively copied including templates, containers, folders, links, content on pages, " +
-                    "content on site, site variables, and content types. The asset copy runs as a background job. " +
-                    "Site identifiers (also known as hostId or host in other endpoints) are used to identify the source. " +
-                    "Requires a valid license and access to the Sites portlet."
-    )
+            description = "Creates a new site by copying an existing one. Optionally copies templates, containers, " +
+                    "folders, links, content on pages, content on site, site variables, and content types " +
+                    "based on the provided copy options. Asset copying runs as a background job. " +
+                    "Requires an Enterprise license.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Site copy initiated successfully",
+            @ApiResponse(responseCode = "200", description = "Site copied successfully and background asset copy initiated",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request or siteName is null"),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions or missing license"),
+            @ApiResponse(responseCode = "400", description = "Invalid copy parameters"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission or missing Enterprise license"),
             @ApiResponse(responseCode = "404", description = "Source site not found")
     })
     public Response copySite(@Context final HttpServletRequest httpServletRequest,
