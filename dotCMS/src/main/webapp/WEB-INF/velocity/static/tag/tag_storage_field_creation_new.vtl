@@ -27,7 +27,7 @@
         aria-haspopup="listbox"
         aria-expanded="false"
         #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled="disabled" #end
-      >Select host</button>
+      ><span id="tagStorageLabelSpan">Select host</span><i class="pi pi-chevron-down" aria-hidden="true"></i></button>
       <div id="tagStorageDropdown" class="custom-dropdown" role="listbox">
         #foreach($c in $tagStorageHostList)
           #if($c.isSystemHost)
@@ -66,20 +66,21 @@
       const button = document.getElementById("tagStorageSelectButton");
       const dropdown = document.getElementById("tagStorageDropdown");
       if (!holder || !button || !dropdown) return;
-      const defaultLabel = (button.textContent || "").trim();
+      const labelSpan = document.getElementById("tagStorageLabelSpan");
+      const defaultLabel = labelSpan ? (labelSpan.textContent || "").trim() : "";
 
       const options = Array.from(dropdown.querySelectorAll(".custom-option"));
       let selectedOption = dropdown.querySelector(".custom-option.selected");
       const currentValue = field ? (field.getValue() || "") : "";
       if (selectedOption && selectedOption.dataset.label) {
-        button.textContent = selectedOption.dataset.label;
+        if (labelSpan) labelSpan.textContent = selectedOption.dataset.label;
         button.classList.remove("placeholder");
       } else if (currentValue && options.length) {
         const match = options.find(function(o) { return o.dataset.identifier === currentValue; });
         if (match) {
           match.classList.add("selected");
           match.setAttribute("aria-selected", "true");
-          button.textContent = match.dataset.label || defaultLabel;
+          if (labelSpan) labelSpan.textContent = match.dataset.label || defaultLabel;
           button.classList.remove("placeholder");
           selectedOption = match;
         }
@@ -121,7 +122,7 @@
           const identifier = this.dataset.identifier;
           const label = this.dataset.label;
           if (field) field.setValue(identifier || "");
-          button.textContent = label || defaultLabel;
+          if (labelSpan) labelSpan.textContent = label || defaultLabel;
           button.classList.remove("placeholder");
           options.forEach(function(o) { o.classList.remove("selected"); });
           this.classList.add("selected");

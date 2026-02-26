@@ -1366,6 +1366,11 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.test(\"Categories were imported\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.above(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1420,7 +1425,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/home/hmb-g8/Desktop/categories_10_6_2022.csv"
+									"src": "resources/CategoryResource/test-import-categories.csv"
 								}
 							]
 						},
@@ -1454,6 +1459,11 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
+									"});",
+									"",
+									"pm.test(\"Categories were imported\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.be.above(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(0);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1508,7 +1518,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/home/hmb-g8/Desktop/categories_10_6_2022.csv"
+									"src": "resources/CategoryResource/test-import-categories.csv"
 								}
 							]
 						},
