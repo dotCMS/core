@@ -47,8 +47,8 @@ tags:
 - description: Returns the content types valid for a page based on the container/types
     on the layout
   name: getPagesContentTypes
-- description: Folder CRUD operations and site folder management
-  name: Folder
+- description: Endpoints for managing folder structure and organization
+  name: Folders
 - description: Form management and processing
   name: Forms
 - description: Health management and monitoring endpoints for administrative dashboards
@@ -120,8 +120,6 @@ tags:
   name: Experiments
 - description: File asset management and download operations
   name: File Assets
-- description: Folder structure and organization
-  name: Folders
 - description: Language management and localization
   name: Internationalization
 - description: License management and validation
@@ -9043,20 +9041,17 @@ paths:
       - Content Type Field
   /v1/folder/byPath:
     post:
-      description: "Retrieves subfolders matching a given path pattern. The path controls\
-        \ both the site scope and the folder filter: paths starting with '//' (e.g.,\
-        \ '//default/folder1/') target a specific site, while paths starting with\
-        \ '/' or without a prefix search across all sites. A trailing '/' lists children\
-        \ of the matched folder; without it, folders are filtered by name prefix.\
-        \ Only folders the user has permissions over are returned."
+      description: "Retrieves subfolders of a given path, filtered by the path sent.\
+        \ The path format supports site-specific search (//siteName/path) or global\
+        \ search (/path). For example: '//default/folder1/' returns subfolder1, subfolder2\
+        \ under folder1 in the 'default' site. '/folder1/s' returns all subfolders\
+        \ starting with 's' under folder1 across all sites."
       operationId: findSubFoldersByPath
       requestBody:
         content:
-          application/json:
+          '*/*':
             schema:
               $ref: "#/components/schemas/SearchByPathForm"
-        description: Form containing the path to search for subfolders
-        required: true
       responses:
         "200":
           content:
@@ -9065,7 +9060,7 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityFolderSearchResultView"
           description: Subfolders retrieved successfully
         "400":
-          description: Bad request — path property is required
+          description: Path property must be sent
         "401":
           description: Authentication required
         "403":
@@ -9074,17 +9069,15 @@ paths:
           description: Site not found
       summary: Find subfolders by path
       tags:
-      - Folder
+      - Folders
   /v1/folder/createfolders/{siteName}:
     post:
       description: "Creates one or more folders on the specified site. The request\
         \ body is a raw JSON array of folder paths (e.g., [\"/path1\", \"/path2/subpath\"\
-        ]). Nested paths will create intermediate folders as needed. Returns the list\
-        \ of created folder details."
+        ]). Nested paths will create intermediate folders as needed."
       operationId: createFoldersBySiteName
       parameters:
-      - description: Name of the site where the folders will be created
-        in: path
+      - in: path
         name: siteName
         required: true
         schema:
@@ -9096,9 +9089,6 @@ paths:
               type: array
               items:
                 type: string
-        description: "JSON array of folder paths to create (e.g., [\"/path1\", \"\
-          /path2\"])"
-        required: true
       responses:
         "200":
           content:
@@ -9106,8 +9096,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityListView"
           description: Folders created successfully
-        "400":
-          description: Bad request or invalid site name
         "401":
           description: Authentication required
         "403":
@@ -9116,22 +9104,20 @@ paths:
           description: Site not found
       summary: Create folders by paths on a site
       tags:
-      - Folder
+      - Folders
   /v1/folder/siteId/{siteId}/path/{path}:
     get:
       description: "Finds a folder by the given path within the specified site and\
-        \ returns the folder details along with all its subfolders, respecting the\
-        \ user's permissions."
+        \ returns the folder along with all its subfolders, respecting the user's\
+        \ permissions."
       operationId: loadFolderAndSubFoldersByPath
       parameters:
-      - description: Identifier of the site where the folder resides
-        in: path
+      - in: path
         name: siteId
         required: true
         schema:
           type: string
-      - description: "Path of the folder to find (e.g., folder1/subfolder)"
-        in: path
+      - in: path
         name: path
         required: true
         schema:
@@ -9149,24 +9135,21 @@ paths:
         "403":
           description: Insufficient permissions
         "404":
-          description: Folder or site not found
-      summary: Load folder and subfolders by site ID and path
+          description: Folder not found
+      summary: Load folder and subfolders by path
       tags:
-      - Folder
+      - Folders
   /v1/folder/sitename/{siteName}/uri/{uri}:
     get:
-      description: "Retrieves a folder by its URI path within the specified site.\
-        \ The URI should be the relative path to the folder (e.g., 'folder1/subfolder')."
+      description: Retrieves a folder by its URI path within the specified site.
       operationId: loadFolderByURI
       parameters:
-      - description: Name of the site where the folder resides
-        in: path
+      - in: path
         name: siteName
         required: true
         schema:
           type: string
-      - description: "URI path to the folder (e.g., folder1/subfolder)"
-        in: path
+      - in: path
         name: uri
         required: true
         schema:
@@ -9185,19 +9168,16 @@ paths:
           description: Insufficient permissions
         "404":
           description: Folder not found
-        "500":
-          description: Internal server error
       summary: Load a folder by site name and URI
       tags:
-      - Folder
+      - Folders
   /v1/folder/{folderId}:
     get:
-      description: Retrieves a folder by its identifier. Returns a 404 status if the
-        folder does not exist or has no valid identifier.
+      description: Retrieves a folder by its identifier. Returns 404 if the folder
+        does not exist.
       operationId: findFolderById
       parameters:
-      - description: Identifier of the folder
-        in: path
+      - in: path
         name: folderId
         required: true
         schema:
@@ -9215,41 +9195,34 @@ paths:
           description: Insufficient permissions
         "404":
           description: Folder not found
-      summary: Get a folder by ID
+      summary: Find a folder by ID
       tags:
-      - Folder
+      - Folders
   /v1/folder/{id}/file-browser-selected:
     put:
-      description: Sets the specified folder as the last selected folder in the file
-        browser session. This is used to persist the user's folder selection state
-        across file browser interactions.
+      description: Marks a folder as the currently selected folder in the file browser
+        session.
       operationId: selectFolderInFileBrowser
       parameters:
-      - description: Identifier of the folder to select
-        in: path
+      - in: path
         name: id
         required: true
         schema:
           type: string
       responses:
         "200":
-          description: Folder selection saved successfully
+          description: Folder selected successfully
         "401":
           description: Authentication required
-        "403":
-          description: Insufficient permissions
-      summary: Set selected folder in file browser
+      summary: Select folder in file browser
       tags:
-      - Folder
+      - Folders
   /v1/folder/{siteName}:
     delete:
-      description: "Deletes one or more folders from the specified site. The request\
-        \ body is a JSON array of folder paths (e.g., [\"/folder1\", \"/folder2\"\
-        ]). Returns the list of successfully deleted folder paths."
+      description: Delete one or more path for a site if they exist
       operationId: deleteFoldersBySiteName
       parameters:
-      - description: Name of the site where the folders reside
-        in: path
+      - in: path
         name: siteName
         required: true
         schema:
@@ -9261,27 +9234,28 @@ paths:
               type: array
               items:
                 type: string
-        description: "JSON array of folder paths to delete (e.g., [\"/path1\", \"\
-          /path2\"])"
-        required: true
       responses:
         "200":
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityListView"
+              example:
+                entity:
+                - /folder-1/folder-2/target-folder
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
           description: Folders deleted successfully
-        "400":
-          description: Bad request or invalid site name
         "401":
-          description: Authentication required
+          description: Unauthorized access
         "403":
-          description: Insufficient permissions
+          description: Insufficient permissions to delete folders
         "404":
-          description: Folder or site not found
-      summary: Delete folders by paths on a site
+          description: Folders not found
+      summary: Delete one or more path for a site
       tags:
-      - Folder
+      - Folders
   /v1/forgotpassword:
     post:
       description: Sends a password reset email to the specified user. Returns the
