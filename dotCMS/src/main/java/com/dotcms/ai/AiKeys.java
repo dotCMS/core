@@ -63,6 +63,7 @@ public class AiKeys {
     public static final String COUNT = "count";
     public static final String INPUT = "input";
     public static final String RESPONSE_FORMAT = "response_format";
+    public static final String B64_JSON = "b64_json";
 
     private AiKeys() {}
 

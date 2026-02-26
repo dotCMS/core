@@ -25,8 +25,10 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 
 public class OpenAIImageAPIImpl implements ImageAPI {
@@ -99,17 +101,28 @@ public class OpenAIImageAPIImpl implements ImageAPI {
     }
 
     private JSONObject createTempFile(final JSONObject imageResponse) {
+        final String b64Json = imageResponse.optString(AiKeys.B64_JSON);
         final String url = imageResponse.optString(AiKeys.URL);
-        if (UtilMethods.isEmpty(() -> url)) {
-            Logger.warn(this.getClass(), "imageResponse does not include URL:" + imageResponse);
-            throw new DotRuntimeException("Image Response does not include URL:" + imageResponse);
+
+        if (UtilMethods.isEmpty(() -> b64Json) && UtilMethods.isEmpty(() -> url)) {
+            Logger.warn(this.getClass(), "imageResponse contains neither 'url' nor 'b64_json':" + imageResponse);
+            throw new DotRuntimeException("Image response contains neither 'url' nor 'b64_json':" + imageResponse);
         }
 
         try {
             final String fileName = generateFileName(imageResponse.getString(AiKeys.ORIGINAL_PROMPT));
             imageResponse.put("tempFileName", fileName);
 
-            final DotTempFile file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
+            final DotTempFile file;
+            if (UtilMethods.isSet(b64Json)) {
+                // gpt-image-1 and newer models always return base64-encoded image data
+                final byte[] imageBytes = Base64.getDecoder().decode(b64Json);
+                file = tempFileApi.createTempFile(fileName, getRequest(), new ByteArrayInputStream(imageBytes));
+            } else {
+                // DALL-E 2/3 return a URL to the hosted image
+                file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
+            }
+
             imageResponse.put(AiKeys.RESPONSE, file.id);
             imageResponse.put("tempFile", file.file.getAbsolutePath());
 

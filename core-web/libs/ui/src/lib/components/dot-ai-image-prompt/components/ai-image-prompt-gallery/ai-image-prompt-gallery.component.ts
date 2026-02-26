@@ -55,7 +55,7 @@ export class AiImagePromptGalleryComponent implements OnChanges {
      * The orientation of the images. helps to define the initial placeholder
      */
     @Input()
-    orientation = DotAIImageOrientation.HORIZONTAL;
+    orientation = DotAIImageOrientation.SQUARE;
 
     /**
      * An event that is emitted when the active image index changes.

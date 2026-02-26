@@ -38,7 +38,7 @@ describe('DotAiImagePromptStore', () => {
             expect(store.formValue()).toEqual({
                 text: '',
                 type: PromptType.INPUT,
-                size: DotAIImageOrientation.HORIZONTAL
+                size: '1024x1024'
             });
         });
     });
@@ -80,7 +80,7 @@ describe('DotAiImagePromptStore', () => {
             const formValue = {
                 text: 'new text',
                 type: PromptType.INPUT,
-                size: DotAIImageOrientation.VERTICAL
+                size: '1024x1792'
             };
             store.setFormValue(formValue);
             expect(store.formValue()).toEqual(formValue);
@@ -92,13 +92,13 @@ describe('DotAiImagePromptStore', () => {
             store.setFormValue({
                 text: 'prompt',
                 type: PromptType.INPUT,
-                size: DotAIImageOrientation.HORIZONTAL
+                size: '1024x1024'
             });
             store.generateImage();
 
             expect(dotAiService.generateAndPublishImage).toHaveBeenCalledWith(
                 'prompt',
-                DotAIImageOrientation.HORIZONTAL
+                '1024x1024'
             );
             expect(store.status()).toBe(ComponentStatus.IDLE);
             expect(store.images().length).toBe(1);
@@ -110,13 +110,13 @@ describe('DotAiImagePromptStore', () => {
             store.setFormValue({
                 text: 'prompt',
                 type: PromptType.INPUT,
-                size: DotAIImageOrientation.HORIZONTAL
+                size: '1024x1024'
             });
             store.generateImage();
 
             expect(dotAiService.generateAndPublishImage).toHaveBeenCalledWith(
                 'prompt',
-                DotAIImageOrientation.HORIZONTAL
+                '1024x1024'
             );
             expect(store.status()).toBe(ComponentStatus.ERROR);
             expect(store.error()).toBe('error');

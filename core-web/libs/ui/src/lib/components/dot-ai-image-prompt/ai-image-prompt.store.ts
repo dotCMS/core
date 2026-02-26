@@ -48,7 +48,7 @@ const initialState: DotAiImagePromptComponentState = {
     formValue: {
         text: '',
         type: DEFAULT_INPUT_PROMPT,
-        size: DotAIImageOrientation.HORIZONTAL
+        size: '1024x1024' // Default square size
     }
 };
 
