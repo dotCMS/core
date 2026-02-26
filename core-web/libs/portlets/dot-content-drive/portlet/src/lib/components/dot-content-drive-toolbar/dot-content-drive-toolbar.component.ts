@@ -1,4 +1,3 @@
-import { trigger, transition, style, animate } from '@angular/animations';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -29,14 +28,9 @@ import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
- * Animation delay in milliseconds - matches the duration of the fadeAnimation
+ * Animation delay in milliseconds - matches the duration of the enter/leave fade
  */
 const ANIMATION_DELAY = 135;
-
-/**
- * Animation duration in milliseconds - matches the duration of the fadeAnimation
- */
-const ANIMATION_DURATION = '100ms';
 
 /**
  * Interface for managing animation states of toolbar elements
@@ -66,14 +60,24 @@ interface ToolbarAnimationState {
         class: 'block transition-all duration-300 ease-in-out',
         '[style.height]': '"7.125rem"'
     },
-    animations: [
-        trigger('slideAnimation', [
-            transition(':enter', [
-                style({ opacity: 0 }),
-                animate(`${ANIMATION_DURATION} ease-out`, style({ opacity: 1 }))
-            ]),
-            transition(':leave', [animate(`${ANIMATION_DURATION} ease-in`, style({ opacity: 0 }))])
-        ])
+    styles: [
+        `
+            .toolbar-enter {
+                animation: toolbar-fade-in 100ms ease-out;
+            }
+            @keyframes toolbar-fade-in {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+            .toolbar-leave {
+                opacity: 0;
+                transition: opacity 100ms ease-in;
+            }
+        `
     ]
 })
 export class DotContentDriveToolbarComponent {
