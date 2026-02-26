@@ -1,4 +1,4 @@
-import { hexToRgba, isValidCustomDateRange } from './dot-analytics.utils';
+import { getValidTimeRangeUrl, hexToRgba, isValidCustomDateRange } from './dot-analytics.utils';
 
 describe('Analytics Utils', () => {
     // ============================================================================
@@ -37,6 +37,30 @@ describe('Analytics Utils', () => {
             expect(isValidCustomDateRange('', '2024-01-31')).toBe(false);
             expect(isValidCustomDateRange('2024-01-01', '')).toBe(false);
             expect(isValidCustomDateRange('', '')).toBe(false);
+        });
+    });
+
+    describe('getValidTimeRangeUrl', () => {
+        it('should return the TimeRange value for a valid key', () => {
+            expect(getValidTimeRangeUrl('last7days')).toBe('last7days');
+            expect(getValidTimeRangeUrl('last30days')).toBe('last30days');
+            expect(getValidTimeRangeUrl('custom')).toBe('custom');
+        });
+
+        it('should return null for an unrecognized key', () => {
+            expect(getValidTimeRangeUrl('unknown-range')).toBeNull();
+            expect(getValidTimeRangeUrl('week')).toBeNull();
+        });
+
+        it('should return null for an empty string', () => {
+            expect(getValidTimeRangeUrl('')).toBeNull();
+        });
+
+        it('should return null when value is not a string', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            expect(getValidTimeRangeUrl(null as any)).toBeNull();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            expect(getValidTimeRangeUrl(undefined as any)).toBeNull();
         });
     });
 
