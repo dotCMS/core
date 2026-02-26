@@ -5,6 +5,7 @@ import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -259,7 +260,7 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Sites retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityListMapView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -327,7 +328,7 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site switched successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntitySiteSwitchView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Site not found")
@@ -454,7 +455,7 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site thumbnails retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityListMapView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -902,7 +903,7 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Setup progress retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntitySiteSetupProgressView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions")
     })
@@ -1072,7 +1073,7 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site created successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntitySiteView.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request or siteName is null"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions")
@@ -1406,7 +1407,7 @@ public class SiteResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site updated successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntitySiteView.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request, missing id, or siteName is null"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),

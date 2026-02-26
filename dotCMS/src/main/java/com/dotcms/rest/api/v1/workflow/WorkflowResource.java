@@ -2519,7 +2519,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -2674,7 +2674,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -2952,7 +2952,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -3176,7 +3176,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/octet-stream",
-                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"results\": [\n" +
@@ -3477,7 +3477,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet(s) modified successfully",
                             content = @Content(mediaType = "application/octet-stream",
-                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"results\": [\n" +
@@ -3947,7 +3947,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -4108,7 +4108,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -4304,7 +4304,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -4961,7 +4961,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Exported workflow scheme successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"permissions\": [\n" +

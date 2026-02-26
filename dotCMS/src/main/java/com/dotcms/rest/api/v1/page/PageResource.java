@@ -51,6 +51,7 @@ import com.dotcms.ema.resolver.EMAConfigStrategyResolver;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -233,7 +234,7 @@ public class PageResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Page metadata retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityEmptyPageView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
@@ -336,7 +337,7 @@ public class PageResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Rendered page retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityPageView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
@@ -618,8 +619,8 @@ public class PageResource {
         tags = {"Page"},
         responses = {
                 @ApiResponse(responseCode = "200", description = "Page template linked to HTML and saved successfully",
-                        content = @Content(mediaType = "application/json", 
-                                schema = @Schema(implementation = ResponseEntityView.class)
+                        content = @Content(mediaType = "application/json",
+                                schema = @Schema(implementation = ResponseEntityPageView.class)
                                 )
                         ),
                 @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
@@ -701,16 +702,16 @@ public class PageResource {
                 responses = {
                         @ApiResponse(responseCode = "200", description = "Page template saved successfully",
                                 content = @Content(mediaType = "application/json", 
-                                        schema = @Schema(implementation = ResponseEntityView.class)
+                                        schema = @Schema(implementation = ResponseEntityTemplateView.class)
                                         )
                                 ),
                         @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
                         @ApiResponse(responseCode = "404", description = "Page not found")
                 })
     public Response saveLayout(
-                @Context final HttpServletRequest request, 
-                @Context final HttpServletResponse response, 
-                @RequestBody(description = "POST body consists of a JSON object containing " + 
+                @Context final HttpServletRequest request,
+                @Context final HttpServletResponse response,
+                @RequestBody(description = "POST body consists of a JSON object containing " +
                                         "one property called 'PageForm', which contains a " +
                                         "template layout for the page",
                                 required = true,
@@ -1030,7 +1031,7 @@ public class PageResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Pages matching the search criteria",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityContentletMapsView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "User does not have required permissions")
     })
@@ -1093,7 +1094,7 @@ public class PageResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Page render versions retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityPageLivePreviewVersionView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
             @ApiResponse(responseCode = "404", description = "Page not found")
@@ -1138,7 +1139,7 @@ public class PageResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Content tree retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityMulitreeView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
             @ApiResponse(responseCode = "404", description = "Page not found")
@@ -1188,7 +1189,7 @@ public class PageResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Personas with personalization flags retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityListPersonalizationPersonaPageView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
             @ApiResponse(responseCode = "404", description = "Page not found")
@@ -1472,7 +1473,7 @@ public class PageResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Page content types retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "User does not have required permissions")
     })
@@ -1700,7 +1701,7 @@ public class PageResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Language availability list retrieved successfully (deprecated endpoint)",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityLanguagesForPageView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "404", description = "Page not found")
     })

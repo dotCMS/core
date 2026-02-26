@@ -143,7 +143,7 @@ public class TemplateResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Templates retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityListTemplateView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions")
     })
@@ -1046,7 +1046,8 @@ public class TemplateResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Template image retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Object.class))),
+                            schema = @Schema(type = "object",
+                                    description = "Template image metadata containing inode, name, identifier, and file extension of the associated image contentlet"))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Template or template image not found")

@@ -741,7 +741,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntitySearchView"
           description: Search results returned successfully
         "400":
           content:
@@ -10059,6 +10059,8 @@ paths:
             application/json:
               schema:
                 type: object
+                description: Map of language codes to language details (RestLanguage
+                  objects)
           description: Languages returned successfully
         "401":
           description: Authentication required
@@ -10082,7 +10084,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
           description: Messages returned successfully
         "400":
           description: Invalid request form data
@@ -10817,7 +10819,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityEmptyPageView"
           description: Page metadata retrieved successfully
         "400":
           description: Bad request
@@ -10848,7 +10850,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityTemplateView"
           description: Page template saved successfully
         "400":
           description: Bad request or data exception
@@ -10906,7 +10908,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityPageView"
           description: Rendered page retrieved successfully
         "400":
           description: Bad request
@@ -10984,7 +10986,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityContentletMapsView"
           description: Pages matching the search criteria
         "401":
           description: Authentication required
@@ -11035,7 +11037,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
           description: Page content types retrieved successfully
         "401":
           description: Authentication required
@@ -11143,7 +11145,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMulitreeView"
           description: Content tree retrieved successfully
         "401":
           description: Authentication required
@@ -11174,7 +11176,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityLanguagesForPageView"
           description: Language availability list retrieved successfully (deprecated
             endpoint)
         "401":
@@ -11221,7 +11223,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityPageView"
           description: Page template linked to HTML and saved successfully
         "400":
           description: Bad request or data exception
@@ -11287,7 +11289,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityListPersonalizationPersonaPageView"
           description: Personas with personalization flags retrieved successfully
         "401":
           description: Authentication required
@@ -11321,7 +11323,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityPageLivePreviewVersionView"
           description: Page render versions retrieved successfully
         "401":
           description: Authentication required
@@ -13161,7 +13163,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityListMapView"
           description: Sites retrieved successfully
         "401":
           description: Authentication required
@@ -13189,7 +13191,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntitySiteView"
           description: Site created successfully
         "400":
           description: Invalid request or siteName is null
@@ -13223,7 +13225,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntitySiteView"
           description: Site updated successfully
         "400":
           description: "Invalid request, missing id, or siteName is null"
@@ -13381,7 +13383,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntitySiteSwitchView"
           description: Site switched successfully
         "401":
           description: Authentication required
@@ -13403,7 +13405,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityListMapView"
           description: Site thumbnails retrieved successfully
         "401":
           description: Authentication required
@@ -13682,7 +13684,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntitySiteSetupProgressView"
           description: Setup progress retrieved successfully
         "401":
           description: Authentication required
@@ -14537,6 +14539,7 @@ paths:
             application/json:
               schema:
                 type: object
+                description: Map of tag names to RestTag objects
           description: Tags returned successfully
         "401":
           description: Authentication required
@@ -14851,6 +14854,8 @@ paths:
             application/json:
               schema:
                 type: object
+                description: Streamed JSON object containing a 'tempFiles' array with
+                  DotTempFile references for each uploaded file
           description: Temporary files created successfully
         "400":
           description: "Invalid file, origin, or referer"
@@ -14879,6 +14884,8 @@ paths:
             application/json:
               schema:
                 type: object
+                description: Map containing a 'tempFiles' array with DotTempFile references
+                  for the downloaded file
           description: Temporary file created from URL successfully
         "400":
           description: "Invalid URL, missing URL, or invalid origin/referer"
@@ -14972,7 +14979,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityListTemplateView"
           description: Templates retrieved successfully
         "401":
           description: Authentication required
@@ -15227,6 +15234,8 @@ paths:
             application/json:
               schema:
                 type: object
+                description: "Template image metadata containing inode, name, identifier,\
+                  \ and file extension of the associated image contentlet"
           description: Template image retrieved successfully
         "401":
           description: Authentication required
@@ -15366,7 +15375,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityPaginatedArrayListMapView"
           description: Themes returned successfully
         "400":
           description: Missing or invalid hostId parameter
@@ -15392,7 +15401,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Theme returned successfully
         "401":
           description: Authentication required
@@ -16342,7 +16351,7 @@ paths:
                 messages: []
                 permissions: []
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Contentlet(s) modified successfully
         "401":
           description: Invalid User
@@ -16458,7 +16467,7 @@ paths:
                 messages: []
                 permissions: []
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -16564,7 +16573,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -16656,7 +16665,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -16747,7 +16756,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -16824,7 +16833,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -17207,7 +17216,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -17293,7 +17302,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Fired action successfully
         "400":
           description: Bad request
@@ -18047,7 +18056,7 @@ paths:
                 pagination: null
                 permissions: []
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityMapStringObjectView"
           description: Exported workflow scheme successfully
         "400":
           description: Bad request
@@ -20661,6 +20670,14 @@ components:
       properties:
         empty:
           type: boolean
+    AccruedTag:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int32
+        tag:
+          type: string
     ActionFail:
       type: object
       properties:
@@ -21190,6 +21207,34 @@ components:
         usesDotcmsApis:
           type: boolean
         version:
+          type: string
+    CachedVanityUrl:
+      type: object
+      properties:
+        forward:
+          type: boolean
+        forwardTo:
+          type: string
+        languageId:
+          type: integer
+          format: int64
+        order:
+          type: integer
+          format: int32
+        pattern:
+          type: object
+        permanentRedirect:
+          type: boolean
+        response:
+          type: integer
+          format: int32
+        siteId:
+          type: string
+        temporaryRedirect:
+          type: boolean
+        url:
+          type: string
+        vanityUrlId:
           type: string
     CategoryEditForm:
       type: object
@@ -21780,6 +21825,23 @@ components:
           type: string
         useDiv:
           type: boolean
+    ContainerRaw:
+      type: object
+      properties:
+        container:
+          $ref: "#/components/schemas/ContainerView"
+        containerStructures:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerStructure"
+        contentlets:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: object
+              additionalProperties:
+                type: object
     ContainerStructure:
       type: object
       properties:
@@ -21985,6 +22047,92 @@ components:
       required:
       - identifier
       - uuid
+    Contentlet:
+      type: object
+      properties:
+        archived:
+          type: boolean
+        categoryId:
+          type: string
+        contentTypeId:
+          type: string
+        dotAsset:
+          type: boolean
+        fileAsset:
+          type: boolean
+        folder:
+          type: string
+        form:
+          type: boolean
+        host:
+          type: string
+        htmlpage:
+          type: boolean
+        identifier:
+          type: string
+        indexPolicyDependencies:
+          type: string
+          enum:
+          - DEFER
+          - WAIT_FOR
+          - FORCE
+        inode:
+          type: string
+        keyValue:
+          type: boolean
+        languageId:
+          type: integer
+          format: int64
+        languageVariable:
+          type: boolean
+        live:
+          type: boolean
+        locked:
+          type: boolean
+        lowIndexPriority:
+          type: boolean
+        modDate:
+          type: string
+          format: date-time
+        modUser:
+          type: string
+        name:
+          type: string
+        new:
+          type: boolean
+        owner:
+          type: string
+        permissionId:
+          type: string
+        permissionType:
+          type: string
+        persona:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int64
+        structureInode:
+          type: string
+        systemHost:
+          type: boolean
+        title:
+          type: string
+        titleImage:
+          $ref: "#/components/schemas/Field"
+        type:
+          type: string
+        userAPI:
+          $ref: "#/components/schemas/UserAPI"
+        vanityUrl:
+          type: boolean
+        variantId:
+          type: string
+        versionId:
+          type: string
+        versionType:
+          type: string
+        working:
+          type: boolean
     ContentletWorkflowStatusView:
       type: object
       properties:
@@ -22597,6 +22745,40 @@ components:
             type: string
           variable:
             type: string
+    EmptyPageView:
+      type: object
+      properties:
+        containers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerRaw"
+        containersMap:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ContainerRaw"
+        layout:
+          $ref: "#/components/schemas/TemplateLayout"
+        live:
+          type: boolean
+        numberContents:
+          type: integer
+          format: int32
+        page:
+          $ref: "#/components/schemas/HTMLPageAsset"
+        pageUrlMapper:
+          type: string
+        runningExperiment:
+          $ref: "#/components/schemas/Experiment"
+        site:
+          $ref: "#/components/schemas/Host"
+        template:
+          $ref: "#/components/schemas/Template"
+        urlContent:
+          $ref: "#/components/schemas/Contentlet"
+        vanityUrl:
+          $ref: "#/components/schemas/CachedVanityUrl"
+        viewAs:
+          $ref: "#/components/schemas/ViewAsPageStatus"
     EndpointDetailView:
       type: object
       properties:
@@ -22779,6 +22961,13 @@ components:
           items:
             type: string
     ExistingLanguagesForContentletView:
+      type: object
+      additionalProperties:
+        type: object
+      properties:
+        empty:
+          type: boolean
+    ExistingLanguagesForPageView:
       type: object
       additionalProperties:
         type: object
@@ -23894,6 +24083,35 @@ components:
           enum:
           - PUBLISH
           - UNPUBLISH
+    Geolocation:
+      type: object
+      properties:
+        city:
+          type: string
+        company:
+          type: string
+        continent:
+          type: string
+        continentCode:
+          type: string
+        country:
+          type: string
+        countryCode:
+          type: string
+        ipAddress:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        subdivision:
+          type: string
+        subdivisionCode:
+          type: string
+        timezone:
+          type: string
     Goal:
       type: object
       properties:
@@ -23919,6 +24137,120 @@ components:
       properties:
         primary:
           $ref: "#/components/schemas/Goal"
+    HTMLPageAsset:
+      type: object
+      properties:
+        archived:
+          type: boolean
+        cacheTTL:
+          type: integer
+          format: int64
+        categoryId:
+          type: string
+        content:
+          type: boolean
+        contentTypeId:
+          type: string
+        dotAsset:
+          type: boolean
+        fileAsset:
+          type: boolean
+        folder:
+          type: string
+        form:
+          type: boolean
+        friendlyName:
+          type: string
+        host:
+          type: string
+        htmlpage:
+          type: boolean
+        httpsRequired:
+          type: boolean
+        identifier:
+          type: string
+        indexPolicyDependencies:
+          type: string
+          enum:
+          - DEFER
+          - WAIT_FOR
+          - FORCE
+        inode:
+          type: string
+        keyValue:
+          type: boolean
+        languageId:
+          type: integer
+          format: int64
+        languageVariable:
+          type: boolean
+        live:
+          type: boolean
+        locked:
+          type: boolean
+        lowIndexPriority:
+          type: boolean
+        menuOrder:
+          type: integer
+          format: int32
+        metadata:
+          type: string
+        modDate:
+          type: string
+          format: date-time
+        modUser:
+          type: string
+        name:
+          type: string
+        new:
+          type: boolean
+        owner:
+          type: string
+        pageUrl:
+          type: string
+        permissionId:
+          type: string
+        permissionType:
+          type: string
+        persona:
+          type: boolean
+        redirect:
+          type: string
+        seoDescription:
+          type: string
+        seoKeywords:
+          type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int64
+        structureInode:
+          type: string
+        systemHost:
+          type: boolean
+        templateId:
+          type: string
+        title:
+          type: string
+        titleImage:
+          $ref: "#/components/schemas/Field"
+        type:
+          type: string
+        uri:
+          type: string
+        userAPI:
+          $ref: "#/components/schemas/UserAPI"
+        vanityUrl:
+          type: boolean
+        variantId:
+          type: string
+        versionId:
+          type: string
+        versionType:
+          type: string
+        working:
+          type: boolean
     HiddenField:
       type: object
       allOf:
@@ -24279,6 +24611,48 @@ components:
         type:
           type: string
         uri:
+          type: string
+        versionId:
+          type: string
+        versionType:
+          type: string
+        working:
+          type: boolean
+    IPersona:
+      type: object
+      properties:
+        archived:
+          type: boolean
+        description:
+          type: string
+        identifier:
+          type: string
+        inode:
+          type: string
+        keyTag:
+          type: string
+        live:
+          type: boolean
+        locked:
+          type: boolean
+        modDate:
+          type: string
+          format: date-time
+        modUser:
+          type: string
+        name:
+          type: string
+        owner:
+          type: string
+        parentPermissionable:
+          $ref: "#/components/schemas/Permissionable"
+        permissionId:
+          type: string
+        permissionType:
+          type: string
+        tags:
+          type: string
+        title:
           type: string
         versionId:
           type: string
@@ -25479,6 +25853,49 @@ components:
           type: string
         title:
           type: string
+    PageLivePreviewVersionBean:
+      type: object
+      properties:
+        diff:
+          type: boolean
+        renderLive:
+          type: string
+        renderWorking:
+          type: string
+    PageView:
+      type: object
+      properties:
+        containers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerRaw"
+        containersMap:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ContainerRaw"
+        layout:
+          $ref: "#/components/schemas/TemplateLayout"
+        live:
+          type: boolean
+        numberContents:
+          type: integer
+          format: int32
+        page:
+          $ref: "#/components/schemas/HTMLPageAsset"
+        pageUrlMapper:
+          type: string
+        runningExperiment:
+          $ref: "#/components/schemas/Experiment"
+        site:
+          $ref: "#/components/schemas/Host"
+        template:
+          $ref: "#/components/schemas/Template"
+        urlContent:
+          $ref: "#/components/schemas/Contentlet"
+        vanityUrl:
+          $ref: "#/components/schemas/VanityURLView"
+        viewAs:
+          $ref: "#/components/schemas/ViewAsPageStatus"
     PageWorkflowActionsView:
       type: object
       properties:
@@ -25490,6 +25907,28 @@ components:
           type: object
           additionalProperties:
             type: object
+    PaginatedArrayListMapStringObject:
+      type: array
+      items:
+        type: object
+        additionalProperties:
+          type: object
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: object
+          additionalProperties:
+            type: object
+        last:
+          type: object
+          additionalProperties:
+            type: object
+        query:
+          type: string
+        totalResults:
+          type: integer
+          format: int64
     Pagination:
       type: object
       properties:
@@ -25870,6 +26309,15 @@ components:
       required:
       - pageId
       - personaTag
+    PersonalizationPersonaPageView:
+      type: object
+      properties:
+        pageId:
+          type: string
+        persona:
+          type: object
+          additionalProperties:
+            type: object
     PublishingEndPoint:
       type: object
       properties:
@@ -26802,6 +27250,34 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityContentletMapsView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
+          uniqueItems: true
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityContentletView:
       type: object
       properties:
@@ -26857,6 +27333,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowDefaultActionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityEmptyPageView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/EmptyPageView"
         errors:
           type: array
           items:
@@ -27253,6 +27752,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityLanguagesForPageView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExistingLanguagesForPageView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityLayoutList:
       type: object
       properties:
@@ -27260,6 +27784,83 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Layout"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityListMapView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityListPersonalizationPersonaPageView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonalizationPersonaPageView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityListTemplateView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/Template"
         errors:
           type: array
           items:
@@ -27428,6 +28029,56 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityMapStringObjectView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityMapStringStringView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityMapView:
       type: object
       properties:
@@ -27453,11 +28104,125 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityMulitreeView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/MulitreeView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPageLivePreviewVersionView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PageLivePreviewVersionBean"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPageView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PageView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityPageWorkflowActionsView:
       type: object
       properties:
         entity:
           $ref: "#/components/schemas/PageWorkflowActionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPaginatedArrayListMapView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: object
+              additionalProperties:
+                type: object
+            last:
+              type: object
+              additionalProperties:
+                type: object
+            query:
+              type: string
+            totalResults:
+              type: integer
+              format: int64
         errors:
           type: array
           items:
@@ -27906,11 +28671,82 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySearchView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SearchView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySingleExperimentView:
       type: object
       properties:
         entity:
           $ref: "#/components/schemas/Experiment"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySiteSetupProgressView:
+      type: object
+      properties:
+        entity:
+          type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySiteSwitchView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -30251,6 +31087,105 @@ components:
           properties:
             empty:
               type: boolean
+    Template:
+      type: object
+      properties:
+        anonymous:
+          type: boolean
+        archived:
+          type: boolean
+        body:
+          type: string
+        categoryId:
+          type: string
+        countAddContainer:
+          type: integer
+          format: int32
+        countContainers:
+          type: integer
+          format: int32
+        deleted:
+          type: boolean
+        drawed:
+          type: boolean
+        drawedBody:
+          type: string
+        footer:
+          type: string
+        friendlyName:
+          type: string
+        getiDate:
+          type: string
+          format: date-time
+        headCode:
+          type: string
+        header:
+          type: string
+        idate:
+          type: string
+          format: date-time
+        identifier:
+          type: string
+        image:
+          type: string
+        inode:
+          type: string
+        isTemplate:
+          type: boolean
+          writeOnly: true
+        live:
+          type: boolean
+        locked:
+          type: boolean
+        modDate:
+          type: string
+          format: date-time
+        modUser:
+          type: string
+        name:
+          type: string
+        new:
+          type: boolean
+        owner:
+          type: string
+        parents:
+          type: array
+          items:
+            type: object
+          writeOnly: true
+        permissionId:
+          type: string
+        permissionType:
+          type: string
+        selectedimage:
+          type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        source:
+          type: string
+          enum:
+          - UNKNOWN
+          - DB
+          - FILE
+        template:
+          type: boolean
+        theme:
+          type: string
+        themeName:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        versionId:
+          type: string
+        versionType:
+          type: string
+        working:
+          type: boolean
     TemplateForm:
       type: object
       properties:
@@ -31219,6 +32154,296 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/User"
+    UserAgent:
+      type: object
+      properties:
+        browser:
+          type: string
+          enum:
+          - OUTLOOK
+          - OUTLOOK2007
+          - OUTLOOK2013
+          - OUTLOOK2010
+          - IE
+          - OUTLOOK_EXPRESS7
+          - IEMOBILE11
+          - IEMOBILE10
+          - IEMOBILE9
+          - IEMOBILE7
+          - IEMOBILE6
+          - IE_XBOX
+          - IE11
+          - IE10
+          - IE9
+          - IE8
+          - IE7
+          - IE6
+          - IE5_5
+          - IE5
+          - EDGE
+          - EDGE_MOBILE
+          - EDGE_MOBILE12
+          - EDGE13
+          - EDGE12
+          - CHROME
+          - CHROME_MOBILE
+          - CHROME49
+          - CHROME48
+          - CHROME47
+          - CHROME46
+          - CHROME45
+          - CHROME44
+          - CHROME43
+          - CHROME42
+          - CHROME41
+          - CHROME40
+          - CHROME39
+          - CHROME38
+          - CHROME37
+          - CHROME36
+          - CHROME35
+          - CHROME34
+          - CHROME33
+          - CHROME32
+          - CHROME31
+          - CHROME30
+          - CHROME29
+          - CHROME28
+          - CHROME27
+          - CHROME26
+          - CHROME25
+          - CHROME24
+          - CHROME23
+          - CHROME22
+          - CHROME21
+          - CHROME20
+          - CHROME19
+          - CHROME18
+          - CHROME17
+          - CHROME16
+          - CHROME15
+          - CHROME14
+          - CHROME13
+          - CHROME12
+          - CHROME11
+          - CHROME10
+          - CHROME9
+          - CHROME8
+          - OMNIWEB
+          - FIREFOX
+          - FIREFOX3MOBILE
+          - FIREFOX_MOBILE
+          - FIREFOX_MOBILE23
+          - FIREFOX_MOBILE_IOS
+          - FIREFOX45
+          - FIREFOX44
+          - FIREFOX43
+          - FIREFOX42
+          - FIREFOX41
+          - FIREFOX40
+          - FIREFOX39
+          - FIREFOX38
+          - FIREFOX37
+          - FIREFOX36
+          - FIREFOX35
+          - FIREFOX34
+          - FIREFOX33
+          - FIREFOX32
+          - FIREFOX31
+          - FIREFOX30
+          - FIREFOX29
+          - FIREFOX28
+          - FIREFOX27
+          - FIREFOX26
+          - FIREFOX25
+          - FIREFOX24
+          - FIREFOX23
+          - FIREFOX22
+          - FIREFOX21
+          - FIREFOX20
+          - FIREFOX19
+          - FIREFOX18
+          - FIREFOX17
+          - FIREFOX16
+          - FIREFOX15
+          - FIREFOX14
+          - FIREFOX13
+          - FIREFOX12
+          - FIREFOX11
+          - FIREFOX10
+          - FIREFOX9
+          - FIREFOX8
+          - FIREFOX7
+          - FIREFOX6
+          - FIREFOX5
+          - FIREFOX4
+          - FIREFOX3
+          - FIREFOX2
+          - FIREFOX1_5
+          - SAFARI
+          - BLACKBERRY10
+          - MOBILE_SAFARI
+          - SILK
+          - SAFARI9
+          - SAFARI8
+          - SAFARI7
+          - SAFARI6
+          - SAFARI5
+          - SAFARI4
+          - COAST
+          - COAST1
+          - OPERA
+          - OPERA_MOBILE
+          - OPERA_MINI
+          - OPERA34
+          - OPERA33
+          - OPERA32
+          - OPERA31
+          - OPERA30
+          - OPERA29
+          - OPERA28
+          - OPERA27
+          - OPERA26
+          - OPERA25
+          - OPERA24
+          - OPERA23
+          - OPERA20
+          - OPERA19
+          - OPERA18
+          - OPERA17
+          - OPERA16
+          - OPERA15
+          - OPERA12
+          - OPERA11
+          - OPERA10
+          - OPERA9
+          - KONQUEROR
+          - DOLFIN2
+          - APPLE_WEB_KIT
+          - APPLE_ITUNES
+          - APPLE_APPSTORE
+          - ADOBE_AIR
+          - LOTUS_NOTES
+          - CAMINO
+          - CAMINO2
+          - FLOCK
+          - THUNDERBIRD
+          - THUNDERBIRD12
+          - THUNDERBIRD11
+          - THUNDERBIRD10
+          - THUNDERBIRD8
+          - THUNDERBIRD7
+          - THUNDERBIRD6
+          - THUNDERBIRD3
+          - THUNDERBIRD2
+          - VIVALDI
+          - SEAMONKEY
+          - BOT
+          - BOT_MOBILE
+          - MOZILLA
+          - CFNETWORK
+          - EUDORA
+          - POCOMAIL
+          - THEBAT
+          - NETFRONT
+          - EVOLUTION
+          - LYNX
+          - DOWNLOAD
+          - UNKNOWN
+          - APPLE_MAIL
+        browserVersion:
+          $ref: "#/components/schemas/Version"
+        id:
+          type: integer
+          format: int32
+        operatingSystem:
+          type: string
+          enum:
+          - WINDOWS
+          - WINDOWS_10
+          - WINDOWS_81
+          - WINDOWS_8
+          - WINDOWS_7
+          - WINDOWS_VISTA
+          - WINDOWS_2000
+          - WINDOWS_XP
+          - WINDOWS_10_MOBILE
+          - WINDOWS_PHONE8_1
+          - WINDOWS_PHONE8
+          - WINDOWS_MOBILE7
+          - WINDOWS_MOBILE
+          - WINDOWS_98
+          - XBOX_OS
+          - ANDROID
+          - ANDROID6
+          - ANDROID6_TABLET
+          - ANDROID5
+          - ANDROID5_TABLET
+          - ANDROID4
+          - ANDROID4_TABLET
+          - ANDROID4_WEARABLE
+          - ANDROID3_TABLET
+          - ANDROID2
+          - ANDROID2_TABLET
+          - ANDROID1
+          - ANDROID_MOBILE
+          - ANDROID_TABLET
+          - CHROME_OS
+          - WEBOS
+          - PALM
+          - MEEGO
+          - IOS
+          - iOS9_IPHONE
+          - iOS8_4_IPHONE
+          - iOS8_3_IPHONE
+          - iOS8_2_IPHONE
+          - iOS8_1_IPHONE
+          - iOS8_IPHONE
+          - iOS7_IPHONE
+          - iOS6_IPHONE
+          - iOS5_IPHONE
+          - iOS4_IPHONE
+          - MAC_OS_X_IPAD
+          - iOS9_IPAD
+          - iOS8_4_IPAD
+          - iOS8_3_IPAD
+          - iOS8_2_IPAD
+          - iOS8_1_IPAD
+          - iOS8_IPAD
+          - iOS7_IPAD
+          - iOS6_IPAD
+          - MAC_OS_X_IPHONE
+          - MAC_OS_X_IPOD
+          - MAC_OS_X
+          - MAC_OS
+          - MAEMO
+          - BADA
+          - GOOGLE_TV
+          - KINDLE
+          - KINDLE3
+          - KINDLE2
+          - LINUX
+          - UBUNTU
+          - UBUNTU_TOUCH_MOBILE
+          - SYMBIAN
+          - SYMBIAN9
+          - SYMBIAN8
+          - SYMBIAN7
+          - SYMBIAN6
+          - SERIES40
+          - SONY_ERICSSON
+          - SUN_OS
+          - PSP
+          - WII
+          - BLACKBERRY
+          - BLACKBERRY7
+          - BLACKBERRY6
+          - BLACKBERRY_TABLET
+          - ROKU
+          - PROXY
+          - UNKNOWN_MOBILE
+          - UNKNOWN_TABLET
+          - UNKNOWN
     UserDeletedView:
       type: object
       properties:
@@ -31350,6 +32575,20 @@ components:
       - path
       - permissions
       - type
+    VanityURLView:
+      type: object
+      properties:
+        forwardTo:
+          type: string
+        id:
+          type: string
+        response:
+          type: integer
+          format: int32
+        siteId:
+          type: string
+        url:
+          type: string
     VanityUrlContentType:
       type: object
       allOf:
@@ -31461,6 +32700,160 @@ components:
         weight:
           type: number
           format: float
+    Version:
+      type: object
+      properties:
+        majorVersion:
+          type: string
+        minorVersion:
+          type: string
+        version:
+          type: string
+    ViewAsPageStatus:
+      type: object
+      properties:
+        device:
+          $ref: "#/components/schemas/Contentlet"
+        language:
+          $ref: "#/components/schemas/Language"
+        pageMode:
+          type: string
+          enum:
+          - LIVE
+          - ADMIN_MODE
+          - PREVIEW_MODE
+          - WORKING
+          - EDIT_MODE
+          - NAVIGATE_EDIT_MODE
+        persona:
+          $ref: "#/components/schemas/IPersona"
+        personalized:
+          type: boolean
+        variantId:
+          type: string
+        visitor:
+          $ref: "#/components/schemas/Visitor"
+    Visitor:
+      type: object
+      properties:
+        accruedTags:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccruedTag"
+        device:
+          type: string
+        dmid:
+          type: string
+          format: uuid
+        geo:
+          $ref: "#/components/schemas/Geolocation"
+        ipAddress:
+          type: object
+          properties:
+            address:
+              type: string
+              format: byte
+            anyLocalAddress:
+              type: boolean
+            canonicalHostName:
+              type: string
+            hostAddress:
+              type: string
+            hostName:
+              type: string
+            linkLocalAddress:
+              type: boolean
+            loopbackAddress:
+              type: boolean
+            mcglobal:
+              type: boolean
+            mclinkLocal:
+              type: boolean
+            mcnodeLocal:
+              type: boolean
+            mcorgLocal:
+              type: boolean
+            mcsiteLocal:
+              type: boolean
+            multicastAddress:
+              type: boolean
+            siteLocalAddress:
+              type: boolean
+        lastRequestDate:
+          type: string
+          format: date-time
+        locale:
+          type: object
+          properties:
+            country:
+              type: string
+            displayCountry:
+              type: string
+            displayLanguage:
+              type: string
+            displayName:
+              type: string
+            displayScript:
+              type: string
+            displayVariant:
+              type: string
+            extensionKeys:
+              type: array
+              items:
+                type: string
+              uniqueItems: true
+            iso3Country:
+              type: string
+            iso3Language:
+              type: string
+            language:
+              type: string
+            script:
+              type: string
+            unicodeLocaleAttributes:
+              type: array
+              items:
+                type: string
+              uniqueItems: true
+            unicodeLocaleKeys:
+              type: array
+              items:
+                type: string
+              uniqueItems: true
+            variant:
+              type: string
+        newVisitor:
+          type: boolean
+        numberPagesViewed:
+          type: integer
+          format: int32
+        persona:
+          $ref: "#/components/schemas/Persona"
+        personaCounts:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        personas:
+          type: array
+          items:
+            type: string
+        referrer:
+          type: string
+          format: uri
+        selectedLanguage:
+          $ref: "#/components/schemas/Language"
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccruedTag"
+        userAgent:
+          $ref: "#/components/schemas/UserAgent"
+        weightedPersonas:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
     WebAssetEntityView:
       type: object
       properties:

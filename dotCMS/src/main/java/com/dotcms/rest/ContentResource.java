@@ -185,7 +185,7 @@ public class ContentResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Search results returned successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntitySearchView.class))),
             @ApiResponse(responseCode = "400", description = "Invalid search parameters or query",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401", description = "Authentication required",

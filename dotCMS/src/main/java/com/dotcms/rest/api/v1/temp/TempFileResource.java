@@ -100,7 +100,8 @@ public class TempFileResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Temporary files created successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(type = "object",
+                                            description = "Streamed JSON object containing a 'tempFiles' array with DotTempFile references for each uploaded file"))),
                     @ApiResponse(responseCode = "400", description = "Invalid file, origin, or referer"),
                     @ApiResponse(responseCode = "401", description = "Authentication required (when anonymous access is disabled)"),
                     @ApiResponse(responseCode = "404", description = "Temp file resource is not enabled")
@@ -278,7 +279,8 @@ public class TempFileResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Temporary file created from URL successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(type = "object",
+                                            description = "Map containing a 'tempFiles' array with DotTempFile references for the downloaded file"))),
                     @ApiResponse(responseCode = "400", description = "Invalid URL, missing URL, or invalid origin/referer"),
                     @ApiResponse(responseCode = "401", description = "Authentication required (when anonymous access is disabled)"),
                     @ApiResponse(responseCode = "404", description = "Temp file resource is not enabled")

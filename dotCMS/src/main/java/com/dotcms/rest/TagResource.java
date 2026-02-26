@@ -116,7 +116,8 @@ public class TagResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Tags returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(type = "object",
+                                            description = "Map of tag names to RestTag objects"))),
                     @ApiResponse(responseCode = "401", description = "Authentication required")
             }
     )

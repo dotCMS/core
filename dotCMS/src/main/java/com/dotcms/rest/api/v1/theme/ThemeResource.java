@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.theme;
 
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapStringObjectView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
@@ -95,7 +97,7 @@ public class ThemeResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Themes returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityPaginatedArrayListMapView.class))),
                     @ApiResponse(responseCode = "400", description = "Missing or invalid hostId parameter"),
                     @ApiResponse(responseCode = "401", description = "Authentication required")
             }
@@ -153,7 +155,7 @@ public class ThemeResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Theme returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityMapStringObjectView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "404", description = "Theme not found")
             }

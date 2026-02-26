@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.languages;
 
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.rest.ResponseEntityMapStringStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -68,7 +69,8 @@ public class LanguagesResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Languages returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(type = "object",
+                                            description = "Map of language codes to language details (RestLanguage objects)"))),
                     @ApiResponse(responseCode = "401", description = "Authentication required")
             }
     )
@@ -101,7 +103,7 @@ public class LanguagesResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Messages returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
                     @ApiResponse(responseCode = "400", description = "Invalid request form data"),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
