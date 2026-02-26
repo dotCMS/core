@@ -63,7 +63,7 @@ Tests are **silently skipped** without explicit `skip=false` flags: `-Dcoreit.te
 | Git workflow, PRs, issues | `docs/core/GIT_WORKFLOWS.md` |
 | CI/CD pipeline | `docs/core/CICD_PIPELINE.md` |
 
-Full index: `docs/README.md`. Frontend specifics: `core-web/CLAUDE.md`. REST API detail: `dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md`.
+Full index: `docs/README.md`. Frontend specifics: `core-web/CLAUDE.md`. REST API detail: `dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md`. Common Maven commands and aliases: `justfile` (run directly with `just <command>` or read as a syntax reference).
 
 ## Cursor Cloud specific instructions
 
