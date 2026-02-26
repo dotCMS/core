@@ -48,6 +48,7 @@ import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.contenttype.util.StoryBlockUtil;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
@@ -58,8 +59,6 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
-import com.dotcms.contenttype.util.StoryBlockUtil;
-import com.dotcms.util.JsonUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
@@ -70,6 +69,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.variant.VariantAPI;
@@ -236,7 +236,6 @@ import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
 
 
 /**
@@ -1677,20 +1676,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (limit <= MAX_LIMIT) {
-            final SearchHits searchHits = contentFactory.indexSearch(queryWithPermissions, limit,
+            final com.dotcms.content.index.domain.SearchHits searchHits = contentFactory.indexSearch(queryWithPermissions, limit,
                     offset, sortBy);
             final PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
-            list.setTotalResults(searchHits.getTotalHits().value);
+            list.setTotalResults(searchHits.totalHits().value());
 
-            for (final SearchHit searchHit : searchHits.getHits()) {
+            for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.hits()) {
                 try {
-                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+                    final Map<String, Object> sourceMap = searchHit.sourceAsMap();
                     final ContentletSearch conWrapper = new ContentletSearch();
-                    conWrapper.setId(searchHit.getId());
-                    conWrapper.setIndex(searchHit.getIndex());
+                    conWrapper.setId(searchHit.id());
+                    conWrapper.setIndex(searchHit.index());
                     conWrapper.setIdentifier(sourceMap.get("identifier").toString());
                     conWrapper.setInode(sourceMap.get("inode").toString());
-                    conWrapper.setScore(searchHit.getScore());
+                    conWrapper.setScore(searchHit.score());
 
                     list.add(conWrapper);
                 } catch (Exception e) {
