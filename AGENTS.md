@@ -36,21 +36,11 @@ Tests are **silently skipped** without explicit `skip=false` flags: `-Dcoreit.te
 - `justfile` — run with `just <command>` or read as a Maven command reference
 - `docs/README.md` — full documentation index (Java, Angular, testing, REST, Docker, CI/CD)
 - `docs/backend/REST_API_PATTERNS.md` — REST endpoints require dotCMS-specific auth init and response wrapping; generic JAX-RS patterns are incomplete here
-- `core-web/CLAUDE.md` — frontend standards and Nx commands
+- `core-web/AGENTS.md` — frontend standards and Nx commands
 - `.cursor/rules/` — domain-specific rules loaded by file pattern (Java, frontend, tests, docs)
+- `docs/infrastructure/CURSOR_CLOUD_SETUP.md` — Docker daemon setup for Cursor Cloud / headless Linux VMs
 
-## Cursor Cloud specific instructions
+## Gotchas
 
-### Starting services
-
-1. Start Docker: `sudo dockerd &>/tmp/dockerd.log &` then `sudo chmod 666 /var/run/docker.sock`
-2. Build: `./mvnw install -DskipTests`
-3. Run: `just dev-start-on-port 8082`
-4. Admin UI: `http://localhost:8082/dotAdmin` — `admin@dotcms.com` / `admin`
-
-### Gotchas
-
-- **Docker storage driver must be `vfs`** — `fuse-overlayfs` causes dpkg-divert failures. Config: `/etc/docker/daemon.json` → `{"storage-driver": "vfs"}`
-- **iptables must be legacy** — `sudo update-alternatives --set iptables /usr/sbin/iptables-legacy`
-- **Pre-commit hooks require SDKMAN** — use `--no-verify` on commits
-- **Frontend OOM** — standalone NX builds need `NODE_OPTIONS="--max_old_space_size=4096" --parallel=2`
+- **Pre-commit hooks require SDKMAN** — use `--no-verify` on commits in environments without it
+- **Frontend memory** — standalone Nx builds may OOM; set `NODE_OPTIONS="--max_old_space_size=4096"`
