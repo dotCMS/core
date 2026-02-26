@@ -9,7 +9,7 @@ import {
     NgZone
 } from '@angular/core';
 
-import { ChartModule } from 'primeng/chart';
+import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -42,7 +42,7 @@ export interface SparklineDataPoint {
  */
 @Component({
     selector: 'dot-analytics-sparkline',
-    imports: [ChartModule, SkeletonModule],
+    imports: [ChartModule, UIChart, SkeletonModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @if ($isLoading()) {
