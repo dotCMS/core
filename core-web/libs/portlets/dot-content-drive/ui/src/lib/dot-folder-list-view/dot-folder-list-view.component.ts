@@ -178,7 +178,7 @@ export class DotFolderListViewComponent implements OnInit {
         () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
     );
 
-    readonly $loadingRows = signal<number[]>([...Array(this.MIN_ROWS_PER_PAGE)]);
+    readonly $loadingRows = signal<number[]>(Array.from({ length: this.MIN_ROWS_PER_PAGE }));
 
     /**
      * Computed pass-through configuration for empty table.

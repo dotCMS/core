@@ -4,15 +4,7 @@
         [class.gap-x-1]="!$treeExpanded()"
         [class.gap-x-0]="$treeExpanded()"
         [class]="'grid-cols-[min-content_1fr] grid-rows-2'">
-        <dot-content-drive-tree-toggler
-            data-testid="tree-toggler"
-            [style]="{
-                opacity: $treeExpanded() ? '0' : '1',
-                visibility: $treeExpanded() ? 'hidden' : 'visible',
-                transition: 'all 0.3s ease-in-out',
-                width: $treeExpanded() ? '0' : undefined,
-                minWidth: $treeExpanded() ? '0' : undefined
-            }" />
+        <dot-content-drive-tree-toggler data-testid="tree-toggler" [style]="$togglerStyles()" />
 
         <div
             class="grid items-center w-full gap-1 row-start-1 col-start-2"

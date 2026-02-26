@@ -121,6 +121,14 @@ export class DotContentDriveToolbarComponent {
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
 
+    readonly $togglerStyles = computed(() => ({
+        opacity: this.$treeExpanded() ? '0' : '1',
+        visibility: this.$treeExpanded() ? 'hidden' : 'visible',
+        transition: 'all 0.3s ease-in-out',
+        width: this.$treeExpanded() ? '0' : undefined,
+        minWidth: this.$treeExpanded() ? '0' : undefined
+    }));
+
     constructor() {
         // Watch for changes in workflow actions state and handle animation sequencing
         effect(() => {
