@@ -3,6 +3,7 @@ import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngn
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
+import { signal } from '@angular/core';
 
 import { DotContentTypeService, DotLanguagesService } from '@dotcms/data-access';
 
@@ -16,12 +17,14 @@ describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
+    // Real signal so the component's computed $togglerStyles re-runs when it changes
+    const isTreeExpandedSignal = signal(false);
+
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                // Tree collapsed at start to render the toggle button on toolbar
-                isTreeExpanded: jest.fn().mockReturnValue(false),
+                isTreeExpanded: isTreeExpandedSignal,
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -60,6 +63,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+        isTreeExpandedSignal.set(false);
     });
 
     it('should render toolbar container', () => {
@@ -114,8 +118,9 @@ describe('DotContentDriveToolbarComponent', () => {
         });
 
         it('should hide the tree toggler with styles when tree is expanded', () => {
-            store.isTreeExpanded.mockReturnValue(true);
+            isTreeExpandedSignal.set(true);
             spectator.detectChanges();
+
             const toggler = spectator.query('[data-testid="tree-toggler"]') as HTMLElement;
             expect(toggler).toBeTruthy();
             expect(toggler.style.opacity).toBe('0');
