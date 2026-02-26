@@ -113,11 +113,14 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should not render the tree toggler when tree is expanded', () => {
+        it('should hide the tree toggler with styles when tree is expanded', () => {
             store.isTreeExpanded.mockReturnValue(true);
             spectator.detectChanges();
-            const toggler = spectator.query('[data-testid="tree-toggler"]');
-            expect(toggler).toBeNull();
+            const toggler = spectator.query('[data-testid="tree-toggler"]') as HTMLElement;
+            expect(toggler).toBeTruthy();
+            expect(toggler.style.opacity).toBe('0');
+            expect(toggler.style.visibility).toBe('hidden');
+            expect(toggler.style.width).toBe('0px');
         });
     });
 
