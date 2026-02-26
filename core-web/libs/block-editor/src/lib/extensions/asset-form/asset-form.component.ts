@@ -7,7 +7,7 @@ import { DEFAULT_LANG_ID } from '../../shared/utils';
 @Component({
     selector: 'dot-asset-form',
     templateUrl: './asset-form.component.html',
-    styleUrls: ['./asset-form.component.scss'],
+    styleUrls: ['./asset-form.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })

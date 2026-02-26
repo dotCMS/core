@@ -89,9 +89,7 @@ export const GridBlock = Node.create({
                             const firstColSize = gridNode.child(0).nodeSize;
                             const secondColStart = gridPos + 1 + firstColSize + 1;
                             const resolvedPos = state.doc.resolve(secondColStart);
-                            editor.commands.setTextSelection(
-                                TextSelection.near(resolvedPos).from
-                            );
+                            editor.commands.setTextSelection(TextSelection.near(resolvedPos).from);
 
                             return true;
                         }
@@ -133,9 +131,7 @@ export const GridBlock = Node.create({
                         if (columnIndex === 1) {
                             const firstColStart = gridPos + 1 + 1;
                             const resolvedPos = state.doc.resolve(firstColStart);
-                            editor.commands.setTextSelection(
-                                TextSelection.near(resolvedPos).from
-                            );
+                            editor.commands.setTextSelection(TextSelection.near(resolvedPos).from);
 
                             return true;
                         }

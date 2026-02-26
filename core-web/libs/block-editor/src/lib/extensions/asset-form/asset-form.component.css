@@ -1,0 +1,29 @@
+:host {
+    border: 1px solid var(--gray-500);
+    display: block;
+}
+
+.tabview-container {
+    width: 720px;
+    background: #fff;
+}
+
+.wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+:host::ng-deep .p-tabview-nav {
+    padding: 0 2rem;
+}
+
+:host::ng-deep .p-tabview-panel {
+    height: 25rem;
+}
+
+:host::ng-deep .p-tabview-panels {
+    padding: 0;
+}

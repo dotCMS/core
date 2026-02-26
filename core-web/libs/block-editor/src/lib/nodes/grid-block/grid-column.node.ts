@@ -11,6 +11,10 @@ export const GridColumn = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['div', { ...HTMLAttributes, 'data-type': 'gridColumn', class: 'grid-block__column' }, 0];
+        return [
+            'div',
+            { ...HTMLAttributes, 'data-type': 'gridColumn', class: 'grid-block__column' },
+            0
+        ];
     }
 });

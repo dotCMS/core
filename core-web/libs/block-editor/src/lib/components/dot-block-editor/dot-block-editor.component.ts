@@ -87,7 +87,7 @@ import {
 @Component({
     selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
-    styleUrls: ['./dot-block-editor.component.scss'],
+    styleUrls: ['./dot-block-editor.component.css'],
     providers: [
         DialogService,
         {

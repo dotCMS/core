@@ -1,0 +1,52 @@
+:host {
+    background: #fff;
+    border-radius: 0.125rem;
+    box-shadow: 0px 4px 10px rgba(10, 7, 37, 0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+}
+
+form {
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+form.dotTableForm {
+    width: 200px;
+}
+
+form.dotTableForm .p-button-outlined {
+    display: none;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-row label {
+    font-size: 12px;
+}
+
+.form-row.checkbox {
+    flex-direction: row;
+    align-items: center;
+}
+
+.form-action {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 16px;
+    width: 100%;
+    gap: 10px;
+}
+
+.error-message {
+    color: #d82b2e;
+    font-size: 0.625rem;
+    text-align: left;
+}
