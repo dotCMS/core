@@ -27,12 +27,13 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { filter } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotAIImageSizeMapperService, DotMessageService } from '@dotcms/data-access';
 import {
     AIImagePrompt,
     DotAIImageOrientation,
+    DotAISimpleModel,
     DotGeneratedAIImage,
     PromptType
 } from '@dotcms/dotcms-models';
@@ -89,6 +90,8 @@ export class AiImagePromptFormComponent implements OnChanges {
     form: FormGroup;
     aiProcessedPrompt: string;
     dotMessageService = inject(DotMessageService);
+    dotAiService = inject(DotAiService);
+    dotAIImageSizeMapper = inject(DotAIImageSizeMapperService);
     promptTextAreaPlaceholder = 'block-editor.extension.ai-image.custom.placeholder';
     promptLabel = 'block-editor.extension.ai-image.prompt';
     submitButtonLabel = 'block-editor.extension.ai-image.generate';
@@ -96,27 +99,29 @@ export class AiImagePromptFormComponent implements OnChanges {
     tooltipText: string = null;
     orientationOptions: SelectItem<DotAIImageOrientation>[] = [
         {
-            value: DotAIImageOrientation.HORIZONTAL,
-            label: this.dotMessageService.get(
-                'block-editor.extension.ai-image.orientation.horizontal'
-            )
-        },
-        {
             value: DotAIImageOrientation.SQUARE,
             label: this.dotMessageService.get('block-editor.extension.ai-image.orientation.square')
         },
         {
-            value: DotAIImageOrientation.VERTICAL,
+            value: DotAIImageOrientation.LANDSCAPE,
             label: this.dotMessageService.get(
-                'block-editor.extension.ai-image.orientation.vertical'
+                'block-editor.extension.ai-image.orientation.landscape'
+            )
+        },
+        {
+            value: DotAIImageOrientation.PORTRAIT,
+            label: this.dotMessageService.get(
+                'block-editor.extension.ai-image.orientation.portrait'
             )
         }
     ];
+    private currentImageModel = 'dall-e-3'; // Default fallback
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
 
     constructor() {
         this.initForm();
+        this.loadImageModelConfig();
     }
 
     ngOnChanges(changes: SimpleChanges): void {
@@ -130,20 +135,49 @@ export class AiImagePromptFormComponent implements OnChanges {
     }
 
     private initForm(): void {
+        // Initialize with default orientation (square) and get its size
+        const defaultOrientation = DotAIImageOrientation.SQUARE;
+        const defaultSize = this.dotAIImageSizeMapper.getSizeForOrientation(
+            this.currentImageModel,
+            defaultOrientation
+        );
+
         this.form = new FormGroup({
             text: new FormControl('', [Validators.required, DotValidators.noWhitespace]),
             type: new FormControl(PromptType.INPUT, Validators.required),
-            size: new FormControl(DotAIImageOrientation.HORIZONTAL, Validators.required)
+            orientation: new FormControl(defaultOrientation, Validators.required),
+            size: new FormControl(defaultSize, Validators.required)
         });
 
         const typeControl = this.form.get('type');
+        const orientationControl = this.form.get('orientation');
+        const sizeControl = this.form.get('size');
+
+        // When orientation changes, update the size based on current model
+        orientationControl.valueChanges
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((orientation: DotAIImageOrientation) => {
+                const newSize = this.dotAIImageSizeMapper.getSizeForOrientation(
+                    this.currentImageModel,
+                    orientation
+                );
+                sizeControl.setValue(newSize, { emitEvent: false });
+            });
 
         this.form.valueChanges
             .pipe(
                 takeUntilDestroyed(this.destroyRef),
                 filter(() => !this.isUpdatingValidators)
             )
-            .subscribe((value: AIImagePrompt) => this.valueChange.emit(value));
+            .subscribe((value) => {
+                // Emit the prompt with size (pixel dimensions) for the backend
+                const prompt: AIImagePrompt = {
+                    text: value.text,
+                    type: value.type,
+                    size: value.size // This is the actual pixel dimension string
+                };
+                this.valueChange.emit(prompt);
+            });
 
         typeControl.valueChanges
             .pipe(takeUntilDestroyed(this.destroyRef))
@@ -200,5 +234,65 @@ export class AiImagePromptFormComponent implements OnChanges {
             : this.aiProcessedPrompt || this.value?.error
               ? 'block-editor.extension.ai-image.regenerate'
               : 'block-editor.extension.ai-image.generate';
+    }
+
+    /**
+     * Loads the current image model configuration from the AI service.
+     *
+     * Resolution order mirrors the text model approach used in CompletionsResource:
+     * 1. Find the model in availableModels where type === 'IMAGE' and current === true
+     *    (this is the model at currentModelIndex, which defaults to the first in the list)
+     * 2. Fall back to the first name in imageModelNames (comma-separated)
+     *
+     * After resolving, updates the form's size control so the store receives the
+     * correct model-specific pixel dimensions.
+     */
+    private loadImageModelConfig(): void {
+        this.dotAiService
+            .getConfig()
+            .pipe(take(1))
+            .subscribe({
+                next: (config) => {
+                    const resolvedModel = this.resolveCurrentImageModel(
+                        config?.availableModels,
+                        config?.imageModelNames
+                    );
+                    if (resolvedModel) {
+                        this.currentImageModel = resolvedModel;
+                        const orientationControl = this.form?.get('orientation');
+                        const sizeControl = this.form?.get('size');
+                        if (orientationControl && sizeControl) {
+                            const newSize = this.dotAIImageSizeMapper.getSizeForOrientation(
+                                this.currentImageModel,
+                                orientationControl.value
+                            );
+                            sizeControl.setValue(newSize);
+                        }
+                    }
+                },
+                error: (error) => {
+                    console.error('Error loading AI config:', error);
+                    // Keep using the default model (dall-e-3)
+                }
+            });
+    }
+
+    /**
+     * Resolves the current image model name from the config response.
+     * Prefers the availableModels list (uses the current flag set by the backend),
+     * falling back to the first model in the imageModelNames comma-separated string.
+     */
+    private resolveCurrentImageModel(
+        availableModels: DotAISimpleModel[],
+        imageModelNames: string
+    ): string | null {
+        const fromAvailable = availableModels?.find(
+            (m) => m.type === 'IMAGE' && m.current
+        )?.name;
+        if (fromAvailable) {
+            return fromAvailable;
+        }
+
+        return imageModelNames?.split(',')[0]?.trim() ?? null;
     }
 }
