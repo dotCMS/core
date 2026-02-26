@@ -44,7 +44,7 @@ Tests are **silently skipped** without explicit `skip=false` flags: `-Dcoreit.te
 
 ## Tech stack
 
-- **Backend**: Java 21 runtime (Java 11 syntax in core), Maven, JAX-RS, Spring/CDI
+- **Backend**: Java 21 runtime with Java 11 release compatibility (core). Migrating to Java 25 — parallel CI workflows override the Java version to validate forward compatibility. See `.sdkmanrc` for the current default JDK.
 - **Frontend**: Angular 20+, Nx monorepo, PrimeNG, NgRx signals, Jest/Spectator — see `core-web/CLAUDE.md`
 - **Infrastructure**: Docker, PostgreSQL (pgvector), OpenSearch, GitHub Actions
 
