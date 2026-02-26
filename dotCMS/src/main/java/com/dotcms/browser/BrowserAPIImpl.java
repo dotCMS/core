@@ -1336,7 +1336,6 @@ public class BrowserAPIImpl implements BrowserAPI {
         int maxResults = browserQuery.maxResults;
 
         int folderCount = 0;
-        int contentTotalCount = 0;
         int contentCount = 0;
         boolean hasMoreContent = false;
         boolean hasMoreFolders = false;
@@ -1366,7 +1365,6 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Keep offset=0 in the request form; only update contentCursor between pages.
         if (browserQuery.showContent && maxResults > 0) {
             final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, 0, maxResults);
-            contentTotalCount = fromDB.totalResults;
             hasMoreContent = fromDB.hasMore;
             nextContentCursor = fromDB.nextDbCursor;
 
@@ -1377,8 +1375,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         list.sort(new GenericMapFieldComparator(browserQuery.sortBy, browserQuery.sortByDesc));
 
-        return new PaginatedContents(list, folderCount, contentTotalCount, contentCount,
-                hasMoreContent, nextContentCursor, hasMoreFolders, nextFolderCursor);
+        return new PaginatedContents(list, folderCount, contentCount, hasMoreContent,
+                nextContentCursor, hasMoreFolders, nextFolderCursor);
     }
 
     /**
@@ -1397,7 +1395,6 @@ public class BrowserAPIImpl implements BrowserAPI {
     public static class PaginatedContents {
         public final List<Map<String, Object>> list;
         public final int folderCount;
-        public final int contentTotalCount;
         public final int contentCount;
         /** True when there are more content DB rows to scan beyond this page. */
         public final boolean hasMoreContent;
@@ -1416,12 +1413,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         public final int nextFolderCursor;
 
         public PaginatedContents(final List<Map<String, Object>> list, final int folderCount,
-                final int contentTotalCount, final int contentCount,
-                final boolean hasMoreContent, final int nextContentCursor,
+                final int contentCount, final boolean hasMoreContent, final int nextContentCursor,
                 final boolean hasMoreFolders, final int nextFolderCursor) {
             this.list = list;
             this.folderCount = folderCount;
-            this.contentTotalCount = contentTotalCount;
             this.contentCount = contentCount;
             this.hasMoreContent = hasMoreContent;
             this.nextContentCursor = nextContentCursor;

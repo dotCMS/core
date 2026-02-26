@@ -1443,7 +1443,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should return exactly 26 items (25 folders + 1 contentlet)", 26, list.size());
         assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
         assertEquals("Content count should be 1", 1, paginatedContents.contentCount);
-        assertEquals("Content total count should be 30", 30, paginatedContents.contentTotalCount);
 
         // Verify first 25 items are folders
         for (int i = 0; i < 25; i++) {
@@ -1513,7 +1512,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
         assertEquals("Content count should be 15", 15, paginatedContents.contentCount);
         assertFalse("Should indicate NO more content available", paginatedContents.hasMoreContent);
-        assertEquals("Content total count should be 15", 15, paginatedContents.contentTotalCount);
     }
 
     /**
@@ -1569,8 +1567,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
         assertEquals("Content count should be 16", 16, paginatedContents.contentCount);
         assertTrue("Should indicate more content available", paginatedContents.hasMoreContent);
-        // the rest of the chunk to complete the 3 (15 folders + 50 contents) - 32 previous pages = 33
-        assertEquals("Content total count should be 33", 33, paginatedContents.contentTotalCount);
     }
 
     /**
@@ -1684,7 +1680,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         final PaginatedContents resultsOne = browserAPI.getPaginatedContents(queryMatchingOne);
 
         assertNotNull("Results should not be null", resultsOne);
-        assertEquals("Should find exactly 1 matching content", 1, resultsOne.contentTotalCount);
         assertEquals("Should return 1 content item", 1, resultsOne.contentCount);
 
         // Verify the correct content was found
@@ -1708,7 +1703,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         final PaginatedContents resultsTwo = browserAPI.getPaginatedContents(queryMatchingTwo);
 
         assertNotNull("Results should not be null", resultsTwo);
-        assertEquals("Should find exactly 2 matching contents", 2, resultsTwo.contentTotalCount);
         assertEquals("Should return 2 content items", 2, resultsTwo.contentCount);
         assertEquals("Should return exactly 2 items in list", 2, resultsTwo.list.size());
 
@@ -1737,7 +1731,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         final PaginatedContents resultsNone = browserAPI.getPaginatedContents(queryNoMatches);
 
         assertNotNull("Results should not be null", resultsNone);
-        assertEquals("Should find no matching content", 0, resultsNone.contentTotalCount);
         assertEquals("Should return no content items", 0, resultsNone.contentCount);
         assertEquals("Should return empty list", 0, resultsNone.list.size());
     }
@@ -1788,7 +1781,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         final PaginatedContents resultsOne = browserAPI.getPaginatedContents(query);
 
         assertNotNull("Results should not be null", resultsOne);
-        assertEquals("Should report all 10 contents as the total", 10, resultsOne.contentTotalCount);
         assertEquals("Should return 5 matching item as we defined a pageSize of 5.", 5, resultsOne.contentCount);
 
     }
