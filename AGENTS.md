@@ -2,6 +2,8 @@
 
 Headless/hybrid CMS — Java 21 backend (Maven), Angular frontend (Nx/Yarn), Docker infrastructure. Migrating to Java 25 with parallel CI workflows; core source uses Java 11 release compatibility.
 
+> **Note:** `CLAUDE.md` is a symlink to this file (`CLAUDE.md → AGENTS.md`). Claude Code reads `CLAUDE.md`; Codex, Aider, and Cursor read `AGENTS.md`. They are the same content.
+
 ## Build, test, run
 
 ```bash
@@ -15,6 +17,8 @@ cd core-web && npx nx serve dotcms-ui              # frontend dev server on :420
 cd core-web && npx nx lint dotcms-ui               # frontend lint
 cd core-web && npx nx test dotcms-ui               # frontend test
 ```
+
+> **Build scope:** Match scope to what changed — core-only change → `just build-quicker`; multi-module → add `--am`; full rebuild → `just build`. Silent failures are rare; slow builds are common.
 
 ### Testing
 
@@ -31,6 +35,7 @@ Tests are **silently skipped** without explicit `skip=false` flags: `-Dcoreit.te
 
 - `justfile` — run with `just <command>` or read as a Maven command reference
 - `docs/README.md` — full documentation index (Java, Angular, testing, REST, Docker, CI/CD)
+- `docs/backend/REST_API_PATTERNS.md` — REST endpoints require dotCMS-specific auth init and response wrapping; generic JAX-RS patterns are incomplete here
 - `core-web/CLAUDE.md` — frontend standards and Nx commands
 - `.cursor/rules/` — domain-specific rules loaded by file pattern (Java, frontend, tests, docs)
 
