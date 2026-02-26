@@ -14,6 +14,7 @@ import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';
 
 import {
     createAnimationState,
@@ -24,7 +25,6 @@ import {
     SPARKLINE_ANIMATION_DURATION
 } from '../../plugins';
 import { AnalyticsChartColors, ChartData } from '../../types';
-import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';
 import { hexToRgba } from '../../utils/dot-analytics.utils';
 
 /** Context object passed to the Chart.js external tooltip callback */
