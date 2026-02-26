@@ -1,64 +1,42 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
+import { signalStore, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import {
+    DotContentletLockerService,
+    DotLanguagesService,
+    DotPropertiesService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { DotCMSPageAsset } from '@dotcms/types';
-import { mockWorkflowsActions } from '@dotcms/utils-testing';
+import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { withWorkflow } from './withWorkflow';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
-import { Orientation, PageType, UVEState } from '../../models';
+import { UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
+import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
 
-const pageParams: DotPageApiParams = {
+const pageParams = {
     url: 'new-url',
     language_id: '1',
     [PERSONA_KEY]: '2'
 };
 
-const initialState: UVEState = {
-    uveStatus: UVE_STATUS.LOADING,
-    uveIsEnterprise: false,
-    uveCurrentUser: null,
-    flags: {},
-    pageParams,
-    pageLanguages: [],
-    pageType: PageType.TRADITIONAL,
-    pageExperiment: null,
-    pageErrorCode: null,
-    workflowActions: [],
-    workflowIsLoading: false,
-    workflowLockIsLoading: false,
-    editorDragItem: null,
-    editorBounds: [],
-    editorState: EDITOR_STATE.IDLE,
-    editorActiveContentlet: null,
-    editorContentArea: null,
-    editorPaletteOpen: true,
-    editorRightSidebarOpen: false,
-    editorOgTags: null,
-    editorStyleSchemas: [],
-    viewDevice: null,
-    viewDeviceOrientation: Orientation.LANDSCAPE,
-    viewSocialMedia: null,
-    viewParams: null,
-    viewOgTagsResults: null,
-    viewZoomLevel: 1,
-    viewZoomIsActive: false,
-    viewZoomIframeDocHeight: 0,
-    viewZoomGestureStartZoom: 1
-};
+const initialState = createInitialUVEState({ pageParams });
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withFeature(() => withPage()),
+    withFlags([]),
+    withPage(),
     withWorkflow(),
     withMethods((store) => ({
         setPageAPIResponse: (pageAssetResponse: DotCMSPageAsset) => {
@@ -75,12 +53,31 @@ describe('withLoad', () => {
     const createService = createServiceFactory({
         service: uveStoreMock,
         providers: [
+            mockProvider(Router),
+            mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get: () => of({}),
+                    getClientPage: () => of({}),
+                    getGraphQLPage: () => of({}),
+                    save: jest.fn()
+                }
+            },
             {
                 provide: DotWorkflowsActionsService,
                 useValue: {
-                    getByInode: () => of(mockWorkflowsActions)
+                    getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions))
                 }
-            }
+            },
+            {
+                provide: DotContentletLockerService,
+                useValue: { unlock: () => of({}), lock: () => of({}) }
+            },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }
         ]
     });
 

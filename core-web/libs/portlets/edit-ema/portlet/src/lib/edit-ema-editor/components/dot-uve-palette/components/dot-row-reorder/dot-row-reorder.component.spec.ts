@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 
@@ -94,9 +95,10 @@ describe('DotRowReorderComponent', () => {
                 {
                     provide: UVEStore,
                     useValue: {
-                        pageAsset: computed(() =>
-                            mockLayoutSignal() ? ({ layout: mockLayoutSignal() } : null)
-                        ),
+                        pageAsset: computed(() => {
+                            const layout = mockLayoutSignal();
+                            return layout ? { layout } : null;
+                        }),
                         updateLayout: jest.fn(),
                         updateRows: jest.fn()
                     }
@@ -104,14 +106,11 @@ describe('DotRowReorderComponent', () => {
             ]
         });
         component = spectator.component;
-        mockUVEStore = spectator.inject(UVEStore, true);
+        mockUVEStore = spectator.inject(UVEStore, true) as InstanceType<typeof UVEStore> & {
+            updateLayout: jest.Mock;
+            updateRows: jest.Mock;
+        };
         spectator.detectChanges();
-    });
-
-    describe('Component Creation', () => {
-        it('should create', () => {
-            expect(component).toBeTruthy();
-        });
     });
 
     describe('Rendering', () => {

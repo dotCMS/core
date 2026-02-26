@@ -270,9 +270,10 @@ describe('DotUveContentletToolsComponent', () => {
                 const paletteButton = spectator.query(byTestId('palette-button')) as Element;
                 spectator.click(paletteButton);
 
-                expect(hostComponent.onSelectContent).toHaveBeenCalledWith(
-                    MOCK_CONTENTLET_AREA.payload
-                );
+                expect(hostComponent.onSelectContent).toHaveBeenCalledWith({
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    position: 'after'
+                });
             });
         });
 
@@ -551,6 +552,7 @@ describe('DotUveContentletToolsComponent', () => {
 
             it('should default to 0px when contentletArea values are undefined', () => {
                 // Create area without x property to test undefined handling
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { x, ...rest } = MOCK_CONTENTLET_AREA;
                 const areaWithUndefined = {
                     ...rest,

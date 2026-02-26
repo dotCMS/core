@@ -2,7 +2,9 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ComponentFixture } from '@angular/core/testing';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSClazzes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
     ContentletEditData,
@@ -14,7 +16,16 @@ describe('DotUveContentletQuickEditComponent', () => {
     let fixture: ComponentFixture<DotUveContentletQuickEditComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotUveContentletQuickEditComponent
+        component: DotUveContentletQuickEditComponent,
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'dot.common.cancel': 'Cancel',
+                    'dot.common.save': 'Save'
+                })
+            }
+        ]
     });
 
     const mockContentletEditData: ContentletEditData = {
@@ -22,8 +33,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             identifier: 'container-123',
             uuid: 'uuid-123',
             acceptTypes: 'test',
-            maxContentlets: 1,
-            variantId: 'DEFAULT'
+            maxContentlets: 1
         },
         contentlet: {
             identifier: 'contentlet-123',

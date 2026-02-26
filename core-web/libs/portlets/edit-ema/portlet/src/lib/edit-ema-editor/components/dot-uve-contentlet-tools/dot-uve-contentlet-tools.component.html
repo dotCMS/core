@@ -49,7 +49,7 @@
                 <p-button
                     (click)="deleteContent.emit(selectedContext)"
                     [disabled]="!allowContentDelete()"
-                    [pTooltip]="deleteButtonTooltip() | dm"
+                    [pTooltip]="(deleteButtonTooltip() ?? '') | dm"
                     tooltipPosition="bottom"
                     [escape]="false"
                     data-testId="delete-button"
