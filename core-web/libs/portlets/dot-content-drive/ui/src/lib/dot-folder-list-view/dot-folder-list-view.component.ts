@@ -1,5 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
 
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,6 +12,7 @@ import {
     OnInit,
     output,
     Renderer2,
+    signal,
     viewChild
 } from '@angular/core';
 
@@ -41,7 +43,8 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
         DotRelativeDatePipe,
         SkeletonModule,
         TableModule,
-        DotLocaleTagPipe
+        DotLocaleTagPipe,
+        NgTemplateOutlet
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
@@ -175,6 +178,8 @@ export class DotFolderListViewComponent implements OnInit {
         () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
     );
 
+    protected readonly $loadingRows = signal<number[]>([...Array(this.MIN_ROWS_PER_PAGE)]);
+
     /**
      * Computed pass-through configuration for empty table.
      */
@@ -275,6 +280,7 @@ export class DotFolderListViewComponent implements OnInit {
      */
     onPage(event: LazyLoadEvent) {
         this.paginate.emit(event);
+        this.$loadingRows.set([...Array(event.rows)]);
     }
 
     /**
