@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -22,35 +22,19 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
             { name: 'Chrome', views: 55000, percentage: 57, time: '2m 30s' },
             { name: 'Safari', views: 25000, percentage: 26, time: '2m 15s' },
             { name: 'Firefox', views: 15655, percentage: 17, time: '2m 00s' }
-        ],
-        language: [
-            { name: 'English', views: 70000, percentage: 73, time: '2m 40s' },
-            { name: 'Spanish', views: 20000, percentage: 21, time: '2m 20s' },
-            { name: 'French', views: 5655, percentage: 6, time: '1m 50s' }
         ]
     };
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsPlatformsTableComponent,
         imports: [DotMessagePipe],
-        providers: [
-            {
-                provide: DotMessageService,
-                useValue: {
-                    get: (key: string) => key
-                }
-            }
-        ]
+        providers: [mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })]
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                platforms: mockPlatformsData,
-                status: ComponentStatus.LOADED
-            } as unknown,
-            detectChanges: false
-        });
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('platforms', mockPlatformsData);
+        spectator.setInput('status', ComponentStatus.LOADED);
     });
 
     describe('Component Initialization', () => {
@@ -64,10 +48,10 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
             expect(spectator.query('p-card')).toExist();
         });
 
-        it('should display p-tabs with 3 tabs', () => {
+        it('should display p-tabs with 2 tab panels', () => {
             spectator.detectChanges();
             expect(spectator.query('p-tabs')).toExist();
-            expect(spectator.queryAll('p-tab').length).toBe(3);
+            expect(spectator.queryAll('p-tabpanel').length).toBe(2);
         });
     });
 
@@ -110,20 +94,12 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
             expect(browserData[0].name).toBe('Chrome');
         });
 
-        it('should compute language data from platforms input', () => {
-            spectator.detectChanges();
-            const languageData = spectator.component.$languageData();
-            expect(languageData.length).toBe(3);
-            expect(languageData[0].name).toBe('English');
-        });
-
         it('should return empty arrays when platforms is null', () => {
             spectator.setInput('platforms', null);
             spectator.detectChanges();
 
             expect(spectator.component.$deviceData()).toEqual([]);
             expect(spectator.component.$browserData()).toEqual([]);
-            expect(spectator.component.$languageData()).toEqual([]);
         });
     });
 });

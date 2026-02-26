@@ -50,7 +50,7 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
 })
 export default class DotAnalyticsConversionsReportComponent implements OnInit {
     /** Analytics dashboard store providing conversions data and actions */
-    readonly store = inject(DotAnalyticsDashboardStore);
+    protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
 
@@ -108,23 +108,28 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
         const totalConversions = this.store.totalConversions();
         const convertingVisitors = this.store.convertingVisitors();
 
-        const totalConversionsValue = totalConversions.data
+        const totalConversionsRaw = totalConversions.data
             ? parseInt(totalConversions.data['EventSummary.totalEvents'], 10)
-            : 0;
+            : null;
+        const totalConversionsValue = totalConversionsRaw === 0 ? null : totalConversionsRaw;
 
         const uniqueVisitors = convertingVisitors.data
             ? parseInt(convertingVisitors.data['EventSummary.uniqueVisitors'], 10)
-            : 0;
+            : null;
 
         const uniqueConvertingVisitors = convertingVisitors.data
             ? parseInt(convertingVisitors.data['EventSummary.uniqueConvertingVisitors'], 10)
-            : 0;
+            : null;
 
-        // Site Conversion Rate = (uniqueConvertingVisitors / uniqueVisitors) * 100
-        const conversionRate =
-            uniqueVisitors > 0
-                ? Math.round((uniqueConvertingVisitors / uniqueVisitors) * 10000) / 100
-                : 0;
+        const hasVisitorData = uniqueVisitors != null && uniqueVisitors > 0;
+
+        const conversionRate = hasVisitorData
+            ? `${Math.round(((uniqueConvertingVisitors ?? 0) / uniqueVisitors) * 10000) / 100}%`
+            : null;
+
+        const convertingVisitorsValue = hasVisitorData
+            ? `${uniqueConvertingVisitors ?? 0}/${uniqueVisitors}`
+            : null;
 
         return [
             {
@@ -137,7 +142,7 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
             },
             {
                 name: 'analytics.metrics.converting-visitors',
-                value: `${uniqueConvertingVisitors}/${uniqueVisitors}`,
+                value: convertingVisitorsValue,
                 subtitle: 'analytics.metrics.converting-visitors.subtitle',
                 icon: 'pi-users',
                 status: convertingVisitors.status,
@@ -145,7 +150,7 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
             },
             {
                 name: 'analytics.metrics.site-conversion-rate',
-                value: `${conversionRate}%`,
+                value: conversionRate,
                 subtitle: 'analytics.metrics.site-conversion-rate.subtitle',
                 icon: 'pi-chart-line',
                 status: convertingVisitors.status,
