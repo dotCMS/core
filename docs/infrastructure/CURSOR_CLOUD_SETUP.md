@@ -18,6 +18,8 @@ just dev-start-on-port 8082
 
 Admin UI: `http://localhost:8082/dotAdmin` — `admin@dotcms.com` / `admin`
 
+> **Frontend dev server note:** The Angular dev server (`nx serve`) proxies API calls to `localhost:8080` by default. If you start the backend on a different port (e.g. 8082), the proxy config in `core-web/apps/dotcms-ui/proxy-dev.conf.mjs` must be updated to match, or frontend API calls will fail.
+
 ## Known issues in Cursor Cloud VMs
 
 - **Docker storage driver must be `vfs`** — `fuse-overlayfs` causes dpkg-divert failures.

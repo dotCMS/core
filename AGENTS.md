@@ -10,15 +10,19 @@ Headless/hybrid CMS — Java 21 backend (Maven), Angular frontend (Nx/Yarn), Doc
 ./mvnw install -DskipTests                        # full build (~8-15 min), or: just build
 ./mvnw install -pl :dotcms-core -DskipTests        # core only (~2-3 min), or: just build-quicker
 
-just dev-start-on-port 8082                        # start (DB + OpenSearch + app in Docker)
+just dev-start-on-port 8080                        # start stack (DB + OpenSearch + app) → :8080/dotAdmin
 just dev-stop                                      # teardown
 
-cd core-web && npx nx serve dotcms-ui              # frontend dev server on :4200
+cd core-web && npx nx serve dotcms-ui              # frontend dev server :4200, proxies API to backend :8080
 cd core-web && npx nx lint dotcms-ui               # frontend lint
 cd core-web && npx nx test dotcms-ui               # frontend test
 ```
 
-> **Build scope:** Match scope to what changed — core-only change → `just build-quicker`; multi-module → add `--am`; full rebuild → `just build`. Silent failures are rare; slow builds are common.
+> **First run:** build first (`just build`), then start — the build produces the Docker image the start command uses.
+>
+> **Build scope:** Match scope to what changed — core-only change → `just build-quicker`; multi-module → add `--am`; full rebuild → `just build`. After a core rebuild, restart to pick up the new image: `just dev-stop && just dev-start-on-port 8080`. Silent failures are rare; slow builds are common.
+>
+> **Frontend dev:** the `nx serve` dev server proxies API calls to the running backend on `:8080` — no backend rebuild needed for frontend-only changes. Backend must be up for API calls to work.
 
 ### Testing
 
