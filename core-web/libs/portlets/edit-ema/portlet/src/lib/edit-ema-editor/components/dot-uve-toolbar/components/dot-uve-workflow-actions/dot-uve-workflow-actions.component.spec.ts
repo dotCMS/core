@@ -94,13 +94,13 @@ const pageSnapshotSignal = signal({
 });
 
 const uveStoreMock = {
-    page: pageSnapshotSignal,
+    pageAsset: pageSnapshotSignal,
     workflowActions: signal([]),
     workflowIsLoading: signal(false),
     editorCanEditContent: () => canEditPageContentSignal(),
     pageParams: signal(pageParams),
     pageLoad: jest.fn(),
-    reloadCurrentPage: jest.fn(),
+    pageReload: jest.fn(),
     setWorkflowActionLoading: jest.fn()
 };
 
@@ -233,7 +233,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
         it('should fire workflow actions and reloadPage', () => {
             const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
-            const spyReloadCurrentPage = jest.spyOn(store, 'reloadCurrentPage');
+            const spyReloadCurrentPage = jest.spyOn(store, 'pageReload');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')

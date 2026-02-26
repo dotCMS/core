@@ -2,7 +2,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 
 import { DotPageAssetLayoutRow, DotPageAssetLayoutColumn, DotCMSLayout } from '@dotcms/types';
 
@@ -80,7 +80,7 @@ describe('DotRowReorderComponent', () => {
         component: DotRowReorderComponent,
         providers: [
             MockProvider(UVEStore, {
-                layout: signal<DotCMSLayout | null>(null),
+                pageAsset: signal(null),
                 updateLayout: jest.fn(),
                 updateRows: jest.fn()
             })
@@ -94,7 +94,9 @@ describe('DotRowReorderComponent', () => {
                 {
                     provide: UVEStore,
                     useValue: {
-                        layout: mockLayoutSignal,
+                        pageAsset: computed(() =>
+                            mockLayoutSignal() ? ({ layout: mockLayoutSignal() } : null)
+                        ),
                         updateLayout: jest.fn(),
                         updateRows: jest.fn()
                     }

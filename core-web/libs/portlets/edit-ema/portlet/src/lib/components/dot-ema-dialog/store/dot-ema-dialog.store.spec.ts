@@ -18,10 +18,9 @@ import { UVEStore } from '../../../store/dot-uve.store';
 
 const TEST_VARIANT = 'my-test-variant';
 
-/** Mock UVEStore signals used by DotEmaDialogStore (same shape as real store's $variantId) */
+/** Mock UVEStore signals used by DotEmaDialogStore (same shape as real store's pageVariantId) */
 const mockUveStore = {
-    pageParams: signal({ variantName: TEST_VARIANT }),
-    $variantId: signal(TEST_VARIANT)
+    pageVariantId: signal(TEST_VARIANT)
 };
 
 describe('DotEmaDialogStoreService', () => {
