@@ -37,7 +37,11 @@ export const DEBOUNCE_TIME = 5000;
     imports: [TemplateBuilderComponent],
     templateUrl: './edit-ema-layout.component.html',
     styleUrls: ['./edit-ema-layout.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    // Note: Needed because gridstack is using the window:mousemove event to scroll the page when dragging an element
+    host: {
+        class: 'overflow-hidden'
+    }
 })
 export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     private readonly dotRouterService = inject(DotRouterService);

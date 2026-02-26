@@ -10,7 +10,7 @@ import { MockComponent } from 'ng-mocks';
 import { EMPTY, Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement, signal, computed } from '@angular/core';
+import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';

@@ -10,8 +10,8 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotCMSClazzes, DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
-
 import { DotMessagePipe } from '@dotcms/ui';
+
 import { ContainerPayload } from '../../../shared/models';
 
 /**

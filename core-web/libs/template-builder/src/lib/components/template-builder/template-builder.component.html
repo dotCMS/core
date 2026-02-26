@@ -46,7 +46,7 @@
                     vm.layoutProperties.sidebar.location === 'right'
             }"
             class="template-builder__container">
-            @if (vm.layoutProperties.sidebar.location.length) {
+            @if (vm.layoutProperties.sidebar.location?.length) {
                 <dotcms-template-builder-sidebar
                     [ngClass]="{
                         'template-builder__sidebar--small':
@@ -87,14 +87,14 @@
                                     class="grid-stack-item sub"
                                     #boxElement>
                                     <dotcms-template-builder-box
-                                        (deleteColumn)="removeColumn(box, boxElement, row.id)"
-                                        (addContainer)="addContainer(box, row.id, $event)"
-                                        (deleteContainer)="deleteContainer(box, row.id, $event)"
-                                        (editClasses)="editBoxStyleClasses(row.id, box)"
+                                        (deleteColumn)="removeColumn(box, boxElement, row.id ?? 0)"
+                                        (addContainer)="addContainer(box, row.id ?? 0, $event)"
+                                        (deleteContainer)="deleteContainer(box, row.id ?? 0, $event)"
+                                        (editClasses)="editBoxStyleClasses(row.id ?? 0, box)"
                                         [attr.data-testId]="'builder-box-' + $index"
                                         [containerMap]="vm.containerMap"
-                                        [items]="box.containers"
-                                        [width]="box.w"
+                                        [items]="box.containers ?? []"
+                                        [width]="box.w ?? 0"
                                         class="grid-stack-item-content" />
                                 </div>
                             }
