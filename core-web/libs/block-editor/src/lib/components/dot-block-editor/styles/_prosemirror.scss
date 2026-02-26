@@ -66,6 +66,9 @@ tiptap-editor ::ng-deep .ProseMirror {
 
     // Import table styles from separate file
     @include meta.load-css("tables");
+
+    // Import grid block styles from separate file
+    @include meta.load-css("grid");
 }
 
 tiptap-editor ::ng-deep {

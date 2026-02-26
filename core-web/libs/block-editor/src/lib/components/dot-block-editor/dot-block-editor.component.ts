@@ -66,7 +66,15 @@ import {
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
+import {
+    AIContentNode,
+    ContentletBlock,
+    GridBlock,
+    GridColumn,
+    ImageNode,
+    LoaderNode,
+    VideoNode
+} from '../../nodes';
 import {
     DEFAULT_LANG_ID,
     DotMarketingConfigService,
@@ -121,7 +129,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         ['image', ImageNode],
         ['video', VideoNode],
         ['aiContent', AIContentNode],
-        ['loader', LoaderNode]
+        ['loader', LoaderNode],
+        ['gridBlock', GridBlock]
     ]);
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
@@ -616,7 +625,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                 }
             }),
             ...DotCMSTableExtensions,
-            DotTableCellContextMenu(this.viewContainerRef)
+            DotTableCellContextMenu(this.viewContainerRef),
+            GridColumn
         ];
 
         if (isAIPluginInstalled) {

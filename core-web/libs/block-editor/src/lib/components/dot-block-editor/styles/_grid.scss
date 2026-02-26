@@ -1,0 +1,38 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
+// =============================================================================
+// GRID BLOCK STYLES - Two-column layout
+// =============================================================================
+
+.grid-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: spacing.$spacing-4;
+    margin: spacing.$spacing-4 0;
+
+    &__column {
+        padding: spacing.$spacing-3;
+        border: 1px dashed colors.$color-palette-gray-400;
+        border-radius: spacing.$spacing-1;
+        min-height: 3rem;
+
+        > *:first-child {
+            margin-top: 0;
+        }
+
+        > *:last-child {
+            margin-bottom: 0;
+        }
+
+        &:focus-within {
+            border-color: colors.$color-palette-primary-300;
+            background: colors.$color-palette-primary-op-10;
+        }
+    }
+}
+
+.ProseMirror-selectednode.grid-block {
+    outline: 2px solid colors.$color-palette-primary;
+    border-radius: spacing.$spacing-1;
+}
