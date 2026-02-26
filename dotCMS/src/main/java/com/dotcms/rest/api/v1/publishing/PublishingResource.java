@@ -34,6 +34,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -79,6 +80,7 @@ public class PublishingResource {
     private final Lazy<com.dotcms.publishing.PublisherAPI> publisherAPI;
     private final Lazy<com.dotcms.publisher.business.PublisherAPI> publisherQueueAPI;
     private final PublishingJobsHelper publishingJobsHelper;
+    private final PublishingRetryHelper publishingRetryHelper;
 
     /**
      * Default constructor for JAX-RS.
@@ -89,18 +91,20 @@ public class PublishingResource {
              Lazy.of(APILocator::getBundleAPI),
              Lazy.of(APILocator::getPublisherAPI),
              Lazy.of(com.dotcms.publisher.business.PublisherAPI::getInstance),
-             new PublishingJobsHelper());
+             new PublishingJobsHelper(),
+             new PublishingRetryHelper());
     }
 
     /**
      * Constructor for testing with dependency injection.
      *
-     * @param webResource          Web resource for authentication
-     * @param publishAuditAPI      Audit API for retrieving publishing status
-     * @param bundleAPI            Bundle API for bundle operations
-     * @param publisherAPI         Publisher API for filter lookup
-     * @param publisherQueueAPI    Publisher Queue API for bundle queue operations
-     * @param publishingJobsHelper Helper for transforming data to views
+     * @param webResource            Web resource for authentication
+     * @param publishAuditAPI        Audit API for retrieving publishing status
+     * @param bundleAPI              Bundle API for bundle operations
+     * @param publisherAPI           Publisher API for filter lookup
+     * @param publisherQueueAPI      Publisher Queue API for bundle queue operations
+     * @param publishingJobsHelper   Helper for transforming data to views
+     * @param publishingRetryHelper  Helper for retry operations
      */
     @VisibleForTesting
     public PublishingResource(final WebResource webResource,
@@ -108,13 +112,15 @@ public class PublishingResource {
                               final Lazy<BundleAPI> bundleAPI,
                               final Lazy<com.dotcms.publishing.PublisherAPI> publisherAPI,
                               final Lazy<com.dotcms.publisher.business.PublisherAPI> publisherQueueAPI,
-                              final PublishingJobsHelper publishingJobsHelper) {
+                              final PublishingJobsHelper publishingJobsHelper,
+                              final PublishingRetryHelper publishingRetryHelper) {
         this.webResource = webResource;
         this.publishAuditAPI = publishAuditAPI;
         this.bundleAPI = bundleAPI;
         this.publisherAPI = publisherAPI;
         this.publisherQueueAPI = publisherQueueAPI;
         this.publishingJobsHelper = publishingJobsHelper;
+        this.publishingRetryHelper = publishingRetryHelper;
     }
 
     /**
@@ -471,6 +477,158 @@ public class PublishingResource {
     }
 
     /**
+     * Retries failed or successful bundles by re-queueing them for publishing.
+     *
+     * <p>This endpoint supports bulk operations, allowing multiple bundles to be retried
+     * in a single request. Each bundle is processed independently, with per-bundle
+     * success/failure results returned in the response.</p>
+     *
+     * <h3>Retryable Statuses:</h3>
+     * <ul>
+     *   <li>SUCCESS - Re-publish successful bundles (force push auto-enabled)</li>
+     *   <li>SUCCESS_WITH_WARNINGS - Re-publish with warnings (force push auto-enabled)</li>
+     *   <li>FAILED_TO_PUBLISH - Retry failed publishing</li>
+     *   <li>FAILED_TO_SEND_TO_ALL_GROUPS - Retry when all endpoints failed</li>
+     *   <li>FAILED_TO_SEND_TO_SOME_GROUPS - Retry when some endpoints failed</li>
+     *   <li>FAILED_TO_SENT - Retry send failures</li>
+     * </ul>
+     *
+     * <h3>Non-Retryable Statuses:</h3>
+     * <ul>
+     *   <li>BUNDLING - Bundle creation in progress</li>
+     *   <li>SENDING_TO_ENDPOINTS - Transfer in progress</li>
+     *   <li>WAITING_FOR_PUBLISHING - Already queued</li>
+     * </ul>
+     *
+     * @param request   The HTTP request
+     * @param response  The HTTP response
+     * @param form      Request body containing bundleIds, forcePush, and deliveryStrategy
+     * @return Per-bundle retry results
+     */
+    @Operation(
+            summary = "Retry failed or successful bundles",
+            description = "Re-attempts sending bundles that were previously pushed but failed, " +
+                    "partially failed, or succeeded but need re-synchronization. " +
+                    "Supports bulk operations with per-bundle results."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Retry operation completed (check individual results for success/failure)",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityRetryBundlesView.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request parameters (e.g., empty bundleIds, invalid deliveryStrategy)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            )
+    })
+    @POST
+    @Path("/retry")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityRetryBundlesView retryBundles(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @RequestBody(
+                    description = "Retry request containing bundle IDs and options",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = RetryBundlesForm.class)
+                    )
+            )
+            final RetryBundlesForm form) {
+
+        // Initialize request context and authenticate user
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final User user = initData.getUser();
+
+        // Validate form
+        if (form == null || form.bundleIds() == null || form.bundleIds().isEmpty()) {
+            throw new BadRequestException("At least one bundle ID is required");
+        }
+
+        // Validate delivery strategy
+        final DeliveryStrategy deliveryStrategy = form.deliveryStrategy();
+        if (deliveryStrategy == null) {
+            throw new BadRequestException(
+                    "Invalid deliveryStrategy. Valid values: ALL_ENDPOINTS, FAILED_ENDPOINTS");
+        }
+
+        // Process each bundle - catch exceptions per item
+        final List<RetryBundleResultView> results = new ArrayList<>();
+
+        for (final String retryBundleId : form.bundleIds()) {
+            try {
+                final RetryResultDTO dto = publishingRetryHelper.retryBundle(
+                        retryBundleId,
+                        form.forcePush(),
+                        deliveryStrategy,
+                        user,
+                        request
+                );
+
+                // Build success result from DTO
+                results.add(RetryBundleResultView.builder()
+                        .bundleId(dto.getBundleId())
+                        .success(true)
+                        .message("Bundle successfully re-queued for publishing")
+                        .forcePush(dto.isForcePush())
+                        .operation(dto.getOperation())
+                        .deliveryStrategy(dto.getDeliveryStrategy())
+                        .assetCount(dto.getAssetCount())
+                        .build());
+
+            } catch (final Exception e) {
+                Logger.debug(this, "Error retrying bundle " + retryBundleId + ": " + e.getMessage(), e);
+
+                // Build failure result
+                results.add(RetryBundleResultView.builder()
+                        .bundleId(retryBundleId != null ? retryBundleId.trim() : "unknown")
+                        .success(false)
+                        .message(e.getMessage())
+                        .forcePush(null)
+                        .operation(null)
+                        .deliveryStrategy(deliveryStrategy)
+                        .assetCount(null)
+                        .build());
+            }
+        }
+
+        // Log summary
+        final long successCount = results.stream().filter(RetryBundleResultView::success).count();
+        final long failureCount = results.size() - successCount;
+
+        Logger.info(this, String.format(
+                "Retry operation completed by user '%s': %d succeeded, %d failed out of %d bundles",
+                user.getUserId(), successCount, failureCount, results.size()));
+
+        return new ResponseEntityRetryBundlesView(results);
+    }
+
+    /**
      * Pushes a bundle to specified environments for publishing.
      *
      * <p>This endpoint schedules an existing bundle (with assets already added)
@@ -630,11 +788,11 @@ public class PublishingResource {
                         form.getOperation()));
         }
 
-        // 10. Fire publisher queue immediately (2-second delay for responsive UX)
+        // 9. Fire publisher queue immediately (2-second delay for responsive UX)
         publisherQueueAPI.get().firePublisherQueueNow(
                 Map.of("deliveryStrategy", DeliveryStrategy.ALL_ENDPOINTS));
 
-        // 11. Build and return result (return actual valid environments, not requested)
+        // 10. Build and return result (return actual valid environments, not requested)
         final List<String> validEnvIds = validEnvs.stream()
                 .map(Environment::getId)
                 .collect(Collectors.toList());
