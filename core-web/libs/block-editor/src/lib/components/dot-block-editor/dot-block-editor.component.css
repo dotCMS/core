@@ -368,35 +368,35 @@ dot-editor-count-bar {
     margin-top: 0;
 }
 
-/* Typography styles within ProseMirror context */
+/* =============================================================================
+   Typography - Vertical Rhythm within ProseMirror context
+   Base unit: 1.5rem (24px) — derived from 1rem font-size × 1.5 line-height
+   All vertical spacing uses multiples: 0.75rem (½), 1.5rem (1×), 3rem (2×)
+   ============================================================================= */
 
 tiptap-editor::ng-deep .ProseMirror p {
     font-size: 1rem;
     line-height: 1.5;
-    margin: 0 0 0.5rem 0;
-    padding: 0.25rem 0;
+    margin: 0 0 0.75rem 0;
     color: #000;
     font-weight: 400;
 }
 
 tiptap-editor::ng-deep .ProseMirror p.is-empty {
-    margin: 0 0 0.5rem 0;
-    padding: 0.25rem 0;
+    margin: 0 0 0.75rem 0;
     min-height: 1.5rem;
     box-sizing: content-box;
 }
 
 tiptap-editor::ng-deep .ProseMirror p:empty {
-    margin: 0 0 0.5rem 0;
-    padding: 0.25rem 0;
+    margin: 0 0 0.75rem 0;
     min-height: 1.5rem;
 }
 
 tiptap-editor::ng-deep .ProseMirror h1 {
     font-size: 2.5rem;
     line-height: 1.2;
-    margin: 2rem 0 1.5rem 0;
-    padding: 0;
+    margin: 3rem 0 1.5rem 0;
     color: #000;
     position: relative;
 }
@@ -404,40 +404,35 @@ tiptap-editor::ng-deep .ProseMirror h1 {
 tiptap-editor::ng-deep .ProseMirror h2 {
     font-size: 2rem;
     line-height: 1.2;
-    margin: 1.5rem 0 1.5rem 0;
-    padding: 0;
+    margin: 3rem 0 1.5rem 0;
     color: #000;
 }
 
 tiptap-editor::ng-deep .ProseMirror h3 {
     font-size: 1.75rem;
-    line-height: 1.3;
-    margin: 1.5rem 0 1.5rem 0;
-    padding: 0;
+    line-height: 1.29;
+    margin: 1.5rem 0 0.75rem 0;
     color: #000;
 }
 
 tiptap-editor::ng-deep .ProseMirror h4 {
     font-size: 1.5rem;
-    line-height: 1.3;
-    margin: 1.5rem 0 1.5rem 0;
-    padding: 0;
+    line-height: 1.25;
+    margin: 1.5rem 0 0.75rem 0;
     color: #000;
 }
 
 tiptap-editor::ng-deep .ProseMirror h5 {
     font-size: 1.125rem;
-    line-height: 1.4;
-    margin: 1.5rem 0 1.5rem 0;
-    padding: 0;
+    line-height: 1.34;
+    margin: 1.5rem 0 0.75rem 0;
     color: #000;
 }
 
 tiptap-editor::ng-deep .ProseMirror h6 {
     font-size: 1.25rem;
-    line-height: 1.4;
-    margin: 1.5rem 0 1.5rem 0;
-    padding: 0;
+    line-height: 1.2;
+    margin: 1.5rem 0 0.75rem 0;
     color: #000;
 }
 
@@ -445,27 +440,29 @@ tiptap-editor::ng-deep .ProseMirror ul,
 tiptap-editor::ng-deep .ProseMirror ol {
     font-size: 1rem;
     line-height: 1.5;
-    margin: 0.5rem 0 1.5rem 0;
+    margin: 0 0 1.5rem 0;
     padding: 0;
     padding-left: 1.5rem;
 }
 
 tiptap-editor::ng-deep .ProseMirror li {
-    margin: 0 0 0.25rem 0;
-    padding: 0.125rem 0;
+    margin: 0 0 0.75rem 0;
     line-height: 1.5;
+}
+
+tiptap-editor::ng-deep .ProseMirror li:last-child {
+    margin-bottom: 0;
 }
 
 tiptap-editor::ng-deep .ProseMirror li p {
     margin: 0;
-    padding: 0;
 }
 
 tiptap-editor::ng-deep .ProseMirror ul ul,
 tiptap-editor::ng-deep .ProseMirror ol ol,
 tiptap-editor::ng-deep .ProseMirror ul ol,
 tiptap-editor::ng-deep .ProseMirror ol ul {
-    margin: 0.25rem 0 0 0;
+    margin: 0.75rem 0 0 0;
     padding-left: 1.5rem;
 }
 
@@ -488,14 +485,18 @@ tiptap-editor::ng-deep .ProseMirror blockquote {
 }
 
 tiptap-editor::ng-deep .ProseMirror blockquote p {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 0.75rem 0;
+}
+
+tiptap-editor::ng-deep .ProseMirror blockquote p:last-child {
+    margin-bottom: 0;
 }
 
 tiptap-editor::ng-deep .ProseMirror pre {
     font-size: 0.875rem;
-    line-height: 1.4;
+    line-height: 1.5;
     margin: 1.5rem 0;
-    padding: 1rem 20px;
+    padding: 0.75rem 1.5rem;
     background: var(--gray-900);
     color: #fff;
     border-radius: 0.5rem;
@@ -509,7 +510,7 @@ tiptap-editor::ng-deep .ProseMirror pre code {
     background: none;
     padding: 0;
     color: inherit;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 tiptap-editor::ng-deep .ProseMirror img.dot-image {
@@ -556,7 +557,7 @@ tiptap-editor::ng-deep .ProseMirror a:has(img.dot-image) {
 }
 
 tiptap-editor::ng-deep .ProseMirror .video-container {
-    margin-bottom: 1rem;
+    margin: 1.5rem 0;
     aspect-ratio: 16/9;
     height: 300px;
 }
