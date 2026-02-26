@@ -27745,6 +27745,9 @@ components:
         deliveryStrategy:
           type: string
           description: "Delivery strategy used: ALL_ENDPOINTS or FAILED_ENDPOINTS"
+          enum:
+          - ALL_ENDPOINTS
+          - FAILED_ENDPOINTS
           example: FAILED_ENDPOINTS
         forcePush:
           type: boolean
@@ -27757,6 +27760,9 @@ components:
         operation:
           type: string
           description: Publishing operation type
+          enum:
+          - PUBLISH
+          - UNPUBLISH
           example: PUBLISH
         success:
           type: boolean

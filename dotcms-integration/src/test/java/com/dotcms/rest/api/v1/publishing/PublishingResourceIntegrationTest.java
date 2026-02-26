@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.publishing;
 
-import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -994,8 +993,6 @@ public class PublishingResourceIntegrationTest {
         Bundle bundle = null;
 
         try {
-            LicenseTestUtil.getLicense();
-
             // Setup environment and endpoint
             environment = PublisherTestUtil.createEnvironment(adminUser);
             endpoint = PublisherTestUtil.createEndpoint(environment);
@@ -1223,7 +1220,7 @@ public class PublishingResourceIntegrationTest {
         final RetryBundleResultView bundleResult = result.getEntity().get(0);
         assertEquals("BundleId should match", bundleId, bundleResult.bundleId());
         assertNotNull("Message should not be null", bundleResult.message());
-        assertEquals("DeliveryStrategy should match", "ALL_ENDPOINTS", bundleResult.deliveryStrategy());
+        assertEquals("DeliveryStrategy should match", DeliveryStrategy.ALL_ENDPOINTS, bundleResult.deliveryStrategy());
     }
 
     /**
@@ -1456,7 +1453,7 @@ public class PublishingResourceIntegrationTest {
         assertNotNull(result);
         final RetryBundleResultView bundleResult = result.getEntity().get(0);
         assertEquals("DeliveryStrategy should be FAILED_ENDPOINTS",
-                "FAILED_ENDPOINTS", bundleResult.deliveryStrategy());
+                DeliveryStrategy.FAILED_ENDPOINTS, bundleResult.deliveryStrategy());
     }
 
     /**

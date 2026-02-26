@@ -136,7 +136,8 @@ public class PublishingRetryHelper {
         final List<PublishQueueElement> foundBundles =
                 publisherAPI.getQueueElementsByBundleId(trimmedBundleId);
         if (foundBundles != null && !foundBundles.isEmpty()) {
-            throw new DotPublisherException("Bundle already in queue - cannot retry while publishing");
+            throw new DotPublisherException(
+                    "Bundle already in queue - cannot retry while publishing: " + trimmedBundleId);
         }
 
         // Get audit history for updating numTries
@@ -225,8 +226,8 @@ public class PublishingRetryHelper {
         return new RetryResultDTO(
                 bundleId + PublisherConfig.STATIC_SUFFIX,
                 false, // forcePush not applicable for static
-                readConfig.getOperation() != null ? readConfig.getOperation().name() : null,
-                deliveryStrategy.name(),
+                readConfig.getOperation(),
+                deliveryStrategy,
                 0 // assetCount not easily retrievable for static
         );
     }
@@ -323,8 +324,8 @@ public class PublishingRetryHelper {
         return new RetryResultDTO(
                 bundleId,
                 effectiveForcePush,
-                config.getOperation().name(),
-                deliveryStrategy.name(),
+                config.getOperation(),
+                deliveryStrategy,
                 identifiers.size()
         );
     }
@@ -359,7 +360,7 @@ public class PublishingRetryHelper {
 
             return true;
         } catch (DotDataException e) {
-            Logger.error(this, "Error checking if bundle is sending: " + e.getMessage(), e);
+            Logger.error(this, "Error checking if bundle " + bundleId + " is sending: " + e.getMessage(), e);
             return true;
         }
     }

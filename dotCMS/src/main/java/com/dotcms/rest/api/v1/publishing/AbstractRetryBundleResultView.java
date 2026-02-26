@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.publishing;
 
 import com.dotcms.annotations.Nullable;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -78,19 +80,19 @@ public interface AbstractRetryBundleResultView {
             example = "PUBLISH"
     )
     @Nullable
-    String operation();
+    Operation operation();
 
     /**
      * The delivery strategy used for this retry.
      *
-     * @return Delivery strategy name
+     * @return Delivery strategy
      */
     @Schema(
             description = "Delivery strategy used: ALL_ENDPOINTS or FAILED_ENDPOINTS",
             example = "FAILED_ENDPOINTS",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
-    String deliveryStrategy();
+    DeliveryStrategy deliveryStrategy();
 
     /**
      * Number of assets in the bundle (null if retry failed).

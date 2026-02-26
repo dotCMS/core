@@ -611,7 +611,7 @@ public class PublishingResource {
                         .message(e.getMessage())
                         .forcePush(null)
                         .operation(null)
-                        .deliveryStrategy(deliveryStrategy.name())
+                        .deliveryStrategy(deliveryStrategy)
                         .assetCount(null)
                         .build());
             }
