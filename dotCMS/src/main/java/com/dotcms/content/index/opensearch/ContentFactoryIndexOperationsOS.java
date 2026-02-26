@@ -3,13 +3,12 @@ package com.dotcms.content.index.opensearch;
 import static com.dotcms.content.index.opensearch.OpenSearchIndexAPI.INDEX_OPERATIONS_TIMEOUT;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
-import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -26,6 +25,9 @@ import io.vavr.control.Try;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
@@ -46,7 +48,7 @@ import org.opensearch.client.opensearch.core.search.HitsMetadata;
 import org.opensearch.client.opensearch.core.search.TotalHitsRelation;
 
 /**
- * Class that centralize all the index related operations used in ContentFactoryIndex
+ * Class that centralize all the index-related operations used in ContentFactoryIndex
  */
 public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOperations {
 
@@ -406,28 +408,61 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     @Override
     public PaginatedArrayList<ContentletSearch> indexSearchScroll(String query, String sortBy,
             int scrollBatchSize) {
-        // TODO: Implement proper OpenSearch scroll functionality
-        // For now, throw UnsupportedOperationException to indicate this needs implementation
-        throw new UnsupportedOperationException("Not supported yet.");
+        final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+
+        // Use the ESContentletScrollImpl inner class to handle all scroll logic
+        // Using configurable batch size instead of MAX_LIMIT for better memory management
+        try (IndexContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
+                false, scrollBatchSize, sortBy)) {
+
+            contentletSearchList.setTotalResults(contentletScroll.getTotalHits());
+
+            // Fetch all batches (first batch is returned on first nextBatch() call)
+            List<ContentletSearch> batch;
+            while ((batch = contentletScroll.nextBatch()) != null && !batch.isEmpty()) {
+                contentletSearchList.addAll(batch);
+            }
+
+            Logger.debug(this.getClass(),
+                    () -> String.format("indexSearchScroll completed: totalResults=%d, query=%s",
+                            contentletSearchList.getTotalResults(), query));
+
+        } catch (final ElasticsearchStatusException | IndexNotFoundException |
+                       SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), String.format("OpenSearch error for query: %s", query));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            return new PaginatedArrayList<>();
+        } catch (final IllegalStateException e) {
+            Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, e);
+            throw new DotRuntimeException(e);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    query, e.getMessage());
+            Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+
+        return contentletSearchList;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ESContentletScroll createScrollQuery(String luceneQuery, User user,
-            boolean respectFrontendRoles, int batchSize, String sortBy) {
-        // TODO: Implement proper OpenSearch scroll functionality
-        // For now, throw UnsupportedOperationException to indicate this needs implementation
-        throw new UnsupportedOperationException("OpenSearch scroll queries not yet implemented. " +
-                "Use indexSearchScroll() method for batch processing.");
+    public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles, final int batchSize,
+            final String sortBy) {
+        return new OSContentletScrollImpl(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ESContentletScroll createScrollQuery(String luceneQuery, User user,
+    public IndexContentletScroll createScrollQuery(String luceneQuery, User user,
             boolean respectFrontendRoles, int batchSize) {
         return createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, "title asc");
     }
