@@ -1304,7 +1304,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         // 2. Contentlets — startRow=0 always; dbCursor handles DB-level positioning.
         // Keep offset=0 in the request form; only update contentCursor between pages.
-        if (browserQuery.showContent && maxResults > 0 && list.size() < maxResults) {
+        if (browserQuery.showContent && maxResults > 0) {
             final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, 0, maxResults);
             contentTotalCount = fromDB.totalResults;
             hasMoreContent = fromDB.hasMore;

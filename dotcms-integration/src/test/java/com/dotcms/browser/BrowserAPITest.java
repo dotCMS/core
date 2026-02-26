@@ -1466,7 +1466,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      * Expected: 11 contentlets (all folders were shown on page 1)
      */
     @Test
-    public void test_SmartPaginationPage2_10Contentlets() throws Exception {
+    public void test_SmartPaginationPage2_15Contentlets() throws Exception {
         // Create test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
@@ -1479,7 +1479,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Create 100 contentlets
+        // Create 25 contentlets
         for (int i = 0; i < 25; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
@@ -1495,7 +1495,8 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showFiles(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .offset(11) // Second page
+                .folderCursor(10) // Second page
+                .contentCursor(10)
                 .maxResults(20)
                 .build();
 
@@ -1507,16 +1508,12 @@ public class BrowserAPITest extends IntegrationTestBase {
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 20 items (20 contentlets, no folders)", 20, list.size());
-        assertEquals("Folder count should be 10", 10, paginatedContents.folderCount);
-        assertEquals("Content count should be 20", 20, paginatedContents.contentCount);
-        assertEquals("Content total count should be 25", 25, paginatedContents.contentTotalCount);
-
-        // Verify all items are contentlets
-        for (Map<String, Object> item : list) {
-            assertNotNull("Item should have extension", item.get("extension"));
-            assertEquals("All items should be files", "txt", item.get("extension"));
-        }
+        assertEquals("Should return exactly 15 items (15 contentlets, no folders)", 15, list.size());
+        assertEquals("Folder count should be 0 the 10 folders where in the first page", 0, paginatedContents.folderCount);
+        assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
+        assertEquals("Content count should be 15", 15, paginatedContents.contentCount);
+        assertFalse("Should indicate NO more content available", paginatedContents.hasMoreContent);
+        assertEquals("Content total count should be 15", 15, paginatedContents.contentTotalCount);
     }
 
     /**
@@ -1524,21 +1521,21 @@ public class BrowserAPITest extends IntegrationTestBase {
      * Expected: 26 more contentlets
      */
     @Test
-    public void test_SmartPaginationPage3_26MoreContentlets() throws Exception {
+    public void test_SmartPaginationPage3_16MoreContentlets() throws Exception {
         // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
-        // Create 25 folders
-        for (int i = 0; i < 25; i++) {
+        // Create 15 folders
+        for (int i = 0; i < 15; i++) {
             new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
                     .nextPersisted();
         }
 
-        // Create 100 contentlets
-        for (int i = 0; i < 100; i++) {
+        // Create 60 contentlets
+        for (int i = 0; i < 50; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1554,8 +1551,9 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showDotAssets(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .offset(52) // Third page (26*2)
-                .maxResults(26)
+                .folderCursor(15)
+                .contentCursor(17)  // Third page (16*2) = 32 (15 folders and 17 contents)
+                .maxResults(16)
                 .build();
 
         final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
@@ -1566,16 +1564,13 @@ public class BrowserAPITest extends IntegrationTestBase {
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 26 items (26 contentlets)", 26, list.size());
-        assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
-        assertEquals("Content count should be 26", 26, paginatedContents.contentCount);
-        assertEquals("Content total count should be 100", 100, paginatedContents.contentTotalCount);
-
-        // Verify all items are contentlets
-        for (Map<String, Object> item : list) {
-            assertNotNull("Item should have extension", item.get("extension"));
-            assertEquals("All items should be files", "txt", item.get("extension"));
-        }
+        assertEquals("Should return exactly 16 items (16 contentlets)", 16, list.size());
+        assertEquals("Folder count should be 0", 0, paginatedContents.folderCount);
+        assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
+        assertEquals("Content count should be 16", 16, paginatedContents.contentCount);
+        assertTrue("Should indicate more content available", paginatedContents.hasMoreContent);
+        // the rest of the chunk to complete the 3 (15 folders + 50 contents) - 32 previous pages = 33
+        assertEquals("Content total count should be 33", 33, paginatedContents.contentTotalCount);
     }
 
     /**
@@ -1616,7 +1611,8 @@ public class BrowserAPITest extends IntegrationTestBase {
         final List<Map<String, Object>> list = paginatedContents.list;
 
         assertEquals("Should return exactly 10 folders", 10, list.size());
-        assertEquals("Folder count should be 15", 15, paginatedContents.folderCount);
+        assertEquals("Folder count should be 10", 10, paginatedContents.folderCount);
+        assertTrue("Should indicate more folders available", paginatedContents.hasMoreFolders);
 
         // Verify all items are folders
         for (Map<String, Object> item : list) {
@@ -1969,7 +1965,8 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should return all 10 accessible contentlets", 10, results4.contentlets.size());
         assertFalse("Should indicate no more pages available", results4.hasMore);
 
-        // Test Case 5: Cursor-based second page — first page returns 5 items and a cursor,
+        // Test Case 5: Cursor-based pagination
+        // first page returns 5 items and a cursor,
         // second page continues from that cursor and returns the remaining 5 items.
         final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 5);
         assertEquals("Should return exactly 5 accessible contentlets on page 1", 5, results5.contentlets.size());
