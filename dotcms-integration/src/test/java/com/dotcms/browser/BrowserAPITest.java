@@ -1534,7 +1534,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Create 60 contentlets
+        // Create 50 contentlets
         for (int i = 0; i < 50; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
