@@ -26,7 +26,7 @@ import com.dotcms.util.CollectionsUtils;
 - Versions only in `bom/application/pom.xml`. Dependencies in `dotCMS/pom.xml` without versions.
 
 ## Java
-- Core: Java 11 syntax. CLI: Java 21 ok. Runtime: Java 21.
+- Core: Java 11 release compatibility. CLI: Java 21 ok. Runtime: Java 21. Migrating to Java 25 (parallel CI workflows validate forward compatibility).
 
 ## Build
 ```bash
