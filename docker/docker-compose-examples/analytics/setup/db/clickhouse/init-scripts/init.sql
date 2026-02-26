@@ -132,6 +132,7 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     custom_48 String,
     custom_49 String,
     custom_50 String,
+    language_iso LowCardinality(String) DEFAULT '',
 
 
     -- ######################################################
@@ -518,7 +519,7 @@ GROUP BY customer_id, cluster_id, context_user_id, context_site_id;
     │  - engaged (true/false)                       │
     │  - device_category                            │
     │  - browser_family                             │
-    │  - language_id                                │
+    │  - language_iso                               │
     │                                               │
     └────────────┬────────────────────────┬─────────┘
                  │                        │
@@ -656,8 +657,8 @@ CREATE TABLE clickhouse_test_db.session_states
 
     /* Event counters (mergeable) */
     total_events_state AggregateFunction(count),               -- total events in session
-    pageviews_state    AggregateFunction(countIf, UInt8),      -- number of pageview events in the session
-    conversions_state  AggregateFunction(countIf, UInt8),      -- number of conversion events in the session
+    pageviews_state    AggregateFunction(countIf, UInt8),      -- total number of pageview events in the session
+    conversions_state  AggregateFunction(countIf, UInt8),      -- total number of conversion events in the session
 
     user_agent_state AggregateFunction(argMax, String, DateTime64(3, 'UTC')),
 
@@ -666,11 +667,11 @@ CREATE TABLE clickhouse_test_db.session_states
     -- last-seen device category label for the session (Desktop/Mobile/Tablet/Other)
     -- derived from UA fields; stored as state so that late events can update the final value deterministically.
 
-    browser_family_state  AggregateFunction(argMax, String, DateTime64(3, 'UTC')),
     -- last-seen browser family bucket (Chrome/Safari/Firefox/Edge/Other)
+    browser_family_state  AggregateFunction(argMax, String, DateTime64(3, 'UTC')),
 
-    language_id_state     AggregateFunction(argMax, String, DateTime64(3, 'UTC'))
-    -- last-seen dotCMS language id (as String), defaulting to '0' if unknown
+    -- last-seen dotCMS language ISO code, defaulting to 'und' ('undefined') if unknown
+    language_iso_state    AggregateFunction(argMax, String, DateTime64(3, 'UTC'))
 )
     /* Why this engine is mandatory:
         -> You are storing aggregate states
@@ -925,7 +926,7 @@ WITH
     /* Prefer browser mapping, else Other */
     coalesce(nullIf(b_map.browser_family, ''), 'Other') AS browser_family,
 
-    nullIf(userlanguage, '') AS language_id
+    nullIf(language_iso, '') AS language_iso
 SELECT
     e.customer_id,
     e.cluster_id,
@@ -949,7 +950,7 @@ SELECT
     /* "last seen" dimension states (tables-only values) */
     argMaxState(device_category, e.utc_time) AS device_category_state,
     argMaxState(browser_family, e.utc_time)  AS browser_family_state,
-    argMaxState(coalesce(language_id, '0'), e.utc_time) AS language_id_state
+    argMaxState(coalesce(language_iso, 'und'), e.utc_time) AS language_iso_state
 FROM clickhouse_test_db.events AS e
      /* Device mapping via table */
      LEFT JOIN clickhouse_test_db.device_category_map AS d_dev
@@ -1015,8 +1016,8 @@ CREATE TABLE clickhouse_test_db.session_facts
 
     /* Finalized counters */
     total_events UInt32,                -- total events in session
-    pageviews    UInt32,                -- pageview events
-    conversions  UInt32,                -- conversion events
+    pageviews    UInt32,                -- total pageview events
+    conversions  UInt32,                -- total conversion events
 
     /* Engagement flag (GA4-style) */
     engaged UInt8,                      -- 1 if engaged, else 0
@@ -1024,7 +1025,7 @@ CREATE TABLE clickhouse_test_db.session_facts
     /* Finalized dimensions */
     device_category String,             -- Desktop/Mobile/Tablet/Other
     browser_family  String,             -- Chrome/Safari/Firefox/Edge/Other
-    language_id     String,             -- dotCMS language id as String ('0' unknown)
+    language_iso LowCardinality(String),    -- dotCMS language ISO code ('und' means undefined)
 
     /* Row version timestamp for ReplacingMergeTree */
     updated_at DateTime('UTC')
@@ -1160,7 +1161,7 @@ SELECT
         browser_family_base
     ) AS browser_family,
 
-    language_id,
+    language_iso,
 
     now64(3, 'UTC') AS updated_at
 FROM
@@ -1198,7 +1199,7 @@ FROM
             /* UA for fallback matching */
             lowerUTF8(argMaxMerge(user_agent_state)) AS ua_l,
 
-            argMaxMerge(language_id_state) AS language_id
+            coalesce(nullIf(argMaxMerge(language_iso_state), ''), 'und') AS language_iso
         FROM clickhouse_test_db.session_states
         GROUP BY (
                   customer_id,
@@ -1542,7 +1543,7 @@ CREATE TABLE clickhouse_test_db.sessions_by_language_daily
     context_site_id String,
     day Date,
 
-    language_id String,                      -- dotCMS language id as String ('0' unknown)
+    language_iso LowCardinality(String),    -- dotCMS language ISO code ('und' means undefined)
 
     total_sessions UInt64,
     engaged_sessions UInt64,
@@ -1557,7 +1558,7 @@ CREATE TABLE clickhouse_test_db.sessions_by_language_daily
              )*/
     ENGINE = ReplacingMergeTree
     PARTITION BY toYYYYMM(day)
-    ORDER BY (customer_id, cluster_id, context_site_id, day, language_id);
+    ORDER BY (customer_id, cluster_id, context_site_id, day, language_iso);
 
 /*
    Object: RMV
@@ -1577,7 +1578,7 @@ SELECT
     cluster_id,
     context_site_id,
     toDate(session_start, 'UTC') AS day,
-    language_id,
+    language_iso,
 
     count() AS total_sessions,
     countIf(engaged = 1) AS engaged_sessions,
@@ -1591,4 +1592,4 @@ GROUP BY (
           cluster_id,
           context_site_id,
           day,
-          language_id);
+          language_iso);
