@@ -10,50 +10,10 @@ import { UVE_MODE } from '@dotcms/types';
 
 import { withTrack } from './withTrack';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
-import { Orientation, PageType, UVEState } from '../../models';
+import { UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
 
-const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    // Normalized page response properties
-    page: null,
-    site: null,
-    template: null,
-    layout: null,
-    containers: null,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
-    pageParams: {} as DotPageApiParams,
-    status: UVE_STATUS.LOADING,
-    pageType: PageType.TRADITIONAL,
-    // Nested editor state
-    editor: {
-        dragItem: null,
-        bounds: [],
-        state: EDITOR_STATE.IDLE,
-        activeContentlet: null,
-        contentArea: null,
-        panels: {
-            palette: { open: true },
-            rightSidebar: { open: false }
-        },
-        ogTags: null,
-        styleSchemas: []
-    },
-    // Nested view state
-    view: {
-        device: null,
-        orientation: Orientation.LANDSCAPE,
-        socialMedia: null,
-        viewParams: null,
-        isEditState: true,
-        isPreviewModeActive: false,
-        ogTagsResults: null
-    }
-};
+const initialState = createInitialUVEState();
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withTrack());
 

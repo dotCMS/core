@@ -15,9 +15,11 @@ import { withView } from './withView';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
-import { Orientation, PageType, UVEState } from '../../../models';
+import { Orientation, UVEState } from '../../../models';
+import { createInitialUVEState } from '../../../testing/mocks';
+import { withFlags } from '../../flags/withFlags';
+import { withPage } from '../../page/withPage';
 
 const pageParams = {
     url: 'test-url',
@@ -27,60 +29,29 @@ const pageParams = {
     clientHost: 'http://localhost:3000'
 };
 
-const initialState: UVEState = {
-    isEnterprise: true,
-    languages: [],
+const initialState = createInitialUVEState({
+    uveCurrentUser: mockCurrentUser,
     flags: {
         FEATURE_FLAG_UVE_TOGGLE_LOCK: false  // Disable toggle lock to test old unlock button behavior
     },
-    currentUser: mockCurrentUser,
-    experiment: null,
-    errorCode: null,
-    pageParams,
-    status: UVE_STATUS.LOADED,
-    pageType: PageType.HEADLESS,
-    // Normalized page response properties
-    page: MOCK_RESPONSE_HEADLESS.page,
-    site: MOCK_RESPONSE_HEADLESS.site,
-    viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
-    template: MOCK_RESPONSE_HEADLESS.template,
-    urlContentMap: MOCK_RESPONSE_HEADLESS.urlContentMap,
-    containers: MOCK_RESPONSE_HEADLESS.containers,
-    vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
-    numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
-    // Nested editor state
-    editor: {
-        dragItem: null,
-        bounds: [],
-        state: EDITOR_STATE.IDLE,
-        activeContentlet: null,
-        contentArea: null,
-        panels: {
-            palette: { open: true },
-            rightSidebar: { open: false }
-        },
-        ogTags: null,
-        styleSchemas: []
-    },
-    // Nested view state
-    view: {
-        device: null,
-        orientation: Orientation.LANDSCAPE,
-        socialMedia: null,
-        viewParams: null,
-        isEditState: true,
-        isPreviewModeActive: false,
-        ogTagsResults: null
-    }
+    pageParams
+});
+
+/** patchState type assertion - Spectator store type doesn't satisfy WritableStateSource but runtime works */
+const patchStoreState = (store: unknown, state: Partial<UVEState>) => {
+    patchState(store as Parameters<typeof patchState>[0], state);
 };
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
+    withFlags([]),
+    withPage(),
     // Add mock $isPageLocked computed that reacts to page state (must come before withView)
     withComputed((store) => ({
         $isPageLocked: computed(() => {
-            const page = store.pageAsset();
+            const pageAsset = store.pageAsset();
+            const page = pageAsset?.page;
             const currentUser = store.uveCurrentUser();
             const isLockedByOther = page?.locked && page?.lockedBy !== currentUser?.userId;
             return isLockedByOther || false;
@@ -101,19 +72,15 @@ describe('withView', () => {
         providers: [
             mockProvider(Router),
             mockProvider(ActivatedRoute),
-            mockProvider(Router),
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of(false))
             }),
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get() {
-                        return of(MOCK_RESPONSE_HEADLESS);
-                    },
-                    getClientPage() {
-                        return of(MOCK_RESPONSE_HEADLESS);
-                    },
+                    get: () => of(MOCK_RESPONSE_HEADLESS),
+                    getClientPage: () => of(MOCK_RESPONSE_HEADLESS),
+                    getGraphQLPage: () => of(MOCK_RESPONSE_HEADLESS),
                     save: jest.fn()
                 }
             }
@@ -123,6 +90,7 @@ describe('withView', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
+        store.setPageAssetResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
     describe('Computed', () => {
@@ -163,15 +131,18 @@ describe('withView', () => {
                         (variant) => variant.name !== DEFAULT_VARIANT_NAME
                     ).id;
 
-                    patchState(store, {
-                        viewAs: {
-                            ...MOCK_RESPONSE_HEADLESS.viewAs,
-                            variantId: variantID
-                        },
-                        experiment: currentExperiment,
+                    patchStoreState(store, {
+                        pageExperiment: currentExperiment,
                         pageParams: {
                             ...store.pageParams(),
                             mode: UVE_MODE.EDIT
+                        }
+                    });
+                    store.setPageAsset({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        viewAs: {
+                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            variantId: variantID
                         }
                     });
 
@@ -192,15 +163,18 @@ describe('withView', () => {
                         (variant) => variant.name !== DEFAULT_VARIANT_NAME
                     ).id;
 
-                    patchState(store, {
-                        viewAs: {
-                            ...MOCK_RESPONSE_HEADLESS.viewAs,
-                            variantId: variantID
-                        },
-                        experiment: currentExperiment,
+                    patchStoreState(store, {
+                        pageExperiment: currentExperiment,
                         pageParams: {
                             ...store.pageParams(),
                             mode: UVE_MODE.PREVIEW
+                        }
+                    });
+                    store.setPageAsset({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        viewAs: {
+                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            variantId: variantID
                         }
                     });
 
@@ -222,15 +196,18 @@ describe('withView', () => {
                         (variant) => variant.name !== DEFAULT_VARIANT_NAME
                     ).id;
 
-                    patchState(store, {
-                        viewAs: {
-                            ...MOCK_RESPONSE_HEADLESS.viewAs,
-                            variantId: variantID
-                        },
-                        experiment: currentExperiment,
+                    patchStoreState(store, {
+                        pageExperiment: currentExperiment,
                         pageParams: {
                             ...store.pageParams(),
                             mode: UVE_MODE.LIVE
+                        }
+                    });
+                    store.setPageAsset({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        viewAs: {
+                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            variantId: variantID
                         }
                     });
 
@@ -248,7 +225,7 @@ describe('withView', () => {
         });
         describe('$showWorkflowsActions', () => {
             it('should return false when in preview mode', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     pageParams: {
                         ...store.pageParams(),
                         mode: UVE_MODE.PREVIEW
@@ -258,13 +235,16 @@ describe('withView', () => {
             });
 
             it('should return true when not in preview mode and is default variant', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     pageParams: {
                         ...store.pageParams(),
                         mode: UVE_MODE.EDIT
-                    },
+                    }
+                });
+                store.setPageAsset({
+                    ...MOCK_RESPONSE_HEADLESS,
                     viewAs: {
-                        ...store.viewAs(),
+                        ...MOCK_RESPONSE_HEADLESS.viewAs,
                         variantId: DEFAULT_VARIANT_ID
                     }
                 });
@@ -272,9 +252,10 @@ describe('withView', () => {
             });
 
             it('should return false when not in preview mode and is not default variant', () => {
-                patchState(store, {
+                store.setPageAsset({
+                    ...MOCK_RESPONSE_HEADLESS,
                     viewAs: {
-                        ...store.viewAs(),
+                        ...MOCK_RESPONSE_HEADLESS.viewAs,
                         variantId: 'some-other-variant'
                     }
                 });
@@ -290,10 +271,10 @@ describe('withView', () => {
                 const iphone = mockDotDevices[0];
 
                 store.viewSetDevice(iphone);
-                expect(store.view().device).toBe(iphone);
-                expect(store.view().orientation).toBe(Orientation.LANDSCAPE); // This mock is on landscape, because the width is greater than the height
+                expect(store.viewDevice()).toBe(iphone);
+                expect(store.viewDeviceOrientation()).toBe(Orientation.LANDSCAPE); // This mock is on landscape, because the width is greater than the height
 
-                expect(store.view().viewParams).toEqual({
+                expect(store.viewParams()).toEqual({
                     device: iphone.inode,
                     orientation: Orientation.LANDSCAPE,
                     seo: null
@@ -304,10 +285,10 @@ describe('withView', () => {
                 const iphone = mockDotDevices[0];
 
                 store.viewSetDevice(iphone, Orientation.PORTRAIT);
-                expect(store.view().device).toBe(iphone);
-                expect(store.view().orientation).toBe(Orientation.PORTRAIT);
+                expect(store.viewDevice()).toBe(iphone);
+                expect(store.viewDeviceOrientation()).toBe(Orientation.PORTRAIT);
 
-                expect(store.view().viewParams).toEqual({
+                expect(store.viewParams()).toEqual({
                     device: iphone.inode,
                     orientation: Orientation.PORTRAIT,
                     seo: null
@@ -322,10 +303,10 @@ describe('withView', () => {
 
                 // Now change orientation
                 store.viewSetOrientation(Orientation.PORTRAIT);
-                expect(store.view().orientation).toBe(Orientation.PORTRAIT);
+                expect(store.viewDeviceOrientation()).toBe(Orientation.PORTRAIT);
 
-                expect(store.view().viewParams).toEqual({
-                    device: store.view().viewParams.device,
+                expect(store.viewParams()).toEqual({
+                    device: store.viewParams().device,
                     orientation: Orientation.PORTRAIT,
                     seo: null
                 });
@@ -338,11 +319,10 @@ describe('withView', () => {
 
                     store.viewClearDeviceAndSocialMedia();
 
-                    expect(store.view().device).toBe(null);
-                    expect(store.view().socialMedia).toBe(null);
-                    expect(store.view().isEditState).toBe(true);
-                    expect(store.view().orientation).toBe(null);
-                    expect(store.view().viewParams).toEqual({
+                    expect(store.viewDevice()).toBe(null);
+                    expect(store.viewSocialMedia()).toBe(null);
+                    expect(store.viewDeviceOrientation()).toBe(null);
+                    expect(store.viewParams()).toEqual({
                         device: null,
                         orientation: null,
                         seo: null
@@ -355,11 +335,11 @@ describe('withView', () => {
             it('should set the seo, update viewparams, and remove device and orientation', () => {
                 store.viewSetSEO('seo');
 
-                expect(store.view().socialMedia).toBe('seo');
-                expect(store.view().device).toBe(null);
-                expect(store.view().orientation).toBe(null);
+                expect(store.viewSocialMedia()).toBe('seo');
+                expect(store.viewDevice()).toBe(null);
+                expect(store.viewDeviceOrientation()).toBe(null);
 
-                expect(store.view().viewParams).toEqual({
+                expect(store.viewParams()).toEqual({
                     device: null,
                     orientation: null,
                     seo: 'seo'

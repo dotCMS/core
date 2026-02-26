@@ -1,67 +1,28 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { signalStore, withFeature, withState } from '@ngrx/signals';
+import { signalStore, withState } from '@ngrx/signals';
+import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
+
 import { withLayout } from './withLayout';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
-import { Orientation, PageType, UVEState } from '../../models';
+import { UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
+import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
 
-const emptyParams = {} as DotPageApiParams;
-
-const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    // Normalized page response properties
-    page: MOCK_RESPONSE_HEADLESS.page,
-    site: MOCK_RESPONSE_HEADLESS.site,
-    template: MOCK_RESPONSE_HEADLESS.template,
-    containers: MOCK_RESPONSE_HEADLESS.containers,
-    viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
-    vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
-    urlContentMap: MOCK_RESPONSE_HEADLESS.urlContentMap,
-    numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
-    pageParams: emptyParams,
-    status: UVE_STATUS.LOADING,
-    pageType: PageType.TRADITIONAL,
-    // Nested editor state
-    editor: {
-        dragItem: null,
-        bounds: [],
-        state: EDITOR_STATE.IDLE,
-        activeContentlet: null,
-        contentArea: null,
-        panels: {
-            palette: { open: true },
-            rightSidebar: { open: false }
-        },
-        ogTags: null,
-        styleSchemas: []
-    },
-    // Nested view state
-    view: {
-        device: null,
-        orientation: Orientation.LANDSCAPE,
-        socialMedia: null,
-        viewParams: null,
-        isEditState: true,
-        isPreviewModeActive: false,
-        ogTagsResults: null
-    }
-};
+const initialState = createInitialUVEState();
 
 export const uveStoreMock = signalStore(
     withState<UVEState>(initialState),
-    withFeature(() => withPage()),
+    withFlags([]),
+    withPage(),
     withLayout()
 );
 
@@ -70,7 +31,22 @@ describe('withLayout', () => {
     let store: InstanceType<typeof uveStoreMock>;
     const createService = createServiceFactory({
         service: uveStoreMock,
-        providers: [mockProvider(Router), mockProvider(ActivatedRoute)]
+        providers: [
+            mockProvider(Router),
+            mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get: () => of({}),
+                    getClientPage: () => of({}),
+                    getGraphQLPage: () => of({}),
+                    save: jest.fn()
+                }
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -107,7 +83,7 @@ describe('withLayout', () => {
 
             store.updateLayout(layout);
 
-            expect(store.layout()).toEqual(layout);
+            expect(store.pageAsset()?.layout).toEqual(layout);
         });
     });
 });

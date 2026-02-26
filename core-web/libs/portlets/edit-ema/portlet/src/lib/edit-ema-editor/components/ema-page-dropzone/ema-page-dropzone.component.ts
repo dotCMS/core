@@ -33,7 +33,7 @@ const DROP_INDICATOR_HEIGHT_PX = 3;
 })
 export class EmaPageDropzoneComponent {
     @Input() containers: Container[] = [];
-    @Input() dragItem: EmaDragItem;
+    @Input() dragItem: EmaDragItem | null = null;
     @Input() zoomLevel = 1;
 
     pointerPosition: Record<string, string> = POINTER_INITIAL_POSITION;

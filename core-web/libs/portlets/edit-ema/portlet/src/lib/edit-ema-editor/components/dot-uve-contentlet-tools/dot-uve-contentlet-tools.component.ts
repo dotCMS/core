@@ -49,7 +49,7 @@ export class DotUveContentletToolsComponent {
      * Positional and contextual data for the currently hovered contentlet.
      * This comes from the iframe mouse enter events.
      */
-    readonly contentletArea = input.required<ContentletArea>({ alias: 'contentletArea' });
+    readonly contentletArea = input<ContentletArea | null>(null, { alias: 'contentletArea' });
 
     /**
      * Internal state tracking the selected/clicked contentlet.

@@ -8,9 +8,9 @@
                         <span class="lock-message" data-testid="message-content">
                             {{
                                 'uve.shell.page.locked.locked.by'
-                                    | dm: [$workflowLockOptions().lockedBy]
+                                    | dm: [$workflowLockOptions()?.lockedBy ?? '']
                             }}
-                            @if ($workflowLockOptions().canLock) {
+                            @if ($workflowLockOptions()?.canLock) {
                                 <button
                                     class="unlock-link"
                                     type="button"

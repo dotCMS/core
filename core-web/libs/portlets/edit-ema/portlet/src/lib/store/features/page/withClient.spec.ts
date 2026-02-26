@@ -1,65 +1,33 @@
 import { describe } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
+import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/types';
 
-import { withClient } from './withClient';
+import { withPage } from './withPage';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
-import { Orientation, PageType, UVEState } from '../../models';
+import { UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
+import { withFlags } from '../flags/withFlags';
 
-const emptyParams = {} as DotPageApiParams;
+const initialState = createInitialUVEState();
 
-const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    // Normalized page response properties
-    page: null,
-    site: null,
-    template: null,
-    layout: null,
-    containers: null,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
-    pageParams: emptyParams,
-    status: UVE_STATUS.LOADING,
-    pageType: PageType.TRADITIONAL,
-    // Nested editor state
-    editor: {
-        dragItem: null,
-        bounds: [],
-        state: EDITOR_STATE.IDLE,
-        activeContentlet: null,
-        contentArea: null,
-        panels: {
-            palette: { open: true },
-            rightSidebar: { open: false }
-        },
-        ogTags: null,
-        styleSchemas: []
-    },
-    // Nested view state
-    view: {
-        device: null,
-        orientation: Orientation.LANDSCAPE,
-        socialMedia: null,
-        viewParams: null,
-        isEditState: true,
-        isPreviewModeActive: false,
-        ogTagsResults: null
-    }
+/** patchState type assertion - Spectator store type doesn't satisfy WritableStateSource but runtime works */
+const patchStoreState = (store: unknown, state: Partial<UVEState>) => {
+    patchState(store as Parameters<typeof patchState>[0], state);
 };
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withClient()
+    withFlags([]),
+    withPage()
 );
 
 describe('UVEStore', () => {
@@ -68,7 +36,22 @@ describe('UVEStore', () => {
 
     const createService = createServiceFactory({
         service: uveStoreMock,
-        providers: [mockProvider(Router), mockProvider(ActivatedRoute)]
+        providers: [
+            mockProvider(Router),
+            mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get: () => of({}),
+                    getClientPage: () => of({}),
+                    getGraphQLPage: () => of({}),
+                    save: jest.fn()
+                }
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -145,7 +128,7 @@ describe('UVEStore', () => {
                 [PERSONA_KEY]: 'persona-id-123'
             };
 
-            patchState(store, { pageParams });
+            patchStoreState(store, { pageParams });
             store.setCustomClient(graphql, false);
 
             const result = store.$requestWithParams();
@@ -180,7 +163,7 @@ describe('UVEStore', () => {
                 [PERSONA_KEY]: 'persona-id-456'
             };
 
-            patchState(store, { pageParams });
+            patchStoreState(store, { pageParams });
             store.setCustomClient(graphql, false);
 
             const result = store.$requestWithParams();
@@ -214,7 +197,7 @@ describe('UVEStore', () => {
                 // mode and variantName are missing
             };
 
-            patchState(store, { pageParams });
+            patchStoreState(store, { pageParams });
             store.setCustomClient(graphql, false);
 
             const result = store.$requestWithParams();

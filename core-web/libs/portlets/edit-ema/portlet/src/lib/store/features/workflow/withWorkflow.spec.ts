@@ -1,6 +1,6 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
+import { signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
@@ -23,43 +23,36 @@ const pageParams: DotPageApiParams = {
 };
 
 const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    // Normalized page response properties
-    page: null,
-    site: null,
-    template: null,
-    containers: null,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
+    uveStatus: UVE_STATUS.LOADING,
+    uveIsEnterprise: false,
+    uveCurrentUser: null,
+    flags: {},
     pageParams,
-    status: UVE_STATUS.LOADING,
+    pageLanguages: [],
     pageType: PageType.TRADITIONAL,
-    // Nested editor state
-    editor: {
-        dragItem: null,
-        bounds: [],
-        state: EDITOR_STATE.IDLE,
-        activeContentlet: null,
-        contentArea: null,
-        panels: {
-            palette: { open: true },
-            rightSidebar: { open: false }
-        },
-        ogTags: null,
-        styleSchemas: []
-    },
-    // Nested view state
-    view: {
-        device: null,
-        orientation: Orientation.LANDSCAPE,
-        socialMedia: null,
-        viewParams: null,
-        isEditState: true,
-        isPreviewModeActive: false,
-        ogTagsResults: null
-    }
+    pageExperiment: null,
+    pageErrorCode: null,
+    workflowActions: [],
+    workflowIsLoading: false,
+    workflowLockIsLoading: false,
+    editorDragItem: null,
+    editorBounds: [],
+    editorState: EDITOR_STATE.IDLE,
+    editorActiveContentlet: null,
+    editorContentArea: null,
+    editorPaletteOpen: true,
+    editorRightSidebarOpen: false,
+    editorOgTags: null,
+    editorStyleSchemas: [],
+    viewDevice: null,
+    viewDeviceOrientation: Orientation.LANDSCAPE,
+    viewSocialMedia: null,
+    viewParams: null,
+    viewOgTagsResults: null,
+    viewZoomLevel: 1,
+    viewZoomIsActive: false,
+    viewZoomIframeDocHeight: 0,
+    viewZoomGestureStartZoom: 1
 };
 
 export const uveStoreMock = signalStore(
@@ -70,16 +63,6 @@ export const uveStoreMock = signalStore(
     withMethods((store) => ({
         setPageAPIResponse: (pageAssetResponse: DotCMSPageAsset) => {
             store.setPageAssetResponse({ pageAsset: pageAssetResponse });
-            patchState(store, {
-                page: pageAssetResponse.page,
-                site: pageAssetResponse.site,
-                template: pageAssetResponse.template,
-                containers: pageAssetResponse.containers,
-                viewAs: pageAssetResponse.viewAs,
-                vanityUrl: pageAssetResponse.vanityUrl,
-                urlContentMap: pageAssetResponse.urlContentMap,
-                numberContents: pageAssetResponse.numberContents
-            });
         }
     }))
 );

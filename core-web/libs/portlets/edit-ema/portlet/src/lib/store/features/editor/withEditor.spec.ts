@@ -5,18 +5,23 @@ import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { DotPropertiesService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotLanguagesService,
+    DotPropertiesService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
+import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
 
-// UVE_PALETTE_TABS removed - now managed locally in DotUvePaletteComponent
+import { withView } from './toolbar/withView';
 import { withEditor } from './withEditor';
-
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -28,28 +33,15 @@ import {
 } from '../../../shared/mocks';
 import { ActionPayload } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
-import { Orientation, PageType, UVEState } from '../../models';
+import { PageType, UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
 import { withFlags } from '../flags/withFlags';
-import { withPageContext } from '../withPageContext';
+import { withPage } from '../page/withPage';
+import { withWorkflow } from '../workflow/withWorkflow';
 
 const emptyParams = {} as DotPageApiParams;
 
-const initialState: UVEState = {
-    isEnterprise: true,
-    languages: [],
-    flags: {},
-    // Normalized page response
-    page: MOCK_RESPONSE_HEADLESS.page,
-    site: MOCK_RESPONSE_HEADLESS.site,
-    template: MOCK_RESPONSE_HEADLESS.template,
-    containers: MOCK_RESPONSE_HEADLESS.containers,
-    viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
-    vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
-    urlContentMap: MOCK_RESPONSE_HEADLESS.urlContentMap,
-    numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
+const initialState = createInitialUVEState({
     pageParams: {
         ...emptyParams,
         url: 'test-url',
@@ -58,36 +50,21 @@ const initialState: UVEState = {
         variantName: 'DEFAULT',
         clientHost: 'http://localhost:3000',
         mode: UVE_MODE.EDIT
-    },
-    status: UVE_STATUS.LOADED,
-    pageType: PageType.HEADLESS,
-    // Flattened editor state with domain-prefixed properties (editor*)
-    editorDragItem: null,
-    editorBounds: [],
-    editorState: EDITOR_STATE.IDLE,
-    editorActiveContentlet: null,
-    editorContentArea: null,
-    editorPaletteOpen: true,
-    editorRightSidebarOpen: false,
-    editorOgTags: null,
-    editorStyleSchemas: [],
-    // Nested view state
-    view: {
-        device: null,
-        orientation: Orientation.LANDSCAPE,
-        socialMedia: null,
-        viewParams: null,
-        isEditState: true,
-        isPreviewModeActive: false,
-        ogTagsResults: null
     }
+});
+
+/** patchState type assertion - Spectator store type doesn't satisfy WritableStateSource but runtime works */
+const patchStoreState = (store: unknown, state: Partial<UVEState>) => {
+    patchState(store as Parameters<typeof patchState>[0], state);
 };
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withFlags([]),               // Provides flags state (empty array for tests)
-    withPageContext(),           // Provides all PageContextComputed properties including $enableInlineEdit
+    withFlags([]),
+    withPage(),
+    withWorkflow(),
+    withView(),
     withEditor()
 );
 
@@ -100,34 +77,36 @@ describe('withEditor', () => {
         providers: [
             mockProvider(Router),
             mockProvider(ActivatedRoute),
-            mockProvider(Router),
-            mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of(false))
             }),
             {
                 provide: DotPageApiService,
                 useValue: {
-                    get() {
-                        return of({});
-                    },
-                    getClientPage() {
-                        return of({});
-                    },
+                    get: () => of({}),
+                    getClientPage: () => of({}),
+                    getGraphQLPage: () => of({}),
                     save: jest.fn()
                 }
             },
             {
-                provide: WINDOW,
-                useValue: window
-            }
+                provide: DotWorkflowsActionsService,
+                useValue: { getByInode: () => of(mockWorkflowsActions) }
+            },
+            {
+                provide: DotContentletLockerService,
+                useValue: { unlock: () => of({}), lock: () => of({}) }
+            },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
+            { provide: WINDOW, useValue: window }
         ]
     });
 
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        patchState(store, initialState);
+        patchStoreState(store, initialState);
+        store.setPageAssetResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
     // Toolbar tests removed - toolbar functionality should be tested in withToolbar.spec.ts
@@ -135,7 +114,7 @@ describe('withEditor', () => {
     describe('withComputed', () => {
         describe('$areaContentType', () => {
             it('should return empty string when contentArea is null', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     editorContentArea: null
                 });
 
@@ -143,7 +122,7 @@ describe('withEditor', () => {
             });
 
             it('should return the content type of the current contentArea', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     editorContentArea: MOCK_CONTENTLET_AREA
                 });
 
@@ -169,8 +148,8 @@ describe('withEditor', () => {
 
         describe('$reloadEditorContent', () => {
             it('should return the expected data for Headless', () => {
-                patchState(store, {
-                    page: MOCK_RESPONSE_HEADLESS.page,
+                store.setPageAsset(MOCK_RESPONSE_HEADLESS);
+                patchStoreState(store, {
                     pageType: PageType.HEADLESS
                 });
 
@@ -181,8 +160,8 @@ describe('withEditor', () => {
                 });
             });
             it('should return the expected data for VTL', () => {
-                patchState(store, {
-                    page: MOCK_RESPONSE_VTL.page,
+                store.setPageAsset(MOCK_RESPONSE_VTL);
+                patchStoreState(store, {
                     pageType: PageType.TRADITIONAL
                 });
                 expect(store.$reloadEditorContent()).toEqual({
@@ -197,7 +176,7 @@ describe('withEditor', () => {
 
         describe('$showContentletControls', () => {
             it('should return false when contentArea is null', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     editorContentArea: null,
                     editorState: EDITOR_STATE.IDLE
                 });
@@ -206,11 +185,14 @@ describe('withEditor', () => {
             });
 
             it('should return false when canEditPage is false', () => {
-                patchState(store, {
+                store.setPageAsset({
+                    ...MOCK_RESPONSE_HEADLESS,
                     page: {
-                        ...store.pageAsset(),
-                        canEdit: false  // Set canEdit to false to make editorCanEditContent false
-                    },
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false
+                    }
+                });
+                patchStoreState(store, {
                     editorContentArea: MOCK_CONTENTLET_AREA,
                     editorState: EDITOR_STATE.IDLE
                 });
@@ -219,7 +201,7 @@ describe('withEditor', () => {
             });
 
             it('should return false when state is not IDLE', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     editorContentArea: MOCK_CONTENTLET_AREA,
                     editorState: EDITOR_STATE.DRAGGING
                 });
@@ -228,7 +210,7 @@ describe('withEditor', () => {
             });
 
             it('should return true when contentArea exists, canEditPage is true, and state is IDLE', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     editorContentArea: MOCK_CONTENTLET_AREA,
                     editorState: EDITOR_STATE.IDLE
                 });
@@ -237,7 +219,7 @@ describe('withEditor', () => {
             });
 
             it('should return false when scrolling', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     editorContentArea: MOCK_CONTENTLET_AREA,
                     editorState: EDITOR_STATE.SCROLLING
                 });
@@ -248,7 +230,7 @@ describe('withEditor', () => {
 
         describe('$styleSchema', () => {
             it('should return undefined when no activeContentlet', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     editorActiveContentlet: null,
                     editorStyleSchemas: []
                 });
@@ -257,7 +239,7 @@ describe('withEditor', () => {
             });
 
             it('should return undefined when styleSchemas is empty', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     editorActiveContentlet: {
                         language_id: '1',
                         pageContainers: [],
@@ -287,7 +269,7 @@ describe('withEditor', () => {
                     sections: []
                 };
 
-                patchState(store, {
+                patchStoreState(store, {
                     editorActiveContentlet: {
                         language_id: '1',
                         pageContainers: [],
@@ -316,7 +298,7 @@ describe('withEditor', () => {
                 const schema2 = { contentType: 'type2', sections: [] };
                 const schema3 = { contentType: 'type3', sections: [] };
 
-                patchState(store, {
+                patchStoreState(store, {
                     editorActiveContentlet: {
                         language_id: '1',
                         pageContainers: [],
@@ -346,7 +328,7 @@ describe('withEditor', () => {
                     sections: []
                 };
 
-                patchState(store, {
+                patchStoreState(store, {
                     editorActiveContentlet: {
                         language_id: '1',
                         pageContainers: [],
@@ -396,7 +378,7 @@ describe('withEditor', () => {
             describe.skip('page dependency', () => {
                 it('should call page when it is a headless page', () => {
                     const spy = jest.spyOn(store, 'pageAsset');
-                    patchState(store, { pageType: PageType.HEADLESS });
+                    patchStoreState(store, { pageType: PageType.HEADLESS });
                     store.$iframeURL();
 
                     expect(spy).toHaveBeenCalled();
@@ -405,7 +387,7 @@ describe('withEditor', () => {
                 it('should call page when it is a traditional page', () => {
                     const spy = jest.spyOn(store, 'pageAsset');
 
-                    patchState(store, { pageType: PageType.TRADITIONAL });
+                    patchStoreState(store, { pageType: PageType.TRADITIONAL });
 
                     store.$iframeURL();
 
@@ -414,8 +396,8 @@ describe('withEditor', () => {
             });
 
             it('should be an instance of String in src when the page is traditional', () => {
-                patchState(store, {
-                    page: MOCK_RESPONSE_VTL.page,
+                store.setPageAsset(MOCK_RESPONSE_VTL);
+                patchStoreState(store, {
                     pageType: PageType.TRADITIONAL
                 });
 
@@ -423,8 +405,8 @@ describe('withEditor', () => {
             });
 
             it('should be an empty string in src when the page is traditional', () => {
-                patchState(store, {
-                    page: MOCK_RESPONSE_VTL.page,
+                store.setPageAsset(MOCK_RESPONSE_VTL);
+                patchStoreState(store, {
                     pageType: PageType.TRADITIONAL
                 });
 
@@ -432,11 +414,14 @@ describe('withEditor', () => {
             });
 
             it('should contain the right url when the page is a vanity url  ', () => {
-                patchState(store, {
+                store.setPageAsset({
+                    ...MOCK_RESPONSE_HEADLESS,
                     vanityUrl: {
                         ...MOCK_RESPONSE_HEADLESS.vanityUrl,
                         url: 'first'
-                    },
+                    }
+                });
+                patchStoreState(store, {
                     pageParams: {
                         language_id: '1',
                         variantName: 'DEFAULT',
@@ -451,7 +436,7 @@ describe('withEditor', () => {
             });
 
             it('should set the right iframe url when the clientHost is present', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     pageParams: {
                         ...emptyParams,
                         url: 'test-url',
@@ -465,7 +450,7 @@ describe('withEditor', () => {
             });
 
             it('should set the right iframe url when the clientHost is present with a aditional path', () => {
-                patchState(store, {
+                patchStoreState(store, {
                     pageParams: {
                         ...emptyParams,
                         url: 'test-url',
@@ -758,7 +743,7 @@ describe('withEditor', () => {
                 const testVariantName = 'test-variant-name-123';
 
                 // Set variantName in pageParams
-                patchState(store, {
+                patchStoreState(store, {
                     pageParams: {
                         ...store.pageParams(),
                         variantName: testVariantName
