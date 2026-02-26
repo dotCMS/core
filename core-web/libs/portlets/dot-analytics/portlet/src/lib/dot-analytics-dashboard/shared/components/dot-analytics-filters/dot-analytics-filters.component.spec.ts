@@ -23,7 +23,6 @@ describe('DotAnalyticsFiltersComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsFiltersComponent,
-        mocks: [DotMessageService],
         providers: [
             {
                 provide: DotMessageService,
@@ -68,6 +67,21 @@ describe('DotAnalyticsFiltersComponent', () => {
 
         it('should have time period options from constants', () => {
             expect(spectator.component.$timeOptions()).toEqual(TIME_PERIOD_OPTIONS);
+        });
+
+        it('should not include today or yesterday as selectable options', () => {
+            const values = spectator.component.$timeOptions().map((o) => o.value);
+            expect(values).not.toContain(TIME_RANGE_OPTIONS.today);
+            expect(values).not.toContain(TIME_RANGE_OPTIONS.yesterday);
+        });
+
+        it('should expose exactly last7days, last30days, and custom as options', () => {
+            const values = spectator.component.$timeOptions().map((o) => o.value);
+            expect(values).toEqual([
+                TIME_RANGE_OPTIONS.last7days,
+                TIME_RANGE_OPTIONS.last30days,
+                TIME_RANGE_OPTIONS.custom
+            ]);
         });
 
         it('should initialize custom date range as null', () => {
@@ -172,6 +186,32 @@ describe('DotAnalyticsFiltersComponent', () => {
             spectator.component.onChangeCustomDateRange();
 
             expect(changeFiltersSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not emit when range is shorter than 7 days (boundary: 6 calendar days)', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            // Jan 1 to Jan 6 = differenceInCalendarDays 5, below threshold of 6
+            const customDateRange = [
+                new Date('2024-01-01T00:00:00'),
+                new Date('2024-01-06T00:00:00')
+            ];
+            spectator.component.$customDateRange.set(customDateRange);
+            spectator.component.onChangeCustomDateRange();
+
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
+        });
+
+        it('should emit when range is exactly 7 days (boundary: differenceInCalendarDays = 6)', () => {
+            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            // Jan 1 to Jan 7 = differenceInCalendarDays 6, exactly at threshold
+            const customDateRange = [
+                new Date('2024-01-01T00:00:00'),
+                new Date('2024-01-07T00:00:00')
+            ];
+            spectator.component.$customDateRange.set(customDateRange);
+            spectator.component.onChangeCustomDateRange();
+
+            expect(changeFiltersSpy).toHaveBeenCalledWith(['2024-01-01', '2024-01-07']);
         });
     });
 

@@ -1,4 +1,4 @@
-import { isBefore, isDate, isSameDay, parse } from 'date-fns';
+import { differenceInCalendarDays, isDate, parse } from 'date-fns';
 
 import { TIME_RANGE_OPTIONS, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
 
@@ -17,8 +17,9 @@ export const isValidCustomDateRange = (fromDate: string, toDate: string): boolea
         return false;
     }
 
-    // Check if from date is before or equal to to date
-    return isBefore(fromDateObj, toDateObj) || isSameDay(fromDateObj, toDateObj);
+    // Enforce minimum range of 7 days (from day0 to day6 inclusive = differenceInCalendarDays >= 6).
+    // Reversed and same-day ranges naturally return false (negative or 0 difference).
+    return differenceInCalendarDays(toDateObj, fromDateObj) >= 6;
 };
 
 /**
