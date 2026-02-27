@@ -22,6 +22,8 @@ import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 
+import { take } from 'rxjs/operators';
+
 import { DotLanguagesService } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
 import {
@@ -217,14 +219,17 @@ export class DotFolderListViewComponent implements OnInit {
     ngOnInit(): void {
         // We should be getting this from the Global Store
         // But it gets out of scope for the ticket.
-        this.dotLanguagesService.get().subscribe((languages) => {
-            const languagesMap = new Map<number, DotLanguage>();
-            languages.forEach((language) => {
-                languagesMap.set(language.id, language);
-            });
+        this.dotLanguagesService
+            .get()
+            .pipe(take(1))
+            .subscribe((languages) => {
+                const languagesMap = new Map<number, DotLanguage>();
+                languages.forEach((language) => {
+                    languagesMap.set(language.id, language);
+                });
 
-            patchState(this.state, { languagesMap });
-        });
+                patchState(this.state, { languagesMap });
+            });
     }
 
     /**

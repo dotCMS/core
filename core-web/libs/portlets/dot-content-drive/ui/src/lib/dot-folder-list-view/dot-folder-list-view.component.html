@@ -97,7 +97,7 @@
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         {{ isFolder ? item.name : item.title }}
                     </span>
-                    <span data-testId="lock-hint" class="text-gray-700]">
+                    <span data-testId="lock-hint" class="text-gray-700">
                         @if (!isFolder) {
                             @if (item.locked) {
                                 <i class="pi pi-lock" data-testId="lock-icon"></i>
