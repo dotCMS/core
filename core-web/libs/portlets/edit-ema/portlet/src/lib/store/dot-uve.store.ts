@@ -55,8 +55,7 @@ const initialState: UVEState = {
     viewOgTagsResults: null,
     viewZoomLevel: 1,
     viewZoomIsActive: false,
-    viewZoomIframeDocHeight: 0,
-    viewZoomGestureStartZoom: 1
+    viewZoomIframeDocHeight: 0
 };
 
 /**

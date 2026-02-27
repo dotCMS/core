@@ -265,20 +265,6 @@ export function withView(_deps?: WithViewDeps) {
              */
             viewSetIframeDocHeight(height: number): void {
                 patchState(store, { viewZoomIframeDocHeight: height });
-            },
-
-            /**
-             * Set gesture start zoom level (for trackpad pinch gestures)
-             */
-            viewZoomSetGestureStart(zoom: number): void {
-                patchState(store, { viewZoomGestureStartZoom: zoom });
-            },
-
-            /**
-             * Get current gesture start zoom level
-             */
-            viewZoomGetGestureStart(): number {
-                return store.viewZoomGestureStartZoom();
             }
         }))
     );
