@@ -1,5 +1,10 @@
 package com.dotmarketing.business;
 
+/**
+ * @deprecated This DWR bean is deprecated and will be removed in a future release.
+ *             Use {@link com.dotcms.rest.api.v1.system.permission.PermissionableObjectView} instead.
+ */
+@Deprecated(forRemoval = true)
 public class PermissionableObjectDWR {
 	
 	private String id;

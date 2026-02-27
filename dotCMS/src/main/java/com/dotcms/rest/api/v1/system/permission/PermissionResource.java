@@ -4,6 +4,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.Pagination;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -1141,5 +1142,149 @@ public class PermissionResource {
             "Successfully updated permissions for role: %s on asset: %s", roleId, assetId));
 
         return new ResponseEntityUpdateRolePermissionsView(result);
+    }
+
+    /**
+     * Breaks permission inheritance for a specific asset, making it have its own
+     * individual permissions (copied from parent). This is used when an asset is
+     * currently inheriting permissions and the user wants to customize them.
+     *
+     * @param request  HTTP servlet request
+     * @param response HTTP servlet response
+     * @param assetId  Asset identifier (inode or identifier)
+     * @return ResponseEntityStringView with success message
+     * @throws DotDataException     If there's an error accessing permission data
+     * @throws DotSecurityException If security validation fails
+     */
+    @Operation(
+        summary = "Break permission inheritance",
+        description = "Breaks permission inheritance for a specific asset, giving it individual " +
+                     "permissions copied from its parent. After this operation, the asset's permissions " +
+                     "can be modified independently of the parent."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Inheritance broken successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityStringView.class))),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user lacks EDIT_PERMISSIONS on asset",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Asset not found",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @PUT
+    @Path("/{assetId}/_individualpermission")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityStringView permissionIndividually(
+            final @Context HttpServletRequest request,
+            final @Context HttpServletResponse response,
+            @Parameter(description = "Asset identifier (inode or identifier)", required = true)
+            final @PathParam("assetId") String assetId)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "permissionIndividually called - assetId: %s", assetId));
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        if (!UtilMethods.isSet(assetId)) {
+            throw new BadRequestException("Asset ID is required");
+        }
+
+        final Permissionable asset = assetPermissionHelper.resolveAsset(assetId);
+        if (asset == null) {
+            throw new NotFoundInDbException(String.format("Asset not found: %s", assetId));
+        }
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        if (!permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
+            throw new DotSecurityException("User does not have permission to edit permissions on this asset");
+        }
+
+        final Permissionable parentPermissionable = permissionAPI.findParentPermissionable(asset);
+        if (parentPermissionable != null) {
+            permissionAPI.permissionIndividually(parentPermissionable, asset, user);
+        }
+
+        Logger.info(this, () -> String.format(
+            "Successfully broke permission inheritance for asset: %s", assetId));
+
+        return new ResponseEntityStringView("Permission inheritance broken successfully");
+    }
+
+    /**
+     * Retrieves metadata about a permissionable asset, including type information
+     * and permission flags. Used by the permissions tab UI to determine which
+     * permission options to display.
+     *
+     * @param request  HTTP servlet request
+     * @param response HTTP servlet response
+     * @param assetId  Asset identifier (inode or identifier)
+     * @return ResponseEntityPermissionableObjectView containing asset metadata
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    @Operation(
+        summary = "Get permissionable asset metadata",
+        description = "Retrieves metadata about a permissionable asset including its type, " +
+                     "whether it is a folder/host/content type, and whether the current user " +
+                     "has permission to edit its permissions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Asset metadata retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityPermissionableObjectView.class))),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Asset not found",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/{assetId}/_permissionable")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityPermissionableObjectView getPermissionableObject(
+            final @Context HttpServletRequest request,
+            final @Context HttpServletResponse response,
+            @Parameter(description = "Asset identifier (inode or identifier)", required = true)
+            final @PathParam("assetId") String assetId)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "getPermissionableObject called - assetId: %s", assetId));
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        if (!UtilMethods.isSet(assetId)) {
+            throw new BadRequestException("Asset ID is required");
+        }
+
+        final PermissionableObjectView view = assetPermissionHelper.getPermissionableObjectView(
+            assetId, user);
+
+        return new ResponseEntityPermissionableObjectView(view);
     }
 }

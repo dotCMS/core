@@ -11125,6 +11125,72 @@ paths:
       summary: Update asset permissions
       tags:
       - Permissions
+  /v1/permissions/{assetId}/_individualpermission:
+    put:
+      description: "Breaks permission inheritance for a specific asset, giving it\
+        \ individual permissions copied from its parent. After this operation, the\
+        \ asset's permissions can be modified independently of the parent."
+      operationId: permissionIndividually
+      parameters:
+      - description: Asset identifier (inode or identifier)
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Inheritance broken successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user lacks EDIT_PERMISSIONS on asset
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+      summary: Break permission inheritance
+      tags:
+      - Permissions
+  /v1/permissions/{assetId}/_permissionable:
+    get:
+      description: "Retrieves metadata about a permissionable asset including its\
+        \ type, whether it is a folder/host/content type, and whether the current\
+        \ user has permission to edit its permissions."
+      operationId: getPermissionableObject
+      parameters:
+      - description: Asset identifier (inode or identifier)
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPermissionableObjectView"
+          description: Asset metadata retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+      summary: Get permissionable asset metadata
+      tags:
+      - Permissions
   /v1/permissions/{assetId}/_reset:
     put:
       description: "Removes all individual permissions from an asset, making it inherit\
@@ -24490,6 +24556,23 @@ components:
           type: string
         permissionType:
           type: string
+    PermissionableObjectView:
+      type: object
+      properties:
+        doesUserHavePermissionsToEdit:
+          type: boolean
+        id:
+          type: string
+        isContentType:
+          type: boolean
+        isFolder:
+          type: boolean
+        isHost:
+          type: boolean
+        isParentPermissionable:
+          type: boolean
+        type:
+          type: string
     Persona:
       type: object
       properties:
@@ -26141,6 +26224,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PermissionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPermissionableObjectView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PermissionableObjectView"
         errors:
           type: array
           items:

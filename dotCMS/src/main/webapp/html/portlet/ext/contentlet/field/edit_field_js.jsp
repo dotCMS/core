@@ -18,7 +18,6 @@
 <%@ page import="org.apache.commons.lang.StringUtils" %>
 
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
-<script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>

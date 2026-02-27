@@ -229,7 +229,12 @@
                 this.gotoCreateHost();
             }
             else {
-				HostAjax.findAllHostThumbnails(dojo.hitch(this, this.goToStep2Callback));
+                fetch('/api/v1/site/thumbnails', {cache: 'no-cache'})
+                    .then(function(response) { return response.json(); })
+                    .then(dojo.hitch(this, function(data) {
+                        this.goToStep2Callback(data.entity);
+                    }))
+                    .catch(function(error) { console.error('Error loading host thumbnails:', error); });
             }
 
         },
@@ -357,42 +362,28 @@
         refreshHostTable: function(){
             var filter = dijit.byId('filter').attr('value');
             var showDeleted = dijit.byId('showDeleted').attr('checked');
-            var offset = (this.currentPage - 1) * this.RESULTS_PER_PAGE;
+            var page = this.currentPage;
             var count = this.RESULTS_PER_PAGE;
-            HostAjax.findHostsPaginated(filter, showDeleted, offset, count, dojo.hitch(this, this.refreshHostTableCallback));
+            var url = '/api/v1/site?filter=' + encodeURIComponent(filter) + '&archived=' + showDeleted + '&page=' + page + '&per_page=' + count;
+            fetch(url, {cache: 'no-cache'})
+                .then(dojo.hitch(this, function(response) {
+                    var total = parseInt(response.headers.get('X-Pagination-Total-Entries') || '0', 10);
+                    return response.json().then(dojo.hitch(this, function(data) {
+                        this.refreshHostTableCallback(data.entity, total);
+                    }));
+                }))
+                .catch(function(error) { console.error('Error loading hosts:', error); });
         },
-        refreshHostTableCallback: function(data){
+        refreshHostTableCallback: function(list, total){
             //Clearing up the table
-            DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
-            DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
+            dojo.byId('hostsTableHeader').innerHTML = '';
+            dojo.byId('hostsTableBody').innerHTML = '';
             dojo.byId('hostContextMenues').innerHTML = '';
 
-            //Data variables
-            var total = data.total;
-            var list = data.list;
-            var structure = data.strucuture;
-            var fields = data.fields;
-
-            //Adding the headers to the table
-            var hostNameField;
-            var columnsHTML = '';
-            var listedFields = [];
-
-            for (var i = 0; i < fields.length; i++) {
-                var field = fields[i];
-                if (field.fieldVelocityVarName == 'hostName') {
-                    hostNameField = field;
-                    continue;
-                }
-
-                if (field.fieldListed) {
-                    columnsHTML += dojo.replace(this.tableHeaderColumnTemplate, field);
-                    listedFields.push(field);
-                }
-            }
+            //Adding the headers to the table - use known fixed columns for hosts
             var headersHTML = dojo.replace(this.tableHeaderRowTemplate, {
-                hostNameHeader: hostNameField.fieldName,
-                headerColumns: columnsHTML
+                hostNameHeader: 'Host Name',
+                headerColumns: dojo.replace(this.tableHeaderColumnTemplate, {fieldName: 'Aliases'})
             });
             dojo.place(headersHTML, 'hostsTableHeader', 'last');
 
@@ -400,30 +391,24 @@
             for (var i = 0; i < list.length; i++) {
 
                 var content = list[i];
-                var rowColumnsHTML = '';
 
-                for (var j = 0; j < listedFields.length; j++) {
-                    var field = listedFields[j];
-                    var value = content[field.fieldVelocityVarName] == null?'':content[field.fieldVelocityVarName];
-                    if(field.fieldVelocityVarName == 'aliases')
-                        value = value.replace(/\n/g, '<br/>');
-                    rowColumnsHTML += dojo.replace(this.tableRowColumnTemplate, {
-                        value: value == null?"":value
-                    });
-                }
+                // Normalize REST response field names to match what the templates expect
+                content.hostName = content.hostname || content.hostName || '';
+                content.workingInode = content.inode || content.workingInode || '';
+
+                var aliasValue = (content.aliases || '').replace(/\n/g, '<br/>');
+                var rowColumnsHTML = dojo.replace(this.tableRowColumnTemplate, { value: aliasValue });
 
                 if(content.isDefault && content.live)
                     content.imgSrc = 'hostDefaultIcon';
                 else if (content.live)
                     content.imgSrc = 'hostIcon';
                 else if(content.archived)
-					content.imgSrc = 'hostArchivedIcon';
+                    content.imgSrc = 'hostArchivedIcon';
                 else
                     content.imgSrc = 'hostStoppedIcon';
                 if(content.isDefault)
-                	content.hostName = '<b>' + content[hostNameField.fieldVelocityVarName] + ' (<%= LanguageUtil.get(pageContext, "Default") %>)</b>';
-                else
-                	content.hostName = content[hostNameField.fieldVelocityVarName];
+                    content.hostName = '<b>' + (content.hostname || content.hostName || '') + ' (<%= LanguageUtil.get(pageContext, "Default") %>)</b>';
                 content.rowColumns = rowColumnsHTML;
 
                 var rowHTML = dojo.replace(this.tableRowTemplate, content);
@@ -433,12 +418,12 @@
                 dijit.registry.remove(content.identifier + "SetupProgress");
                 dojo.parser.parse("row" + content.identifier);
                 if(content.hostInSetup) {
-                	dojo.attr(content.identifier + "SetupProgress",'style','display:block;width:100px;');
+                    dojo.attr(content.identifier + "SetupProgress",'style','display:block;width:100px;');
                     setTimeout(dojo.hitch(this, this.checkSetupProgress, content.identifier), 1000);
                 }
 
                 //Checking the status and permission to stop, start, edit and delete a host
-				var menuesHTML = '';
+                var menuesHTML = '';
                 if (dojo.indexOf(content.userPermissions, 2) > 0  && content.archived == false) {
                     menuesHTML += dojo.replace(this.tableEditRowMenuTemplate, content);
                 }
@@ -534,7 +519,12 @@
 
         },
         checkSetupProgress: function(hostIdentifier){
-			HostAjax.getHostSetupProgress(hostIdentifier, dojo.hitch(this, this.checkSetupProgressCallback, hostIdentifier));
+            fetch('/api/v1/site/' + hostIdentifier + '/setup_progress', {cache: 'no-cache'})
+                .then(function(response) { return response.json(); })
+                .then(dojo.hitch(this, function(data) {
+                    this.checkSetupProgressCallback(hostIdentifier, data.entity);
+                }))
+                .catch(function(error) { console.error('Error checking setup progress:', error); });
         },
         checkSetupProgressCallback: function(hostIdentifier, progress){
 			if(progress < 0 || progress >= 100)
@@ -552,15 +542,15 @@
 			}
         },
         filterHosts: function(){
-        	DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
-		    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
+        	dojo.byId('hostsTableHeader').innerHTML = '';
+		    dojo.byId('hostsTableBody').innerHTML = '';
 		    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
             clearTimeout(this.filterHandler);
             this.filterHandler = setTimeout(dojo.hitch(this, this.refreshHostTable), 700);
         },
         clearFilter: function(){
-        	DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
-		    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
+        	dojo.byId('hostsTableHeader').innerHTML = '';
+		    dojo.byId('hostsTableBody').innerHTML = '';
 		    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
         	dijit.byId('showDeleted').attr('checked', false);
             dijit.byId('filter').attr('value', '');
@@ -583,7 +573,10 @@
 		},
 		publishHost: function (id) {
 			if(confirm(publishConfirmMessage)) {
-				HostAjax.publishHost(id, dojo.hitch(this, this.refreshHostTable));
+				fetch('/api/v1/site/' + id + '/_publish', {method: 'PUT', cache: 'no-cache'})
+					.then(function(response) { return response.json(); })
+					.then(dojo.hitch(this, this.refreshHostTable))
+					.catch(function(error) { console.error('Error publishing host:', error); });
 			}
 		},
 		remotePublish: function (id) {
@@ -594,42 +587,55 @@
 		},
 		unpublishHost: function (id) {
 			if(confirm(unpublishConfirmMessage)) {
-				HostAjax.unpublishHost(id, dojo.hitch(this, this.refreshHostTable));
+				fetch('/api/v1/site/' + id + '/_unpublish', {method: 'PUT', cache: 'no-cache'})
+					.then(function(response) { return response.json(); })
+					.then(dojo.hitch(this, this.refreshHostTable))
+					.catch(function(error) { console.error('Error unpublishing host:', error); });
 			}
 		},
 		archiveHost: function (id) {
 			if(confirm(archiveConfirmMessage)) {
-				HostAjax.archiveHost(id, dojo.hitch(this, this.refreshHostTable));
+				fetch('/api/v1/site/' + id + '/_archive', {method: 'PUT', cache: 'no-cache'})
+					.then(function(response) { return response.json(); })
+					.then(dojo.hitch(this, this.refreshHostTable))
+					.catch(function(error) { console.error('Error archiving host:', error); });
 			}
 		},
 		unarchiveHost: function (id) {
 			if(confirm(unarchiveConfirmMessage)) {
-				HostAjax.unarchiveHost(id, dojo.hitch(this, this.refreshHostTable));
+				fetch('/api/v1/site/' + id + '/_unarchive', {method: 'PUT', cache: 'no-cache'})
+					.then(function(response) { return response.json(); })
+					.then(dojo.hitch(this, this.refreshHostTable))
+					.catch(function(error) { console.error('Error unarchiving host:', error); });
 			}
 		},
 		deleteHost: function (id) {
 			if(confirm(deleteConfirmMessage)) {
-				DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
-			    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
+				dojo.byId('hostsTableHeader').innerHTML = '';
+			    dojo.byId('hostsTableBody').innerHTML = '';
 			    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
 			    setTimeout(dojo.hitch(this, this.refreshAfterDelete, id), 1000);
-				HostAjax.deleteHost(id, dojo.hitch(this, this.refreshHostTable));
+				fetch('/api/v1/site/' + id, {method: 'DELETE', cache: 'no-cache'})
+					.then(function(response) { return response.json(); })
+					.then(dojo.hitch(this, this.refreshHostTable))
+					.catch(function(error) { console.error('Error deleting host:', error); });
 			}
 		},
         refreshAfterDelete: function(identifier){
             var filter = dijit.byId('filter').attr('value');
             var showDeleted = dijit.byId('showDeleted').attr('checked');
-            var offset = (this.currentPage - 1) * this.RESULTS_PER_PAGE;
+            var page = this.currentPage;
             var count = this.RESULTS_PER_PAGE;
-            var callMetaData = {
-            		  callback:dojo.hitch(this, this.refreshAfterDeleteCallback),
-            		  arg: identifier
-            		};
-            HostAjax.findHostsPaginated(filter, showDeleted, offset, count, callMetaData);
+            var url = '/api/v1/site?filter=' + encodeURIComponent(filter) + '&archived=' + showDeleted + '&page=' + page + '&per_page=' + count;
+            fetch(url, {cache: 'no-cache'})
+                .then(function(response) { return response.json(); })
+                .then(dojo.hitch(this, function(data) {
+                    this.refreshAfterDeleteCallback(data.entity, identifier);
+                }))
+                .catch(function(error) { console.error('Error refreshing hosts after delete:', error); });
         },
-        refreshAfterDeleteCallback: function(data, identifier){
-            var list = data.list;
-			var isDeletionDone = true;
+        refreshAfterDeleteCallback: function(list, identifier){
+            var isDeletionDone = true;
             for (var i = 0; i < list.length; i++) {
                 if(list[i]["identifier"] == identifier)
                 	isDeletionDone = false;
@@ -651,10 +657,13 @@
         },
 		makeDefault: function (id) {
 			if(confirm(makeDefaultConfirmMessage)) {
-				DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
-			    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
+				dojo.byId('hostsTableHeader').innerHTML = '';
+			    dojo.byId('hostsTableBody').innerHTML = '';
 			    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
-				HostAjax.makeDefault(id, dojo.hitch(this, this.refreshHostTable));
+				fetch('/api/v1/site/' + id + '/_makedefault', {method: 'PUT', cache: 'no-cache'})
+					.then(function(response) { return response.json(); })
+					.then(dojo.hitch(this, this.refreshHostTable))
+					.catch(function(error) { console.error('Error making host default:', error); });
 			}
 		}
 

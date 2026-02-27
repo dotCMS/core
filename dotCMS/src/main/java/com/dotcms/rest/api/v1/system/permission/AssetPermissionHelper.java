@@ -256,9 +256,13 @@ public class AssetPermissionHelper {
                 // Build individual permissions set
                 final Set<PermissionAPI.Type> individual = convertPermissionsToTypeSet(individualPermissions);
 
-                // Build inheritable permissions map (only for parent permissionables)
+                // Build inheritable permissions map.
+                // Always include when there are inheritable-type permissions, even for
+                // non-parent permissionables. The DWR compatibility layer in the JSP needs
+                // these to merge into the "individual" bucket (matching legacy DWR behavior
+                // where getPermissions() forced all types to "individual").
                 final Map<PermissionAPI.Scope, Set<PermissionAPI.Type>> inheritable;
-                if (isParentPermissionable && !inheritablePermissions.isEmpty()) {
+                if (!inheritablePermissions.isEmpty()) {
                     inheritable = buildInheritablePermissionMap(inheritablePermissions);
                 } else {
                     inheritable = null;
@@ -988,6 +992,51 @@ public class AssetPermissionHelper {
             .roleName(role.getName())
             .asset(assetView)
             .build();
+    }
+
+    /**
+     * Builds a PermissionableObjectView for the given asset.
+     * Returns metadata needed by the permissions tab UI to determine which
+     * permission options to display.
+     *
+     * <p>Replaces the legacy {@code PermissionAjax.getAsset()} DWR method.
+     *
+     * @param assetId Asset identifier (inode or identifier)
+     * @param user    Requesting user
+     * @return PermissionableObjectView containing asset metadata
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    public PermissionableObjectView getPermissionableObjectView(final String assetId,
+                                                                  final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Permissionable asset = resolveAsset(assetId);
+        if (asset == null) {
+            throw new NotFoundInDbException(String.format("Asset not found: %s", assetId));
+        }
+
+        final boolean isFolder = asset instanceof Folder;
+        final boolean isHost = asset instanceof Host
+                || (asset instanceof Contentlet
+                    && ((Contentlet) asset).isHost());
+        final boolean isContentType = asset instanceof com.dotcms.contenttype.model.type.ContentType
+                || asset instanceof com.dotmarketing.portlets.structure.model.Structure;
+        final boolean isParentPermissionable = asset.isParentPermissionable();
+        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false);
+
+        final String type = asset.getClass().getName();
+
+        return new PermissionableObjectView(
+            asset.getPermissionId(),
+            type,
+            isFolder,
+            isHost,
+            isContentType,
+            isParentPermissionable,
+            canEditPermissions
+        );
     }
 
     /**

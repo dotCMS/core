@@ -427,7 +427,10 @@ public class PortalUtil {
       return null;
     }
 
-    String tok = req.getHeader("Authorization").replace("Bearer ", "").trim();
+    String tok = req.getHeader("Authorization")
+            .replace("Bearer ", "")
+            .replace("bearer ", "")
+            .trim();
 
     return Try.of(() -> JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(tok).getActiveUser()
             .orElse(null)).getOrNull();
