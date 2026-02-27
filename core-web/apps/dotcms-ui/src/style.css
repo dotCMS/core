@@ -1,9 +1,11 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
 @plugin "daisyui" {
+    /* Solo tema light; no se incluye dark para evitar modo oscuro. */
+    themes: light --default;
     /* DaisyUI solo aplica dentro de dot-native-field (componentes semánticos en custom fields). */
-    root: "dot-native-field";
-  }
+    root: 'dot-native-field';
+}
 
 :root {
     --experiment-nav-size: 80px;

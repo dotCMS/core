@@ -11,6 +11,7 @@
   const SYSTEM_HOST = "System Host";
   const ALL_SITES_TITLE = "All Sites";
   const ALL_SITES_FORMATTED = "-- All Sites ---";
+  const LOAD_MORE_VALUE = "__load_more__";
 
   // UTILS
   /**
@@ -86,21 +87,6 @@
    */
   function getElement(id) {
     return document.getElementById(id);
-  }
-
-  /**
-   * Updates the selected state of options in dropdown
-   * @param {HTMLElement} dropdown - The dropdown element
-   * @param {string} identifier - The identifier of the selected option
-   */
-  function updateSelectedOption(dropdown, identifier) {
-    const options = dropdown.querySelectorAll("[data-option]");
-    options.forEach((opt) => {
-      opt.classList.remove("active", "bg-base-200");
-      if (opt.dataset.identifier === identifier) {
-        opt.classList.add("active", "bg-base-200");
-      }
-    });
   }
 
   /**
@@ -247,8 +233,7 @@
     const isTemplateValid = templateId && templateId !== ALL_SITES_IDENTIFIER;
 
     if (!templates || templates.length === 0) {
-      // If no templates, show "All Sites" as placeholder
-      updateSelectButton(null);
+      updateSelectValue(null);
       return;
     }
 
@@ -271,26 +256,18 @@
     }
 
     if (!template) {
-      // If no template found, show "All Sites" as placeholder
-      updateSelectButton(null);
+      updateSelectValue(null);
       return;
     }
 
-    const { identifier, fullTitle } = template;
-    // We set the values directly into the components
+    const { identifier } = template;
     const currentTemplateIdElement = getElement("currentTemplateId");
     if (currentTemplateIdElement) {
       currentTemplateIdElement.value = identifier;
     }
     templateField.setValue(identifier);
 
-    updateSelectButton(template);
-
-    // Update selected state in dropdown
-    const dropdown = getElement("customDropdown");
-    if (dropdown) {
-      updateSelectedOption(dropdown, identifier);
-    }
+    updateSelectValue(template);
 
     fetchTemplateImage(identifier);
   };
@@ -303,16 +280,7 @@
       currentTemplateIdElement.value = "";
     }
 
-    updateSelectButton(null);
-
-    // Update selected state in dropdown
-    const dropdown = getElement("customDropdown");
-    if (dropdown) {
-      const options = dropdown.querySelectorAll("[data-option]");
-      options.forEach((opt) => {
-        opt.classList.remove("active");
-      });
-    }
+    updateSelectValue(null);
 
     toggleThumbnailContainer(false);
   }
@@ -373,123 +341,69 @@
   }
 
   /**
-   * Creates an option element for the DaisyUI dropdown menu
+   * Returns the display label for a template option (title — host)
    */
-  function createOptionElement(template, selectedValue) {
-    const option = document.createElement("li");
-    option.setAttribute("data-option", "");
-    option.dataset.identifier = template.identifier;
-
-    const hostName = getHostName(template);
-    option.dataset.hostName = hostName;
-
-    // DaisyUI menu item: one solid block, one hover for the whole option
-    option.classList.add(
-      "cursor-pointer",
-      "rounded-btn",
-      "py-2",
-      "px-3",
-      "flex",
-      "flex-col",
-      "gap-0",
-      "leading-tight",
-      "bg-white-100",
-      "hover:bg-white-200",
-      "transition-colors",
-    );
-
-    if (template.identifier === selectedValue) {
-      option.classList.add("active", "bg-base-200");
-    }
-
-    if (template.identifier === ALL_SITES_IDENTIFIER) {
-      option.classList.add("text-base-content/70");
-    }
-
-    // Primary line: title (strong) – no own hover, part of the single option block
-    const title = document.createElement("strong");
-    title.className =
-      "block text-sm font-semibold text-base-content leading-tight pointer-events-none";
-
-    if (template.identifier === ALL_SITES_IDENTIFIER) {
-      if (template.htmlTitle) {
-        const tempDiv = document.createElement("div");
-        tempDiv.innerHTML = template.htmlTitle;
-        title.textContent = tempDiv.textContent || ALL_SITES_FORMATTED;
-      } else {
-        title.textContent = ALL_SITES_FORMATTED;
-      }
-    } else {
-      title.textContent = getCleanTitle(template);
-    }
-
-    // Secondary line: host/site (small) – no own hover, part of the single option block
-    const subtitle = document.createElement("small");
-    subtitle.className =
-      "block text-xs text-base-content/60 font-normal leading-tight mt-0.5 pointer-events-none";
-    subtitle.textContent = hostName;
-
-    option.appendChild(title);
-    option.appendChild(subtitle);
-
-    return option;
+  function getOptionLabel(template) {
+    const title =
+      template.identifier === ALL_SITES_IDENTIFIER
+        ? ALL_SITES_FORMATTED
+        : getCleanTitle(template);
+    if (template.identifier === ALL_SITES_IDENTIFIER) return title;
+    const host = getHostName(template);
+    return host ? `${title} — ${host}` : title;
   }
 
   /**
-   * Creates and populates the custom dropdown
+   * Populates the native select with template options
+   * @param {HTMLSelectElement} selectEl - The select element
+   * @param {Array} templates - List of templates
+   * @param {string} selectedValue - Currently selected template identifier
+   * @param {boolean} hasMore - Whether to show "More choices" option
    */
-  function populateCustomDropdown(templates, selectedValue, append = false) {
-    const dropdown = getElement("customDropdown");
-    if (!dropdown) {
-      return;
-    }
+  function populateSelect(selectEl, templates, selectedValue, hasMore) {
+    if (!selectEl) return;
 
-    const moreChoicesButton = getElement("moreChoicesButton");
+    selectEl.innerHTML = "";
 
-    if (!append) {
-      const existingOptions = dropdown.querySelectorAll("[data-option]");
-      existingOptions.forEach((opt) => opt.remove());
-    }
+    const allSitesOpt = document.createElement("option");
+    allSitesOpt.value = ALL_SITES_IDENTIFIER;
+    allSitesOpt.textContent = getOptionLabel({
+      identifier: ALL_SITES_IDENTIFIER,
+      fullTitle: ALL_SITES_TITLE,
+      hostName: SYSTEM_HOST,
+    });
+    selectEl.appendChild(allSitesOpt);
 
     templates.forEach((template) => {
-      const option = createOptionElement(template, selectedValue);
-      // Insert before the more choices button
-      if (moreChoicesButton) {
-        dropdown.insertBefore(option, moreChoicesButton);
-      } else {
-        dropdown.appendChild(option);
-      }
+      if (template.identifier === ALL_SITES_IDENTIFIER) return;
+      const opt = document.createElement("option");
+      opt.value = template.identifier;
+      opt.textContent = getOptionLabel(template);
+      selectEl.appendChild(opt);
     });
-  }
 
-  /**
-   * Sets the select button label (span only, keeps PrimeNG chevron icon)
-   */
-  function setSelectButtonLabel(text) {
-    const labelSpan = getElement("templateSelectButtonLabel");
-    if (labelSpan) labelSpan.textContent = text;
-    else {
-      const button = getElement("customSelectButton");
-      if (button) button.textContent = text;
-    }
-  }
-
-  /**
-   * Updates the button text with selected template
-   */
-  function updateSelectButton(template) {
-    const button = getElement("customSelectButton");
-    if (!button) {
-      return;
+    if (hasMore) {
+      const moreOpt = document.createElement("option");
+      moreOpt.value = LOAD_MORE_VALUE;
+      moreOpt.textContent = "More choices...";
+      selectEl.appendChild(moreOpt);
     }
 
-    if (template && template.identifier !== ALL_SITES_IDENTIFIER) {
-      setSelectButtonLabel(getCleanTitle(template));
-      button.classList.remove("opacity-60");
+    if (selectedValue) {
+      selectEl.value = selectedValue;
     } else {
-      setSelectButtonLabel(ALL_SITES_TITLE);
-      button.classList.add("opacity-60");
+      selectEl.value = ALL_SITES_IDENTIFIER;
     }
+  }
+
+  /**
+   * Updates the select value and optional opacity for "All Sites"
+   */
+  function updateSelectValue(template) {
+    const selectEl = getElement("templateSelect");
+    if (!selectEl) return;
+    selectEl.value = template && template.identifier ? template.identifier : ALL_SITES_IDENTIFIER;
+    selectEl.classList.toggle("opacity-60", !template || template.identifier === ALL_SITES_IDENTIFIER);
   }
 
   /**
@@ -529,53 +443,9 @@
       currentTemplateIdElement.value = value;
     }
 
-    updateSelectButton(template);
+    updateSelectValue(template);
 
-    // Update selected state in dropdown
-    const dropdown = getElement("customDropdown");
-    if (dropdown) {
-      updateSelectedOption(dropdown, value);
-    }
-
-    closeDropdown();
     fetchTemplateImage(value);
-  }
-
-  /**
-   * Opens the DaisyUI dropdown (details element).
-   * Per Daisy UI: open/close via JS by adding/removing the "open" attribute.
-   */
-  function openDropdown() {
-    const holder = getElement("templateHolder");
-    if (holder && holder.tagName === "DETAILS") {
-      holder.setAttribute("open", "");
-    }
-  }
-
-  /**
-   * Closes the DaisyUI dropdown (details element).
-   * Per Daisy UI: open/close via JS by adding/removing the "open" attribute.
-   */
-  function closeDropdown() {
-    const holder = getElement("templateHolder");
-    if (holder && holder.tagName === "DETAILS") {
-      holder.removeAttribute("open");
-    }
-  }
-
-  /**
-   * Toggles the DaisyUI dropdown (details element).
-   * Per Daisy UI: open/close via JS by adding/removing the "open" attribute.
-   */
-  function toggleDropdown() {
-    const holder = getElement("templateHolder");
-    if (holder && holder.tagName === "DETAILS") {
-      if (holder.hasAttribute("open")) {
-        holder.removeAttribute("open");
-      } else {
-        holder.setAttribute("open", "");
-      }
-    }
   }
 
   DotCustomFieldApi.ready(() => {
@@ -595,38 +465,17 @@
     let hasMore = false;
     let isLoading = false;
 
-    const templateHolder = getElement("templateHolder");
-    if (!templateHolder) {
+    const selectEl = getElement("templateSelect");
+    if (!selectEl) {
       return;
     }
 
-    // Grab existing DaisyUI dropdown elements
-    const selectButton = getElement("customSelectButton");
-    const dropdown = getElement("customDropdown");
-    let moreChoicesButton = getElement("moreChoicesButton");
-
-    if (!selectButton || !dropdown) {
-      return;
-    }
-
-    if (!moreChoicesButton) {
-      moreChoicesButton = document.createElement("li");
-      moreChoicesButton.id = "moreChoicesButton";
-      moreChoicesButton.setAttribute("data-action", "load-more");
-      moreChoicesButton.className = "hidden border-t border-base-300";
-      moreChoicesButton.textContent = "More choices";
-      dropdown.appendChild(moreChoicesButton);
-    }
-
-    // Load more templates
     async function loadMoreTemplates() {
-      if (isLoading || !hasMore) {
-        return;
-      }
+      if (isLoading || !hasMore) return;
 
       isLoading = true;
-      moreChoicesButton.classList.add("cursor-wait", "opacity-70");
-      moreChoicesButton.textContent = "Loading...";
+      const currentId = templateField.getValue() || ALL_SITES_IDENTIFIER;
+      selectEl.disabled = true;
 
       currentPage++;
       try {
@@ -641,23 +490,15 @@
         allTemplates = allTemplates.concat(result.templates);
         hasMore = result.hasMore;
 
-        populateCustomDropdown(result.templates, templateId, true);
-
-        if (!hasMore) {
-          moreChoicesButton.classList.add("hidden");
-        }
-
-        isLoading = false;
-        moreChoicesButton.classList.remove("cursor-wait", "opacity-70");
-        moreChoicesButton.textContent = "More choices";
+        populateSelect(selectEl, allTemplates, currentId, hasMore);
       } catch (error) {
+        populateSelect(selectEl, allTemplates, currentId, hasMore);
+      } finally {
         isLoading = false;
-        moreChoicesButton.classList.remove("cursor-wait", "opacity-70");
-        moreChoicesButton.textContent = "More choices";
+        selectEl.disabled = false;
       }
     }
 
-    // Reload templates with new hostId (for "All Sites" functionality)
     async function reloadTemplates(newHostId, showAllSiteLabel) {
       currentHostId = newHostId || "";
       allSiteLabel = showAllSiteLabel;
@@ -665,11 +506,7 @@
       allTemplates = [];
       isLoading = true;
 
-      // Show loading state
-      const button = getElement("customSelectButton");
-      if (button) {
-        button.disabled = true;
-      }
+      selectEl.disabled = true;
 
       try {
         const result = await fetchTemplates({
@@ -684,80 +521,40 @@
         hasMore = result.hasMore;
         currentPage = 1;
 
-        populateCustomDropdown(result.templates, "");
-
-        if (hasMore) {
-          moreChoicesButton.classList.remove("hidden");
-        } else {
-          moreChoicesButton.classList.add("hidden");
-        }
-
-        isLoading = false;
-        if (button) {
-          button.disabled = false;
-        }
+        populateSelect(selectEl, result.templates, "", hasMore);
       } catch (error) {
+        populateSelect(selectEl, [], "", false);
+      } finally {
         isLoading = false;
-        if (button) {
-          button.disabled = false;
-        }
+        selectEl.disabled = false;
       }
     }
 
-    dropdown.addEventListener("click", (e) => {
-      if (e.target.closest("[data-action='load-more']")) {
+    selectEl.addEventListener("change", (e) => {
+      const value = e.target.value;
+
+      if (value === LOAD_MORE_VALUE) {
+        loadMoreTemplates();
+        selectEl.value = templateField.getValue() || ALL_SITES_IDENTIFIER;
         return;
       }
 
-      const option = e.target.closest("[data-option]");
-      if (option) {
-        const identifier = option.dataset.identifier;
-        const hostName = option.dataset.hostName;
-        const titleEl = option.querySelector("strong");
-        const fullTitle = titleEl ? titleEl.textContent : "";
-
-        const template = allTemplates.find(
-          (t) => t.identifier === identifier,
-        ) || {
-          identifier,
-          fullTitle: fullTitle,
-          title: fullTitle,
-          hostName: hostName || SYSTEM_HOST,
-        };
-        handleTemplateSelection(
-          template,
-          templateField,
-          (value) => {
-            allSiteLabel = value;
-          },
-          reloadTemplates,
-        );
-      }
+      const template = allTemplates.find((t) => t.identifier === value) || {
+        identifier: value,
+        fullTitle: value,
+        title: value,
+        hostName: SYSTEM_HOST,
+      };
+      handleTemplateSelection(
+        template,
+        templateField,
+        (val) => {
+          allSiteLabel = val;
+        },
+        reloadTemplates,
+      );
     });
 
-    // Handle "More choices" button click
-    moreChoicesButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      loadMoreTemplates();
-    });
-
-    // Toggle dropdown on button click.
-    // preventDefault() is required: <summary> natively toggles its parent <details>;
-    // without it the browser removes the "open" attribute right after we set it.
-    selectButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleDropdown();
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener("click", (e) => {
-      if (!templateHolder.contains(e.target)) {
-        closeDropdown();
-      }
-    });
-
-    // Fetch initial templates
     (async () => {
       try {
         const result = await fetchTemplates({
@@ -772,15 +569,8 @@
         hasMore = result.hasMore;
         currentPage = 1;
 
-        populateCustomDropdown(result.templates, templateId);
+        populateSelect(selectEl, result.templates, templateId, hasMore);
 
-        if (hasMore) {
-          moreChoicesButton.classList.remove("hidden");
-        } else {
-          moreChoicesButton.classList.add("hidden");
-        }
-
-        // Find selected template
         let selectedTemplate = null;
         if (isTemplateValid) {
           selectedTemplate = allTemplates.find(
@@ -795,6 +585,11 @@
         );
       } catch (error) {
         console.error("Error fetching initial templates:", error);
+        selectEl.innerHTML = "";
+        const opt = document.createElement("option");
+        opt.value = ALL_SITES_IDENTIFIER;
+        opt.textContent = ALL_SITES_FORMATTED;
+        selectEl.appendChild(opt);
       }
     })();
 
@@ -805,30 +600,13 @@
 </script>
 
 <div class="flex flex-col gap-2 w-full">
-  <details id="templateHolder" class="dropdown w-full">
-    <summary
-      id="customSelectButton"
-      class="btn btn-outline w-full justify-between opacity-60"
-      aria-label="Select template"
-      aria-haspopup="listbox"
-    >
-      <span id="templateSelectButtonLabel">All Sites</span>
-      <i class="pi pi-chevron-down" aria-hidden="true"></i>
-    </summary>
-    <ul
-      id="customDropdown"
-      class="menu dropdown-content bg-white-100 rounded-box z-[1] w-full max-h-96 overflow-y-auto shadow-sm"
-      role="listbox"
-    >
-      <li
-        id="moreChoicesButton"
-        data-action="load-more"
-        class="hidden border-t border-white-300"
-      >
-        More choices
-      </li>
-    </ul>
-  </details>
+  <select
+    id="templateSelect"
+    class="select select-bordered w-full"
+    aria-label="Select template"
+  >
+    <option value="" disabled selected>Loading...</option>
+  </select>
 
   <input
     id="currentTemplateId"
