@@ -1,5 +1,5 @@
 ::ng-deep .p-contextmenu {
-    min-width: 15rem;
+    min-width: 16rem;
     border: 1px solid var(--color-palette-black-op-10);
     border-radius: 0.5rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
@@ -21,6 +21,7 @@
     color: #000;
     transition: background-color 150ms ease;
     border-radius: 0.375rem;
+    gap: 1rem;
 }
 
 ::ng-deep .p-contextmenu .p-menuitem-link:hover {
