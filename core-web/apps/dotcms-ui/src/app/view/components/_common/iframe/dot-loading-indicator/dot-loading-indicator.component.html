@@ -1,8 +1,8 @@
-@if (!fullscreen && dotLoadingIndicatorService.display) {
+@if (!fullscreen && dotLoadingIndicatorService.display()) {
     <dot-spinner />
 }
 
-@if (fullscreen && dotLoadingIndicatorService.display) {
+@if (fullscreen && dotLoadingIndicatorService.display()) {
     <div class="loader__overlay">
         <dot-spinner />
     </div>

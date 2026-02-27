@@ -281,8 +281,9 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
 
-            const clearButton = spectator.query(byTestId('activities-clear'));
-            spectator.click(clearButton);
+            const clearButtonComponent = spectator.query(byTestId('activities-clear'));
+            const actualButton = clearButtonComponent?.querySelector('button') as HTMLButtonElement;
+            spectator.click(actualButton);
             spectator.detectChanges();
 
             expect(commentInput).toHaveValue('');
@@ -292,44 +293,50 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
         it('should disable clear button when comment field is empty', () => {
             // Initially check that it's disabled
-            let clearButton = spectator.query(byTestId('activities-clear'));
-            expect(clearButton).toBeDisabled();
+            let clearButtonComponent = spectator.query(byTestId('activities-clear'));
+            let actualButton = clearButtonComponent?.querySelector('button') as HTMLButtonElement;
+            expect(actualButton?.disabled).toBe(true);
 
             // Type something to enable it
             const commentInput = spectator.query(byTestId('activities-input'));
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
 
-            clearButton = spectator.query(byTestId('activities-clear'));
-            expect(clearButton).not.toBeDisabled();
+            clearButtonComponent = spectator.query(byTestId('activities-clear'));
+            actualButton = clearButtonComponent?.querySelector('button') as HTMLButtonElement;
+            expect(actualButton?.disabled).toBe(false);
 
             // Delete the content to see if it gets disabled again
             spectator.typeInElement('', commentInput);
             spectator.detectChanges();
 
-            clearButton = spectator.query(byTestId('activities-clear'));
-            expect(clearButton).toBeDisabled();
+            clearButtonComponent = spectator.query(byTestId('activities-clear'));
+            actualButton = clearButtonComponent?.querySelector('button') as HTMLButtonElement;
+            expect(actualButton?.disabled).toBe(true);
         });
 
         it('should disable submit button when comment field is empty', () => {
             // Initially check that it's disabled when comment is empty
-            let submitButton = spectator.query(byTestId('activities-submit'));
-            expect(submitButton).toBeDisabled();
+            let submitButtonComponent = spectator.query(byTestId('activities-submit'));
+            let actualButton = submitButtonComponent?.querySelector('button') as HTMLButtonElement;
+            expect(actualButton?.disabled).toBe(true);
 
             // Type something to enable it
             const commentInput = spectator.query(byTestId('activities-input'));
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
 
-            submitButton = spectator.query(byTestId('activities-submit'));
-            expect(submitButton).not.toBeDisabled();
+            submitButtonComponent = spectator.query(byTestId('activities-submit'));
+            actualButton = submitButtonComponent?.querySelector('button') as HTMLButtonElement;
+            expect(actualButton?.disabled).toBe(false);
 
             // Delete the content to see if it gets disabled again
             spectator.typeInElement('', commentInput);
             spectator.detectChanges();
 
-            submitButton = spectator.query(byTestId('activities-submit'));
-            expect(submitButton).toBeDisabled();
+            submitButtonComponent = spectator.query(byTestId('activities-submit'));
+            actualButton = submitButtonComponent?.querySelector('button') as HTMLButtonElement;
+            expect(actualButton?.disabled).toBe(true);
         });
 
         it('should reset form state when clearComment is called', () => {
@@ -388,9 +395,12 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.setInput('status', ComponentStatus.SAVING);
             spectator.detectChanges();
 
-            const submitButton = spectator.query(byTestId('activities-submit'));
+            const submitButtonComponent = spectator.query(byTestId('activities-submit'));
+            const actualButton = submitButtonComponent?.querySelector(
+                'button'
+            ) as HTMLButtonElement;
 
-            expect(submitButton).toBeDisabled();
+            expect(actualButton?.disabled).toBe(true);
             expect(spectator.component['$isSaving']()).toBe(true);
         });
 

@@ -1,27 +1,38 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host ::ng-deep {
     .p-card {
         border: none;
-        box-shadow: $shadow-xs;
+        box-shadow: shadows.$shadow-xs;
         cursor: pointer;
         display: flex;
-        gap: $spacing-3;
-        height: 94px;
+        flex-direction: row;
+        gap: spacing.$spacing-3;
+        height: 5.875rem;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
 
         .p-card-header {
             padding: 0;
-            height: 94px;
-            width: 94px;
-            min-height: 94px;
-            min-width: 94px;
-            border-radius: $border-radius-sm 0 0 $border-radius-sm;
+            height: 5.875rem;
+            min-height: 5.875rem;
+            min-width: 5.875rem;
+            aspect-ratio: 1/1;
+            border-radius: common.$border-radius-sm 0 0 common.$border-radius-sm;
 
             .thumbnail-container {
-                padding: 10px;
+                padding: 0.625rem;
                 width: 100%;
                 height: 100%;
-                background: $color-palette-gray-200;
+                background: colors.$color-palette-gray-200;
 
                 dot-contentlet-thumbnail {
                     width: 100%;
@@ -41,13 +52,13 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding: $spacing-2 0;
-            padding-right: $spacing-2;
+            padding: spacing.$spacing-2 0;
+            padding-right: spacing.$spacing-2;
 
             .p-card-title {
                 flex-grow: 1;
                 h2 {
-                    font-size: $font-size-md;
+                    font-size: fonts.$font-size-md;
                     line-height: 140%;
                     margin: 0;
                     overflow: hidden;
@@ -56,22 +67,13 @@
                 }
             }
         }
-    }
 
-    .state {
-        align-items: center;
-        display: flex;
-        gap: $spacing-1;
-    }
-
-    .badge {
-        background: $color-palette-primary-100;
-        border-radius: $border-radius-xs;
-        color: $black;
-        font-size: 0.75 * $dot-editor-size;
-        line-height: 140%;
-        padding: 0.2rem $spacing-1;
-        display: flex;
-        align-items: center;
+        .p-card-footer {
+            .state {
+                align-items: center;
+                display: flex;
+                gap: spacing.$spacing-1;
+            }
+        }
     }
 }

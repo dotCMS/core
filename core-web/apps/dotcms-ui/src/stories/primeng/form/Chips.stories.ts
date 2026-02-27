@@ -3,14 +3,14 @@ import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { Chips, ChipsModule } from 'primeng/chips';
+import { Chips, ChipModule } from 'primeng/chip';
 
 const meta: Meta = {
     title: 'PrimeNG/Form/Chips',
     component: Chips,
     decorators: [
         moduleMetadata({
-            imports: [ChipsModule, BrowserAnimationsModule, FormsModule]
+            imports: [ChipModule, BrowserAnimationsModule, FormsModule]
         })
     ],
     parameters: {

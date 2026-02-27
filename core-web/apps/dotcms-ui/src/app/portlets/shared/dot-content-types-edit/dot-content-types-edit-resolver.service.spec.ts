@@ -1,19 +1,16 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { of as observableOf, throwError as observableThrowError } from 'rxjs';
 
-import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
 
 import {
     DotContentTypesInfoService,
     DotCrudService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotRouterService,
-    DotSystemConfigService
+    DotRouterService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -22,174 +19,150 @@ import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-te
 
 import { DotContentTypeEditResolver } from './dot-content-types-edit-resolver.service';
 
-import { DOTTestBed } from '../../../test/dot-test-bed';
+const getDataByIdSpy = jest.fn();
+const gotoPortletSpy = jest.fn();
+const addNewBreadcrumbSpy = jest.fn();
+const handleErrorSpy = jest.fn().mockReturnValue(observableOf({ redirected: false }));
 
-class CrudServiceMock {
-    getDataById() {}
+function createRouteSnapshot(paramMapGet: (key: string) => string | null): ActivatedRouteSnapshot {
+    return {
+        paramMap: { get: paramMapGet },
+        data: {}
+    } as unknown as ActivatedRouteSnapshot;
 }
 
-const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
-activatedRouteSnapshotMock.paramMap = {};
-
 describe('DotContentTypeEditResolver', () => {
-    let crudService: DotCrudService;
-    let dotContentTypeEditResolver: DotContentTypeEditResolver;
-    let dotRouterService: DotRouterService;
-    let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let globalStore: InstanceType<typeof GlobalStore>;
+    let spectator: SpectatorService<DotContentTypeEditResolver>;
 
-    beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
-            providers: [
-                DotContentTypeEditResolver,
-                DotContentTypesInfoService,
-                DotHttpErrorManagerService,
-                { provide: DotCrudService, useClass: CrudServiceMock },
-                {
-                    provide: DotMessageDisplayService,
-                    useClass: DotMessageDisplayServiceMock
-                },
-                { provide: LoginService, useClass: LoginServiceMock },
-                {
-                    provide: ActivatedRouteSnapshot,
-                    useValue: activatedRouteSnapshotMock
-                },
-                {
-                    provide: DotSystemConfigService,
-                    useValue: { getSystemConfig: () => observableOf({}) }
-                },
-                GlobalStore
-            ],
-            imports: [RouterTestingModule]
+    const createService = createServiceFactory({
+        service: DotContentTypeEditResolver,
+        providers: [
+            DotContentTypesInfoService,
+            {
+                provide: DotCrudService,
+                useValue: { getDataById: getDataByIdSpy }
+            },
+            {
+                provide: DotHttpErrorManagerService,
+                useValue: { handle: handleErrorSpy }
+            },
+            {
+                provide: DotMessageDisplayService,
+                useClass: DotMessageDisplayServiceMock
+            },
+            {
+                provide: DotRouterService,
+                useValue: { gotoPortlet: gotoPortletSpy }
+            },
+            { provide: LoginService, useClass: LoginServiceMock },
+            {
+                provide: GlobalStore,
+                useValue: { addNewBreadcrumb: addNewBreadcrumbSpy }
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        getDataByIdSpy.mockReset();
+        gotoPortletSpy.mockReset();
+        addNewBreadcrumbSpy.mockReset();
+        handleErrorSpy.mockReset();
+        handleErrorSpy.mockReturnValue(observableOf({ redirected: false }));
+    });
+
+    it('should get and return a content type', (done) => {
+        const route = createRouteSnapshot((key) => (key === 'id' ? '123' : null));
+        const contentType = { fake: 'content-type', object: 'right?' };
+        getDataByIdSpy.mockReturnValue(observableOf(contentType));
+
+        spectator.service.resolve(route).subscribe((result: any) => {
+            expect(result).toEqual(contentType);
+            expect(getDataByIdSpy).toHaveBeenCalledWith('v1/contenttype', '123');
+            expect(getDataByIdSpy).toHaveBeenCalledTimes(1);
+            done();
         });
-        crudService = TestBed.inject(DotCrudService);
-        dotContentTypeEditResolver = TestBed.inject(DotContentTypeEditResolver);
-        dotRouterService = TestBed.inject(DotRouterService);
-        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-        globalStore = TestBed.inject(GlobalStore);
+    });
 
-        // Spy on addNewBreadcrumb to prevent errors when contentType is null
-        jest.spyOn(globalStore, 'addNewBreadcrumb').mockImplementation(() => {});
-    }));
-
-    it('should get and return a content type', () => {
-        activatedRouteSnapshotMock.paramMap.get = () => '123';
-        jest.spyOn(crudService, 'getDataById').mockReturnValue(
-            observableOf({
-                fake: 'content-type',
-                object: 'right?'
-            })
+    it("should redirect to content-types if content type it's not found", (done) => {
+        const route = createRouteSnapshot((key) => (key === 'id' ? 'invalid-id' : null));
+        getDataByIdSpy.mockReturnValue(
+            observableThrowError(() => ({
+                bodyJsonObject: { error: '' },
+                response: { status: 403 }
+            }))
         );
+        handleErrorSpy.mockReturnValue(observableOf({ redirected: false }));
 
-        dotContentTypeEditResolver
-            .resolve(activatedRouteSnapshotMock)
-            .subscribe((fakeContentType: any) => {
-                expect(fakeContentType).toEqual({
-                    fake: 'content-type',
-                    object: 'right?'
+        spectator.service.resolve(route).subscribe({
+            next: () => {
+                expect(getDataByIdSpy).toHaveBeenCalledWith('v1/contenttype', 'invalid-id');
+                expect(getDataByIdSpy).toHaveBeenCalledTimes(1);
+                expect(gotoPortletSpy).toHaveBeenCalledWith('/content-types-angular', {
+                    replaceUrl: true
                 });
-            });
-        expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
-        expect(crudService.getDataById).toHaveBeenCalledTimes(1);
-    });
-
-    it("should redirect to content-types if content type it's not found", () => {
-        activatedRouteSnapshotMock.paramMap.get = () => 'invalid-id';
-
-        jest.spyOn<any>(dotHttpErrorManagerService, 'handle').mockReturnValue(
-            observableOf({
-                redirected: false
-            })
-        );
-
-        jest.spyOn(crudService, 'getDataById').mockReturnValue(
-            observableThrowError({
-                bodyJsonObject: {
-                    error: ''
-                },
-                response: {
-                    status: 403
-                }
-            })
-        );
-
-        dotContentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe();
-
-        expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', 'invalid-id');
-        expect(crudService.getDataById).toHaveBeenCalledTimes(1);
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular', {
-            replaceUrl: true
-        });
-    });
-
-    it.skip('should get and return null and go to home', () => {
-        activatedRouteSnapshotMock.paramMap.get = () => '123';
-
-        jest.spyOn<any>(dotHttpErrorManagerService, 'handle').mockReturnValue(
-            observableOf({
-                redirected: false
-            })
-        );
-
-        jest.spyOn(crudService, 'getDataById').mockReturnValue(
-            observableThrowError({
-                bodyJsonObject: {
-                    error: ''
-                },
-                response: {
-                    status: 403
-                }
-            })
-        );
-
-        // Subscribe with error handler since tap will try to access null.name
-        dotContentTypeEditResolver.resolve(activatedRouteSnapshotMock).subscribe({
+                done();
+            },
             error: () => {
-                // Expected error when trying to access properties of null
-                expect(crudService.getDataById).toHaveBeenCalledWith('v1/contenttype', '123');
-                expect(crudService.getDataById).toHaveBeenCalledTimes(1);
-                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith(
-                    '/content-types-angular',
-                    {
-                        replaceUrl: true
-                    }
-                );
+                // tap(contentType => addNewBreadcrumb(...)) throws when contentType is null
+                expect(getDataByIdSpy).toHaveBeenCalledWith('v1/contenttype', 'invalid-id');
+                expect(getDataByIdSpy).toHaveBeenCalledTimes(1);
+                expect(gotoPortletSpy).toHaveBeenCalledWith('/content-types-angular', {
+                    replaceUrl: true
+                });
+                done();
             }
         });
     });
 
-    it.skip('should return a content type placeholder base on type', () => {
-        activatedRouteSnapshotMock.paramMap.get = (param) => {
-            return param === 'type' ? 'content' : false;
-        };
+    it.skip('should get and return null and go to home', () => {
+        const route = createRouteSnapshot((key) => (key === 'id' ? '123' : null));
+        getDataByIdSpy.mockReturnValue(
+            observableThrowError(() => ({
+                bodyJsonObject: { error: '' },
+                response: { status: 403 }
+            }))
+        );
+        handleErrorSpy.mockReturnValue(observableOf({ redirected: false }));
 
-        jest.spyOn(crudService, 'getDataById').mockReturnValue(observableOf(false));
-        dotContentTypeEditResolver
-            .resolve(activatedRouteSnapshotMock)
-            .subscribe((res: DotCMSContentType) => {
-                expect(res).toEqual({
-                    baseType: 'content',
-                    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-                    defaultType: false,
-                    fields: [],
-                    fixed: false,
-                    folder: 'SYSTEM_FOLDER',
-                    host: null,
-                    iDate: null,
-                    id: null,
-                    layout: [],
-                    modDate: null,
-                    multilingualable: false,
-                    nEntries: 0,
-                    name: null,
-                    owner: '123',
-                    system: false,
-                    variable: null,
-                    versionable: false,
-                    workflows: []
+        spectator.service.resolve(route).subscribe({
+            error: () => {
+                expect(getDataByIdSpy).toHaveBeenCalledWith('v1/contenttype', '123');
+                expect(getDataByIdSpy).toHaveBeenCalledTimes(1);
+                expect(gotoPortletSpy).toHaveBeenCalledWith('/content-types-angular', {
+                    replaceUrl: true
                 });
+            }
+        });
+    });
+
+    it.skip('should return a content type placeholder base on type', (done) => {
+        const route = createRouteSnapshot((key) => (key === 'type' ? 'content' : null));
+        getDataByIdSpy.mockReturnValue(observableOf(false));
+
+        spectator.service.resolve(route).subscribe((res: DotCMSContentType) => {
+            expect(res).toEqual({
+                baseType: 'content',
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                defaultType: false,
+                fields: [],
+                fixed: false,
+                folder: 'SYSTEM_FOLDER',
+                host: null,
+                iDate: null,
+                id: null,
+                layout: [],
+                modDate: null,
+                multilingualable: false,
+                nEntries: 0,
+                name: null,
+                owner: '123',
+                system: false,
+                variable: null,
+                versionable: false,
+                workflows: []
             });
+            done();
+        });
     });
 });

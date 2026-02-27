@@ -1,7 +1,0 @@
-@use "variables" as *;
-
-::ng-deep {
-    .p-button.p-button-text .pi.pi-trash {
-        color: $color-palette-primary-400;
-    }
-}

@@ -1,9 +1,12 @@
 @use "variables" as *;
-@import "dotcms-theme/utils/theme-variables";
-@import "mixins";
+@use "dotcms-theme/utils/theme-variables";
+@use "mixins";
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
     cursor: pointer;
 
     dot-icon {
@@ -14,7 +17,7 @@
 
     &::ng-deep {
         .material-icons {
-            color: $color-palette-gray-700;
+            color: colors.$color-palette-gray-700;
             transform: scale(1.2);
         }
     }
@@ -22,17 +25,17 @@
     &.disabled {
         &::ng-deep {
             .avatar__placeholder {
-                background-color: $field-disabled-color;
+                background-color: theme-variables.$field-disabled-color;
             }
 
             .material-icons {
-                color: $field-disabled-color;
+                color: theme-variables.$field-disabled-color;
             }
         }
 
         .dot-persona-selector__label,
         .dot-persona-selector__name {
-            color: $field-disabled-color;
+            color: theme-variables.$field-disabled-color;
         }
     }
 
@@ -44,7 +47,7 @@
 }
 
 .dot-persona-selector__label-container {
-    @include truncate-text;
+    @include mixins.truncate-text;
 
     span {
         display: block;
@@ -52,21 +55,21 @@
 }
 
 .dot-persona-selector__label {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     flex: 1;
-    font-size: $font-size-sm;
-    line-height: $spacing-3;
+    font-size: fonts.$font-size-sm;
+    line-height: spacing.$spacing-3;
 }
 
 .dot-persona-selector__label--edit {
-    color: $color-palette-primary;
+    color: colors.$color-palette-primary;
 }
 
 .dot-persona-selector__name {
-    color: $black;
-    font-size: $font-size-md;
+    color: colors.$black;
+    font-size: fonts.$font-size-md;
 
-    @include truncate-text;
+    @include mixins.truncate-text;
 }
 
 @media only screen and (max-width: $screen-lg-max) {

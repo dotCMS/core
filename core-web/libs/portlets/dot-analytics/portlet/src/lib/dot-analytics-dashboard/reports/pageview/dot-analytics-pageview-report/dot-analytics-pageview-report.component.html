@@ -1,37 +1,30 @@
-<!-- Metrics Section -->
-<div class="analytics-dashboard-pages__metrics flex gap-3 flex-wrap">
-    @for (metric of $metricsData(); track metric.name) {
-        <div class="analytics-dashboard-pages__metric-wrapper">
-            <dot-analytics-metric
-                class="analytics-dashboard-pages__metric-card"
-                [title]="metric.name"
-                [value]="metric.value || 0"
-                [subtitle]="metric.subtitle || ''"
-                [icon]="metric.icon || ''"
-                [status]="metric.status"
-                data-testid="analytics-metric-card" />
-        </div>
-    }
-</div>
-
-<!-- Charts Section -->
-<div class="analytics-dashboard-pages__charts flex gap-3">
-    <!-- Line Chart -->
-    <div class="analytics-dashboard-pages__timeline-chart">
-        <dot-analytics-chart
-            [title]="'analytics.charts.pageviews-timeline.title'"
-            type="line"
-            [data]="$pageViewTimeLineData()"
-            [status]="$pageViewTimeLineStatus()"
-            data-testid="analytics-timeline-chart" />
+<div class="flex flex-col gap-10">
+    <!-- Metrics -->
+    <div class="flex flex-wrap gap-6">
+        @for (metric of $metricsData(); track metric.name) {
+            <div class="flex-1">
+                <dot-analytics-metric
+                    [title]="metric.name"
+                    [value]="metric.value"
+                    [subtitle]="metric.subtitle"
+                    [icon]="metric.icon"
+                    [status]="metric.status"
+                    data-testid="analytics-metric-card" />
+            </div>
+        }
     </div>
-</div>
 
-<!-- Table and Pie Chart Section -->
-@defer (on viewport) {
-    <div class="analytics-dashboard-pages__bottom-section flex gap-3 align-items-stretch">
-        <!-- Pie Chart -->
-        <div class="analytics-dashboard-pages__device-chart">
+    <!-- Timeline Chart -->
+    <dot-analytics-chart
+        [title]="'analytics.charts.pageviews-timeline.title'"
+        type="line"
+        [data]="$pageViewTimeLineData()"
+        [status]="$pageViewTimeLineStatus()"
+        data-testid="analytics-timeline-chart" />
+
+    <!-- Device Chart + Top Pages Table -->
+    <div class="flex flex-col lg:flex-row gap-6 items-stretch">
+        <div class="lg:w-5/12 shrink-0 flex flex-col justify-center">
             <dot-analytics-chart
                 [title]="'analytics.charts.device-breakdown.title'"
                 type="pie"
@@ -39,15 +32,14 @@
                 [status]="$pageViewDeviceBrowsersStatus()"
                 data-testid="analytics-device-chart" />
         </div>
-
-        <!-- Table -->
-        <div class="analytics-dashboard-pages__table">
-            <h3 class="chart-title mb-2">{{ 'analytics.dashboard.table.top-pages.title' | dm }}</h3>
+        <div class="flex-1 min-w-0 flex flex-col">
+            <h3 class="text-lg font-bold mb-2">
+                {{ 'analytics.dashboard.table.top-pages.title' | dm }}
+            </h3>
             <dot-analytics-top-pages-table
+                class="flex-1"
                 [tableState]="$topPagesTable()"
                 data-testid="analytics-table" />
         </div>
     </div>
-} @placeholder {
-    <div style="min-height: 24rem"></div>
-}
+</div>

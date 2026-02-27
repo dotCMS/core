@@ -1,12 +1,14 @@
 @if ($hasSelectedCategories()) {
-    <dot-category-field-chips
-        data-testId="category-chip-list"
-        [categories]="store.selected()"
-        [disabled]="$isDisabled()"
-        (remove)="store.removeRootSelected($event)" />
+    <div class="flex flex-wrap items-center border border-gray-400 px-2 py-1 border-b-0">
+        <dot-category-field-chips
+            data-testId="category-chip-list"
+            [categories]="store.selected()"
+            [disabled]="$isDisabled()"
+            (remove)="store.removeRootSelected($event)" />
+    </div>
 }
 
-<div class="dot-category-field__select">
+<div class="flex flex-wrap items-center border border-gray-400 h-10 px-0 justify-end">
     <button
         type="button"
         (click)="openCategoriesDialog()"

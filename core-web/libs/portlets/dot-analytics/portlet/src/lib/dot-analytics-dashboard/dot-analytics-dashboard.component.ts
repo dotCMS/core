@@ -11,8 +11,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { MessagesModule } from 'primeng/messages';
-import { TabViewModule } from 'primeng/tabview';
+import { MessageModule } from 'primeng/message';
+import { TabsModule } from 'primeng/tabs';
 
 import { map } from 'rxjs/operators';
 
@@ -20,9 +20,12 @@ import { DotLocalstorageService } from '@dotcms/data-access';
 import {
     DASHBOARD_TAB_LIST,
     DASHBOARD_TABS,
+    DashboardTab,
     DotAnalyticsDashboardStore,
+    isValidTab,
     TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import DotAnalyticsConversionsReportComponent from './reports/conversions/dot-analytics-conversions-report/dot-analytics-conversions-report.component';
@@ -33,12 +36,12 @@ import { DotAnalyticsFiltersComponent } from './shared/components/dot-analytics-
 const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-banner';
 
 @Component({
-    selector: 'lib-dot-analytics-dashboard',
+    selector: 'dot-analytics-dashboard',
     imports: [
         CommonModule,
         ButtonModule,
-        MessagesModule,
-        TabViewModule,
+        MessageModule,
+        TabsModule,
         DotAnalyticsFiltersComponent,
         DotAnalyticsPageviewReportComponent,
         DotAnalyticsConversionsReportComponent,
@@ -54,8 +57,9 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
  * and feature-flag-gated visibility of the Engagement tab.
  */
 export default class DotAnalyticsDashboardComponent {
+    readonly #globalStore = inject(GlobalStore);
     /** Analytics dashboard store providing data and actions */
-    readonly store = inject(DotAnalyticsDashboardStore);
+    protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #localStorageService = inject(DotLocalstorageService);
 
@@ -80,13 +84,6 @@ export default class DotAnalyticsDashboardComponent {
         return DASHBOARD_TAB_LIST.filter((tab) => tab.id !== DASHBOARD_TABS.engagement || enabled);
     });
 
-    /** Index of the currently active tab within the visible tabs list */
-    readonly $activeTabIndex = computed(() => {
-        const currentTab = this.store.currentTab();
-
-        return this.$tabs().findIndex((tab) => tab.id === currentTab);
-    });
-
     constructor() {
         // TODO: Remove this effect when the feature flag is removed
         effect(() => {
@@ -94,7 +91,10 @@ export default class DotAnalyticsDashboardComponent {
             const params = this.#activatedRoute.snapshot.queryParamMap;
 
             if (enabled && !params.has('tab')) {
-                this.store.setCurrentTabAndNavigate(DASHBOARD_TABS.engagement);
+                this.#globalStore.addNewBreadcrumb({
+                    label: DASHBOARD_TABS.engagement,
+                    url: '/analytics/dashboard?tab=engagement'
+                });
             }
         });
     }
@@ -108,13 +108,12 @@ export default class DotAnalyticsDashboardComponent {
     }
 
     /**
-     * Handles tab change event from p-tabView.
+     * Handles tab change event from p-tabs.
      * Updates the store and URL query param.
      */
-    onTabChange(event: { index: number }): void {
-        const tab = this.$tabs()[event.index];
-        if (tab) {
-            this.store.setCurrentTabAndNavigate(tab.id);
+    onTabChange(tabId: string | number | undefined): void {
+        if (tabId !== undefined && isValidTab(String(tabId))) {
+            this.store.setCurrentTabAndNavigate(tabId as DashboardTab);
         }
     }
 

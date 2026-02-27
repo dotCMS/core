@@ -1,20 +1,18 @@
 @if (dotAlertConfirmService.confirmModel) {
-<p-confirmDialog [closable]="false" [style]="{width: '400px'}" #cd>
-    <p-footer>
-        <button
-            (click)="onClickConfirm('reject')"
+<p-confirmDialog [closable]="false" [style]="{ width: '400px' }" #cd>
+    <ng-template pTemplate="footer">
+        <p-button
+            (onClick)="onClickConfirm('reject')"
+            [outlined]="true"
             [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
-            class="p-button-outlined"
             type="button"
-            pButton
-            tabindex="-1"></button>
-        <button
-            (click)="onClickConfirm('accept')"
+            tabindex="-1" />
+        <p-button
+            (onClick)="onClickConfirm('accept')"
             [label]="dotAlertConfirmService.confirmModel.footerLabel.accept"
             type="button"
-            pButton
-            #confirmBtn></button>
-    </p-footer>
+            #confirmBtn />
+    </ng-template>
 </p-confirmDialog>
 } @if (dotAlertConfirmService.alertModel) {
 <p-dialog
@@ -22,24 +20,22 @@
     [draggable]="false"
     [header]="dotAlertConfirmService.alertModel.header"
     [visible]="true"
-    [style]="{width: '400px'}"
-    modal="modal">
+    [style]="{ width: '400px' }"
+    [modal]="true">
     <div [innerHTML]="dotAlertConfirmService.alertModel.message"></div>
-    <p-footer>
+    <ng-template pTemplate="footer">
         @if (dotAlertConfirmService.alertModel.footerLabel.reject) {
-        <button
-            (click)="dotAlertConfirmService.alertReject($event)"
+        <p-button
+            (onClick)="dotAlertConfirmService.alertReject($event)"
+            [outlined]="true"
             [label]="dotAlertConfirmService.alertModel.footerLabel.reject"
-            class="p-button-outlined"
-            type="button"
-            pButton></button>
+            type="button" />
         }
-        <button
-            (click)="dotAlertConfirmService.alertAccept($event)"
+        <p-button
+            (onClick)="dotAlertConfirmService.alertAccept($event)"
             [label]="dotAlertConfirmService.alertModel.footerLabel.accept"
             type="button"
-            pButton
-            #acceptBtn></button>
-    </p-footer>
+            #acceptBtn />
+    </ng-template>
 </p-dialog>
 }

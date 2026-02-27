@@ -3,7 +3,7 @@
 @let currentPageReportLayout = $currentPageReportLayout();
 
 <div
-    class="flex justify-content-center"
+    class="flex justify-center"
     [class.gap-1]="currentPageReportLayout === 'center'"
     [class.gap-2]="currentPageReportLayout === 'left'">
     @switch ($currentPageReportLayout()) {
@@ -16,7 +16,7 @@
                 [text]="true"
                 [disabled]="currentPage === 1"
                 size="small" />
-            <span class="text-primary-500 flex align-items-center">
+            <span class="text-primary-500 flex items-center">
                 {{ currentPage }} of {{ totalPages }}
             </span>
             <p-button
@@ -29,10 +29,10 @@
                 size="small" />
         }
         @default {
-            <span class="text-primary-500 flex align-items-center">
+            <span class="text-primary-500 flex items-center">
                 {{ currentPage }} of {{ totalPages }}
             </span>
-            <div class="flex justify-content-center gap-1">
+            <div class="flex justify-center gap-1">
                 <p-button
                     type="button"
                     (onClick)="previousPage.emit()"

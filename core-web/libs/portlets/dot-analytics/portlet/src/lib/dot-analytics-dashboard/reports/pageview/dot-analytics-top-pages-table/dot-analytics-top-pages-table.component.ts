@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
@@ -13,6 +12,7 @@ import {
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAnalyticsEmptyStateComponent } from '../../../shared/components/dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../../../shared/components/dot-analytics-state-message/dot-analytics-state-message.component';
 import { TABLE_CONFIG, TOP_PAGES_TABLE_COLUMNS } from '../../../shared/constants';
 import { TableColumn } from '../../../shared/types';
@@ -34,10 +34,10 @@ const SKELETON_WIDTH_MAP = {
     selector: 'dot-analytics-top-pages-table',
     imports: [
         CommonModule,
-        CardModule,
         SkeletonModule,
         TableModule,
         DotMessagePipe,
+        DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent
     ],
     templateUrl: './dot-analytics-top-pages-table.component.html',
@@ -91,14 +91,4 @@ export class DotAnalyticsTopPagesTableComponent {
                 SKELETON_WIDTH_MAP.text
         }));
     });
-
-    /**
-     * Track function for skeleton rows to improve performance
-     */
-    protected trackByIndex = (index: number): number => index;
-
-    /**
-     * Track function for table columns
-     */
-    protected trackByField = (index: number, column: TableColumn): string => column.field;
 }

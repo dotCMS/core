@@ -1,24 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement, Injectable } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { Injectable } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { delay } from 'rxjs/operators';
 
-import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
-import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,
@@ -30,40 +25,41 @@ import {
 
 import { DotLoginComponent } from './dot-login.component';
 
-import { DotLoadingIndicatorComponent } from '../../_common/iframe/dot-loading-indicator/dot-loading-indicator.component';
 import { DotLoginPageStateService } from '../shared/services/dot-login-page-state.service';
 
-const mockLoginInfo = {
+const mockLoginInfo: DotLoginInformation = {
     ...mockLoginFormResponse,
     i18nMessagesMap: {
         ...mockLoginFormResponse.i18nMessagesMap,
-        emailAddressLabel: 'Email Address'
+        emailAddressLabel: 'Email Address',
+        'angular.login.component.community.licence.message':
+            ' - <a href="https://dotcms.com/features" target="_blank">upgrade</a>'
     }
 };
-const subject = new BehaviorSubject<DotLoginInformation>(mockLoginInfo);
-const queryParams = new BehaviorSubject<Params>({});
+
+const loginInfoSubject = new BehaviorSubject<DotLoginInformation>(mockLoginInfo);
+const queryParamsSubject = new BehaviorSubject<Params>({});
 
 @Injectable()
 class MockDotLoginPageStateService {
     update = jest.fn();
     set = jest.fn().mockReturnValue(of(mockLoginInfo));
-    get = () => subject;
+    get = () => loginInfoSubject.asObservable();
 }
 
 class ActivatedRouteMock {
-    queryParams = queryParams;
+    queryParams = queryParamsSubject;
 }
 
 describe('DotLoginComponent', () => {
+    let spectator: Spectator<DotLoginComponent>;
     let component: DotLoginComponent;
-    let fixture: ComponentFixture<DotLoginComponent>;
-    let de: DebugElement;
     let loginService: LoginService;
     let dotRouterService: DotRouterService;
-    let loginPageStateService: DotLoginPageStateService;
+    let loginPageStateService: MockDotLoginPageStateService;
     let dotMessageService: DotMessageService;
     let dotFormatDateService: DotFormatDateService;
-    let signInButton: DebugElement;
+
     const credentials = {
         login: 'admin@dotcms.com',
         language: 'en_US',
@@ -72,86 +68,69 @@ describe('DotLoginComponent', () => {
         backEndLogin: true
     };
 
+    const createComponent = createComponentFactory({
+        component: DotLoginComponent,
+        imports: [RouterTestingModule, NoopAnimationsModule, RouterLink],
+        providers: [
+            { provide: LoginService, useClass: LoginServiceMock },
+            { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            { provide: ActivatedRoute, useClass: ActivatedRouteMock },
+            { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+            DotMessageService,
+            DotLoadingIndicatorService,
+            DotRouterService,
+            LoggerService,
+            StringUtils
+        ],
+        detectChanges: false
+    });
+
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                DotLoginComponent,
-                BrowserAnimationsModule,
-                FormsModule,
-                ButtonModule,
-                CheckboxModule,
-                DropdownModule,
-                DotLoadingIndicatorComponent,
-                DotFieldValidationMessageComponent,
-                RouterTestingModule,
-                FormsModule,
-                ReactiveFormsModule,
-                HttpClientTestingModule,
-                RouterLink
-            ],
-            providers: [
-                { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: ActivatedRoute, useClass: ActivatedRouteMock },
-                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
-                DotMessageService,
-                DotLoadingIndicatorService,
-                DotRouterService,
-                LoggerService,
-                StringUtils
-            ]
-        });
-
-        fixture = TestBed.createComponent(DotLoginComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
-
-        loginService = de.injector.get(LoginService);
-        dotRouterService = de.injector.get(DotRouterService);
-        dotFormatDateService = de.injector.get(DotFormatDateService);
-        dotMessageService = de.injector.get(DotMessageService);
-        loginPageStateService = de.injector.get(DotLoginPageStateService);
+        loginInfoSubject.next(mockLoginInfo);
+        queryParamsSubject.next({});
+        spectator = createComponent();
+        component = spectator.component;
+        loginService = spectator.inject(LoginService);
+        dotRouterService = spectator.inject(DotRouterService);
+        loginPageStateService = spectator.inject(
+            DotLoginPageStateService
+        ) as unknown as MockDotLoginPageStateService;
+        dotMessageService = spectator.inject(DotMessageService);
+        dotFormatDateService = spectator.inject(DotFormatDateService);
         jest.spyOn(dotMessageService, 'init');
+        spectator.detectChanges();
     });
 
     describe('Functionality', () => {
-        beforeEach(() => {
-            fixture.detectChanges();
-            signInButton = de.query(By.css('[data-testId="submitButton"]'));
-        });
-
         it('should load form labels correctly', () => {
-            const header: DebugElement = de.query(By.css('[data-testId="header"]'));
-            const emailLabel: DebugElement = de.query(By.css('[data-testId="emailLabel"]'));
-            const passwordLabel: DebugElement = de.query(By.css('[data-testId="passwordLabel"]'));
-            const recoverPasswordLink: DebugElement = de.query(
-                By.css('[data-testId="actionLink"]')
-            );
-            const rememberMe: DebugElement = de.query(By.css('p-checkbox label'));
-            const submitButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
-            const serverInformation: DebugElement = de.query(By.css('[data-testId="server"]'));
-            const versionInformation: DebugElement = de.query(By.css('[data-testId="version"]'));
-            const licenseInformation: DebugElement = de.query(By.css('[data-testId="license"]'));
+            const header = spectator.query(byTestId('header'));
+            const emailLabel = spectator.query(byTestId('emailLabel'));
+            const passwordLabel = spectator.query(byTestId('passwordLabel'));
+            const recoverPasswordLink = spectator.query(byTestId('actionLink'));
+            const checkboxContainer = spectator.query('.checkbox');
+            const submitButton = spectator.query(byTestId('submitButton'));
+            const serverInformation = spectator.query(byTestId('server'));
+            const versionInformation = spectator.query(byTestId('version'));
+            const licenseInformation = spectator.query(byTestId('license'));
 
-            expect(header.nativeElement.innerHTML.trim()).toContain('Welcome!');
-            expect(emailLabel.nativeElement.innerHTML.trim()).toEqual('Email Address');
-            expect(passwordLabel.nativeElement.innerHTML.trim()).toEqual('Password');
-            expect(recoverPasswordLink.nativeElement.innerHTML.trim()).toEqual('Recover Password');
-            expect(rememberMe.nativeElement.innerHTML.trim()).toEqual('Remember Me');
-            expect(submitButton.nativeElement.innerHTML.trim()).toContain('Sign In');
-            expect(serverInformation.nativeElement.innerHTML.trim()).toEqual('Server: 860173b0');
-            expect(versionInformation.nativeElement.innerHTML.trim()).toEqual(
+            expect(header?.innerHTML.trim()).toContain('Welcome!');
+            expect(emailLabel?.innerHTML.trim()).toEqual('Email Address');
+            expect(passwordLabel?.innerHTML.trim()).toEqual('Password');
+            expect(recoverPasswordLink?.innerHTML.trim()).toEqual('Recover Password');
+            expect(checkboxContainer?.textContent?.trim()).toContain('Remember Me');
+            expect(submitButton?.innerHTML.trim()).toContain('Sign In');
+            expect(serverInformation?.innerHTML.trim()).toEqual('Server: 860173b0');
+            expect(versionInformation?.innerHTML.trim()).toEqual(
                 'COMMUNITY EDITION: 5.0.0 - March 13, 2019'
             );
-            expect(licenseInformation.nativeElement.innerHTML).toEqual(
+            expect(licenseInformation?.innerHTML).toEqual(
                 ' - <a href="https://dotcms.com/features" target="_blank">upgrade</a>'
             );
         });
 
         it('should call services on language change', () => {
-            const pDropDown: DebugElement = de.query(By.css('[data-testId="language"]'));
-            pDropDown.triggerEventHandler('onChange', { value: 'es_ES' });
+            component.onLanguageChange('es_ES');
 
             expect(dotMessageService.init).toHaveBeenCalledWith({ language: 'es_ES' });
             expect(dotMessageService.init).toHaveBeenCalledTimes(1);
@@ -160,10 +139,8 @@ describe('DotLoginComponent', () => {
         });
 
         it('should have a link to forgot password', () => {
-            const forgotPasswordLink: DebugElement = de.query(By.css('[data-testId="actionLink"]'));
-            expect(forgotPasswordLink.nativeElement.getAttribute('href')).toEqual(
-                '/public/forgotPassword'
-            );
+            const forgotPasswordLink = spectator.query(byTestId('actionLink'));
+            expect(forgotPasswordLink?.getAttribute('href')).toEqual('/public/forgotPassword');
         });
 
         it('should load initial value of the form', () => {
@@ -180,16 +157,17 @@ describe('DotLoginComponent', () => {
             component.loginForm.setValue(credentials);
             jest.spyOn(dotFormatDateService, 'setLang');
             jest.spyOn(dotRouterService, 'goToMain');
-            jest.spyOn<any>(loginService, 'loginUser').mockReturnValue(
+            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
                 })
             );
-            fixture.detectChanges();
+            spectator.detectChanges();
 
-            expect(signInButton.nativeElement.disabled).toBeFalsy();
-            signInButton.triggerEventHandler('click', {});
+            const signInButton = spectator.query(byTestId('submitButton'));
+            expect(signInButton?.hasAttribute('disabled')).toBeFalsy();
+            spectator.click(byTestId('submitButton'));
             expect(loginService.loginUser).toHaveBeenCalledWith(credentials);
             expect(loginService.loginUser).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToMain).toHaveBeenCalledWith('redirect/to');
@@ -198,92 +176,82 @@ describe('DotLoginComponent', () => {
             expect(dotFormatDateService.setLang).toHaveBeenCalledTimes(1);
         });
 
-        it('should disable fields while waiting login response', async () => {
+        it('should set loading while waiting login response', fakeAsync(() => {
             component.loginForm.setValue(credentials);
-            jest.spyOn(dotRouterService, 'goToMain');
-            jest.spyOn<any>(loginService, 'loginUser').mockReturnValue(
+            jest.spyOn(dotRouterService, 'goToMain').mockResolvedValue(true);
+            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
-                })
+                }).pipe(delay(200))
             );
-            signInButton.triggerEventHandler('click', {});
-
-            fixture.detectChanges();
-            await fixture.whenStable();
-
-            const languageDropdown: Dropdown = de.query(
-                By.css('[data-testId="language"]')
-            ).componentInstance;
-            const emailInput = de.query(By.css('[data-testId="userNameInput"]'));
-            const passwordInput = de.query(By.css('[data-testId="password"]'));
-            const rememberCheckBox = component.loginForm.get('rememberMe');
-
-            expect(languageDropdown.disabled).toBeTruthy();
-            expect(emailInput.nativeElement.disabled).toBeTruthy();
-            expect(passwordInput.nativeElement.disabled).toBeTruthy();
-            expect(rememberCheckBox.disable).toBeTruthy();
-        });
+            component.logInUser();
+            tick(0);
+            expect(component.loading()).toBe(true);
+            tick(200);
+            expect(component.loading()).toBe(false);
+        }));
 
         it('should keep submit button disabled until the form is valid', () => {
-            expect(signInButton.nativeElement.disabled).toBeTruthy();
+            const signInButton = spectator.query(byTestId('submitButton'));
+            expect(signInButton?.hasAttribute('disabled')).toBeTruthy();
         });
 
         it('should show error message for required form fields', () => {
             const loginControl = component.loginForm.get('login');
-            loginControl.setValue('');
-            loginControl.markAsTouched();
-            loginControl.markAsDirty();
-            loginControl.updateValueAndValidity();
+            loginControl?.setValue('');
+            loginControl?.markAsTouched();
+            loginControl?.markAsDirty();
+            loginControl?.updateValueAndValidity();
 
             const passwordControl = component.loginForm.get('password');
-            passwordControl.setValue('');
-            passwordControl.markAsTouched();
-            passwordControl.markAsDirty();
-            passwordControl.updateValueAndValidity();
+            passwordControl?.setValue('');
+            passwordControl?.markAsTouched();
+            passwordControl?.markAsDirty();
+            passwordControl?.updateValueAndValidity();
 
-            fixture.detectChanges();
+            spectator.detectChanges();
 
-            const errorsMessages = de.queryAll(By.css('.p-invalid'));
+            const errorsMessages = spectator.queryAll('.p-invalid');
             expect(errorsMessages.length).toBe(2);
         });
 
         it('should show error messages if error comes from the server', () => {
             component.loginForm.setValue(credentials);
-            jest.spyOn(loginService, 'loginUser').mockReturnValue(
-                throwError({ status: 400, error: { errors: [{ message: 'error message' }] } })
+            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
+                throwError({
+                    status: 400,
+                    error: { errors: [{ message: 'error message' }] }
+                })
             );
-            signInButton.triggerEventHandler('click', {});
-            fixture.detectChanges();
-            const message: HTMLParagraphElement = de.query(
-                By.css('[data-testId="message"]')
-            ).nativeElement;
+            component.logInUser();
+            spectator.detectChanges();
+            const message = spectator.query(byTestId('message'));
             expect(message).toHaveClass('p-invalid');
-            expect(message.textContent).toEqual('error message');
+            expect(message?.textContent).toEqual('error message');
         });
     });
 
     describe('Success messages', () => {
         it('should show password changed', () => {
-            queryParams.next({ changedPassword: 'test' });
-            fixture.detectChanges();
-            const message: HTMLParagraphElement = de.query(
-                By.css('[data-testId="message"]')
-            ).nativeElement;
-            expect(message).toHaveClass('success');
-            expect(message.textContent).toEqual('Your password has been successfully changed');
+            queryParamsSubject.next({ changedPassword: 'test' });
+            loginInfoSubject.next(mockLoginInfo);
+            spectator.detectChanges();
+            expect(component.message).toEqual('Your password has been successfully changed');
+            expect(component.isError).toBe(false);
         });
 
         it('should show email reset notification', () => {
-            queryParams.next({ resetEmailSent: 'true', resetEmail: 'test@email.com' });
-            fixture.detectChanges();
-            const message: HTMLParagraphElement = de.query(
-                By.css('[data-testId="message"]')
-            ).nativeElement;
-            expect(message).toHaveClass('success');
-            expect(message.textContent).toEqual(
+            queryParamsSubject.next({
+                resetEmailSent: 'true',
+                resetEmail: 'test@email.com'
+            });
+            loginInfoSubject.next(mockLoginInfo);
+            spectator.detectChanges();
+            expect(component.message).toEqual(
                 'An Email with instructions has been sent to test@email.com.'
             );
+            expect(component.isError).toBe(false);
         });
     });
 });

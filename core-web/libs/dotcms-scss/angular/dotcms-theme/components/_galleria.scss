@@ -1,41 +1,45 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
+@use "../../../shared/spacing";
 
 .p-galleria {
     & .p-galleria-item-nav {
-        background: $color-palette-white-op-60;
-        color: $color-palette-gray-800;
-        width: $spacing-6;
-        height: $spacing-6;
+        background: colors.$color-palette-white-op-60;
+        color: colors.$color-palette-gray-800;
+        width: spacing.$spacing-6;
+        height: spacing.$spacing-6;
         transition:
             background-color $basic-speed,
             color $basic-speed,
             box-shadow $basic-speed;
-        border-radius: $border-radius-circular;
-        margin: -$spacing-3 $spacing-1 0;
+        border-radius: common.$border-radius-circular;
+        margin: -(spacing.$spacing-3) spacing.$spacing-1 0;
         z-index: 1;
 
         .p-galleria-item-prev-icon,
         .p-galleria-item-next-icon {
-            font-size: $font-size-default;
+            font-size: fonts.$font-size-default;
         }
 
         .p-icon-wrapper .p-icon {
-            width: $spacing-2;
-            height: $spacing-2;
+            width: spacing.$spacing-2;
+            height: spacing.$spacing-2;
         }
 
         &:not(.p-disabled):hover {
-            background: $color-palette-white-op-80;
+            background: colors.$color-palette-white-op-80;
         }
 
         &.p-disabled {
-            background: $color-palette-white-op-60;
-            color: $color-palette-gray-500;
+            background: colors.$color-palette-white-op-60;
+            color: colors.$color-palette-gray-500;
         }
 
         &:focus {
-            @include field-focus;
+            @include mixins.field-focus;
         }
     }
 }

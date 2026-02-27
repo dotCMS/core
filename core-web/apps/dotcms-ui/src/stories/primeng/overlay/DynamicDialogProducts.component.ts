@@ -21,7 +21,9 @@ export const ProductsTableTemplate = `
               <td>{{product.price}}</td>
               <td><span [class]="'product-badge status-'+product.inventoryStatus.toLowerCase()">{{product.inventoryStatus}}</span></td>
               <td>
-                  <button type="button" pButton icon="pi pi-search" (click)="selectProduct(product)"></button>
+                  <button type="button" pButton (click)="selectProduct(product)">
+                      <i class="pi pi-search" pButtonIcon></i>
+                  </button>
               </td>
           </tr>
       </ng-template>

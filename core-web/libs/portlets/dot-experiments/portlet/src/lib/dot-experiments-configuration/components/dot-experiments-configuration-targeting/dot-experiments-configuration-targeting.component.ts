@@ -18,7 +18,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
     selector: 'dot-experiments-configuration-targeting',
     imports: [CommonModule, CardModule, DotMessagePipe, ButtonModule, TooltipModule],
     templateUrl: './dot-experiments-configuration-targeting.component.html',
-    styleUrls: ['./dot-experiments-configuration-targeting.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTargetingComponent {

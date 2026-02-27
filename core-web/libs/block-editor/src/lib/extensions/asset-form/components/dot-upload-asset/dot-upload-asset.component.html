@@ -23,8 +23,11 @@
                 {{ errorMessage }}
             </span>
         </div>
-        <button (click)="cancelAction()" class="p-button-outlined" data-test-id="back-btn" pButton>
-            Cancel
-        </button>
+        <p-button
+            (onClick)="cancelAction()"
+            variant="outlined"
+            data-test-id="back-btn"
+            label="Cancel"
+            type="button" />
     </div>
 }

@@ -7,7 +7,6 @@ import { take } from 'rxjs/operators';
 
 import {
     DotCurrentUserService,
-    DotLicenseService,
     PushPublishService,
     DotFormatDateService
 } from '@dotcms/data-access';
@@ -27,13 +26,11 @@ import { DotTemplateListResolver } from './dot-template-list-resolver.service';
 describe('DotTemplateListResolverService', () => {
     let service: DotTemplateListResolver;
     let pushPublishService: PushPublishService;
-    let dotLicenseService: DotLicenseService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
-                DotLicenseService,
                 PushPublishService,
                 ApiRoot,
                 UserModel,
@@ -62,11 +59,9 @@ describe('DotTemplateListResolverService', () => {
         });
         service = TestBed.inject(DotTemplateListResolver);
         pushPublishService = TestBed.inject(PushPublishService);
-        dotLicenseService = TestBed.inject(DotLicenseService);
     });
 
     it('should set pagination params, get first page, check license and publish environments', () => {
-        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
         jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(
             of([
                 {
@@ -75,11 +70,11 @@ describe('DotTemplateListResolverService', () => {
                 }
             ])
         );
+
         service
             .resolve()
             .pipe(take(1))
-            .subscribe(([isEnterPrise, hasEnvironments]) => {
-                expect(isEnterPrise).toEqual(true);
+            .subscribe((hasEnvironments: boolean) => {
                 expect(hasEnvironments).toEqual(true);
             });
     });

@@ -64,7 +64,10 @@ export const Overlay: Story = {
         props: args,
         template: `
             <p-menu #menu [popup]="true" appendTo="body" [model]="items" />
-            <button type="button" pButton icon="pi pi-list" label="Show" (click)="menu.toggle($event)"></button>`
+            <button type="button" pButton (click)="menu.toggle($event)">
+                <i class="pi pi-list" pButtonIcon></i>
+                <span pButtonLabel>Show</span>
+            </button>`
     })
 };
 
@@ -92,6 +95,9 @@ export const WithCustomLabels: Story = {
         props: args,
         template: `
             <p-menu #menu [popup]="true" appendTo="body" [model]="items" />
-            <button type="button" pButton icon="pi pi-list" label="Show" (click)="menu.toggle($event)"></button>`
+            <button type="button" pButton (click)="menu.toggle($event)">
+                <i class="pi pi-list" pButtonIcon></i>
+                <span pButtonLabel>Show</span>
+            </button>`
     })
 };

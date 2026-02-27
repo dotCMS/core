@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 import { exampleToolHandler } from './handlers';
 
+import { asMcpSchema } from '../../utils/schema-helpers';
+
 /**
  * TODO: Define your input schema
  *
@@ -64,7 +66,7 @@ export function registerExampleTools(server: McpServer) {
                 openWorldHint: true
             },
 
-            inputSchema: ExampleToolInputSchema.shape
+            inputSchema: asMcpSchema(ExampleToolInputSchema)
         },
         exampleToolHandler
     );

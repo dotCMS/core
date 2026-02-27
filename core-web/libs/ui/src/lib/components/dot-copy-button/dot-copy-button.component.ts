@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
-import { ButtonModule } from 'primeng/button';
-import { TooltipModule } from 'primeng/tooltip';
+import { Button } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -15,8 +15,7 @@ import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
     selector: 'dot-copy-button',
     providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
-    styleUrls: ['./dot-copy-button.component.scss'],
-    imports: [TooltipModule, ButtonModule],
+    imports: [Tooltip, Button],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCopyButtonComponent {
@@ -40,8 +39,22 @@ export class DotCopyButtonComponent {
      */
     customClass = input('');
 
+    /**
+     * Tooltip position to be displayed when hovering the button
+     */
+    tooltipPosition = input('bottom');
+
     // Final CSS class to be added to the button
-    $clazz = computed(() => `p-button-sm p-button-text ${this.customClass()}`);
+    // When label is empty, use icon-only button styling for input field integration
+    // When label exists, use text button for standalone usage
+    $clazz = computed(() => {
+        if (this.label()) {
+            return this.customClass();
+        }
+
+        // Icon-only: constrain dimensions for compact display
+        return `w-8 h-8 min-w-8 p-0 ${this.customClass()}`.trim();
+    });
 
     private dotClipboardUtil: DotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService: DotMessageService = inject(DotMessageService);

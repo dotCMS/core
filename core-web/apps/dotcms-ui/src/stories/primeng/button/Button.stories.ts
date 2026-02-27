@@ -73,7 +73,7 @@ export const Default: Story = {
                 [iconPos]="iconPos"
                 [disabled]="disabled"
                 [label]="label"
-                [styleClass]="classes">
+                [class]="classes">
             </p-button>`
         };
     }

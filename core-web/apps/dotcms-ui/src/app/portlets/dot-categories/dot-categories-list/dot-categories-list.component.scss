@@ -1,3 +1,6 @@
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 dot-portlet-base {
@@ -6,8 +9,8 @@ dot-portlet-base {
 
 .category_listing ::ng-deep {
     .tableHeader {
-        padding-top: $spacing-4;
-        padding-bottom: $spacing-4;
+        padding-top: spacing.$spacing-4;
+        padding-bottom: spacing.$spacing-4;
     }
 
     .category_listing__sortOrder__field {
@@ -18,7 +21,7 @@ dot-portlet-base {
     .category_listing-datatable__empty {
         display: flex;
         justify-content: center;
-        font-size: $spacing-9;
-        font-size: $font-size-xl;
+        font-size: spacing.$spacing-9;
+        font-size: fonts.$font-size-xl;
     }
 }

@@ -129,7 +129,7 @@ describe('ContentTypesFieldsListComponent', () => {
         });
 
         it('should filter fields that are only allowed by FORM', () => {
-            expect(items.length).toEqual(5);
+            expect(items.length).toEqual(6);
         });
     });
 });

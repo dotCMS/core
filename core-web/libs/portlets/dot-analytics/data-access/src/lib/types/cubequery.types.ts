@@ -8,8 +8,17 @@
  * - 'EventSummary': Conversion and event analytics
  * - 'ContentAttribution': Content attribution for conversions
  * - 'Conversion': Conversions overview data
+ * - 'EngagementDaily' and SessionsBy*: Engagement dashboard cubes
  */
-export type CubePrefix = 'request' | 'EventSummary' | 'ContentAttribution' | 'Conversion';
+export type CubePrefix =
+    | 'request'
+    | 'EventSummary'
+    | 'ContentAttribution'
+    | 'Conversion'
+    | 'EngagementDaily'
+    | 'SessionsByDeviceDaily'
+    | 'SessionsByBrowserDaily'
+    | 'SessionsByLanguageDaily';
 
 /**
  * Sort direction options for ordering queries.
@@ -72,7 +81,10 @@ const DimensionField = {
     CONVERSION_NAME: 'conversionName',
     TOTAL_CONVERSION: 'totalConversion',
     CONV_RATE: 'convRate',
-    TOP_ATTRIBUTED_CONTENT: 'topAttributedContent'
+    TOP_ATTRIBUTED_CONTENT: 'topAttributedContent',
+    DEVICE_CATEGORY: 'deviceCategory',
+    BROWSER_FAMILY: 'browserFamily',
+    LANGUAGE_ID: 'languageId'
 } as const;
 
 export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField];

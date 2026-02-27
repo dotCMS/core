@@ -13,6 +13,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotCurrentUserService,
     DotEventsService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
@@ -28,6 +29,7 @@ import { DotPersona, DotSystemConfig } from '@dotcms/dotcms-models';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
+    DotCurrentUserServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
@@ -131,6 +133,7 @@ describe('DotPersonaSelectorComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             provideAnimations(),
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             DotSessionStorageService,
             {
                 provide: DotMessageService,
@@ -317,7 +320,7 @@ describe('DotPersonaSelectorComponent', () => {
             expect(personaDialog.visible).toBe(true);
             expect(personaDialog.personaName).toBe('Bill');
             personaDialog.visible = false;
-            spectator.detectChanges();
+            spectator.fixture.detectChanges(false);
         });
 
         it('should emit persona and refresh the list on Add new persona', () => {

@@ -1,50 +1,44 @@
+@let displayedApps = state.displayedApps;
+
 <dot-portlet-base>
-    @if (!canAccessPortlet) {
-        <dot-not-license />
-    } @else {
-        <div class="dot-apps__container">
-            <div class="dot-apps__header">
-                <input
-                    [placeholder]="('apps.search.placeholder' | dm) || ''"
-                    #searchInput
-                    pInputText
-                    type="text" />
-                <div class="dot-apps__header-actions">
-                    <div class="dot-apps__header-info">
-                        <dot-icon name="help" size="18" />
-                        <a href="https://dotcms.com/docs/latest/apps-integrations" target="_blank">
-                            {{ 'apps.link.info' | dm }}
-                        </a>
-                    </div>
-                    <button
-                        (click)="confirmImportExport('Import')"
-                        [label]="'apps.confirmation.import.button' | dm"
-                        class="dot-apps-configuration__action_import_button"
-                        pButton
-                        link
-                        icon="pi pi-upload"></button>
-                    <button
-                        (click)="confirmImportExport('Export')"
-                        [label]="'apps.confirmation.export.all.button' | dm"
-                        [disabled]="!isExportButtonDisabled()"
-                        class="dot-apps-configuration__action_export_button"
-                        pButton
-                        link
-                        icon="pi pi-download"></button>
+    <div class="dot-apps__container">
+        <div class="dot-apps__header">
+            <input
+                [placeholder]="('apps.search.placeholder' | dm) || ''"
+                #searchInput
+                pInputText
+                type="text" />
+            <div class="dot-apps__header-actions">
+                <div class="dot-apps__header-info">
+                    <i class="pi pi-question-circle text-lg"></i>
+                    <a href="https://dotcms.com/docs/latest/apps-integrations" target="_blank">
+                        {{ 'apps.link.info' | dm }}
+                    </a>
                 </div>
-            </div>
-            <div class="dot-apps__body">
-                @for (app of appsCopy; track app) {
-                    <dot-apps-card (actionFired)="goToApp($event)" [app]="app" />
-                }
+                <button
+                    (click)="openImportDialog()"
+                    [label]="'apps.confirmation.import.button' | dm"
+                    class="dot-apps-configuration__action_import_button"
+                    pButton
+                    link
+                    icon="pi pi-upload"></button>
+                <button
+                    (click)="openExportDialog()"
+                    [label]="'apps.confirmation.export.all.button' | dm"
+                    [disabled]="!isExportButtonDisabled()"
+                    class="dot-apps-configuration__action_export_button"
+                    pButton
+                    link
+                    icon="pi pi-download"></button>
             </div>
         </div>
-    }
+        <div class="dot-apps__body">
+            @for (app of displayedApps(); track app.key) {
+                <dot-apps-card (actionFired)="goToApp($event)" [app]="app" />
+            }
+        </div>
+    </div>
 
-    <dot-apps-import-export-dialog
-        (resolved)="reloadAppsData()"
-        (shutdown)="onClosedDialog()"
-        [action]="importExportDialogAction"
-        [show]="showDialog"
-        #importExportDialog />
+    <!-- Dialog is now managed by store, no inputs needed -->
+    <dot-apps-import-export-dialog />
 </dot-portlet-base>

@@ -1,12 +1,9 @@
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 
-import { ScrollerLazyLoadEvent } from 'primeng/scroller';
-
-import { DotMessageService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
 import {
     DotEmptyContainerComponent,
@@ -93,7 +90,10 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         'edit.content.sidebar.history.versions': 'Versions',
         'edit.content.sidebar.history.push.publish': 'Push Publish',
         'edit.content.sidebar.history.empty.message':
-            "This content doesn't have any version history yet."
+            "This content doesn't have any version history yet.",
+        'edit.content.sidebar.history.push.publish.empty.message':
+            "This content doesn't have any push publish history yet.",
+        'edit.content.sidebar.history.push.publish.delete.all': 'Delete All'
     });
 
     const createComponent = createComponentFactory({
@@ -102,7 +102,8 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             DatePipe,
             DotMessagePipe,
             DotRelativeDatePipe,
-            { provide: DotMessageService, useValue: messageServiceMock }
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotFormatDateService)
         ],
         imports: [
             DotEmptyContainerComponent,
@@ -184,20 +185,10 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             expect(historyTimeline).toBeTruthy();
         });
 
-        it('should configure p-scroller with correct properties', () => {
-            const scrollerElement = spectator.query('p-scroller');
-            expect(scrollerElement).toBeTruthy();
-
-            // Verify scrollHeight attribute is set correctly
-            expect(scrollerElement.getAttribute('scrollHeight')).toBe('100%');
-
-            // Access the PrimeNG Scroller component instance to verify properties
-            const scrollerDebugElement = spectator.debugElement.query(By.css('p-scroller'));
-            const scrollerComponent = scrollerDebugElement?.componentInstance;
-
-            expect(scrollerComponent).toBeTruthy();
-            expect(scrollerComponent.itemSize).toBe(83);
-            expect(scrollerComponent.lazy).toBe(true);
+        it('should render timeline container with correct structure', () => {
+            const timelineContainer = spectator.query(byTestId('history-timeline-container'));
+            expect(timelineContainer).toBeTruthy();
+            expect(timelineContainer).toHaveClass('overflow-y-auto');
         });
     });
 
@@ -232,22 +223,26 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
     });
 
-    describe('Scroll Events', () => {
+    describe('Scroll Events (timeline lazy load)', () => {
+        function createNearBottomScrollEvent(): Event {
+            const target = {
+                scrollHeight: 500,
+                scrollTop: 400,
+                clientHeight: 100
+            };
+            return { target } as unknown as Event;
+        }
+
         beforeEach(() => {
             spectator.setInput('historyPagination', mockPagination);
             spectator.setInput('historyItems', mockHistoryItems);
             spectator.detectChanges();
         });
 
-        it('should emit pageChange when loading next page', fakeAsync(() => {
+        it('should emit pageChange when scroll is near bottom', fakeAsync(() => {
             const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
 
-            const scrollEvent: ScrollerLazyLoadEvent = {
-                first: 0,
-                last: mockHistoryItems.length - 3
-            };
-
-            spectator.component.onScrollIndexChange(scrollEvent);
+            spectator.component.onTimelineScroll(createNearBottomScrollEvent());
             tick();
 
             expect(spy).toHaveBeenCalledWith(2);
@@ -257,12 +252,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
 
-            const scrollEvent: ScrollerLazyLoadEvent = {
-                first: 0,
-                last: mockHistoryItems.length - 3
-            };
-
-            spectator.component.onScrollIndexChange(scrollEvent);
+            spectator.component.onTimelineScroll(createNearBottomScrollEvent());
 
             expect(spy).not.toHaveBeenCalled();
         });
@@ -305,8 +295,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         it('should emit timelineItemAction through template click binding', () => {
             const actionSpy = jest.spyOn(spectator.component.timelineItemAction, 'emit');
 
-            // Since p-scroller doesn't render items in test environment,
-            // we'll test the output emission directly by simulating what the template would do
+            // Test the output emission directly by simulating what the template would do
             spectator.component.timelineItemAction.emit({
                 type: DotHistoryTimelineItemActionType.VIEW,
                 item: mockHistoryItems[0]
@@ -419,15 +408,19 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 spectator.detectChanges();
             });
 
-            it('should emit pushPublishPageChange when loading next page', fakeAsync(() => {
+            function createNearBottomScrollEvent(): Event {
+                const target = {
+                    scrollHeight: 500,
+                    scrollTop: 400,
+                    clientHeight: 100
+                };
+                return { target } as unknown as Event;
+            }
+
+            it('should emit pushPublishPageChange when scroll is near bottom', fakeAsync(() => {
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                const scrollEvent: ScrollerLazyLoadEvent = {
-                    first: 0,
-                    last: mockPushPublishHistoryItems.length - 3
-                };
-
-                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
                 tick();
 
                 expect(spy).toHaveBeenCalledWith(2);
@@ -437,12 +430,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 spectator.setInput('status', ComponentStatus.LOADING);
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                const scrollEvent: ScrollerLazyLoadEvent = {
-                    first: 0,
-                    last: mockPushPublishHistoryItems.length - 3
-                };
-
-                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
 
                 expect(spy).not.toHaveBeenCalled();
             });
@@ -457,12 +445,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
 
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                const scrollEvent: ScrollerLazyLoadEvent = {
-                    first: 0,
-                    last: mockPushPublishHistoryItems.length - 3
-                };
-
-                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
 
                 expect(spy).not.toHaveBeenCalled();
             });

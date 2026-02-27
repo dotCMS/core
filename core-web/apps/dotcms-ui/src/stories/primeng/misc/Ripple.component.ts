@@ -5,7 +5,9 @@ import { PrimeNGConfig } from 'primeng/api';
 @Component({
     selector: 'dot-p-button-ripple',
     template: `
-        <button class="p-button-success" type="button" pButton pRipple label="Success"></button>
+        <button class="p-button-success" type="button" pButton pRipple>
+            <span pButtonLabel>Success</span>
+        </button>
     `
 })
 export class RippleComponent implements OnInit {

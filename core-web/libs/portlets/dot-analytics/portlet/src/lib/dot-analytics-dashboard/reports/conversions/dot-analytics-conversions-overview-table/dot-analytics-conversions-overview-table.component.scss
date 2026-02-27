@@ -1,24 +1,41 @@
 @use "variables" as *;
 
-.table-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-bold;
-    color: $black;
-    line-height: $line-height-relative;
-    margin: 0;
+$table-min-height: 20rem;
+
+.table-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: $table-min-height;
 }
 
-// Ensure consistent row height
-::ng-deep .p-datatable {
-    .p-datatable-tbody > tr {
-        height: 46px;
-        box-sizing: border-box;
-        cursor: default;
+.skeleton-table {
+    display: flex;
+    flex-direction: column;
+
+    &__header {
+        display: flex;
+        gap: $spacing-3;
+        padding: $spacing-3 $spacing-4;
+        border-bottom: 1px solid var(--surface-200);
+    }
+
+    &__row {
+        display: flex;
+        gap: $spacing-3;
+        padding: $spacing-3 $spacing-4;
+        border-bottom: 1px solid var(--surface-100);
+    }
+
+    &__pagination {
+        display: flex;
+        justify-content: center;
+        padding: $spacing-3 $spacing-4;
     }
 }
 
-// Custom conversion name badges - blue from dotCMS palette
-::ng-deep {
+// Custom PrimeNG tag overrides
+:host ::ng-deep {
     .p-tag.conversion-name-badge {
         background-color: $color-palette-blue-tint;
         border: 1px solid $color-palette-blue-op-20;
@@ -28,49 +45,8 @@
         font-weight: $font-weight-semi-bold;
         padding: $spacing-0 $spacing-2;
     }
-}
 
-// Top Attributed Content styling - compact
-.attributed-content-list {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-1;
-}
-
-.attributed-content-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $spacing-3;
-    font-size: $font-size-sm;
-    line-height: 1.4;
-
-    .content-info {
-        display: flex;
-        align-items: center;
-        gap: $spacing-2;
-        flex: 1;
-        min-width: 0; // Allow text truncation
-    }
-
-    .content-title {
-        color: $black;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .content-percentage {
-        font-weight: $font-weight-semi-bold;
-        color: $color-palette-primary;
-        min-width: 50px;
-        text-align: right;
-        white-space: nowrap;
-    }
-}
-
-// Event type badge styling (same as Content Conversions Table)
-::ng-deep {
+    // Event type badge styling
     .p-tag.event-type-badge {
         border-radius: $border-radius-sm;
         font-size: $font-size-xs;
@@ -108,4 +84,49 @@
         color: $color-palette-purple-shade;
         border-color: $color-palette-purple-op-20;
     }
+}
+
+// // Top Attributed Content - single row, compact
+.attributed-content-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-3;
+
+    .content-info {
+        display: flex;
+        align-items: center;
+        gap: $spacing-2;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .content-title {
+        color: $black;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.attributed-content-right {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    white-space: nowrap;
+}
+
+.content-percentage {
+    font-weight: $font-weight-semi-bold;
+    color: $color-palette-primary;
+    min-width: 50px;
+    text-align: right;
+}
+
+.more-indicator {
+    font-size: $font-size-xs;
+    color: $color-palette-gray-500;
+    background: $color-palette-gray-100;
+    border-radius: $border-radius-sm;
+    padding: 0 $spacing-1;
 }

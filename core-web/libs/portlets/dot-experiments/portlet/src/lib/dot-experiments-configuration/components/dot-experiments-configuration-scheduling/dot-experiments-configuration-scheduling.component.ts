@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -15,7 +15,7 @@ import {
     RangeOfDateAndTime,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
@@ -26,14 +26,11 @@ import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experi
         CommonModule,
         DotDynamicDirective,
         DotMessagePipe,
-        DotIconComponent,
-        // PrimeNg
         CardModule,
         ButtonModule,
         TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-scheduling.component.html',
-    styleUrls: ['./dot-experiments-configuration-scheduling.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationSchedulingComponent {
@@ -49,7 +46,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
         tap(({ status }) => this.handleSidebar(status))
     );
 
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     private componentRef: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
 
     /**
@@ -71,17 +68,23 @@ export class DotExperimentsConfigurationSchedulingComponent {
 
     private loadSidebarComponent(status: StepStatus): void {
         if (this.shouldLoadSidebar(status)) {
-            this.sidebarHost.viewContainerRef.clear();
-            this.componentRef =
-                this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationSchedulingAddComponent>(
-                    DotExperimentsConfigurationSchedulingAddComponent
-                );
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+                this.componentRef =
+                    sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationSchedulingAddComponent>(
+                        DotExperimentsConfigurationSchedulingAddComponent
+                    );
+            }
         }
     }
 
     private removeSidebarComponent() {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 

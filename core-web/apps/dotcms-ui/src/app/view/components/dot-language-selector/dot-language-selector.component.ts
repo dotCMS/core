@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
@@ -20,7 +20,7 @@ import { DotLanguage } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-language-selector',
     templateUrl: './dot-language-selector.component.html',
-    imports: [DropdownModule, FormsModule],
+    imports: [SelectModule, FormsModule],
     styleUrls: ['./dot-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

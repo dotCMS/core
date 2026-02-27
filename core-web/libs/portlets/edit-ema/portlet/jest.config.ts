@@ -9,6 +9,7 @@ export default {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
             {
+                isolatedModules: true, // Prevent type checking in tests and deps
                 tsconfig: '<rootDir>/tsconfig.spec.json',
                 stringifyContentPathRegex: '\\.(html|svg)$'
             }

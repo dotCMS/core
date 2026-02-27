@@ -61,7 +61,10 @@ describe('DotEditContentSidebarSectionComponent', () => {
 
     describe('Without title', () => {
         beforeEach(() => {
-            spectator.setHostInput('title', null);
+            // Create fresh host with title: null to avoid ExpressionChangedAfterItHasBeenCheckedError
+            spectator = createHost(null, {
+                hostProps: { title: null }
+            });
         });
 
         it('should not render header section', () => {

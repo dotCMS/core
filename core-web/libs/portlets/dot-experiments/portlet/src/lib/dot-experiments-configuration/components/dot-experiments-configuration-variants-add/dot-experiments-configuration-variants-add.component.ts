@@ -6,8 +6,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { SidebarModule } from 'primeng/sidebar';
 
 import { ComponentStatus, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import {
@@ -17,7 +17,8 @@ import {
     DotSidebarDirective,
     DotSidebarHeaderComponent,
     DotTrimInputDirective,
-    DotValidators
+    DotValidators,
+    SIDEBAR_SIZES
 } from '@dotcms/ui';
 
 import {
@@ -34,8 +35,7 @@ import {
         DotMessagePipe,
         DotFieldValidationMessageComponent,
         DotSidebarDirective,
-        //PrimeNg
-        SidebarModule,
+        DrawerModule,
         ButtonModule,
         InputTextModule,
         AutoFocusModule,
@@ -43,7 +43,6 @@ import {
         DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-configuration-variants-add.component.html',
-    styleUrls: ['./dot-experiments-configuration-variants-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
@@ -51,6 +50,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
 
     stepStatus = ComponentStatus;
     form: FormGroup;
+    sidebarSizes = SIDEBAR_SIZES;
     vm$: Observable<ConfigurationVariantStepViewModel> =
         this.dotExperimentsConfigurationStore.variantsStepVm$;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;

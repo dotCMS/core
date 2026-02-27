@@ -25,9 +25,7 @@ export const ANALYTICS_KEYS = {
 export const TABLE_CONFIG = {
     SORT_MODE: 'multiple',
     DATA_KEY: 'path',
-    // Virtual scroll configuration
-    VIRTUAL_SCROLL_ITEM_SIZE: 46,
-    SCROLL_HEIGHT: '23.125rem'
+    ROWS_PER_PAGE: 10
 } as const;
 
 /** Table column configuration for top pages analytics table */
@@ -52,7 +50,7 @@ export const TOP_PAGES_TABLE_COLUMNS = [
         field: 'views',
         header: 'analytics.table.headers.pageviews',
         type: 'number',
-        alignment: 'center',
+        alignment: 'right',
         sortable: true,
         width: '15%'
     }

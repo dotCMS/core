@@ -2,29 +2,29 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
+import { ToggleSwitch, ToggleSwitchModule } from 'primeng/toggleswitch';
 
-const InputSwitchTemplate = `<p-inputSwitch [(ngModel)]="data" />`;
+const ToggleSwitchTemplate = `<p-toggleSwitch [(ngModel)]="data" />`;
 
-type Args = InputSwitch & { data: boolean };
+type Args = ToggleSwitch & { data: boolean };
 
 const meta: Meta<Args> = {
-    title: 'PrimeNG/Form/InputSwitch',
-    component: InputSwitch,
+    title: 'PrimeNG/Form/ToggleSwitch',
+    component: ToggleSwitch,
     parameters: {
         docs: {
             description: {
                 component:
-                    'InputSwitch is used to select a boolean value.: https://primeng.org/inputswitch'
+                    'ToggleSwitch is used to select a boolean value.: https://primeng.org/toggleswitch'
             },
             source: {
-                code: InputSwitchTemplate
+                code: ToggleSwitchTemplate
             }
         }
     },
     decorators: [
         moduleMetadata({
-            imports: [InputSwitchModule, BrowserAnimationsModule]
+            imports: [ToggleSwitchModule, BrowserAnimationsModule]
         })
     ],
     args: {
@@ -38,7 +38,7 @@ const meta: Meta<Args> = {
     },
     render: (args) => ({
         props: args,
-        template: InputSwitchTemplate
+        template: ToggleSwitchTemplate
     })
 };
 export default meta;

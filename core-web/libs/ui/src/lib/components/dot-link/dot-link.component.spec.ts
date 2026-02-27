@@ -1,6 +1,4 @@
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -8,79 +6,68 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotLinkComponent } from './dot-link.component';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
-import { DotApiLinkComponent } from '../dot-api-link/dot-api-link.component';
 
-@Component({
-    standalone: false,
-    template: `
-        <dot-link [href]="href" [icon]="icon" [label]="label"></dot-link>
-    `
-})
-class TestHostComponent {
-    href = 'api/v1/123';
-    icon = 'pi-link';
-    label = 'dot.common.testing';
+const messageServiceMock = new MockDotMessageService({
+    'dot.common.testing': 'This is a test'
+});
 
-    updateLink(href: string): void {
-        this.href = href;
-    }
-}
+const defaultProps = {
+    href: 'api/v1/123',
+    icon: 'pi-link',
+    label: 'dot.common.testing'
+};
 
 describe('DotLinkComponent', () => {
-    let hostFixture: ComponentFixture<TestHostComponent>;
-    let hostDe: DebugElement;
-    let hostComp: TestHostComponent;
-    let de: DebugElement;
-    let link: DebugElement;
+    let spectator: Spectator<DotLinkComponent>;
 
-    const messageServiceMock = new MockDotMessageService({
-        'dot.common.testing': 'This is a test'
+    const createComponent = createComponentFactory({
+        component: DotLinkComponent,
+        imports: [DotMessagePipe, DotLinkComponent],
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
-            imports: [DotApiLinkComponent, DotMessagePipe, DotLinkComponent],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
-    }));
+    function getLinkElement(): HTMLAnchorElement | null {
+        return spectator.query('a');
+    }
 
     beforeEach(() => {
-        hostFixture = TestBed.createComponent(TestHostComponent);
-        hostDe = hostFixture.debugElement;
-        hostComp = hostDe.componentInstance;
-
-        de = hostDe.query(By.css('dot-link'));
-        hostFixture.detectChanges();
-        link = de.query(By.css('a'));
+        spectator = createComponent({
+            props: defaultProps
+        });
+        spectator.detectChanges();
     });
 
     it('should show label', () => {
-        expect(link.nativeElement.textContent).toBe('This is a test');
+        const link = getLinkElement();
+        expect(link?.textContent?.trim()).toBe('This is a test');
     });
 
     it('should set link properties and attr correctly', () => {
-        expect(link.attributes.target).toEqual('_blank');
-        expect(link.properties.href).toEqual('/api/v1/123');
-        expect(link.properties.title).toEqual('/api/v1/123');
+        const link = getLinkElement();
+        expect(link?.getAttribute('target')).toBe('_blank');
+        expect(link?.getAttribute('href')).toBe('/api/v1/123');
+        expect(link?.getAttribute('title')).toBe('/api/v1/123');
     });
 
     it('should update link when href is change', () => {
-        expect(link.properties.href).toEqual('/api/v1/123');
-        expect(link.properties.title).toEqual('/api/v1/123');
+        spectator = createComponent({
+            props: { ...defaultProps, href: '/api/new/1000' }
+        });
+        spectator.detectChanges();
 
-        hostComp.updateLink('/api/new/1000');
-        hostFixture.detectChanges();
-
-        expect(link.properties.href).toEqual('/api/new/1000');
-        expect(link.properties.title).toEqual('/api/new/1000');
+        const link = getLinkElement();
+        expect(link?.getAttribute('href')).toBe('/api/new/1000');
+        expect(link?.getAttribute('title')).toBe('/api/new/1000');
     });
 
     it('should set the link relative always', () => {
-        hostComp.updateLink('api/no/start/slash');
-        hostFixture.detectChanges();
+        spectator = createComponent({
+            props: { ...defaultProps, href: 'api/no/start/slash' }
+        });
+        spectator.detectChanges();
 
-        expect(link.properties.href).toEqual('/api/no/start/slash');
-        expect(link.properties.title).toEqual('/api/no/start/slash');
+        const link = getLinkElement();
+        expect(link?.getAttribute('href')).toBe('/api/no/start/slash');
+        expect(link?.getAttribute('title')).toBe('/api/no/start/slash');
     });
 });

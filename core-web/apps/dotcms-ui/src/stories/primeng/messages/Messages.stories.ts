@@ -2,11 +2,11 @@ import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { MessagesModule, Messages } from 'primeng/messages';
+import { MessageModule, Message } from 'primeng/message';
 
-const MessageTemplate = `<p-messages [(value)]="messages" />`;
+const MessageTemplate = `<p-message [(value)]="messages" />`;
 
-const meta: Meta<Messages> = {
+const meta: Meta<Message> = {
     title: 'PrimeNG/Messages/Message',
     parameters: {
         docs: {
@@ -21,7 +21,7 @@ const meta: Meta<Messages> = {
     },
     decorators: [
         moduleMetadata({
-            imports: [MessagesModule, BrowserAnimationsModule]
+            imports: [MessageModule, BrowserAnimationsModule]
         })
     ],
     args: {

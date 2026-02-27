@@ -4,7 +4,9 @@
     <p-button
         (onClick)="handleAction()"
         [icon]="options?.actionIcon"
-        styleClass="p-button-text p-button-sm p-button-rounded"
+        [text]="true"
+        size="small"
+        [rounded]="true"
         data-testId="info-action" />
 }
 

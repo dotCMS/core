@@ -2,9 +2,9 @@
 <dot-create-contentlet (custom)="onCustomEvent($event)" />
 <dot-message-display />
 
-<div class="layout">
+<div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] h-full w-full">
     <aside
-        class="layout__navigation"
+        class="col-span-1 row-span-2 bg-primary-950"
         data-testid="navigation-sidebar"
         role="navigation"
         aria-label="Main navigation">
@@ -14,7 +14,7 @@
         <dot-toolbar />
     </header>
     <div
-        class="layout__viewport"
+        class="overflow-auto"
         data-testid="content-viewport"
         role="region"
         aria-label="Main content area">

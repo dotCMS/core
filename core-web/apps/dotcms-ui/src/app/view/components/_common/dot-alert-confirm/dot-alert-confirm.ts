@@ -1,7 +1,18 @@
 import { Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import {
+    afterNextRender,
+    Component,
+    ElementRef,
+    inject,
+    Injector,
+    OnDestroy,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 
@@ -12,23 +23,27 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 @Component({
     selector: 'dot-alert-confirm',
     templateUrl: './dot-alert-confirm.html',
-    imports: [ConfirmDialogModule, DialogModule]
+    imports: [ConfirmDialogModule, DialogModule, ButtonModule]
 })
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     dotAlertConfirmService = inject(DotAlertConfirmService);
+    private confirmationService = inject(ConfirmationService);
+    private injector = inject(Injector);
 
     @ViewChild('cd') cd: ConfirmDialog;
     @ViewChild('confirmBtn') confirmBtn: ElementRef;
     @ViewChild('acceptBtn') acceptBtn: ElementRef;
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    private destroy$ = new Subject<boolean>();
 
     ngOnInit(): void {
         this.dotAlertConfirmService.confirmDialogOpened$
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
                 const btn = this.confirmBtn || this.acceptBtn;
-                btn.nativeElement.focus();
+                if (btn?.nativeElement) {
+                    afterNextRender(() => btn.nativeElement.focus(), { injector: this.injector });
+                }
             });
     }
 
@@ -44,7 +59,17 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
      * @memberof DotAlertConfirmComponent
      */
     onClickConfirm(action: string): void {
-        action === 'accept' ? this.cd.accept() : this.cd.reject();
+        if (action === 'accept') {
+            if (this.dotAlertConfirmService.confirmModel?.accept) {
+                this.dotAlertConfirmService.confirmModel.accept();
+            }
+            this.confirmationService.onAccept();
+        } else {
+            if (this.dotAlertConfirmService.confirmModel?.reject) {
+                this.dotAlertConfirmService.confirmModel.reject();
+            }
+            this.confirmationService.close();
+        }
         this.dotAlertConfirmService.clearConfirm();
     }
 }

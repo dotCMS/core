@@ -4,14 +4,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
-    Input,
+    inject,
+    input,
     OnChanges,
     OnDestroy,
     OnInit,
-    Output,
-    SimpleChanges,
-    inject
+    output,
+    SimpleChanges
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
@@ -35,7 +34,6 @@ const BLOCK_EDITOR_ASSETS = [
 @Component({
     selector: 'dot-block-editor-settings',
     templateUrl: './dot-block-editor-settings.component.html',
-    styleUrls: ['./dot-block-editor-settings.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })
@@ -45,12 +43,12 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
     private readonly dotMessageService = inject(DotMessageService);
     private readonly fb = inject(FormBuilder);
 
-    @Output() changeControls = new EventEmitter<DotDialogActions>();
-    @Output() valid = new EventEmitter<boolean>();
-    @Output() save = new EventEmitter<DotFieldVariable[]>();
+    readonly $changeControls = output<DotDialogActions>();
+    readonly $valid = output<boolean>();
+    readonly $save = output<DotFieldVariable[]>();
 
-    @Input() field: DotCMSContentTypeField;
-    @Input() isVisible = false;
+    readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
     public form: FormGroup;
     public settingsMap = {
         allowedBlocks: {
@@ -85,7 +83,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
         });
 
         this.fieldVariablesService
-            .load(this.field)
+            .load(this.$field())
             .pipe(take(1))
             .subscribe((fieldVariables: DotFieldVariable[]) => {
                 fieldVariables.forEach((variable) => {
@@ -99,14 +97,14 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
             });
 
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.valid.emit(this.form.valid);
+            this.$valid.emit(this.form.valid);
         });
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        const { isVisible } = changes;
-        if (isVisible?.currentValue) {
-            this.changeControls.emit(this.dialogActions());
+        const { $isVisible } = changes;
+        if ($isVisible?.currentValue) {
+            this.$changeControls.emit(this.dialogActions());
         }
     }
 
@@ -134,8 +132,8 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
 
                 return (
                     value
-                        ? this.fieldVariablesService.save(this.field, fieldVariable)
-                        : this.fieldVariablesService.delete(this.field, fieldVariable)
+                        ? this.fieldVariablesService.save(this.$field(), fieldVariable)
+                        : this.fieldVariablesService.delete(this.$field(), fieldVariable)
                 ).pipe(tap((variable) => (this.settingsMap[key].variable = variable))); // Update Variable Reference
             })
         )
@@ -146,7 +144,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
                 )
             )
             .subscribe((value: DotFieldVariable[]) => {
-                this.save.emit(value);
+                this.$save.emit(value);
                 this.form.markAsPristine();
             });
     }

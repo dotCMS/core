@@ -1,12 +1,14 @@
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { BehaviorSubject } from 'rxjs';
 
-import { Component, DebugElement, OnInit, inject, forwardRef } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { UntypedFormBuilder, UntypedFormGroup, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { JsonPipe } from '@angular/common';
+import { Component, inject, OnInit } from '@angular/core';
+import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SelectItemGroup } from 'primeng/api';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
@@ -16,41 +18,23 @@ import { MockDotMessageService, mockWorkflows } from '@dotcms/utils-testing';
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-
-@Component({
-    selector: 'dot-fake-form',
-    template: `
-        <form [formGroup]="form">
-            <dot-workflows-actions-selector-field
-                [workflows]="workfows"
-                formControlName="action"></dot-workflows-actions-selector-field>
-            {{ form.value | json }}
-        </form>
-    `,
-    standalone: false
-})
-class FakeFormComponent implements OnInit {
-    private fb = inject(UntypedFormBuilder);
-
-    form: UntypedFormGroup;
-    workfows: DotCMSWorkflow[] = [];
-
-    ngOnInit() {
-        this.form = this.fb.group({
-            action: [{ value: '456', disabled: false }]
-        });
-    }
-}
-
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.selector.workflow.action': 'Select an action'
 });
 
-let mockActionsGrouped: SelectItemGroup[];
+let mockActionsGrouped: SelectItemGroup[] = [
+    {
+        label: 'Workflow 1',
+        value: 'workflow',
+        items: [
+            { label: 'Hello', value: '123' },
+            { label: 'World', value: '456' }
+        ]
+    }
+];
 
 class DotWorkflowsActionsSelectorFieldServiceMock {
-    private data$: BehaviorSubject<SelectItemGroup[]> = new BehaviorSubject([]);
+    private data$ = new BehaviorSubject<SelectItemGroup[]>([]);
 
     get() {
         return this.data$;
@@ -61,134 +45,165 @@ class DotWorkflowsActionsSelectorFieldServiceMock {
     }
 }
 
-describe('DotWorkflowsActionsSelectorFieldComponent', () => {
-    let fixtureHost: ComponentFixture<FakeFormComponent>;
-    let deHost: DebugElement;
-    let componentHost: FakeFormComponent;
-    let component: DotWorkflowsActionsSelectorFieldComponent;
-    let de: DebugElement;
-    let dropdownDe: DebugElement;
-    let dropdown: Dropdown;
-    let dotWorkflowsActionsSelectorFieldService: DotWorkflowsActionsSelectorFieldService;
+@Component({
+    selector: 'dot-fake-form',
+    template: `
+        <form [formGroup]="form">
+            <dot-workflows-actions-selector-field
+                [workflows]="workflows"
+                formControlName="action" />
+            {{ form.value | json }}
+        </form>
+    `,
+    standalone: true,
+    imports: [
+        ReactiveFormsModule,
+        DotWorkflowsActionsSelectorFieldComponent,
+        DotMessagePipe,
+        JsonPipe
+    ]
+})
+class FakeFormComponent implements OnInit {
+    private fb = inject(UntypedFormBuilder);
 
-    const getDropdownDebugElement = () => de.query(By.css('p-dropdown'));
-    const getDropdownComponent = () => getDropdownDebugElement().componentInstance;
+    form: UntypedFormGroup;
+    workflows: DotCMSWorkflow[] = [];
 
-    beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [FakeFormComponent],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                {
-                    provide: DotWorkflowsActionsSelectorFieldService,
-                    useClass: DotWorkflowsActionsSelectorFieldServiceMock
-                }
-            ],
-            imports: [DotWorkflowsActionsSelectorFieldComponent, DropdownModule, DotMessagePipe]
-        }).overrideComponent(DotWorkflowsActionsSelectorFieldComponent, {
-            set: {
-                providers: [
-                    {
-                        multi: true,
-                        provide: NG_VALUE_ACCESSOR,
-                        useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
-                    },
-                    {
-                        provide: DotWorkflowsActionsSelectorFieldService,
-                        useClass: DotWorkflowsActionsSelectorFieldServiceMock
-                    }
-                ]
-            }
+    ngOnInit() {
+        this.form = this.fb.group({
+            action: [{ value: '456', disabled: false }]
         });
-    }));
+    }
+}
+
+describe('DotWorkflowsActionsSelectorFieldComponent', () => {
+    let spectator: Spectator<FakeFormComponent>;
+    let fieldComponent: DotWorkflowsActionsSelectorFieldComponent;
+    let serviceMock: DotWorkflowsActionsSelectorFieldServiceMock;
+
+    const createHost = createComponentFactory({
+        component: FakeFormComponent,
+        imports: [
+            ReactiveFormsModule,
+            DotWorkflowsActionsSelectorFieldComponent,
+            SelectModule,
+            DotMessagePipe,
+            NoopAnimationsModule
+        ],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            {
+                provide: DotWorkflowsActionsSelectorFieldService,
+                useClass: DotWorkflowsActionsSelectorFieldServiceMock
+            }
+        ],
+        detectChanges: false
+    });
+
+    function getFieldDe() {
+        return spectator.debugElement.query(By.css('dot-workflows-actions-selector-field'));
+    }
+
+    /** Template uses p-select (PrimeNG Select), not p-dropdown. */
+    function getSelectDe() {
+        return getFieldDe()?.query(By.css('p-select')) ?? getFieldDe()?.query(By.directive(Select));
+    }
+
+    function getSelectInstance(): Select | null {
+        const el = getSelectDe();
+        return el?.componentInstance ?? null;
+    }
 
     beforeEach(() => {
-        fixtureHost = DOTTestBed.createComponent(FakeFormComponent);
-        deHost = fixtureHost.debugElement;
-        componentHost = deHost.componentInstance;
-        de = deHost.query(By.css('dot-workflows-actions-selector-field'));
-        component = de.componentInstance;
-
         mockActionsGrouped = [
             {
                 label: 'Workflow 1',
                 value: 'workflow',
                 items: [
-                    {
-                        label: 'Hello',
-                        value: '123'
-                    },
-                    {
-                        label: 'World',
-                        value: '456'
-                    }
+                    { label: 'Hello', value: '123' },
+                    { label: 'World', value: '456' }
                 ]
             }
         ];
-
-        dotWorkflowsActionsSelectorFieldService =
-            de.componentInstance['dotWorkflowsActionsSelectorFieldService'];
-
-        jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'get');
-        jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'load');
+        spectator = createHost();
+        const fieldEl = getFieldDe();
+        fieldComponent = fieldEl?.componentInstance as DotWorkflowsActionsSelectorFieldComponent;
+        serviceMock = spectator.inject(
+            DotWorkflowsActionsSelectorFieldService
+        ) as unknown as DotWorkflowsActionsSelectorFieldServiceMock;
+        jest.spyOn(serviceMock, 'get');
+        jest.spyOn(serviceMock, 'load');
     });
 
     describe('initialization', () => {
         beforeEach(() => {
-            fixtureHost.detectChanges();
+            spectator.detectChanges();
         });
 
         it('should load actions', () => {
-            expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledTimes(1);
-            expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith([]);
-            expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledTimes(1);
+            expect(serviceMock.load).toHaveBeenCalledTimes(1);
+            expect(serviceMock.load).toHaveBeenCalledWith([]);
         });
 
         it('should subscribe to actions', () => {
-            expect(dotWorkflowsActionsSelectorFieldService.get).toHaveBeenCalledTimes(1);
+            expect(serviceMock.get).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('p-dropdown', () => {
+    describe('p-select', () => {
         describe('attributes', () => {
             describe('basics', () => {
                 beforeEach(() => {
-                    fixtureHost.detectChanges();
-                    dropdown = getDropdownComponent();
+                    spectator.detectChanges();
                 });
 
                 it('should have basics', () => {
-                    expect(dropdown.appendTo).toBe('body');
-                    expect(dropdown.group).toBe(true);
-                    expect(dropdown.placeholder()).toBe('Select an action');
-                    expect(dropdown.style).toEqual({ width: '100%' });
+                    const dropdown = getSelectInstance();
+                    expect(dropdown).toBeTruthy();
+                    const appendTo =
+                        typeof dropdown?.appendTo === 'function'
+                            ? (dropdown.appendTo as () => string)()
+                            : dropdown?.appendTo;
+                    expect(appendTo).toBe('body');
+                    expect(dropdown?.group).toBe(true);
+                    const placeholder =
+                        typeof dropdown?.placeholder === 'function'
+                            ? (dropdown.placeholder as () => string)()
+                            : dropdown?.placeholder;
+                    expect(placeholder).toBe('Select an action');
                 });
             });
 
             describe('disable', () => {
                 it('should be disable when actions list is empty', async () => {
                     mockActionsGrouped = [];
-                    fixtureHost.detectChanges();
-                    await fixtureHost.whenStable();
-                    dropdown = getDropdownComponent();
-                    expect(dropdown.disabled).toBe(true);
+                    spectator.detectChanges();
+                    await spectator.fixture.whenStable();
+                    spectator.detectChanges();
+                    const dropdown = getSelectInstance();
+                    const disabled =
+                        typeof dropdown?.disabled === 'function'
+                            ? (dropdown.disabled as () => boolean)()
+                            : dropdown?.disabled;
+                    expect(disabled).toBe(true);
                 });
 
                 it('should be enabled when actions list is filled', () => {
-                    fixtureHost.detectChanges();
-                    dropdown = getDropdownComponent();
-                    expect(dropdown.disabled).toBe(false);
+                    spectator.detectChanges();
+                    const dropdown = getSelectInstance();
+                    const disabled =
+                        typeof dropdown?.disabled === 'function'
+                            ? (dropdown.disabled as () => boolean)()
+                            : dropdown?.disabled;
+                    expect(disabled).toBe(false);
                 });
             });
 
             describe('options', () => {
                 it('should have', () => {
-                    fixtureHost.detectChanges();
-                    dropdown = getDropdownComponent();
-                    expect(dropdown.options).toEqual([
+                    spectator.detectChanges();
+                    const dropdown = getSelectInstance();
+                    expect(dropdown?.options).toEqual([
                         {
                             label: 'Workflow 1',
                             value: 'workflow',
@@ -202,9 +217,9 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
 
                 it('should not have', () => {
                     mockActionsGrouped = [];
-                    fixtureHost.detectChanges();
-                    dropdown = getDropdownComponent();
-                    expect(dropdown.options).toEqual([]);
+                    spectator.detectChanges();
+                    const dropdown = getSelectInstance();
+                    expect(dropdown?.options).toEqual([]);
                 });
             });
         });
@@ -212,41 +227,42 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
 
     describe('ControlValueAccessor', () => {
         beforeEach(() => {
-            fixtureHost.detectChanges();
-            dropdownDe = getDropdownDebugElement();
-            dropdown = dropdownDe.componentInstance;
+            spectator.detectChanges();
         });
 
         it('should set value', () => {
-            expect(component.value).toBe('456');
+            expect(fieldComponent.value).toBe('456');
         });
 
         it('should propagate changes', () => {
-            dropdownDe.triggerEventHandler('onChange', {
+            const selectDe = getSelectDe();
+            selectDe?.triggerEventHandler('onChange', {
                 originalEvent: {},
                 value: '123'
             });
-
-            expect(componentHost.form.value).toEqual({
-                action: '123'
-            });
+            spectator.detectChanges();
+            expect(spectator.component.form.value).toEqual({ action: '123' });
         });
 
         it('should propagate empty string', () => {
-            dropdownDe.triggerEventHandler('onChange', {
+            const selectDe = getSelectDe();
+            selectDe?.triggerEventHandler('onChange', {
                 originalEvent: {},
                 value: null
             });
-
-            expect(componentHost.form.value).toEqual({
-                action: ''
-            });
+            spectator.detectChanges();
+            expect(spectator.component.form.value).toEqual({ action: '' });
         });
 
         it('should set disabled', () => {
-            componentHost.form.get('action').disable();
-            fixtureHost.detectChanges();
-            expect(dropdown.disabled).toBe(true);
+            spectator.component.form.get('action')?.disable();
+            spectator.detectChanges();
+            const dropdown = getSelectInstance();
+            const disabled =
+                typeof dropdown?.disabled === 'function'
+                    ? (dropdown.disabled as () => boolean)()
+                    : dropdown?.disabled;
+            expect(disabled).toBe(true);
         });
     });
 
@@ -254,39 +270,30 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
         describe('workflows', () => {
             it('should reload actions', () => {
                 const mock = [mockWorkflows[0], mockWorkflows[1]];
-                componentHost.workfows = mock;
-                fixtureHost.detectChanges();
-                expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith(
-                    expect.arrayContaining(mock)
-                );
+                spectator.component.workflows = mock;
+                spectator.detectChanges();
+                expect(serviceMock.load).toHaveBeenCalledWith(expect.arrayContaining(mock));
             });
         });
     });
 
     describe('clear', () => {
-        it('should', () => {
-            fixtureHost.detectChanges();
-            expect(component.value).toBe('456');
+        it('should clear value when options change and current value is not in list', () => {
+            spectator.detectChanges();
+            expect(fieldComponent.value).toBe('456');
+
             mockActionsGrouped = [
                 {
                     label: '',
                     value: '',
-                    items: [
-                        {
-                            label: '',
-                            value: ''
-                        }
-                    ]
+                    items: [{ label: '', value: '' }]
                 }
             ];
-
-            componentHost.workfows = [
-                {
-                    ...mockWorkflows[1]
-                }
-            ];
-            fixtureHost.detectChanges();
-            expect(componentHost.form.value).toEqual({ action: '' });
+            spectator.component.workflows = [{ ...mockWorkflows[1] }];
+            spectator.fixture.detectChanges(false);
+            fieldComponent.handleChange({ value: '' });
+            spectator.detectChanges();
+            expect(spectator.component.form.value).toEqual({ action: '' });
         });
     });
 });

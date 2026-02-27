@@ -1,22 +1,27 @@
-<ul class="category-list">
+<ul class="list-none m-0 p-0">
     @for (category of $categories(); track category.key) {
-        <li class="category-list__item" @fadeAnimation data-testId="category-item">
-            <div class="category-list__item-content">
-                <div class="category-list__title" data-testId="category-title">
+        <li
+            class="grid grid-cols-[1fr_2rem] items-center py-2 gap-2 border-b border-(--gray-300)"
+            @fadeAnimation
+            data-testId="category-item">
+            <div class="flex w-full overflow-hidden gap-2 flex-col">
+                <div
+                    class="text-xs font-semibold truncate text-[#14151a]"
+                    data-testId="category-title">
                     {{ category.value }}
                 </div>
-                <div class="category-list__path">
+                <div class="flex-1 overflow-hidden">
                     <span
                         [pTooltip]="category.path"
                         tooltipPosition="top"
-                        class="category-list__path-content"
+                        class="text-xs text-(--gray-700) font-normal block truncate [direction:rtl] text-left"
                         data-testId="category-path">
                         {{ category.path || 'edit.content.category-field.category.root-name' | dm }}
                     </span>
                 </div>
             </div>
 
-            <div class="category-list__remove">
+            <div class="flex items-center justify-center">
                 <button
                     (click)="removeItem.emit(category.key)"
                     icon="pi pi-times"

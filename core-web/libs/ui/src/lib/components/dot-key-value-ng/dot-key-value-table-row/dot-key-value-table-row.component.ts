@@ -14,10 +14,10 @@ import {
 import { FormsModule, ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TableModule } from 'primeng/table';
+import { TextareaModule } from 'primeng/textarea';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
 
@@ -26,12 +26,12 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
 
 @Component({
     selector: 'dot-key-value-table-row',
-    styleUrls: ['./dot-key-value-table-row.component.scss'],
     templateUrl: './dot-key-value-table-row.component.html',
+    host: { class: 'contents' },
     imports: [
         ButtonModule,
-        InputSwitchModule,
-        InputTextareaModule,
+        ToggleSwitchModule,
+        TextareaModule,
         InputTextModule,
         FormsModule,
         ReactiveFormsModule,

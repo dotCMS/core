@@ -200,6 +200,7 @@ export class SiteService {
     }
 
     /**
+     * @deprecated Use other site-switching mechanisms instead. Use libs/data-access/src/lib/dot-site/dot-site.service.ts
      * Change the current site
      *
      * @param {Site} site

@@ -1,14 +1,19 @@
+@use "../../shared/colors";
+@use "../../shared/common";
+@use "../../shared/fonts";
+@use "../../shared/spacing";
+
 @use "variables" as *;
 
 .p-component {
-    font-family: $font-default;
-    font-size: $font-size-md;
+    font-family: fonts.$font-default;
+    font-size: fonts.$font-size-md;
     font-weight: normal;
     line-height: normal;
 }
 
 .p-component-overlay {
-    background-color: $white;
+    background-color: colors.$white;
     transition-duration: 0.2s;
 }
 
@@ -18,11 +23,11 @@
 }
 
 .p-text-secondary {
-    color: $black;
+    color: colors.$black;
 }
 
 .p-link {
-    border-radius: $border-radius-xs;
+    border-radius: common.$border-radius-xs;
 }
 
 .p-link:focus {
@@ -36,7 +41,7 @@
 }
 
 .p-fluid .p-inputgroup .p-button.p-button-icon-only {
-    width: $spacing-6;
+    width: spacing.$spacing-6;
 }
 
 a.p-button {
@@ -45,13 +50,7 @@ a.p-button {
 }
 
 .p-field > label {
-    font-size: $font-size-sm;
-}
-
-.formgroup-inline {
-    .field-checkbox {
-        margin-bottom: 0;
-    }
+    font-size: fonts.$font-size-sm;
 }
 
 .p-label-input-required::after {
@@ -68,18 +67,18 @@ a.p-button {
     justify-content: center;
     align-items: center;
     display: flex;
-    font-size: $icon-md;
-    width: $icon-md-box;
+    font-size: common.$icon-md;
+    width: common.$icon-md-box;
 }
 
 [class$="-sm"] .pi {
-    width: $icon-sm-box;
-    font-size: $icon-sm;
+    width: common.$icon-sm-box;
+    font-size: common.$icon-sm;
 }
 
 [class$="-lg"] .pi {
-    width: $icon-lg-box;
-    font-size: $icon-lg;
+    width: common.$icon-lg-box;
+    font-size: common.$icon-lg;
 }
 
 .truncate-text {

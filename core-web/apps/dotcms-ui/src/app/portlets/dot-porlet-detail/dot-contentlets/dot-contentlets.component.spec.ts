@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement, Injectable } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -43,7 +42,11 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+import {
+    DotcmsConfigServiceMock,
+    LoginServiceMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 
 import { DotContentletsComponent } from './dot-contentlets.component';
 
@@ -54,124 +57,110 @@ import { IframeOverlayService } from '../../../view/components/_common/iframe/se
 import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
-@Injectable()
 class MockDotContentletEditorService {
     edit = jest.fn();
 }
 
-describe('DotContentletsComponent', () => {
-    let fixture: ComponentFixture<DotContentletsComponent>;
-    let de: DebugElement;
+const mockContentletEditorService = new MockDotContentletEditorService();
 
+describe('DotContentletsComponent', () => {
+    let spectator: Spectator<DotContentletsComponent>;
     let dotRouterService: DotRouterService;
     let dotIframeService: DotIframeService;
-    let dotContentletEditorService: DotContentletEditorService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                DotEditContentletComponent,
-                RouterTestingModule,
-                HttpClientTestingModule,
-                DotContentletsComponent
-            ],
-            providers: [
-                DotContentletEditorService,
-                DotIframeService,
-                DotCustomEventHandlerService,
-                DotLicenseService,
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: {
-                            params: {
-                                asset: '5cd3b647-e465-4a6d-a78b-e834a7a7331a'
-                            }
+    const createComponent = createComponentFactory({
+        component: DotContentletsComponent,
+        detectChanges: false,
+        imports: [DotEditContentletComponent, RouterTestingModule, HttpClientTestingModule],
+        componentProviders: [
+            { provide: DotContentletEditorService, useValue: mockContentletEditorService }
+        ],
+        providers: [
+            DotIframeService,
+            DotCustomEventHandlerService,
+            DotLicenseService,
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: {
+                        params: {
+                            asset: '5cd3b647-e465-4a6d-a78b-e834a7a7331a'
                         }
                     }
-                },
-                {
-                    provide: DotContentletEditorService,
-                    useClass: MockDotContentletEditorService
-                },
-
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                DotWorkflowEventHandlerService,
-                PushPublishService,
-                {
-                    provide: CoreWebService,
-                    useValue: {
-                        request: jest.fn().mockReturnValue(of({})),
-                        requestView: jest.fn().mockReturnValue(of({ entity: {} }))
-                    }
-                },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                PushPublishService,
-                ApiRoot,
-                DotFormatDateService,
-                UserModel,
-                StringUtils,
-                DotcmsEventsService,
-                LoggerService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                DotcmsConfigService,
-                LoggerService,
-                DotCurrentUserService,
-                DotMessageDisplayService,
-                DotWizardService,
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                DotWorkflowActionsFireService,
-                DotGlobalMessageService,
-                DotEventsService,
-                DotIframeService,
-                LoginService,
-                DotGenerateSecurePasswordService,
-                DotDownloadBundleDialogService,
-                mockProvider(DotContentTypeService),
-                {
-                    provide: IframeOverlayService,
-                    useValue: {
-                        overlay: of(false),
-                        show: jest.fn(),
-                        hide: jest.fn(),
-                        toggle: jest.fn()
-                    }
                 }
-            ]
-        });
-
-        fixture = TestBed.createComponent(DotContentletsComponent);
-        de = fixture.debugElement;
-        dotRouterService = de.injector.get(DotRouterService);
-        dotIframeService = de.injector.get(DotIframeService);
-        dotContentletEditorService = de.injector.get(DotContentletEditorService);
-        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
-
-        jest.spyOn(dotIframeService, 'reloadData');
-        fixture.detectChanges();
+            },
+            { provide: LoginService, useClass: LoginServiceMock },
+            DotWorkflowEventHandlerService,
+            PushPublishService,
+            {
+                provide: CoreWebService,
+                useValue: {
+                    request: jest.fn().mockReturnValue(of({})),
+                    requestView: jest.fn().mockReturnValue(of({ entity: {} }))
+                }
+            },
+            { provide: DotRouterService, useClass: MockDotRouterService },
+            { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+            ApiRoot,
+            DotFormatDateService,
+            UserModel,
+            StringUtils,
+            DotcmsEventsService,
+            LoggerService,
+            DotEventsSocket,
+            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+            { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
+            DotCurrentUserService,
+            DotMessageDisplayService,
+            DotWizardService,
+            DotHttpErrorManagerService,
+            DotAlertConfirmService,
+            ConfirmationService,
+            DotWorkflowActionsFireService,
+            DotGlobalMessageService,
+            DotEventsService,
+            DotIframeService,
+            LoginService,
+            DotGenerateSecurePasswordService,
+            DotDownloadBundleDialogService,
+            mockProvider(DotContentTypeService),
+            {
+                provide: IframeOverlayService,
+                useValue: {
+                    overlay: of(false),
+                    show: jest.fn(),
+                    hide: jest.fn(),
+                    toggle: jest.fn()
+                }
+            }
+        ]
     });
 
-    it('should call contentlet modal', async () => {
+    beforeEach(() => {
+        mockContentletEditorService.edit.mockClear();
+        spectator = createComponent();
+        dotRouterService = spectator.inject(DotRouterService);
+        dotIframeService = spectator.inject(DotIframeService);
+        dotCustomEventHandlerService = spectator.inject(DotCustomEventHandlerService);
+        jest.spyOn(dotIframeService, 'reloadData');
+    });
+
+    it('should call contentlet modal', fakeAsync(() => {
+        spectator.detectChanges();
+        tick(0);
         const params = {
             data: {
                 inode: '5cd3b647-e465-4a6d-a78b-e834a7a7331a'
             }
         };
-        await fixture.whenStable();
-        expect(dotContentletEditorService.edit).toHaveBeenCalledWith(params);
-        expect(dotContentletEditorService.edit).toHaveBeenCalledTimes(1);
-    });
+        expect(mockContentletEditorService.edit).toHaveBeenCalledWith(params);
+        expect(mockContentletEditorService.edit).toHaveBeenCalledTimes(1);
+    }));
 
     it('should go current portlet and reload data when modal closed', () => {
-        const edit = de.query(By.css('dot-edit-contentlet'));
+        spectator.detectChanges();
+        const edit = spectator.debugElement.query(By.css('dot-edit-contentlet'));
         edit.triggerEventHandler('shutdown', {});
         expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('this/is/an', {
             queryParamsHandling: 'preserve'
@@ -181,12 +170,13 @@ describe('DotContentletsComponent', () => {
     });
 
     it('should call dotCustomEventHandlerService on customEvent', () => {
+        spectator.detectChanges();
         jest.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {
             /* mock implementation */
         });
-        const edit = de.query(By.css('dot-edit-contentlet'));
+        const edit = spectator.debugElement.query(By.css('dot-edit-contentlet'));
         const mockEvent = { detail: { name: 'test-event', data: 'test' } };
         edit.triggerEventHandler('custom', mockEvent);
-        expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
+        expect(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
     });
 });

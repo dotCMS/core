@@ -89,9 +89,9 @@ describe('DotEditContentSidebarPermissionsComponent', () => {
                 modal: true,
                 appendTo: 'body',
                 closeOnEscape: false,
+                closable: true,
                 draggable: false,
                 keepInViewport: false,
-                maskStyleClass: 'p-dialog-mask-dynamic',
                 resizable: false,
                 position: 'center'
             });

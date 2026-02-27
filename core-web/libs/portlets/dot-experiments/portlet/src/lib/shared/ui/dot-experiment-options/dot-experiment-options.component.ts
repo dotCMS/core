@@ -1,4 +1,4 @@
-import { animate, state, style, transition, trigger } from '@angular/animations';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -21,18 +21,15 @@ const SELECT_VALUE_ACCESSOR: Provider = {
 
 @Component({
     selector: 'dot-experiment-options',
+    imports: [CommonModule],
     templateUrl: './dot-experiment-options.component.html',
     styleUrls: ['./dot-experiment-options.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col gap-3'
+    },
     providers: [SELECT_VALUE_ACCESSOR],
-    animations: [
-        trigger('contentExpansion', [
-            state('expanded', style({ height: '*', opacity: 1, visibility: 'visible' })),
-            state('collapsed', style({ height: '0px', opacity: 0, visibility: 'hidden' })),
-            transition('expanded <=> collapsed', animate('200ms cubic-bezier(.37,1.04,.68,.98)'))
-        ])
-    ],
-    standalone: false
+    standalone: true
 })
 export class DotExperimentOptionsComponent implements ControlValueAccessor {
     value: string;

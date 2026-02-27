@@ -10,7 +10,9 @@ import {
 } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
-import { DropdownModule } from 'primeng/dropdown';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
@@ -21,7 +23,7 @@ import {
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { DotDialogActions } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
 import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
@@ -40,9 +42,10 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
     imports: [
         FormsModule,
         ReactiveFormsModule,
-        DropdownModule,
+        DialogModule,
+        ButtonModule,
+        SelectModule,
         SelectButtonModule,
-        DotDialogComponent,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],

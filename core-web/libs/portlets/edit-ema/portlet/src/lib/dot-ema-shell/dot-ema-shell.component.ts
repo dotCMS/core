@@ -13,9 +13,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -84,6 +85,7 @@ import {
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
     imports: [
+        ButtonModule,
         ConfirmDialogModule,
         ToastModule,
         EditEmaNavigationBarComponent,
@@ -92,7 +94,7 @@ import {
         DotEmaDialogComponent,
         DotInfoPageComponent,
         DotNotLicenseComponent,
-        MessagesModule,
+        MessageModule,
         DotMessagePipe
     ]
 })

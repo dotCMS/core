@@ -1,8 +1,7 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
-import { SiteEntity } from '@dotcms/dotcms-models';
+import { DotCurrentUserService, DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
 
 import { GlobalStore } from './store';
 import { mockSiteEntity } from './store.mock';
@@ -13,7 +12,11 @@ describe('GlobalStore', () => {
 
     const createService = createServiceFactory({
         service: GlobalStore,
-        providers: [mockProvider(DotSiteService), mockProvider(DotSystemConfigService)]
+        providers: [
+            mockProvider(DotCurrentUserService),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService)
+        ]
     });
 
     beforeEach(() => {
@@ -31,7 +34,7 @@ describe('GlobalStore', () => {
     describe('Site Management', () => {
         it('should call DotSiteService.getCurrentSite when loadCurrentSite is invoked', () => {
             const mockService = spectator.inject(DotSiteService);
-            mockService.getCurrentSite.mockReturnValue(of(mockSiteEntity as SiteEntity));
+            mockService.getCurrentSite.mockReturnValue(of(mockSiteEntity));
 
             store.loadCurrentSite();
 

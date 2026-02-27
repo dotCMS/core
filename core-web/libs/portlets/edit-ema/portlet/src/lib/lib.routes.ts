@@ -23,7 +23,7 @@ import {
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
 import { editEmaGuard } from './services/guards/edit-ema.guard';
 
-export const DotEmaRoutes: Route[] = [
+export const dotEmaRoutes: Route[] = [
     {
         path: '',
         canActivate: [editEmaGuard],
@@ -71,8 +71,7 @@ export const DotEmaRoutes: Route[] = [
                     DotExperimentsConfigResolver
                 ],
                 loadChildren: async () =>
-                    (await import('@dotcms/portlets/dot-experiments/portlet'))
-                        .DotExperimentsPortletRoutes
+                    (await import('@dotcms/portlets/dot-experiments/portlet')).dotExperimentsRoutes
             },
 
             {

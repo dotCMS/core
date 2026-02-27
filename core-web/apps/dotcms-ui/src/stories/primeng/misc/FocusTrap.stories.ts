@@ -8,12 +8,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AccordionModule } from 'primeng/accordion';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
 import { FocusTrapModule } from 'primeng/focustrap';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { SelectModule } from 'primeng/select';
 
 const FocusTrapTemplate = `
   <div pFocusTrap class="card">
@@ -33,16 +33,25 @@ const FocusTrapTemplate = `
     <input type="text" size="30" pInputText tabindex="-1" />
 
     <h5>Button</h5>
-    <button pButton type="button" icon="pi pi-check" label="Check"></button>
+    <button pButton type="button">
+        <i class="pi pi-check" pButtonIcon></i>
+        <span pButtonLabel>Check</span>
+    </button>
 
     <h5>Disabled Button</h5>
-    <button pButton type="button" icon="pi pi-check" [disabled]="true" label="Disabled"></button>
+    <button pButton type="button" [disabled]="true">
+        <i class="pi pi-check" pButtonIcon></i>
+        <span pButtonLabel>Disabled</span>
+    </button>
 
     <h5>Button with tabindex -1</h5>
-    <button pButton type="button" icon="pi pi-check" tabindex="-1"  label="Check"></button>
+    <button pButton type="button" tabindex="-1">
+        <i class="pi pi-check" pButtonIcon></i>
+        <span pButtonLabel>Check</span>
+    </button>
 
     <h5>Dropdown</h5>
-    <p-dropdown [options]="cities" [(ngModel)]="selectedCity" placeholder="Select a City" optionLabel="name" [showClear]="true"></p-dropdown>
+    <p-select [options]="cities" [(ngModel)]="selectedCity" placeholder="Select a City" optionLabel="name" [showClear]="true"></p-select>
 </div>
 `;
 
@@ -71,9 +80,9 @@ const meta: Meta = {
                 AccordionModule,
                 FocusTrapModule,
                 AutoCompleteModule,
-                CalendarModule,
+                DatePickerModule,
                 MultiSelectModule,
-                DropdownModule,
+                SelectModule,
                 HttpClientModule
             ]
         })

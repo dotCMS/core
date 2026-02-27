@@ -1,22 +1,21 @@
-import { Component, input, inject, computed } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { CheckboxModule } from 'primeng/checkbox';
+import { Checkbox } from 'primeng/checkbox';
 
 import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uve';
 
 @Component({
     selector: 'dot-uve-style-editor-field-checkbox-group',
     standalone: true,
-    imports: [ReactiveFormsModule, CheckboxModule],
+    imports: [ReactiveFormsModule, Checkbox],
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    templateUrl: './uve-style-editor-field-checkbox-group.component.html',
-    styleUrl: './uve-style-editor-field-checkbox-group.component.scss'
+    templateUrl: './uve-style-editor-field-checkbox-group.component.html'
 })
 export class UveStyleEditorFieldCheckboxGroupComponent {
     $field = input.required<StyleEditorFieldSchema>({ alias: 'field' });

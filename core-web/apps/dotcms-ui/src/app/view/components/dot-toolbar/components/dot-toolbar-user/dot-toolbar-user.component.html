@@ -3,10 +3,12 @@
         <div (click)="toggleMenu($event)" class="dot-mask" data-testId="dot-mask"></div>
     }
     <p-avatar
+        size="normal"
         (click)="toggleMenu($event)"
         [email]="vm.userData.email"
         data-testId="avatar"
         shape="circle"
+        class="cursor-pointer"
         dotGravatar />
     <p-menu
         [model]="vm.items"

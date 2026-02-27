@@ -7,6 +7,8 @@ import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
 import { DotAssetCardComponent } from './dot-asset-card.component';
 
+import { DotContentletStatusChipComponent } from '../../../dot-contentlet-status-chip/dot-contentlet-status-chip.component';
+
 const contentlet: DotCMSContentlet = {
     ...EMPTY_CONTENTLET,
     title: 'test title',
@@ -19,7 +21,7 @@ describe('DotAssetCardComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAssetCardComponent,
-        imports: [CardModule]
+        imports: [CardModule, DotContentletStatusChipComponent]
     });
 
     beforeEach(() => {
@@ -38,12 +40,13 @@ describe('DotAssetCardComponent', () => {
     });
 
     it('should display the contentlet file name and language', () => {
+        spectator.detectChanges();
         const title = spectator.query('[data-testId="dot-card-title"]');
         const language = spectator.query('[data-testId="dot-card-language"]');
 
-        expect(title.innerHTML.trim()).toBe(contentlet.fileName);
+        expect(title?.textContent?.trim()).toBe(contentlet.fileName);
         const languageContent = contentlet.language as string;
-        expect(language.innerHTML.trim()).toBe(languageContent);
+        expect(language?.textContent?.trim()).toBe(languageContent);
     });
 
     it('should display the contentlet title when the fileName property is empty', () => {
@@ -55,6 +58,6 @@ describe('DotAssetCardComponent', () => {
         spectator.detectChanges();
 
         const title = spectator.query('[data-testId="dot-card-title"]');
-        expect(title.innerHTML.trim()).toBe(contentlet.title);
+        expect(title?.textContent?.trim()).toBe(contentlet.title);
     });
 });

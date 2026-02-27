@@ -19,7 +19,7 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
-import { TableRowReorderEvent, TableModule } from 'primeng/table';
+import { TableModule, TableRowReorderEvent } from 'primeng/table';
 
 import { filter } from 'rxjs/operators';
 
@@ -53,7 +53,6 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         DotMessagePipe
     ],
     templateUrl: './dot-relationship-field.component.html',
-    styleUrls: ['./dot-relationship-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
@@ -223,9 +222,10 @@ export class DotRelationshipFieldComponent
 
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
+            baseZIndex: 10000,
             closeOnEscape: false,
             draggable: false,
-            keepInViewport: false,
+            keepInViewport: true,
             modal: true,
             resizable: false,
             position: 'center',
@@ -292,9 +292,10 @@ export class DotRelationshipFieldComponent
 
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
+            baseZIndex: 10000,
             closeOnEscape: true,
             draggable: false,
-            keepInViewport: false,
+            keepInViewport: true,
             modal: true,
             resizable: true,
             position: 'center',

@@ -1,18 +1,31 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+
+import { DotExperimentOptionContentDirective } from './directives/dot-experiment-option-content.directive';
+import { DotExperimentOptionsItemDirective } from './directives/dot-experiment-options-item.directive';
 import { DotExperimentOptionsComponent } from './dot-experiment-options.component';
-import { DotExperimentsOptionsModule } from './dot-experiments-options.module';
 
 describe('DotExperimentOptionsComponent', () => {
     let spectator: SpectatorHost<DotExperimentOptionsComponent>;
+    let form: FormGroup;
     const createHost = createHostFactory({
         component: DotExperimentOptionsComponent,
-        imports: [DotExperimentsOptionsModule]
+        imports: [
+            ReactiveFormsModule,
+            DotExperimentOptionsComponent,
+            DotExperimentOptionsItemDirective,
+            DotExperimentOptionContentDirective
+        ]
     });
 
     beforeEach(() => {
+        form = new FormGroup({
+            type: new FormControl<string>('a', { nonNullable: true })
+        });
         spectator = createHost(
-            `<dot-experiment-options formControlName="type">
+            `<form [formGroup]="form">
+                <dot-experiment-options formControlName="type">
                          <dot-experiment-options-item
                                       value="a"
                                       detail="Detail A"
@@ -28,12 +41,14 @@ describe('DotExperimentOptionsComponent', () => {
                 Content of Detail B
               </ng-template>
                          </dot-experiment-options-item>
-                        </dot-experiment-options>`
+                        </dot-experiment-options>
+              </form>`,
+            { hostProps: { form } }
         );
     });
 
     it('should have 2 rendered items', () => {
-        expect(spectator.queryAll('.dot-options__item').length).toEqual(2);
+        expect(spectator.queryAll('[data-testId^="dot-options-item_"]').length).toEqual(2);
     });
 
     it('should have 2 rendered items with title and detail', () => {
@@ -55,7 +70,7 @@ describe('DotExperimentOptionsComponent', () => {
         spectator.click(headerOptionWithContent);
         spectator.detectComponentChanges();
 
-        expect(spectator.query(byTestId('dot-options-item-content_b'))).toHaveClass('expanded');
+        expect(spectator.query(byTestId('dot-options-item-content_b'))).toHaveClass('pb-4');
         expect(spectator.query(byTestId('dot-options-item-content_b'))).toHaveText(
             'Content of Detail B'
         );

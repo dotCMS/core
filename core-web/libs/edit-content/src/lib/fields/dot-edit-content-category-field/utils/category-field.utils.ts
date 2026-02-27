@@ -87,16 +87,26 @@ const transformCategory = (
  * @param keyParentPath - Path of keys to determine clicked state
  * @returns Transformed category or array of transformed categories with additional properties
  */
-export const transformCategories = (
+export function transformCategories(
+    categories: DotCategory[],
+    keyParentPath?: string[]
+): DotCategoryFieldKeyValueObj[];
+
+export function transformCategories(
+    categories: DotCategory,
+    keyParentPath?: string[]
+): DotCategoryFieldKeyValueObj;
+
+export function transformCategories(
     categories: DotCategory | DotCategory[],
     keyParentPath: string[] = []
-): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] => {
+): DotCategoryFieldKeyValueObj | DotCategoryFieldKeyValueObj[] {
     if (Array.isArray(categories)) {
         return categories.map((category) => transformCategory(category, keyParentPath));
     } else {
-        return transformCategory(categories, keyParentPath);
+        return transformCategory(categories as DotCategory, keyParentPath);
     }
-};
+}
 
 /**
  * Deep copy of the matrix

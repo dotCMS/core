@@ -1,6 +1,6 @@
 import { InferInputSignals } from '@ngneat/spectator';
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { of, throwError, timer } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { computed, signal } from '@angular/core';
@@ -10,6 +10,8 @@ import { FormGroup } from '@angular/forms';
 import { Accordion, AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+
+import { mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSPageAsset } from '@dotcms/types';
@@ -344,32 +346,27 @@ describe('DotUveStyleEditorFormComponent', () => {
             let form = spectator.component.$form();
             expect(form?.get('font-size')?.value).toBe(16);
 
-            // Mock saveStyleEditor to fail and simulate rollback by updating graphqlResponse
+            // Mock: set rollback state then emit error so #restoreFormFromRollback sees graphqlResponse=16
             const rolledBackResponse = createMockGraphQLResponse(16);
             mockUveStore.saveStyleEditor.mockReturnValue(
-                throwError(() => {
-                    // Simulate store's rollback behavior: update graphqlResponse to rolled-back state
-                    mockUveStore.graphqlResponse.set(rolledBackResponse);
-                    return new Error('Save failed');
-                })
+                timer(0).pipe(
+                    tap(() => mockUveStore.graphqlResponse.set(rolledBackResponse)),
+                    mergeMap(() => throwError(() => new Error('Save failed')))
+                )
             );
 
             // Change form value (this triggers the save flow)
-            // activeContentlet is captured at the time of form change (before debounce)
             form?.patchValue({ 'font-size': 20 });
-            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100); // Wait for debounce + error handling
-            spectator.detectChanges(); // Ensure change detection runs after rollback
-
-            // Flush microtasks after rollback to allow form to be rebuilt
-            flushMicrotasks();
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100); // Wait for debounce
+            tick(0); // Let timer(0) run: set rollback then emit error, then #restoreFormFromRollback runs
             spectator.detectChanges();
 
             // Get the NEW form reference after rollback (form is rebuilt, not patched)
             form = spectator.component.$form();
 
-            // Verify form is restored to rolled-back value
-            expect(form?.get('font-size')?.value).toBe(16);
+            // Verify save was attempted and form is restored to rolled-back value
             expect(mockUveStore.saveStyleEditor).toHaveBeenCalled();
+            expect(form?.get('font-size')?.value).toBe(16);
         }));
 
         it('should handle consecutive rollback failures correctly', fakeAsync(() => {
@@ -388,39 +385,30 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             const rolledBackResponse = createMockGraphQLResponse(16);
 
-            // Mock saveStyleEditor to always fail and rollback to 16
+            // Mock: set rollback then emit error so #restoreFormFromRollback sees graphqlResponse=16
             mockUveStore.saveStyleEditor.mockReturnValue(
-                throwError(() => {
-                    mockUveStore.graphqlResponse.set(rolledBackResponse);
-                    return new Error('Save failed');
-                })
+                timer(0).pipe(
+                    tap(() => mockUveStore.graphqlResponse.set(rolledBackResponse)),
+                    mergeMap(() => throwError(() => new Error('Save failed')))
+                )
             );
 
             // First failure: change from 16 to 20, then fail
-            // activeContentlet is captured at the time of form change (before debounce)
             let form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
             tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
-            spectator.detectChanges(); // Ensure change detection runs after rollback
-
-            // Flush microtasks after first rollback to allow form to be rebuilt
-            flushMicrotasks();
+            tick(0);
             spectator.detectChanges();
 
             // Get the NEW form reference after first rollback (form is rebuilt)
             form = spectator.component.$form();
             expect(form?.get('font-size')?.value).toBe(16); // Rolled back to 16
 
-            // Second failure: Get fresh form reference before patching
-            // This ensures we're patching the current form instance
-            // activeContentlet is captured again at the time of form change
+            // Second failure: change to 24, then fail
             form = spectator.component.$form();
             form?.patchValue({ 'font-size': 24 });
             tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
-            spectator.detectChanges(); // Ensure change detection runs after rollback
-
-            // Flush microtasks after second rollback to allow form to be rebuilt
-            flushMicrotasks();
+            tick(0);
             spectator.detectChanges();
 
             // Get the NEW form reference after second rollback
@@ -446,23 +434,19 @@ describe('DotUveStyleEditorFormComponent', () => {
             const initialForm = spectator.component.$form();
             expect(initialForm?.get('font-size')?.value).toBe(16);
 
-            // Mock saveStyleEditor to fail and simulate rollback
+            // Mock: set rollback then emit error so #restoreFormFromRollback sees graphqlResponse=16
             const rolledBackResponse = createMockGraphQLResponse(16);
             mockUveStore.saveStyleEditor.mockReturnValue(
-                throwError(() => {
-                    mockUveStore.graphqlResponse.set(rolledBackResponse);
-                    return new Error('Save failed');
-                })
+                timer(0).pipe(
+                    tap(() => mockUveStore.graphqlResponse.set(rolledBackResponse)),
+                    mergeMap(() => throwError(() => new Error('Save failed')))
+                )
             );
 
             // Change form value to trigger save and rollback
-            // activeContentlet is captured at the time of form change (before debounce)
             initialForm?.patchValue({ 'font-size': 20 });
             tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
-            spectator.detectChanges(); // Ensure change detection runs after rollback
-
-            // Flush microtasks after rollback to allow form to be rebuilt
-            flushMicrotasks();
+            tick(0);
             spectator.detectChanges();
 
             // Get form reference after rollback
