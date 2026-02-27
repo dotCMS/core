@@ -1,5 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
 
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,6 +12,7 @@ import {
     OnInit,
     output,
     Renderer2,
+    signal,
     viewChild
 } from '@angular/core';
 
@@ -19,6 +21,8 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
+
+import { take } from 'rxjs/operators';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
@@ -41,7 +45,8 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
         DotRelativeDatePipe,
         SkeletonModule,
         TableModule,
-        DotLocaleTagPipe
+        DotLocaleTagPipe,
+        NgTemplateOutlet
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
@@ -175,10 +180,12 @@ export class DotFolderListViewComponent implements OnInit {
         () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
     );
 
+    readonly $loadingRows = signal<number[]>(Array.from({ length: this.MIN_ROWS_PER_PAGE }));
+
     /**
      * Computed pass-through configuration for empty table.
      */
-    protected readonly $ptConfig = computed(() => ({
+    readonly $ptConfig = computed(() => ({
         table: {
             style: {
                 'table-layout': 'fixed',
@@ -212,14 +219,17 @@ export class DotFolderListViewComponent implements OnInit {
     ngOnInit(): void {
         // We should be getting this from the Global Store
         // But it gets out of scope for the ticket.
-        this.dotLanguagesService.get().subscribe((languages) => {
-            const languagesMap = new Map<number, DotLanguage>();
-            languages.forEach((language) => {
-                languagesMap.set(language.id, language);
-            });
+        this.dotLanguagesService
+            .get()
+            .pipe(take(1))
+            .subscribe((languages) => {
+                const languagesMap = new Map<number, DotLanguage>();
+                languages.forEach((language) => {
+                    languagesMap.set(language.id, language);
+                });
 
-            patchState(this.state, { languagesMap });
-        });
+                patchState(this.state, { languagesMap });
+            });
     }
 
     /**
@@ -275,6 +285,7 @@ export class DotFolderListViewComponent implements OnInit {
      */
     onPage(event: LazyLoadEvent) {
         this.paginate.emit(event);
+        this.$loadingRows.set([...Array(event.rows)]);
     }
 
     /**

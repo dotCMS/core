@@ -89,8 +89,8 @@
 <div
     class="flex flex-col justify-center items-center font-semibold w-0 col-start-3 row-start-2 row-span-2"></div>
 <p-dialog
-    [visible]="!!$dialog()"
-    [header]="$dialog()?.header"
+    [visible]="!!$dialog?.()"
+    [header]="$dialog?.()?.header"
     [draggable]="false"
     [resizable]="false"
     [modal]="true"
@@ -98,11 +98,11 @@
     data-testId="dialog"
     [pt]="{ content: { class: 'w-[43.75rem] pt-0 p-4' } }"
     (visibleChange)="onHideDialog()">
-    @switch ($dialog()?.type) {
+    @switch ($dialog?.()?.type) {
         @case (DIALOG_TYPE.FOLDER) {
             <dot-content-drive-dialog-folder
                 data-testId="dialog-folder"
-                [folder]="$dialog()?.payload" />
+                [folder]="$dialog?.()?.payload" />
         }
         @default {
             <div>Default dialog</div>

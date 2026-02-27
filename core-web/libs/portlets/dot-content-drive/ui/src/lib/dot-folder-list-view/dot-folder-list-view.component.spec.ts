@@ -5,6 +5,8 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
+import { LazyLoadEvent } from 'primeng/api';
+
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
@@ -333,6 +335,77 @@ describe('DotFolderListViewComponent', () => {
             const loadingRow = spectator.query(byTestId('loading-row'));
 
             expect(loadingRow).toBeNull();
+        });
+
+        it('should show loading row when loading is true and items is empty', () => {
+            spectator.setInput('items', []);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRows = spectator.queryAll(byTestId('loading-row'));
+
+            expect(loadingRows.length).toBeGreaterThan(0);
+        });
+
+        it('should show loading row instead of data rows when loading is true and items has data', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRows = spectator.queryAll(byTestId('loading-row'));
+            const itemRows = spectator.queryAll(byTestId('item-row'));
+
+            expect(loadingRows.length).toBe(mockItems.length);
+            expect(itemRows.length).toBe(0);
+        });
+
+        it('should render loading row with checkbox-sized skeleton in first column', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRow = spectator.query(byTestId('loading-row'));
+            const firstCell = loadingRow?.querySelector('td');
+            const skeleton = firstCell?.querySelector('p-skeleton');
+
+            expect(firstCell).toBeTruthy();
+            expect(skeleton).toBeTruthy();
+            expect(skeleton?.getAttribute('height')).toBe('1.5rem');
+            expect(skeleton?.getAttribute('width')).toBe('1.5rem');
+        });
+
+        it('should set $loadingRows length to event.rows when onPage is called', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            spectator.component.onPage({ first: 0, rows: 40 } as LazyLoadEvent);
+            spectator.detectChanges();
+
+            expect(spectator.component.$loadingRows().length).toBe(40);
+        });
+    });
+
+    describe('Empty state and pass-through config', () => {
+        it('should set table height and width 100% in $ptConfig when items is empty', () => {
+            spectator.setInput('items', []);
+            spectator.detectChanges();
+
+            const ptConfig = spectator.component.$ptConfig();
+            const tableStyle = ptConfig.table?.style as { height?: string; width?: string };
+
+            expect(tableStyle?.height).toBe('100%');
+            expect(tableStyle?.width).toBe('100%');
+        });
+
+        it('should not set full size in $ptConfig when items has data', () => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            const ptConfig = spectator.component.$ptConfig();
+            const tableStyle = ptConfig.table?.style as { height?: string; width?: string };
+
+            expect(tableStyle?.height).toBeUndefined();
+            expect(tableStyle?.width).toBeUndefined();
         });
     });
 
