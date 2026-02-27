@@ -1,6 +1,0 @@
-# Files to copy from primary worktree when creating a new worktree.
-# Must also be listed in .gitignore to be eligible for copying.
-core-web/node_modules/
-core-web/.nx/
-core-web/.angular/cache
-core-web/.sass-cache

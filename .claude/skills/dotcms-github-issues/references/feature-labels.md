@@ -49,7 +49,7 @@ When analyzing the task description, match keywords and concepts to select the m
 - **Calendar/Scheduling/Date/Time** → `dotCMS : Calendar`
 - **CLI/Command Line/Terminal** → `dotCMS : CLI`
 - **Clustering/Scalability/Multi-server** → `dotCMS : Clustering`
-- **Content/CMS/Editor/Contentlet** → `dotCMS : Content Management`
+- **Content types / contentlet operations / content creation workflows** → `dotCMS : Content Management`
 - **Edit Content/Contentlet Editor/Edit Contentlet** → `dotCMS : New Edit Contentlet`
 - **Docker/Deployment/Containers** → `dotCMS : Containerization`
 - **Experiments/A-B Testing/Testing** → `dotCMS : Experiments`
@@ -74,8 +74,8 @@ When analyzing the task description, match keywords and concepts to select the m
 
 1. **Primary keywords**: Look for explicit mentions of features (e.g., "workflow", "API", "authentication")
 2. **Context clues**: Analyze the problem domain (e.g., UI issues → Admin Tools, backend services → appropriate backend feature)
-3. **Multiple matches**: If multiple labels could apply, choose the most specific one
-4. **Default fallback**: If no clear match is found, use `dotCMS : Content Management` as it's the most general category
+3. **Multiple matches**: If 2–3 labels are plausible, present them to the user via `AskUserQuestion`
+4. **No clear match**: Ask the user — do not default. `dotCMS : Content Management` is for issues specifically about content types, contentlet operations, and content creation workflows, not a catch-all
 
 ### Examples
 
@@ -112,7 +112,7 @@ When analyzing the task description, match keywords and concepts to select the m
 To verify or update this list, retrieve current labels from the repository:
 
 ```bash
-gh label list --repo dotCMS/core --limit 100 | grep "dotCMS :"
+gh label list --repo dotCMS/core --limit 1000 | grep "dotCMS :"
 ```
 
 This ensures the skill always references accurate, up-to-date feature labels.
