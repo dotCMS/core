@@ -41,7 +41,6 @@ export interface WithViewDeps {
  * **Zoom Controls:**
  * - Zoom in/out of the editor canvas (0.1x to 3.0x)
  * - Reset zoom to 100%
- * - Support for trackpad pinch gestures
  * - Dynamic canvas dimensions based on iframe height
  *
  * **View Mode:**
@@ -129,7 +128,6 @@ export function withView(_deps?: WithViewDeps) {
 
             // Zoom state accessors
             $viewZoomLevel: computed(() => store.viewZoomLevel()),
-            $viewZoomIsActive: computed(() => store.viewZoomIsActive()),
             $viewIframeDocHeight: computed(() => store.viewZoomIframeDocHeight()),
 
             // Canvas styles for zoom transform
@@ -251,13 +249,6 @@ export function withView(_deps?: WithViewDeps) {
             viewZoomSetLevel(viewZoomLevel: number): void {
                 const clampedZoom = Math.max(0.1, Math.min(3, viewZoomLevel));
                 patchState(store, { viewZoomLevel: clampedZoom });
-            },
-
-            /**
-             * Set zoom mode state (active during zoom gestures)
-             */
-            viewZoomSetActive(viewZoomIsActive: boolean): void {
-                patchState(store, { viewZoomIsActive });
             },
 
             /**

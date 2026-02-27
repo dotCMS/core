@@ -21,7 +21,6 @@ interface UVEState {
   editorPaletteOpen: boolean;
 
   viewZoomLevel: number;
-  viewZoomIsActive: boolean;
 }
 
 // ❌ WRONG: Nested objects break reactivity

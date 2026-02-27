@@ -54,7 +54,6 @@ const initialState: UVEState = {
     viewParams: null,
     viewOgTagsResults: null,
     viewZoomLevel: 1,
-    viewZoomIsActive: false,
     viewZoomIframeDocHeight: 0
 };
 

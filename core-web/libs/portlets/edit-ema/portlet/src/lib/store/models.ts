@@ -135,7 +135,6 @@ export interface UVEState {
 
     // Zoom controls
     viewZoomLevel: number;
-    viewZoomIsActive: boolean;
     viewZoomIframeDocHeight: number;
 }
 
