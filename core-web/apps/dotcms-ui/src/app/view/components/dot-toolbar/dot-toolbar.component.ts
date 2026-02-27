@@ -1,4 +1,5 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DividerModule } from 'primeng/divider';
@@ -37,11 +38,32 @@ export class DotToolbarComponent implements OnInit {
     readonly #dotcmsEventsService = inject(DotcmsEventsService);
     readonly #siteService = inject(SiteService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #http = inject(HttpClient);
     iframeOverlayService = inject(IframeOverlayService);
 
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
+    serverGreeting = signal<string>('');
+    serverUptime = signal<string>('');
 
     ngOnInit(): void {
+        this.#http
+            .get<{ entity: { message: string; serverTime: string; uptimeSeconds: string } }>('/api/v1/demo/greet')
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (response) => {
+                    this.serverGreeting.set(response.entity.message);
+                    const secs = parseInt(response.entity.uptimeSeconds, 10);
+                    const h = Math.floor(secs / 3600);
+                    const m = Math.floor((secs % 3600) / 60);
+                    const s = secs % 60;
+                    this.serverUptime.set(`up ${h}h ${m}m ${s}s`);
+                },
+                error: () => {
+                    this.serverGreeting.set('');
+                    this.serverUptime.set('');
+                }
+            });
+
         this.#dotcmsEventsService
             .subscribeTo<Site>('ARCHIVE_SITE')
             .pipe(takeUntilDestroyed(this.#destroyRef))

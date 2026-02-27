@@ -34,11 +34,10 @@ Workflow optimization for AI assistants:
 3. Reference **architecture** for system understanding
 
 ### For AI Assistants
-1. Start with **CLAUDE.md** for task routing
-2. Read **core principles** for all tasks
-3. Read **domain-specific** docs based on task context
-4. Follow **workflow patterns** for efficient task completion
-5. **Update documentation** when discovering incorrect/missing information
+1. Start with **AGENTS.md** (root) for build/test/run commands
+2. Read **domain-specific** docs based on task context
+3. Follow **workflow patterns** for efficient task completion
+4. **Update documentation** when discovering incorrect/missing information
 
 ## Documentation Quality Standards
 

@@ -45,6 +45,8 @@ tags:
 - description: Returns the content types valid for a page based on the container/types
     on the layout
   name: getPagesContentTypes
+- description: Development workflow demo endpoint
+  name: Demo
 - description: Endpoints for managing folder structure and organization
   name: Folders
 - description: Form management and processing
@@ -7745,6 +7747,25 @@ paths:
           description: default response
       tags:
       - Content Type Field
+  /v1/demo/greet:
+    get:
+      description: Returns a greeting with server timestamp. Authenticated endpoint
+        used to verify the REST API is reachable from the frontend dev server.
+      operationId: greet
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDemoGreetingView"
+          description: Greeting returned
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized
+      summary: Get server greeting
+      tags:
+      - Demo
   /v1/ema:
     get:
       operationId: getDetails
@@ -25580,6 +25601,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowDefaultActionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDemoGreetingView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: string
         errors:
           type: array
           items:

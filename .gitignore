@@ -2,6 +2,7 @@
 ######################
 bin/*.sh
 *.log
+.frontend.pid
 .classpath
 .settings/*
 .project
