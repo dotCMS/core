@@ -16,6 +16,14 @@
                     "headed": false,
                     "ui": false
                 },
+                "dev": {
+                    "headed": false,
+                    "ui": false
+                },
+                "local": {
+                    "headed": false,
+                    "ui": false
+                },
                 "headless": {
                     "headed": false
                 },
@@ -26,7 +34,64 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": [
+                    "apps/dotcms-ui-e2e/src/**/*.ts",
+                    "apps/dotcms-ui-e2e/playwright.config.ts"
+                ]
+            }
+        },
+        "e2e:ci": {
+            "executor": "@nx/playwright:playwright",
+            "options": {
+                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
+                "headed": false,
+                "ui": false
+            }
+        },
+        "e2e:dev": {
+            "executor": "@nx/playwright:playwright",
+            "options": {
+                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
+                "headed": false,
+                "ui": false
+            }
+        },
+        "e2e:dev:headless": {
+            "executor": "@nx/playwright:playwright",
+            "options": {
+                "config": "apps/dotcms-ui-e2e/playwright.config.ts",
+                "headed": false,
+                "ui": false
+            }
+        },
+        "e2e:dev:full": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": [
+                    "cd .. && ./mvnw -pl :dotcms-core package -DskipTests -Ddocker.skip=false -Ddocker.skip.push=true",
+                    "cd .. && ./mvnw docker:stop docker:start -pl :dotcms-ui-e2e -De2e.test.skip=false",
+                    "npx wait-on http://localhost:8080/dotAdmin --timeout 120000 --interval 2000",
+                    "CURRENT_ENV=dev HEADLESS=false nx e2e dotcms-ui-e2e --configuration=dev --ui"
+                ],
+                "parallel": false,
+                "cwd": "{workspaceRoot}"
+            }
+        },
+        "e2e:ci:full": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": [
+                    "cd .. && ./mvnw -pl :dotcms-core package -DskipTests -Ddocker.skip=false -Ddocker.skip.push=true",
+                    "cd .. && ./mvnw docker:stop docker:start -pl :dotcms-ui-e2e -De2e.test.skip=false",
+                    "npx wait-on http://localhost:8080/dotAdmin --timeout 120000 --interval 2000",
+                    "CURRENT_ENV=ci HEADLESS=true nx e2e dotcms-ui-e2e --configuration=ci",
+                    "cd .. && ./mvnw docker:stop -pl :dotcms-ui-e2e -De2e.test.skip=false"
+                ],
+                "parallel": false,
+                "cwd": "{workspaceRoot}"
+            }
         }
     }
 }
