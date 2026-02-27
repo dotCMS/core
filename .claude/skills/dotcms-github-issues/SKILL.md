@@ -3,7 +3,7 @@ name: dotcms-github-issues
 description: Create GitHub issues using repository templates. Use when the user asks to create an issue, bug report, feature request, task, spike, epic, or UX requirement. Also use when the user describes a problem, bug, enhancement, or work item that should be tracked. Also use when the user asks to update, query, or view an existing GitHub issue. Also use when the user wants to find, search, list, or discover issues — assigned to them, open for their team, recently active, or matching a keyword. Supports both English and Spanish input.
 ---
 
-# Create / Update / Query GitHub Issues
+# Create / Update / Query / Find GitHub Issues
 
 AI-agent-native skill for managing GitHub issues in `dotCMS/core`. Infers where possible — asks only what's needed.
 
@@ -127,6 +127,7 @@ Derived automatically from user description — no extra input needed:
 |---|---|
 | Angular / frontend / UI / TypeScript / component / admin interface | `Front-end` |
 | Java / REST / backend / Spring / Maven / server-side | `Java` |
+| Angular + Java / full-stack / both frontend and backend | `FE and BE` |
 | Build / CI / Docker / infra / Nx / npm / Maven structure / pipeline | `Platform` |
 | Marketing / sales / business | `Go-To-Market` |
 
@@ -210,14 +211,14 @@ gh issue create \
   --repo "dotCMS/core" \
   --title "TITLE" \
   --body "BODY" \
-  --label "TYPE_LABEL,TEAM_LABEL,FEATURE_LABEL[,TEMPLATE_LABELS]"
+  --label "LABEL1,LABEL2,..."
 ```
 
-Where:
-- `TYPE_LABEL` = the `Type :` label from Step 4c (include when matched)
-- `TEAM_LABEL` = `Team : [Name]` from Step 6
-- `FEATURE_LABEL` = `dotCMS : [Feature]` from Step 4
-- `TEMPLATE_LABELS` = labels defined in the template file (e.g., `Triage`, `OKR : Customer Support`)
+Build the label list by including only those that apply — omit any that were not selected:
+- `Type :` label from Step 4c (include when matched)
+- `Team : [Name]` from Step 6 (always include)
+- `dotCMS : [Feature]` from Step 4 (omit if none was selected — do not leave a trailing comma)
+- Template labels from the template file (e.g., `Triage`, `OKR : Customer Support`)
 
 Capture the returned issue number.
 
