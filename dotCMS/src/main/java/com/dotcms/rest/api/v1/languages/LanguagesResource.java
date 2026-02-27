@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.languages;
 
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.rest.ResponseEntityMapStringStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
@@ -12,6 +13,10 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.util.LocaleUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +33,7 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
 @Path("/v1/languages")
-@Tag(name = "Internationalization")
+@Tag(name = "Language", description = "Language configuration and management")
 public class LanguagesResource {
 
     private final LanguageAPI languageAPI;
@@ -56,6 +61,19 @@ public class LanguagesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "listLanguages",
+            summary = "List all available languages",
+            description = "Returns all configured languages in the system, keyed by language code. " +
+                    "Each entry contains the full language details including country, language code, and display name.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Languages returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(type = "object",
+                                            description = "Map of language codes to language details (RestLanguage objects)"))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required")
+            }
+    )
     /**
      * @deprecated use {@link LanguagesResource#getMessages(HttpServletRequest, I18NForm)} instead
      */
@@ -76,6 +94,21 @@ public class LanguagesResource {
     @Path("/i18n")
     @InitRequestRequired
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "getI18nMessages",
+            summary = "Get internationalized messages",
+            description = "Retrieves internationalized (i18n) message strings for the specified locale " +
+                    "and message keys. The locale is determined from the request body's country and " +
+                    "language fields. Returns a map of message keys to their translated string values.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Messages returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid request form data"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
     /**
      * @deprecated use {@link LanguagesResource#getMessages(HttpServletRequest, I18NForm)} instead
      */

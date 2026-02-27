@@ -4,6 +4,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -45,9 +46,12 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
@@ -156,16 +160,34 @@ public class CategoriesResource {
      * @param showChildrenCount
      * @return Response
      */
+    @Operation(
+            operationId = "getCategories",
+            summary = "Get paginated list of categories",
+            description = "Returns a paginated list of categories. Supports filtering by name, sorting, " +
+                    "and optionally including the count of child categories for each result."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Paginated categories retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     @GET
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getCategories(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
+            @Parameter(description = "Filter string to match against category names")
             @QueryParam(PaginationUtil.FILTER) final String filter,
+            @Parameter(description = "Page number (zero-based)")
             @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of items per page")
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "Field to order results by")
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @Parameter(description = "Sort direction: ASC or DESC")
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
             @QueryParam("showChildrenCount") final boolean showChildrenCount) {
 
@@ -241,6 +263,20 @@ public class CategoriesResource {
      * @param inode
      * @return Response
      */
+    @Operation(
+            operationId = "getCategoryChildren",
+            summary = "Get children of a category",
+            description = "Returns a paginated list of child categories for the specified parent category inode. " +
+                    "When 'allLevels' is true, returns categories at any depth; otherwise only immediate children."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Children categories retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCategoryWithChildCountView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     @GET
     @Path(("/children"))
     @JSONP
@@ -376,6 +412,20 @@ public class CategoriesResource {
      * @return CategoryView
      */
 
+    @Operation(
+            operationId = "getCategoryByIdOrKey",
+            summary = "Get a category by ID or key",
+            description = "Retrieves a single category by either its inode (ID) or its unique key. " +
+                    "First attempts to find by inode; if not found, searches by key."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request — idOrKey is required"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+    })
     @GET
     @JSONP
     @Path("/{idOrKey}")
@@ -426,6 +476,19 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "createCategory",
+            summary = "Create a new category",
+            description = "Creates a new category using the provided form data. The category name is required."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request — category name is required"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     @POST
     @JSONP
     @NoCache
@@ -468,6 +531,19 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "updateCategory",
+            summary = "Update an existing category",
+            description = "Updates a working version of an existing category. The form must contain the inode of the category to update."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+    })
     @PUT
     @JSONP
     @NoCache
@@ -518,6 +594,18 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "updateCategorySortOrder",
+            summary = "Update category sort order",
+            description = "Updates the sort order of one or more existing categories."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Sort order updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required")
+    })
     @PUT
     @Path("/_sort")
     @JSONP
@@ -573,6 +661,19 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "deleteCategories",
+            summary = "Delete categories by inodes",
+            description = "Deletes one or more categories and all their children. Accepts a JSON array of category inodes."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bulk delete result returned",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     @DELETE
     @JSONP
     @NoCache
@@ -708,6 +809,17 @@ public class CategoriesResource {
      * @param httpRequest
      * @return
      */
+    @Operation(
+            operationId = "exportCategories",
+            summary = "Export categories as CSV",
+            description = "Exports categories to a CSV file. Optionally filter by name and scope to a parent category inode."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "CSV file streamed successfully",
+                    content = @Content(mediaType = "text/csv")),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     @GET
     @Path("/_export")
     @JSONP
@@ -791,6 +903,21 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "importCategories",
+            summary = "Import categories from a CSV file",
+            description = "Imports categories from an uploaded CSV file. The 'exportType' parameter controls " +
+                    "the import strategy: 'replace' deletes existing categories before importing, " +
+                    "'merge' adds or updates without removing existing ones."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Import result returned",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request or invalid file"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     @POST
     @Path("/_import")
     @JSONP

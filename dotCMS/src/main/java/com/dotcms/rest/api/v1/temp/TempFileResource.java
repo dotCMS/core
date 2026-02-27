@@ -31,6 +31,11 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.HttpHeaders;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.StopWatch;
@@ -60,8 +65,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
 
-@Tag(name = "Temporary Files")
 @Path("/v1/temp")
+@Tag(name = "Temporary Files", description = "Temporary file upload and management for content creation")
 public class TempFileResource {
 
     public final static String MAX_FILE_LENGTH_PARAM ="maxFileLength";
@@ -83,11 +88,37 @@ public class TempFileResource {
     @POST
     @JSONP
     @NoCache
-    @Produces("application/octet-stream")
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Operation(
+            operationId = "uploadTempFileMultipart",
+            summary = "Upload temporary files via multipart form",
+            description = "Uploads one or more files as temporary resources via multipart form data. " +
+                    "Files are stored temporarily and can be referenced when creating content. " +
+                    "The response streams back a JSON object with the created temporary file references. " +
+                    "Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Temporary files created successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(type = "object",
+                                            description = "Streamed JSON object containing a 'tempFiles' array with DotTempFile references for each uploaded file"))),
+                    @ApiResponse(responseCode = "400", description = "Invalid file, origin, or referer"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required (when anonymous access is disabled)"),
+                    @ApiResponse(responseCode = "404", description = "Temp file resource is not enabled")
+            }
+    )
     public final Response uploadTempResourceMulti(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response, 
+            @Context final HttpServletResponse response,
+            @Parameter(description = "Maximum file length in bytes (-1 for default)")
             @DefaultValue("-1") @QueryParam(MAX_FILE_LENGTH_PARAM) final String maxFileLengthString, // this is being used later
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Multipart form data with one or more files to upload temporarily. Files are stored for a limited time and can be referenced when creating content.",
+                    required = true,
+                    content = @Content(
+                            mediaType = "multipart/form-data",
+                            schema = @Schema(type = "object",
+                                    description = "One or more file parts to upload"))
+            )
             final FormDataMultiPart body) {
 
         verifyTempResourceEnabled();
@@ -237,7 +268,24 @@ public class TempFileResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Operation(
+            operationId = "createTempFileFromUrl",
+            summary = "Create temporary file from a remote URL",
+            description = "Downloads a file from the specified remote URL and stores it as a temporary resource. " +
+                    "The temporary file can then be referenced when creating content. " +
+                    "The URL must pass validation to prevent SSRF attacks. " +
+                    "Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Temporary file created from URL successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(type = "object",
+                                            description = "Map containing a 'tempFiles' array with DotTempFile references for the downloaded file"))),
+                    @ApiResponse(responseCode = "400", description = "Invalid URL, missing URL, or invalid origin/referer"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required (when anonymous access is disabled)"),
+                    @ApiResponse(responseCode = "404", description = "Temp file resource is not enabled")
+            }
+    )
     public final Response copyTempFromUrl(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
             final RemoteUrlForm form) {
 

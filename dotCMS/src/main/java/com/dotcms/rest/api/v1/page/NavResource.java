@@ -21,7 +21,14 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import com.dotcms.rest.ResponseEntityMapView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +47,7 @@ import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 
 @Path("/v1/nav")
-@Tag(name = "Navigation")
+@Tag(name = "Navigation", description = "Site navigation tree endpoints")
 public class NavResource {
 
 
@@ -79,12 +86,33 @@ public class NavResource {
      * @param depth - an int for how many levels to include
      * @return a json representation of the navigation
      */
+    @Operation(
+            operationId = "getNavigationTree",
+            summary = "Get site navigation tree",
+            description = "Returns navigation metadata in JSON format for objects marked as 'show on menu'. "
+                    + "Builds a tree structure starting from the given URI path, up to the specified depth. "
+                    + "Example: /api/v1/nav/about-us?depth=2&languageId=1 returns the navigation tree under /about-us, 2 levels deep."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Navigation tree retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid depth or languageId parameter"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Navigation path not found")
+    })
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{uri: .*}")
     public final Response loadJson(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-            @PathParam("uri") final String uri, @QueryParam("depth") final String depth, @QueryParam("languageId") final String languageId) {
+            @Parameter(description = "Starting URI path for the navigation tree (e.g., 'about-us')", required = true)
+            @PathParam("uri") final String uri,
+            @Parameter(description = "Number of levels deep to include in the tree (default: 1)")
+            @QueryParam("depth") final String depth,
+            @Parameter(description = "Language ID for the navigation content (defaults to the request language)")
+            @QueryParam("languageId") final String languageId) {
 
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();

@@ -55,6 +55,12 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -113,7 +119,7 @@ import static com.dotmarketing.util.NumberUtil.toLong;
  * @since May 25th, 2012
  */
 @Path("/content")
-@Tag(name = "Content Delivery")
+@Tag(name = "Content Delivery", description = "Content retrieval and manipulation endpoints")
 public class ContentResource {
 
     // set this only from an environmental variable so it cannot be overridden in our Config class
@@ -155,11 +161,31 @@ public class ContentResource {
      *
      * @return json array of objects. each object with inode and identifier
      */
+    @Operation(
+            operationId = "searchContent",
+            summary = "Search content using Lucene query",
+            description = "Performs a content search using a Lucene query provided via POST body. " +
+                    "Returns matching contentlets with pagination support. Supports sorting, " +
+                    "offset/limit, depth for relationship traversal, and optional velocity rendering."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Content search results returned successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySearchView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/_search")
     @Produces(MediaType.APPLICATION_JSON)
     public Response search(@Context HttpServletRequest request,
                            @Context final HttpServletResponse response,
+                           @Parameter(description = "If true, stores the query in the current session for the Query Tool portlet")
                            @QueryParam("rememberQuery") @DefaultValue("false") final boolean rememberQuery,
                            final SearchForm searchForm) throws DotSecurityException, DotDataException {
 
@@ -213,13 +239,37 @@ public class ContentResource {
      * @param offset how many results skip
      * @return json array of objects. each object with inode and identifier
      */
+    @Operation(
+            operationId = "indexSearchContent",
+            summary = "Search content index by Lucene query",
+            description = "Performs an index search using the Lucene query and returns an array " +
+                    "of JSON objects, each containing the inode and identifier of matching content."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Index search results returned successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Array of content identifiers or inodes matching the search criteria"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response indexSearch(@Context HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Lucene query string to search the index")
             @PathParam("query") String query,
-            @PathParam("sortby") String sortBy, @PathParam("limit") int limit,
+            @Parameter(description = "Field name to sort results by")
+            @PathParam("sortby") String sortBy,
+            @Parameter(description = "Maximum number of results to return")
+            @PathParam("limit") int limit,
+            @Parameter(description = "Number of results to skip for pagination")
             @PathParam("offset") int offset,
             @PathParam("type") String type,
             @PathParam("callback") String callback)
@@ -260,11 +310,31 @@ public class ContentResource {
      * @param query lucene query to count on
      * @return a string with the count
      */
+    @Operation(
+            operationId = "indexCountContent",
+            summary = "Count content matching a Lucene query",
+            description = "Performs an index count using the specified Lucene query and returns " +
+                    "the total number of matching contentlets as a plain text string."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Count of matching contentlets returned successfully",
+                    content = @Content(mediaType = "text/plain",
+                            schema = @Schema(type = "string",
+                                    description = "The count of contentlets matching the query"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/indexcount/{query}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response indexCount(@Context HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Lucene query string to count matching content")
             @PathParam("query") String query,
             @PathParam("type") String type,
             @PathParam("callback") String callback) throws DotDataException {
@@ -295,12 +365,38 @@ public class ContentResource {
      * @throws DotDataException
      * @throws JSONException
      */
+    @Operation(
+            operationId = "lockContent",
+            summary = "Lock a contentlet (deprecated)",
+            description = "Locks a contentlet identified by inode or identifier to prevent concurrent edits. " +
+                    "Parameters are passed as semicolon-delimited path segments (e.g., id:abc123/language:1). " +
+                    "This endpoint is deprecated - use the v1 ContentResource lockContent endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Contentlet locked successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Lock status result"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "Contentlet not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @PUT
     @Path("/lock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response lockContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
+            @Context HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)")
+            @PathParam("params") String params)
             throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(params, request, response, false, null);
@@ -376,11 +472,37 @@ public class ContentResource {
      * @throws DotDataException
      * @throws JSONException
      */
+    @Operation(
+            operationId = "canLockContent",
+            summary = "Check if a contentlet can be locked (deprecated)",
+            description = "Checks whether the current user can lock a contentlet identified by inode or identifier. " +
+                    "Returns lock capability information including current lock status and lock owner details. " +
+                    "Parameters are passed as semicolon-delimited path segments (e.g., id:abc123/language:1). " +
+                    "This endpoint is deprecated - use the v1 ContentResource canLockContent endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Lock capability check completed successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Lock capability check result"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "Contentlet not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @PUT
     @Path("/canLock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response canLockContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)")
             @PathParam("params") String params)
             throws DotDataException, JSONException {
 
@@ -474,12 +596,38 @@ public class ContentResource {
      * @throws DotDataException
      * @throws JSONException
      */
+    @Operation(
+            operationId = "unlockContent",
+            summary = "Unlock a contentlet (deprecated)",
+            description = "Unlocks a previously locked contentlet identified by inode or identifier. " +
+                    "Parameters are passed as semicolon-delimited path segments (e.g., id:abc123/language:1). " +
+                    "This endpoint is deprecated - use the v1 ContentResource unlockContent endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Contentlet unlocked successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Unlock operation result"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "Contentlet not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @PUT
     @Path("/unlock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response unlockContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
+            @Context HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)")
+            @PathParam("params") String params)
             throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(params, request, response, false, null);
@@ -557,10 +705,41 @@ public class ContentResource {
      *         3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
      *         null --> Relationships will not be sent in the response
      */
+    @Operation(
+            operationId = "getContent",
+            summary = "Retrieve content by ID, inode, query, or related content",
+            description = "Retrieves contentlets using various lookup strategies. Parameters use a " +
+                    "slash-delimited key:value format in the URL path (e.g., " +
+                    "/api/content/inode:abc123/live:true/language:1). " +
+                    "Supported parameters include: id (identifier), inode, query (Lucene query), " +
+                    "type (json or xml), orderby, limit, offset, language, live, depth (0-3 for " +
+                    "relationship traversal), render (true to render widgets), related " +
+                    "(ContentType.Field:identifier format), and allCategoriesInfo. " +
+                    "When 'depth' is set: 0 returns related content identifiers, 1 returns full " +
+                    "related content objects, 2 returns related content with their related identifiers, " +
+                    "3 returns related content with their fully hydrated related content."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Content retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Content data in the requested format"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Parameter(description = "Slash-delimited key:value parameters (e.g., inode:abc123/live:true/language:1)")
             @PathParam("params") String params) {
         final InitDataObject initData = this.webResource.init
                 (params, request, response, false, null);
@@ -1161,6 +1340,29 @@ public class ContentResource {
      * @throws URISyntaxException
      * @throws DotDataException
      */
+    @Operation(
+            operationId = "multipartPutContent",
+            summary = "Create or update content via multipart PUT (deprecated)",
+            description = "Creates or updates a contentlet using multipart form data with file upload support. " +
+                    "This endpoint is deprecated - use the v1 WorkflowResource fireActionDefaultMultipart endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Contentlet created or updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Created or updated contentlet data"))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid input data",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @PUT
     @Path("/{params:.*}")
@@ -1168,7 +1370,9 @@ public class ContentResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response multipartPUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
-            FormDataMultiPart multipart, @PathParam("params") String params)
+            FormDataMultiPart multipart,
+            @Parameter(description = "Slash-delimited key:value parameters for content operation")
+            @PathParam("params") String params)
             throws URISyntaxException, DotDataException {
         return multipartPUTandPOST(request, response, multipart, params, "PUT");
     }
@@ -1185,6 +1389,29 @@ public class ContentResource {
      * @throws URISyntaxException
      * @throws DotDataException
      */
+    @Operation(
+            operationId = "multipartPostContent",
+            summary = "Create content via multipart POST (deprecated)",
+            description = "Creates a contentlet using multipart form data with file upload support. " +
+                    "This endpoint is deprecated - use the v1 WorkflowResource fireActionDefaultMultipart endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Contentlet created successfully",
+                    content = @Content(mediaType = "text/plain",
+                            schema = @Schema(type = "object",
+                                    description = "Created or updated contentlet data"))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid input data",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @POST
     @Path("/{params:.*}")
@@ -1192,7 +1419,9 @@ public class ContentResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response multipartPOST(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
-            FormDataMultiPart multipart, @PathParam("params") String params)
+            FormDataMultiPart multipart,
+            @Parameter(description = "Slash-delimited key:value parameters for content operation")
+            @PathParam("params") String params)
             throws URISyntaxException, DotDataException {
         return multipartPUTandPOST(request, response, multipart, params, "POST");
     }
@@ -1379,6 +1608,29 @@ public class ContentResource {
      * @return
      * @throws URISyntaxException
      */
+    @Operation(
+            operationId = "singlePutContent",
+            summary = "Create or update content via PUT (deprecated)",
+            description = "Creates or updates a contentlet using JSON, XML, or form-encoded data. " +
+                    "This endpoint is deprecated - use the v1 WorkflowResource fireActionDefault endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Contentlet created or updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Created or updated contentlet data"))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid input data",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{params:.*}")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
@@ -1386,7 +1638,9 @@ public class ContentResource {
             MediaType.APPLICATION_XML})
     @Deprecated
     public Response singlePUT(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
+            @Context HttpServletResponse response,
+            @Parameter(description = "Slash-delimited key:value parameters for content operation")
+            @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "PUT");
     }
@@ -1402,6 +1656,29 @@ public class ContentResource {
      * @return
      * @throws URISyntaxException
      */
+    @Operation(
+            operationId = "singlePostContent",
+            summary = "Create content via POST (deprecated)",
+            description = "Creates a contentlet using JSON, XML, or form-encoded data. " +
+                    "This endpoint is deprecated - use the v1 WorkflowResource fireActionDefault endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Contentlet created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Created or updated contentlet data"))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid input data",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @POST
     @Path("/{params:.*}")
@@ -1409,7 +1686,9 @@ public class ContentResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
     public Response singlePOST(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
+            @Context HttpServletResponse response,
+            @Parameter(description = "Slash-delimited key:value parameters for content operation")
+            @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "POST");
     }
