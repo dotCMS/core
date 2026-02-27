@@ -4,6 +4,12 @@
     </ng-template>
     <ng-template pTemplate="end">
         <div class="flex gap-1 align-items-center">
+            @if (serverGreeting()) {
+                <span class="text-sm px-2" style="color: var(--color-palette-primary-400)">
+                    🟢 <strong>{{ serverGreeting() }}</strong>
+                    <span class="text-xs ml-1" style="opacity: 0.7">{{ serverUptime() }}</span>
+                </span>
+            }
             <div class="px-2">
                 <dot-site-selector
                     (switch)="siteChange($event)"

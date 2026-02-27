@@ -1,10 +1,15 @@
 /* eslint-env es6 */
 /* eslint-disable */
+
+// Backend target: discovered at startup via DOTCMS_HOST env var (set by `just dev-start-frontend`).
+// Falls back to :8080 if not set — the conventional fixed port for `just dev-start-on-port 8080`.
+const target = process.env.DOTCMS_HOST || 'http://localhost:8080';
+
 export default [
     // 1. Dedicated WebSocket Proxy (Must be first)
     {
         context: ['/api/ws'],
-        target: 'http://localhost:8080',
+        target,
         ws: true,
         secure: false,
         changeOrigin: true,
@@ -33,7 +38,7 @@ export default [
             '/ext',
             '/image'
         ],
-        target: 'http://localhost:8080',
+        target,
         secure: false,
         changeOrigin: true,
         logLevel: 'debug',
