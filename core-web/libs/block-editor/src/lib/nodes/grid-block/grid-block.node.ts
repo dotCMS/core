@@ -7,7 +7,7 @@ declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         gridBlock: {
             insertGridBlock: () => ReturnType;
-            setGridColumns: (columns: string) => ReturnType;
+            setGridColumns: (columns: number[]) => ReturnType;
         };
     }
 }
@@ -22,17 +22,30 @@ export const GridBlock = Node.create({
     addAttributes() {
         return {
             columns: {
-                default: '50 50',
-                parseHTML: (element: HTMLElement) =>
-                    element.getAttribute('data-columns') || '50 50',
-                renderHTML: (attributes: Record<string, string>) => {
-                    const parts = (attributes.columns || '50 50').split(' ');
-                    const col1 = parts[0] || '50';
-                    const col2 = parts[1] || '50';
+                default: [6, 6],
+                parseHTML: (element: HTMLElement) => {
+                    const raw = element.getAttribute('data-columns');
+
+                    try {
+                        const parsed = JSON.parse(raw);
+
+                        if (Array.isArray(parsed) && parsed.length === 2) {
+                            return parsed;
+                        }
+                    } catch {
+                        // ignore
+                    }
+
+                    return [6, 6];
+                },
+                renderHTML: (attributes: Record<string, unknown>) => {
+                    const cols = (attributes.columns as number[]) || [6, 6];
+                    const pct1 = (cols[0] / 12) * 100;
+                    const pct2 = (cols[1] / 12) * 100;
 
                     return {
-                        'data-columns': attributes.columns,
-                        style: `--col-1: ${col1}%; --col-2: ${col2}%`
+                        'data-columns': JSON.stringify(cols),
+                        style: `--col-1: ${pct1}%; --col-2: ${pct2}%`
                     };
                 }
             }
@@ -75,7 +88,7 @@ export const GridBlock = Node.create({
                     return true;
                 },
             setGridColumns:
-                (columns: string) =>
+                (columns: number[]) =>
                 ({ tr, state, dispatch }) => {
                     const { $from } = state.selection;
 
@@ -128,9 +141,7 @@ export const GridBlock = Node.create({
                             const to = gridPos + gridNode.nodeSize;
                             const paragraph = state.schema.nodes.paragraph.create();
                             tr.replaceWith(from, to, paragraph);
-                            tr.setSelection(
-                                TextSelection.near(tr.doc.resolve(from + 1))
-                            );
+                            tr.setSelection(TextSelection.near(tr.doc.resolve(from + 1)));
                             editor.view.dispatch(tr);
 
                             return true;

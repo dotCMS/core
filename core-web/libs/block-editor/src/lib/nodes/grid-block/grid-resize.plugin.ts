@@ -4,17 +4,11 @@ import { EditorView } from '@tiptap/pm/view';
 
 export const GRID_RESIZE_PLUGIN_KEY = new PluginKey('gridResize');
 
-/** Snap thresholds — maps a ratio to "col1 col2" percentage string. */
-function snapToLayout(ratio: number): string {
-    if (ratio < 0.375) {
-        return '25 75';
-    }
+/** Snap a drag ratio to the nearest 12-column grid split. */
+function snapToGrid(ratio: number): number[] {
+    const col1 = Math.min(11, Math.max(1, Math.round(ratio * 12)));
 
-    if (ratio < 0.625) {
-        return '50 50';
-    }
-
-    return '75 25';
+    return [col1, 12 - col1];
 }
 
 /**
@@ -222,8 +216,8 @@ export function GridResizePlugin(editor: Editor): Plugin {
             const onPointerMove = (moveEvent: PointerEvent) => {
                 const deltaX = moveEvent.clientX - startX;
                 currentRatio = Math.min(
-                    0.85,
-                    Math.max(0.15, startRatio + deltaX / usableWidth)
+                    11 / 12,
+                    Math.max(1 / 12, startRatio + deltaX / usableWidth)
                 );
 
                 setPreviewRatio(currentRatio);
@@ -237,7 +231,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
                 handle.classList.remove('grid-block__resize-handle--active');
                 preview.remove();
 
-                const snappedColumns = snapToLayout(currentRatio);
+                const snappedColumns = snapToGrid(currentRatio);
 
                 dragging = false;
 
