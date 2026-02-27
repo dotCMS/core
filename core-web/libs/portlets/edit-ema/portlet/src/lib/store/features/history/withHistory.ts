@@ -1,4 +1,10 @@
-import { patchState, signalStoreFeature, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    withComputed,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
@@ -113,9 +119,7 @@ export function withHistory<T>(config: WithHistoryConfig<T>) {
             /**
              * Can navigate forward in history
              */
-            canRedo: computed(() =>
-                store.historyPointer() < store.history().length - 1
-            ),
+            canRedo: computed(() => store.historyPointer() < store.history().length - 1),
 
             /**
              * Total number of history entries
@@ -150,15 +154,10 @@ export function withHistory<T>(config: WithHistoryConfig<T>) {
                 const maxHistory = config.maxHistory ?? 50;
 
                 // Clone to prevent mutations
-                const snapshot = config.deepClone !== false
-                    ? structuredClone(state)
-                    : state;
+                const snapshot = config.deepClone !== false ? structuredClone(state) : state;
 
                 // Trim future history if we're not at the end (branching)
-                const newHistory = [
-                    ...history.slice(0, pointer + 1),
-                    snapshot
-                ];
+                const newHistory = [...history.slice(0, pointer + 1), snapshot];
 
                 // Trim to max history (keep most recent)
                 const trimmed = newHistory.slice(-maxHistory);
@@ -206,9 +205,7 @@ export function withHistory<T>(config: WithHistoryConfig<T>) {
                         historyPointer: newPointer
                     });
 
-                    return config.deepClone !== false
-                        ? structuredClone(nextState)
-                        : nextState;
+                    return config.deepClone !== false ? structuredClone(nextState) : nextState;
                 }
                 return null;
             },

@@ -384,8 +384,12 @@ describe('DotUveStyleEditorFormComponent', () => {
             expect(mockUveStore.saveStyleEditor).toHaveBeenCalledTimes(1);
 
             const saveCall = mockUveStore.saveStyleEditor.mock.calls[0][0];
-            expect(saveCall.contentletIdentifier).toBe(originalActiveContentlet?.contentlet.identifier);
-            expect(saveCall.containerIdentifier).toBe(originalActiveContentlet?.container.identifier);
+            expect(saveCall.contentletIdentifier).toBe(
+                originalActiveContentlet?.contentlet.identifier
+            );
+            expect(saveCall.containerIdentifier).toBe(
+                originalActiveContentlet?.container.identifier
+            );
             expect(saveCall.pageId).toBe(originalActiveContentlet?.pageId);
         }));
     });

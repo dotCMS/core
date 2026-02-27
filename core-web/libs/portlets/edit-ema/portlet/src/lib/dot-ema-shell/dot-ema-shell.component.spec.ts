@@ -380,7 +380,10 @@ describe('DotEmaShellComponent', () => {
 
                 overrideRouteSnapshot(
                     activatedRoute,
-                    createRouteSnapshot({ queryParams: params, data: createUveConfigData(BASIC_OPTIONS) })
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
                 );
 
                 spectator.detectChanges();
@@ -402,7 +405,10 @@ describe('DotEmaShellComponent', () => {
 
                 overrideRouteSnapshot(
                     activatedRoute,
-                    createRouteSnapshot({ queryParams: params, data: createUveConfigData(BASIC_OPTIONS) })
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
                 );
 
                 spectator.detectChanges();
@@ -426,7 +432,10 @@ describe('DotEmaShellComponent', () => {
 
                 overrideRouteSnapshot(
                     activatedRoute,
-                    createRouteSnapshot({ queryParams: params, data: createUveConfigData(BASIC_OPTIONS) })
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
                 );
 
                 spectator.detectChanges();
@@ -477,7 +486,10 @@ describe('DotEmaShellComponent', () => {
 
             overrideRouteSnapshot(
                 activatedRoute,
-                createRouteSnapshot({ queryParams: params, data: createUveConfigData(BASIC_OPTIONS) })
+                createRouteSnapshot({
+                    queryParams: params,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
             );
 
             spectator.detectChanges();
@@ -493,7 +505,10 @@ describe('DotEmaShellComponent', () => {
 
             overrideRouteSnapshot(
                 activatedRoute,
-                createRouteSnapshot({ queryParams: params, data: createUveConfigData(BASIC_OPTIONS) })
+                createRouteSnapshot({
+                    queryParams: params,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
             );
 
             spectator.detectChanges();
@@ -515,7 +530,10 @@ describe('DotEmaShellComponent', () => {
 
             overrideRouteSnapshot(
                 activatedRoute,
-                createRouteSnapshot({ queryParams: withViewParams, data: createUveConfigData(BASIC_OPTIONS) })
+                createRouteSnapshot({
+                    queryParams: withViewParams,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
             );
 
             spectator.detectChanges();
@@ -537,7 +555,10 @@ describe('DotEmaShellComponent', () => {
 
             overrideRouteSnapshot(
                 activatedRoute,
-                createRouteSnapshot({ queryParams: withViewParams, data: createUveConfigData(BASIC_OPTIONS) })
+                createRouteSnapshot({
+                    queryParams: withViewParams,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
             );
 
             spectator.detectChanges();
@@ -880,7 +901,10 @@ describe('DotEmaShellComponent', () => {
                 };
                 overrideRouteSnapshot(
                     activatedRoute,
-                    createRouteSnapshot({ queryParams: params, data: createUveConfigData(BASIC_OPTIONS) })
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
                 );
                 spectator.detectChanges();
                 expect(spyStoreLoadPage).toHaveBeenCalledWith({
@@ -897,7 +921,10 @@ describe('DotEmaShellComponent', () => {
                 };
                 overrideRouteSnapshot(
                     activatedRoute,
-                    createRouteSnapshot({ queryParams: params, data: createUveConfigData(BASIC_OPTIONS) })
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
                 );
                 spectator.detectChanges();
                 expect(spyStoreLoadPage).toHaveBeenCalledWith({
@@ -1226,7 +1253,9 @@ describe('DotEmaShellComponent', () => {
 
             it('should return error payload when error code exists', () => {
                 spectator.component['uveStore'].setUveStatus = jest.fn();
-                const uveStore = spectator.component['uveStore'] as InstanceType<typeof UVEStore> & {
+                const uveStore = spectator.component['uveStore'] as InstanceType<
+                    typeof UVEStore
+                > & {
                     pageErrorCode: () => number;
                 };
                 jest.spyOn(uveStore, 'pageErrorCode').mockReturnValue(401);

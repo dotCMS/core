@@ -196,7 +196,10 @@
 
 @if (uveStore.viewMode() === UVE_MODE.EDIT) {
     <div class="right-sidebar-wrapper" [class.open]="$rightSidebarOpen">
-        <p-tabView styleClass="flex flex-column w-full h-full" [activeIndex]="$rightSidebarActiveTab()" (onChange)="handleRightSidebarTabChange($event)">
+        <p-tabView
+            styleClass="flex flex-column w-full h-full"
+            [activeIndex]="$rightSidebarActiveTab()"
+            (onChange)="handleRightSidebarTabChange($event)">
             <p-tabPanel>
                 <ng-template pTemplate="header">
                     <div class="tab-header" pTooltip="Content Editor" tooltipPosition="bottom">

@@ -47,11 +47,13 @@ export type PageClientResponse =
           requestMetadata: { query: string; variables: Record<string, string> } | null;
       };
 
-export type PageSnapshot = (DotCMSPageAsset & {
-    content?: Record<string, unknown>;
-    requestMetadata?: { query: string; variables: Record<string, string> } | null;
-    clientResponse?: PageClientResponse | null;
-}) | null;
+export type PageSnapshot =
+    | (DotCMSPageAsset & {
+          content?: Record<string, unknown>;
+          requestMetadata?: { query: string; variables: Record<string, string> } | null;
+          clientResponse?: PageClientResponse | null;
+      })
+    | null;
 
 export interface PageComputed {
     pageAsset: Signal<PageSnapshot>;
@@ -72,14 +74,23 @@ export interface PageComputed {
 export interface WithPageMethods extends PageComputed {
     // Page loading configuration state
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
-    pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
+    pageAssetResponse: () => {
+        pageAsset: DotCMSPageAsset;
+        content?: Record<string, unknown>;
+    } | null;
     isClientReady: () => boolean;
     legacyResponseFormat: () => boolean;
 
     // Page loading configuration methods
     setIsClientReady: (isClientReady: boolean) => void;
-    setCustomClient: (requestMetadata: { query: string; variables: Record<string, string> }, legacyResponseFormat: boolean) => void;
-    setPageAssetResponse: (pageAssetResponse: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    setCustomClient: (
+        requestMetadata: { query: string; variables: Record<string, string> },
+        legacyResponseFormat: boolean
+    ) => void;
+    setPageAssetResponse: (pageAssetResponse: {
+        pageAsset: DotCMSPageAsset;
+        content?: Record<string, unknown>;
+    }) => void;
     setPageAsset: (pageAsset: DotCMSPageAsset) => void;
     resetClientConfiguration: () => void;
     addCurrentPageToHistory: () => void;
@@ -143,9 +154,9 @@ export function withPage() {
                     const currentResponse = store.pageAssetResponse();
                     const nextResponse = currentResponse
                         ? {
-                            ...currentResponse,
-                            pageAsset
-                        }
+                              ...currentResponse,
+                              pageAsset
+                          }
                         : { pageAsset };
                     patchState(store, { pageAssetResponse: nextResponse });
                 },
@@ -200,9 +211,9 @@ export function withPage() {
                 const clientResponse = store.legacyResponseFormat()
                     ? asset
                     : {
-                        ...response,
-                        requestMetadata
-                    };
+                          ...response,
+                          requestMetadata
+                      };
 
                 return {
                     ...asset,
@@ -236,16 +247,16 @@ export function withPage() {
             const pageLanguageId = computed(() => pageAsset()?.viewAs?.language?.id || 1);
             const pageLanguage = computed(() => pageAsset()?.viewAs?.language);
             const pageURI = computed(() => pageAsset()?.page?.pageURI ?? '');
-            const pageVariantId = computed(() => store.pageParams()?.variantName ?? DEFAULT_VARIANT_ID);
+            const pageVariantId = computed(
+                () => store.pageParams()?.variantName ?? DEFAULT_VARIANT_ID
+            );
 
             const pageTranslateProps = computed<TranslateProps>(() => {
                 const pageDataValue = pageAsset()?.page as DotCMSPage;
                 const viewAsData = pageAsset()?.viewAs;
                 const languageId = viewAsData?.language?.id;
                 const translatedLanguages = untracked(() => store.pageLanguages());
-                const currentLanguage = translatedLanguages.find(
-                    (lang) => lang.id === languageId
-                );
+                const currentLanguage = translatedLanguages.find((lang) => lang.id === languageId);
 
                 return {
                     page: pageDataValue,
@@ -272,7 +283,12 @@ export function withPage() {
                 pageVariantId,
                 pageTranslateProps,
                 pageFriendlyParams
-            } satisfies PageComputed & { $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null> };
+            } satisfies PageComputed & {
+                $requestWithParams: Signal<{
+                    query: string;
+                    variables: Record<string, string>;
+                } | null>;
+            };
         })
     );
 }

@@ -1,8 +1,4 @@
-import {
-    DotCMSBasicContentlet,
-    DotCMSPageAsset,
-    StyleEditorProperties
-} from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSPageAsset, StyleEditorProperties } from '@dotcms/types';
 
 import { ActionPayload } from '../../../../../../shared/models';
 

@@ -1,6 +1,13 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Output,
+    computed,
+    inject
+} from '@angular/core';
 
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
@@ -23,12 +30,7 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
  */
 @Component({
     selector: 'dot-uve-palette',
-    imports: [
-        TabViewModule,
-        DotUvePaletteListComponent,
-        TooltipModule,
-        DotRowReorderComponent,
-    ],
+    imports: [TabViewModule, DotUvePaletteListComponent, TooltipModule, DotRowReorderComponent],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -80,5 +82,4 @@ export class DotUvePaletteComponent {
     protected handleTabChange(event: TabViewChangeEvent) {
         patchState(this.#localState, { currentTab: event.index });
     }
-
 }

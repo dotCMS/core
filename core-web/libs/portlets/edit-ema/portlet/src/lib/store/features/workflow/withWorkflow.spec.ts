@@ -1,5 +1,10 @@
 import { describe, expect } from '@jest/globals';
-import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { signalStore, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 

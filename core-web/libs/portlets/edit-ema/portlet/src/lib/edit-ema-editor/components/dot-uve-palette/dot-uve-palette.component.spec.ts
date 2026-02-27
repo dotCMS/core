@@ -19,10 +19,7 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
  * Helper function to trigger tab change event
  * Simulates the onChange event that p-tabView emits when a tab is clicked
  */
-function triggerTabChange(
-    spectator: Spectator<DotUvePaletteComponent>,
-    index: number
-): void {
+function triggerTabChange(spectator: Spectator<DotUvePaletteComponent>, index: number): void {
     const tabViewDebugElement: DebugElement = spectator.debugElement.query(By.directive(TabView));
     const tabViewComponent: TabView = tabViewDebugElement?.componentInstance;
 
@@ -42,7 +39,7 @@ const mockUVEStore = {
     pageLanguageId: signal(1),
     pageVariantId: signal('DEFAULT'),
     $isStyleEditorEnabled: signal(false),
-    $canEditStyles: () => false,  // Computed property used by component
+    $canEditStyles: () => false, // Computed property used by component
     $styleSchema: signal(undefined),
     // editor() method returns editor state with activeContentlet
     // Must be a computed function to reflect changes when mockActiveContentlet changes

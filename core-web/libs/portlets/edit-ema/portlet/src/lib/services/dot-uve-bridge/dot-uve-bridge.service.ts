@@ -205,7 +205,7 @@ export class DotUveBridgeService {
 
     initialize(
         iframe: ElementRef<HTMLIFrameElement>,
-        store: InstanceType<typeof UVEStore>,
+        store: InstanceType<typeof UVEStore>
     ): Observable<MessageEvent> {
         this.iframeElement = iframe.nativeElement;
         this.store = store;
@@ -215,7 +215,11 @@ export class DotUveBridgeService {
         );
     }
 
-    handleMessage(event: MessageEvent, onUveMessage: (message: PostMessage) => void, onClampScroll: () => void): void {
+    handleMessage(
+        event: MessageEvent,
+        onUveMessage: (message: PostMessage) => void,
+        onClampScroll: () => void
+    ): void {
         // 1) Cross-origin iframe height bridge (e.g. Next.js at localhost:3000)
         if (this.tryHandleIframeHeightMessage(event, onClampScroll)) {
             return;
@@ -241,11 +245,7 @@ export class DotUveBridgeService {
     }
 
     private isUvePostMessage(data: unknown): data is PostMessage {
-        return (
-            !!data &&
-            typeof data === 'object' &&
-            'action' in data
-        );
+        return !!data && typeof data === 'object' && 'action' in data;
     }
 
     private tryHandleIframeHeightMessage(event: MessageEvent, onClampScroll: () => void): boolean {
@@ -293,4 +293,3 @@ export class DotUveBridgeService {
         return true;
     }
 }
-

@@ -31,9 +31,7 @@ export function withLayout() {
                     const templateData = page?.template;
 
                     return {
-                        containersMap: mapContainerStructureToDotContainerMap(
-                            containersData ?? {}
-                        ),
+                        containersMap: mapContainerStructureToDotContainerMap(containersData ?? {}),
                         layout: layoutData,
                         template: {
                             identifier: templateData?.identifier,

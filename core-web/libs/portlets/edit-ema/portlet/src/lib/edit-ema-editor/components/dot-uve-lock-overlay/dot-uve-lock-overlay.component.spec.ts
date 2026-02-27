@@ -19,7 +19,7 @@ describe('DotUveLockOverlayComponent', () => {
         isLocked: false,
         lockedBy: '',
         canLock: true,
-        isLockedByCurrentUser: false,
+        isLockedByCurrentUser: false
     });
 
     const createComponent = createComponentFactory({
@@ -56,7 +56,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: false,
                 lockedBy: '',
                 canLock: true,
-                isLockedByCurrentUser: false,
+                isLockedByCurrentUser: false
             });
             spectator.detectChanges();
         });
@@ -100,7 +100,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: true,
                 lockedBy: 'another-user',
                 canLock: false,
-                isLockedByCurrentUser: false,
+                isLockedByCurrentUser: false
             });
             spectator.detectChanges();
         });
@@ -130,7 +130,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: false,
                 lockedBy: '',
                 canLock: true,
-                isLockedByCurrentUser: false,
+                isLockedByCurrentUser: false
             });
             spectator.detectChanges();
 
@@ -148,7 +148,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: true,
                 lockedBy: 'another-user',
                 canLock: false,
-                isLockedByCurrentUser: false,
+                isLockedByCurrentUser: false
             });
             spectator.detectChanges();
 
@@ -166,7 +166,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: true,
                 lockedBy: 'current-user',
                 canLock: true,
-                isLockedByCurrentUser: true,
+                isLockedByCurrentUser: true
             });
             spectator.detectChanges();
 

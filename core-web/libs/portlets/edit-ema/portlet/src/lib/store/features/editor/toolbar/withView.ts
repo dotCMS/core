@@ -1,10 +1,4 @@
-import {
-    patchState,
-    signalStoreFeature,
-    type,
-    withComputed,
-    withMethods
-} from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
@@ -13,11 +7,7 @@ import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { InfoOptions } from '../../../../shared/models';
-import {
-    getFullPageURL,
-    getIsDefaultVariant,
-    getOrientation
-} from '../../../../utils';
+import { getFullPageURL, getIsDefaultVariant, getOrientation } from '../../../../utils';
 import { PageComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
@@ -181,10 +171,12 @@ export function withView(_deps?: WithViewDeps) {
             viewSetOrientation: (orientation: Orientation) => {
                 patchState(store, {
                     viewDeviceOrientation: orientation,
-                    viewParams: store.viewParams() ? {
-                        ...store.viewParams(),
-                        orientation
-                    } : store.viewParams()
+                    viewParams: store.viewParams()
+                        ? {
+                              ...store.viewParams(),
+                              orientation
+                          }
+                        : store.viewParams()
                 });
             },
             viewSetSEO: (socialMedia: string | null) => {

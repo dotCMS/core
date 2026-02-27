@@ -5,7 +5,8 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject, OnChanges
+    inject,
+    OnChanges
 } from '@angular/core';
 import { UntypedFormControl } from '@angular/forms';
 

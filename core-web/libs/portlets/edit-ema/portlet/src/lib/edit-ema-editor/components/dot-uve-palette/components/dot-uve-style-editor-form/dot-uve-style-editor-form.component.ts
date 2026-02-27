@@ -69,7 +69,6 @@ export class DotUveStyleEditorFormComponent {
 
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
-
     /**
      * Computed property that returns an array of all section indices to keep all tabs open by default
      */

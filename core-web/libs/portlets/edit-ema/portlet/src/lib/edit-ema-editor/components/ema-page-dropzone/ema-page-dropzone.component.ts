@@ -70,7 +70,9 @@ export class EmaPageDropzoneComponent {
 
         const opacity = isEmpty ? '0.1' : '1';
         // Adjust coordinates for zoom level
-        const adjustedHeight = isEmpty ? targetRect.height / this.zoomLevel : DROP_INDICATOR_HEIGHT_PX;
+        const adjustedHeight = isEmpty
+            ? targetRect.height / this.zoomLevel
+            : DROP_INDICATOR_HEIGHT_PX;
         const top = this.getTop(isEmpty);
 
         this.pointerPosition = {
@@ -117,8 +119,6 @@ export class EmaPageDropzoneComponent {
             return `${adjustedTop}px`;
         }
 
-        return position === 'before'
-            ? `${adjustedTop}px`
-            : `${adjustedTop + adjustedHeight}px`;
+        return position === 'before' ? `${adjustedTop}px` : `${adjustedTop + adjustedHeight}px`;
     }
 }

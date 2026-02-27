@@ -32,7 +32,7 @@ const pageParams = {
 const initialState = createInitialUVEState({
     uveCurrentUser: mockCurrentUser,
     flags: {
-        FEATURE_FLAG_UVE_TOGGLE_LOCK: false  // Disable toggle lock to test old unlock button behavior
+        FEATURE_FLAG_UVE_TOGGLE_LOCK: false // Disable toggle lock to test old unlock button behavior
     },
     pageParams
 });
@@ -58,9 +58,11 @@ export const uveStoreMock = signalStore(
         })
     })),
     // Use withFeature to access store and pass reactive dependency
-    withFeature((store) => withView({
-        $isPageLocked: () => store.$isPageLocked()  // Call the computed above
-    }))
+    withFeature((store) =>
+        withView({
+            $isPageLocked: () => store.$isPageLocked() // Call the computed above
+        })
+    )
 );
 
 describe('withView', () => {
@@ -262,7 +264,6 @@ describe('withView', () => {
                 expect(store.$showWorkflowsActions()).toBe(false);
             });
         });
-
     });
 
     describe('methods', () => {

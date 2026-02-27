@@ -91,7 +91,13 @@ import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.s
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { CONTAINER_INSERT_ERROR, EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
+import {
+    CONTAINER_INSERT_ERROR,
+    EDITOR_STATE,
+    NG_CUSTOM_EVENTS,
+    PALETTE_CLASSES,
+    UVE_STATUS
+} from '../shared/enums';
 import {
     ActionPayload,
     ClientData,
@@ -164,7 +170,7 @@ const MESSAGE_KEY = {
         ClipboardModule,
         OverlayPanelModule,
         TooltipModule,
-        DotMessagePipe,
+        DotMessagePipe
     ],
     providers: [
         DotPaletteListStore,
@@ -210,7 +216,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected readonly $contentletEditData = computed(() => {
-        const { container, contentlet: contentletPayload } = this.uveStore.editorActiveContentlet() ?? {};
+        const { container, contentlet: contentletPayload } =
+            this.uveStore.editorActiveContentlet() ?? {};
         // Removed pageAPIResponse - use normalized accessors
 
         const contentType = this.$contenttypes().find(
@@ -228,7 +235,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         // Get the full contentlet from containers using container identifier and uuid
         let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
         const containers = this.uveStore.pageAsset()?.containers;
-        if (container?.identifier && container?.uuid && contentletPayload?.identifier && containers) {
+        if (
+            container?.identifier &&
+            container?.uuid &&
+            contentletPayload?.identifier &&
+            containers
+        ) {
             const containerData = containers[container.identifier];
             const contentletUuid = `uuid-${container.uuid}`;
             const contentlets = containerData?.contentlets?.[contentletUuid] || [];
@@ -478,7 +490,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $resetActiveContentletOnUnlockEffect = effect(() => {
         // const toggleLockOptions = this.$workflowLockOptions();
         // const activeContentlet = this.uveStore.editorActiveContentlet();
-
         // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
         // if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
         //     this.uveStore.resetActiveContentlet();
@@ -501,15 +512,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      */
     private saveContentletForm(formData: Record<string, unknown>): void {
         this.#isSubmitting.set(true);
-        this.dotWorkflowActionsFireService.saveContentlet(formData as Record<string, string>).subscribe({
-            next: () => {
-                this.#isSubmitting.set(false);
-                this.reloadPage();
-            },
-            error: () => {
-                this.#isSubmitting.set(false);
-            }
-        });
+        this.dotWorkflowActionsFireService
+            .saveContentlet(formData as Record<string, string>)
+            .subscribe({
+                next: () => {
+                    this.#isSubmitting.set(false);
+                    this.reloadPage();
+                },
+                error: () => {
+                    this.#isSubmitting.set(false);
+                }
+            });
     }
 
     protected onFormSubmit(formData: Record<string, unknown>): void {
@@ -548,7 +561,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                         onNumberOfPages: 1 // Because we just copied the contentlet to the same page
                     };
                     this.uveStore.setActiveContentlet(
-                        this.uveStore.getPageSavePayload({ container, contentlet: newContentletPayload })
+                        this.uveStore.getPageSavePayload({
+                            container,
+                            contentlet: newContentletPayload
+                        })
                     );
                 }
 
@@ -559,7 +575,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 };
                 this.saveContentletForm(updatedFormData);
             });
-
     }
 
     protected onCancel(): void {
@@ -581,10 +596,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         // Bridge service handles message events - needs iframe which is available now
-        const messageStream = this.bridgeService.initialize(
-            this.iframe,
-            this.uveStore
-        );
+        const messageStream = this.bridgeService.initialize(this.iframe, this.uveStore);
 
         messageStream.subscribe((event) => {
             this.bridgeService.handleMessage(
@@ -601,9 +613,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | undefined
     ): void {
         if (selectedContentlet?.container && selectedContentlet?.contentlet) {
-            this.uveStore.setActiveContentlet(
-                this.uveStore.getPageSavePayload(selectedContentlet)
-            );
+            this.uveStore.setActiveContentlet(this.uveStore.getPageSavePayload(selectedContentlet));
         } else {
             this.uveStore.resetActiveContentlet();
         }

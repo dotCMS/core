@@ -8,7 +8,6 @@ import { filter } from 'rxjs/operators';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
 
-
 import { IFRAME_SCROLL_ZONE } from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
@@ -170,4 +169,3 @@ export class DotUveDragDropService {
             });
     }
 }
-

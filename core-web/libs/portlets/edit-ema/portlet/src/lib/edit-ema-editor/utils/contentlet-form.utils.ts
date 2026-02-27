@@ -1,4 +1,8 @@
-import { DotCMSClazzes, DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
 
 /**
  * Type representing the supported field classes for quick edit form

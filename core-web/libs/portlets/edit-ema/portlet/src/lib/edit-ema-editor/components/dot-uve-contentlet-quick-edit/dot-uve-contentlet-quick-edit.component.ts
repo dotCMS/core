@@ -1,5 +1,11 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    AbstractControl,
+    FormBuilder,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -119,7 +125,11 @@ export class DotUveContentletQuickEditComponent {
             const validators = [];
 
             // Handle checkbox with multiple options - value should be an array
-            if (field.clazz === DotCMSClazzes.CHECKBOX && field.options && field.options.length > 0) {
+            if (
+                field.clazz === DotCMSClazzes.CHECKBOX &&
+                field.options &&
+                field.options.length > 0
+            ) {
                 // Convert string value to array if needed
                 if (typeof fieldValue === 'string' && fieldValue) {
                     fieldValue = fieldValue.split(',').map((v) => v.trim());

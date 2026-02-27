@@ -129,26 +129,28 @@ export const UVEStore = signalStore(
     // 10. Editor UI
     withEditor(),
     // 11. Backend API (must be last - needs all dependencies above)
-    withFeature((store) => withPageApi({
-        // Client configuration
-        resetClientConfiguration: () => store.resetClientConfiguration(),
+    withFeature((store) =>
+        withPageApi({
+            // Client configuration
+            resetClientConfiguration: () => store.resetClientConfiguration(),
 
-        // Workflow
-        workflowFetch: (inode: string) => store.workflowFetch(inode),
+            // Workflow
+            workflowFetch: (inode: string) => store.workflowFetch(inode),
 
-        // Request metadata
-        requestMetadata: () => store.requestMetadata(),
-        $requestWithParams: store.$requestWithParams,
+            // Request metadata
+            requestMetadata: () => store.requestMetadata(),
+            $requestWithParams: store.$requestWithParams,
 
-        // Page asset management
-        setPageAssetResponse: (response) => store.setPageAssetResponse(response),
-        rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
+            // Page asset management
+            setPageAssetResponse: (response) => store.setPageAssetResponse(response),
+            rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
 
-        // History management
-        addHistory: (response) => store.addToHistory(response),
-        resetHistoryToCurrent: () => store.resetHistoryToCurrent(),
+            // History management
+            addHistory: (response) => store.addToHistory(response),
+            resetHistoryToCurrent: () => store.resetHistoryToCurrent(),
 
-        // Page access
-        pageAsset: () => store.pageAsset()
-    }))
+            // Page access
+            pageAsset: () => store.pageAsset()
+        })
+    )
 );

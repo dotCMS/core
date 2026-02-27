@@ -1,8 +1,4 @@
-import {
-    DotDeviceListItem,
-    SeoMetaTags,
-    SeoMetaTagsResult
-} from '@dotcms/dotcms-models';
+import { DotDeviceListItem, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 

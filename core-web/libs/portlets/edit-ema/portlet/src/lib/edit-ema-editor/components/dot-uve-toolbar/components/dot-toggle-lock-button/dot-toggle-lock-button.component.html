@@ -15,7 +15,9 @@
             [class]="
                 $workflowLockIsLoading()
                     ? 'pi pi-spinner pi-spin'
-                    : ($workflowLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open')
+                    : $workflowLockOptions().isLocked
+                      ? 'pi pi-lock'
+                      : 'pi pi-lock-open'
             "></i>
         <span>{{ $buttonLabel() | dm }}</span>
     </button>

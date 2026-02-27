@@ -15,7 +15,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { DotMessageService, DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService
+} from '@dotcms/data-access';
 import { SafeUrlPipe } from '@dotcms/ui';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
@@ -193,6 +197,4 @@ export class DotUveIframeComponent {
             this.uveStore.viewSetOGTagResults(results);
         });
     }
-
 }
-

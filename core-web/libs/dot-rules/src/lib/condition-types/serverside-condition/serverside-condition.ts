@@ -4,7 +4,8 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject, OnChanges
+    inject,
+    OnChanges
 } from '@angular/core';
 
 import { of } from 'rxjs/internal/observable/of';

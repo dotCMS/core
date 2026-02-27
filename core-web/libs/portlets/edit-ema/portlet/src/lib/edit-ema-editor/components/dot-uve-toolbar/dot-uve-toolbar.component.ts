@@ -220,8 +220,18 @@ export class DotUveToolbarComponent {
      * Handle toggle lock event from presentational DotToggleLockButtonComponent
      * @param event Lock toggle event with inode and lock states
      */
-    handleToggleLock(event: { inode: string; isLocked: boolean; isLockedByCurrentUser: boolean; lockedBy?: string }) {
-        this.#store.workflowToggleLock(event.inode, event.isLocked, event.isLockedByCurrentUser, event.lockedBy);
+    handleToggleLock(event: {
+        inode: string;
+        isLocked: boolean;
+        isLockedByCurrentUser: boolean;
+        lockedBy?: string;
+    }) {
+        this.#store.workflowToggleLock(
+            event.inode,
+            event.isLocked,
+            event.isLockedByCurrentUser,
+            event.lockedBy
+        );
     }
 
     /**

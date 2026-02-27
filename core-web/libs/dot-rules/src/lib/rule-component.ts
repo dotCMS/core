@@ -7,7 +7,8 @@ import {
     Input,
     Output,
     ChangeDetectionStrategy,
-    inject, OnChanges
+    inject,
+    OnChanges
 } from '@angular/core';
 import {
     UntypedFormControl,
@@ -393,7 +394,7 @@ class RuleComponent implements OnChanges {
     ngOnChanges(change): void {
         if (change.rule) {
             const rule = this.rule;
-            const ctrl: UntypedFormControl = <UntypedFormControl> this.formModel.controls['name'];
+            const ctrl: UntypedFormControl = <UntypedFormControl>this.formModel.controls['name'];
             ctrl.patchValue(this.rule.name, {});
 
             ctrl.valueChanges.pipe(debounceTime(250)).subscribe((name: string) => {

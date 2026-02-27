@@ -1,4 +1,10 @@
-import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import {
+    CdkDrag,
+    CdkDragDrop,
+    CdkDragHandle,
+    CdkDropList,
+    moveItemInArray
+} from '@angular/cdk/drag-drop';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -39,8 +45,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                 class="row-reorder-list">
                 @for (row of rows(); track $index; let i = $index) {
                     <div cdkDrag class="row-item" [cdkDragDisabled]="isColumnDragging()">
-                        <div
-                            class="row-header">
+                        <div class="row-header">
                             <div
                                 class="row-handle"
                                 cdkDragHandle
@@ -50,7 +55,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                             <div
                                 class="row-label"
                                 (click)="selectRow(i + 1)"
-                            (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
+                                (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
                                 (mousedown)="$event.stopPropagation()"
                                 (touchstart)="$event.stopPropagation()">
                                 {{ getRowLabel(row, i) }}
@@ -59,9 +64,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                                 type="button"
                                 class="row-toggle"
                                 [attr.aria-expanded]="isRowExpanded(i)"
-                                [attr.aria-label]="
-                                    isRowExpanded(i) ? 'Collapse row' : 'Expand row'
-                                "
+                                [attr.aria-label]="isRowExpanded(i) ? 'Collapse row' : 'Expand row'"
                                 (click)="toggleRow(i); $event.stopPropagation()"
                                 (mousedown)="$event.stopPropagation()"
                                 (touchstart)="$event.stopPropagation()">
@@ -94,7 +97,10 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                                             </div>
                                             <div
                                                 class="column-label"
-                                                (dblclick)="openEditColumnDialog(i, j); $event.stopPropagation()"
+                                                (dblclick)="
+                                                    openEditColumnDialog(i, j);
+                                                    $event.stopPropagation()
+                                                "
                                                 (mousedown)="$event.stopPropagation()"
                                                 (touchstart)="$event.stopPropagation()">
                                                 {{ getColumnLabel(column, j) }}
@@ -134,169 +140,171 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
             </form>
         </p-dialog>
     `,
-    styles: [`
-        .row-reorder-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
+    styles: [
+        `
+            .row-reorder-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
 
-        .row-item {
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.5rem;
-            padding: 0.75rem;
-            background: var(--surface-ground);
-            border: 1px solid var(--surface-border);
-            border-radius: 4px;
-            cursor: default;
-            transition: box-shadow 0.2s;
-        }
+            .row-item {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                background: var(--surface-ground);
+                border: 1px solid var(--surface-border);
+                border-radius: 4px;
+                cursor: default;
+                transition: box-shadow 0.2s;
+            }
 
-        .row-item:hover {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+            .row-item:hover {
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
 
-        .row-item.cdk-drag-animating {
-            transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-        }
+            .row-item.cdk-drag-animating {
+                transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+            }
 
-        .row-reorder-list.cdk-drop-list-dragging .row-item:not(.cdk-drag-placeholder) {
-            transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-        }
+            .row-reorder-list.cdk-drop-list-dragging .row-item:not(.cdk-drag-placeholder) {
+                transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+            }
 
-        .row-item.cdk-drag-placeholder {
-            opacity: 0.4;
-        }
+            .row-item.cdk-drag-placeholder {
+                opacity: 0.4;
+            }
 
-        .row-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            min-width: 0;
-            cursor: pointer;
-        }
+            .row-header {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                min-width: 0;
+                cursor: pointer;
+            }
 
-        .row-handle {
-            display: flex;
-            align-items: center;
-            color: var(--text-color-secondary);
-            cursor: grab;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+            .row-handle {
+                display: flex;
+                align-items: center;
+                color: var(--text-color-secondary);
+                cursor: grab;
+                user-select: none;
+                -webkit-user-select: none;
+            }
 
-        .row-handle:active {
-            cursor: grabbing;
-        }
+            .row-handle:active {
+                cursor: grabbing;
+            }
 
-        .row-label {
-            flex: 1;
-            font-size: 0.875rem;
-            color: var(--text-color);
-            min-width: 0;
-        }
+            .row-label {
+                flex: 1;
+                font-size: 0.875rem;
+                color: var(--text-color);
+                min-width: 0;
+            }
 
-        .row-body {
-            padding-left: 1.75rem;
-        }
+            .row-body {
+                padding-left: 1.75rem;
+            }
 
-        .row-columns {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
+            .row-columns {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
 
-        .row-column {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8125rem;
-            color: var(--text-color);
-            background: var(--surface-card);
-            border: 1px solid var(--surface-border);
-            border-radius: 4px;
-            padding: 0.5rem 0.75rem;
-        }
+            .row-column {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.8125rem;
+                color: var(--text-color);
+                background: var(--surface-card);
+                border: 1px solid var(--surface-border);
+                border-radius: 4px;
+                padding: 0.5rem 0.75rem;
+            }
 
-        /* Column drag/sort animations (match row behavior) */
-        .row-column.cdk-drag-animating {
-            transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-        }
+            /* Column drag/sort animations (match row behavior) */
+            .row-column.cdk-drag-animating {
+                transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+            }
 
-        .row-columns.cdk-drop-list-dragging .row-column:not(.cdk-drag-placeholder) {
-            transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-        }
+            .row-columns.cdk-drop-list-dragging .row-column:not(.cdk-drag-placeholder) {
+                transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+            }
 
-        .row-column.cdk-drag-placeholder {
-            opacity: 0.4;
-        }
+            .row-column.cdk-drag-placeholder {
+                opacity: 0.4;
+            }
 
-        .column-handle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-color-secondary);
-            cursor: grab;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+            .column-handle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-color-secondary);
+                cursor: grab;
+                user-select: none;
+                -webkit-user-select: none;
+            }
 
-        .column-handle:active {
-            cursor: grabbing;
-        }
+            .column-handle:active {
+                cursor: grabbing;
+            }
 
-        .column-label {
-            flex: 1;
-            min-width: 0;
-        }
+            .column-label {
+                flex: 1;
+                min-width: 0;
+            }
 
-        .row-toggle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            align-self: flex-start;
-            width: 2rem;
-            height: 2rem;
-            margin-left: auto;
-            margin-top: 0.125rem;
-            border: 1px solid var(--surface-border);
-            background: var(--surface-card);
-            border-radius: 4px;
-            cursor: pointer;
-            color: var(--text-color-secondary);
-        }
+            .row-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                align-self: flex-start;
+                width: 2rem;
+                height: 2rem;
+                margin-left: auto;
+                margin-top: 0.125rem;
+                border: 1px solid var(--surface-border);
+                background: var(--surface-card);
+                border-radius: 4px;
+                cursor: pointer;
+                color: var(--text-color-secondary);
+            }
 
-        .row-toggle:hover {
-            color: var(--text-color);
-        }
+            .row-toggle:hover {
+                color: var(--text-color);
+            }
 
-        .empty-state {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            color: var(--text-color-secondary);
-        }
+            .empty-state {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 2rem;
+                color: var(--text-color-secondary);
+            }
 
-        .row-edit-form {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            min-width: 20rem;
-        }
+            .row-edit-form {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+                min-width: 20rem;
+            }
 
-        .row-edit-label {
-            font-size: 0.875rem;
-            color: var(--text-color);
-        }
+            .row-edit-label {
+                font-size: 0.875rem;
+                color: var(--text-color);
+            }
 
-        .row-edit-actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-    `],
+            .row-edit-actions {
+                display: flex;
+                justify-content: flex-end;
+            }
+        `
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotRowReorderComponent {
@@ -308,7 +316,9 @@ export class DotRowReorderComponent {
     private readonly columnDragging = signal<boolean>(false);
     protected readonly editRowDialogOpen = signal<boolean>(false);
     private readonly editingRowIndex = signal<number | null>(null);
-    protected readonly editingColumn = signal<{ rowIndex: number; columnIndex: number } | null>(null);
+    protected readonly editingColumn = signal<{ rowIndex: number; columnIndex: number } | null>(
+        null
+    );
 
     protected readonly rowStyleClassControl = new FormControl<string>('', { nonNullable: true });
 

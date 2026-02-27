@@ -70,7 +70,7 @@ export class DataTypeModel {
     }
 
     validator(): ValidatorFn {
-        return Validators.compose(<ValidatorFn[]> this.validators());
+        return Validators.compose(<ValidatorFn[]>this.validators());
     }
 }
 
@@ -126,7 +126,7 @@ export class CwInputDefinition {
         if (this._validator == null) {
             this._vFns = this.validators();
             if (this._vFns && this._vFns.length) {
-                this._validator = Validators.compose(<ValidatorFn[]> this._vFns);
+                this._validator = Validators.compose(<ValidatorFn[]>this._vFns);
             } else {
                 this._validator = () => {
                     return null;

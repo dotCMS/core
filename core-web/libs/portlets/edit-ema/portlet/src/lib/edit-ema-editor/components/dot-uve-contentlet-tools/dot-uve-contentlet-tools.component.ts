@@ -92,7 +92,6 @@ export class DotUveContentletToolsComponent {
         payload: ActionPayload;
     }>();
 
-
     readonly outputSelectedContentlet = output<Pick<ClientData, 'container' | 'contentlet'>>();
     /**
      * Emitted when the contentlet is selected from the tools (for example, via a drag handle).
@@ -116,7 +115,10 @@ export class DotUveContentletToolsComponent {
      * Helper function to compare two contentlets by their identifier.
      * Returns true if they represent the same contentlet.
      */
-    protected isSameContentlet(area1: ContentletArea | null, area2: ContentletArea | null): boolean {
+    protected isSameContentlet(
+        area1: ContentletArea | null,
+        area2: ContentletArea | null
+    ): boolean {
         if (!area1 || !area2) {
             return false;
         }
@@ -220,22 +222,21 @@ export class DotUveContentletToolsComponent {
      * Uses selected context when available, otherwise falls back to hovered context.
      */
     readonly menuItems = computed<MenuItem[]>(() => {
-        const context = this.selectedContentletArea() ? this.selectedContentContext() : this.contentContext();
+        const context = this.selectedContentletArea()
+            ? this.selectedContentContext()
+            : this.contentContext();
         return [
             {
                 label: this.#dotMessageService.get('content'),
-                command: () =>
-                    this.addContent.emit({ type: 'content', payload: context })
+                command: () => this.addContent.emit({ type: 'content', payload: context })
             },
             {
                 label: this.#dotMessageService.get('Widget'),
-                command: () =>
-                    this.addContent.emit({ type: 'widget', payload: context })
+                command: () => this.addContent.emit({ type: 'widget', payload: context })
             },
             {
                 label: this.#dotMessageService.get('form'),
-                command: () =>
-                    this.addContent.emit({ type: 'form', payload: context })
+                command: () => this.addContent.emit({ type: 'form', payload: context })
             }
         ];
     });
@@ -245,7 +246,9 @@ export class DotUveContentletToolsComponent {
      * Each item represents a file and triggers the `editVTL` output when clicked.
      */
     readonly vtlMenuItems = computed<MenuItem[]>(() => {
-        const context = this.selectedContentletArea() ? this.selectedContentContext() : this.contentContext();
+        const context = this.selectedContentletArea()
+            ? this.selectedContentContext()
+            : this.contentContext();
         const { vtlFiles } = context ?? {};
         return vtlFiles?.map((file) => ({
             label: file?.name,

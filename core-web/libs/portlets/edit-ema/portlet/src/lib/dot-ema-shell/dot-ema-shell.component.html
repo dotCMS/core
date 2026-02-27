@@ -46,9 +46,7 @@
         (action)="handleItemAction($event)"
         data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
     <p-toast position="top-center" data-testId="ema-toast"></p-toast>
-    <dot-page-tools-seo
-        [currentPageUrlParams]="$seoParams()"
-        #pageTools></dot-page-tools-seo>
+    <dot-page-tools-seo [currentPageUrlParams]="$seoParams()" #pageTools></dot-page-tools-seo>
 } @else {
     @if ($errorDisplay()?.code === 401) {
         <dot-not-license />

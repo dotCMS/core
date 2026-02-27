@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter, OnChanges } from '@angular/core';
+import {
+    Component,
+    ChangeDetectionStrategy,
+    Input,
+    Output,
+    EventEmitter,
+    OnChanges
+} from '@angular/core';
 
 import { KeyCode } from '../services/util/key-util';
 

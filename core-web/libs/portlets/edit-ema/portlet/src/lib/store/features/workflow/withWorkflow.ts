@@ -1,5 +1,12 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, type, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withComputed,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -8,7 +15,11 @@ import { computed, inject, Signal } from '@angular/core';
 
 import { map, switchMap, tap } from 'rxjs/operators';
 
-import { DotContentletLockerService, DotLanguagesService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotLanguagesService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset } from '@dotcms/types';
 
@@ -39,7 +50,12 @@ export interface WorkflowComputed {
 export interface WithWorkflowMethods extends WorkflowComputed {
     workflowFetch: RxMethod<string>;
     setWorkflowActionLoading: (workflowIsLoading: boolean) => void;
-    workflowToggleLock: (inode: string, isLocked: boolean, isLockedByCurrentUser: boolean, lockedBy?: string) => void;
+    workflowToggleLock: (
+        inode: string,
+        isLocked: boolean,
+        isLockedByCurrentUser: boolean,
+        lockedBy?: string
+    ) => void;
 }
 
 /**
@@ -72,8 +88,8 @@ export function withWorkflow() {
                 return computeIsPageLocked(store.pageAsset()?.page ?? null, store.uveCurrentUser());
             });
 
-            const systemIsLockFeatureEnabled = computed(() =>
-                store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
+            const systemIsLockFeatureEnabled = computed(
+                () => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
             );
 
             const $workflowLockOptions = computed<ToggleLockOptions | null>(() => {
@@ -114,8 +130,14 @@ export function withWorkflow() {
             const dotLanguagesService = inject(DotLanguagesService);
             const pageStore = store as typeof store & {
                 requestMetadata: () => { query: string; variables: Record<string, string> } | null;
-                $requestWithParams: () => { query: string; variables: Record<string, string> } | null;
-                setPageAssetResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+                $requestWithParams: () => {
+                    query: string;
+                    variables: Record<string, string>;
+                } | null;
+                setPageAssetResponse: (response: {
+                    pageAsset: DotCMSPageAsset;
+                    content?: Record<string, unknown>;
+                }) => void;
             };
 
             const reloadPageAfterLockChange = () => {
@@ -130,34 +152,36 @@ export function withWorkflow() {
 
                 const requestWithParams = pageStore.$requestWithParams?.();
                 const requestMetadata = pageStore.requestMetadata?.();
-                const pageRequest = !requestMetadata || !requestWithParams
-                    ? dotPageApiService.get(params).pipe(
-                        map((pageAsset) => ({ pageAsset }))
-                    )
-                    : dotPageApiService.getGraphQLPage(requestWithParams);
+                const pageRequest =
+                    !requestMetadata || !requestWithParams
+                        ? dotPageApiService.get(params).pipe(map((pageAsset) => ({ pageAsset })))
+                        : dotPageApiService.getGraphQLPage(requestWithParams);
 
                 pageRequest.subscribe({
                     next: (response) => {
-                        const pageResponse = 'pageAsset' in response ? response : { pageAsset: response };
+                        const pageResponse =
+                            'pageAsset' in response ? response : { pageAsset: response };
 
                         pageStore.setPageAssetResponse(pageResponse);
 
-                        dotLanguagesService.getLanguagesUsedPage(pageResponse.pageAsset.page.identifier).subscribe({
-                            next: (languages) => {
-                                patchState(store, {
-                                    pageLanguages: languages,
-                                    uveStatus: UVE_STATUS.LOADED,
-                                    workflowLockIsLoading: false
-                                });
-                            },
-                            error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                patchState(store, {
-                                    pageErrorCode: errorStatus,
-                                    uveStatus: UVE_STATUS.ERROR,
-                                    workflowLockIsLoading: false
-                                });
-                            }
-                        });
+                        dotLanguagesService
+                            .getLanguagesUsedPage(pageResponse.pageAsset.page.identifier)
+                            .subscribe({
+                                next: (languages) => {
+                                    patchState(store, {
+                                        pageLanguages: languages,
+                                        uveStatus: UVE_STATUS.LOADED,
+                                        workflowLockIsLoading: false
+                                    });
+                                },
+                                error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                    patchState(store, {
+                                        pageErrorCode: errorStatus,
+                                        uveStatus: UVE_STATUS.ERROR,
+                                        workflowLockIsLoading: false
+                                    });
+                                }
+                            });
                     },
                     error: ({ status: errorStatus }: HttpErrorResponse) => {
                         patchState(store, {

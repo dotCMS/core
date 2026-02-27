@@ -92,7 +92,8 @@ describe('DotUveContentletQuickEditComponent', () => {
         const formElement = spectator.query('form');
         expect(formElement).toBeTruthy();
 
-        const testFieldInput = spectator.query('input[formcontrolname="testField"]') || spectator.query('#testField');
+        const testFieldInput =
+            spectator.query('input[formcontrolname="testField"]') || spectator.query('#testField');
         expect(testFieldInput).toBeTruthy();
     });
 
@@ -106,7 +107,8 @@ describe('DotUveContentletQuickEditComponent', () => {
         let emittedData: Record<string, unknown> | undefined;
         spectator.component.submit.subscribe((data) => (emittedData = data));
 
-        const input = (spectator.query('input[formcontrolname="testField"]') || spectator.query('#testField')) as HTMLInputElement;
+        const input = (spectator.query('input[formcontrolname="testField"]') ||
+            spectator.query('#testField')) as HTMLInputElement;
         expect(input).toBeTruthy();
         spectator.typeInElement('test value', input);
         spectator.detectChanges();

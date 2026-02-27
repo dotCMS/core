@@ -5,7 +5,8 @@ import {
     EventEmitter,
     Input,
     Output,
-    inject, OnChanges
+    inject,
+    OnChanges
 } from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
 

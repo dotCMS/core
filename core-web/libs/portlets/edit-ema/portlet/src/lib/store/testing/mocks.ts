@@ -45,4 +45,3 @@ export const BASE_UVE_STATE: UVEState = {
 export function createInitialUVEState(overrides?: Partial<UVEState>): UVEState {
     return { ...BASE_UVE_STATE, ...overrides };
 }
-

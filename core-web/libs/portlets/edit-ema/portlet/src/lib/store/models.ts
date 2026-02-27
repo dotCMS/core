@@ -7,9 +7,7 @@ import {
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import {
-    DotCMSPage
-} from '@dotcms/types';
+import { DotCMSPage } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { UVEFlags } from './features/flags/models';
@@ -32,7 +30,6 @@ export enum PageType {
     /** Headless/client-hosted - external application using APIs */
     HEADLESS = 'headless'
 }
-
 
 export interface EditorUIState {
     // Drag and drop state

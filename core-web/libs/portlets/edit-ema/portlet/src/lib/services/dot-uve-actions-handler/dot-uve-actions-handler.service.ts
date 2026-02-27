@@ -7,10 +7,7 @@ import { MessageService } from 'primeng/api';
 
 import { switchMap, take, tap } from 'rxjs/operators';
 
-
-import {
-    DotMessageService,
-} from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import {
     DotCMSInlineEditingPayload,
@@ -59,10 +56,7 @@ export class DotUveActionsHandlerService {
     private readonly messageService = inject(MessageService);
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
 
-    handleAction(
-        { action, payload }: PostMessage,
-        deps: ActionsHandlerDependencies
-    ): void {
+    handleAction({ action, payload }: PostMessage, deps: ActionsHandlerDependencies): void {
         const {
             uveStore,
             dialog,
@@ -73,10 +67,7 @@ export class DotUveActionsHandlerService {
             onCopyContent
         } = deps;
 
-        const CLIENT_ACTIONS_FUNC_MAP: Record<
-            DotCMSUVEAction,
-            (payload: unknown) => void
-        > = {
+        const CLIENT_ACTIONS_FUNC_MAP: Record<DotCMSUVEAction, (payload: unknown) => void> = {
             [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
                 const isSameUrl = compareUrlPaths(uveStore.pageParams()?.url, payload.url);
 
@@ -94,7 +85,6 @@ export class DotUveActionsHandlerService {
             },
             [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
                 const actionPayload = uveStore.getPageSavePayload(coords.payload);
-
 
                 uveStore.setContentletArea({
                     x: coords.x,

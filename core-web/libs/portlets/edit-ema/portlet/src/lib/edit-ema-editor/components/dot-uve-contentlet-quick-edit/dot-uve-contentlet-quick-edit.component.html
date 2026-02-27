@@ -10,9 +10,7 @@
         }
         @for (field of data().fields; track field.variable) {
             <div class="field">
-                <label
-                    [class.p-label-input-required]="field.required"
-                    [for]="field.variable">
+                <label [class.p-label-input-required]="field.required" [for]="field.variable">
                     {{ field.name }}
                 </label>
                 @if (field.clazz === DotCMSClazzes.TEXT) {

@@ -1,7 +1,16 @@
 import { patchState } from '@ngrx/signals';
 
 import { Location } from '@angular/common';
-import { Component, computed, DestroyRef, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
+import {
+    Component,
+    computed,
+    DestroyRef,
+    effect,
+    inject,
+    OnInit,
+    signal,
+    ViewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
@@ -201,7 +210,8 @@ export class DotEmaShellComponent implements OnInit {
         // This prevents reloading when navigating between child routes (content <-> layout)
         const currentPageParams = this.uveStore.pageParams();
         const hasPageData = !!this.uveStore.pageAsset()?.page;
-        const paramsMatch = currentPageParams &&
+        const paramsMatch =
+            currentPageParams &&
             currentPageParams.url === params.url &&
             currentPageParams.language_id === params.language_id &&
             currentPageParams.mode === params.mode;

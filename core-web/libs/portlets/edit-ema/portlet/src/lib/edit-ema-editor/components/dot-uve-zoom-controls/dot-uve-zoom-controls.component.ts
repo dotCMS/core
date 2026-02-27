@@ -9,9 +9,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     standalone: true,
     templateUrl: './dot-uve-zoom-controls.component.html',
     styleUrls: ['./dot-uve-zoom-controls.component.scss'],
-    imports: [
-        ButtonModule
-    ]
+    imports: [ButtonModule]
 })
 export class DotUveZoomControlsComponent {
     protected readonly store = inject(UVEStore);
@@ -35,4 +33,3 @@ export class DotUveZoomControlsComponent {
         return this.store.viewZoomLabel();
     }
 }
-

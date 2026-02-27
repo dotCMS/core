@@ -9,7 +9,12 @@ import { Router } from '@angular/router';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotExperimentsService, DotLanguagesService, DotLicenseService, DotPageLayoutService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotLanguagesService,
+    DotLicenseService,
+    DotPageLayoutService
+} from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
@@ -17,7 +22,11 @@ import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { UVE_STATUS } from '../../../shared/enums';
-import { DotPageAssetParams, PageContainer, SaveStylePropertiesPayload } from '../../../shared/models';
+import {
+    DotPageAssetParams,
+    PageContainer,
+    SaveStylePropertiesPayload
+} from '../../../shared/models';
 import { isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { PageSnapshot } from '../page/withPage';
@@ -35,7 +44,9 @@ export interface WithPageApiMethods {
     // Save methods
     editorSave: RxMethod<PageContainer[]>;
     updateRows: RxMethod<DotPageAssetLayoutRow[]>;
-    saveStyleEditor: (payload: SaveStylePropertiesPayload) => ReturnType<DotPageApiService['saveStyleProperties']>;
+    saveStyleEditor: (
+        payload: SaveStylePropertiesPayload
+    ) => ReturnType<DotPageApiService['saveStyleProperties']>;
 }
 
 /**
@@ -54,11 +65,17 @@ export interface WithPageApiDeps {
     $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
 
     // Page asset management
-    setPageAssetResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    setPageAssetResponse: (response: {
+        pageAsset: DotCMSPageAsset;
+        content?: Record<string, unknown>;
+    }) => void;
     rollbackPageAssetResponse: () => boolean;
 
     // History management
-    addHistory: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    addHistory: (response: {
+        pageAsset: DotCMSPageAsset;
+        content?: Record<string, unknown>;
+    }) => void;
     resetHistoryToCurrent: () => void;
 
     // Page access (single accessor)
@@ -297,11 +314,19 @@ export function withPageApi(deps: WithPageApiDeps) {
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() => {
                                     const pageRequest = !deps.requestMetadata()
-                                        ? dotPageApiService.get(store.pageParams()).pipe(
-                                                  tap((pageAsset) => deps.setPageAssetResponse({ pageAsset }))
+                                        ? dotPageApiService
+                                              .get(store.pageParams())
+                                              .pipe(
+                                                  tap((pageAsset) =>
+                                                      deps.setPageAssetResponse({ pageAsset })
+                                                  )
                                               )
-                                        : dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
-                                                  tap((response) => deps.setPageAssetResponse(response)),
+                                        : dotPageApiService
+                                              .getGraphQLPage(deps.$requestWithParams())
+                                              .pipe(
+                                                  tap((response) =>
+                                                      deps.setPageAssetResponse(response)
+                                                  ),
                                                   map((response) => response.pageAsset)
                                               );
 
@@ -353,55 +378,57 @@ export function withPageApi(deps: WithPageApiDeps) {
                                 return EMPTY;
                             }
 
-                            return dotPageLayoutService.save(page.identifier, {
-                                layout: {
-                                    ...layoutData,
-                                    body: {
-                                        ...layoutData.body,
-                                        rows: sortedRows.map((row) => {
-                                            return {
-                                                ...row,
-                                                columns: row.columns.map((column) => {
-                                                    return {
-                                                        leftOffset: column.leftOffset,
-                                                        styleClass: column.styleClass,
-                                                        width: column.width,
-                                                        containers: column.containers
-                                                    };
-                                                })
-                                            };
-                                        })
-                                    }
-                                },
-                                themeId: template?.theme,
-                                title: null
-                            }).pipe(
-                                /**********************************************************************
-                                 * IMPORTANT: After saving the layout, we must re-fetch the page here  *
-                                 * to obtain the new rendered content WITH all `data-*` attributes.    *
-                                 * This is required because saveLayout API DOES NOT return the updated *
-                                 * rendered page HTML.                                                 *
-                                 **********************************************************************/
-                                switchMap(() => {
-                                    return dotPageApiService.get(store.pageParams()).pipe(
-                                        map((response) => response)
-                                    );
-                                }),
-                                tapResponse(
-                                    (pageRender: DotCMSPageAsset) => {
-                                        deps.setPageAssetResponse({ pageAsset: pageRender });
-                                        patchState(store, {
-                                            uveStatus: UVE_STATUS.LOADED
-                                        });
+                            return dotPageLayoutService
+                                .save(page.identifier, {
+                                    layout: {
+                                        ...layoutData,
+                                        body: {
+                                            ...layoutData.body,
+                                            rows: sortedRows.map((row) => {
+                                                return {
+                                                    ...row,
+                                                    columns: row.columns.map((column) => {
+                                                        return {
+                                                            leftOffset: column.leftOffset,
+                                                            styleClass: column.styleClass,
+                                                            width: column.width,
+                                                            containers: column.containers
+                                                        };
+                                                    })
+                                                };
+                                            })
+                                        }
                                     },
-                                    (e) => {
-                                        console.error(e);
-                                        patchState(store, {
-                                            uveStatus: UVE_STATUS.ERROR
-                                        });
-                                    }
-                                )
-                            );
+                                    themeId: template?.theme,
+                                    title: null
+                                })
+                                .pipe(
+                                    /**********************************************************************
+                                     * IMPORTANT: After saving the layout, we must re-fetch the page here  *
+                                     * to obtain the new rendered content WITH all `data-*` attributes.    *
+                                     * This is required because saveLayout API DOES NOT return the updated *
+                                     * rendered page HTML.                                                 *
+                                     **********************************************************************/
+                                    switchMap(() => {
+                                        return dotPageApiService
+                                            .get(store.pageParams())
+                                            .pipe(map((response) => response));
+                                    }),
+                                    tapResponse(
+                                        (pageRender: DotCMSPageAsset) => {
+                                            deps.setPageAssetResponse({ pageAsset: pageRender });
+                                            patchState(store, {
+                                                uveStatus: UVE_STATUS.LOADED
+                                            });
+                                        },
+                                        (e) => {
+                                            console.error(e);
+                                            patchState(store, {
+                                                uveStatus: UVE_STATUS.ERROR
+                                            });
+                                        }
+                                    )
+                                );
                         }),
                         catchError((e) => {
                             console.error(e);

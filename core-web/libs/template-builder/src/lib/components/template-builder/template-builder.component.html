@@ -89,7 +89,9 @@
                                     <dotcms-template-builder-box
                                         (deleteColumn)="removeColumn(box, boxElement, row.id ?? 0)"
                                         (addContainer)="addContainer(box, row.id ?? 0, $event)"
-                                        (deleteContainer)="deleteContainer(box, row.id ?? 0, $event)"
+                                        (deleteContainer)="
+                                            deleteContainer(box, row.id ?? 0, $event)
+                                        "
                                         (editClasses)="editBoxStyleClasses(row.id ?? 0, box)"
                                         [attr.data-testId]="'builder-box-' + $index"
                                         [containerMap]="vm.containerMap"
