@@ -31,31 +31,6 @@ export enum PageType {
     HEADLESS = 'headless'
 }
 
-export interface EditorUIState {
-    // Drag and drop state
-    dragItem: EmaDragItem | null;
-    bounds: Container[];
-    state: EDITOR_STATE;
-
-    // Contentlet management
-    activeContentlet: ActionPayload | null;
-    contentArea: ContentletArea | null;
-
-    // UI panel preferences (user-configurable)
-    panels: {
-        palette: {
-            open: boolean;
-        };
-        rightSidebar: {
-            open: boolean;
-        };
-    };
-
-    // Editor-specific data
-    ogTags: SeoMetaTags | null;
-    styleSchemas: StyleEditorFormSchema[];
-}
-
 /**
  * View State (transient)
  * Manages editor view modes (edit vs preview) and preview configuration.
