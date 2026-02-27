@@ -23,9 +23,22 @@ home_dir := env_var('HOME')
 default:
     @just --list --unsorted --justfile {{ justfile() }}
 
-# Builds the project without running tests, useful for quick iterations
+# Full build without tests — filters output to phase transitions and errors. Full log saved to /tmp.
 build:
-    ./mvnw -DskipTests clean install
+    #!/usr/bin/env bash
+    set -o pipefail
+    LOG=$(mktemp /tmp/dotcms-build.XXXXXX)
+    echo "Building dotCMS (full) — full log: $LOG"
+    ./mvnw -DskipTests clean install 2>&1 | tee "$LOG" | \
+        grep --line-buffered -E '^\[INFO\] (---|BUILD)|^\[ERROR\]|DOCKER>' || true
+    if grep -q 'BUILD FAILURE' "$LOG"; then
+        echo ""
+        echo "=== Build errors ==="
+        grep '^\[ERROR\]' "$LOG" | grep -v '^\[ERROR\] *$' | head -30
+        echo "Full log: $LOG"
+        exit 1
+    fi
+    echo "Full log: $LOG"
 
 # Builds the project without running tests, skip using docker or creating image
 build-no-docker:

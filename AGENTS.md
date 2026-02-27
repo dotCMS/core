@@ -28,10 +28,10 @@ When adding a new script or recipe, test or reason through both environments bef
 ./mvnw install -DskipTests                        # full build (~8-15 min), or: just build
 ./mvnw install -pl :dotcms-core -DskipTests        # core only (~2-3 min), or: just build-quicker
 
-just dev-start-on-port 8080                        # start stack (DB + OpenSearch + app); prints URLs on completion
+just dev-start-on-port 8080                        # start stack (DB + OpenSearch + app) with app on :8080
 just dev-stop                                      # teardown
-just dev-urls                                      # print all access URLs for the running instance (dotAdmin, REST API, health)
-just dev-health                                    # check server health (management port, discovered live from Docker)
+just dev-urls                                      # discover and print all live URLs from Docker (dotAdmin, REST API, health)
+just dev-health                                    # check server health (management port discovered live from Docker)
 just dev-wait                                      # block until healthy — use in scripts after start or restart
 
 just dev-start-frontend                            # start Angular dev server :4200 (background, PID-managed)
@@ -46,9 +46,9 @@ cd core-web && npx nx test dotcms-ui               # frontend test
 >
 > **Build scope:** Match scope to what changed — core-only change → `just build-quicker`; multi-module → add `--am`; full rebuild → `just build`. After a core rebuild, restart to pick up the new image: `just dev-stop && just dev-start-on-port 8080`. Silent failures are rare; slow builds are common.
 >
-> **Build visibility:** `just build-quicker` filters Maven output to phase transitions and errors — full log is saved to `/tmp/dotcms-build.*.log` for detailed inspection. To investigate a failure without loading the full log: `grep '^\[ERROR\]' /tmp/dotcms-build.<id>` shows only error lines. If the Docker image build fails with a stale layer SHA, run `docker builder prune -f` then retry.
+> **Build visibility:** Both `just build` and `just build-quicker` filter Maven output to phase transitions and errors — full log is saved to `/tmp/dotcms-build.*.log` for detailed inspection. To investigate a failure without loading the full log: `grep '^\[ERROR\]' /tmp/dotcms-build.<id>` shows only error lines. If the Docker image build fails with a stale layer SHA, run `docker builder prune -f` then retry.
 >
-> **Server URLs:** `just dev-start-on-port` prints access URLs on completion. `just dev-urls` retrieves them at any time from the running instance. Management port (8090 inside container) is mapped to a dynamic host port on each start — never hardcode it; use `just dev-health` or `just dev-urls` instead.
+> **Server URLs:** `dev-start-on-port PORT` fixes the app port to what you specify (e.g. `:8080`). The management port (8090 inside container) is **always** mapped to a dynamic host port regardless. Use `just dev-urls` after any start or restart to get the actual URLs — it queries Docker live and is the only reliable source for the health endpoint port.
 >
 > **Agent log strategy:** Prefer targeted commands over loading full logs into context. Use `just dev-health` (one line) to check liveness. On build failure, read only the `[ERROR]` lines from the saved log. Load the full log only when errors alone are insufficient to diagnose the problem.
 >
