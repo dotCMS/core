@@ -1,3 +1,6 @@
+
+import { of, timer } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -17,7 +20,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { debounceTime, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
+import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -34,9 +37,11 @@ import {
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
+import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { filterFormValues } from '../../utils';
+
 
 @Component({
     selector: 'dot-uve-style-editor-form',
@@ -188,22 +193,31 @@ export class DotUveStyleEditorFormComponent {
                             (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
                         ),
                         // Capture activeContentlet at the time of form change (before debounce)
-                        // This ensures we use the correct contentlet even if the user switches
-                        // to a different contentlet during the debounce period
+                        // and identify the editor mode for this update.
                         map((formValues) => ({
                             formValues,
-                            activeContentlet: this.#uveStore.activeContentlet()
+                            activeContentlet: this.#uveStore.activeContentlet(),
+                            isTraditionalPage: this.#uveStore.isTraditionalPage()
                         })),
-                        tap(({ formValues, activeContentlet }) =>
-                            this.#updateIframeImmediately(formValues, activeContentlet)
-                        ),
-                        debounceTime(STYLE_EDITOR_DEBOUNCE_TIME)
+                        tap(({ formValues, activeContentlet, isTraditionalPage }) => {
+                            // Traditional pages do not support instant iframe updates.
+                            if (!isTraditionalPage) {
+                                this.#updateIframeOptimistically(formValues, activeContentlet);
+                            }
+                        }),
+                        // Traditional: emit immediately (of(0) completes right away).
+                        // Headless: debounce 2s - timer resets on each new form change.
+                        debounce((changeEvent) =>
+                            changeEvent.isTraditionalPage
+                                ? of(0)
+                                : timer(STYLE_EDITOR_DEBOUNCE_TIME)
+                        )
                     )
                 ),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe(({ formValues, activeContentlet }) => {
-                this.#saveStyleProperties(formValues, activeContentlet);
+            .subscribe(({ formValues, activeContentlet, isTraditionalPage }) => {
+                this.#saveStyleProperties(formValues, activeContentlet, isTraditionalPage);
             });
     }
 
@@ -211,7 +225,7 @@ export class DotUveStyleEditorFormComponent {
      * Immediately updates the iframe with new form values (no debounce)
      * Uses optimistic updates WITHOUT saving to history (history is saved only on API calls)
      */
-    #updateIframeImmediately(
+    #updateIframeOptimistically(
         formValues: Record<string, unknown>,
         activeContentlet: ActionPayload | null
     ): void {
@@ -259,7 +273,8 @@ export class DotUveStyleEditorFormComponent {
      */
     #saveStyleProperties(
         formValues: Record<string, unknown>,
-        activeContentlet: ActionPayload
+        activeContentlet: ActionPayload | null,
+        isTraditionalPage = false
     ): void {
         if (!activeContentlet) {
             return;
@@ -280,6 +295,10 @@ export class DotUveStyleEditorFormComponent {
             this.#uveStore.addHistory(currentGraphqlResponse);
         }
 
+        if (isTraditionalPage) {
+            this.#uveStore.setUveStatus(UVE_STATUS.LOADING);
+        }
+
         // Use the store's saveStyleEditor method which handles API call and rollback on failure
         // Subscribe to handle success/error and show toast notifications
         this.#uveStore
@@ -293,6 +312,11 @@ export class DotUveStyleEditorFormComponent {
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: () => {
+                    if (isTraditionalPage) {
+                        this.#iframeMessenger.reloadPage();
+                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                    }
+
                     // Success toast - style properties saved successfully
                     this.#messageService.add({
                         severity: 'success',
@@ -308,6 +332,10 @@ export class DotUveStyleEditorFormComponent {
                     // Rollback already happened synchronously in store's error handler,
                     // so we can restore the form immediately
                     this.#restoreFormFromRollback();
+
+                    if (isTraditionalPage) {
+                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                    }
 
                     // Error toast - rollback already handled in store
                     this.#messageService.add({
