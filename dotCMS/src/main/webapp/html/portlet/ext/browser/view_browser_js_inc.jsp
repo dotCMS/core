@@ -36,8 +36,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 </style>
 
-<script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
-
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
 <script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
 
@@ -1149,7 +1147,10 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     function setAsDefaultHost(objId,referer) {
         if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-set-this-host-as-the-default-host")) %>')) {
-            HostAjax.makeDefault(objId, setAsDefaultHostCallback);
+            fetch('/api/v1/site/' + objId + '/_makedefault', {method: 'PUT', cache: 'no-cache'})
+                .then(function(r) { return r.json(); })
+                .then(function() { setAsDefaultHostCallback(); })
+                .catch(function(error) { console.error('Error setting default host:', error); });
         }
     }
 

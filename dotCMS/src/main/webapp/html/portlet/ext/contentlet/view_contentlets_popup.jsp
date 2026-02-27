@@ -22,7 +22,6 @@
 
 
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
-<script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
 <script type='text/javascript' src='/dwr/engine.js'></script>
 <script type='text/javascript' src='/dwr/util.js'></script>
@@ -310,7 +309,12 @@ function renderSearchField (field) {
 			var cat = categories[i];
 			var selectId = cat["categoryName"].replace(/[^A-Za-z0-9_]/, "") + "Select";
 			var mycallbackfnc = function(data) { fillCategorySelect(selectId, data); }
-			CategoryAjax.getSubCategories(cat["inode"], '', { callback: mycallbackfnc, async: false });
+			(function(cb) {
+				fetch('/api/v1/categories/children?inode=' + encodeURIComponent(cat["inode"]) + '&allLevels=true&per_page=1000', {cache: 'no-cache'})
+					.then(function(r) { return r.json(); })
+					.then(function(data) { cb(data.entity || []); })
+					.catch(function(error) { console.error('Error loading subcategories:', error); cb([]); });
+			})(mycallbackfnc);
 		}
 	}
 	

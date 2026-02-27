@@ -1387,7 +1387,12 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         var selectId = cat["categoryName"].replace(/[^A-Za-z0-9_]/g, "") + "Select";
                         var mycallbackfnc = function(data) { fillCategorySelect(selectId, data); }
 
-                        CategoryAjax.getSubCategories(cat["inode"], '', { callback: mycallbackfnc, async: false });
+                        (function(cb) {
+                            fetch('/api/v1/categories/children?inode=' + encodeURIComponent(cat["inode"]) + '&allLevels=true&per_page=1000', {cache: 'no-cache'})
+                                .then(function(r) { return r.json(); })
+                                .then(function(data) { cb(data.entity || []); })
+                                .catch(function(error) { console.error('Error loading subcategories:', error); cb([]); });
+                        })(mycallbackfnc);
                 }
         }
 

@@ -58,7 +58,6 @@
     }
 
 </style>
-<script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
 <script type="text/javascript">
     dojo.require("dojox.grid.enhanced.plugins.Pagination");
     dojo.require("dojox.grid.enhanced.plugins.Search");
@@ -125,7 +124,18 @@
     };
 
     var sortCat = function() {
-        CategoryAjax.sortCategory(this.name, this.value);
+        var inode = this.name;
+        var sortOrder = parseInt(this.value, 10);
+        var categoryData = {};
+        categoryData[inode] = sortOrder;
+        fetch('/api/v1/categories/_sort', {
+            method: 'PUT',
+            cache: 'no-cache',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({categoryData: categoryData, parentInode: currentInodeOrIdentifier || null})
+        })
+        .then(function(r) { return r.json(); })
+        .catch(function(error) { console.error('Error updating sort order:', error); });
     };
 
     var sortSelectable = function() {
@@ -585,14 +595,19 @@
 			}
         }
 
-        CategoryAjax.getCategoryMap(inode,getCategoryMapCallback);
+        if (inode && inode !== '0') {
+            fetch('/api/v1/categories/' + encodeURIComponent(inode), {cache: 'no-cache'})
+                .then(function(r) { return r.json(); })
+                .then(function(data) { getCategoryMapCallback(data.entity); })
+                .catch(function(error) { console.error('Error fetching category:', error); });
+        }
     }
 
     function getCategoryMapCallback(categoryMap){
         var inode = categoryMap['inode'];
-        var name = categoryMap['category_name'];
-        var velVar = categoryMap['category_velocity_var_name'];
-        var key = categoryMap['category_key'];
+        var name = categoryMap['categoryName'];
+        var velVar = categoryMap['categoryVelocityVarName'];
+        var key = categoryMap['key'];
         var keywords = categoryMap['keywords'];
 
         key = key=="null"?"":key;
@@ -616,25 +631,35 @@
                 var dia = dijit.byId('dotDeleteCategoriesDialog');
                 dia.show();
 
-                CategoryAjax.deleteCategories(currentInodeOrIdentifier, {
-                    callback:function(result) {
-                        if(result==0) {
+                var deleteBody = currentInodeOrIdentifier ? [currentInodeOrIdentifier] : [];
+                fetch('/api/v1/categories', {
+                    method: 'DELETE',
+                    cache: 'no-cache',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(deleteBody)
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var result = data.entity;
+                    if (result && result.fails && result.fails.length > 0) {
+                        dojo.byId("warningDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>';
+                        var t = new dojox.timing.Timer();
+                        t.setInterval(5000);
+                        t.onTick = function() {
+                            t.stop();
                             dojo.byId("warningDiv").innerHTML = '';
-                        } else if(result==1) {
-                            dojo.byId("warningDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>';
-                            var t = new dojox.timing.Timer();
-                            t.setInterval(5000);
-                            t.onTick = function() {
-                                t.stop();
-                                dojo.byId("warningDiv").innerHTML = '';
-                            };
-                            t.start();
-                        }
-
-                        dia.hide();
-                        doSearch(false, true);
-                        grid.selection.clear();
+                        };
+                        t.start();
+                    } else {
+                        dojo.byId("warningDiv").innerHTML = '';
                     }
+                    dia.hide();
+                    doSearch(false, true);
+                    grid.selection.clear();
+                })
+                .catch(function(error) {
+                    console.error('Error deleting categories:', error);
+                    dia.hide();
                 });
             }
 
@@ -648,27 +673,34 @@
                     inodes[index] = selectedItem.i.inode;
                 });
 
-                CategoryAjax.deleteSelectedCategories(inodes, {
-                    callback:function(result) {
-                        if(result==0) {
+                fetch('/api/v1/categories', {
+                    method: 'DELETE',
+                    cache: 'no-cache',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(inodes)
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var result = data.entity;
+                    if (result && result.fails && result.fails.length > 0) {
+                        dojo.byId("warningDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>';
+                        var t = new dojox.timing.Timer();
+                        t.setInterval(5000);
+                        t.onTick = function() {
                             dojo.byId("warningDiv").innerHTML = '';
-                        } else if(result==1) { // has dependencies
-                            dojo.byId("warningDiv").innerHTML = '<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>';
-                            var t = new dojox.timing.Timer();
-                            t.setInterval(5000);
-                            t.onTick = function() {
-                                dojo.byId("warningDiv").innerHTML = '';
-                                t.stop();
-                            }
-                            t.start();
-                        } else if (result==2) {
-                            dojo.byId("warningDiv").innerHTML = '';
+                            t.stop();
                         }
-
-                        grid.selection.clear();
-                        doSearch(false, true);
-                        dia.hide();
+                        t.start();
+                    } else {
+                        dojo.byId("warningDiv").innerHTML = '';
                     }
+                    grid.selection.clear();
+                    doSearch(false, true);
+                    dia.hide();
+                })
+                .catch(function(error) {
+                    console.error('Error deleting categories:', error);
+                    dia.hide();
                 });
             };
         }
@@ -695,41 +727,74 @@
         var key = dojo.byId(prefix+"CatKey").value;
         var keywords = dojo.byId(prefix+"CatKeywords").value;
 
-        CategoryAjax.saveOrUpdateCategory(save, currentInodeOrIdentifier, name, velVar, key, keywords, {
-            callback:function(result) {
+        var requestBody;
+        var requestMethod;
+        var requestUrl = '/api/v1/categories';
+
+        if (save) {
+            requestMethod = 'POST';
+            requestBody = {
+                categoryName: name,
+                categoryVelocityVarName: velVar,
+                key: key,
+                keywords: keywords,
+                parent: currentInodeOrIdentifier || null
+            };
+        } else {
+            requestMethod = 'PUT';
+            requestBody = {
+                inode: currentInodeOrIdentifier,
+                categoryName: name,
+                categoryVelocityVarName: velVar,
+                key: key,
+                keywords: keywords
+            };
+        }
+
+        fetch(requestUrl, {
+            method: requestMethod,
+            cache: 'no-cache',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(requestBody)
+        })
+        .then(function(r) {
+            if (r.status === 403) {
+                return r.json().then(function() {
+                    var message = `<%= LanguageUtil.get(pageContext, "message.category.permission.error") %>`;
+                    dojo.byId("savedMessage").innerHTML = message;
+                    dojo.byId("savedMessage").style = "color:red; font-size:11px;";
+                    if (!save) { showDotCMSSystemMessage(message); }
+                });
+            }
+            if (!r.ok) {
+                return r.json().then(function(errData) {
+                    var errMsg = (errData && errData.message) ? errData.message : '';
+                    var message;
+                    if (errMsg.indexOf('taken') !== -1 || errMsg.indexOf('key') !== -1) {
+                        message = `<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>`;
+                    } else {
+                        message = errMsg || `<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>`;
+                    }
+                    dojo.byId("savedMessage").innerHTML = message;
+                    dojo.byId("savedMessage").style = "color:red; font-size:11px;";
+                });
+            }
+            return r.json().then(function() {
                 doSearch(false, true);
                 grid.selection.clear();
-
-                var message = "";
-                var messageStyle = "color:green; font-size:11px;";
-
-                switch (result) {
-                    case 0:
-                        message = `<%= LanguageUtil.get(pageContext, "message.category.add") %>`;
-                        clearAddDialog();
-                        if(!save) {
-                            message = `<%= LanguageUtil.get(pageContext, "message.category.update") %>`;
-                            showDotCMSSystemMessage(message);
-                        }
-                        break;
-                    case 1:
-                        message = `<%= LanguageUtil.get(pageContext, "message.category.permission.error") %>`;
-                        messageStyle = "color:red; font-size:11px;";
-                        error = true;
-						if(!save) {
-							showDotCMSSystemMessage(message);
-						}
-                        break;
-                    case 2:
-                        message = `<%= LanguageUtil.get(pageContext, "error.category.folder.taken") %>`;
-                        messageStyle = "color:red; font-size:11px;";
-                        break;
-                    default:
+                var message = `<%= LanguageUtil.get(pageContext, "message.category.add") %>`;
+                if (!save) {
+                    message = `<%= LanguageUtil.get(pageContext, "message.category.update") %>`;
+                    showDotCMSSystemMessage(message);
+                } else {
+                    clearAddDialog();
                 }
-
                 dojo.byId("savedMessage").innerHTML = message;
-                dojo.byId("savedMessage").style = messageStyle;
-            }
+                dojo.byId("savedMessage").style = "color:green; font-size:11px;";
+            });
+        })
+        .catch(function(error) {
+            console.error('Error saving category:', error);
         });
     }
 
@@ -741,21 +806,36 @@
     }
 
     function importCategories() {
-        var file = dwr.util.getValue('uploadFile');
+        var fileInput = document.getElementById('uploadFile');
         var filter = dojo.byId("catFilter").value;
         var merge = dojo.byId("radioTwo");
         var exportType = "replace";
 
-        if(merge.checked) {
+        if (merge.checked) {
             exportType = "merge";
         }
 
-        CategoryAjax.importCategories(currentInodeOrIdentifier, filter, file, exportType, function(result) {
-            var dia = dijit.byId('importCategoriesOptions');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            console.error('No file selected for import');
+            return;
+        }
 
-            if(result==0) {
-                dojo.byId("warningDiv").innerHTML = '';
-            }  else if (result==1) {
+        var formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('filter', filter || '');
+        formData.append('exportType', exportType);
+        formData.append('contextInode', currentInodeOrIdentifier || '');
+
+        fetch('/api/v1/categories/_import', {
+            method: 'POST',
+            cache: 'no-cache',
+            body: formData
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var dia = dijit.byId('importCategoriesOptions');
+            var result = data.entity;
+            if (result && result.fails && result.fails.length > 0) {
                 dojo.byId("warningDiv").innerHTML = `<%= LanguageUtil.get(pageContext, "message.category.delete.failed.has.dependencies") %>`;
                 var t = new dojox.timing.Timer();
                 t.setInterval(5000);
@@ -764,16 +844,24 @@
                     t.stop();
                 }
                 t.start();
+            } else {
+                dojo.byId("warningDiv").innerHTML = '';
             }
-
             dia.hide();
             doSearch(false, true);
             grid.selection.clear();
+        })
+        .catch(function(error) {
+            console.error('Error importing categories:', error);
         });
     }
 
 
     function initPermission() {
+        if (!currentInodeOrIdentifier) {
+            return;
+        }
+
         var nameField = dojo.byId("permCatName");
         nameField.innerHTML = currentCatName;
 

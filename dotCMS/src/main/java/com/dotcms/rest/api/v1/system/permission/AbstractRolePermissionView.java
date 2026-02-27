@@ -96,4 +96,46 @@ public interface AbstractRolePermissionView {
     )
     @Nullable
     Map<PermissionAPI.Scope, Set<PermissionAPI.Type>> inheritable();
+
+    /**
+     * Gets the type of the asset from which permissions are inherited.
+     * Only populated when {@link #inherited()} is true.
+     *
+     * @return Inherited source type (host, folder, category, structure), or empty string if not inherited
+     */
+    @JsonProperty("inheritedFromType")
+    @Schema(
+        description = "Type of the parent asset from which permissions are inherited (host, folder, category, structure)",
+        example = "folder"
+    )
+    @Value.Default
+    default String inheritedFromType() { return ""; }
+
+    /**
+     * Gets the display path/name of the asset from which permissions are inherited.
+     * Only populated when {@link #inherited()} is true.
+     *
+     * @return Inherited source path or name, or empty string if not inherited
+     */
+    @JsonProperty("inheritedFromPath")
+    @Schema(
+        description = "Display path or name of the parent asset from which permissions are inherited",
+        example = "/about-us/"
+    )
+    @Value.Default
+    default String inheritedFromPath() { return ""; }
+
+    /**
+     * Gets the ID of the asset from which permissions are inherited.
+     * Only populated when {@link #inherited()} is true.
+     *
+     * @return Inherited source asset ID, or empty string if not inherited
+     */
+    @JsonProperty("inheritedFromId")
+    @Schema(
+        description = "Identifier of the parent asset from which permissions are inherited",
+        example = "abc-123-def-456"
+    )
+    @Value.Default
+    default String inheritedFromId() { return ""; }
 }

@@ -38,7 +38,6 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 
 <script type='text/javascript' src='/dwr/interface/CalendarAjax.js'></script>
-<script type='text/javascript' src='/dwr/interface/CategoryAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 <script type='text/javascript' src='/dwr/engine.js'></script>
