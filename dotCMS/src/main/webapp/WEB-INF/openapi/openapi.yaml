@@ -28057,6 +28057,20 @@ components:
           type: boolean
           description: Whether permissions are inherited from a parent asset
           example: false
+        inheritedFromId:
+          type: string
+          description: Identifier of the parent asset from which permissions are inherited
+          example: abc-123-def-456
+        inheritedFromPath:
+          type: string
+          description: Display path or name of the parent asset from which permissions
+            are inherited
+          example: /about-us/
+        inheritedFromType:
+          type: string
+          description: "Type of the parent asset from which permissions are inherited\
+            \ (host, folder, category, structure)"
+          example: folder
         roleId:
           type: string
           description: Role identifier
