@@ -1,6 +1,6 @@
 package com.dotmarketing.util.contentet.pagination;
 
-import com.dotcms.content.elasticsearch.business.ESContentletScroll;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -65,7 +65,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
 
     // Scroll API state
     private boolean useScrollApi = false;
-    private ESContentletScroll esContentletScroll = null;
+    private IndexContentletScroll contentletScroll = null;
 
     /**
      * Create a PaginatedContentlet
@@ -105,7 +105,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
                 }
 
                 // Clear scroll if it was created but returned no results
-                if (esContentletScroll != null && totalHits == 0) {
+                if (contentletScroll != null && totalHits == 0) {
                     Logger.debug(this.getClass(), "Clearing unused scroll context since no results were returned");
                     Try.run(this::close);
                 }
@@ -120,7 +120,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
             currentPageContentletInodes = new ArrayList<>();
             totalHits = 0; // CRITICAL: Reset totalHits so iterator won't try to iterate
             // Clear scroll if it was created before failure
-            if (esContentletScroll != null) {
+            if (contentletScroll != null) {
                 Try.run(this::close);
             }
         }
@@ -161,7 +161,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
             // CRITICAL: Use ContentletAPI to create scroll query with proper permissions applied
             // DO NOT bypass the API by going directly to the factory, as that would skip
             // permission checks and create a security vulnerability
-            this.esContentletScroll = this.contentletAPI.createScrollQuery(
+            this.contentletScroll = this.contentletAPI.createScrollQuery(
                     luceneQuery, user, respectFrontendRoles, perPage, SORT_BY);
 
             return initializeScrollAndLoadFirstPage();
@@ -192,11 +192,11 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
      */
     private List<String> initializeScrollAndLoadFirstPage() throws DotDataException {
         // Scroll is already initialized in constructor, just get first batch
-        final List<ContentletSearch> batch = esContentletScroll.nextBatch();
+        final List<ContentletSearch> batch = contentletScroll.nextBatch();
 
         Logger.debug(this.getClass(),
                 String.format("Scroll API ready: totalHits=%d, firstBatchSize=%d",
-                        esContentletScroll.getTotalHits(), batch.size()));
+                        contentletScroll.getTotalHits(), batch.size()));
 
         return batch.stream()
                 .map(ContentletSearch::getInode)
@@ -208,7 +208,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
      * Delegates to ESContentletScroll.
      */
     private List<String> loadNextPageWithScroll() throws DotDataException {
-        final List<ContentletSearch> batch = esContentletScroll.nextBatch();
+        final List<ContentletSearch> batch = contentletScroll.nextBatch();
 
         Logger.debug(this.getClass(),
                 () -> String.format("Scroll API next batch: size=%d", batch.size()));
@@ -247,9 +247,9 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
      */
     @Override
     public void close() {
-        if (esContentletScroll != null) {
-            esContentletScroll.close();
-            esContentletScroll = null;
+        if (contentletScroll != null) {
+            contentletScroll.close();
+            contentletScroll = null;
         }
     }
 

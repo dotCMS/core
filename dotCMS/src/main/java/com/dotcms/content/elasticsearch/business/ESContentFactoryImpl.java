@@ -16,6 +16,7 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
@@ -1625,7 +1626,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @return ESContentletScroll instance for iterating through results
      */
     @Override
-    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+    public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
                                                   final boolean respectFrontendRoles, final int batchSize,
                                                   final String sortBy) {
        return indexOperationsES.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
@@ -1641,7 +1642,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @return ESContentletScroll instance for iterating through results
      */
     @Override
-    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+    public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
                                                   final boolean respectFrontendRoles, final int batchSize) {
         return createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, "title asc");
     }

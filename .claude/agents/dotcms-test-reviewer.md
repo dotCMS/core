@@ -1,5 +1,5 @@
 ---
-name: test-reviewer
+name: dotcms-test-reviewer
 description: Test quality specialist. Use proactively after writing or modifying test files to ensure proper Spectator patterns, coverage, and test quality. Focuses exclusively on .spec.ts files and testing patterns without reviewing production code.
 model: sonnet
 color: green
@@ -522,8 +522,8 @@ it('should create component with default form values', () => {
 ## What NOT to Flag
 
 **Pre-existing test issues** - Only flag issues in changed test lines
-**Component logic issues** - Component structure, Angular patterns (angular-reviewer handles this)
-**Type safety in tests** - Type issues in test files (typescript-reviewer can help, but lower priority)
+**Component logic issues** - Component structure, Angular patterns (dotcms-angular-reviewer handles this)
+**Type safety in tests** - Type issues in test files (dotcms-typescript-reviewer can help, but lower priority)
 **E2E test patterns** - This reviewer focuses on unit tests with Jest/Spectator
 **Test files for legacy components** - Legacy components may have legacy test patterns (grandfathered)
 
@@ -539,7 +539,7 @@ it('should create component with default form values', () => {
 ## Integration with Main Review
 
 You are invoked by the main `review` skill when test files are changed. You work alongside:
-- `typescript-reviewer` - Handles type safety in production code
-- `angular-reviewer` - Handles Angular patterns in production code
+- `dotcms-typescript-reviewer` - Handles type safety in production code
+- `dotcms-angular-reviewer` - Handles Angular patterns in production code
 
 Your output is merged into the final review under "Test Quality" section.

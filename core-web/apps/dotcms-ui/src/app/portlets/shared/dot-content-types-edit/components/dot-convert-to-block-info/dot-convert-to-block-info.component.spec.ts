@@ -1,5 +1,4 @@
-import { TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -13,56 +12,35 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotConvertToBlockInfoComponent', () => {
-    beforeEach(async () => {
-        TestBed.configureTestingModule({
-            imports: [DotConvertToBlockInfoComponent],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ]
-        });
+    let spectator: Spectator<DotConvertToBlockInfoComponent>;
 
-        await TestBed.compileComponents();
+    const createComponent = createComponentFactory({
+        component: DotConvertToBlockInfoComponent,
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
     });
 
     it('should render info and learn more button', () => {
-        const fixture = TestBed.createComponent(DotConvertToBlockInfoComponent);
-        const de = fixture.debugElement;
+        const infoContent = spectator.query(byTestId('infoContent'));
+        const learnMore = spectator.query(byTestId('learnMore'));
 
-        fixture.detectChanges();
-
-        const infoContent = de.query(By.css('[data-testId="infoContent"]')).nativeElement;
-        const learnMore = de.query(By.css('[data-testId="learnMore"]')).nativeElement;
-
-        expect(infoContent.textContent?.trim()).toBe('Info Content');
-        expect(learnMore.textContent?.trim()).toBe('Learn More');
+        expect(infoContent?.textContent?.trim()).toBe('Info Content');
+        expect(learnMore?.textContent?.trim()).toBe('Learn More');
     });
 
-    // TODO: Fix this test - setInput() with signal inputs appears to have issues in TestBed
-    // The component was migrated from @Input() to input() signals but the test wasn't updated
-    // The same UI behavior is tested in the first test (learn more button when no currentField)
-    it.skip('should render info and info button', () => {
-        const fixture = TestBed.createComponent(DotConvertToBlockInfoComponent);
-        const de = fixture.debugElement;
+    it('should render info and info button when currentField has id', () => {
+        spectator.setInput('currentField', { id: '123' });
+        spectator.detectChanges();
 
-        fixture.componentRef.setInput('currentField', {
-            id: '123'
-        });
-
-        // First detectChanges to initialize
-        fixture.detectChanges();
-
-        // Second detectChanges to ensure signals are updated
-        fixture.detectChanges();
-
-        const infoContent = de.query(By.css('[data-testId="infoContent"]'));
-        const button = de.query(By.css('[data-testId="button"]'));
+        const infoContent = spectator.query(byTestId('infoContent'));
+        const button = spectator.query(byTestId('button'));
 
         expect(infoContent).toBeTruthy();
-        expect(infoContent.nativeElement.textContent?.trim()).toBe('Info Content');
+        expect(infoContent?.textContent?.trim()).toBe('Info Content');
         expect(button).toBeTruthy();
-        expect(button.nativeElement.textContent?.trim()).toBe('Info Button');
+        expect(button?.textContent?.trim()).toBe('Info Button');
     });
 });

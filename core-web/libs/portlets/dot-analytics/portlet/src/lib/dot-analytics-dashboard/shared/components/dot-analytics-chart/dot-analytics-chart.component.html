@@ -16,22 +16,19 @@
 
 <p-card
     class="chart-card"
-    [class.chart-card--loading]="isLoading"
-    [class.chart-card--empty]="isEmpty"
-    [class.chart-card--error]="isError"
     [class.flex]="shouldUsePieLayout"
     [class.w-full]="shouldUsePieLayout"
     data-testid="analytics-chart">
     @if ($isError()) {
         <!-- Error state -->
-        <div class="chart-error flex items-center justify-center" [style.height]="height">
+        <div class="flex flex-1 items-center justify-center" [style.min-height]="height">
             <dot-analytics-state-message
                 message="analytics.charts.error.loading"
                 icon="pi-exclamation-triangle" />
         </div>
     } @else if (isLoading) {
         <!-- Loading state with skeletons -->
-        <div class="chart-loading flex items-center justify-center w-full" [style.height]="height">
+        <div class="flex items-center justify-center w-full" [style.height]="height">
             @if (type === 'line') {
                 <!-- Line chart skeleton -->
                 <div class="chart-skeleton chart-skeleton--line">
@@ -89,14 +86,7 @@
             }
         </div>
     } @else if (isEmpty) {
-        <!-- Empty state -->
-        <div
-            class="chart-container chart-empty w-full flex items-center justify-center"
-            [style.height]="height">
-            <dot-analytics-state-message
-                message="analytics.charts.empty.description"
-                icon="pi-info-circle" />
-        </div>
+        <dot-analytics-empty-state [style.height]="height" />
     } @else {
         <!-- Normal chart content -->
         <div class="chart-container" [style.height]="height">

@@ -1,6 +1,40 @@
 @use "variables" as *;
 
-::ng-deep {
+$table-min-height: 20rem;
+
+.table-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: $table-min-height;
+}
+
+.skeleton-table {
+    display: flex;
+    flex-direction: column;
+
+    &__header {
+        display: flex;
+        gap: $spacing-3;
+        padding: $spacing-3 $spacing-4;
+        border-bottom: 1px solid var(--surface-200);
+    }
+
+    &__row {
+        display: flex;
+        gap: $spacing-3;
+        padding: $spacing-3 $spacing-4;
+        border-bottom: 1px solid var(--surface-100);
+    }
+
+    &__pagination {
+        display: flex;
+        justify-content: center;
+        padding: $spacing-3 $spacing-4;
+    }
+}
+
+:host ::ng-deep {
     .p-tag.event-type-badge {
         border-radius: $border-radius-sm;
         font-size: $font-size-xs;
