@@ -577,6 +577,11 @@ tiptap-editor::ng-deep .ProseMirror img.dot-image {
     border-radius: 0.25rem;
 }
 
+tiptap-editor::ng-deep .ProseMirror .grid-block__column img.dot-image {
+    max-width: 100%;
+    max-height: none;
+}
+
 tiptap-editor::ng-deep .ProseMirror img.dot-image:before {
     content: 'The image URL ' attr(src) ' seems to be broken, please double check the URL.';
     align-items: center;
