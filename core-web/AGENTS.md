@@ -5,7 +5,14 @@ Angular/Nx monorepo for the dotCMS admin UI, SDKs, and shared libraries. Check `
 ## Commands
 
 ```bash
+# Frontend dev server lifecycle (preferred over running nx serve directly)
+just dev-start-frontend                   # start nx serve in background → :4200/dotAdmin (PID-managed)
+just dev-stop-frontend                    # stop cleanly via PID file
+just dev-frontend-logs                    # tail the dev server log
+
+# Or run directly in the foreground (Ctrl+C to stop)
 npx nx serve dotcms-ui                    # dev server (:4200), proxies API to :8080
+
 npx nx test dotcms-ui                     # unit tests
 npx nx lint dotcms-ui                     # lint
 npx nx test dotcms-ui --testPathPattern=dot-edit-content  # single test file
@@ -25,6 +32,7 @@ npx nx affected -t test --exclude='tag:skip:test'         # changed projects onl
 
 ## Gotchas
 
+- **`:4200` vs `:8080`**: `nx serve` serves Angular from disk at `:4200/dotAdmin` with live reload. `:8080/dotAdmin` serves the Angular WAR compiled into the Docker image — changes to `core-web/` files are invisible there until a full rebuild. Always develop against `:4200`.
 - **Proxy errors**: Backend must be running on port 8080 for the dev server. Start with `just dev-start-on-port 8080` or run the full dotCMS stack.
 - **Circular dependencies**: Check TypeScript paths in `tsconfig.base.json` if builds fail unexpectedly.
 - **Test inputs**: Never set component inputs directly (`component.prop = x`); always use `spectator.setInput()` or tests will silently not trigger change detection.

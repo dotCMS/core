@@ -39,8 +39,22 @@ build-test:
 build-quick:
     ./mvnw -DskipTests install
 
+# Builds dotcms-core incrementally, showing phase/error progress. Full log saved to /tmp.
 build-quicker:
-    ./mvnw -pl :dotcms-core -DskipTests install
+    #!/usr/bin/env bash
+    set -o pipefail
+    LOG=$(mktemp /tmp/dotcms-build.XXXXXX)
+    echo "Building dotcms-core — full log: $LOG"
+    ./mvnw -pl :dotcms-core -DskipTests install 2>&1 | tee "$LOG" | \
+        grep --line-buffered -E '^\[INFO\] (---|BUILD)|^\[ERROR\]|DOCKER>' || true
+    if grep -q 'BUILD FAILURE' "$LOG"; then
+        echo ""
+        echo "=== Build errors ==="
+        grep '^\[ERROR\]' "$LOG" | grep -v '^\[ERROR\] *$' | head -30
+        echo "Full log: $LOG"
+        exit 1
+    fi
+    echo "Full log: $LOG"
 
 # Builds the project for production, skipping tests
 build-prod:
@@ -86,13 +100,127 @@ dev-run-map-dev-paths:
 dev-run-debug-suspend port="8082":
     ./mvnw -pl :dotcms-core -Pdocker-start,debug-suspend -Dtomcat.port={{ port }}
 
-# Starts the dotCMS Docker container in the background
+# Starts the dotCMS Docker container and prints access URLs on completion.
 dev-start-on-port port="8082":
     ./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port={{ port }}
+    just dev-urls
+
+# Prints all access URLs for the running dotCMS instance. Host ports discovered live from Docker.
+dev-urls:
+    #!/usr/bin/env bash
+    CONTAINER=$(just _dotcms-container) || exit 1
+    APP=$(docker port "$CONTAINER" 8080 2>/dev/null | cut -d: -f2)
+    MGMT=$(docker port "$CONTAINER" 8090 2>/dev/null | cut -d: -f2)
+    echo ""
+    echo "  dotAdmin  → http://localhost:${APP}/dotAdmin"
+    echo "  REST API  → http://localhost:${APP}/api/v1/"
+    echo "  Health    → http://localhost:${MGMT}/dotmgt/livez"
+    echo ""
 
 # Stops the development Docker container
 dev-stop:
     ./mvnw -pl :dotcms-core -Pdocker-stop
+
+# Starts the Angular frontend dev server on :4200. Discovers backend port from Docker; falls back to :8080.
+dev-start-frontend:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -f ".frontend.pid" ] && kill -0 "$(cat .frontend.pid)" 2>/dev/null; then
+        echo "Frontend dev server already running (PID=$(cat .frontend.pid))"
+        exit 0
+    fi
+    # Discover the backend app port from Docker. Falls back to 8080 if no container is running.
+    CONTAINER=$(docker ps --filter "status=running" \
+                          --format '{{ "{{.Names}}\t{{.Image}}" }}' \
+                          | awk -F'\t' '/dotcms\/dotcms-test:/{print $1}' | head -1)
+    if [ -n "$CONTAINER" ]; then
+        APP_PORT=$(docker port "$CONTAINER" 8080 2>/dev/null | cut -d: -f2)
+    fi
+    DOTCMS_HOST="http://localhost:${APP_PORT:-8080}"
+    echo "Proxying API to $DOTCMS_HOST"
+    cd core-web
+    DOTCMS_HOST="$DOTCMS_HOST" NODE_OPTIONS="--max_old_space_size=4096" nohup npx nx serve dotcms-ui > ../.frontend.log 2>&1 &
+    disown $!
+    echo $! > ../.frontend.pid
+    echo "Frontend dev server started (PID=$!) → http://localhost:4200/dotAdmin"
+    echo "Logs: just dev-frontend-logs"
+
+# Stops the Angular frontend dev server started by dev-start-frontend
+dev-stop-frontend:
+    #!/usr/bin/env bash
+    PID_FILE=".frontend.pid"
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE")
+        if kill "$PID" 2>/dev/null; then
+            echo "Stopped frontend dev server (PID=$PID)"
+        else
+            echo "Process $PID already stopped"
+        fi
+        rm -f "$PID_FILE"
+    else
+        # lsof is macOS/common Linux; fall back to ss (Linux) or fuser if unavailable
+        PID=$(lsof -ti :4200 2>/dev/null \
+              || ss -Htlnp 'sport = :4200' 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' \
+              || fuser 4200/tcp 2>/dev/null \
+              || true)
+        if [ -n "$PID" ]; then
+            kill "$PID" && echo "Stopped frontend dev server (PID=$PID)"
+        else
+            echo "No frontend dev server running on :4200"
+        fi
+    fi
+
+# Tail the Angular frontend dev server log
+dev-frontend-logs:
+    tail -f .frontend.log
+
+# Internal helper: finds the running dotCMS container by image name (tag-agnostic).
+_dotcms-container:
+    #!/usr/bin/env bash
+    # Filter by image name prefix — tag is intentionally omitted since it varies by build.
+    # Full image namespacing per workspace is a tracked issue for multi-worktree support.
+    NAMES=$(docker ps --filter "status=running" \
+                      --format '{{ "{{.Names}}\t{{.Image}}" }}' \
+                      | awk -F'\t' '/dotcms\/dotcms-test:/{print $1}')
+    if [ -z "$NAMES" ]; then
+        echo "No dotCMS container running" >&2; exit 1
+    fi
+    LINE_COUNT=$(printf '%s\n' "$NAMES" | wc -l | tr -d ' ')
+    if [ "$LINE_COUNT" -gt 1 ]; then
+        echo "Multiple dotCMS containers running — use docker ps to identify the correct one:" >&2
+        printf '%s\n' "$NAMES" >&2
+        exit 1
+    fi
+    echo "$NAMES"
+
+# Checks dotCMS health via the management port. Host port discovered live from Docker.
+dev-health:
+    #!/usr/bin/env bash
+    CONTAINER=$(just _dotcms-container) || exit 1
+    PORT=$(docker port "$CONTAINER" 8090 2>/dev/null | cut -d: -f2)
+    if [ -z "$PORT" ]; then
+        echo "Management port (8090) not mapped on $CONTAINER" >&2; exit 1
+    fi
+    RESULT=$(curl -sf "http://localhost:$PORT/dotmgt/livez" 2>/dev/null) || {
+        echo "unhealthy — $CONTAINER :$PORT" >&2; exit 1
+    }
+    echo "$RESULT — $CONTAINER :$PORT"
+
+# Polls until dotCMS is healthy (max 3 min). Use after dev-start-on-port or a restart.
+dev-wait:
+    #!/usr/bin/env bash
+    echo -n "Waiting for dotCMS"
+    TRIES=0
+    until just dev-health > /dev/null 2>&1; do
+        printf '.'
+        TRIES=$((TRIES + 1))
+        if [ "$TRIES" -ge 60 ]; then
+            echo " timed out after 3 minutes" >&2; exit 1
+        fi
+        sleep 3
+    done
+    echo ""
+    just dev-health
 
 # Cleans up Docker volumes associated with the development environment
 dev-clean-volumes:
