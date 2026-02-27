@@ -270,24 +270,30 @@ For `dojoType="dijit.Dialog"` elements, use the native HTML `<dialog>` element.
 <script type="application/javascript">
   DotCustomFieldApi.ready(() => {
     // Select a Page
-    const pageSelectorModal = bridge.openBrowserModal({
+    const pageSelectorModal = DotCustomFieldApi.openBrowserModal({
       header: "Select a Page",
-      mimeTypes: ["application/dotpage"],
+      params: {
+        mimeTypes: ["application/dotpage"],
+      },
       onClose: (result) => console.log(result),
     });
     pageSelectorModal.close(); // close programmatically if needed
 
     // Select an Image
-    const imageSelectorModal = bridge.openBrowserModal({
+    const imageSelectorModal = DotCustomFieldApi.openBrowserModal({
       header: "Select an Image",
-      mimeTypes: ["image"],
+      params: {
+        mimeTypes: ["image"],
+      },
       onClose: (result) => console.log(result),
     });
 
     // Select a File
-    const fileSelectorModal = bridge.openBrowserModal({
+    const fileSelectorModal = DotCustomFieldApi.openBrowserModal({
       header: "Select a File",
-      includeDotAssets: true,
+      params: {
+        includeDotAssets: true,
+      },
       onClose: (result) => console.log(result),
     });
   });
@@ -359,6 +365,43 @@ DotCustomFieldApi.ready(() => {
   }
 });
 ```
+
+### Security
+
+**Never use `innerHTML` with string interpolation or inline event handlers** — they introduce XSS vulnerabilities if user-controlled values are involved:
+
+```js
+// BAD — XSS risk: quotes in newSlug can break out of the onclick string
+suggestion.innerHTML = `
+  <a href="#" onclick="applySuggestion('${newSlug}'); return false">
+    Use: ${newSlug}
+  </a>
+`;
+
+// GOOD — create elements programmatically; textContent is XSS-safe
+suggestion.innerHTML = "";
+const link = document.createElement("a");
+link.textContent = `Use: ${newSlug}`; // textContent escapes HTML automatically
+link.addEventListener("click", (e) => {
+  e.preventDefault();
+  applySuggestion(newSlug);
+});
+suggestion.appendChild(link);
+```
+
+This is also why Rule 10 mandates `addEventListener` over inline `onclick=` / `onkeyup=` attributes.
+
+### Script Type Attributes
+
+Be consistent when writing `<script>` tags in migrated VTL files:
+
+| Type | When to use |
+|------|-------------|
+| `<script type="application/javascript">` | Standard scripts — the default convention in this codebase |
+| `<script type="module">` | When you need ES module scope (top-level `const`/`let` not exposed globally) |
+| `<script>` (no attribute) | Equivalent to `application/javascript`, but omitting the attribute is less explicit |
+
+**Prefer `type="application/javascript"` for consistency** unless you specifically need module semantics. Do not mix bare `<script>` with typed variants within the same file or guide examples.
 
 ### What to Preserve
 
@@ -650,6 +693,9 @@ DotCustomFieldApi.ready(() => {
         name: "titleBox",
         value: dojo.byId("title").value,
         onChange: function () {
+          // dojo.byId("title") refers to the hidden input dotCMS generates
+          // for the actual field value (id matches the field variable name).
+          // "titleBox" is the visible Dijit widget wrapping it.
           dojo.byId("title").value = this.get("value");
 
           var url = dijit.byId("url");
@@ -677,12 +723,17 @@ DotCustomFieldApi.ready(() => {
     );
   });
 </script>
+<!-- Hidden input managed by dotCMS for the actual field value -->
+<input type="hidden" id="title" />
+<!-- Visible Dijit widget -->
 <input id="titleBox" />
 ```
 
+> **Note:** In the old pattern, `dojo.byId("title")` refers to a hidden input element that dotCMS generates for each field (its `id` matches the field's variable name). The visible `<input id="titleBox">` is the Dijit widget overlay. In the new pattern, `DotCustomFieldApi.getField("title")` replaces both — there is no need to manage hidden inputs directly.
+
 **New (title_custom_field.vtl):**
 ```html
-<script>
+<script type="application/javascript">
   DotCustomFieldApi.ready(() => {
     const titleField = DotCustomFieldApi.getField("title");
     const urlField = DotCustomFieldApi.getField("url");
@@ -749,6 +800,9 @@ DotCustomFieldApi.ready(() => {
       return;
     }
 
+    // ⚠️ XSS risk: string interpolation inside onclick and innerHTML can allow
+    // script injection if newSlug contains quotes or HTML special characters.
+    // This is one of the reasons this pattern is being replaced.
     suggestion.innerHTML = `
       <a href="#" onclick="applySuggestion('${newSlug}'); return false">
         Use: ${newSlug}
@@ -826,48 +880,6 @@ DotCustomFieldApi.ready(() => {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-  const applySuggestion = (slug) => {
-    const input = document.getElementById(SLUG_INPUT);
-    input.value = slug;
-    currentValue = slug;
-    isLocked = true;
-    const field = DotCustomFieldApi.getField(TARGET_FIELD);
-    field.setValue(slug);
-    document.getElementById(SUGGESTION_DIV).style.display = "none";
-  };
-
-  const showSuggestion = (newSlug) => {
-    const suggestion = document.getElementById(SUGGESTION_DIV);
-
-    if (!newSlug || newSlug === currentValue) {
-      suggestion.style.display = "none";
-      return;
-    }
-
-    suggestion.innerHTML = "";
-
-    const link = document.createElement("a");
-    link.textContent = `Use: ${newSlug}`;
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      applySuggestion(newSlug);
-    });
-
-    suggestion.appendChild(link);
-    suggestion.style.display = "block";
-    suggestion.style.cursor = "pointer";
-  };
-
-  const handleInput = () => {
-    const input = document.getElementById(SLUG_INPUT);
-    const newSlug = slugifyText(input.value);
-    input.value = newSlug;
-    currentValue = newSlug;
-    isLocked = true;
-    const field = DotCustomFieldApi.getField(TARGET_FIELD);
-    field.setValue(newSlug);
-  };
-
   DotCustomFieldApi.ready(() => {
     const input = document.getElementById(SLUG_INPUT);
     const urlTitleField = DotCustomFieldApi.getField("urlTitle");
@@ -877,6 +889,45 @@ DotCustomFieldApi.ready(() => {
       input.value = savedValue;
       currentValue = savedValue;
     }
+
+    // Field reference captured once inside ready() and reused by both helpers
+    const applySuggestion = (slug) => {
+      input.value = slug;
+      currentValue = slug;
+      isLocked = true;
+      urlTitleField.setValue(slug);
+      document.getElementById(SUGGESTION_DIV).style.display = "none";
+    };
+
+    const showSuggestion = (newSlug) => {
+      const suggestion = document.getElementById(SUGGESTION_DIV);
+
+      if (!newSlug || newSlug === currentValue) {
+        suggestion.style.display = "none";
+        return;
+      }
+
+      suggestion.innerHTML = "";
+
+      const link = document.createElement("a");
+      link.textContent = `Use: ${newSlug}`;
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        applySuggestion(newSlug);
+      });
+
+      suggestion.appendChild(link);
+      suggestion.style.display = "block";
+      suggestion.style.cursor = "pointer";
+    };
+
+    const handleInput = () => {
+      const newSlug = slugifyText(input.value);
+      input.value = newSlug;
+      currentValue = newSlug;
+      isLocked = true;
+      urlTitleField.setValue(newSlug);
+    };
 
     const titleField = DotCustomFieldApi.getField("title");
     titleField.onChange((value) => {
