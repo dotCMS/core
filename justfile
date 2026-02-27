@@ -27,6 +27,11 @@ default:
 build:
     ./mvnw -DskipTests clean install
 
+
+# Builds the project without tests and disables Maven build cache
+build-no-cache:
+    ./mvnw -DskipTests clean install -Dmaven.build.cache.enabled=false
+
 # Builds the project without running tests, skip using docker or creating image
 build-no-docker:
     ./mvnw -DskipTests clean install -Ddocker.skip
@@ -305,7 +310,7 @@ check-native-deps:
 # Dependency Commands
 ###########################################################
 
-# Installs all dependencies for the current project
+# Installs all dependencies for the current project (macOS)
 install-all-mac-deps: install-jdk-mac check-docker-mac check-git-mac
 
 # Installs SDKMAN for managing Java JDK versions
@@ -350,3 +355,56 @@ check-git-mac:
         git --version; \
         echo "Git is already installed."; \
     fi
+
+
+# Installs all dependencies for the current project (Linux: Fedora/Ubuntu)
+install-all-linux-deps: install-jdk-linux check-docker-linux check-git-linux
+
+# Installs the latest version of Java JDK using SDKMAN (Linux)
+install-jdk-linux: install-sdkman-mac
+    #!/usr/bin/env bash
+    set -eo pipefail
+    source ~/.sdkman/bin/sdkman-init.sh
+    sdk env install java
+
+# Checks if Docker is installed and running (Linux); suggests apt/dnf install
+check-docker-linux:
+    #!/usr/bin/env bash
+    set -eo pipefail
+    if ! command -v docker >/dev/null 2>&1; then
+        echo "Docker is not installed."
+        if command -v apt-get >/dev/null 2>&1; then
+            echo "Install with: sudo apt-get update && sudo apt-get install -y docker.io"
+            echo "Or Docker CE: https://docs.docker.com/engine/install/ubuntu/"
+        elif command -v dnf >/dev/null 2>&1; then
+            echo "Install with: sudo dnf install -y docker"
+            echo "Then: sudo systemctl start docker && sudo systemctl enable docker"
+        else
+            echo "Install Docker from: https://docs.docker.com/get-docker/"
+        fi
+        exit 1
+    fi
+    echo "Docker is installed."
+    if ! docker info >/dev/null 2>&1; then
+        echo "Docker is not running. Start it with: sudo systemctl start docker"
+        exit 1
+    fi
+    echo "Docker is running."
+
+# Checks if Git is installed; installs via apt/dnf if missing (Linux)
+check-git-linux:
+    #!/usr/bin/env bash
+    set -eo pipefail
+    if ! command -v git >/dev/null 2>&1; then
+        echo "Git is not installed. Installing..."
+        if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y git
+        elif command -v dnf >/dev/null 2>&1; then
+            sudo dnf install -y git
+        else
+            echo "Please install Git manually (apt-get install git or dnf install git)"
+            exit 1
+        fi
+    fi
+    git --version
+    echo "Git is ready."

@@ -238,6 +238,7 @@
         "babel-jest": "29.7.0",
         "babel-loader": "^8.2.1",
         "codelyzer": "^6.0.2",
+        "daisyui": "^5.5.19",
         "dotenv": "^16.5.0",
         "esbuild": "^0.19.2",
         "eslint": "8.57.0",

@@ -1,19 +1,3 @@
-<style>
-  /* Template-field-only: thumbnail (shared dropdown styles are in native-field.component.scss) */
-  #templateThumbnailHolder {
-    transition: all 0.3s ease;
-    max-width: 100%;
-  }
-
-  .template-thumbnail-container {
-    display: none;
-  }
-
-  .template-thumbnail-container.visible {
-    display: block;
-  }
-</style>
-
 <script type="module">
   // Global Constants
   const initialHostId =
@@ -110,11 +94,11 @@
    * @param {string} identifier - The identifier of the selected option
    */
   function updateSelectedOption(dropdown, identifier) {
-    const options = dropdown.querySelectorAll(".custom-option");
+    const options = dropdown.querySelectorAll("[data-option]");
     options.forEach((opt) => {
-      opt.classList.remove("selected");
+      opt.classList.remove("active", "bg-base-200");
       if (opt.dataset.identifier === identifier) {
-        opt.classList.add("selected");
+        opt.classList.add("active", "bg-base-200");
       }
     });
   }
@@ -127,9 +111,9 @@
     const container = getElement("templateThumbnailContainer");
     if (container) {
       if (show) {
-        container.classList.add("visible");
+        container.classList.remove("hidden");
       } else {
-        container.classList.remove("visible");
+        container.classList.add("hidden");
       }
     }
   }
@@ -324,9 +308,9 @@
     // Update selected state in dropdown
     const dropdown = getElement("customDropdown");
     if (dropdown) {
-      const options = dropdown.querySelectorAll(".custom-option");
+      const options = dropdown.querySelectorAll("[data-option]");
       options.forEach((opt) => {
-        opt.classList.remove("selected");
+        opt.classList.remove("active");
       });
     }
 
@@ -346,9 +330,6 @@
 
     if (isInodeSet(imageInode)) {
       imageEl.src = `/dA/${imageInode}/250w`;
-      imageEl.style.border = "1px solid #B6CBEB";
-      imageEl.style.marginTop = "1rem";
-      imageEl.style.borderRadius = "4px";
       toggleThumbnailContainer(true);
     } else {
       toggleThumbnailContainer(false);
@@ -392,30 +373,45 @@
   }
 
   /**
-   * Creates an option element for the custom dropdown
+   * Creates an option element for the DaisyUI dropdown menu
    */
   function createOptionElement(template, selectedValue) {
-    const option = document.createElement("div");
-    option.className = "custom-option";
+    const option = document.createElement("li");
+    option.setAttribute("data-option", "");
     option.dataset.identifier = template.identifier;
 
     const hostName = getHostName(template);
     option.dataset.hostName = hostName;
 
+    // DaisyUI menu item: one solid block, one hover for the whole option
+    option.classList.add(
+      "cursor-pointer",
+      "rounded-btn",
+      "py-2",
+      "px-3",
+      "flex",
+      "flex-col",
+      "gap-0",
+      "leading-tight",
+      "bg-white-100",
+      "hover:bg-white-200",
+      "transition-colors",
+    );
+
     if (template.identifier === selectedValue) {
-      option.classList.add("selected");
+      option.classList.add("active", "bg-base-200");
     }
 
     if (template.identifier === ALL_SITES_IDENTIFIER) {
-      option.classList.add("placeholder");
+      option.classList.add("text-base-content/70");
     }
 
-    const title = document.createElement("div");
-    title.className = "option-title";
+    // Primary line: title (strong) – no own hover, part of the single option block
+    const title = document.createElement("strong");
+    title.className =
+      "block text-sm font-semibold text-base-content leading-tight pointer-events-none";
 
-    // For "All Sites", show the formatted version from htmlTitle or use the format
     if (template.identifier === ALL_SITES_IDENTIFIER) {
-      // Extract text from htmlTitle if available, otherwise use formatted version
       if (template.htmlTitle) {
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = template.htmlTitle;
@@ -427,8 +423,10 @@
       title.textContent = getCleanTitle(template);
     }
 
-    const subtitle = document.createElement("div");
-    subtitle.className = "option-subtitle";
+    // Secondary line: host/site (small) – no own hover, part of the single option block
+    const subtitle = document.createElement("small");
+    subtitle.className =
+      "block text-xs text-base-content/60 font-normal leading-tight mt-0.5 pointer-events-none";
     subtitle.textContent = hostName;
 
     option.appendChild(title);
@@ -449,8 +447,7 @@
     const moreChoicesButton = getElement("moreChoicesButton");
 
     if (!append) {
-      // Clear all except the more choices button
-      const existingOptions = dropdown.querySelectorAll(".custom-option");
+      const existingOptions = dropdown.querySelectorAll("[data-option]");
       existingOptions.forEach((opt) => opt.remove());
     }
 
@@ -488,10 +485,10 @@
 
     if (template && template.identifier !== ALL_SITES_IDENTIFIER) {
       setSelectButtonLabel(getCleanTitle(template));
-      button.classList.remove("placeholder");
+      button.classList.remove("opacity-60");
     } else {
       setSelectButtonLabel(ALL_SITES_TITLE);
-      button.classList.add("placeholder");
+      button.classList.add("opacity-60");
     }
   }
 
@@ -545,35 +542,38 @@
   }
 
   /**
-   * Opens the custom dropdown
+   * Opens the DaisyUI dropdown (details element).
+   * Per Daisy UI: open/close via JS by adding/removing the "open" attribute.
    */
   function openDropdown() {
-    const dropdown = getElement("customDropdown");
-    if (dropdown) {
-      dropdown.classList.add("open");
+    const holder = getElement("templateHolder");
+    if (holder && holder.tagName === "DETAILS") {
+      holder.setAttribute("open", "");
     }
   }
 
   /**
-   * Closes the custom dropdown
+   * Closes the DaisyUI dropdown (details element).
+   * Per Daisy UI: open/close via JS by adding/removing the "open" attribute.
    */
   function closeDropdown() {
-    const dropdown = getElement("customDropdown");
-    if (dropdown) {
-      dropdown.classList.remove("open");
+    const holder = getElement("templateHolder");
+    if (holder && holder.tagName === "DETAILS") {
+      holder.removeAttribute("open");
     }
   }
 
   /**
-   * Toggles the custom dropdown
+   * Toggles the DaisyUI dropdown (details element).
+   * Per Daisy UI: open/close via JS by adding/removing the "open" attribute.
    */
   function toggleDropdown() {
-    const dropdown = getElement("customDropdown");
-    if (dropdown) {
-      if (dropdown.classList.contains("open")) {
-        closeDropdown();
+    const holder = getElement("templateHolder");
+    if (holder && holder.tagName === "DETAILS") {
+      if (holder.hasAttribute("open")) {
+        holder.removeAttribute("open");
       } else {
-        openDropdown();
+        holder.setAttribute("open", "");
       }
     }
   }
@@ -600,44 +600,21 @@
       return;
     }
 
-    // Use existing button (from HTML with span + PrimeNG icon) or create fallback with same structure
-    let selectButton = getElement("customSelectButton");
-    if (!selectButton) {
-      selectButton = document.createElement("button");
-      selectButton.id = "customSelectButton";
-      selectButton.className = "custom-select-button placeholder";
-      selectButton.type = "button";
-      selectButton.setAttribute("aria-label", "Select template");
-      selectButton.setAttribute("aria-haspopup", "listbox");
-      const labelSpan = document.createElement("span");
-      labelSpan.id = "templateSelectButtonLabel";
-      labelSpan.textContent = ALL_SITES_TITLE;
-      const icon = document.createElement("i");
-      icon.className = "pi pi-chevron-down";
-      icon.setAttribute("aria-hidden", "true");
-      selectButton.appendChild(labelSpan);
-      selectButton.appendChild(icon);
-      templateHolder.appendChild(selectButton);
-    }
-
-    // Create custom dropdown
-    let dropdown = getElement("customDropdown");
-    if (!dropdown) {
-      dropdown = document.createElement("div");
-      dropdown.id = "customDropdown";
-      dropdown.className = "custom-dropdown";
-      dropdown.setAttribute("role", "listbox");
-      templateHolder.appendChild(dropdown);
-    }
-
-    // Create "More choices" button
+    // Grab existing DaisyUI dropdown elements
+    const selectButton = getElement("customSelectButton");
+    const dropdown = getElement("customDropdown");
     let moreChoicesButton = getElement("moreChoicesButton");
+
+    if (!selectButton || !dropdown) {
+      return;
+    }
+
     if (!moreChoicesButton) {
-      moreChoicesButton = document.createElement("div");
+      moreChoicesButton = document.createElement("li");
       moreChoicesButton.id = "moreChoicesButton";
-      moreChoicesButton.className = "more-choices-button";
+      moreChoicesButton.setAttribute("data-action", "load-more");
+      moreChoicesButton.className = "hidden border-t border-base-300";
       moreChoicesButton.textContent = "More choices";
-      moreChoicesButton.style.display = "none";
       dropdown.appendChild(moreChoicesButton);
     }
 
@@ -648,7 +625,7 @@
       }
 
       isLoading = true;
-      moreChoicesButton.classList.add("loading");
+      moreChoicesButton.classList.add("cursor-wait", "opacity-70");
       moreChoicesButton.textContent = "Loading...";
 
       currentPage++;
@@ -667,15 +644,15 @@
         populateCustomDropdown(result.templates, templateId, true);
 
         if (!hasMore) {
-          moreChoicesButton.style.display = "none";
+          moreChoicesButton.classList.add("hidden");
         }
 
         isLoading = false;
-        moreChoicesButton.classList.remove("loading");
+        moreChoicesButton.classList.remove("cursor-wait", "opacity-70");
         moreChoicesButton.textContent = "More choices";
       } catch (error) {
         isLoading = false;
-        moreChoicesButton.classList.remove("loading");
+        moreChoicesButton.classList.remove("cursor-wait", "opacity-70");
         moreChoicesButton.textContent = "More choices";
       }
     }
@@ -710,9 +687,9 @@
         populateCustomDropdown(result.templates, "");
 
         if (hasMore) {
-          moreChoicesButton.style.display = "block";
+          moreChoicesButton.classList.remove("hidden");
         } else {
-          moreChoicesButton.style.display = "none";
+          moreChoicesButton.classList.add("hidden");
         }
 
         isLoading = false;
@@ -727,19 +704,17 @@
       }
     }
 
-    // Handle option click
     dropdown.addEventListener("click", (e) => {
-      // Don't trigger if clicking on "More choices" button
-      if (e.target.closest(".more-choices-button")) {
+      if (e.target.closest("[data-action='load-more']")) {
         return;
       }
 
-      const option = e.target.closest(".custom-option");
+      const option = e.target.closest("[data-option]");
       if (option) {
         const identifier = option.dataset.identifier;
         const hostName = option.dataset.hostName;
-        const titleElement = option.querySelector(".option-title");
-        const fullTitle = titleElement ? titleElement.textContent : "";
+        const titleEl = option.querySelector("strong");
+        const fullTitle = titleEl ? titleEl.textContent : "";
 
         const template = allTemplates.find(
           (t) => t.identifier === identifier,
@@ -766,8 +741,11 @@
       loadMoreTemplates();
     });
 
-    // Toggle dropdown on button click
+    // Toggle dropdown on button click.
+    // preventDefault() is required: <summary> natively toggles its parent <details>;
+    // without it the browser removes the "open" attribute right after we set it.
     selectButton.addEventListener("click", (e) => {
+      e.preventDefault();
       e.stopPropagation();
       toggleDropdown();
     });
@@ -797,9 +775,9 @@
         populateCustomDropdown(result.templates, templateId);
 
         if (hasMore) {
-          moreChoicesButton.style.display = "block";
+          moreChoicesButton.classList.remove("hidden");
         } else {
-          moreChoicesButton.style.display = "none";
+          moreChoicesButton.classList.add("hidden");
         }
 
         // Find selected template
@@ -826,18 +804,31 @@
   });
 </script>
 
-<div class="custom-field-wrapper">
-  <div class="select-wrapper">
-    <div id="templateHolder">
-      <button
-        type="button"
-        id="customSelectButton"
-        class="custom-select-button placeholder"
-        aria-label="Select template"
-        aria-haspopup="listbox"
-      ><span id="templateSelectButtonLabel">All Sites</span><i class="pi pi-chevron-down" aria-hidden="true"></i></button>
-    </div>
-  </div>
+<div class="flex flex-col gap-2 w-full">
+  <details id="templateHolder" class="dropdown w-full">
+    <summary
+      id="customSelectButton"
+      class="btn btn-outline w-full justify-between opacity-60"
+      aria-label="Select template"
+      aria-haspopup="listbox"
+    >
+      <span id="templateSelectButtonLabel">All Sites</span>
+      <i class="pi pi-chevron-down" aria-hidden="true"></i>
+    </summary>
+    <ul
+      id="customDropdown"
+      class="menu dropdown-content bg-white-100 rounded-box z-[1] w-full max-h-96 overflow-y-auto shadow-sm"
+      role="listbox"
+    >
+      <li
+        id="moreChoicesButton"
+        data-action="load-more"
+        class="hidden border-t border-white-300"
+      >
+        More choices
+      </li>
+    </ul>
+  </details>
 
   <input
     id="currentTemplateId"
@@ -846,7 +837,11 @@
     value=""
   />
 
-  <div id="templateThumbnailContainer" class="template-thumbnail-container">
-    <img id="templateThumbnailHolder" alt="Template Thumbnail" />
+  <div id="templateThumbnailContainer" class="hidden mt-4">
+    <img
+      id="templateThumbnailHolder"
+      alt="Template Thumbnail"
+      class="max-w-full rounded border border-base-300 transition-all duration-300 ease-in-out"
+    />
   </div>
 </div>

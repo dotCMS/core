@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+@plugin "daisyui" {
+    /* DaisyUI solo aplica dentro de dot-native-field (componentes semánticos en custom fields). */
+    root: "dot-native-field";
+  }
 
 :root {
     --experiment-nav-size: 80px;
