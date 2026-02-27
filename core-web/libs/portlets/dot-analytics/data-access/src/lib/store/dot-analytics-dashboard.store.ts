@@ -77,32 +77,25 @@ export const DotAnalyticsDashboardStore = signalStore(
             },
 
             /**
-             * Updates time range and syncs URL with query params.
+             * Updates time range and syncs URL with query params without triggering Angular router navigation.
              */
             updateTimeRange(timeRange: TimeRangeInput): void {
                 store.setTimeRange(timeRange);
 
-                // Build query params from time range
-                const queryParams: Params = {};
+                const queryParams: Params = Array.isArray(timeRange)
+                    ? {
+                          time_range: TIME_RANGE_OPTIONS.custom,
+                          from: timeRange[0],
+                          to: timeRange[1]
+                      }
+                    : { time_range: timeRange };
 
-                if (Array.isArray(timeRange)) {
-                    // Custom date range
-                    queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
-                    queryParams['from'] = timeRange[0];
-                    queryParams['to'] = timeRange[1];
-                } else {
-                    // Predefined range
-                    queryParams['time_range'] = timeRange;
-                }
-
-                // Update URL
-                // TODO: Find a better way to update the URL with the time range query params.
-                router.navigate([], {
+                const urlTree = router.createUrlTree([], {
                     relativeTo: route,
-                    queryParams: queryParams,
-                    queryParamsHandling: 'merge',
-                    replaceUrl: true
+                    queryParams,
+                    queryParamsHandling: 'merge'
                 });
+                location.replaceState(router.serializeUrl(urlTree));
             }
         })
     ),

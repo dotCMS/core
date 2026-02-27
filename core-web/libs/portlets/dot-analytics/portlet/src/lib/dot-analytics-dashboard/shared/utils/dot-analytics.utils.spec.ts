@@ -1,4 +1,4 @@
-import { hexToRgba, isValidCustomDateRange } from './dot-analytics.utils';
+import { getValidTimeRangeUrl, hexToRgba, isValidCustomDateRange } from './dot-analytics.utils';
 
 describe('Analytics Utils', () => {
     // ============================================================================
@@ -6,9 +6,20 @@ describe('Analytics Utils', () => {
     // ============================================================================
 
     describe('isValidCustomDateRange', () => {
-        it('should return true for valid date range', () => {
+        it('should return true for ranges of 7 days or more', () => {
+            // Exactly 7 days: Jan 1 to Jan 7 (differenceInCalendarDays = 6)
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-07')).toBe(true);
+            // 30 days
             expect(isValidCustomDateRange('2024-01-01', '2024-01-31')).toBe(true);
+            // Cross-month
             expect(isValidCustomDateRange('2023-12-01', '2024-01-01')).toBe(true);
+        });
+
+        it('should return false for ranges shorter than 7 days', () => {
+            // 6-day range: Jan 1 to Jan 6 (differenceInCalendarDays = 5)
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-06')).toBe(false);
+            // Same day (0 days)
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-01')).toBe(false);
         });
 
         it('should return false for invalid dates', () => {
@@ -22,14 +33,34 @@ describe('Analytics Utils', () => {
             expect(isValidCustomDateRange('2024-12-31', '2024-01-01')).toBe(false);
         });
 
-        it('should return true for same dates', () => {
-            expect(isValidCustomDateRange('2024-01-01', '2024-01-01')).toBe(true);
-        });
-
         it('should return false for empty or null dates', () => {
             expect(isValidCustomDateRange('', '2024-01-31')).toBe(false);
             expect(isValidCustomDateRange('2024-01-01', '')).toBe(false);
             expect(isValidCustomDateRange('', '')).toBe(false);
+        });
+    });
+
+    describe('getValidTimeRangeUrl', () => {
+        it('should return the TimeRange value for a valid key', () => {
+            expect(getValidTimeRangeUrl('last7days')).toBe('last7days');
+            expect(getValidTimeRangeUrl('last30days')).toBe('last30days');
+            expect(getValidTimeRangeUrl('custom')).toBe('custom');
+        });
+
+        it('should return null for an unrecognized key', () => {
+            expect(getValidTimeRangeUrl('unknown-range')).toBeNull();
+            expect(getValidTimeRangeUrl('week')).toBeNull();
+        });
+
+        it('should return null for an empty string', () => {
+            expect(getValidTimeRangeUrl('')).toBeNull();
+        });
+
+        it('should return null when value is not a string', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            expect(getValidTimeRangeUrl(null as any)).toBeNull();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            expect(getValidTimeRangeUrl(undefined as any)).toBeNull();
         });
     });
 
