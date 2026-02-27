@@ -52,26 +52,38 @@ export function createGradientFillPlugin(
             const { ctx, chartArea, data } = chart;
             if (!chartArea) return;
 
-            const dataset = data?.datasets?.[0];
-            if (!dataset) return;
-
-            // Only create gradient if not already a CanvasGradient
-            if (dataset.backgroundColor instanceof CanvasGradient) return;
-
             const {
-                color,
+                color: fallbackColor,
                 topOpacity = DEFAULT_TOP_OPACITY,
                 middleOpacity = DEFAULT_MIDDLE_OPACITY,
                 bottomOpacity = DEFAULT_BOTTOM_OPACITY
             } = options;
 
-            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+            /** Extended dataset shape that includes the non-standard _fillOpacity property */
+            interface ExtendedDataset {
+                fill?: boolean | string;
+                /** Per-dataset fill opacity multiplier injected by sparkline component */
+                _fillOpacity?: number;
+                borderColor?: string | CanvasGradient | CanvasPattern;
+                backgroundColor?: string | CanvasGradient;
+            }
 
-            gradient.addColorStop(0, hexToRgba(color, topOpacity));
-            gradient.addColorStop(0.5, hexToRgba(color, middleOpacity));
-            gradient.addColorStop(1, hexToRgba(color, bottomOpacity));
+            for (const dataset of data?.datasets ?? []) {
+                const ds = dataset as ExtendedDataset;
+                if (ds.fill === false || ds.fill === undefined) continue;
+                if (dataset.backgroundColor instanceof CanvasGradient) continue;
 
-            dataset.backgroundColor = gradient;
+                const opacity = ds._fillOpacity ?? 1;
+                const rawColor = dataset.borderColor;
+                const color = typeof rawColor === 'string' ? rawColor : fallbackColor;
+                const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+
+                gradient.addColorStop(0, hexToRgba(color, topOpacity * opacity));
+                gradient.addColorStop(0.5, hexToRgba(color, middleOpacity * opacity));
+                gradient.addColorStop(1, hexToRgba(color, bottomOpacity * opacity));
+
+                dataset.backgroundColor = gradient;
+            }
         }
     };
 }

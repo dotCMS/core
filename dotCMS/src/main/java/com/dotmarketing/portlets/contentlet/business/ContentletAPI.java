@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -436,7 +437,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException If user is null and not respecting frontend roles
 	 * @throws DotDataException If there's an error creating the scroll query
 	 */
-	public com.dotcms.content.elasticsearch.business.ESContentletScroll createScrollQuery(
+	public IndexContentletScroll createScrollQuery(
 			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy)
 			throws DotSecurityException, DotDataException;
 

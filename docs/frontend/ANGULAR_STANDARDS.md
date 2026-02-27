@@ -4,7 +4,7 @@ This document is the single source of truth for Angular development in the dotCM
 
 ## Tech Stack Configuration
 - **Angular**: 20.3.9 standalone components
-- **UI**: PrimeNG 17.18.11, PrimeFlex 3.3.1
+- **UI**: PrimeNG 17.18.11, Tailwind CSS 4.x (PrimeFlex deprecated/removed)
 - **State**: NgRx Signals, Component Store  
 - **Build**: Nx 20.5.1
 - **Testing**: Jest + Spectator (REQUIRED)
@@ -297,6 +297,6 @@ yarn install                   # NOT npm install
 ## See also
 - [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md) — Structure, file layout, data flow
 - [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) — NgRx Signal Store for feature state
-- [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) — PrimeFlex, BEM, SCSS
+- [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) — Tailwind CSS, PrimeNG theme, BEM, SCSS
 - [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) — Spectator, byTestId, setInput
 - [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md) — Strict types, as const, # private

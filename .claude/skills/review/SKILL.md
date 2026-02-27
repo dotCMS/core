@@ -27,17 +27,17 @@ This skill performs an **autonomous, multi-stage frontend review** with intellig
 
 ### Stage 1-3: File Classification with Dedicated Agent
 
-Launch the **File Classifier** agent (subagent type: `file-classifier`) to handle PR data collection, file classification, and review decision:
+Launch the **File Classifier** agent (subagent type: `dotcms-file-classifier`) to handle PR data collection, file classification, and review decision:
 
 ```
 Task(
-    subagent_type="file-classifier",
+    subagent_type="dotcms-file-classifier",
     prompt="Classify PR #<NUMBER> files by domain (Angular, TypeScript, tests, styles) and determine if frontend-focused review is needed.",
     description="Classify PR files"
 )
 ```
 
-The `file-classifier` agent will:
+The `dotcms-file-classifier` agent will:
 1. **Fetch** PR metadata and diff (`gh pr view`, `gh pr diff`)
 2. **Classify** every changed file into reviewer buckets (angular, typescript, test, out-of-scope)
 3. **Calculate** frontend vs non-frontend ratio
@@ -49,31 +49,38 @@ The `file-classifier` agent will:
 
 ### Stage 4: Domain-Specific Review with Specialized Agents
 
-**Using the file map from the file-classifier agent**, launch **parallel specialized agents** only for buckets that have files:
+**Using the file map from the dotcms-file-classifier agent**, launch **parallel specialized agents** only for buckets that have files:
 
-1. **TypeScript Type Reviewer** (subagent type: `typescript-reviewer`)
+1. **TypeScript Type Reviewer** (subagent type: `dotcms-typescript-reviewer`)
    - Receives the `typescript-reviewer` file list from the file map
    - Focus: Type safety, generics, null handling, type quality
    - Confidence threshold: ≥ 75
    - **Skip if**: No files in the typescript bucket
 
-2. **Angular Pattern Reviewer** (subagent type: `angular-reviewer`)
+2. **Angular Pattern Reviewer** (subagent type: `dotcms-angular-reviewer`)
    - Receives the `angular-reviewer` file list from the file map
    - Focus: Modern syntax, component architecture, lifecycle, subscriptions
    - Confidence threshold: ≥ 75
    - **Skip if**: No files in the angular bucket
 
-3. **Test Quality Reviewer** (subagent type: `test-reviewer`)
+3. **Test Quality Reviewer** (subagent type: `dotcms-test-reviewer`)
    - Receives the `test-reviewer` file list from the file map
    - Focus: Spectator patterns, coverage, test quality
    - Confidence threshold: ≥ 75
    - **Skip if**: No files in the test bucket
 
+4. **SCSS/HTML Style Reviewer** (subagent type: `dotcms-scss-html-style-reviewer`)
+   - Receives the `styles` file list from the file map (`.scss`, `.css`, `.html` files)
+   - Focus: BEM compliance, CSS custom properties, unused classes, SCSS standards, Angular encapsulation, PrimeNG theming
+   - Confidence threshold: ≥ 75
+   - **Skip if**: No `.scss`, `.css`, or `.html` files in the styles bucket
+
 **Launch agents in parallel** using the Task tool (only for non-empty buckets):
 ```
-Task(subagent_type="typescript-reviewer", prompt="Review TypeScript type safety for PR #<NUMBER>. Files: <file-list from file-classifier>", description="TypeScript review")
-Task(subagent_type="angular-reviewer", prompt="Review Angular patterns for PR #<NUMBER>. Files: <file-list from file-classifier>", description="Angular review")
-Task(subagent_type="test-reviewer", prompt="Review test quality for PR #<NUMBER>. Files: <file-list from file-classifier>", description="Test review")
+Task(subagent_type="dotcms-typescript-reviewer", prompt="Review TypeScript type safety for PR #<NUMBER>. Files: <file-list from dotcms-file-classifier>", description="TypeScript review")
+Task(subagent_type="dotcms-angular-reviewer", prompt="Review Angular patterns for PR #<NUMBER>. Files: <file-list from dotcms-file-classifier>", description="Angular review")
+Task(subagent_type="dotcms-test-reviewer", prompt="Review test quality for PR #<NUMBER>. Files: <file-list from dotcms-file-classifier>", description="Test review")
+Task(subagent_type="dotcms-scss-html-style-reviewer", prompt="Review SCSS/HTML styling standards for PR #<NUMBER>. Files: <styles file-list from dotcms-file-classifier>", description="Style review")
 ```
 
 **For Backend/Config/Docs changes**: This skill focuses on frontend code review only. Backend reviews are handled separately.
@@ -131,7 +138,7 @@ Task(subagent_type="test-reviewer", prompt="Review test quality for PR #<NUMBER>
 [Only if frontend files changed - consolidate from specialized agents]
 
 ### TypeScript Type Safety
-[From typescript-reviewer agent]
+[From dotcms-typescript-reviewer agent]
 
 #### Critical Issues 🔴 (95-100)
 [Type safety violations, raw generics, unsafe casts]
@@ -143,7 +150,7 @@ Task(subagent_type="test-reviewer", prompt="Review test quality for PR #<NUMBER>
 [Type improvements, better generics]
 
 ### Angular Patterns
-[From angular-reviewer agent]
+[From dotcms-angular-reviewer agent]
 
 #### Critical Issues 🔴 (95-100)
 [Legacy syntax, missing standalone, memory leaks]
@@ -155,7 +162,7 @@ Task(subagent_type="test-reviewer", prompt="Review test quality for PR #<NUMBER>
 [Pattern improvements, optimizations]
 
 ### Test Quality
-[From test-reviewer agent]
+[From dotcms-test-reviewer agent]
 
 #### Critical Issues 🔴 (95-100)
 [Wrong Spectator usage, missing detectChanges]
@@ -165,6 +172,18 @@ Task(subagent_type="test-reviewer", prompt="Review test quality for PR #<NUMBER>
 
 #### Quality Issues 🔵 (75-84)
 [Test organization, clarity]
+
+### Styling Standards
+[From dotcms-scss-html-style-reviewer agent — only if .scss/.css/.html files changed]
+
+#### Critical Issues 🔴 (95-100)
+[BEM violations, hardcoded colors/spacing, ::ng-deep misuse]
+
+#### Important Issues 🟡 (85-94)
+[Unused classes, missing CSS variables, nesting depth exceeded]
+
+#### Quality Issues 🔵 (75-84)
+[Selector improvements, mixin usage, PrimeNG theming patterns]
 
 ---
 
@@ -227,6 +246,6 @@ Use this as your **single entry point** for all PR reviews.
 ## Skill Metadata
 
 - **Author**: Generated from usage insights analysis
-- **Last Updated**: 2026-02-10
+- **Last Updated**: 2026-02-24
 - **Replaces**: dotcms-code-reviewer-frontend
 - **Dependencies**: `gh` CLI, access to repository

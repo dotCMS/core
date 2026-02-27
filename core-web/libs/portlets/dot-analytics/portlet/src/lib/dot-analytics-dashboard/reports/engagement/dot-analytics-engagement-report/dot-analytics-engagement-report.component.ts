@@ -13,18 +13,25 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    AnalyticsChartColors,
+    DotAnalyticsDashboardStore
+} from '@dotcms/portlets/dot-analytics/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
-import { DotAnalyticsSparklineComponent } from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
+import {
+    DotAnalyticsSparklineComponent,
+    SparklineDataset
+} from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
 import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 
 /**
  * DotAnalyticsEngagementReportComponent displays the engagement dashboard.
  * It includes the engagement rate, trend chart, and platforms table.
+ * Each block (KPIs, breakdown, platforms) has independent loading and error state.
  */
 @Component({
     selector: 'dot-analytics-engagement-report',
@@ -47,12 +54,9 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
 })
 export default class DotAnalyticsEngagementReportComponent implements OnInit {
     /** Analytics dashboard store providing engagement data and actions */
-    readonly store = inject(DotAnalyticsDashboardStore);
+    protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
-
-    /** Raw engagement data slice from the store */
-    readonly engagementData = this.store.engagementData;
 
     /** Controls visibility of the "How it's calculated" dialog */
     readonly $showCalculationDialog = signal(false);
@@ -64,18 +68,64 @@ export default class DotAnalyticsEngagementReportComponent implements OnInit {
         });
     }
 
-    /** Key performance indicators (engagement rate, avg session time, etc.) */
-    readonly $kpis = computed(() => this.engagementData().data?.kpis);
-    /** Engagement trend data for the sparkline/trend chart */
-    readonly $trend = computed(() => this.engagementData().data?.trend);
-    /** Engagement breakdown data for the doughnut chart */
-    readonly $breakdown = computed(() => this.engagementData().data?.breakdown);
-    /** Platform analytics data (device, browser, language) */
-    readonly $platforms = computed(() => this.engagementData().data?.platforms);
-    /** Current component status derived from store data */
-    readonly $status = computed(() => this.engagementData().status ?? ComponentStatus.INIT);
-    /** Whether data has finished loading successfully */
-    readonly $isLoaded = computed(() => this.$status() === ComponentStatus.LOADED);
+    /** KPIs slice: data and status for the metric cards */
+    readonly $kpis = computed(() => this.store.engagementKpis().data);
+    readonly $kpisStatus = computed(
+        () => this.store.engagementKpis().status ?? ComponentStatus.INIT
+    );
+
+    /** Breakdown slice: doughnut chart data and status */
+    readonly $breakdown = computed(() => this.store.engagementBreakdown().data);
+    readonly $breakdownStatus = computed(
+        () => this.store.engagementBreakdown().status ?? ComponentStatus.INIT
+    );
+
+    /** Platforms slice: device/browser/language and status */
+    readonly $platforms = computed(() => this.store.engagementPlatforms().data);
+    readonly $platformsStatus = computed(
+        () => this.store.engagementPlatforms().status ?? ComponentStatus.INIT
+    );
+
+    /** Sparkline: current + optional previous period as datasets for the sparkline component */
+    readonly $sparklineDatasets = computed<SparklineDataset[]>(() => {
+        const slice = this.store.engagementSparkline().data;
+        if (!slice?.current?.length) return [];
+
+        const current: SparklineDataset = {
+            data: slice.current,
+            label:
+                this.#messageService.get('analytics.engagement.sparkline.period-current') ??
+                'This period',
+            color: AnalyticsChartColors.primary.line,
+            dashed: false
+        };
+
+        if (slice.previous?.length) {
+            const len = slice.current.length;
+            const previousData =
+                slice.previous.length >= len ? slice.previous.slice(0, len) : slice.previous;
+            const previous: SparklineDataset = {
+                data: previousData,
+                label:
+                    this.#messageService.get('analytics.engagement.sparkline.period-previous') ??
+                    'Previous period',
+                color: AnalyticsChartColors.neutralDark.line,
+                dashed: false,
+                borderWidth: 1,
+                fillOpacity: 0.35
+            };
+            return [current, previous];
+        }
+
+        return [current];
+    });
+
+    readonly $sparklineStatus = computed(
+        () => this.store.engagementSparkline().status ?? ComponentStatus.INIT
+    );
+
+    /** Whether KPIs have finished loading successfully */
+    readonly $isKpisLoaded = computed(() => this.$kpisStatus() === ComponentStatus.LOADED);
 
     /** Calculate total sessions from platforms data */
     readonly $totalSessions = computed(() => {
@@ -83,5 +133,16 @@ export default class DotAnalyticsEngagementReportComponent implements OnInit {
         if (!platforms?.device) return 0;
 
         return platforms.device.reduce((sum, item) => sum + item.views, 0);
+    });
+
+    /**
+     * True when data is loaded but there are no sessions (empty state).
+     * Used to show a clear "no data" banner and avoid showing raw zeros everywhere.
+     */
+    readonly $hasNoData = computed(() => {
+        if (this.$kpisStatus() !== ComponentStatus.LOADED) return false;
+        if (this.$breakdownStatus() !== ComponentStatus.LOADED) return false;
+        const breakdown = this.$breakdown();
+        return !breakdown?.labels?.length && !breakdown?.datasets?.length;
     });
 }
