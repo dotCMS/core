@@ -1,4 +1,4 @@
-# GitHub API Reference — create-issue skill
+# GitHub API Reference — dotcms-github-issues skill
 
 Exact `gh` commands for all operations. Replace placeholders in ALL_CAPS.
 
@@ -43,20 +43,12 @@ gh api graphql -f query='
 
 Requires: project item ID (from B), field ID and option ID (from [project-fields.md](project-fields.md)).
 
+> **Important:** Do NOT use GraphQL variables (`$projId:ID!` etc.) — the `!` in `ID!` is
+> backslash-escaped by Claude Code's Bash tool, causing a parse error. Inline all values
+> directly as string literals instead.
+
 ```bash
-gh api graphql -f query='
-  mutation($projId:ID!, $itemId:ID!, $fieldId:ID!, $optId:String!) {
-    updateProjectV2ItemFieldValue(input:{
-      projectId:$projId
-      itemId:$itemId
-      fieldId:$fieldId
-      value:{singleSelectOptionId:$optId}
-    }) { projectV2Item { id } }
-  }' \
-  -f projId="PVT_kwDOAA9Wz84AKDq_" \
-  -f itemId="ITEM_ID" \
-  -f fieldId="FIELD_ID" \
-  -f optId="OPTION_ID"
+gh api graphql -f query='mutation { updateProjectV2ItemFieldValue(input:{projectId:"PVT_kwDOAA9Wz84AKDq_" itemId:"ITEM_ID" fieldId:"FIELD_ID" value:{singleSelectOptionId:"OPTION_ID"}}) { projectV2Item { id } } }'
 ```
 
 **Example — set Technology to Java:**
@@ -73,18 +65,8 @@ ITEM_ID=$(gh api graphql -f query='
   | jq -r '.data.repository.issue.projectItems.nodes[]
             | select(.project.number==7) | .id')
 
-# 2. Set Technology = Java
-gh api graphql -f query='
-  mutation($projId:ID!, $itemId:ID!, $fieldId:ID!, $optId:String!) {
-    updateProjectV2ItemFieldValue(input:{
-      projectId:$projId itemId:$itemId fieldId:$fieldId
-      value:{singleSelectOptionId:$optId}
-    }) { projectV2Item { id } }
-  }' \
-  -f projId="PVT_kwDOAA9Wz84AKDq_" \
-  -f itemId="$ITEM_ID" \
-  -f fieldId="PVTSSF_lADOAA9Wz84AKDq_zgH5iBk" \
-  -f optId="82b4e691"
+# 2. Set Technology = Java (inline all IDs — no variables)
+gh api graphql -f query='mutation { updateProjectV2ItemFieldValue(input:{projectId:"PVT_kwDOAA9Wz84AKDq_" itemId:"'"$ITEM_ID"'" fieldId:"PVTSSF_lADOAA9Wz84AKDq_zgH5iBk" value:{singleSelectOptionId:"82b4e691"}}) { projectV2Item { id } } }'
 ```
 
 ---
