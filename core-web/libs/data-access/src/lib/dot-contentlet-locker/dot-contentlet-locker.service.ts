@@ -1,15 +1,19 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { map } from 'rxjs/operators';
 
 export interface DotContentletLockResponse {
     id: string;
     inode: string;
     message: string;
+}
+
+// Response type for endpoints that return bodyJsonObject
+interface DotBodyJsonResponse<T> {
+    bodyJsonObject: T;
 }
 
 /**
@@ -21,7 +25,7 @@ export interface DotContentletLockResponse {
  */
 @Injectable()
 export class DotContentletLockerService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      * Lock a content asset
@@ -31,12 +35,11 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     lock(inode: string): Observable<DotContentletLockResponse> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `/api/content/lock/inode/${inode}`
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http
+            .put<
+                DotBodyJsonResponse<DotContentletLockResponse>
+            >(`/api/content/lock/inode/${inode}`, {})
+            .pipe(map((response) => response.bodyJsonObject));
     }
 
     /**
@@ -47,11 +50,10 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     unlock(inode: string): Observable<DotContentletLockResponse> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `/api/content/unlock/inode/${inode}`
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http
+            .put<
+                DotBodyJsonResponse<DotContentletLockResponse>
+            >(`/api/content/unlock/inode/${inode}`, {})
+            .pipe(map((response) => response.bodyJsonObject));
     }
 }

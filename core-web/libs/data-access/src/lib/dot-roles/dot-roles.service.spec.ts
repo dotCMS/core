@@ -1,13 +1,9 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotRole } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    MockDotMessageService,
-    mockProcessedRoles
-} from '@dotcms/utils-testing';
+import { MockDotMessageService, mockProcessedRoles } from '@dotcms/utils-testing';
 
 import { DotRolesService } from './dot-roles.service';
 
@@ -35,10 +31,10 @@ describe('DotRolesService', () => {
         });
 
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotRolesService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });

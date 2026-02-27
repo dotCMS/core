@@ -1,91 +1,58 @@
-import { mockProvider } from '@ngneat/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { ConfirmationService } from 'primeng/api';
-
-import {
-    DotAlertConfirmService,
-    DotFormatDateService,
-    DotHttpErrorManagerService,
-    DotMessageDisplayService,
-    DotMessageService,
-    DotRouterService
-} from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { DotHttpErrorManagerService, DotRouterService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    DotMessageDisplayServiceMock,
-    LoginServiceMock,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { MockDotHttpErrorManagerService, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotContentletEditorService } from './dot-contentlet-editor.service';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 
 describe('DotContentletEditorService', () => {
-    const load = () => {
-        //
-    };
-
-    const keyDown = () => {
-        //
-    };
-
     let service: DotContentletEditorService;
     let dotMenuService: DotMenuService;
     let dotRouterService: DotRouterService;
-    let httpMock: HttpTestingController;
-    let injector;
+    let httpTesting: HttpTestingController;
 
     beforeEach(() => {
-        injector = TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+        TestBed.configureTestingModule({
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentletEditorService,
                 DotMenuService,
-                DotHttpErrorManagerService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                DotFormatDateService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                {
-                    provide: DotMessageDisplayService,
-                    useClass: DotMessageDisplayServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                mockProvider(DotMessageService)
+                { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService },
+                { provide: DotRouterService, useClass: MockDotRouterService }
             ]
         });
 
-        service = injector.inject(DotContentletEditorService);
-        dotMenuService = injector.inject(DotMenuService);
-        dotRouterService = injector.inject(DotRouterService);
-        httpMock = injector.inject(HttpTestingController);
+        service = TestBed.inject(DotContentletEditorService);
+        dotMenuService = TestBed.inject(DotMenuService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        httpTesting = TestBed.inject(HttpTestingController);
         jest.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
     });
 
+    afterEach(() => {
+        httpTesting.verify();
+    });
+
     it('should get action url', () => {
-        const url = `v1/portlet/_actionurl/test`;
+        const url = '/api/v1/portlet/_actionurl/test';
 
         service.getActionUrl('test').subscribe((urlString: string) => {
             expect(urlString).toEqual('testString');
         });
 
-        const req = httpMock.expectOne(url);
+        const req = httpTesting.expectOne(url);
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: 'testString'
         });
-        httpMock.verify();
     });
 
     it('should set data to add', () => {
@@ -114,8 +81,12 @@ describe('DotContentletEditorService', () => {
                 container: '123'
             },
             events: {
-                load: load,
-                keyDown: keyDown
+                load: () => {
+                    //
+                },
+                keyDown: () => {
+                    //
+                }
             }
         });
     });

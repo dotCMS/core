@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { take, pluck } from 'rxjs/operators';
+import { take, map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { ESContent } from '@dotcms/dotcms-models';
+import { DotCMSResponse, ESContent } from '@dotcms/dotcms-models';
 
 export enum ESOrderDirection {
     ASC = 'ASC',
@@ -27,7 +27,7 @@ export interface queryEsParams {
  */
 @Injectable()
 export class DotESContentService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     private _paginationPerPage = 40;
     private _offset = '0';
@@ -48,13 +48,12 @@ export class DotESContentService {
 
         const queryParams = this.getESQuery(params, this.getObjectFromMap(this._extraParams));
 
-        return this.coreWebService
-            .requestView<ESContent>({
-                body: JSON.stringify(queryParams),
-                method: 'POST',
-                url: this._url
-            })
-            .pipe(pluck('entity'), take(1));
+        return this.http
+            .post<DotCMSResponse<ESContent>>(this._url, JSON.stringify(queryParams))
+            .pipe(
+                map((response) => response.entity),
+                take(1)
+            );
     }
 
     private setExtraParams(name: string, value?: string | number): void {

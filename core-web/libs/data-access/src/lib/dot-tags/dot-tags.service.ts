@@ -5,7 +5,8 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotCMSAPIResponse, DotTag } from '@dotcms/dotcms-models';
+import { DotTag, DotCMSAPIResponse } from '@dotcms/dotcms-models';
+
 
 /**
  * Provide util methods to get Tags available in the system.

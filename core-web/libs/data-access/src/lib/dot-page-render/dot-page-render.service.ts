@@ -1,12 +1,13 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Params } from '@angular/router';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
+    DotCMSResponse,
     DotPageMode,
     DotPersona,
     DotDevice,
@@ -26,7 +27,7 @@ import { DotSessionStorageService } from '../dot-session-storage/dot-session-sto
  */
 @Injectable()
 export class DotPageRenderService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private readonly dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
@@ -37,15 +38,11 @@ export class DotPageRenderService {
      * @memberof DotPageRenderService
      */
     checkPermission(queryParams: Params): Observable<boolean> {
-        return this.coreWebService
-            .requestView({
-                body: {
-                    ...queryParams
-                },
-                method: 'POST',
-                url: `v1/page/_check-permission`
+        return this.http
+            .post<DotCMSResponse<boolean>>('/api/v1/page/_check-permission', {
+                ...queryParams
             })
-            .pipe(pluck('entity'));
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -61,12 +58,11 @@ export class DotPageRenderService {
     ): Observable<DotPageRenderParameters> {
         const params: DotPageRenderRequestParams = this.getOptionalViewAsParams(viewAs, mode);
 
-        return this.coreWebService
-            .requestView({
-                url: `v1/page/render/${url?.replace(/^\//, '')}`,
-                params: { ...extraParams, ...params }
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<
+                DotCMSResponse<DotPageRenderParameters>
+            >(`/api/v1/page/render/${url?.replace(/^\//, '')}`, { params: { ...extraParams, ...params } as Record<string, string> })
+            .pipe(map((response) => response.entity));
     }
 
     private getOptionalViewAsParams(

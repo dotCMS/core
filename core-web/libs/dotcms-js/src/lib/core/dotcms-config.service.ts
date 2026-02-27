@@ -1,12 +1,17 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map, pluck, take } from 'rxjs/operators';
+import { filter, map, take } from 'rxjs/operators';
 
-import { CoreWebService } from './core-web.service';
 import { LoggerService } from './logger.service';
 import { Menu } from './routing.service';
+
+// Local interface to avoid circular dependency with dotcms-models
+interface DotCMSEntityResponse<T> {
+    entity: T;
+}
 
 /**
  * Created by josecastro on 7/29/16.
@@ -70,6 +75,36 @@ export interface DotTimeZone {
     offset: string;
 }
 
+interface DotAppConfigResponse {
+    config: {
+        colors: DotUiColors;
+        [EMAIL_REGEX]: string;
+        license: {
+            displayServerId: string;
+            isCommunity: boolean;
+            level: number;
+            levelName: string;
+        };
+        logos: {
+            loginScreen: string;
+            navBar: string;
+        };
+        [DOTCMS_PAGINATOR_LINKS]: number;
+        [DOTCMS_PAGINATOR_ROWS]: number;
+        releaseInfo?: {
+            buildDate: string;
+            version: string;
+        };
+        websocket: {
+            [DOTCMS_WEBSOCKET_RECONNECT_TIME]: number;
+            [DOTCMS_DISABLE_WEBSOCKET_PROTOCOL]: boolean;
+        };
+        systemTimezone: SystemTimezone;
+        timezones: DotTimeZone[];
+    };
+    menu: Menu[];
+}
+
 /**
  * @deprecated Use DotSystemConfigService from @dotcms/data-access instead.
  * This service uses the deprecated CoreWebService and will be removed in a future version.
@@ -87,7 +122,7 @@ export interface DotTimeZone {
     providedIn: 'root'
 })
 export class DotcmsConfigService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
     private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
@@ -99,7 +134,7 @@ export class DotcmsConfigService {
      * @param configParams - The configuration properties for the current instance.
      */
     constructor() {
-        this.configUrl = 'v1/appconfiguration';
+        this.configUrl = '/api/v1/appconfiguration';
         this.loadConfig();
     }
 
@@ -112,12 +147,10 @@ export class DotcmsConfigService {
     loadConfig(): void {
         this.loggerService.debug('Loading configuration on: ', this.configUrl);
 
-        this.coreWebService
-            .requestView({
-                url: this.configUrl
-            })
-            .pipe(pluck('entity'))
-            .subscribe((res: any) => {
+        this.http
+            .get<DotCMSEntityResponse<DotAppConfigResponse>>(this.configUrl)
+            .pipe(map((response) => response.entity))
+            .subscribe((res: DotAppConfigResponse) => {
                 this.loggerService.debug('Configuration Loaded!', res);
 
                 const configParams: ConfigParams = {
@@ -154,27 +187,23 @@ export class DotcmsConfigService {
      * @memberof DotcmsConfigService
      */
     getTimeZones(): Observable<DotTimeZone[]> {
-        return this.coreWebService
-            .requestView({
-                url: this.configUrl
+        return this.http.get<DotCMSEntityResponse<DotAppConfigResponse>>(this.configUrl).pipe(
+            map((response) => response.entity.config.timezones),
+            map((timezones: DotTimeZone[]) => {
+                return timezones.sort((a: DotTimeZone, b: DotTimeZone) => {
+                    if (a.label > b.label) {
+                        return 1;
+                    }
+
+                    if (a.label < b.label) {
+                        return -1;
+                    }
+
+                    // a must be equal to b
+                    return 0;
+                });
             })
-            .pipe(
-                pluck('entity', 'config', 'timezones'),
-                map((timezones: DotTimeZone[]) => {
-                    return timezones.sort((a: DotTimeZone, b: DotTimeZone) => {
-                        if (a.label > b.label) {
-                            return 1;
-                        }
-
-                        if (a.label < b.label) {
-                            return -1;
-                        }
-
-                        // a must be equal to b
-                        return 0;
-                    });
-                })
-            );
+        );
     }
 
     /**
@@ -183,10 +212,9 @@ export class DotcmsConfigService {
      * @memberof DotcmsConfigService
      */
     getSystemTimeZone(): Observable<DotTimeZone> {
-        return this.coreWebService
-            .requestView({
-                url: this.configUrl
-            })
-            .pipe(pluck('entity', 'config', 'systemTimezone'), take(1));
+        return this.http.get<DotCMSEntityResponse<DotAppConfigResponse>>(this.configUrl).pipe(
+            map((response) => response.entity.config.systemTimezone),
+            take(1)
+        );
     }
 }

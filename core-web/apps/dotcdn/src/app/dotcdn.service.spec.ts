@@ -1,313 +1,159 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
-
 import {
-    CoreWebService,
-    CoreWebServiceMock,
-    SiteService,
-    SiteServiceMock
-} from '@dotcms/dotcms-js';
+    createHttpFactory,
+    HttpMethod,
+    mockProvider,
+    SpectatorHttp,
+    SpyObject
+} from '@ngneat/spectator/jest';
+
+import { SiteService } from '@dotcms/dotcms-js';
 
 import { DotCDNService } from './dotcdn.service';
 
-const fakeDotCDNViewData = {
-    resp: {
-        headers: {
-            normalizedNames: {},
-            lazyUpdate: null
+const MOCK_SITE_IDENTIFIER = '123-xyz-567-xxl';
+
+const fakeDotCDNStats = {
+    stats: {
+        bandwidthPretty: '238.85 MB',
+        bandwidthUsedChart: {
+            '2021-04-16T00:00:00Z': 15506849,
+            '2021-04-17T00:00:00Z': 0,
+            '2021-04-18T00:00:00Z': 0,
+            '2021-04-19T00:00:00Z': 15301470,
+            '2021-04-20T00:00:00Z': 5061682
         },
-        status: 200,
-        statusText: 'OK',
-        url: 'http://localhost:4200/api/v1/dotcdn/stats?hostId=48190c8c-42c4-46af-8d1a-0cd5db894797&dateFrom=2021-04-16&dateTo=2021-05-01',
-        ok: true,
-        type: 4,
-        body: {
-            entity: {
-                stats: {
-                    bandwidthPretty: '238.85 MB',
-                    bandwidthUsedChart: {
-                        '2021-04-16T00:00:00Z': 15506849,
-                        '2021-04-17T00:00:00Z': 0,
-                        '2021-04-18T00:00:00Z': 0,
-                        '2021-04-19T00:00:00Z': 15301470,
-                        '2021-04-20T00:00:00Z': 5061682,
-                        '2021-04-21T00:00:00Z': 0,
-                        '2021-04-22T00:00:00Z': 0,
-                        '2021-04-23T00:00:00Z': 0,
-                        '2021-04-24T00:00:00Z': 0,
-                        '2021-04-25T00:00:00Z': 0,
-                        '2021-04-26T00:00:00Z': 0,
-                        '2021-04-27T00:00:00Z': 0,
-                        '2021-04-28T00:00:00Z': 110186951,
-                        '2021-04-29T00:00:00Z': 92793786,
-                        '2021-04-30T00:00:00Z': 0,
-                        '2021-05-01T00:00:00Z': 0
-                    },
-                    cacheHitRate: 64.58333333333334,
-                    cdnDomain: 'https://erick-demo.b-cdn.net',
-                    dateFrom: '2021-04-15T22:00:00Z',
-                    dateTo: '2021-04-30T22:00:00Z',
-                    geographicDistribution: {
-                        NA: {
-                            ' Miami, FL': 238850738
-                        }
-                    },
-                    requestsServedChart: {
-                        '2021-04-16T00:00:00Z': 3,
-                        '2021-04-17T00:00:00Z': 0,
-                        '2021-04-18T00:00:00Z': 0,
-                        '2021-04-19T00:00:00Z': 6,
-                        '2021-04-20T00:00:00Z': 3,
-                        '2021-04-21T00:00:00Z': 0,
-                        '2021-04-22T00:00:00Z': 0,
-                        '2021-04-23T00:00:00Z': 0,
-                        '2021-04-24T00:00:00Z': 0,
-                        '2021-04-25T00:00:00Z': 0,
-                        '2021-04-26T00:00:00Z': 0,
-                        '2021-04-27T00:00:00Z': 0,
-                        '2021-04-28T00:00:00Z': 19,
-                        '2021-04-29T00:00:00Z': 17,
-                        '2021-04-30T00:00:00Z': 0,
-                        '2021-05-01T00:00:00Z': 0
-                    },
-                    totalBandwidthUsed: 238850738,
-                    totalRequestsServed: 48
-                }
-            },
-            errors: [],
-            i18nMessagesMap: {},
-            messages: [],
-            permissions: []
-        }
-    },
-    bodyJsonObject: {
-        entity: {
-            stats: {
-                bandwidthPretty: '238.85 MB',
-                bandwidthUsedChart: {
-                    '2021-04-16T00:00:00Z': 15506849,
-                    '2021-04-17T00:00:00Z': 0,
-                    '2021-04-18T00:00:00Z': 0,
-                    '2021-04-19T00:00:00Z': 15301470,
-                    '2021-04-20T00:00:00Z': 5061682,
-                    '2021-04-21T00:00:00Z': 0,
-                    '2021-04-22T00:00:00Z': 0,
-                    '2021-04-23T00:00:00Z': 0,
-                    '2021-04-24T00:00:00Z': 0,
-                    '2021-04-25T00:00:00Z': 0,
-                    '2021-04-26T00:00:00Z': 0,
-                    '2021-04-27T00:00:00Z': 0,
-                    '2021-04-28T00:00:00Z': 110186951,
-                    '2021-04-29T00:00:00Z': 92793786,
-                    '2021-04-30T00:00:00Z': 0,
-                    '2021-05-01T00:00:00Z': 0
-                },
-                cacheHitRate: 64.58333333333334,
-                cdnDomain: 'https://erick-demo.b-cdn.net',
-                dateFrom: '2021-04-15T22:00:00Z',
-                dateTo: '2021-04-30T22:00:00Z',
-                geographicDistribution: {
-                    NA: {
-                        ' Miami, FL': 238850738
-                    }
-                },
-                requestsServedChart: {
-                    '2021-04-16T00:00:00Z': 3,
-                    '2021-04-17T00:00:00Z': 0,
-                    '2021-04-18T00:00:00Z': 0,
-                    '2021-04-19T00:00:00Z': 6,
-                    '2021-04-20T00:00:00Z': 3,
-                    '2021-04-21T00:00:00Z': 0,
-                    '2021-04-22T00:00:00Z': 0,
-                    '2021-04-23T00:00:00Z': 0,
-                    '2021-04-24T00:00:00Z': 0,
-                    '2021-04-25T00:00:00Z': 0,
-                    '2021-04-26T00:00:00Z': 0,
-                    '2021-04-27T00:00:00Z': 0,
-                    '2021-04-28T00:00:00Z': 19,
-                    '2021-04-29T00:00:00Z': 17,
-                    '2021-04-30T00:00:00Z': 0,
-                    '2021-05-01T00:00:00Z': 0
-                },
-                totalBandwidthUsed: 238850738,
-                totalRequestsServed: 48
+        cacheHitRate: 64.58333333333334,
+        cdnDomain: 'https://erick-demo.b-cdn.net',
+        dateFrom: '2021-04-15T22:00:00Z',
+        dateTo: '2021-04-30T22:00:00Z',
+        geographicDistribution: {
+            NA: {
+                ' Miami, FL': 238850738
             }
         },
-        errors: [],
-        i18nMessagesMap: {},
-        messages: [],
-        permissions: []
-    },
-    headers: {
-        normalizedNames: {},
-        lazyUpdate: null
+        requestsServedChart: {
+            '2021-04-16T00:00:00Z': 3,
+            '2021-04-17T00:00:00Z': 0,
+            '2021-04-18T00:00:00Z': 0,
+            '2021-04-19T00:00:00Z': 6,
+            '2021-04-20T00:00:00Z': 3
+        },
+        totalBandwidthUsed: 238850738,
+        totalRequestsServed: 48
     }
 };
 
-const fakePurgeUrlsResp = {
-    resp: {
-        headers: {
-            normalizedNames: {},
-            lazyUpdate: null
-        },
-        status: 200,
-        statusText: 'OK',
-        url: 'http://localhost:4200/api/v1/dotcdn',
-        ok: true,
-        type: 4,
-        body: {
-            entity: {
-                'All Urls Sent Purged: ': true
-            },
-            errors: [],
-            i18nMessagesMap: {},
-            messages: [],
-            permissions: []
-        }
+const fakePurgeUrlsResponse = {
+    entity: {
+        'All Urls Sent Purged: ': true
     },
-    bodyJsonObject: {
-        entity: {
-            'All Urls Sent Purged: ': true
-        },
-        errors: [],
-        i18nMessagesMap: {},
-        messages: [],
-        permissions: []
-    },
-    headers: {
-        normalizedNames: {},
-        lazyUpdate: null
-    }
+    errors: [],
+    i18nMessagesMap: {},
+    messages: [],
+    permissions: []
 };
 
-const fakePurgeAllResp = {
-    resp: {
-        headers: {
-            normalizedNames: {},
-            lazyUpdate: null
-        },
-        status: 200,
-        statusText: 'OK',
-        url: 'http://localhost:4200/api/v1/dotcdn',
-        ok: true,
-        type: 4,
-        body: {
-            entity: {
-                'Entire Cache Purged: ': true
-            },
-            errors: [],
-            i18nMessagesMap: {},
-            messages: [],
-            permissions: []
-        }
+const fakePurgeAllResponse = {
+    entity: {
+        'Entire Cache Purged: ': true
     },
-    bodyJsonObject: {
-        entity: {
-            'Entire Cache Purged: ': true
-        },
-        errors: [],
-        i18nMessagesMap: {},
-        messages: [],
-        permissions: []
-    },
-    headers: {
-        normalizedNames: {},
-        lazyUpdate: null
-    }
+    errors: [],
+    i18nMessagesMap: {},
+    messages: [],
+    permissions: []
 };
 
-describe('DotcdnService', () => {
-    let service: DotCDNService;
-    let dotSiteService: SiteService;
-    let dotCoreWebService: CoreWebService;
-    let httpMock: HttpTestingController;
+describe('DotCDNService', () => {
+    let spectator: SpectatorHttp<DotCDNService>;
+    let siteService: SpyObject<SiteService>;
+
+    const createHttp = createHttpFactory({
+        service: DotCDNService,
+        providers: [mockProvider(SiteService)]
+    });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: SiteService, useClass: SiteServiceMock }
-            ]
-        });
-        service = TestBed.inject(DotCDNService);
-        dotSiteService = TestBed.inject(SiteService);
-        dotCoreWebService = TestBed.inject(CoreWebService);
-        httpMock = TestBed.inject(HttpTestingController);
-        jest.spyOn(dotSiteService, 'getCurrentSite');
-        jest.restoreAllMocks();
+        spectator = createHttp();
+        siteService = spectator.inject(SiteService);
 
         jest.useFakeTimers();
         jest.setSystemTime(new Date('2021-05-03'));
     });
 
-    // Skipping because the `useFakeTimers` and `setSystemTime` is not pickinh up win GHA
-    xit('should return the stats', (done) => {
-        jest.spyOn(dotCoreWebService, 'requestView');
-
-        const {
-            bodyJsonObject: { entity }
-        } = fakeDotCDNViewData;
-
-        service.requestStats('30').subscribe((value) => {
-            expect(value).toStrictEqual(entity);
-            done();
-        });
-
-        const req = httpMock.expectOne(
-            `/api/v1/dotcdn/stats?hostId=123-xyz-567-xxl&dateFrom=2021-04-02&dateTo=2021-05-02`
-        );
-
-        req.flush({ entity });
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
-    it('should purge cache with URLs', (done) => {
-        const requestViewSpy = jest.spyOn(dotCoreWebService, 'requestView');
-        service.purgeCache(['url1, url2']).subscribe((value) => {
-            expect(value).toStrictEqual({
-                entity: {
-                    'All Urls Sent Purged: ': true
-                },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                permissions: []
+    describe('requestStats', () => {
+        beforeEach(() => {
+            const { of } = jest.requireActual('rxjs');
+            siteService.getCurrentSite.mockReturnValue(of({ identifier: MOCK_SITE_IDENTIFIER }));
+        });
+
+        it('should return the stats', () => {
+            spectator.service.requestStats('30').subscribe((value) => {
+                expect(value).toStrictEqual(fakeDotCDNStats);
             });
-            done();
-        });
-        const req = httpMock.expectOne('/api/v1/dotcdn');
-        expect(req.request.method).toBe('DELETE');
 
-        expect(requestViewSpy).toHaveBeenCalledWith({
-            body: '{"urls":["url1, url2"],"invalidateAll":false,"hostId":"123-xyz-567-xxl"}',
-            method: 'DELETE',
-            url: '/api/v1/dotcdn'
-        });
+            const req = spectator.expectOne(
+                `/api/v1/dotcdn/stats?hostId=${MOCK_SITE_IDENTIFIER}&dateFrom=2021-04-02&dateTo=2021-05-02`,
+                HttpMethod.GET
+            );
 
-        req.flush(fakePurgeUrlsResp.bodyJsonObject);
+            req.flush({ entity: fakeDotCDNStats });
+        });
     });
 
-    it('should purge all cache', (done) => {
-        const requestViewSpy = jest.spyOn(dotCoreWebService, 'requestView');
-        service.purgeCacheAll().subscribe((value) => {
-            expect(value).toStrictEqual({
-                entity: { 'Entire Cache Purged: ': true },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                permissions: []
+    describe('purgeCache', () => {
+        beforeEach(() => {
+            const { of } = jest.requireActual('rxjs');
+            siteService.getCurrentSite.mockReturnValue(of({ identifier: MOCK_SITE_IDENTIFIER }));
+        });
+
+        it('should purge cache with URLs', () => {
+            spectator.service.purgeCache(['url1', 'url2']).subscribe((value) => {
+                expect(value).toStrictEqual(fakePurgeUrlsResponse);
             });
-            done();
-        });
-        const req = httpMock.expectOne('/api/v1/dotcdn');
-        expect(req.request.method).toBe('DELETE');
 
-        expect(requestViewSpy).toHaveBeenCalledWith({
-            body: '{"urls":[],"invalidateAll":true,"hostId":"123-xyz-567-xxl"}',
-            method: 'DELETE',
-            url: '/api/v1/dotcdn'
+            const req = spectator.expectOne('/api/v1/dotcdn', HttpMethod.DELETE);
+            expect(req.request.body).toBe(
+                `{"urls":["url1","url2"],"invalidateAll":false,"hostId":"${MOCK_SITE_IDENTIFIER}"}`
+            );
+
+            req.flush({ bodyJsonObject: fakePurgeUrlsResponse });
         });
 
-        req.flush(fakePurgeAllResp.bodyJsonObject);
+        it('should purge cache with empty URLs array when no URLs provided', () => {
+            spectator.service.purgeCache([]).subscribe((value) => {
+                expect(value).toStrictEqual(fakePurgeUrlsResponse);
+            });
+
+            const req = spectator.expectOne('/api/v1/dotcdn', HttpMethod.DELETE);
+            expect(req.request.body).toBe(
+                `{"urls":[],"invalidateAll":false,"hostId":"${MOCK_SITE_IDENTIFIER}"}`
+            );
+
+            req.flush({ bodyJsonObject: fakePurgeUrlsResponse });
+        });
+    });
+
+    describe('purgeCacheAll', () => {
+        beforeEach(() => {
+            const { of } = jest.requireActual('rxjs');
+            siteService.getCurrentSite.mockReturnValue(of({ identifier: MOCK_SITE_IDENTIFIER }));
+        });
+
+        it('should purge all cache', () => {
+            spectator.service.purgeCacheAll().subscribe((value) => {
+                expect(value).toStrictEqual(fakePurgeAllResponse);
+            });
+
+            const req = spectator.expectOne('/api/v1/dotcdn', HttpMethod.DELETE);
+            expect(req.request.body).toBe(
+                `{"urls":[],"invalidateAll":true,"hostId":"${MOCK_SITE_IDENTIFIER}"}`
+            );
+
+            req.flush({ bodyJsonObject: fakePurgeAllResponse });
+        });
     });
 });
