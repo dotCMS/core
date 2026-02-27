@@ -7,7 +7,8 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject
+    inject,
+    OnChanges
 } from '@angular/core';
 import { UntypedFormControl } from '@angular/forms';
 
@@ -49,7 +50,7 @@ const I8N_BASE = 'api.sites.ruleengine';
     `,
     standalone: false
 })
-export class VisitorsLocationContainer {
+export class VisitorsLocationContainer implements OnChanges {
     resources = inject(I18nService);
     decimalPipe = inject(DecimalPipe);
     private loggerService = inject(LoggerService);

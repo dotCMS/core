@@ -11,13 +11,6 @@ export interface MessagePipeOptions {
     args: string[];
 }
 
-export interface UnlockOptions {
-    inode: string;
-    loading: boolean;
-    info: MessagePipeOptions;
-    disabled: boolean;
-}
-
 export interface InfoOptions {
     icon: string;
     info: MessagePipeOptions;
@@ -279,13 +272,16 @@ export interface ReorderMenuPayload {
 export type DotPageAssetParams = DotPageApiParams;
 
 export interface ToggleLockOptions {
+    /** The inode identifier of the content */
     inode: string;
+    /** Whether the content is currently locked */
     isLocked: boolean;
+    /** The user ID who has locked the content */
     lockedBy: string;
+    /** Whether the current user has permission to lock/unlock the content */
     canLock: boolean;
+    /** Whether the content is locked by the currently authenticated user */
     isLockedByCurrentUser: boolean;
-    showBanner: boolean;
-    showOverlay: boolean;
 }
 
 export type DotUVEPaletteListType =

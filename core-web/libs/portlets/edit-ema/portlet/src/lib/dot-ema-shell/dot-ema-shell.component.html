@@ -1,5 +1,5 @@
-@if ($shellProps()?.canRead) {
-    @if ($toggleLockOptions()?.showBanner && $showBanner()) {
+@if ($canRead()) {
+    @if ($showLockBanner() && $showBanner()) {
         <p-messages severity="warning" data-testid="message">
             <ng-template pTemplate="content">
                 <div class="flex align-items-center justify-content-between gap-2 w-full">
@@ -8,10 +8,14 @@
                         <span class="lock-message" data-testid="message-content">
                             {{
                                 'uve.shell.page.locked.locked.by'
-                                    | dm: [$toggleLockOptions().lockedBy]
+                                    | dm: [$workflowLockOptions()?.lockedBy ?? '']
                             }}
-                            @if ($toggleLockOptions().canLock) {
-                                <button class="unlock-link" type="button" (click)="toggleLock()">
+                            @if ($workflowLockOptions()?.canLock) {
+                                <button
+                                    class="unlock-link"
+                                    type="button"
+                                    [disabled]="$workflowLockIsLoading()"
+                                    (click)="toggleLock()">
                                     {{ 'uve.shell.page.locked.unlock.to.start.editing' | dm }}
                                 </button>
                                 {{
@@ -38,16 +42,16 @@
 
     <router-outlet />
     <dot-edit-ema-navigation-bar
-        [items]="$shellProps().items"
+        [items]="$menuItems()"
         (action)="handleItemAction($event)"
-        data-testId="ema-nav-bar" />
-    <p-toast position="top-center" data-testId="ema-toast" />
-    <dot-page-tools-seo [currentPageUrlParams]="$shellProps().seoParams" #pageTools />
+        data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
+    <p-toast position="top-center" data-testId="ema-toast"></p-toast>
+    <dot-page-tools-seo [currentPageUrlParams]="$seoParams()" #pageTools></dot-page-tools-seo>
 } @else {
-    @if ($shellProps().error?.code === 401) {
+    @if ($errorDisplay()?.code === 401) {
         <dot-not-license />
-    } @else if ($shellProps()?.error?.pageInfo) {
-        <dot-info-page [info]="$shellProps().error.pageInfo" />
+    } @else if ($errorDisplay()?.pageInfo) {
+        <dot-info-page [info]="$errorDisplay().pageInfo" />
     }
 }
 

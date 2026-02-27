@@ -1,37 +1,33 @@
 import { describe } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
+import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/types';
 
-import { withClient } from './withClient';
+import { withPage } from './withPage';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { UVE_STATUS } from '../../../shared/enums';
 import { UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
+import { withFlags } from '../flags/withFlags';
 
-const emptyParams = {} as DotPageApiParams;
+const initialState = createInitialUVEState();
 
-const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    pageAPIResponse: null,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
-    pageParams: emptyParams,
-    status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false
+/** patchState type assertion - Spectator store type doesn't satisfy WritableStateSource but runtime works */
+const patchStoreState = (store: unknown, state: Partial<UVEState>) => {
+    patchState(store as Parameters<typeof patchState>[0], state);
 };
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withClient()
+    withFlags([]),
+    withPage()
 );
 
 describe('UVEStore', () => {
@@ -40,7 +36,22 @@ describe('UVEStore', () => {
 
     const createService = createServiceFactory({
         service: uveStoreMock,
-        providers: [mockProvider(Router), mockProvider(ActivatedRoute)]
+        providers: [
+            mockProvider(Router),
+            mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get: () => of({}),
+                    getClientPage: () => of({}),
+                    getGraphQLPage: () => of({}),
+                    save: jest.fn()
+                }
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -50,10 +61,10 @@ describe('UVEStore', () => {
 
     it('should have initial state', () => {
         expect(store.isClientReady()).toBeFalsy();
-        expect(store.graphql()).toEqual(null);
-        expect(store.graphqlResponse()).toEqual(null);
+        expect(store.requestMetadata()).toEqual(null);
+        expect(store.pageAssetResponse()).toEqual(null);
         expect(store.isClientReady()).toBe(false);
-        expect(store.legacyGraphqlResponse()).toBe(false);
+        expect(store.legacyResponseFormat()).toBe(false);
     });
 
     describe('withMethods', () => {
@@ -72,9 +83,9 @@ describe('UVEStore', () => {
                     }
                 };
 
-                store.setCustomGraphQL(graphql, true);
+                store.setCustomClient(graphql, true);
 
-                expect(store.graphql()).toEqual(graphql);
+                expect(store.requestMetadata()).toEqual(graphql);
             });
         });
 
@@ -84,21 +95,21 @@ describe('UVEStore', () => {
                 variables: null
             };
 
-            store.setCustomGraphQL(graphql, true);
+            store.setCustomClient(graphql, true);
             store.resetClientConfiguration();
 
-            expect(store.graphql()).toEqual(null);
+            expect(store.requestMetadata()).toEqual(null);
         });
     });
 
-    describe('$graphqlWithParams', () => {
+    describe('$requestWithParams', () => {
         it('should return null when graphql is null', () => {
-            expect(store.$graphqlWithParams()).toBeNull();
+            expect(store.$requestWithParams()).toBeNull();
         });
 
         it('should return null when graphql is not set', () => {
             store.resetClientConfiguration();
-            expect(store.$graphqlWithParams()).toBeNull();
+            expect(store.$requestWithParams()).toBeNull();
         });
 
         it('should merge graphql variables with page params', () => {
@@ -117,10 +128,10 @@ describe('UVEStore', () => {
                 [PERSONA_KEY]: 'persona-id-123'
             };
 
-            patchState(store, { pageParams });
-            store.setCustomGraphQL(graphql, false);
+            patchStoreState(store, { pageParams });
+            store.setCustomClient(graphql, false);
 
-            const result = store.$graphqlWithParams();
+            const result = store.$requestWithParams();
 
             expect(result).toEqual({
                 query: 'test query',
@@ -152,10 +163,10 @@ describe('UVEStore', () => {
                 [PERSONA_KEY]: 'persona-id-456'
             };
 
-            patchState(store, { pageParams });
-            store.setCustomGraphQL(graphql, false);
+            patchStoreState(store, { pageParams });
+            store.setCustomClient(graphql, false);
 
-            const result = store.$graphqlWithParams();
+            const result = store.$requestWithParams();
 
             expect(result).toEqual({
                 query: 'test query',
@@ -186,10 +197,10 @@ describe('UVEStore', () => {
                 // mode and variantName are missing
             };
 
-            patchState(store, { pageParams });
-            store.setCustomGraphQL(graphql, false);
+            patchStoreState(store, { pageParams });
+            store.setCustomClient(graphql, false);
 
-            const result = store.$graphqlWithParams();
+            const result = store.$requestWithParams();
 
             expect(result).toEqual({
                 query: 'test query',

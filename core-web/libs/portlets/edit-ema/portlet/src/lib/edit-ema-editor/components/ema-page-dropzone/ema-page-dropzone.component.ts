@@ -21,6 +21,9 @@ const POINTER_INITIAL_POSITION = {
     top: '0'
 };
 
+// Height in pixels for the drop indicator when container is not empty
+const DROP_INDICATOR_HEIGHT_PX = 3;
+
 @Component({
     selector: 'dot-ema-page-dropzone',
     imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgStyle, NgTemplateOutlet],
@@ -30,7 +33,8 @@ const POINTER_INITIAL_POSITION = {
 })
 export class EmaPageDropzoneComponent {
     @Input() containers: Container[] = [];
-    @Input() dragItem: EmaDragItem;
+    @Input() dragItem: EmaDragItem | null = null;
+    @Input() zoomLevel = 1;
 
     pointerPosition: Record<string, string> = POINTER_INITIAL_POSITION;
 
@@ -65,15 +69,18 @@ export class EmaPageDropzoneComponent {
         const isEmpty = empty === 'true';
 
         const opacity = isEmpty ? '0.1' : '1';
-        const height = isEmpty ? `${targetRect.height}px` : '3px';
+        // Adjust coordinates for zoom level
+        const adjustedHeight = isEmpty
+            ? targetRect.height / this.zoomLevel
+            : DROP_INDICATOR_HEIGHT_PX;
         const top = this.getTop(isEmpty);
 
         this.pointerPosition = {
-            left: `${targetRect.left - parentRect.left}px`,
-            width: `${targetRect.width}px`,
+            left: `${(targetRect.left - parentRect.left) / this.zoomLevel}px`,
+            width: `${targetRect.width / this.zoomLevel}px`,
             opacity,
             top,
-            height
+            height: `${adjustedHeight}px`
         };
     }
 
@@ -102,12 +109,16 @@ export class EmaPageDropzoneComponent {
     private getTop(isEmpty: boolean): string {
         const { parentRect, targetRect, position } = this.$positionData();
 
+        // Adjust coordinates for zoom level
+        // getBoundingClientRect() returns viewport coordinates, but we need
+        // coordinates relative to the transformed parent, so we adjust by zoom
+        const adjustedTop = (targetRect.top - parentRect.top) / this.zoomLevel;
+        const adjustedHeight = targetRect.height / this.zoomLevel;
+
         if (isEmpty) {
-            return `${targetRect.top - parentRect.top}px`;
+            return `${adjustedTop}px`;
         }
 
-        return position === 'before'
-            ? `${targetRect.top - parentRect.top}px`
-            : `${targetRect.top - parentRect.top + targetRect.height}px`;
+        return position === 'before' ? `${adjustedTop}px` : `${adjustedTop + adjustedHeight}px`;
     }
 }

@@ -7,7 +7,8 @@ import {
     Input,
     Output,
     ChangeDetectionStrategy,
-    inject
+    inject,
+    OnChanges
 } from '@angular/core';
 import {
     UntypedFormControl,
@@ -229,7 +230,7 @@ const I8N_BASE = 'api.sites.ruleengine';
     `,
     standalone: false
 })
-class RuleComponent {
+class RuleComponent implements OnChanges {
     private _user = inject(UserModel);
     elementRef = inject(ElementRef);
     resources = inject(I18nService);

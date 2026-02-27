@@ -11,7 +11,7 @@
     "dependencies": {
         "@dotcms/client": "latest",
         "@dotcms/experiments": "latest",
-        "@dotcms/react": "latest",
+        "@dotcms/react": "next",
         "@dotcms/types": "latest",
         "@dotcms/uve": "latest",
         "@tinymce/tinymce-react": "6.2.1",

@@ -13,10 +13,15 @@ import { UVEStore } from '../../../store/dot-uve.store';
 export class DotUveLockOverlayComponent {
     readonly #store = inject(UVEStore);
 
-    $toggleLockOptions = this.#store.$toggleLockOptions;
+    $workflowLockOptions = this.#store.$workflowLockOptions;
 
     $overlayMessages = computed(() => {
-        const { isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
+        const lockOptions = this.$workflowLockOptions();
+        if (!lockOptions) {
+            return null;
+        }
+
+        const { isLocked } = lockOptions;
 
         if (!isLocked) {
             return {
@@ -26,14 +31,10 @@ export class DotUveLockOverlayComponent {
             };
         }
 
-        if (!isLockedByCurrentUser) {
-            return {
-                title: 'uve.editor.overlay.lock.locked.page.title',
-                icon: 'pi pi-lock',
-                message: 'uve.editor.overlay.lock.locked.page.description'
-            };
-        }
-
-        return null;
+        return {
+            title: 'uve.editor.overlay.lock.locked.page.title',
+            icon: 'pi pi-lock',
+            message: 'uve.editor.overlay.lock.locked.page.description'
+        };
     });
 }

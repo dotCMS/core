@@ -1,0 +1,25 @@
+@use "variables" as *;
+
+:host {
+    background-color: $color-palette-gray-100;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-left: 1px solid $color-palette-gray-200;
+    height: 100%;
+    width: 25rem; // 400px equivalent
+}
+
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+
+    .empty-message {
+        color: $color-palette-gray-500;
+        font-size: 1rem;
+        margin: 0;
+    }
+}

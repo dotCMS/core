@@ -5,7 +5,8 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject
+    inject,
+    OnChanges
 } from '@angular/core';
 import { UntypedFormControl } from '@angular/forms';
 
@@ -79,7 +80,7 @@ const UNITS = {
     `,
     standalone: false
 })
-export class VisitorsLocationComponent {
+export class VisitorsLocationComponent implements OnChanges {
     decimalPipe = inject(DecimalPipe);
     private loggerService = inject(LoggerService);
 

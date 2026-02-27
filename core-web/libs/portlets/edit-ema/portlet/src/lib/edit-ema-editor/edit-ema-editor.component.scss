@@ -2,11 +2,11 @@
 
 :host {
     display: grid;
-    grid-template-rows: min-content 1fr;
+    grid-template-rows: min-content 1fr min-content;
     height: 100%;
 
-    // Default state (no palette)
-    grid-template-columns: min-content 1fr;
+    // Default state (no palette, no right sidebar)
+    grid-template-columns: min-content 1fr min-content;
 }
 
 // To generate the space for the palette toggle button
@@ -22,12 +22,14 @@ dot-uve-palette {
     grid-row: 2 / -1;
 
     &.closed {
-        width: 0;
+        width: 0 !important;
         border-left: none;
+        min-width: 0;
     }
 
     &.open {
-        width: 18.75rem;
+        width: 18.75rem !important;
+        min-width: 18.75rem;
     }
 }
 
@@ -42,7 +44,7 @@ dot-ema-page-dropzone {
 
 dot-edit-ema-toolbar,
 dot-uve-toolbar {
-    grid-column: 1 /-1;
+    grid-column: 1 / 4;
 }
 
 dot-ema-device-display {
@@ -54,33 +56,86 @@ dot-results-seo-tool {
 }
 
 .editor-content {
-    padding: $spacing-4 $spacing-3;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: $spacing-1;
     overflow: auto;
+    position: relative;
+    height: 100%;
+    min-height: 0;
 
-    grid-column: 2 / -1;
+    grid-column: 2 / 3;
 }
 
-.editor-content-preview {
-    padding: $spacing-4;
+// Right sidebar wrapper with width transition
+.right-sidebar-wrapper {
+    grid-column: 3 / -1;
+    grid-row: 2 / -1;
+    overflow: hidden;
+    width: 0;
+    transition: width $basic-speed ease-in-out;
+
+    &.open {
+        width: 25rem;
+    }
+
+    ::ng-deep {
+        .p-tabview-panels {
+            height: 100%;
+            flex: 1;
+            overflow: hidden;
+        }
+    }
+}
+
+.canvas-viewport {
+    padding: $spacing-4 0;
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+    // IMPORTANT:
+    // Do NOT use flex + justify-content:center here.
+    // When the canvas is wider than the scroll container, centering can introduce a negative left offset
+    // that becomes unreachable because scrollLeft cannot be negative (canvas appears "cut" on the left).
+    display: block;
+}
+
+.canvas-row {
+    display: flex;
+    align-items: flex-start;
+    width: fit-content;
+    margin: 0 auto; // center when it fits; when it overflows, scroll controls visibility
+}
+
+.canvas-gutter {
+    flex: 0 0 $spacing-3;
+    width: $spacing-3;
+}
+
+.canvas-outer {
+    position: relative;
+    display: block;
+    user-select: none;
+}
+
+.canvas-inner {
+    position: relative;
 }
 
 .iframe-wrapper {
     position: relative;
     overflow: hidden;
-    flex-grow: 1;
     margin: 0 auto;
     border: solid 1px $color-palette-gray-300;
-    height: 100%;
-    width: 100%;
-    transition: all 0.3s ease-in-out;
+    width: 1520px;
+    min-width: 1520px;
+    height: auto;
+    transition: width 0.3s ease-in-out;
 
     iframe {
         border: none;
+        display: block;
+        width: 100%;
+        // Height is controlled from TS to match the iframe document height (no iframe scrolling).
+        height: auto;
+        min-height: 1px;
     }
 
     dot-uve-lock-overlay {
@@ -108,4 +163,84 @@ a,
 a:focus,
 a:active {
     text-decoration: none;
+}
+
+:host ::ng-deep {
+    .browser-toolbar {
+        justify-content: center;
+    }
+}
+
+.browser-url-bar-container {
+    background-color: $color-palette-gray-200;
+    display: flex;
+    gap: $spacing-3;
+    border-radius: $border-radius-md;
+    padding: 0;
+}
+
+.browser-url-bar {
+    padding: $spacing-1;
+    color: $color-palette-gray-700;
+}
+
+.flip-horizontal {
+    transform: scaleX(-1);
+}
+
+.url-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+    max-width: 25rem;
+}
+
+.url-item {
+    display: flex;
+    padding: $spacing-0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: $spacing-0;
+
+    &:not(:last-child)::after {
+        content: "";
+        display: block;
+        width: 100%;
+        height: 1px;
+        background: $color-palette-gray-200;
+        margin: $spacing-0 0;
+    }
+}
+
+.url-label {
+    font-style: normal;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.url-value {
+    display: flex;
+    align-items: center;
+    gap: $spacing-0;
+    min-height: 28px;
+    width: 100%;
+
+    a {
+        color: $black;
+        text-decoration: none;
+        flex: 1 0 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.875rem;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    p-button {
+        flex-shrink: 0;
+    }
 }

@@ -1,58 +1,12 @@
-@let preview = $isPreviewMode();
-@let live = $isLiveMode();
-@let runningExperiment = $toolbar().runningExperiment;
+@let mode = $mode();
+@let preview = mode === UVE_MODE.PREVIEW;
+@let live = mode === UVE_MODE.LIVE;
+@let runningExperiment = $runningExperiment();
 
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
-        @if ($isEditMode() && $canEditPage()) {
-            <button
-                pButton
-                type="button"
-                class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
-                (click)="togglePalette()"
-                data-testId="uve-toolbar-palette-toggle">
-                <img
-                    src="./assets/edit-uve-toolbar/left_panel_open.svg"
-                    alt="Left Panel Open"
-                    [class.hidden]="!$isPaletteOpen()"
-                    data-testId="palette-open-icon" />
-                <img
-                    src="./assets/edit-uve-toolbar/left_panel_close.svg"
-                    alt="Left Panel Close"
-                    [class.hidden]="$isPaletteOpen()"
-                    data-testId="palette-close-icon" />
-            </button>
-        }
         <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
-        <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
-        <p-button
-            (click)="op.toggle($event)"
-            [pTooltip]="'editpage.header.copy' | dm"
-            tooltipPosition="bottom"
-            icon="pi pi-copy"
-            styleClass="p-button-text p-button-sm p-button-rounded"
-            data-testId="uve-toolbar-copy-url">
-            <p-overlayPanel #op>
-                <div class="url-list">
-                    @for (url of $pageURLS(); track url.value) {
-                        <div class="url-item">
-                            <span class="url-label">{{ url.label | dm }}:</span>
-                            <div class="url-value">
-                                <a [href]="url.value" target="_blank" rel="noreferrer noopener">
-                                    {{ url.value }}
-                                </a>
-                                <p-button
-                                    icon="pi pi-copy"
-                                    styleClass="p-button-text p-button-sm p-button-rounded"
-                                    (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                                    [cdkCopyToClipboard]="url.value"
-                                    data-testId="copy-url-button" />
-                            </div>
-                        </div>
-                    }
-                </div>
-            </p-overlayPanel>
-        </p-button>
+        <dot-ema-bookmarks [url]="$bookmarksUrl()" />
         <a
             title="Page API URL"
             [pTooltip]="'uve.toolbar.page.api.url' | dm"
@@ -66,7 +20,10 @@
         @if (preview || live) {
             @if ($devices()?.length) {
                 <dot-uve-device-selector
+                    [state]="$deviceSelectorState()"
                     [devices]="$devices()"
+                    [isTraditionalPage]="isTraditionalPage()"
+                    (stateChange)="handleDeviceSelectorChange($event)"
                     data-testId="uve-toolbar-device-selector" />
             }
         } @else {
@@ -106,7 +63,12 @@
     }
 
     <div class="p-toolbar-group-end">
-        <dot-toggle-lock-button />
+        @if ($workflowLockOptions(); as lockOptions) {
+            <dot-toggle-lock-button
+                [toggleLockOptions]="lockOptions"
+                (toggleLockClick)="handleToggleLock($event)"
+                data-testId="uve-toolbar-toggle-lock" />
+        }
 
         @if (runningExperiment) {
             <dot-ema-running-experiment
@@ -116,7 +78,7 @@
         <dot-edit-ema-language-selector
             #languageSelector
             (selected)="onLanguageSelected($event)"
-            [language]="$toolbar().currentLanguage"
+            [language]="$currentLanguage()"
             data-testId="uve-toolbar-language-selector" />
 
         <dot-edit-ema-persona-selector
@@ -134,5 +96,8 @@
 </p-toolbar>
 
 @if ($infoDisplayProps(); as options) {
-    <dot-ema-info-display data-testId="info-display" [options]="options" />
+    <dot-ema-info-display
+        data-testId="info-display"
+        [options]="options"
+        (actionClicked)="handleInfoDisplayAction($event)" />
 }

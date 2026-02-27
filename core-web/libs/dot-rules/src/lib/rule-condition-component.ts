@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, inject, OnChanges } from '@angular/core';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
@@ -69,7 +69,7 @@ import { I18nService } from './services/system/locale/I18n';
     `,
     standalone: false
 })
-export class ConditionComponent implements OnInit {
+export class ConditionComponent implements OnInit, OnChanges {
     private _resources = inject(I18nService);
     private loggerService = inject(LoggerService);
 

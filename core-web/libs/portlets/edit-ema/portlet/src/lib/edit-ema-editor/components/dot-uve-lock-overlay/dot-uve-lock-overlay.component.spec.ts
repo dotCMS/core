@@ -19,9 +19,7 @@ describe('DotUveLockOverlayComponent', () => {
         isLocked: false,
         lockedBy: '',
         canLock: true,
-        isLockedByCurrentUser: false,
-        showBanner: false,
-        showOverlay: true
+        isLockedByCurrentUser: false
     });
 
     const createComponent = createComponentFactory({
@@ -40,7 +38,7 @@ describe('DotUveLockOverlayComponent', () => {
             {
                 provide: UVEStore,
                 useValue: {
-                    $toggleLockOptions: mockToggleLockOptions
+                    $workflowLockOptions: mockToggleLockOptions
                 }
             }
         ],
@@ -58,9 +56,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: false,
                 lockedBy: '',
                 canLock: true,
-                isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: true
+                isLockedByCurrentUser: false
             });
             spectator.detectChanges();
         });
@@ -104,9 +100,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: true,
                 lockedBy: 'another-user',
                 canLock: false,
-                isLockedByCurrentUser: false,
-                showBanner: true,
-                showOverlay: true
+                isLockedByCurrentUser: false
             });
             spectator.detectChanges();
         });
@@ -136,9 +130,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: false,
                 lockedBy: '',
                 canLock: true,
-                isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: true
+                isLockedByCurrentUser: false
             });
             spectator.detectChanges();
 
@@ -156,9 +148,7 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: true,
                 lockedBy: 'another-user',
                 canLock: false,
-                isLockedByCurrentUser: false,
-                showBanner: true,
-                showOverlay: true
+                isLockedByCurrentUser: false
             });
             spectator.detectChanges();
 
@@ -170,20 +160,22 @@ describe('DotUveLockOverlayComponent', () => {
             });
         });
 
-        it('should return null when page is locked by current user', () => {
+        it('should return lock messages when page is locked by current user', () => {
             mockToggleLockOptions.set({
                 inode: 'test-inode',
                 isLocked: true,
                 lockedBy: 'current-user',
                 canLock: true,
-                isLockedByCurrentUser: true,
-                showBanner: false,
-                showOverlay: false
+                isLockedByCurrentUser: true
             });
             spectator.detectChanges();
 
             const messages = spectator.component.$overlayMessages();
-            expect(messages).toBeNull();
+            expect(messages).toEqual({
+                icon: 'pi pi-lock',
+                title: 'uve.editor.overlay.lock.locked.page.title',
+                message: 'uve.editor.overlay.lock.locked.page.description'
+            });
         });
     });
 });

@@ -102,7 +102,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         (state, { url, contentType, actionPayload }: CreateContentletAction) => {
             const completeURL = new URL(url, window.location.origin);
 
-            completeURL.searchParams.set('variantName', this.uveStore.$variantId());
+            completeURL.searchParams.set('variantName', this.uveStore.pageVariantId());
 
             return {
                 ...state,
@@ -320,7 +320,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             _content_cmd: 'edit',
             inode: inode,
             angularCurrentPortlet: angularCurrentPortlet,
-            variantName: this.uveStore.$variantId()
+            variantName: this.uveStore.pageVariantId()
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
@@ -348,7 +348,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             container_id: containerId,
             add: acceptTypes,
             language_id,
-            variantName: this.uveStore.$variantId()
+            variantName: this.uveStore.pageVariantId()
         });
 
         return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
@@ -371,7 +371,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             lang: newLanguage.toString(),
             populateaccept: 'true',
             reuseLastLang: 'true',
-            variantName: this.uveStore.$variantId()
+            variantName: this.uveStore.pageVariantId()
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;

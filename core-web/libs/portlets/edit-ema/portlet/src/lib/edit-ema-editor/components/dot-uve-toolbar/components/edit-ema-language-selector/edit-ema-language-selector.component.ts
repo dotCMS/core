@@ -35,9 +35,14 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
     language = input<DotLanguage>();
 
     selectedLanguage = computed(() => {
+        const lang = this.language();
+        if (!lang) {
+            return null;
+        }
+
         const selected = {
-            ...this.language(),
-            label: this.createLanguageLabel(this.language())
+            ...lang,
+            label: this.createLanguageLabel(lang)
         };
         // This method internally set a signal. We need to use untracked to avoid unnecessary updates
         untracked(() => this.listbox?.writeValue(selected));
@@ -57,7 +62,15 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
         );
 
     ngAfterViewInit(): void {
-        this.listbox.writeValue(this.selectedLanguage());
+        const lang = this.language();
+        if (!lang) {
+            return;
+        }
+
+        const selected = this.selectedLanguage();
+        if (selected) {
+            this.listbox.writeValue(selected);
+        }
     }
 
     /**
@@ -67,9 +80,17 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
      * @memberof EmaLanguageSelectorComponent
      */
     onChange({ value }: ListboxChangeEvent) {
+        const lang = this.language();
+        if (!lang) {
+            return;
+        }
+
         this.selected.emit(value.id);
 
-        this.listbox.writeValue(this.selectedLanguage());
+        const selected = this.selectedLanguage();
+        if (selected) {
+            this.listbox.writeValue(selected);
+        }
     }
 
     /**

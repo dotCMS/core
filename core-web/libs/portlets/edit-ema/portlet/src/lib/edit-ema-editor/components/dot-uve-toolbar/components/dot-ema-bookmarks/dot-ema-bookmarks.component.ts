@@ -78,7 +78,7 @@ export class DotEmaBookmarksComponent implements OnInit {
         this.dotFavoritePageService
             .get({
                 url,
-                userId: this.store.currentUser()?.userId,
+                userId: this.store.uveCurrentUser()?.userId,
                 limit: 10
             })
             .pipe(

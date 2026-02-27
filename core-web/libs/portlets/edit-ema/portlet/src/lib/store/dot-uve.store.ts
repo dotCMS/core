@@ -1,183 +1,154 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-
-import { computed, untracked } from '@angular/core';
+import { signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
-import { withSave } from './features/editor/save/withSave';
+import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
-import { withLock } from './features/editor/withLock';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
+import { withPage } from './features/page/withPage';
+import { withPageApi } from './features/page-api/withPageApi';
 import { withTrack } from './features/track/withTrack';
-import { withPageContext } from './features/withPageContext';
-import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
+import { withUve } from './features/uve/withUve';
+import { withWorkflow } from './features/workflow/withWorkflow';
+import { Orientation, PageType, UVEState } from './models';
 
-import { UVE_FEATURE_FLAGS } from '../shared/consts';
-import { UVE_STATUS } from '../shared/enums';
-import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
+import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
+import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
 const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    pageAPIResponse: null,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
+    // UVE system state (managed by withUve)
+    uveStatus: UVE_STATUS.LOADING,
+    uveIsEnterprise: false,
+    uveCurrentUser: null,
+    // Flags (managed by withFlags)
+    flags: {}, // Will be populated by withFlags feature
+    // Page state (managed by withPage)
     pageParams: null,
+    pageLanguages: [],
+    pageType: PageType.TRADITIONAL,
+    pageExperiment: null,
+    pageErrorCode: null,
+    // Workflow state (managed by withWorkflow)
+    workflowActions: [],
+    workflowIsLoading: false,
+    workflowLockIsLoading: false,
+    // Note: Page asset properties removed (page, site, template, containers, viewAs, vanityUrl, urlContentMap, numberContents)
+    // Access via computed signal: store.pageAsset()
+    // Editor state (flattened with editor* prefix)
+    editorDragItem: null,
+    editorBounds: [],
+    editorState: EDITOR_STATE.IDLE,
+    editorActiveContentlet: null,
+    editorContentArea: null,
+    editorPaletteOpen: true,
+    editorRightSidebarOpen: false,
+    editorOgTags: null,
+    editorStyleSchemas: [],
+    // View state (device, orientation, social media, zoom)
+    viewDevice: DEFAULT_DEVICE,
+    viewDeviceOrientation: Orientation.LANDSCAPE,
+    viewSocialMedia: null,
     viewParams: null,
-    status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false
+    viewOgTagsResults: null,
+    viewZoomLevel: 1,
+    viewZoomIframeDocHeight: 0
 };
 
+/**
+ * Main UVE Store - Unified Visual Editor state management.
+ *
+ * This store manages all state for the Universal Visual Editor including:
+ * - Page content and metadata
+ * - Editor UI state (palette, sidebars, drag/drop)
+ * - Workflow actions and permissions
+ * - Client configuration and time machine (undo/redo)
+ *
+ * ## Feature Composition Order (CRITICAL - Do not reorder without reviewing dependencies)
+ *
+ * 1. withState - Base state
+ * 2. withUve - Global system state (status, enterprise, user)
+ * 3. withFlags - Feature flags
+ * 4. withPage - Page data + history (composes withHistory)
+ * 5. withTrack - Analytics (standalone)
+ * 6. withWorkflow - Workflow + lock (needs PageComputed, uses pageReload via type assertion)
+ * 7. withMethods - updatePageResponse helper
+ * 8. withLayout - Layout operations (needs page data)
+ * 9. withView - View modes + zoom (needs page params)
+ * 10. withEditor - Editor UI (needs PageComputed, WorkflowComputed, ViewComputed)
+ * 11. withPageApi - Backend API (needs all above, provides pageReload)
+ *
+ * Note: Circular dependency exists between withWorkflow and withPageApi:
+ * - withWorkflow needs pageReload() from withPageApi (accessed via type assertion)
+ * - withPageApi needs workflowFetch() from withWorkflow (accessed via dependency injection)
+ * Current order is optimal - do not change without addressing this circular dependency.
+ *
+ * @example
+ * ```typescript
+ * export class MyComponent {
+ *   readonly store = inject(UVEStore);
+ *
+ *   ngOnInit() {
+ *     const page = this.store.pageAsset()?.page;
+ *   }
+ * }
+ * ```
+ */
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
+    // 1. Base state
     withState<UVEState>(initialState),
-    // Make common computed available through all the features
-    withPageContext(),
+    // 2. Global system state
+    withUve(),
+    // 3. Feature flags
+    withFlags(UVE_FEATURE_FLAGS),
+    // 4. Page data + history
+    withPage(),
+    // 5. Analytics
+    withTrack(),
+    // 6. Workflow + lock
+    withWorkflow(),
+    // 7. Helper methods
     withMethods((store) => {
         return {
-            setUveStatus(status: UVE_STATUS) {
-                patchState(store, {
-                    status
-                });
-            },
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
-                patchState(store, {
-                    status: UVE_STATUS.LOADED,
-                    pageAPIResponse
-                });
-            },
-            patchViewParams(viewParams: Partial<DotUveViewParams>) {
-                patchState(store, {
-                    viewParams: {
-                        ...store.viewParams(),
-                        ...viewParams
-                    }
-                });
+                // Single source of truth - pageAsset properties accessed via store.pageAsset()
+                store.setPageAssetResponse({ pageAsset: pageAPIResponse });
+                store.setUveStatus(UVE_STATUS.LOADED);
             }
         };
     }),
-    withSave(),
+    // 8. Layout operations
     withLayout(),
+    // 9. View modes + zoom
+    withView(),
+    // 10. Editor UI
     withEditor(),
-    withTrack(),
-    withFlags(UVE_FEATURE_FLAGS),
-    withLock(),
-    withComputed(
-        ({
-            pageAPIResponse,
-            pageParams,
-            viewParams,
-            languages,
-            errorCode: error,
-            status,
-            isEnterprise
-        }) => {
-            return {
-                $translateProps: computed<TranslateProps>(() => {
-                    const response = pageAPIResponse();
-                    const languageId = response?.viewAs.language?.id;
-                    const translatedLanguages = untracked(() => languages());
-                    const currentLanguage = translatedLanguages.find(
-                        (lang) => lang.id === languageId
-                    );
+    // 11. Backend API (must be last - needs all dependencies above)
+    withFeature((store) =>
+        withPageApi({
+            // Client configuration
+            resetClientConfiguration: () => store.resetClientConfiguration(),
 
-                    return {
-                        page: response?.page,
-                        currentLanguage
-                    };
-                }),
-                $shellProps: computed<ShellProps>(() => {
-                    const response = pageAPIResponse();
+            // Workflow
+            workflowFetch: (inode: string) => store.workflowFetch(inode),
 
-                    const url = sanitizeURL(response?.page.pageURI);
-                    const currentUrl = url.startsWith('/') ? url : '/' + url;
+            // Request metadata
+            requestMetadata: () => store.requestMetadata(),
+            $requestWithParams: store.$requestWithParams,
 
-                    const requestHostName = getRequestHostName(pageParams());
+            // Page asset management
+            setPageAssetResponse: (response) => store.setPageAssetResponse(response),
+            rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
 
-                    const page = response?.page;
-                    const templateDrawed = response?.template.drawed;
+            // History management
+            addHistory: (response) => store.addToHistory(response),
+            resetHistoryToCurrent: () => store.resetHistoryToCurrent(),
 
-                    const isLayoutDisabled = !page?.canEdit || !templateDrawed;
-                    const errorCode = error();
-
-                    const errorPayload = getErrorPayload(errorCode);
-                    const isLoading = status() === UVE_STATUS.LOADING;
-                    const isEnterpriseLicense = isEnterprise();
-
-                    const canSeeRulesExists = page && 'canSeeRules' in page;
-
-                    return {
-                        canRead: page?.canRead,
-                        error: errorPayload,
-                        seoParams: {
-                            siteId: response?.site?.identifier,
-                            languageId: response?.viewAs.language.id,
-                            currentUrl,
-                            requestHostName
-                        },
-                        items: [
-                            {
-                                icon: 'pi-file',
-                                label: 'editema.editor.navbar.content',
-                                href: 'content',
-                                id: 'content'
-                            },
-                            {
-                                icon: 'pi-table',
-                                label: 'editema.editor.navbar.layout',
-                                href: 'layout',
-                                id: 'layout',
-                                isDisabled: isLayoutDisabled || !isEnterpriseLicense,
-                                tooltip: templateDrawed
-                                    ? null
-                                    : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                            },
-                            {
-                                icon: 'pi-sliders-h',
-                                label: 'editema.editor.navbar.rules',
-                                id: 'rules',
-                                href: `rules/${page?.identifier}`,
-                                isDisabled:
-                                    // Check if the page has the canSeeRules property, GraphQL query does suppport this property
-                                    (canSeeRulesExists && !page.canSeeRules) ||
-                                    !page?.canEdit ||
-                                    !isEnterpriseLicense
-                            },
-                            {
-                                iconURL: 'experiments',
-                                label: 'editema.editor.navbar.experiments',
-                                href: `experiments/${page?.identifier}`,
-                                id: 'experiments',
-                                isDisabled: !page?.canEdit || !isEnterpriseLicense
-                            },
-                            {
-                                icon: 'pi-th-large',
-                                label: 'editema.editor.navbar.page-tools',
-                                id: 'page-tools'
-                            },
-                            {
-                                icon: 'pi-ellipsis-v',
-                                label: 'editema.editor.navbar.properties',
-                                id: 'properties',
-                                isDisabled: isLoading
-                            }
-                        ]
-                    };
-                }),
-                $friendlyParams: computed(() => {
-                    const params = {
-                        ...(pageParams() ?? {}),
-                        ...(viewParams() ?? {})
-                    };
-
-                    return normalizeQueryParams(params);
-                })
-            };
-        }
+            // Page access
+            pageAsset: () => store.pageAsset()
+        })
     )
 );

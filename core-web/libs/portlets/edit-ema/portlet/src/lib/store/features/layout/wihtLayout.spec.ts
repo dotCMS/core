@@ -1,45 +1,58 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
+import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotPropertiesService } from '@dotcms/data-access';
+
 import { withLayout } from './withLayout';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
-import { UVE_STATUS } from '../../../shared/enums';
+import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
+import { withFlags } from '../flags/withFlags';
+import { withPage } from '../page/withPage';
 
-const emptyParams = {} as DotPageApiParams;
+const initialState = createInitialUVEState();
 
-const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
-    pageParams: emptyParams,
-    status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false
-};
-
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withLayout());
+export const uveStoreMock = signalStore(
+    withState<UVEState>(initialState),
+    withFlags([]),
+    withPage(),
+    withLayout()
+);
 
 describe('withLayout', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
     const createService = createServiceFactory({
         service: uveStoreMock,
-        providers: [mockProvider(Router), mockProvider(ActivatedRoute)]
+        providers: [
+            mockProvider(Router),
+            mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+            }),
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get: () => of({}),
+                    getClientPage: () => of({}),
+                    getGraphQLPage: () => of({}),
+                    save: jest.fn()
+                }
+            }
+        ]
     });
 
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
+        store.setPageAssetResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
     describe('withComputed', () => {
@@ -70,7 +83,7 @@ describe('withLayout', () => {
 
             store.updateLayout(layout);
 
-            expect(store.pageAPIResponse().layout).toEqual(layout);
+            expect(store.pageAsset()?.layout).toEqual(layout);
         });
     });
 });

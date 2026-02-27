@@ -16,7 +16,7 @@ import {
     DotPageContentTypeService
 } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -251,14 +251,19 @@ describe('DotUvePaletteListComponent', () => {
         jest.useFakeTimers();
         // Reset mockGlobalStore signal
         mockGlobalStore.currentSiteId.set('demo.dotcms.com');
+
         spectator = createComponent({
             providers: [mockProvider(DotPaletteListStore, mockStore)],
             detectChanges: false
         });
         store = spectator.inject(DotPaletteListStore, true);
+
+        // Set required inputs - use fixture.componentRef.setInput to avoid triggering change detection
+        // Component now receives these via @Input instead of store injection
         spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
         spectator.fixture.componentRef.setInput('languageId', 1);
         spectator.fixture.componentRef.setInput('pagePath', '/test-page');
+        spectator.fixture.componentRef.setInput('variantId', DEFAULT_VARIANT_ID);
     });
 
     afterEach(() => {
@@ -782,15 +787,15 @@ describe('DotUvePaletteListComponent', () => {
             );
         });
 
-        it('should pass host parameter with other input changes (languageId)', () => {
+        it('should pass host parameter with other store changes (languageId from UVEStore)', () => {
             setLoadedContentTypes();
             spectator.detectChanges();
 
             // Clear initial calls
             jest.clearAllMocks();
 
-            // Change languageId
-            spectator.fixture.componentRef.setInput('languageId', 2);
+            // Change languageId via input (component now receives props, not store)
+            spectator.setInput('languageId', 2);
             spectator.detectChanges();
 
             expect(store.getContentTypes).toHaveBeenCalledWith(
@@ -803,15 +808,15 @@ describe('DotUvePaletteListComponent', () => {
             );
         });
 
-        it('should pass host parameter with other input changes (pagePath)', () => {
+        it('should pass host parameter with other store changes (pagePath via input)', () => {
             setLoadedContentTypes();
             spectator.detectChanges();
 
             // Clear initial calls
             jest.clearAllMocks();
 
-            // Change pagePath
-            spectator.fixture.componentRef.setInput('pagePath', '/new-page');
+            // Change pagePath via input (component now receives props, not store)
+            spectator.setInput('pagePath', '/new-page');
             spectator.detectChanges();
 
             expect(store.getContentTypes).toHaveBeenCalledWith(

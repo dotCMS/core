@@ -1,83 +1,85 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
+import { patchState, signalState } from '@ngrx/signals';
+
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Output,
+    computed,
+    inject
+} from '@angular/core';
 
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { DotPageLayoutService } from '@dotcms/data-access';
 
+import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
-import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
-import { DotUveStyleEditorFormComponent } from './components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUVEPaletteListTypes } from './models';
 
+import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
 /**
  * Standalone palette component used by the EMA editor to display and switch
  * between different UVE-related resources (content types, components, styles, etc.).
  *
- * It exposes inputs to control the current page, language, variant and active tab,
- * and emits events when the active tab changes.
+ * Container component that uses signalState for local UI state (tab selection)
+ * and reads shared state from UVEStore.
  */
 @Component({
     selector: 'dot-uve-palette',
-    imports: [
-        TabViewModule,
-        DotUvePaletteListComponent,
-        TooltipModule,
-        DotUveStyleEditorFormComponent,
-        DotUveStyleEditorEmptyStateComponent
-    ],
+    imports: [TabViewModule, DotUvePaletteListComponent, TooltipModule, DotRowReorderComponent],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteComponent {
-    /**
-     * Absolute path of the page currently being edited.
-     */
-    $pagePath = input.required<string>({ alias: 'pagePath' });
-
-    /**
-     * Identifier of the language in which the page is being edited.
-     */
-    $languageId = input.required<number>({ alias: 'languageId' });
-
-    /**
-     * Variant identifier of the page/contentlet; defaults to `DEFAULT_VARIANT_ID`.
-     */
-    $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
-
-    /**
-     * Currently active palette tab.
-     */
-    $activeTab = input<UVE_PALETTE_TABS>(UVE_PALETTE_TABS.CONTENT_TYPES, { alias: 'activeTab' });
-
-    /**
-     * Whether the style editor tab should be shown in the palette.
-     */
-    $showStyleEditorTab = input<boolean>(false, { alias: 'showStyleEditorTab' });
-
-    /**
-     * The Style Schema to use for the current selected contentlet.
-     */
-    $styleSchema = input<StyleEditorFormSchema>(undefined, { alias: 'styleSchema' });
-
-    /**
-     * Emits whenever the active tab in the palette changes.
-     */
-    @Output() onTabChange = new EventEmitter<UVE_PALETTE_TABS>();
+    protected readonly uveStore = inject(UVEStore);
+    protected readonly dotPageLayoutService = inject(DotPageLayoutService);
 
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
 
     /**
+     * Local component UI state using NgRx signalState (recommended pattern).
+     * This keeps tab selection local to the component instead of polluting the global store.
+     */
+    readonly #localState = signalState({
+        currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
+    });
+
+    /**
+     * Computed signals that read from UVEStore for shared state.
+     * Made public for testing purposes.
+     */
+    readonly $pagePath = computed(() => this.uveStore.pageURI());
+    readonly $languageId = computed(() => this.uveStore.pageLanguageId());
+    readonly $variantId = computed(() => this.uveStore.pageVariantId());
+
+    /**
+     * Active tab - read from local state, not global store.
+     * Made public for testing purposes.
+     */
+    readonly $activeTab = this.#localState.currentTab;
+
+    /**
+     * Emits when a tree node is selected to scroll to the corresponding element.
+     */
+    @Output() onNodeSelect = new EventEmitter<{ selector: string; type: string }>();
+
+    constructor() {
+        // Tab management is now handled locally without effects
+    }
+
+    /**
      * Called whenever the tab changes, either by user interaction or via the `activeIndex` property.
+     * Updates local component state using patchState instead of dispatching to global store.
      *
      * @param event TabView change event containing the new active index.
      */
     protected handleTabChange(event: TabViewChangeEvent) {
-        this.onTabChange.emit(event.index);
+        patchState(this.#localState, { currentTab: event.index });
     }
 }
