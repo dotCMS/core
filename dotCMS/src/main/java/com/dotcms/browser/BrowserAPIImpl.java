@@ -149,23 +149,17 @@ public class BrowserAPIImpl implements BrowserAPI {
                 final AtomicInteger count = new AtomicInteger(0);
                 final Set<String> collectedInodes = new LinkedHashSet<>(
                         doElasticSearchTextFiltering(browserQuery, count, startRow, maxRows, sqlQuery));
-                final List<Contentlet> contentlets = findContentletsInParallel(new ArrayList<>(collectedInodes));
-                final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
-                        PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
+
+                final List<Contentlet> filtered = getContentFilteredByRole(browserQuery, new ArrayList<>(collectedInodes));
                 return new ContentUnderParent(filtered, count.get(), false, 0);
             }
 
             // When pagination is not requested (public overload passes -1/-1), fetch everything at once.
             if (startRow < 0 || maxRows <= 0) {
-                final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-                sqlQuery.params.forEach(dcSelect::addParam);
-                @SuppressWarnings("unchecked") final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-                final List<String> allInodesOrdered = inodesMapList.stream()
-                        .map(m -> m.get("inode"))
-                        .collect(Collectors.toList());
-                final List<Contentlet> contentlets = findContentletsInParallel(allInodesOrdered);
-                final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
-                        PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
+                final DotConnect dcSelect = getDotConnect(sqlQuery);
+                final List<String> allInodesOrdered = collectInodesFromDB(dcSelect);
+
+                final List<Contentlet> filtered = getContentFilteredByRole(browserQuery, allInodesOrdered);
                 return new ContentUnderParent(filtered, filtered.size(), false, 0);
             }
 
@@ -179,57 +173,50 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<Contentlet> accumulated = new ArrayList<>();
             boolean hasMore = false;
             int nextContentCursor;
+            int chunkCount = 0;
+            final DotConnect dcSelect = getDotConnect(sqlQuery);
+
+            Logger.debug(this, String.format(
+                    "[Starting content search by chunks]: content required %d, chunk size: %d, user: %s",
+                    needed, chunkSize, browserQuery.user.getFullName()));
 
             while (true) {
-                final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-                sqlQuery.params.forEach(dcSelect::addParam);
+                chunkCount++;
+                Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
+
                 dcSelect.setStartRow(dbOffset).setMaxRows(chunkSize);
+                final List<String> chunkInodesOrdered = collectInodesFromDB(dcSelect);
 
-                @SuppressWarnings("unchecked") final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-
-                if (inodesMapList.isEmpty()) {
-                    // DB exhausted — no more rows to scan.
+                if (chunkInodesOrdered.isEmpty()) {
+                    Logger.debug(this, String.format("DB exhausted at offset %d after %d chunks.",
+                            dbOffset, chunkCount));
                     nextContentCursor = dbOffset;
                     break;
                 }
 
-                final List<String> chunkInodesOrdered = inodesMapList.stream()
-                        .map(m -> m.get("inode"))
-                        .collect(Collectors.toList());
-
-                final List<Contentlet> chunkContentlets = findContentletsInParallel(chunkInodesOrdered);
-                final List<Contentlet> chunkFiltered = permissionAPI.filterCollection(
-                        chunkContentlets,
-                        PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
+                final List<Contentlet> chunkFiltered = getContentFilteredByRole(browserQuery, chunkInodesOrdered);
 
                 accumulated.addAll(chunkFiltered);
-                dbOffset += inodesMapList.size();
+                dbOffset += chunkInodesOrdered.size();
 
                 if (accumulated.size() >= needed) {
-                    // We have enough visible items.
-                    hasMore = (inodesMapList.size() == chunkSize);
-
-                    if (accumulated.size() > needed) {
-                        // Leftover filtered items beyond what is needed for this page.
-                        // Store (last needed item's DB row + 1) so the next page starts after it.
-                        final Contentlet lastOnPage = accumulated.get(needed - 1);
-                        final int indexInChunk = chunkContentlets.indexOf(lastOnPage);
-                        final int startOfChunk = dbOffset - inodesMapList.size();
-                        nextContentCursor = indexInChunk >= 0
-                                ? startOfChunk + indexInChunk + 1
-                                : dbOffset;
-                    } else {
-                        // Exactly the right number — no leftovers, advance past this chunk.
-                        nextContentCursor = dbOffset;
-                    }
+                    hasMore = (chunkInodesOrdered.size() == chunkSize);
+                    nextContentCursor = generateNextContentCursor(accumulated, needed,
+                            chunkInodesOrdered, dbOffset);
                     break;
                 }
 
-                if (inodesMapList.size() < chunkSize) {
-                    // Partial chunk — DB is exhausted.
+                if (chunkInodesOrdered.size() < chunkSize) {
+                    Logger.debug(this, String.format(
+                            "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
+                            accumulated.size()));
                     nextContentCursor = dbOffset;
                     break;
                 }
+
+                Logger.debug(this, String.format(
+                        "Current chunk: %d, Not enough content, continuing search in the next chunk. Total accumulated: %d",
+                        chunkCount, accumulated.size()));
             }
 
             final int accumulatedSize = accumulated.size();
@@ -252,6 +239,103 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.warnAndDebug(this.getClass(), errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
+    }
+
+    /**
+     * Creates a {@link DotConnect} preloaded with the select query and its bound parameters from a
+     * {@link SelectAndCountQueries} pair. Callers may further configure pagination
+     * ({@code setStartRow}/{@code setMaxRows}) before executing.
+     *
+     * @param sqlQuery the pre-built SQL select/count pair containing the query string and parameters
+     * @return a {@link DotConnect} ready to execute
+     */
+    private static DotConnect getDotConnect(final SelectAndCountQueries sqlQuery) {
+        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+        sqlQuery.params.forEach(dcSelect::addParam);
+        return dcSelect;
+    }
+
+    /**
+     * Executes the given {@link DotConnect} query and extracts the {@code inode} column from every
+     * result row, returning them as an ordered list.
+     *
+     * @param dcSelect a fully configured {@link DotConnect} instance ready to execute
+     * @return ordered list of inode strings; empty list when the query returns no rows
+     * @throws DotDataException if the underlying JDBC call fails
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> collectInodesFromDB(final DotConnect dcSelect) throws DotDataException {
+        final List<Map<String, String>> results = dcSelect.loadResults();
+        if (results.isEmpty()) {
+            return List.of();
+        }
+        return results.stream()
+                .map(m -> m.get("inode"))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Filters a list of contentlets down to those the current user can {@code READ}. Delegates to
+     * {@link PermissionAPI#filterCollection} respecting the query's front-end role flag.
+     *
+     * @param browserQuery query whose {@code user} and {@code respectFrontEndRoles} are used
+     * @param collectedInodes  collected inodes from the database
+     * @return sub-list of contentlets the user is allowed to read
+     * @throws DotDataException     if a permission lookup fails at the data layer
+     * @throws DotSecurityException if a security boundary is violated during filtering
+     */
+    private List<Contentlet> getContentFilteredByRole(final BrowserQuery browserQuery,
+            final List<String> collectedInodes) throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
+        final List<Contentlet> chunkFiltered = permissionAPI.filterCollection(
+                contentlets, PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
+
+        Logger.debug(this, String.format("Content fetched %d → %d passed permission filter.",
+                collectedInodes.size(), chunkFiltered.size()));
+        return chunkFiltered;
+    }
+
+    /**
+     * Computes the DB-row cursor that the next page should start from, given the accumulated
+     * permission-filtered results and the last DB chunk that was read.
+     * <p>
+     * When the accumulator holds more items than the page needs, the last item on the page is
+     * located inside the current chunk by searching its inode in {@code chunkInodesOrdered}.
+     * The cursor is then set to the row immediately after that item in the DB sequence.
+     * When the accumulator has exactly the right number of items the cursor simply advances to
+     * the end of the current chunk ({@code dbOffset}).
+     * </p>
+     *
+     * @param accumulated       permission-filtered items collected so far (may exceed {@code needed})
+     * @param needed            total items needed to satisfy the page ({@code startRow + maxRows})
+     * @param chunkInodesOrdered DB-ordered inode list for the last fetched chunk
+     * @param dbOffset          DB row offset after reading the current chunk
+     *                          ({@code previousDbOffset + chunkInodesOrdered.size()})
+     * @return the DB row index the next page scan should start from
+     */
+    private int generateNextContentCursor(final List<Contentlet> accumulated, final int needed,
+            final List<String> chunkInodesOrdered, final int dbOffset) {
+        int nextContentCursor;
+        final int startOfCurrentChunk = dbOffset - chunkInodesOrdered.size();
+
+        if (accumulated.size() > needed) {
+            final Contentlet lastOnPage = accumulated.get(needed - 1);
+            final String targetInode = lastOnPage.getInode();
+
+            // O(n) search by inode string — only in last chunk.
+            final int indexInChunk = chunkInodesOrdered.indexOf(targetInode);
+
+            // Position the cursor right after the last item on this page.
+            nextContentCursor = indexInChunk >= 0
+                    ? startOfCurrentChunk + indexInChunk + 1
+                    : dbOffset;
+            Logger.debug(this, "Page limit reached. Setting next cursor to " + nextContentCursor);
+        } else {
+            // Exactly the right number — no leftovers, advance past this chunk.
+            nextContentCursor = dbOffset;
+        }
+        return nextContentCursor;
     }
 
     /**
@@ -330,14 +414,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         Logger.debug(this, "::::: Using Single Query Chunked for text filtering ::::");
 
         // Execute single DB query to get ALL candidate inodes without pagination
-        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-        sqlQuery.params.forEach(dcSelect::addParam);
-
-        @SuppressWarnings("unchecked")
-        final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-        final List<String> allCandidateInodes = inodesMapList.stream()
-                .map(data -> data.get("inode"))
-                .collect(Collectors.toList());
+        final DotConnect dcSelect = getDotConnect(sqlQuery);
+        final List<String> allCandidateInodes = collectInodesFromDB(dcSelect);
 
         if (allCandidateInodes.isEmpty()) {
             Logger.debug(this, "Single Query Chunked: No candidate inodes found");
@@ -357,7 +435,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int listSize = list.size();
         final int safeStartRow = Math.max(0, Math.min(startRow, listSize));
         final int safeEndRow = Math.min(listSize, safeStartRow + Math.max(0, maxRows));
-        //Update the count (before slicing) so it can be accurately read from the upper calling layers this function
+        // Update the count (before slicing) so it can be accurately read from the upper calling layers this function
         count.set(listSize);
         // Create a LinkedHashSet from the sliced sublist to preserve order
         return new LinkedHashSet<>(list.subList(safeStartRow, safeEndRow));
