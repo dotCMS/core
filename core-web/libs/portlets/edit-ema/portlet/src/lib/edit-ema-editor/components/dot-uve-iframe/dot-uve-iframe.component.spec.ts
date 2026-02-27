@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -112,7 +113,9 @@ describe('DotUveIframeComponent', () => {
             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
             expect(iframe).toBeTruthy();
             expect(iframe.getAttribute('title')).toBe('Test Iframe');
-            expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin allow-forms');
+            expect(iframe.getAttribute('sandbox')).toBe(
+                'allow-scripts allow-same-origin allow-forms'
+            );
         });
 
         it('should apply ngStyle correctly', () => {
@@ -265,7 +268,9 @@ describe('DotUveIframeComponent', () => {
             } as unknown as Window;
 
             // Spy on document write method
-            writeSpy = jest.spyOn(mockDoc, 'write').mockImplementation(() => {});
+            writeSpy = jest.spyOn(mockDoc, 'write').mockImplementation(() => {
+                /* empty */
+            });
 
             Object.defineProperty(mockIframe, 'contentDocument', {
                 value: mockDoc,
@@ -329,7 +334,9 @@ describe('DotUveIframeComponent', () => {
             expect(writtenContent).toContain('<style>');
             // Script is added before </body>, styles are added at the end after </html>
             // So styles should appear after </html>
-            expect(writtenContent.indexOf('<style>')).toBeGreaterThan(writtenContent.indexOf('</html>'));
+            expect(writtenContent.indexOf('<style>')).toBeGreaterThan(
+                writtenContent.indexOf('</html>')
+            );
         });
     });
 
@@ -359,18 +366,22 @@ describe('DotUveIframeComponent', () => {
             (component as any).handleInlineScripts(false);
             expect(mockWindow.addEventListener).toHaveBeenCalled();
             expect((mockWindow.addEventListener as jest.Mock).mock.calls[0][0]).toBe('click');
-            expect(typeof (mockWindow.addEventListener as jest.Mock).mock.calls[0][1]).toBe('function');
+            expect(typeof (mockWindow.addEventListener as jest.Mock).mock.calls[0][1]).toBe(
+                'function'
+            );
         });
 
         it('should emit internalNav on click', () => {
             const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
             let clickHandler: ((e: MouseEvent) => void) | undefined;
 
-            (mockWindow.addEventListener as jest.Mock).mockImplementation((event: string, handler: (e: MouseEvent) => void) => {
-                if (event === 'click') {
-                    clickHandler = handler;
+            (mockWindow.addEventListener as jest.Mock).mockImplementation(
+                (event: string, handler: (e: MouseEvent) => void) => {
+                    if (event === 'click') {
+                        clickHandler = handler;
+                    }
                 }
-            });
+            );
 
             (component as any).handleInlineScripts(false);
 
@@ -384,11 +395,13 @@ describe('DotUveIframeComponent', () => {
             const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
             let clickHandler: ((e: MouseEvent) => void) | undefined;
 
-            (mockWindow.addEventListener as jest.Mock).mockImplementation((event: string, handler: (e: MouseEvent) => void) => {
-                if (event === 'click') {
-                    clickHandler = handler;
+            (mockWindow.addEventListener as jest.Mock).mockImplementation(
+                (event: string, handler: (e: MouseEvent) => void) => {
+                    if (event === 'click') {
+                        clickHandler = handler;
+                    }
                 }
-            });
+            );
 
             (component as any).handleInlineScripts(false);
 

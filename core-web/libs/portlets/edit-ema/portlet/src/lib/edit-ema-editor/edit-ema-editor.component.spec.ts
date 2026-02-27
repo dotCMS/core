@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { describe, expect, it } from '@jest/globals';
 import {
     SpectatorRouting,
@@ -169,7 +168,8 @@ const mockDotUveDragDropService = {
 const mockInlineEditService = {
     enableInlineEdit: jest.fn(),
     disableInlineEdit: jest.fn(),
-    injectInlineEdit: jest.fn()
+    injectInlineEdit: jest.fn(),
+    removeInlineEdit: jest.fn()
 };
 
 const createRouting = () =>
@@ -426,7 +426,7 @@ const createRouting = () =>
         ]
     });
 
-xdescribe('EditEmaEditorComponent', () => {
+describe('EditEmaEditorComponent', () => {
     describe('with queryParams and permission', () => {
         let spectator: SpectatorRouting<EditEmaEditorComponent>;
         let store: InstanceType<typeof UVEStore>;
@@ -1503,7 +1503,6 @@ xdescribe('EditEmaEditorComponent', () => {
 
                     afterEach(() => jest.clearAllMocks());
                 });
-
 
                 describe('Copy content', () => {
                     let copySpy: jest.SpyInstance<Observable<DotCMSContentlet>>;
@@ -3162,7 +3161,7 @@ xdescribe('EditEmaEditorComponent', () => {
                         });
                     });
 
-                    it('iframe should have the correct content when is VTL', () => {
+                    it.skip('iframe should have the correct content when is VTL', () => {
                         spectator.detectChanges();
                         jest.runOnlyPendingTimers();
 
@@ -3181,7 +3180,7 @@ xdescribe('EditEmaEditorComponent', () => {
                         );
                     });
 
-                    it('iframe should have reload the page and add the new content, maintaining scroll', () => {
+                    it.skip('iframe should have reload the page and add the new content, maintaining scroll', () => {
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
                         );
@@ -3353,7 +3352,7 @@ xdescribe('EditEmaEditorComponent', () => {
                             store.pageLoad({ url: 'index', clientHost: null });
                         });
 
-                        it('should call injectBaseTag with the right data', () => {
+                        it.skip('should call injectBaseTag with the right data', () => {
                             const origin = window.location.origin;
                             const injectBaseTagSpy = jest.spyOn(uveUtils, 'injectBaseTag');
 
@@ -3369,7 +3368,7 @@ xdescribe('EditEmaEditorComponent', () => {
                             });
                         });
 
-                        it('should add script and styles to iframe', () => {
+                        it.skip('should add script and styles to iframe', () => {
                             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
                             const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
                             iframe.dispatchEvent(new Event('load'));
@@ -3401,7 +3400,7 @@ xdescribe('EditEmaEditorComponent', () => {
                             store.pageLoad({ url: 'index', clientHost: null });
                         });
 
-                        it('should add script and styles to iframe for advance templates', () => {
+                        it.skip('should add script and styles to iframe for advance templates', () => {
                             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
                             const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
 

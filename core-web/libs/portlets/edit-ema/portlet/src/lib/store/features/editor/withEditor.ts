@@ -1,10 +1,4 @@
-import {
-    patchState,
-    signalStoreFeature,
-    type,
-    withComputed,
-    withMethods,
-} from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
 
 import { computed, inject, Signal, untracked } from '@angular/core';
 
@@ -90,10 +84,10 @@ export function withEditor() {
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
-            const styleEditorFeatureEnabled = computed(() => {
-                const isHeadless = store.pageType() === PageType.HEADLESS;
-                return store.flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
-            });
+            // const styleEditorFeatureEnabled = computed(() => {
+            //     const isHeadless = store.pageType() === PageType.HEADLESS;
+            //     return store.flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
+            // });
 
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageAsset()?.page?.canEdit;
@@ -123,18 +117,22 @@ export function withEditor() {
                     DotExperimentStatus.SCHEDULED
                 ].includes(store.pageExperiment()?.status);
 
-                return (canEditPage || canDrawTemplate) && !isExperimentRunning && !store.workflowIsPageLocked();
+                return (
+                    (canEditPage || canDrawTemplate) &&
+                    !isExperimentRunning &&
+                    !store.workflowIsPageLocked()
+                );
             });
 
-            const hasPermissionToEditStyles = computed(() => {
-                const canEditPage = store.pageAsset()?.page?.canEdit;
-                const isExperimentRunning = [
-                    DotExperimentStatus.RUNNING,
-                    DotExperimentStatus.SCHEDULED
-                ].includes(store.pageExperiment()?.status);
+            // const hasPermissionToEditStyles = computed(() => {
+            //     const canEditPage = store.pageAsset()?.page?.canEdit;
+            //     const isExperimentRunning = [
+            //         DotExperimentStatus.RUNNING,
+            //         DotExperimentStatus.SCHEDULED
+            //     ].includes(store.pageExperiment()?.status);
 
-                return canEditPage && !isExperimentRunning && !store.workflowIsPageLocked();
-            });
+            //     return canEditPage && !isExperimentRunning && !store.workflowIsPageLocked();
+            // });
 
             // Public capabilities (exported via EditorComputed interface)
             const editorCanEditContent = computed(() => {
@@ -153,7 +151,6 @@ export function withEditor() {
             const editorEnableInlineEdit = computed(() => {
                 return store.viewMode() === UVE_MODE.EDIT && store.uveIsEnterprise();
             });
-
 
             return {
                 editorCanEditContent,
@@ -328,7 +325,6 @@ export function withEditor() {
                     });
                 },
                 setActiveContentlet(contentlet: ActionPayload) {
-                    console.log('setActiveContentlet', contentlet);
                     patchState(store, {
                         editorActiveContentlet: contentlet,
                         editorPaletteOpen: true
@@ -336,14 +332,11 @@ export function withEditor() {
                     });
                 },
                 resetActiveContentlet() {
-                    console.log('resetActiveContentlet');
-                    debugger;
                     patchState(store, {
                         editorActiveContentlet: null
                     });
                 },
                 resetContentletArea() {
-                    console.log('resetContentletArea');
                     patchState(store, {
                         editorContentArea: null,
                         editorState: EDITOR_STATE.IDLE
