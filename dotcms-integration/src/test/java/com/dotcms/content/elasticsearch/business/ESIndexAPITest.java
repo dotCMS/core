@@ -58,7 +58,7 @@ public class ESIndexAPITest {
 
             String replicasSetting = getSettingsResponse.getSetting(fullNewIndexName, "index.auto_expand_replicas");
 
-            Assert.assertEquals("0-all", replicasSetting);
+            Assert.assertEquals("0-1", replicasSetting);
         } finally {
             esIndexAPI.delete(esIndexAPI.getNameWithClusterIDPrefix(newIndexName));
         }

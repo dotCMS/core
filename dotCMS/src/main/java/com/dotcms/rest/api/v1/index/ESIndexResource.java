@@ -1,28 +1,5 @@
 package com.dotcms.rest.api.v1.index;
 
-import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
-import com.liferay.portal.language.LanguageUtil;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -36,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.NodeStats;
+import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -58,9 +36,31 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 
 /**
@@ -327,9 +327,11 @@ public class ESIndexResource {
     @Path("/reindex")
     @Produces({MediaType.APPLICATION_JSON})
     public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @QueryParam("shards") int shards, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
+            @DefaultValue(DOTALL) @QueryParam("contentType") String contentType)
+            throws DotDataException, DotSecurityException {
+
         final InitDataObject init = auth(request, response);
-        shards = (shards <= 0) ? Config.getIntProperty("es.index.number_of_shards", 2) : shards;
+        int shards = Config.getIntProperty("es.index.number_of_shards", 1);
 
         System.setProperty("es.index.number_of_shards", String.valueOf(shards));
         Logger.info(this, "Running Contentlet Reindex");
