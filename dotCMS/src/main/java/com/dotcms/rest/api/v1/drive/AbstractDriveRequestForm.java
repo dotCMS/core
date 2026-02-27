@@ -341,4 +341,41 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("showFolders")
     @Value.Default
     default boolean showFolders(){return true; }
+
+    /**
+     * Content cursor: the DB row to start scanning content from (returned as
+     * {@code nextContentCursor} in the previous page response).
+     * <p>
+     * On the first page leave this at 0. On subsequent pages pass the
+     * {@code nextContentCursor} value from the previous response to continue
+     * exactly where the last content scan left off, avoiding duplicate or
+     * missing items across pages.
+     * </p>
+     * <p>
+     * When using cursor-based pagination always keep {@code offset} at 0;
+     * only update {@code contentCursor} between pages.
+     * </p>
+     *
+     * @return DB row offset for the next content scan, defaults to 0
+     */
+    @JsonProperty("contentCursor")
+    @Value.Default
+    default int contentCursor() { return 0; }
+
+    /**
+     * Folder cursor: the index into the folder list to start from (returned as
+     * {@code nextFolderCursor} in the previous page response).
+     * <p>
+     * On the first page leave this at 0. On subsequent pages pass the
+     * {@code nextFolderCursor} value from the previous response. When the
+     * previous response returned {@code hasMoreFolders: false} you should
+     * also set {@code showFolders: false} to skip the folder query entirely
+     * on pages where all folders have already been shown.
+     * </p>
+     *
+     * @return folder list index to start from, defaults to 0
+     */
+    @JsonProperty("folderCursor")
+    @Value.Default
+    default int folderCursor() { return 0; }
 }
