@@ -12,6 +12,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -159,6 +160,18 @@ public class AssetPermissionHelper {
             Logger.debug(this, () -> String.format("Not a container: %s", assetId));
         }
 
+        // Try Category
+        try {
+            final Category category = APILocator.getCategoryAPI()
+                .find(assetId, systemUser, respectFrontendRoles);
+            if (category != null && UtilMethods.isSet(category.getInode())) {
+                Logger.debug(this, () -> String.format("Resolved as Category: %s", assetId));
+                return category;
+            }
+        } catch (Exception e) {
+            Logger.debug(this, () -> String.format("Not a category: %s", assetId));
+        }
+
         Logger.warn(this, String.format("Unable to resolve asset: %s", assetId));
         return null;
     }
@@ -227,6 +240,26 @@ public class AssetPermissionHelper {
         final boolean isInheriting = permissionAPI.isInheritingPermissions(asset);
         final boolean isParentPermissionable = asset.isParentPermissionable();
 
+        // Resolve the parent permissionable for inherited-from info
+        String inheritedFromType = "";
+        String inheritedFromPath = "";
+        String inheritedFromId = "";
+        if (isInheriting) {
+            try {
+                final Permissionable parentPerm = permissionAPI.findParentPermissionable(asset);
+                if (parentPerm != null) {
+                    final String[] inheritInfo = resolveInheritedFromInfo(parentPerm);
+                    inheritedFromType = inheritInfo[0];
+                    inheritedFromPath = inheritInfo[1];
+                    inheritedFromId = inheritInfo[2];
+                }
+            } catch (Exception e) {
+                Logger.debug(this, () -> String.format(
+                    "Could not resolve parent permissionable for asset: %s - %s",
+                    asset.getPermissionId(), e.getMessage()));
+            }
+        }
+
         // Group permissions by role ID
         final Map<String, List<Permission>> permissionsByRole = permissions.stream()
             .collect(Collectors.groupingBy(Permission::getRoleId, LinkedHashMap::new, Collectors.toList()));
@@ -272,6 +305,9 @@ public class AssetPermissionHelper {
                     .roleId(roleId)
                     .roleName(role.getName())
                     .inherited(isInheriting)
+                    .inheritedFromType(inheritedFromType)
+                    .inheritedFromPath(inheritedFromPath)
+                    .inheritedFromId(inheritedFromId)
                     .individual(individual)
                     .inheritable(inheritable)
                     .build();
@@ -285,6 +321,57 @@ public class AssetPermissionHelper {
         }
 
         return rolePermissions;
+    }
+
+    /**
+     * Resolves the inherited-from metadata (type, path, id) for a parent permissionable.
+     * Matches the legacy DWR PermissionAjax behavior for the "Getting permissions from parent:" display.
+     *
+     * @param parentPerm The parent permissionable
+     * @return String array [type, path, id]
+     */
+    private String[] resolveInheritedFromInfo(final Permissionable parentPerm) {
+        try {
+            if (parentPerm instanceof Folder) {
+                final Folder folder = (Folder) parentPerm;
+                final String path = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
+                return new String[]{"folder", path, folder.getInode()};
+            } else if (parentPerm instanceof Host) {
+                final Host host = (Host) parentPerm;
+                return new String[]{"host", host.getHostname(), host.getIdentifier()};
+            } else if (parentPerm instanceof Contentlet && ((Contentlet) parentPerm).isHost()) {
+                final Host host = new Host((Contentlet) parentPerm);
+                return new String[]{"host", host.getHostname(), host.getIdentifier()};
+            } else if (parentPerm instanceof Category) {
+                final Category category = (Category) parentPerm;
+                return new String[]{"category", category.getCategoryName(), category.getInode()};
+            } else if (parentPerm instanceof com.dotcms.contenttype.model.type.ContentType) {
+                final com.dotcms.contenttype.model.type.ContentType ct =
+                    (com.dotcms.contenttype.model.type.ContentType) parentPerm;
+                return new String[]{"structure", ct.name(), ct.inode()};
+            } else if (parentPerm instanceof com.dotmarketing.portlets.structure.model.Structure) {
+                final com.dotmarketing.portlets.structure.model.Structure structure =
+                    (com.dotmarketing.portlets.structure.model.Structure) parentPerm;
+                return new String[]{"structure", structure.getName(), structure.getInode()};
+            }
+        } catch (Exception e) {
+            Logger.debug(this, () -> String.format(
+                "Error resolving inherited-from info for permissionable: %s - %s",
+                parentPerm.getPermissionId(), e.getMessage()));
+        }
+
+        // Fallback: try to resolve as host by permission ID
+        try {
+            final Host host = hostAPI.find(parentPerm.getPermissionId(),
+                APILocator.getUserAPI().getSystemUser(), false);
+            if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+                return new String[]{"host", host.getHostname(), host.getIdentifier()};
+            }
+        } catch (Exception e) {
+            Logger.debug(this, () -> "Fallback host lookup failed");
+        }
+
+        return new String[]{"", "", ""};
     }
 
     /**

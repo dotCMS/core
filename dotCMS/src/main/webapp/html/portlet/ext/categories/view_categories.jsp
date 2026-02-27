@@ -858,6 +858,10 @@
 
 
     function initPermission() {
+        if (!currentInodeOrIdentifier) {
+            return;
+        }
+
         var nameField = dojo.byId("permCatName");
         nameField.innerHTML = currentCatName;
 
