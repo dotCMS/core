@@ -617,7 +617,10 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                         return this.#dotMessageService.get('block-editor.placeholder.quote');
                     }
 
-                    if (node.type.name === 'table') {
+                    if (
+                        node.type.name === 'table' ||
+                        node.type.name === 'gridBlock'
+                    ) {
                         return '';
                     }
 
