@@ -71,6 +71,19 @@
         *##elseif( $element.type == "dotVideo" )#*
             *##set($item = $element)#*
             *##parse("static/storyblock/dotVideo.vtl")#*
+        *##elseif( $element.type == "gridBlock" )#*
+            *##if($element.attrs.columns && $element.attrs.columns.size() == 2)#*
+                *##set($gridCol1Pct = $math.div($math.mul($element.attrs.columns.get(0), 100), 12))#*
+                *##set($gridCol2Pct = $math.div($math.mul($element.attrs.columns.get(1), 100), 12))#*
+            *##else#*
+                *##set($gridCol1Pct = 50)#*
+                *##set($gridCol2Pct = 50)#*
+            *##end
+<div data-type="gridBlock" class="grid-block" style="display: grid; grid-template-columns: ${gridCol1Pct}% ${gridCol2Pct}%; gap: 1rem;">#*
+            *##foreach($column in $element.content)
+<div data-type="gridColumn" class="grid-block__column">#renderContentBlock($column.content)</div>#*
+            *##end
+</div>#*
         *##elseif( $element.type == "text" )#*
             *##renderMarks($element)#*
         *##end#*
