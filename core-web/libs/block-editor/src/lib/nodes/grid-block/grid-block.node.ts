@@ -1,10 +1,13 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 
+import { GridResizePlugin } from './grid-resize.plugin';
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         gridBlock: {
             insertGridBlock: () => ReturnType;
+            setGridColumns: (columns: string) => ReturnType;
         };
     }
 }
@@ -15,6 +18,26 @@ export const GridBlock = Node.create({
     content: 'gridColumn gridColumn',
     draggable: true,
     isolating: true,
+
+    addAttributes() {
+        return {
+            columns: {
+                default: '50 50',
+                parseHTML: (element: HTMLElement) =>
+                    element.getAttribute('data-columns') || '50 50',
+                renderHTML: (attributes: Record<string, string>) => {
+                    const parts = (attributes.columns || '50 50').split(' ');
+                    const col1 = parts[0] || '50';
+                    const col2 = parts[1] || '50';
+
+                    return {
+                        'data-columns': attributes.columns,
+                        style: `--col-1: ${col1}%; --col-2: ${col2}%`
+                    };
+                }
+            }
+        };
+    },
 
     parseHTML() {
         return [{ tag: 'div[data-type="gridBlock"]' }];
@@ -50,6 +73,28 @@ export const GridBlock = Node.create({
                     }
 
                     return true;
+                },
+            setGridColumns:
+                (columns: string) =>
+                ({ tr, state, dispatch }) => {
+                    const { $from } = state.selection;
+
+                    for (let depth = $from.depth; depth > 0; depth--) {
+                        if ($from.node(depth).type.name === 'gridBlock') {
+                            const pos = $from.before(depth);
+
+                            if (dispatch) {
+                                tr.setNodeMarkup(pos, undefined, {
+                                    ...$from.node(depth).attrs,
+                                    columns
+                                });
+                            }
+
+                            return true;
+                        }
+                    }
+
+                    return false;
                 }
         };
     },
@@ -184,5 +229,9 @@ export const GridBlock = Node.create({
                 return false;
             }
         };
+    },
+
+    addProseMirrorPlugins() {
+        return [GridResizePlugin(this.editor)];
     }
 });
