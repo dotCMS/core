@@ -25,6 +25,7 @@ export const GridBlock = Node.create({
                 default: [6, 6],
                 parseHTML: (element: HTMLElement) => {
                     const raw = element.getAttribute('data-columns');
+                    if (!raw) return [6, 6];
 
                     try {
                         const parsed = JSON.parse(raw);
@@ -39,7 +40,7 @@ export const GridBlock = Node.create({
                     return [6, 6];
                 },
                 renderHTML: (attributes: Record<string, unknown>) => {
-                    const cols = (attributes.columns as number[]) || [6, 6];
+                    const cols = Array.isArray(attributes.columns) ? attributes.columns : [6, 6];
                     const pct1 = (cols[0] / 12) * 100;
                     const pct2 = (cols[1] / 12) * 100;
 
