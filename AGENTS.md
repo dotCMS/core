@@ -29,14 +29,16 @@ When adding a new script or recipe, test or reason through both environments bef
 ./mvnw install -pl :dotcms-core -DskipTests        # core only (~2-3 min), or: just build-quicker
 
 just dev-start-on-port 8080                        # start stack (DB + OpenSearch + app) with app on :8080
-just dev-stop                                      # teardown
+just dev-stop                                      # stop all containers (app + sidecars); safe no-op if not running
+just dev-restart 8080                              # stop everything and restart on given port — use after a backend rebuild
 just dev-urls                                      # discover and print all live URLs from Docker (dotAdmin, REST API, health)
 just dev-health                                    # check server health (management port discovered live from Docker)
 just dev-wait                                      # block until healthy — use in scripts after start or restart
 
 just dev-start-frontend                            # start Angular dev server :4200 (background, PID-managed)
 just dev-stop-frontend                             # stop it cleanly
-just dev-frontend-logs                             # tail the dev server log
+just dev-frontend-logs                             # tail the dev server log (blocking — Ctrl-C to exit)
+just dev-frontend-status                           # show last 40 lines of dev server log (non-blocking snapshot)
 
 cd core-web && npx nx lint dotcms-ui               # frontend lint
 cd core-web && npx nx test dotcms-ui               # frontend test
@@ -44,7 +46,7 @@ cd core-web && npx nx test dotcms-ui               # frontend test
 
 > **First run:** build first (`just build`), then start — the build produces the Docker image the start command uses.
 >
-> **Build scope:** Match scope to what changed — core-only change → `just build-quicker`; multi-module → add `--am`; full rebuild → `just build`. After a core rebuild, restart to pick up the new image: `just dev-stop && just dev-start-on-port 8080`. Silent failures are rare; slow builds are common.
+> **Build scope:** Match scope to what changed — core-only change → `just build-quicker`; multi-module → add `--am`; full rebuild → `just build`. After a core rebuild, restart to pick up the new image: `just dev-restart 8080`. Silent failures are rare; slow builds are common.
 >
 > **Build visibility:** Both `just build` and `just build-quicker` filter Maven output to phase transitions and errors — full log is saved to `/tmp/dotcms-build.*.log` for detailed inspection. To investigate a failure without loading the full log: `grep '^\[ERROR\]' /tmp/dotcms-build.<id>` shows only error lines. If the Docker image build fails with a stale layer SHA, run `docker builder prune -f` then retry.
 >

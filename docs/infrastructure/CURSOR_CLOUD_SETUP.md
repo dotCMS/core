@@ -18,7 +18,7 @@ just dev-start-on-port 8082
 
 Admin UI: `http://localhost:8082/dotAdmin` — `admin@dotcms.com` / `admin`
 
-> **Frontend dev server note:** The Angular dev server (`nx serve`) proxies API calls to `localhost:8080` by default. If you start the backend on a different port (e.g. 8082), the proxy config in `core-web/apps/dotcms-ui/proxy-dev.conf.mjs` must be updated to match, or frontend API calls will fail.
+> **Frontend dev server note:** Start the Angular dev server with `just dev-start-frontend` — it auto-discovers the backend port from Docker and injects it into the proxy config. Do not run `npx nx serve` directly; it falls back to `:8080` and will fail if your backend is on a different port.
 
 ## Known issues in Cursor Cloud VMs
 

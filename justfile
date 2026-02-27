@@ -130,9 +130,14 @@ dev-urls:
     echo "  Health    → http://localhost:${MGMT}/dotmgt/livez"
     echo ""
 
-# Stops the development Docker container
+# Stops all development containers — app, database, and OpenSearch. Safe no-op if not running.
 dev-stop:
     ./mvnw -pl :dotcms-core -Pdocker-stop
+
+# Stops all dev containers and restarts on the given port. Use after a backend rebuild.
+dev-restart port="8080":
+    just dev-stop
+    just dev-start-on-port {{ port }}
 
 # Starts the Angular frontend dev server on :4200. Discovers backend port from Docker; falls back to :8080.
 dev-start-frontend:
@@ -143,9 +148,15 @@ dev-start-frontend:
         exit 0
     fi
     # Discover the backend app port from Docker. Falls back to 8080 if no container is running.
+    # Uses same two-stage discovery as _dotcms-container: image name first, then container name pattern.
     CONTAINER=$(docker ps --filter "status=running" \
                           --format '{{ "{{.Names}}\t{{.Image}}" }}' \
                           | awk -F'\t' '/dotcms\/dotcms-test:/{print $1}' | head -1)
+    if [ -z "$CONTAINER" ]; then
+        CONTAINER=$(docker ps --filter "status=running" \
+                              --format '{{ "{{.Names}}" }}' \
+                              | grep -E '^dotbuild_.*_dotcms$' | head -1)
+    fi
     if [ -n "$CONTAINER" ]; then
         APP_PORT=$(docker port "$CONTAINER" 8080 2>/dev/null | cut -d: -f2)
     fi
@@ -183,18 +194,30 @@ dev-stop-frontend:
         fi
     fi
 
-# Tail the Angular frontend dev server log
+# Tail the Angular frontend dev server log (blocking — Ctrl-C to exit)
 dev-frontend-logs:
     tail -f .frontend.log
+
+# Show last 40 lines of the frontend dev server log (non-blocking snapshot)
+dev-frontend-status:
+    @tail -40 .frontend.log 2>/dev/null || echo "No frontend log found — is the dev server running? (just dev-start-frontend)"
 
 # Internal helper: finds the running dotCMS container by image name (tag-agnostic).
 _dotcms-container:
     #!/usr/bin/env bash
     # Filter by image name prefix — tag is intentionally omitted since it varies by build.
+    # Falls back to container name pattern when the image has been rebuilt: Docker strips the
+    # named tag from the old container and shows it by short image ID instead, breaking the
+    # image-name filter. Name pattern dotbuild_*_dotcms is stable across rebuilds.
     # Full image namespacing per workspace is a tracked issue for multi-worktree support.
     NAMES=$(docker ps --filter "status=running" \
                       --format '{{ "{{.Names}}\t{{.Image}}" }}' \
                       | awk -F'\t' '/dotcms\/dotcms-test:/{print $1}')
+    if [ -z "$NAMES" ]; then
+        NAMES=$(docker ps --filter "status=running" \
+                          --format '{{ "{{.Names}}" }}' \
+                          | grep -E '^dotbuild_.*_dotcms$')
+    fi
     if [ -z "$NAMES" ]; then
         echo "No dotCMS container running" >&2; exit 1
     fi
