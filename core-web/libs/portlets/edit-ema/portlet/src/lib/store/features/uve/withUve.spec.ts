@@ -32,6 +32,10 @@ describe('withUve', () => {
         it('should initialize with null currentUser', () => {
             expect(store.uveCurrentUser()).toBeNull();
         });
+
+        it('should have $isCMSAdmin false when no user', () => {
+            expect(store.$isCMSAdmin()).toBe(false);
+        });
     });
 
     describe('setUveStatus', () => {
@@ -82,6 +86,16 @@ describe('withUve', () => {
         it('should set current user', () => {
             store.setUveCurrentUser(mockUser);
             expect(store.uveCurrentUser()).toEqual(mockUser);
+        });
+
+        it('should update $isCMSAdmin when user has admin flag', () => {
+            expect(store.$isCMSAdmin()).toBe(false);
+
+            store.setUveCurrentUser({ ...mockUser, admin: true } as CurrentUser);
+            expect(store.$isCMSAdmin()).toBe(true);
+
+            store.setUveCurrentUser({ ...mockUser, admin: false } as CurrentUser);
+            expect(store.$isCMSAdmin()).toBe(false);
         });
 
         it('should allow clearing current user', () => {

@@ -54,7 +54,6 @@ export function withUve() {
             uveIsEnterprise: false,
             uveCurrentUser: null
         }),
-
         withMethods((store) => ({
             /**
              * Update the overall editor operational status

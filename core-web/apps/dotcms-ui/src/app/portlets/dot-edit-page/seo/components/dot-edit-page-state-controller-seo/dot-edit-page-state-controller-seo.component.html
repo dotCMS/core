@@ -3,6 +3,7 @@
     (changeSeoMedia)="changeSeoMedia($event)"
     (hideOverlayPanel)="tabButtons.resetDropdownById(dotPageMode.PREVIEW)"
     [apiLink]="apiLink"
+    [currentUser]="pageState?.user"
     #deviceSelector
     appendTo="body"
     data-testId="dot-device-selector" />

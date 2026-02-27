@@ -427,6 +427,111 @@ describe('DotUveIframeComponent', () => {
             (component as any).handleInlineScripts(true);
             expect(mockInlineEditService.injectInlineEdit).not.toHaveBeenCalled();
         });
+
+        describe('click filter', () => {
+            let clickHandler: ((e: MouseEvent) => void) | undefined;
+            let doc: Document;
+
+            beforeEach(() => {
+                doc = document.implementation.createHTMLDocument();
+                (mockWindow.addEventListener as jest.Mock).mockImplementation(
+                    (event: string, handler: (e: MouseEvent) => void) => {
+                        if (event === 'click') {
+                            clickHandler = handler;
+                        }
+                    }
+                );
+                (component as any).handleInlineScripts(false);
+            });
+
+            function createClickWithTarget(element: HTMLElement): MouseEvent {
+                const ev = new MouseEvent('click', { bubbles: true });
+                Object.defineProperty(ev, 'target', { value: element, writable: false });
+                return ev;
+            }
+
+            it('should emit internalNav and inlineEditing when click target is inside an anchor with href', () => {
+                const a = doc.createElement('a');
+                a.setAttribute('href', '/some-page');
+                const span = doc.createElement('span');
+                a.appendChild(span);
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(span));
+
+                expect(internalNavSpy).toHaveBeenCalledTimes(1);
+                expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should emit internalNav and inlineEditing when click target is an anchor with href', () => {
+                const a = doc.createElement('a');
+                a.setAttribute('href', '/page');
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(a));
+
+                expect(internalNavSpy).toHaveBeenCalledTimes(1);
+                expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should emit internalNav and inlineEditing when click target has data-mode', () => {
+                const div = doc.createElement('div');
+                div.dataset.mode = 'edit';
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(div));
+
+                expect(internalNavSpy).toHaveBeenCalledTimes(1);
+                expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should emit internalNav and inlineEditing when click target is inside [data-mode]', () => {
+                const wrapper = doc.createElement('div');
+                wrapper.setAttribute('data-mode', 'edit');
+                const inner = doc.createElement('span');
+                wrapper.appendChild(inner);
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(inner));
+
+                expect(internalNavSpy).toHaveBeenCalledTimes(1);
+                expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not emit when click target is a plain element (no link, no data-mode)', () => {
+                const div = doc.createElement('div');
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(div));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not emit when click target is inside an anchor without href', () => {
+                const a = doc.createElement('a');
+                const span = doc.createElement('span');
+                a.appendChild(span);
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(span));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+        });
     });
 
     describe('setSeoData', () => {

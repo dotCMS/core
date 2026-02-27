@@ -20,11 +20,10 @@ import { DropdownModule } from 'primeng/dropdown';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
 
-import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
+import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
-import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import {
-    DotCurrentUser,
     DotDevice,
     DotDeviceListItem,
     SocialMediaOption,
@@ -61,11 +60,15 @@ import { WINDOW } from '@dotcms/utils';
 export class DotDeviceSelectorSeoComponent implements OnInit {
     private dotDevicesService = inject(DotDevicesService);
     private dotMessageService = inject(DotMessageService);
-    private dotCurrentUser = inject(DotCurrentUserService);
     private window = inject<Window>(WINDOW);
 
     @Input() value: DotDevice;
     @Input() hideSocialMedia = false;
+
+    /**
+     * Current user from store (e.g. UVEStore.uveCurrentUser()). When not provided, isCMSAdmin is false.
+     */
+    @Input() currentUser?: { admin?: boolean } | null;
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();
@@ -78,8 +81,11 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     };
 
     options$: Observable<DotDevice[]>;
-    isCMSAdmin$: Observable<boolean>;
     SOCIAL_MEDIA_TILES: SocialMediaOption[];
+
+    protected get isCMSAdmin(): boolean {
+        return !!this.currentUser?.admin;
+    }
 
     defaultOptions: DotDeviceListItem[] = [
         {
@@ -134,7 +140,6 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
 
     ngOnInit() {
         this.options$ = this.getOptions();
-        this.isCMSAdmin$ = this.checkIfCMSAdmin();
         this.SOCIAL_MEDIA_TILES = Object.values(SOCIAL_MEDIA_TILES);
     }
 
@@ -178,18 +183,6 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
             }),
             filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
             toArray()
-        );
-    }
-
-    /**
-     * Check if current user is CMS Admin
-     * @returns Observable<boolean>
-     */
-    checkIfCMSAdmin(): Observable<boolean> {
-        return this.dotCurrentUser.getCurrentUser().pipe(
-            map((user: DotCurrentUser) => {
-                return user.admin;
-            })
         );
     }
 

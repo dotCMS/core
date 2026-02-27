@@ -30,6 +30,7 @@ import {
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_NAME,
+    DotAlertConfirm,
     DotExperimentStatus,
     DotPageMode,
     DotPageRender,
@@ -293,6 +294,46 @@ describe('DotEditPageStateControllerSeoComponent', () => {
                 const message = de.query(By.css('[data-testId="lockInfo"]')).componentInstance;
                 expect(message.pageState).toEqual(getPageRenderStateMock());
             });
+
+            it('should pass currentUser from pageState to dot-device-selector-seo', () => {
+                componentHost.variant = null;
+                fixtureHost.detectChanges();
+
+                const deviceSelectorDe = de.query(By.css('dot-device-selector-seo'));
+                const deviceSelector = deviceSelectorDe.componentInstance;
+
+                expect(deviceSelector.currentUser).toEqual(componentHost.pageState.user);
+            });
+
+            it('should show Add device link when user is admin', () => {
+                componentHost.variant = null;
+                componentHost.pageState = new DotPageRenderState(
+                    { ...mockUser(), admin: true },
+                    new DotPageRender(mockDotRenderedPage())
+                );
+                fixtureHost.detectChanges();
+
+                component.deviceSelector.openMenu(createFakeEvent('click'));
+                fixtureHost.detectChanges();
+
+                const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
+                expect(link).not.toBeNull();
+            });
+
+            it('should not show Add device link when user is not admin', () => {
+                componentHost.variant = null;
+                componentHost.pageState = new DotPageRenderState(
+                    { ...mockUser(), admin: false },
+                    new DotPageRender(mockDotRenderedPage())
+                );
+                fixtureHost.detectChanges();
+
+                component.deviceSelector.openMenu(createFakeEvent('click'));
+                fixtureHost.detectChanges();
+
+                const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
+                expect(link).toBeNull();
+            });
         });
 
         describe('disable mode selector option', () => {
@@ -467,8 +508,8 @@ describe('DotEditPageStateControllerSeoComponent', () => {
         });
 
         it('should update LOCK and MODE when confirmation dialog Canceled', () => {
-            jest.spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
-                conf.cancel();
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf: DotAlertConfirm) => {
+                conf.reject?.();
             });
 
             fixtureHost.detectChanges();
