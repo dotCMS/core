@@ -12,6 +12,8 @@ import { PageComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
 
+const VIEW_CANVAS_BASE_WIDTH = 1520;
+
 /**
  * Dependencies interface for withView
  * Currently no external dependencies needed - all accessed from store
@@ -117,13 +119,12 @@ export function withView(_deps?: WithViewDeps) {
                 return null;
             }),
             $showWorkflowsActions: computed<boolean>(() => {
-                const isPreviewMode = store.pageParams()?.mode === UVE_MODE.PREVIEW;
-                const isLiveMode = store.pageParams()?.mode === UVE_MODE.LIVE;
+                const isEditMode = store.pageParams()?.mode === UVE_MODE.EDIT;
 
                 const viewAs = store.pageAsset()?.viewAs;
                 const isDefaultVariant = getIsDefaultVariant(viewAs?.variantId);
 
-                return !isPreviewMode && !isLiveMode && isDefaultVariant;
+                return isEditMode && isDefaultVariant;
             }),
 
             // Zoom state accessors
@@ -136,7 +137,7 @@ export function withView(_deps?: WithViewDeps) {
                 const zoom = store.viewZoomLevel();
                 const height = store.viewZoomIframeDocHeight() || 800;
                 return {
-                    width: `${1520 * zoom}px`,
+                    width: `${VIEW_CANVAS_BASE_WIDTH * zoom}px`,
                     height: `${height * zoom}px`
                 };
             }),
@@ -144,7 +145,7 @@ export function withView(_deps?: WithViewDeps) {
                 const zoom = store.viewZoomLevel();
                 const height = store.viewZoomIframeDocHeight() || 800;
                 return {
-                    width: `1520px`,
+                    width: `${VIEW_CANVAS_BASE_WIDTH}px`,
                     height: `${height}px`,
                     transform: `scale(${zoom})`,
                     transformOrigin: 'top left'

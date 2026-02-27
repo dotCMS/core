@@ -92,7 +92,7 @@ export class DotUveContentletToolsComponent {
         payload: ActionPayload;
     }>();
 
-    readonly outputSelectedContentlet = output<Pick<ClientData, 'container' | 'contentlet'>>();
+    readonly selectedContentlet = output<Pick<ClientData, 'container' | 'contentlet'>>();
     /**
      * Emitted when the contentlet is selected from the tools (for example, via a drag handle).
      */
@@ -347,7 +347,7 @@ export class DotUveContentletToolsComponent {
         this.selectedContentletArea.set(hoveredArea);
 
         // Emit the selection event
-        this.outputSelectedContentlet.emit({
+        this.selectedContentlet.emit({
             container: hoveredArea.payload.container,
             contentlet: hoveredArea.payload.contentlet
         });

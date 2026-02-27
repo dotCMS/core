@@ -49,9 +49,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
     describe('Component Creation', () => {
         it('should create', () => {
             const initialState: DeviceSelectorState = {
-                currentDevice: null,
-                currentSocialMedia: null,
-                currentOrientation: null
+                device: null,
+                socialMedia: null,
+                orientation: null
             };
             spectator.setInput('state', initialState);
             spectator.setInput('devices', mockDevices);
@@ -64,9 +64,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
     describe('Device Selection', () => {
         beforeEach(() => {
             const state: DeviceSelectorState = {
-                currentDevice: DEFAULT_DEVICE,
-                currentSocialMedia: null,
-                currentOrientation: Orientation.LANDSCAPE
+                device: DEFAULT_DEVICE,
+                socialMedia: null,
+                orientation: Orientation.LANDSCAPE
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);
@@ -89,9 +89,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         it('should emit default device when selecting same device (toggle off)', () => {
             const customDevice = mockDevices.find((d) => !d._isDefault);
             const state: DeviceSelectorState = {
-                currentDevice: customDevice,
-                currentSocialMedia: null,
-                currentOrientation: Orientation.LANDSCAPE
+                device: customDevice,
+                socialMedia: null,
+                orientation: Orientation.LANDSCAPE
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -108,9 +108,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         it('should show custom device in more button label', () => {
             const customDevice = mockDevices.find((d) => !d._isDefault);
             const state: DeviceSelectorState = {
-                currentDevice: customDevice,
-                currentSocialMedia: null,
-                currentOrientation: Orientation.LANDSCAPE
+                device: customDevice,
+                socialMedia: null,
+                orientation: Orientation.LANDSCAPE
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -122,9 +122,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
     describe('Social Media Selection', () => {
         beforeEach(() => {
             const state: DeviceSelectorState = {
-                currentDevice: DEFAULT_DEVICE,
-                currentSocialMedia: null,
-                currentOrientation: null
+                device: DEFAULT_DEVICE,
+                socialMedia: null,
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);
@@ -144,9 +144,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
         it('should emit default device when selecting same social media (toggle off)', () => {
             const state: DeviceSelectorState = {
-                currentDevice: null,
-                currentSocialMedia: 'facebook',
-                currentOrientation: null
+                device: null,
+                socialMedia: 'facebook',
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -162,9 +162,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
         it('should show social media in more button label', () => {
             const state: DeviceSelectorState = {
-                currentDevice: null,
-                currentSocialMedia: 'facebook',
-                currentOrientation: null
+                device: null,
+                socialMedia: 'facebook',
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -177,9 +177,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         beforeEach(() => {
             const customDevice = mockDevices.find((d) => !d._isDefault);
             const state: DeviceSelectorState = {
-                currentDevice: customDevice,
-                currentSocialMedia: null,
-                currentOrientation: Orientation.LANDSCAPE
+                device: customDevice,
+                socialMedia: null,
+                orientation: Orientation.LANDSCAPE
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);
@@ -198,9 +198,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
         it('should emit orientation change from portrait to landscape', () => {
             const state: DeviceSelectorState = {
-                currentDevice: mockDevices.find((d) => !d._isDefault),
-                currentSocialMedia: null,
-                currentOrientation: Orientation.PORTRAIT
+                device: mockDevices.find((d) => !d._isDefault),
+                socialMedia: null,
+                orientation: Orientation.PORTRAIT
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -216,9 +216,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
         it('should disable orientation when default device is selected', () => {
             const state: DeviceSelectorState = {
-                currentDevice: DEFAULT_DEVICE,
-                currentSocialMedia: null,
-                currentOrientation: Orientation.LANDSCAPE
+                device: DEFAULT_DEVICE,
+                socialMedia: null,
+                orientation: Orientation.LANDSCAPE
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -228,9 +228,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
         it('should disable orientation when social media is selected', () => {
             const state: DeviceSelectorState = {
-                currentDevice: null,
-                currentSocialMedia: 'facebook',
-                currentOrientation: null
+                device: null,
+                socialMedia: 'facebook',
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -242,9 +242,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
     describe('Menu Items', () => {
         it('should include custom devices in menu', () => {
             const state: DeviceSelectorState = {
-                currentDevice: DEFAULT_DEVICE,
-                currentSocialMedia: null,
-                currentOrientation: null
+                device: DEFAULT_DEVICE,
+                socialMedia: null,
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);
@@ -259,9 +259,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
         it('should include social media menu for traditional pages', () => {
             const state: DeviceSelectorState = {
-                currentDevice: DEFAULT_DEVICE,
-                currentSocialMedia: null,
-                currentOrientation: null
+                device: DEFAULT_DEVICE,
+                socialMedia: null,
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);
@@ -276,9 +276,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
         it('should NOT include social media menu for non-traditional pages', () => {
             const state: DeviceSelectorState = {
-                currentDevice: DEFAULT_DEVICE,
-                currentSocialMedia: null,
-                currentOrientation: null
+                device: DEFAULT_DEVICE,
+                socialMedia: null,
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);
@@ -296,9 +296,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         it('should be active when custom device is selected', () => {
             const customDevice = mockDevices.find((d) => !d._isDefault);
             const state: DeviceSelectorState = {
-                currentDevice: customDevice,
-                currentSocialMedia: null,
-                currentOrientation: Orientation.LANDSCAPE
+                device: customDevice,
+                socialMedia: null,
+                orientation: Orientation.LANDSCAPE
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);
@@ -309,9 +309,9 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
         it('should NOT be active when default device is selected', () => {
             const state: DeviceSelectorState = {
-                currentDevice: DEFAULT_DEVICE,
-                currentSocialMedia: null,
-                currentOrientation: null
+                device: DEFAULT_DEVICE,
+                socialMedia: null,
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);

@@ -26,9 +26,9 @@ const DEFAULT_DEVICE_INODE = 'default';
  * State - what the user has selected (changes frequently)
  */
 export interface DeviceSelectorState {
-    currentDevice: DotDevice | null;
-    currentSocialMedia: string | null;
-    currentOrientation: Orientation | null;
+    device: DotDevice | null;
+    socialMedia: string | null;
+    orientation: Orientation | null;
 }
 
 /**
@@ -72,8 +72,7 @@ export class DotUveDeviceSelectorComponent {
     };
     readonly $disableOrientation = computed(
         () =>
-            this.state().currentDevice?.inode === DEFAULT_DEVICE_INODE ||
-            this.state().currentSocialMedia !== null
+            this.state().device?.inode === DEFAULT_DEVICE_INODE || this.state().socialMedia !== null
     );
 
     readonly $menuItems = computed(() => {
@@ -104,22 +103,22 @@ export class DotUveDeviceSelectorComponent {
         const DEFAULT_LABEL = 'more';
 
         const customDevice = this.devices().find(
-            (device) => !device._isDefault && device.inode === this.state().currentDevice?.inode
+            (device) => !device._isDefault && device.inode === this.state().device?.inode
         );
 
-        const label = customDevice?.name || this.state().currentSocialMedia;
+        const label = customDevice?.name || this.state().socialMedia;
 
         return label || DEFAULT_LABEL;
     });
 
     readonly activeMenuItemId = computed(() => {
-        const deviceInode = this.state().currentDevice?.inode;
-        const socialMedia = this.state().currentSocialMedia;
+        const deviceInode = this.state().device?.inode;
+        const socialMedia = this.state().socialMedia;
 
         return socialMedia || deviceInode;
     });
 
-    readonly $isMoreButtonActive = computed(() => !this.state().currentDevice?._isDefault);
+    readonly $isMoreButtonActive = computed(() => !this.state().device?._isDefault);
 
     /**
      * Select a social media
@@ -129,7 +128,7 @@ export class DotUveDeviceSelectorComponent {
      * @memberof DotUveDeviceSelectorComponent
      */
     onSocialMediaSelect(socialMedia: string): void {
-        const isSameSocialMedia = this.state().currentSocialMedia === socialMedia;
+        const isSameSocialMedia = this.state().socialMedia === socialMedia;
 
         if (isSameSocialMedia) {
             // Emit default device to clear social media
@@ -150,7 +149,7 @@ export class DotUveDeviceSelectorComponent {
      * @memberof DotUveDeviceSelectorComponent
      */
     onDeviceSelect(device: DotDevice): void {
-        const currentDevice = this.state().currentDevice;
+        const currentDevice = this.state().device;
         const isSameDevice = currentDevice?.inode === device.inode;
 
         // Emit device selection (or default to clear)
@@ -168,7 +167,7 @@ export class DotUveDeviceSelectorComponent {
      */
     onOrientationChange(): void {
         const newOrientation =
-            this.state().currentOrientation === Orientation.LANDSCAPE
+            this.state().orientation === Orientation.LANDSCAPE
                 ? Orientation.PORTRAIT
                 : Orientation.LANDSCAPE;
 

@@ -42,10 +42,8 @@ export interface ViewComputed {
 export interface EditorComputed {
     editorCanEditContent: Signal<boolean>;
     editorCanEditLayout: Signal<boolean>;
-
     editorCanEditStyles: Signal<boolean>;
     editorEnableInlineEdit: Signal<boolean>;
-
     editorHasAccessToEditMode: Signal<boolean>;
 }
 
@@ -83,11 +81,6 @@ export function withEditor() {
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
-
-            // const styleEditorFeatureEnabled = computed(() => {
-            //     const isHeadless = store.pageType() === PageType.HEADLESS;
-            //     return store.flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
-            // });
 
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageAsset()?.page?.canEdit;

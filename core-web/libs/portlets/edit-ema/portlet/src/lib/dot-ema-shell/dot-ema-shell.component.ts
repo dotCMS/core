@@ -207,7 +207,6 @@ export class DotEmaShellComponent implements OnInit {
         });
 
         // Check if we already have page data loaded with matching params
-        // This prevents reloading when navigating between child routes (content <-> layout)
         const currentPageParams = this.uveStore.pageParams();
         const hasPageData = !!this.uveStore.pageAsset()?.page;
         const paramsMatch =
@@ -216,7 +215,6 @@ export class DotEmaShellComponent implements OnInit {
             currentPageParams.language_id === params.language_id &&
             currentPageParams.mode === params.mode;
 
-        // Only load if we don't have data or params have changed
         if (!hasPageData || !paramsMatch) {
             this.uveStore.pageLoad(params);
         }
@@ -229,7 +227,6 @@ export class DotEmaShellComponent implements OnInit {
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                // Removed pageAPIResponse - use normalized accessors
                 this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
                 break;
             }

@@ -159,9 +159,9 @@ export class DotUveToolbarComponent {
     // Build unified device selector state
     readonly $deviceSelectorState = computed(() => {
         return {
-            currentDevice: this.#store.viewDevice(),
-            currentSocialMedia: this.#store.viewSocialMedia(),
-            currentOrientation: this.#store.viewDeviceOrientation()
+            device: this.#store.viewDevice(),
+            socialMedia: this.#store.viewSocialMedia(),
+            orientation: this.#store.viewDeviceOrientation()
         };
     });
 

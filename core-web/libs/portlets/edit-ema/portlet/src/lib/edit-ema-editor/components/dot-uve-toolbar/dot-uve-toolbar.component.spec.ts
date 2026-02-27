@@ -1359,9 +1359,9 @@ describe('DotUveToolbarComponent', () => {
                         const state = spectator.component.$deviceSelectorState();
 
                         expect(state).toEqual({
-                            currentDevice: testDevice,
-                            currentSocialMedia: 'facebook',
-                            currentOrientation: Orientation.LANDSCAPE
+                            device: testDevice,
+                            socialMedia: 'facebook',
+                            orientation: Orientation.LANDSCAPE
                         });
                     });
 
@@ -1370,7 +1370,7 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.device.set(defaultDevice);
                         spectator.detectChanges();
 
-                        expect(spectator.component.$deviceSelectorState().currentDevice).toBe(
+                        expect(spectator.component.$deviceSelectorState().device).toBe(
                             defaultDevice
                         );
 
@@ -1378,23 +1378,19 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.device.set(newDevice);
                         spectator.detectChanges();
 
-                        expect(spectator.component.$deviceSelectorState().currentDevice).toBe(
-                            newDevice
-                        );
+                        expect(spectator.component.$deviceSelectorState().device).toBe(newDevice);
                     });
 
                     it('should react to social media changes', () => {
                         baseUVEState.socialMedia.set(null);
                         spectator.detectChanges();
 
-                        expect(
-                            spectator.component.$deviceSelectorState().currentSocialMedia
-                        ).toBeNull();
+                        expect(spectator.component.$deviceSelectorState().socialMedia).toBeNull();
 
                         baseUVEState.socialMedia.set('twitter');
                         spectator.detectChanges();
 
-                        expect(spectator.component.$deviceSelectorState().currentSocialMedia).toBe(
+                        expect(spectator.component.$deviceSelectorState().socialMedia).toBe(
                             'twitter'
                         );
                     });
@@ -1403,14 +1399,14 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.orientation.set(Orientation.PORTRAIT);
                         spectator.detectChanges();
 
-                        expect(spectator.component.$deviceSelectorState().currentOrientation).toBe(
+                        expect(spectator.component.$deviceSelectorState().orientation).toBe(
                             Orientation.PORTRAIT
                         );
 
                         baseUVEState.orientation.set(Orientation.LANDSCAPE);
                         spectator.detectChanges();
 
-                        expect(spectator.component.$deviceSelectorState().currentOrientation).toBe(
+                        expect(spectator.component.$deviceSelectorState().orientation).toBe(
                             Orientation.LANDSCAPE
                         );
                     });
@@ -1531,9 +1527,9 @@ describe('DotUveToolbarComponent', () => {
                         deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
 
                     expect(deviceSelector.state()).toEqual({
-                        currentDevice: testDevice,
-                        currentSocialMedia: 'facebook',
-                        currentOrientation: Orientation.LANDSCAPE
+                        device: testDevice,
+                        socialMedia: 'facebook',
+                        orientation: Orientation.LANDSCAPE
                     });
                 });
 
