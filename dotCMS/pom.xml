@@ -36,6 +36,8 @@
         <docker.skip.clean.before>true</docker.skip.clean.before>
         <docker.skip.clean.after>true</docker.skip.clean.after>
         <core.unit.test.fork.count>1C</core.unit.test.fork.count>
+        <!-- Wire core fork count to surefire so unit tests use 1 fork per CPU core -->
+        <surefire.fork.count>${core.unit.test.fork.count}</surefire.fork.count>
         <legacy.webapp.dir>${project.basedir}/src/main/webapp</legacy.webapp.dir>
         <fabric8.dynamic-port>true</fabric8.dynamic-port>
         <!--<db.port></db.port>
@@ -1544,13 +1546,7 @@
             </resource>
             -->
         </resources>
-        <extensions>
-            <extension>
-                <groupId>io.quarkus.bot</groupId>
-                <artifactId>build-reporter-maven-extension</artifactId>
-                <version>3.1.0</version>
-            </extension>
-        </extensions>
+        <!-- build-reporter-maven-extension inherited from parent -->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -2047,6 +2043,7 @@
                             <goal>jandex</goal>
                         </goals>
                         <configuration>
+                            <skip>${jandex.skip}</skip>
                             <fileSets>
                                 <fileSet>
                                     <directory>${project.build.directory}/generated-sources/annotations</directory>
@@ -2062,6 +2059,7 @@
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-maven-plugin</artifactId>
                 <configuration>
+                    <skip>${swagger.skip}</skip>
                     <outputFileName>openapi</outputFileName>
                     <!--<outputPath>${project.build.directory}/generated-resources/openapi</outputPath>-->
                     <outputPath>${project.basedir}/src/main/webapp/WEB-INF/openapi</outputPath>
@@ -2085,7 +2083,7 @@
                         <goals>
                             <goal>resolve</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <phase>package</phase>
                     </execution>
                 </executions>
             </plugin>

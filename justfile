@@ -42,6 +42,10 @@ build-quick:
 build-quicker:
     ./mvnw -pl :dotcms-core -DskipTests install
 
+# Fastest full build: skips tests, Docker, Swagger, Jandex. Use when iterating on code before a full rebuild.
+build-fast:
+    ./mvnw -DskipTests install -Pfast
+
 # Builds the project for production, skipping tests
 build-prod:
     ./mvnw -DskipTests clean install -Pprod
