@@ -208,11 +208,11 @@ describe('auth', () => {
             );
 
             expect(token).toBe('jwt-token-from-server');
-            expect(mockOfetch).toHaveBeenCalledWith('/api/v1/authentication', {
+            expect(mockOfetch).toHaveBeenCalledWith('/api/v1/authentication/api-token', {
                 baseURL: 'https://demo.dotcms.com',
                 method: 'POST',
                 body: {
-                    userId: 'admin@dotcms.com',
+                    user: 'admin@dotcms.com',
                     password: 'admin',
                     expirationDays: 30
                 }

@@ -81,15 +81,27 @@ export const BODY_FIELD_TYPES = ['WYSIWYG', 'Textarea', 'Story-Block'] as const;
 /** Field types that represent binary data (sidecar files) */
 export const BINARY_FIELD_TYPES = ['Binary', 'Image', 'File'] as const;
 
+/** Field types that use dataType=SYSTEM but are user-editable */
+const USER_EDITABLE_SYSTEM_TYPES = new Set(['Binary', 'Image', 'File']);
+
 /**
  * Determine if a content type field is a system field (not user-editable).
  * A field is system/non-editable if any of these are true:
  * - `fixed === true` — immutable system field
  * - `readOnly === true` — read-only field
  * - `dataType === 'SYSTEM'` — system data type (dividers, tabs, constants)
+ *   EXCEPT for Binary/Image/File which use SYSTEM dataType but are user-editable
  */
 export function isSystemField(field: ContentTypeField): boolean {
-    return field.fixed === true || field.readOnly === true || field.dataType === 'SYSTEM';
+    if (field.fixed === true || field.readOnly === true) {
+        return true;
+    }
+
+    if (field.dataType === 'SYSTEM' && !USER_EDITABLE_SYSTEM_TYPES.has(field.fieldType)) {
+        return true;
+    }
+
+    return false;
 }
 
 // ─── Snapshot ────────────────────────────────────────────────────────────────

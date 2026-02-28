@@ -143,12 +143,13 @@ export async function downloadContentBinaries(
             continue;
         }
 
-        const binaryMeta = fieldValue as { idPath?: string; name?: string };
-        if (!binaryMeta.name) {
+        const binaryMeta = fieldValue as { idPath?: string; name?: string; fileName?: string };
+        const binaryName = binaryMeta.name || binaryMeta.fileName;
+        if (!binaryName) {
             continue;
         }
 
-        const result = await downloadBinary(client, inode, fieldVar, binaryMeta.name, assetsDir);
+        const result = await downloadBinary(client, inode, fieldVar, binaryName, assetsDir);
 
         if (result) {
             results.push(result);

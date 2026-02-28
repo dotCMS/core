@@ -152,18 +152,18 @@ interface AuthApiResponse {
 
 /**
  * Authenticate with a dotCMS instance using username/password.
- * Returns the JWT token.
+ * Returns a persistent API token (not a session JWT).
  */
 export async function authenticateWithCredentials(
     baseURL: string,
     username: string,
     password: string
 ): Promise<string> {
-    const response = await ofetch<AuthApiResponse>('/api/v1/authentication', {
+    const response = await ofetch<AuthApiResponse>('/api/v1/authentication/api-token', {
         baseURL,
         method: 'POST',
         body: {
-            userId: username,
+            user: username,
             password,
             expirationDays: 30
         }

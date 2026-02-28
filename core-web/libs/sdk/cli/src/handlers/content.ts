@@ -6,7 +6,7 @@
  */
 
 import matter from 'gray-matter';
-import { Document } from 'yaml';
+import { Document, parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 
 import {
@@ -92,8 +92,8 @@ export interface GraphQLQueryOptions {
 /** Map of dotCMS field types to their GraphQL subfield selections */
 const GRAPHQL_SUBSELECTIONS: Record<string, string> = {
     Binary: '{ versionPath name idPath size }',
-    Image: '{ fileName }',
-    File: '{ fileName }',
+    Image: '{ versionPath name idPath size }',
+    File: '{ versionPath name idPath size }',
     'Story-Block': '{ json }',
     StoryBlock: '{ json }',
     'Key-Value': '{ key value }',
@@ -237,7 +237,25 @@ export function serializeContentlet(
     // Serialize with yaml library — block style, no line wrapping
     const doc = new Document(frontmatterObj);
     const yamlStr = doc.toString({ lineWidth: 0 });
-    const bodyContent = bodyFieldVar ? String(record[bodyFieldVar] ?? '') : '';
+
+    // Extract body content — needs field-type-aware serialization
+    let bodyContent = '';
+    if (bodyFieldVar) {
+        const bodyField = userFields.find((f) => f.variable === bodyFieldVar);
+        const rawBody = record[bodyFieldVar];
+        if (rawBody !== undefined && rawBody !== null) {
+            if (bodyField && JSON_FIELD_TYPES.has(bodyField.fieldType)) {
+                // StoryBlock/JSON body: deserialize GraphQL { json } wrapper, then YAML-serialize
+                const deserialized = serializeFieldValue(rawBody, bodyField, shortId);
+                if (deserialized !== undefined) {
+                    const bodyDoc = new Document(deserialized);
+                    bodyContent = bodyDoc.toString({ lineWidth: 0 });
+                }
+            } else {
+                bodyContent = String(rawBody);
+            }
+        }
+    }
 
     const content = `---\n${yamlStr}---\n${bodyContent}\n`;
 
@@ -285,7 +303,18 @@ export function buildPushPayload(
     // Map body content back to the body field
     const bodyFieldVar = frontmatter.bodyField || getBodyField(schema);
     if (bodyFieldVar && body) {
-        contentlet[bodyFieldVar] = body;
+        const bodyField = schema.fields.find((f) => f.variable === bodyFieldVar);
+        if (bodyField && JSON_FIELD_TYPES.has(bodyField.fieldType)) {
+            // StoryBlock/JSON body: parse YAML back to object, then JSON.stringify for the API
+            try {
+                const parsed2 = parseYaml(body);
+                contentlet[bodyFieldVar] = JSON.stringify(parsed2);
+            } catch {
+                contentlet[bodyFieldVar] = body;
+            }
+        } else {
+            contentlet[bodyFieldVar] = body;
+        }
     }
 
     // Map user fields from frontmatter
