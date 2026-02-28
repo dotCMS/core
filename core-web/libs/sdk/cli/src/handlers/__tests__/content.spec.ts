@@ -524,7 +524,7 @@ describe('buildPushPayload', () => {
         expect(result.binaries[0]).toEqual({
             fieldVariable: 'image',
             localPath: './assets/abc123/image.photo.jpg',
-            fileName: 'image.photo.jpg'
+            fileName: 'photo.jpg' // field variable prefix stripped from sidecar name
         });
         // Binary fields should NOT be in contentlet JSON
         expect(result.contentlet['image']).toBeUndefined();

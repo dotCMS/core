@@ -143,24 +143,35 @@ export const pushCommand = defineCommand({
                 );
                 results.push(result);
 
-                if (result.status === 'error') {
+                if (result.status === 'skipped') {
+                    consola.warn(
+                        `Skipped: ${path.relative(projectDir, result.file)} — ${result.error}`
+                    );
+                } else if (result.status === 'error') {
+                    consola.error(
+                        `Failed: ${path.relative(projectDir, result.file)} — ${result.error}`
+                    );
                     failures.push({
                         file: result.file,
                         error: result.error || 'Unknown error',
                         identifier: result.identifier
                     });
                     if (bail) {
-                        consola.error(`Bailing: ${result.error}`);
                         break;
                     }
                 }
             } catch (error) {
-                const errorMsg = (error as Error).message;
+                const err = error as Error & { data?: unknown; status?: number };
+                let errorMsg = err.message;
+                // ofetch includes response body in .data for HTTP errors
+                if (err.data) {
+                    errorMsg += ` — ${JSON.stringify(err.data)}`;
+                }
+                consola.error(`Failed: ${path.relative(projectDir, filePath)} — ${errorMsg}`);
                 failures.push({ file: filePath, error: errorMsg });
                 results.push({ file: filePath, status: 'error', error: errorMsg });
 
                 if (bail) {
-                    consola.error(`Bailing: ${errorMsg}`);
                     break;
                 }
             }
@@ -262,7 +273,6 @@ async function pushFile(
     // Push via workflow fire API (default action)
     // Remove inode — let the server resolve it from identifier
     delete contentlet['inode'];
-    const url = `/api/v1/workflow/actions/default/fire/${systemAction}`;
 
     let responseData: Record<string, unknown>;
 
@@ -272,12 +282,19 @@ async function pushFile(
         return fs.existsSync(absPath);
     });
 
+    const url = `/api/v1/workflow/actions/default/fire/${systemAction}`;
+
     if (existingBinaries.length > 0) {
         const formData = await buildMultipartPayload(contentlet, existingBinaries, filePath);
         responseData = await client(url, {
             method: 'PUT',
             body: formData,
-            headers: { 'Content-Type': undefined as unknown as string }
+            onRequest({ options }) {
+                // Remove default Content-Type so fetch auto-sets multipart/form-data with boundary
+                const h = new Headers(options.headers as HeadersInit);
+                h.delete('Content-Type');
+                options.headers = h;
+            }
         });
     } else {
         responseData = await put<Record<string, unknown>>(client, url, { contentlet });

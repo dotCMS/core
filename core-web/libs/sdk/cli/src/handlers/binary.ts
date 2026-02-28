@@ -197,7 +197,11 @@ export async function prepareBinaryUpload(
 
 /**
  * Build a FormData multipart payload for the workflow fire endpoint.
- * Adds the contentlet JSON and each binary file as parts.
+ * Adds the contentlet JSON as "json" part and each binary file as "file" part.
+ *
+ * The dotCMS workflow fire API expects:
+ * - "json" part: `{"contentlet": {...}}` wrapped JSON
+ * - "file" part: binary file data (one per binary field)
  */
 export async function buildMultipartPayload(
     contentletJson: Record<string, unknown>,
@@ -206,13 +210,11 @@ export async function buildMultipartPayload(
 ): Promise<FormData> {
     const formData = new FormData();
 
-    // Add contentlet JSON as a part
-    formData.append(
-        'json',
-        new Blob([JSON.stringify(contentletJson)], { type: 'application/json' })
-    );
+    // Add contentlet JSON as a part — must be wrapped in { contentlet: ... }
+    const wrappedJson = JSON.stringify({ contentlet: contentletJson });
+    formData.append('json', new Blob([wrappedJson], { type: 'application/json' }));
 
-    // Add each binary file
+    // Add each binary file — dotCMS expects "file" as the multipart field name
     for (const binaryInfo of binaries) {
         const prepared = await prepareBinaryUpload(binaryInfo, contentFilePath);
         const fileBuffer = await readFile(prepared.filePath);
@@ -221,7 +223,7 @@ export async function buildMultipartPayload(
             fileBuffer.byteOffset + fileBuffer.byteLength
         ) as ArrayBuffer;
         const blob = new Blob([arrayBuffer], { type: prepared.mimeType });
-        formData.append(prepared.fieldVariable, blob, prepared.fileName);
+        formData.append('file', blob, prepared.fileName);
     }
 
     return formData;

@@ -439,7 +439,8 @@ describe('buildMultipartPayload', () => {
 
         expect(formData).toBeInstanceOf(FormData);
         expect(formData.get('json')).toBeInstanceOf(Blob);
-        expect(formData.get('heroImage')).toBeInstanceOf(Blob);
+        // All binaries use "file" as the multipart field name
+        expect(formData.get('file')).toBeInstanceOf(Blob);
     });
 
     it('should include multiple binary parts', async () => {
@@ -458,8 +459,11 @@ describe('buildMultipartPayload', () => {
         );
 
         expect(formData.get('json')).toBeInstanceOf(Blob);
-        expect(formData.get('heroImage')).toBeInstanceOf(Blob);
-        expect(formData.get('attachment')).toBeInstanceOf(Blob);
+        // All binaries use "file" as the multipart field name
+        const allFiles = formData.getAll('file');
+        expect(allFiles).toHaveLength(2);
+        expect(allFiles[0]).toBeInstanceOf(Blob);
+        expect(allFiles[1]).toBeInstanceOf(Blob);
     });
 
     it('should include only JSON when no binaries provided', async () => {

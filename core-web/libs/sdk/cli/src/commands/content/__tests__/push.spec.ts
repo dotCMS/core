@@ -261,6 +261,6 @@ describe('content push command', () => {
         await pushCommand.run!({ args: { bail: true } } as never);
 
         // Should stop after first error (no schema cache)
-        expect(consola.error).toHaveBeenCalledWith(expect.stringContaining('Bailing'));
+        expect(consola.error).toHaveBeenCalledWith(expect.stringContaining('Failed'));
     });
 });

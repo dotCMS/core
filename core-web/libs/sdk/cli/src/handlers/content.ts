@@ -327,10 +327,17 @@ export function buildPushPayload(
         const field = schema.fields.find((f) => f.variable === key);
         if (field && BINARY_TYPES_SET.has(field.fieldType)) {
             if (typeof value === 'string' && value.startsWith('./')) {
+                // Sidecar files are named {fieldVar}.{originalFileName}
+                // Strip the field variable prefix to get the original filename
+                const sidecarName = value.split('/').pop() || value;
+                const prefix = `${key}.`;
+                const originalFileName = sidecarName.startsWith(prefix)
+                    ? sidecarName.slice(prefix.length)
+                    : sidecarName;
                 binaries.push({
                     fieldVariable: key,
                     localPath: value,
-                    fileName: value.split('/').pop() || value
+                    fileName: originalFileName
                 });
             }
             continue; // binary fields handled via multipart, not JSON

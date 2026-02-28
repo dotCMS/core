@@ -89,20 +89,24 @@ export function removeSnapshotEntry(projectDir: string, filePath: string): void 
 const metadataKeySet = new Set<string>(METADATA_KEYS);
 
 /**
- * Compute a deterministic SHA-256 hash of the user-editable content in a .md file.
+ * Compute a deterministic SHA-256 hash of the user-editable content in a .md file,
+ * including the contents of any referenced binary sidecar files.
  *
  * The hash is independent of YAML formatting (key order, whitespace, quote style).
  * Algorithm:
  * 1. Parse .md with gray-matter → frontmatter + body
  * 2. Strip metadata keys from frontmatter
  * 3. Sort remaining keys alphabetically
- * 4. Add trimmed body as `__body__` key
- * 5. JSON.stringify the sorted object
- * 6. SHA-256 hash
+ * 4. For values starting with `./` (binary sidecar refs), hash the file contents
+ *    and use the hash as the value instead of the path string
+ * 5. Add trimmed body as `__body__` key
+ * 6. JSON.stringify the sorted object
+ * 7. SHA-256 hash
  */
 export function computeContentHash(filePath: string): string {
     const raw = fs.readFileSync(filePath, 'utf-8');
     const { data: frontmatter, content: body } = matter(raw);
+    const fileDir = path.dirname(filePath);
 
     // Strip metadata keys, keep only user fields
     const userFields: Record<string, unknown> = {};
@@ -111,7 +115,19 @@ export function computeContentHash(filePath: string): string {
         .sort();
 
     for (const key of keys) {
-        userFields[key] = frontmatter[key];
+        const value = frontmatter[key];
+
+        // If value is a local binary sidecar reference, hash the file contents
+        if (typeof value === 'string' && value.startsWith('./')) {
+            const absPath = path.resolve(fileDir, value);
+            if (fs.existsSync(absPath)) {
+                userFields[key] = `__binary__:${computeBinaryHash(absPath)}`;
+            } else {
+                userFields[key] = value;
+            }
+        } else {
+            userFields[key] = value;
+        }
     }
 
     // Add body content
