@@ -195,8 +195,6 @@ describe('DotAnalyticsChartComponent', () => {
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
-            const errorElement = spectator.query('.chart-error');
-            expect(errorElement).toExist();
             expect(spectator.query('dot-analytics-state-message')).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -228,11 +226,11 @@ describe('DotAnalyticsChartComponent', () => {
         it('should correctly identify error state', () => {
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
-            expect(spectator.query('.chart-error')).toExist();
+            expect(spectator.query('dot-analytics-state-message')).toExist();
 
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.query('.chart-error')).not.toExist();
+            expect(spectator.query('dot-analytics-state-message')).not.toExist();
         });
 
         it('should correctly identify empty state', () => {

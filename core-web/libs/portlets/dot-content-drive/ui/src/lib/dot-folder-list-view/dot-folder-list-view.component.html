@@ -50,20 +50,7 @@
         @let isFolder = item.type === 'folder';
 
         @if ($loading() || !$items().length) {
-            <tr data-testId="loading-row" class="cursor-default h-17 hover:bg-transparent!">
-                <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
-                    <span class="flex items-center justify-center h-full">
-                        <p-skeleton height="1.5rem" width="2.5rem" />
-                    </span>
-                </td>
-                @for (column of HEADER_COLUMNS; track column.field) {
-                    <td [style.width]="column.width">
-                        <span class="flex items-center justify-center h-full first:text-left">
-                            <p-skeleton height="1.5rem" width="100%" />
-                        </span>
-                    </td>
-                }
-            </tr>
+            <ng-container [ngTemplateOutlet]="loadingRow"></ng-container>
         } @else {
             <tr
                 class="group transition-colors duration-200"
@@ -110,7 +97,7 @@
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         {{ isFolder ? item.name : item.title }}
                     </span>
-                    <span data-testId="lock-hint" class="text-gray-700]">
+                    <span data-testId="lock-hint" class="text-gray-700">
                         @if (!isFolder) {
                             @if (item.locked) {
                                 <i class="pi pi-lock" data-testId="lock-icon"></i>
@@ -155,22 +142,45 @@
         }
     </ng-template>
     <ng-template pTemplate="emptymessage">
-        <tr class="hover:bg-transparent! h-max">
-            <td colspan="7" class="p-6 text-center h-full border-none">
-                <div class="flex flex-col items-center gap-4 max-w-100 mx-auto">
-                    <div class="flex items-center justify-center w-20 h-20 rounded-full">
-                        <i class="pi pi-folder-open text-(--surface-500) text-6xl!"></i>
+        @if (!$loading()) {
+            <tr class="hover:bg-transparent! h-max">
+                <td colspan="7" class="p-6 text-center h-full border-none">
+                    <div class="flex flex-col items-center gap-4 max-w-100 mx-auto">
+                        <div class="flex items-center justify-center w-20 h-20 rounded-full">
+                            <i class="pi pi-folder-open text-(--surface-500) text-6xl!"></i>
+                        </div>
+                        <div class="flex flex-col text-center">
+                            <h3 class="m-0 text-lg font-medium text-gray-800">
+                                {{ 'content.drive.empty.state.title' | dm }}
+                            </h3>
+                            <p class="m-0 text-text-color text-base leading-6">
+                                {{ 'content.drive.empty.state.description' | dm }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="flex flex-col text-center">
-                        <h3 class="m-0 text-lg font-medium text-gray-800">
-                            {{ 'content.drive.empty.state.title' | dm }}
-                        </h3>
-                        <p class="m-0 text-text-color text-base leading-6">
-                            {{ 'content.drive.empty.state.description' | dm }}
-                        </p>
-                    </div>
-                </div>
-            </td>
-        </tr>
+                </td>
+            </tr>
+        } @else {
+            @for (i of $loadingRows(); track $index) {
+                <ng-container [ngTemplateOutlet]="loadingRow"></ng-container>
+            }
+        }
     </ng-template>
 </p-table>
+
+<ng-template #loadingRow>
+    <tr data-testId="loading-row" class="cursor-default h-17 hover:bg-transparent!">
+        <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
+            <span class="flex items-center justify-center h-full w-fit">
+                <p-skeleton height="1.5rem" width="1.5rem" />
+            </span>
+        </td>
+        @for (column of HEADER_COLUMNS; track column.field) {
+            <td [style.width]="column.width">
+                <span class="flex items-center justify-center h-full first:text-left">
+                    <p-skeleton height="1.5rem" width="100%" />
+                </span>
+            </td>
+        }
+    </tr>
+</ng-template>
