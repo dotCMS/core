@@ -587,7 +587,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final List<Integer> tokens = EncodingUtil.get()
                 .getEncoding()
-                .map(encoding -> encoding.encode(content))
+                .map(encoding -> encoding.encode(content).boxed())
                 .orElse(List.of());
         if (tokens.isEmpty()) {
             config.debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
