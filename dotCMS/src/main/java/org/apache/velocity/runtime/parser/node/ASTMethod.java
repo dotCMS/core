@@ -140,30 +140,29 @@ public class ASTMethod extends SimpleNode
          *  at execution time.  There can be no in-node caching,
          *  but if we are careful, we can do it in the context.
          */
-        Object [] params = new Object[paramCount];
+        Object[] params = new Object[paramCount];
 
-          /*
-           * sadly, we do need recalc the values of the args, as this can
-           * change from visit to visit
-           */
-        final Class[] paramClasses =       
-            paramCount > 0 ? new Class[paramCount] : ArrayUtils.EMPTY_CLASS_ARRAY;
+        /*
+         * sadly, we do need recalc the values of the args, as this can
+         * change from visit to visit
+         */
+        final Class[] paramClasses =
+                paramCount > 0 ? new Class[paramCount] : ArrayUtils.EMPTY_CLASS_ARRAY;
 
-        for (int j = 0; j < paramCount; j++)
-        {
+        for (int j = 0; j < paramCount; j++) {
             params[j] = jjtGetChild(j + 1).value(context);
-            if (params[j] != null)
-            {
+            if (params[j] != null) {
                 paramClasses[j] = params[j].getClass();
             }
         }
-            
-        VelMethod method = ClassUtils.getMethod(methodName, params, paramClasses, 
-            o, context, this, strictRef);
-        if (method == null) return null;
 
-        try
-        {
+        VelMethod method = ClassUtils.getMethod(methodName, params, paramClasses,
+                o, context, this, strictRef);
+        if (method == null) {
+            return null;
+        }
+
+        try {
             /*
              *  get the returned object.  It may be null, and that is
              *  valid for something declared with a void return type.
@@ -189,13 +188,13 @@ public class ASTMethod extends SimpleNode
         {
             return handleInvocationException(o, context, ite.getTargetException());
         }
-        
+
         /** Can also be thrown by method invocation **/
         catch( IllegalArgumentException t )
         {
             return handleInvocationException(o, context, t);
         }
-        
+
         /**
          * pass through application level runtime exceptions
          */

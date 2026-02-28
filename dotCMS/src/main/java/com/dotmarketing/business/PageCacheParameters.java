@@ -6,7 +6,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -20,6 +19,18 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class PageCacheParameters {
 
+    /**
+     * ThreadLocal TreeSet for sorting query parameters without allocating a new Set per request.
+     * TreeSet provides natural ordering which ensures consistent cache key generation.
+     */
+    private static final ThreadLocal<TreeSet<String>> QUERY_SET_LOCAL =
+            ThreadLocal.withInitial(TreeSet::new);
+
+    /**
+     * ThreadLocal StringBuilder for building filtered query strings without allocation per request.
+     */
+    private static final ThreadLocal<StringBuilder> QUERY_BUILDER_LOCAL =
+            ThreadLocal.withInitial(() -> new StringBuilder(256));
 
     static final AtomicLong expired = new AtomicLong();
     static final long REFRESH_INTERVAL = 1000 * 60 * 5;     // 5 minutes
@@ -97,35 +108,48 @@ public class PageCacheParameters {
      * normalizing (lowercasing) the values, sorting them alphabetically,
      * and determining which parameters to include or exclude
      * based on the "respect" or "ignore" parameters defined in the system.
+     * <p>
+     * Uses ThreadLocal buffers to minimize object allocation per request.
      *
      * @param queryString the query string to be filtered; may include key-value pairs separated by `&` or `?`
      * @return a filtered and alphabetically sorted query string containing the selected parameters,
      *         or {@code null} if the provided query string is empty
      */
-    public static String filterQueryString(String queryString) {
+    public static String filterQueryString(final String queryString) {
         if (UtilMethods.isEmpty(queryString)) {
             return null;
         }
-        // sorts the query string parameters alphabetically
-        Set<String> querySplit = new TreeSet<>(Arrays.asList(filterNulls(queryString.toLowerCase().split("[?&]", -1))));
-        StringBuilder queryStringBuilder = new StringBuilder();
-        if (getRespectParams().length > 0) {
-            for (String queryParam : querySplit) {
-                if (matches(queryParam, getRespectParams())) {
-                    queryStringBuilder.append("&").append(queryParam);
-                }
+
+        // Get and reset ThreadLocal buffers
+        final TreeSet<String> querySplit = QUERY_SET_LOCAL.get();
+        final StringBuilder queryStringBuilder = QUERY_BUILDER_LOCAL.get();
+        querySplit.clear();
+        queryStringBuilder.setLength(0);
+
+        // Split, filter nulls, and add to TreeSet for sorting
+        final String[] parts = queryString.toLowerCase().split("[?&]", -1);
+        for (final String part : parts) {
+            if (UtilMethods.isSet(part)) {
+                querySplit.add(part);
             }
-            return queryStringBuilder.toString();
         }
 
+        // Build filtered query string
+        if (getRespectParams().length > 0) {
+            for (final String queryParam : querySplit) {
+                if (matches(queryParam, getRespectParams())) {
+                    queryStringBuilder.append('&').append(queryParam);
+                }
+            }
+            return queryStringBuilder.length() > 0 ? queryStringBuilder.toString() : null;
+        }
 
-        for (String queryParam : querySplit) {
+        for (final String queryParam : querySplit) {
             if (!matches(queryParam, getIgnoreParams())) {
-                queryStringBuilder.append("&").append(queryParam);
+                queryStringBuilder.append('&').append(queryParam);
             }
         }
         return queryStringBuilder.length() > 0 ? queryStringBuilder.toString() : null;
-
     }
 
 
