@@ -6,7 +6,7 @@
 
 <style>
     #Logging #tailContainer {
-        height: 600px;
+        height: calc(100vh - 150px);
     }
     span[data-hr]{
         background-color: yellow;
@@ -20,7 +20,7 @@
         overflow: scroll;
         padding: 1rem;
         white-space: pre;
-        min-height: 600px;
+        min-height: 300px;
     }
     .highlightKeywordMatchLogViewer{
         background-color: yellow;
@@ -861,6 +861,28 @@
     /* Log Viewer - END */
     /********************/
 
+    function showDownloadDialog() {
+        var fileName = document.getElementById('fileName').value;
+        if (!fileName) return;
+
+        var dlg = dijit.byId('downloadLogDialog');
+        if (dlg) {
+            dlg.show();
+        }
+    }
+
+    function downloadSingleLog() {
+        var fileName = document.getElementById('fileName').value;
+        dijit.byId('downloadLogDialog').hide();
+        location.href = '/api/v1/maintenance/_downloadLog/' + fileName;
+    }
+
+    function downloadClusterLogs() {
+        var fileName = document.getElementById('fileName').value;
+        dijit.byId('downloadLogDialog').hide();
+        location.href = '/api/v1/maintenance/_downloadClusterLog/' + fileName;
+    }
+
 </script>
 
 <div class="portlet-toolbar" id="headerContainer">
@@ -887,7 +909,7 @@
         <button dojoType="dijit.form.Button" onClick="doPopup()" value="popup" name="popup">
             <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"popup") %>
         </button>
-        <button dojoType="dijit.form.Button" onclick="location.href='/api/v1/maintenance/_downloadLog/' + document.getElementById('fileName').value"  id="downloadLog" value="download" name="download" disabled>
+        <button dojoType="dijit.form.Button" onclick="showDownloadDialog()" id="downloadLog" value="download" name="download" disabled>
             <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>
         </button>
     </div>
@@ -896,4 +918,18 @@
 <div id="tailContainer" class="log-files__container" style="display: flex; flex-direction: column;">
     <iframe id="tailingFrame" src="/html/blank.jsp" style="display: none;" class="log-files__iframe" ></iframe>
     <div class="logViewerPrinted" style="flex-grow: 1;"></div>
+</div>
+
+<div dojoType="dijit.Dialog" id="downloadLogDialog" title="<%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>" style="width:350px;">
+    <div style="padding:15px; text-align:center;">
+        <p style="margin-bottom:15px;"><%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download-log-from") %></p>
+        <div class="buttonRow" style="display:flex; justify-content:center; gap:10px;">
+            <button dojoType="dijit.form.Button" onClick="downloadSingleLog()">
+                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"This-Server") %>
+            </button>
+            <button dojoType="dijit.form.Button" onClick="downloadClusterLogs()">
+                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"All-Cluster-Nodes") %>
+            </button>
+        </div>
+    </div>
 </div>

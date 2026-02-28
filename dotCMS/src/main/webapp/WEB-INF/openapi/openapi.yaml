@@ -9749,6 +9749,24 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/maintenance/_downloadClusterLog/{fileName}:
+    get:
+      operationId: downloadClusterLogFile
+      parameters:
+      - in: path
+        name: fileName
+        required: true
+        schema:
+          type: string
+          pattern: .+
+      responses:
+        default:
+          content:
+            application/json: {}
+            application/octet-stream: {}
+          description: default response
+      tags:
+      - Maintenance
   /v1/maintenance/_downloadDb:
     get:
       operationId: downloadDb
