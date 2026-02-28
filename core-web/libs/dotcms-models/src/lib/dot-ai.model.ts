@@ -49,7 +49,7 @@ export interface DotAIImageResponse {
 export interface AIImagePrompt {
     text: string;
     type: PromptType;
-    size: DotAIImageOrientation;
+    size: string;
 }
 
 /**
@@ -72,20 +72,34 @@ export interface DotGeneratedAIImage {
 
 /**
  * Represents the possible orientations of a Dot AI image.
+ * Values are semantic (landscape, square, portrait) and will be mapped to
+ * actual pixel dimensions based on the selected AI model.
  */
 export const enum DotAIImageOrientation {
-    HORIZONTAL = '1792x1024',
-    SQUARE = '1024x1024',
-    VERTICAL = '1024x1792'
+    LANDSCAPE = 'landscape',
+    SQUARE = 'square',
+    PORTRAIT = 'portrait'
+}
+
+/**
+ * Represents a single AI model entry as returned by the /completions/config endpoint.
+ * Mirrors com.dotcms.ai.model.SimpleModel.
+ */
+export interface DotAISimpleModel {
+    name: string;
+    /** AIModelType enum value: 'TEXT' | 'IMAGE' | 'EMBEDDINGS' | 'UNKNOWN' */
+    type: string;
+    /** True when this model is the currently-selected model for its type */
+    current: boolean;
 }
 
 export interface DotAICompletionsConfig {
     apiImageUrl: string;
     apiKey: string;
     apiUrl: string;
-    availableModels: string[];
+    availableModels: DotAISimpleModel[];
     configHost: string;
-    imageModel: string;
+    imageModelNames: string;
     imagePrompt: string;
     imageSize: string;
     model: string;

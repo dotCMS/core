@@ -11,11 +11,19 @@ import {
     ViewChild
 } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+import { TabViewModule } from 'primeng/tabview';
+
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
+import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
+import { DotTemplateAdvancedComponent } from '../dot-template-advanced/dot-template-advanced.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
 export const AUTOSAVE_DEBOUNCE_TIME = 5000;
@@ -24,7 +32,16 @@ export const AUTOSAVE_DEBOUNCE_TIME = 5000;
     selector: 'dot-template-builder',
     templateUrl: './dot-template-builder.component.html',
     styleUrls: ['./dot-template-builder.component.scss'],
-    standalone: false
+    imports: [
+        DotMessagePipe,
+        DotTemplateAdvancedComponent,
+        TabViewModule,
+        IframeComponent,
+        DotPortletBoxComponent,
+        TemplateBuilderComponent,
+        ButtonModule,
+        DotGlobalMessageComponent
+    ]
 })
 export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     readonly #dotRouterService = inject(DotRouterService);

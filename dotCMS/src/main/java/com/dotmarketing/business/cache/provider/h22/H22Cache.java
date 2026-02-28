@@ -1,6 +1,7 @@
 package com.dotmarketing.business.cache.provider.h22;
 
 import com.dotcms.cache.CacheValue;
+import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -12,6 +13,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
+import io.vavr.control.Try;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -53,12 +55,12 @@ public class H22Cache extends CacheProvider {
 
     final ThreadFactory namedThreadFactory =  new ThreadFactoryBuilder().setDaemon(true).setNameFormat("H22-ASYNC-COMMIT-%d").build();
     final private LinkedBlockingQueue<Runnable> asyncTaskQueue = new LinkedBlockingQueue<>();
-    final private ExecutorService executorService = new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10, TimeUnit.SECONDS, asyncTaskQueue ,namedThreadFactory);
+    private ExecutorService executorService;
 
 
-    private AtomicBoolean isInitialized = new AtomicBoolean(false);
+    private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
-	final static String TABLE_PREFIX = "cach_table_";
+    final static String TABLE_PREFIX = "cache_table_";
 
 
 	private final static Cache<String, String> DONT_CACHE_ME = Caffeine.newBuilder()
@@ -82,7 +84,7 @@ public class H22Cache extends CacheProvider {
 	// try to recover with h2 if within this time (30m default)
 	private final long recoverOnRestart = Config.getIntProperty("cache.h22.recover.if.restarted.in.milliseconds", 0);
 	private long lastLog = System.currentTimeMillis();
-	private long[] errorCounter = new long[numberOfDbs];
+    private final long[] errorCounter = new long[numberOfDbs];
 	private final H22HikariPool[] pools = new H22HikariPool[numberOfDbs];
 	private int failedFlushAlls=0;
 
@@ -111,17 +113,41 @@ public class H22Cache extends CacheProvider {
     	return false;
     }
 
-	@Override
-	public void init() throws Exception {
 
+    private ExecutorService spawnNewThreadPool() {
+
+        if (Config.getBooleanProperty("cache.h22.async.caller.runs.policy", true)) {
+            return new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10,
+                    TimeUnit.SECONDS, asyncTaskQueue, namedThreadFactory, new ThreadPoolExecutor.CallerRunsPolicy()
+            );
+        }
+
+        return new ThreadPoolExecutor(numberOfAsyncThreads, numberOfAsyncThreads, 10,
+                TimeUnit.SECONDS, asyncTaskQueue, namedThreadFactory
+        );
+    }
+
+
+    @Override
+    public void init() throws Exception {
+
+        if (ShutdownCoordinator.isShutdownStarted()) {
+            return;
+        }
         if (isInitialized.compareAndSet(false, true)) {
+
+            Logger.info(this, "Starting H22 Cache Async Executor Service");
+            Try.run(() -> executorService.shutdownNow());
+            executorService = spawnNewThreadPool();
+
             // init the databases
             for (int i = 0; i < numberOfDbs; i++) {
                 getPool(i, true);
             }
+
         }
 
-	}
+    }
 
 	@Override
 	public boolean isInitialized() throws Exception {
@@ -412,10 +438,11 @@ public class H22Cache extends CacheProvider {
 
 	@Override
 	public void shutdown() {
-        isInitialized.set(false);
-		// don't trash on shutdown - just close existing pools without creating new ones
-		shutdownPools();
-	}
+        if (isInitialized.compareAndSet(true, false)) {
+            // don't trash on shutdown - just close existing pools without creating new ones
+            shutdownPools();
+        }
+    }
 
 	/**
 	 * Shutdown existing pools without creating new ones (for clean shutdown)
@@ -432,8 +459,8 @@ public class H22Cache extends CacheProvider {
 				Logger.error(this.getClass(), "Error closing H22 cache pool " + db + ": " + e.getMessage(), e);
 			}
 		}
-		
-		// Shutdown the async executor service
+
+        // Shutdown the async executor service
 		try {
 			executorService.shutdown();
 			if (!executorService.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
@@ -721,6 +748,10 @@ public class H22Cache extends CacheProvider {
 	}
 
 	private void handleError(final Exception ex, final Fqn fqn) {
+        if (ex.getCause() != null && ex.getCause() instanceof java.lang.InterruptedException) {
+            Logger.debug(this.getClass(), ex.getMessage() + ": cache shutting down, ignoring", ex);
+            return;
+        }
 	    DONT_CACHE_ME.put(fqn.id, fqn.toString());
 		// debug all errors
 		Logger.debug(this.getClass(), ex.getMessage() + " on " + fqn, ex);

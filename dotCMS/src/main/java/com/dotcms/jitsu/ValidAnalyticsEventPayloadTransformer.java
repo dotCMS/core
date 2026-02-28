@@ -89,8 +89,10 @@ public enum ValidAnalyticsEventPayloadTransformer {
      * @param payload Analytics event payload
      */
     public Collection<EventsPayload.EventPayload> transform(final JSONObject payload){
+        final JSONObject payloadCopy = new JSONObject(payload);
+
         final Map<String, Serializable> newRootContext =
-                (Map<String, Serializable>) payload.get(CONTEXT_ATTRIBUTE_NAME);
+                (Map<String, Serializable>) payloadCopy.get(CONTEXT_ATTRIBUTE_NAME);
 
         final Serializable sessionId = newRootContext.get(SESSION_ID_ATTRIBUTE_NAME);
         newRootContext.remove(SESSION_ID_ATTRIBUTE_NAME);
@@ -99,12 +101,12 @@ public enum ValidAnalyticsEventPayloadTransformer {
         newRootContext.remove(DEVICE_ATTRIBUTE_NAME);
 
         final List<Map<String, Serializable>> events =
-                (List<Map<String, Serializable>>) payload.get(EVENTS_ATTRIBUTE_NAME);
+                (List<Map<String, Serializable>>) payloadCopy.get(EVENTS_ATTRIBUTE_NAME);
 
         return events.stream()
                 .map(JSONObject::new)
                 .map(ValidAnalyticsEventPayloadTransformer::transformDate)
-                .map(jsonObject -> ValidAnalyticsEventPayloadTransformer.setRootValues(jsonObject, payload))
+                .map(jsonObject -> ValidAnalyticsEventPayloadTransformer.setRootValues(jsonObject, payloadCopy))
                 .map(jsonObject -> putContent(jsonObject, newRootContext, sessionId))
                 .map(eventPayload -> putEventAttributes(eventPayload, deviceAttributes))
                 .map(this::transformCustom)
@@ -182,7 +184,14 @@ public enum ValidAnalyticsEventPayloadTransformer {
      * @return
      */
     private static JSONObject removeData(final JSONObject payload) {
+        final Map<String, Object> dataAttributes  = (Map<String, Object>) payload.get(DATA_ATTRIBUTE_NAME);
+
+        dataAttributes.remove(PAGE_ATTRIBUTE_NAME);
+
+        moveToRoot(payload, dataAttributes, Map.of());
+
         payload.remove(DATA_ATTRIBUTE_NAME);
+        payload.remove(CUSTOM_ATTRIBUTE_NAME);
         return payload;
     }
 

@@ -14,7 +14,7 @@ import {
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
-import { DotDialogComponent, DotDialogModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 // eslint-disable-next-line import/order
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
@@ -93,8 +93,13 @@ describe('DotDownloadBundleDialogComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotDownloadBundleDialogComponent],
-            imports: [DotDialogModule, SelectButtonModule, DropdownModule, DotMessagePipe],
+            imports: [
+                DotDownloadBundleDialogComponent,
+                DotDialogComponent,
+                SelectButtonModule,
+                DropdownModule,
+                DotMessagePipe
+            ],
             providers: [
                 DotDownloadBundleDialogService,
                 DotPushPublishFiltersService,

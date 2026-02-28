@@ -33,15 +33,15 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'containers',
         loadChildren: () =>
-            import('@dotcms/app/portlets/dot-containers/dot-containers.module').then(
-                (m) => m.DotContainersModule
+            import('@dotcms/app/portlets/dot-containers/dot-containers.routes').then(
+                (m) => m.dotContainersRoutes
             )
     },
     {
         path: 'categories',
         loadChildren: () =>
-            import('@dotcms/app/portlets/dot-categories/dot-categories.module').then(
-                (m) => m.DotCategoriesModule
+            import('@dotcms/app/portlets/dot-categories/dot-categories.routes').then(
+                (m) => m.dotCategoriesRoutes
             )
     },
     {
@@ -49,7 +49,7 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         loadChildren: () =>
-            import('@portlets/dot-templates/dot-templates.module').then((m) => m.DotTemplatesModule)
+            import('@portlets/dot-templates/dot-templates.routes').then((m) => m.DotTemplatesRoutes)
     },
     {
         path: 'content-types-angular',
@@ -59,8 +59,8 @@ const PORTLETS_ANGULAR: Route[] = [
             reuseRoute: false
         },
         loadChildren: () =>
-            import('@portlets/dot-content-types/dot-content-types.module').then(
-                (m) => m.DotContentTypesModule
+            import('@portlets/dot-content-types/dot-content-types.routes').then(
+                (m) => m.dotContentTypesRoutes
             )
     },
     {
@@ -99,8 +99,8 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         loadChildren: () =>
-            import('@portlets/dot-form-builder/dot-form-builder.module').then(
-                (m) => m.DotFormBuilderModule
+            import('@portlets/dot-form-builder/dot-form-builder.routes').then(
+                (m) => m.dotFormBuilderRoutes
             ),
         data: {
             filterBy: 'FORM'
@@ -115,14 +115,14 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'starter',
         loadChildren: () =>
-            import('@portlets/dot-starter/dot-starter.module').then((m) => m.DotStarterModule)
+            import('@portlets/dot-starter/dot-starter.routes').then((m) => m.dotStarterRoutes)
     },
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'apps',
         loadChildren: () =>
-            import('@portlets/dot-apps/dot-apps.module').then((m) => m.DotAppsModule)
+            import('./portlets/dot-apps/dot-apps.routes').then((m) => m.dotAppsRoutes)
     },
     {
         path: 'edit-page',
@@ -154,7 +154,7 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivate: [MenuGuardService, PagesGuardService],
         path: 'pages',
         loadChildren: () =>
-            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
+            import('@portlets/dot-pages/dot-pages.routes').then((m) => m.dotPagesRoutes)
     },
     {
         canActivate: [MenuGuardService],
@@ -162,6 +162,12 @@ const PORTLETS_ANGULAR: Route[] = [
         path: 'content-drive',
         loadChildren: () =>
             import('@dotcms/portlets/content-drive/portlet').then((m) => m.DotContentDriveRoutes)
+    },
+    {
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        path: 'usage',
+        loadChildren: () => import('@dotcms/portlets/dot-usage').then((m) => m.DotUsageRoutes)
     },
     {
         path: '',
@@ -180,15 +186,15 @@ const PORTLETS_IFRAME = [
                 children: [
                     {
                         loadChildren: () =>
-                            import(
-                                '@components/dot-contentlet-editor/dot-contentlet-editor.routing.module'
-                            ).then((m) => m.DotContentletEditorRoutingModule),
+                            import('@components/dot-contentlet-editor/dot-contentlet-editor.routes').then(
+                                (m) => m.dotContentletEditorRoutes
+                            ),
                         path: 'new'
                     },
                     {
-                        loadChildren: () =>
-                            import('@portlets/dot-porlet-detail/dot-portlet-detail.module').then(
-                                (m) => m.DotPortletDetailModule
+                        loadComponent: () =>
+                            import('@portlets/dot-porlet-detail/dot-portlet-detail.component').then(
+                                (m) => m.DotPortletDetailComponent
                             ),
                         path: ':asset',
                         data: {
@@ -231,7 +237,7 @@ const appRoutes: Routes = [
             loginFormInfo: DotLoginPageResolver
         },
         loadChildren: () =>
-            import('@components/login/dot-login-page.module').then((m) => m.DotLoginPageModule)
+            import('@components/login/dot-login-page.routes').then((m) => m.dotLoginPageRoutes)
     },
     {
         path: 'fromCore',
@@ -270,6 +276,9 @@ const appRoutes: Routes = [
             onSameUrlNavigation: 'reload'
         })
     ],
-    providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
+    providers: [
+        { provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService },
+        DotLoginPageResolver
+    ]
 })
 export class AppRoutingModule {}

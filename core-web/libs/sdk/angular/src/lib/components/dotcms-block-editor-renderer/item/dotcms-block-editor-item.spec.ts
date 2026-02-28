@@ -28,11 +28,10 @@ const MOCK_UVE_STATE_EDIT = {
 
 @Component({
     selector: 'dotcms-block-editor-renderer-custom-component',
-    standalone: true,
     template: '<div>Custom Component</div>'
 })
 export class DotCMSBlockEditorRendererCustomComponent {
-    @Input() content: BlockEditorNode[] = [];
+    @Input() node: BlockEditorNode | undefined;
 }
 
 jest.mock('@dotcms/uve', () => ({
@@ -119,7 +118,44 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
             it('should pass level attribute', () => {
                 const heading = spectator.query(DotHeadingBlock);
-                expect(heading?.level).toBe('2');
+                expect(heading?.level()).toBe('2');
+            });
+
+            it('should render heading component with level 6 even if the level is not a string', () => {
+                const content: BlockEditorNode[] = [
+                    {
+                        type: BlockEditorDefaultBlocks.HEADING,
+                        attrs: { level: 6 },
+                        content: []
+                    }
+                ];
+                spectator.setInput('content', content);
+                spectator.detectChanges();
+
+                expect(spectator.query(DotHeadingBlock)).toBeTruthy();
+                expect(spectator.query(DotHeadingBlock)?.level()).toBe(6);
+            });
+
+            it('should render heading content when node has content array with text', () => {
+                const content: BlockEditorNode[] = [
+                    {
+                        type: BlockEditorDefaultBlocks.HEADING,
+                        attrs: { level: '2' },
+                        content: [
+                            {
+                                type: BlockEditorDefaultBlocks.TEXT,
+                                text: 'My Heading Title',
+                                marks: []
+                            }
+                        ]
+                    }
+                ];
+                spectator.setInput('content', content);
+                spectator.detectChanges();
+
+                const textBlock = spectator.query(DotTextBlock);
+                expect(textBlock).toBeTruthy();
+                expect(textBlock?.text).toBe('My Heading Title');
             });
         });
 
@@ -303,7 +339,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
                 const customComponent = spectator.query(DotCMSBlockEditorRendererCustomComponent);
                 expect(customComponent).toBeTruthy();
-                expect(customComponent?.content).toEqual(content[0]);
+                expect(customComponent?.node).toEqual(content[0]);
             }));
 
             describe('Unknown Block Type', () => {

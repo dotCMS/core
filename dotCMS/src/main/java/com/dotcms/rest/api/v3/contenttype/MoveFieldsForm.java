@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v3.contenttype;
 
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableRowField;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
@@ -12,33 +13,59 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.exception.ExceptionUtil.getErrorMessage;
 
 /**
- * Form to {@link FieldResource#moveFields(String, MoveFieldsForm, HttpServletRequest)}
+ * This form class is used by the
+ * {@link FieldResource#moveFields(String, MoveFieldsForm, HttpServletRequest)} REST Endpoint to
+ * persist changes in the field layout of a Content Type. This involves adding, moving, or deleting
+ * a field from it.
+ *
+ * @author Freddy Rodriguez
+ * @since Jun 24th, 2019
  */
 @JsonDeserialize(builder = MoveFieldsForm.Builder.class)
 public class MoveFieldsForm {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private final List<Map<String, Object>> fields;
 
     public MoveFieldsForm(final List<Map<String, Object>> fields) {
         this.fields = fields;
     }
 
+    /**
+     * Generates the new Field Layout object with the new changes made to the Content Type's
+     * fields.
+     *
+     * @param contentType The {@link ContentType} whose fields have been updated.
+     *
+     * @return The new {@link FieldLayout} object with the updated fields.
+     */
     public FieldLayout getRows(final ContentType contentType) {
         try {
             fixFields(fields, contentType.id());
             final String rowsString = MAPPER.writeValueAsString(fields);
             return new FieldLayout(contentType, new JsonFieldTransformer(rowsString).asList());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             Logger.error(MoveFieldsForm.class,
-                    String.format("Error moving fields to Content Type %s: %s", contentType.name(), e.getMessage()));
+                    String.format("Error generating field layout in Content Type %s: %s", contentType.name(),
+                            getErrorMessage(e)));
             throw new DotRuntimeException(e);
         }
     }
 
+    /**
+     * Based on their order of appearance in the list of maps, this method sets the appropriate
+     * order value for each field in the Content Type's layout
+     *
+     * @param fields        The list of maps containing each field in the Content Type.
+     * @param contentTypeId The ID of the Content Type whose list of fields is being updated.
+     */
     private void fixFields(final List<Map<String, Object>> fields, final String contentTypeId) {
         int layoutFieldIndex = 0;
 
@@ -57,8 +84,9 @@ public class MoveFieldsForm {
         }
     }
 
-
+    @SuppressWarnings("unchecked")
     public static final class Builder {
+
         @JsonProperty
         private List<Map<String, Object>> layout;
 
@@ -71,19 +99,19 @@ public class MoveFieldsForm {
             final List<Map<String, Object>> fieldsMap = new ArrayList<>();
 
             for (Map<String, Object> row : layout) {
-                fieldsMap.add((Map) row.get("divider"));
+                fieldsMap.add((Map<String, Object>) row.get("divider"));
                 final List<Map<String, Object>> columnsMap = (List<Map<String, Object>>) row.get("columns");
 
                 if (columnsMap != null) {
                     for (final Map<String, Object> columnMap : columnsMap) {
-                        fieldsMap.add((Map) columnMap.get("columnDivider"));
+                        fieldsMap.add((Map<String, Object>) columnMap.get("columnDivider"));
                         fieldsMap.addAll((List<Map<String, Object>>) columnMap.get("fields"));
                     }
                 }
             }
-
-
             return new MoveFieldsForm(fieldsMap);
         }
+
     }
+
 }

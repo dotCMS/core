@@ -8,7 +8,9 @@ import java.util.Arrays;
  */
 public enum EventType {
     PAGE_VIEW("pageview"),
-    CONTENT_IMPRESSION("content_impression");
+    CONTENT_IMPRESSION("content_impression"),
+    CONTENT_CLICK("content_click"),
+    CONVERSION("conversion");
 
     private String name;
 

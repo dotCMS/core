@@ -3,7 +3,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -22,6 +23,7 @@ import {
     DotFormatDateService,
     DotIframeService,
     DotRouterService,
+    DotSystemConfigService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import {
@@ -35,10 +37,11 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import {
-    DotDialogModule,
+    DotDialogComponent,
     DotGravatarDirective,
-    DotIconModule,
+    DotIconComponent,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -50,7 +53,7 @@ import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { SearchableDropDownModule } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
+import { SearchableDropdownComponent } from '../../../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
@@ -87,13 +90,20 @@ describe('DotToolbarUserComponent', () => {
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 DotFormatDateService,
-                DotToolbarUserStore
+                DotToolbarUserStore,
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ],
             imports: [
                 BrowserAnimationsModule,
-                DotDialogModule,
-                DotIconModule,
-                SearchableDropDownModule,
+                DotDialogComponent,
+                DotIconComponent,
+                SearchableDropdownComponent,
                 RouterTestingModule,
                 ButtonModule,
                 DotSafeHtmlPipe,
@@ -108,7 +118,9 @@ describe('DotToolbarUserComponent', () => {
                 DotMyAccountComponent,
                 DotToolbarUserComponent,
                 DotGravatarDirective,
-                AvatarModule
+                AvatarModule,
+                DotIconComponent,
+                DotDialogComponent
             ]
         });
 

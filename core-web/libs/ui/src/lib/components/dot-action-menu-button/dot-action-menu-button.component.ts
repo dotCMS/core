@@ -47,7 +47,7 @@ export class DotActionMenuButtonComponent implements OnInit {
                     command: ($event: DotActionMenuClickEvent) => {
                         action.menuItem.command(this.item);
 
-                        $event.originalEvent.stopPropagation();
+                        $event?.originalEvent?.stopPropagation();
                     }
                 };
             });

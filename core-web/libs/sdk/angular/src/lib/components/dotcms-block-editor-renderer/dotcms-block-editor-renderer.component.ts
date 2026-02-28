@@ -1,6 +1,6 @@
 import { Component, Input, signal } from '@angular/core';
 
-import { UVE_MODE, BlockEditorContent } from '@dotcms/types';
+import { UVE_MODE, BlockEditorNode } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
 import { isValidBlocks } from '@dotcms/uve/internal';
@@ -40,7 +40,7 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
     imports: [DotCMSBlockEditorItemComponent]
 })
 export class DotCMSBlockEditorRendererComponent {
-    @Input() blocks!: BlockEditorContent;
+    @Input() blocks!: BlockEditorNode;
     @Input() customRenderers: CustomRenderer | undefined;
     @Input() class: string | undefined;
     @Input() style: string | Record<string, string> | undefined;

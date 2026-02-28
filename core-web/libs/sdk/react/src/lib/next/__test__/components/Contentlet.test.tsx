@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react';
 
 import { getDotContentletAttributes } from '@dotcms/uve/internal';
 
-import { Contentlet } from '../../components/Contentlet/Contentlet';
+import { Contentlet, CONTENTLET_CLASS } from '../../components/Contentlet/Contentlet';
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 
@@ -21,6 +21,7 @@ jest.mock('../../hooks/useCheckVisibleContent', () => ({
 
 jest.mock('@dotcms/uve/internal', () => ({
     getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' })),
+    CUSTOM_NO_COMPONENT: 'CustomNoComponent',
     DEVELOPMENT_MODE: 'development',
     PRODUCTION_MODE: 'production'
 }));
@@ -54,6 +55,7 @@ describe('Contentlet', () => {
 
         const containerDiv = screen.getByTestId('fallback').parentElement;
         expect(containerDiv).toHaveAttribute('data-dot-object', 'contentlet');
+        expect(containerDiv).toHaveClass(CONTENTLET_CLASS);
 
         expect(containerDiv).toHaveStyle('min-height: 4rem');
         expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
@@ -88,12 +90,13 @@ describe('Contentlet', () => {
             container: 'container-1'
         });
 
-        expect(getDotContentletAttributes).not.toHaveBeenCalled();
+        // UVE attributes should always be called
+        expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
 
         const containerDiv = container.querySelector(
             '[data-dot-object="contentlet"]'
         ) as HTMLElement;
-        expect(containerDiv.className).toBe('');
+        expect(containerDiv.className).toBe(CONTENTLET_CLASS);
     });
 
     test('should not apply minHeight style if useCheckVisibleContent returns true', () => {
@@ -108,5 +111,41 @@ describe('Contentlet', () => {
 
         const containerDiv = document.querySelector('div[data-dot-object="contentlet"]');
         expect(containerDiv).not.toHaveStyle('min-height: 4rem');
+    });
+
+    test('should always apply UVE attributes in production', () => {
+        const contextValue = {
+            mode: 'production',
+            userComponents: {}
+        };
+
+        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
+
+        // UVE attributes should always be called
+        expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
+    });
+
+    test('should always apply UVE attributes even when isDevMode is false', () => {
+        const contextValue = {
+            mode: 'production',
+            userComponents: {}
+        };
+
+        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
+
+        // UVE attributes should always be called
+        expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
+    });
+
+    test('should always apply UVE attributes in development mode (UVE)', () => {
+        const contextValue = {
+            mode: 'development',
+            userComponents: {}
+        };
+
+        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
+
+        // UVE attributes should always be called
+        expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
     });
 });

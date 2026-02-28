@@ -84,7 +84,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -149,6 +148,44 @@ public class HostAssetsJobImpl extends ParentProxy{
 
 	private static final boolean DONT_RESPECT_FRONTEND_ROLES = Boolean.FALSE;
 	private static final boolean RESPECT_FRONTEND_ROLES = Boolean.TRUE;
+
+	/**
+	 * Configuration property to control how many contentlets are processed before committing
+	 * the transaction and clearing Hibernate session. Lower values reduce memory usage but
+	 * increase transaction overhead. Default: 500
+	 */
+	private static final Lazy<Integer> CONTENT_BATCH_SIZE = Lazy.of(() ->
+			Config.getIntProperty("SITE_COPY_CONTENT_BATCH_SIZE", 500));
+
+	/**
+	 * Configuration property to control how many contentlets with relationships are accumulated
+	 * before processing them. This prevents unbounded list growth. Default: 500
+	 */
+	private static final Lazy<Integer> RELATIONSHIP_BATCH_SIZE = Lazy.of(() ->
+			Config.getIntProperty("SITE_COPY_RELATIONSHIP_BATCH_SIZE", 500));
+
+	/**
+	 * Configuration property to control how long to pause (in milliseconds) between batches
+	 * of content processing. This gives the system time to reclaim memory and reduces CPU
+	 * pressure. Even if set to 0, a minimum pause will still be enforced. Default: 100ms
+	 */
+	private static final Lazy<Integer> BATCH_PAUSE_MS = Lazy.of(() ->
+			Config.getIntProperty("SITE_COPY_BATCH_PAUSE_MS", 100));
+
+	/**
+	 * Minimum pause time (in milliseconds) between batches, enforced even if configured value
+	 * is 0. This ensures the system always has time to breathe, allowing garbage collection,
+	 * thread scheduling, and preventing CPU thrashing. Default: 10ms
+	 */
+	private static final int MIN_BATCH_PAUSE_MS = 10;
+
+	/**
+	 * Configuration property to control the maximum initial capacity for the HTML pages collection
+	 * during site copy. This prevents excessive memory allocation for sites with very large numbers
+	 * of contentlets but relatively few HTML pages. Default: 100000
+	 */
+	private static final Lazy<Integer> HTML_PAGES_MAX_INITIAL_CAPACITY = Lazy.of(() ->
+			Config.getIntProperty("SITE_COPY_HTML_PAGES_MAX_CAPACITY", 100000));
 
 	/**
 	 * Creates an instance of the Site Copy Job.
@@ -273,6 +310,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			final List<Contentlet> contentsWithRelationships =  new ArrayList<>();
 			final Map<String, ContentTypeMapping> copiedContentTypesBySourceId = new HashMap<>();
 			final Map<String, RelationshipMapping> copiedRelationshipsBySourceId = new HashMap<>();
+			final List<FailedContentInfo> failedContents = new ArrayList<>();
 			if (copyOptions.isCopyTemplatesAndContainers()) {
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying Templates and Containers to new Site '%s'", destinationSite.getHostname()));
@@ -316,13 +354,14 @@ public class HostAssetsJobImpl extends ParentProxy{
 										for (final Contentlet asset : sourceContainerAssets) {
 											processedContentletsList.add(
 													processCopyOfContentlet(asset, copyOptions,
-															destinationSite,
+															sourceSite, destinationSite,
 															copiedContentsBySourceId,
 															copiedFoldersBySourceId,
 															copiedContainersBySourceId,
 															copiedTemplatesBySourceId,
 															contentsWithRelationships,
-															copiedContentTypesBySourceId
+															copiedContentTypesBySourceId,
+															failedContents
 													)
 											);
 										}
@@ -576,97 +615,192 @@ public class HostAssetsJobImpl extends ParentProxy{
 			this.siteCopyStatus.addMessage("copying-content-on-host");
 			int contentCount = 0;
 
-            // Option 1: Copy ONLY content pages WITHOUT other contents, if 
+            // Option 1: Copy ONLY content pages WITHOUT other contents, if
 			// copyOptions.isCopyContentOnHost() == true should be handled by option 2.
             if (!copyOptions.isCopyContentOnHost() && copyOptions.isCopyLinks()) {
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying HTML Pages - but NOT their contents - to new Site '%s'", destinationSite.getHostname()));
-                final PaginatedContentlets sourceContentlets = this.contentAPI.findContentletsPaginatedByHost(sourceSite,
+
+				final int batchSize = CONTENT_BATCH_SIZE.get();
+				final int relationshipBatchSize = RELATIONSHIP_BATCH_SIZE.get();
+				final int batchPauseMs = BATCH_PAUSE_MS.get();
+
+                try (final PaginatedContentlets sourceContentlets = this.contentAPI.findContentletsPaginatedByHost(sourceSite,
                         List.of(BaseContentType.HTMLPAGE.getType()), null, this.SYSTEM_USER,
-						DONT_RESPECT_FRONTEND_ROLES);
+						DONT_RESPECT_FRONTEND_ROLES)) {
 
-                currentProgress = 70;
-                progressIncrement = (95 - 70) / (double) sourceContentlets.size();
-				Logger.info(this, String.format("-> Copying %d HTML Pages", sourceContentlets.size()));
-                for (final Contentlet sourceContent : sourceContentlets) {
-					if (null != sourceContent) {
-						this.processCopyOfContentlet(sourceContent, copyOptions,
-								destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
-								copiedContainersBySourceId, copiedTemplatesBySourceId,
-								contentsWithRelationships, copiedContentTypesBySourceId);
-
-						currentProgress += progressIncrement;
-
-						this.siteCopyStatus.updateProgress((int) currentProgress);
-						if (contentCount % 100 == 0) {
-							HibernateUtil.closeAndCommitTransaction();
-							HibernateUtil.startTransaction();
-						}
-						contentCount++;
+					if (sourceContentlets.isUsingScrollApi()) {
+						Logger.debug(this, "-> Using Scroll API for large result set");
 					}
-                }
 
-                // Copy contentlet dependencies
-				this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
-						copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
+					currentProgress = 70;
+					progressIncrement = (95 - 70) / (double) sourceContentlets.size();
+					Logger.info(this, String.format("-> Copying %d HTML Pages (batch size: %d, pause: %dms)",
+							sourceContentlets.size(), batchSize, batchPauseMs));
+
+					for (final Contentlet sourceContent : sourceContentlets) {
+                        if (null != sourceContent) {
+                            this.processCopyOfContentlet(sourceContent, copyOptions,
+                                    sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+                                    copiedContainersBySourceId, copiedTemplatesBySourceId,
+                                    contentsWithRelationships, copiedContentTypesBySourceId, failedContents);
+
+                            currentProgress += progressIncrement;
+                            contentCount++;
+
+                            this.siteCopyStatus.updateProgress((int) currentProgress);
+
+                            // Commit more frequently and clear Hibernate session to prevent memory buildup
+                            if (contentCount % batchSize == 0) {
+                                this.commitAndClearSession();
+                                this.pauseBetweenBatches(batchPauseMs);
+                            }
+
+                            // Process relationships in batches to prevent unbounded list growth
+                            if (contentsWithRelationships.size() >= relationshipBatchSize) {
+                                Logger.debug(this, () -> String.format("Processing batch of %d relationships", contentsWithRelationships.size()));
+                                this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
+                                        copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
+                                contentsWithRelationships.clear();
+                                this.commitAndClearSession();
+                                this.pauseBetweenBatches(batchPauseMs);
+                            }
+                        }
+					} // end for loop
+
+					// Copy remaining contentlet dependencies
+					if (!contentsWithRelationships.isEmpty()) {
+						Logger.debug(this, String.format("-> Processing final batch of %d relationships", contentsWithRelationships.size()));
+						this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
+								copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
+						contentsWithRelationships.clear();
+					}
+				} // end try-with-resources (PaginatedContentlets will auto-close and clear scroll)
             }
 
             // Option 2: Copy all content on site
             if (copyOptions.isCopyContentOnHost()) {
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying ALL contents to new Site '%s'", destinationSite.getHostname()));
-                final PaginatedContentlets sourceContentlets = this.contentAPI.findContentletsPaginatedByHost(sourceSite,
-						this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-                currentProgress = 70;
-                progressIncrement = (95 - 70) / (double) sourceContentlets.size();
 
-                // Process simple Contents first. This makes it easier to later 
-                // associate page contents when updating the multi-tree
-                Iterator<Contentlet> ite = sourceContentlets.iterator();
-				Logger.info(this, "-> Copying simple contents first");
-                while (ite.hasNext()) {
-                	final Contentlet sourceContent = ite.next();
-                	if (null != sourceContent && !sourceContent.isHTMLPage()) {
-	                    this.processCopyOfContentlet(sourceContent, copyOptions,
-	                            destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
-	                            copiedContainersBySourceId, copiedTemplatesBySourceId,
-	                            contentsWithRelationships, copiedContentTypesBySourceId);
-	                    // Update progress ONLY if the record is processed
-	                    currentProgress += progressIncrement;
-						this.siteCopyStatus.updateProgress((int) currentProgress);
-	                    if (contentCount % 100 == 0) {
-	                        HibernateUtil.closeAndCommitTransaction();
-	                        HibernateUtil.startTransaction();
-	                    }
-	                    contentCount++;
-	                    ite.remove();
-                	}
-                }
-				Logger.info(this, String.format("-> %d simple contents have been copied", contentCount));
-                // Now process Content Pages. Updating the multi-tree will be 
-                // easier since the content is already in
-				Logger.info(this, "-> Now, copying HTML Pages");
-                ite = sourceContentlets.iterator();
-                while (ite.hasNext()) {
-                	final Contentlet sourceContent = ite.next();
-					if (null != sourceContent && sourceContent.isHTMLPage()) {
-						this.processCopyOfContentlet(sourceContent, copyOptions,
-								destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
-								copiedContainersBySourceId, copiedTemplatesBySourceId,
-								contentsWithRelationships, copiedContentTypesBySourceId);
-						currentProgress += progressIncrement;
-						siteCopyStatus.updateProgress((int) currentProgress);
-						if (contentCount % 100 == 0) {
-							HibernateUtil.closeAndCommitTransaction();
-							HibernateUtil.startTransaction();
-						}
-						contentCount++;
+				final int batchSize = CONTENT_BATCH_SIZE.get();
+				final int relationshipBatchSize = RELATIONSHIP_BATCH_SIZE.get();
+				final int batchPauseMs = BATCH_PAUSE_MS.get();
+
+				// Use try-with-resources to ensure Scroll context is cleaned up
+                try (final PaginatedContentlets sourceContentlets = this.contentAPI.findContentletsPaginatedByHost(sourceSite,
+						this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES)) {
+
+					if (sourceContentlets.isUsingScrollApi()) {
+						Logger.debug(this, "-> Using Scroll API for large result set");
 					}
-                }
-				Logger.info(this, String.format("-> A total of %d contents have been copied", contentCount));
-                // Copy contentlet dependencies
-				this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
-						copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
+
+					currentProgress = 70;
+					progressIncrement = (95 - 70) / (double) sourceContentlets.size();
+					Logger.info(this, String.format("-> Total contentlets to copy: %d (batch size: %d, relationship batch: %d, pause: %dms)",
+							sourceContentlets.size(), batchSize, relationshipBatchSize, batchPauseMs));
+
+					// Strategy: Process simple content immediately, collect HTML pages for later processing
+					final ArrayList<String> htmlPageInodes = new ArrayList<>(
+                            Math.min(HTML_PAGES_MAX_INITIAL_CAPACITY.get(), (int) sourceContentlets.size()));
+					int simpleContentCount = 0;
+
+                    Logger.info(this, "-> Processing contentlets (simple content first, then HTML pages)");
+                    for (final Contentlet sourceContent : sourceContentlets) {
+                        if (null == sourceContent) {
+                            continue;
+                        }
+
+                        if (sourceContent.isHTMLPage()) {
+                            // Collect HTML pages for second pass (inodes only to minimize memory)
+                            htmlPageInodes.add(sourceContent.getInode());
+                        } else {
+                            // Process simple content immediately
+                            this.processCopyOfContentlet(sourceContent, copyOptions,
+                                    sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+                                    copiedContainersBySourceId, copiedTemplatesBySourceId,
+                                    contentsWithRelationships, copiedContentTypesBySourceId, failedContents);
+                            currentProgress += progressIncrement;
+                            contentCount++;
+                            simpleContentCount++;
+
+                            this.siteCopyStatus.updateProgress((int) currentProgress);
+
+                            // Commit more frequently and clear Hibernate session to prevent memory buildup
+                            if (contentCount % batchSize == 0) {
+                                this.commitAndClearSession();
+                                this.pauseBetweenBatches(batchPauseMs);
+                            }
+
+                            // Process relationships in batches to prevent unbounded list growth
+                            final int contentCountFinal = contentCount;
+                            if (contentsWithRelationships.size() >= relationshipBatchSize) {
+                                Logger.debug(this, () -> String.format("Processing batch of %d relationships at content %d",
+                                        contentsWithRelationships.size(), contentCountFinal));
+                                this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
+                                        copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
+                                contentsWithRelationships.clear();
+                                this.commitAndClearSession();
+                                this.pauseBetweenBatches(batchPauseMs);
+                            }
+                        }
+                    }
+                    Logger.info(this, String.format("-> %d simple contents have been copied", simpleContentCount));
+
+                    // Trim the ArrayList to actual size to free unused capacity
+                    htmlPageInodes.trimToSize();
+
+                    // Now process HTML Pages that were collected during first pass
+                    // Processing them second makes it easier to associate page contents when updating the multi-tree
+                    Logger.info(this, String.format("-> Now copying %d HTML Pages", htmlPageInodes.size()));
+                    final int htmlPagesStart = contentCount;
+                    for (final String htmlPageInode : htmlPageInodes) {
+                        // Load the contentlet by inode
+                        final Contentlet sourceContent = Try.of(() ->
+                                this.contentAPI.find(htmlPageInode, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES))
+                                .getOrElseThrow(e -> new DotDataException(
+                                        "Error loading HTML page: " + htmlPageInode, e));
+
+                        if (null != sourceContent) {
+                            this.processCopyOfContentlet(sourceContent, copyOptions,
+                                    sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
+                                    copiedContainersBySourceId, copiedTemplatesBySourceId,
+                                    contentsWithRelationships, copiedContentTypesBySourceId, failedContents);
+                            currentProgress += progressIncrement;
+                            contentCount++;
+
+                            siteCopyStatus.updateProgress((int) currentProgress);
+
+                            // Commit more frequently and clear Hibernate session
+                            if (contentCount % batchSize == 0) {
+                                this.commitAndClearSession();
+                                this.pauseBetweenBatches(batchPauseMs);
+                            }
+
+                            // Process relationships in batches
+                            final int contentCountFinal = contentCount;
+                            if (contentsWithRelationships.size() >= relationshipBatchSize) {
+                                Logger.debug(this, () -> String.format("Processing batch of %d relationships at content %d",
+                                        contentsWithRelationships.size(), contentCountFinal));
+                                this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
+                                        copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
+                                contentsWithRelationships.clear();
+                                this.commitAndClearSession();
+                                this.pauseBetweenBatches(batchPauseMs);
+                            }
+                        }
+                    }
+                    Logger.info(this, String.format("-> %d HTML pages have been copied", contentCount - htmlPagesStart));
+                    Logger.info(this, String.format("-> A total of %d contents have been copied", contentCount));
+
+                    // Copy remaining contentlet dependencies
+                    if (!contentsWithRelationships.isEmpty()) {
+                        Logger.info(this, String.format("-> Processing final batch of %d relationships", contentsWithRelationships.size()));
+                        this.copyRelatedContentlets(contentsWithRelationships, copiedContentsBySourceId,
+                                copiedRelationshipsBySourceId, copyOptions, sourceSite, destinationSite);
+                        contentsWithRelationships.clear();
+                    }
+				} // end try-with-resources (PaginatedContentlets will auto-close and clear scroll)
             }
 
 			this.siteCopyStatus.updateProgress(95);
@@ -692,6 +826,35 @@ public class HostAssetsJobImpl extends ParentProxy{
 				}
 			}
 			siteCopyStatus.updateProgress(100);
+
+			// Print summary of failed contentlets
+			if (!failedContents.isEmpty()) {
+				Logger.info(this, "======================================================================");
+				Logger.info(this, String.format(":::: Site Copy Summary - %d contentlet(s) failed to copy from '%s' to '%s'",
+						failedContents.size(), sourceSite.getHostname(), destinationSite.getHostname()));
+				Logger.info(this, "----------------------------------------------------------------------");
+
+				// Group failures by content type for better readability
+				final Map<String, List<FailedContentInfo>> failuresByType = new HashMap<>();
+				for (final FailedContentInfo failure : failedContents) {
+					failuresByType.computeIfAbsent(failure.contentType, k -> new ArrayList<>()).add(failure);
+				}
+
+				// Print grouped failures
+				for (final Map.Entry<String, List<FailedContentInfo>> entry : failuresByType.entrySet()) {
+					final String contentType = entry.getKey();
+					final List<FailedContentInfo> failures = entry.getValue();
+					Logger.info(this, String.format("-> Content Type: %s (%d failures)", contentType, failures.size()));
+					for (final FailedContentInfo failure : failures) {
+						Logger.info(this, String.format("   - ID: %s, Host: %s, Reason: %s",
+								failure.sourceIdentifier, failure.host, failure.reason));
+					}
+				}
+				Logger.info(this, "======================================================================");
+			} else {
+				Logger.info(this, String.format(":::: All contentlets copied successfully from '%s' to '%s'",
+						sourceSite.getHostname(), destinationSite.getHostname()));
+			}
 
 			final String destinationSiteIdentifier = destinationSite.getIdentifier();
 			HibernateUtil.addCommitListener("Host"+destinationSiteIdentifier, ()-> triggerEvents(destinationSiteIdentifier));
@@ -976,15 +1139,17 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 *                                     is relevant ONLY if the
 	 *                                     {@code FEATURE_FLAG_ENABLE_CONTENT_TYPE_COPY} property
 	 *                                     is enabled.
+	 * @param sourceSite               The {@link Host} object from which content is being copied.
 	 */
 	private Contentlet processCopyOfContentlet(final Contentlet sourceContent,
-			final HostCopyOptions copyOptions, final Host destinationSite,
+			final HostCopyOptions copyOptions, final Host sourceSite, final Host destinationSite,
 			final Map<String, ContentMapping> copiedContentletsBySourceId,
 			final Map<String, FolderMapping> copiedFoldersBySourceId,
 			final Map<String, Container> copiedContainersBySourceId,
 			final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> copiedTemplatesBySourceId,
 			final List<Contentlet> contentsWithRelationships,
-		    final Map<String, ContentTypeMapping> copiedContentTypesBySourceId) {
+		    final Map<String, ContentTypeMapping> copiedContentTypesBySourceId,
+			final List<FailedContentInfo> failedContents) {
 
 		//Since certain properties are modified here we're going to use a defensive copy to avoid cache issue.
 		final Contentlet sourceCopy = new Contentlet(sourceContent);
@@ -1013,6 +1178,7 @@ public class HostAssetsJobImpl extends ParentProxy{
                 final Folder destinationFolder = copiedFoldersBySourceId.get(sourceFolder.getInode()) != null ? copiedFoldersBySourceId
                         .get(sourceFolder.getInode()).destinationFolder : null;
                 if (!copyOptions.isCopyFolders()) {
+                    Logger.debug(HostAssetsJobImpl.class, () -> String.format("Source content '%s' in a folder, skipped because folders are not included in the copy", sourceCopy.getIdentifier()));
                     return null;
                 }
 
@@ -1043,9 +1209,16 @@ public class HostAssetsJobImpl extends ParentProxy{
                 final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(sourceCopy.getIdentifier());
 				for (final MultiTree sourceMultiTree : pageContents) {
 					String newChild = sourceMultiTree.getContentlet();
+
 					// Update the child reference to point to the previously copied content
 					if (copiedContentletsBySourceId.containsKey(sourceMultiTree.getContentlet())) {
 						newChild = copiedContentletsBySourceId.get(sourceMultiTree.getContentlet()).destinationContent.getIdentifier();
+					} else {
+						// Contentlet was not copied - validate if it exists and is accessible
+						if (shouldSkipMultiTreeEntry(sourceMultiTree.getContentlet(), sourceSite,
+								destinationSite, newContent.getIdentifier())) {
+							continue;
+						}
 					}
 
                     String newContainer = sourceMultiTree.getContainer();
@@ -1065,16 +1238,66 @@ public class HostAssetsJobImpl extends ParentProxy{
 
             }// Pages are a big deal.
 
-            copiedContentletsBySourceId.put(sourceCopy.getIdentifier(), new ContentMapping(sourceCopy, newContent));
-			final Contentlet finalNewContent = newContent;
-			Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Re-Mapping content: Identifier `%s` now points to `%s`.", sourceCopy.getIdentifier(), finalNewContent
-					.getIdentifier()));
+			if (newContent != null) {
+				copiedContentletsBySourceId.put(sourceCopy.getIdentifier(), new ContentMapping(sourceCopy, newContent));
+				final Contentlet finalNewContent = newContent;
+
+				// Verify the contentlet was created in the database
+				try {
+					final Contentlet dbContentlet = contentAPI.findInDb(finalNewContent.getInode()).orElse(null);
+					if (dbContentlet == null) {
+						Logger.warn(this, String.format(
+							"Copied contentlet not found in database - ID: %s, Inode: %s, Content Type: %s",
+							finalNewContent.getIdentifier(),
+							finalNewContent.getInode(),
+							finalNewContent.getContentType().variable()
+						));
+                        failedContents.add(new FailedContentInfo(
+                                sourceCopy.getIdentifier(),
+                                sourceCopy.getContentType().variable(),
+                                sourceCopy.getHost(),
+                                "Copy operation result identifier not found in the database"
+                        ));
+					}
+				} catch (final Exception e) {
+					Logger.warn(this, String.format(
+						"Failed to verify contentlet in database - ID: %s, Inode: %s, Content Type: %s",
+						finalNewContent.getIdentifier(),
+						finalNewContent.getInode(),
+						finalNewContent.getContentType().variable()
+					), e);
+				}
+
+				Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Re-Mapping content: Identifier `%s` now points to `%s`.", sourceCopy.getIdentifier(), finalNewContent
+						.getIdentifier()));
+			} else {
+				final String reason = "Copy operation returned null";
+				Logger.warn(this, String.format(
+					"Failed to copy contentlet - Source ID: %s, Content Type: %s, Host: %s",
+					sourceCopy.getIdentifier(),
+					sourceCopy.getContentType().variable(),
+					sourceCopy.getHost()
+				));
+				failedContents.add(new FailedContentInfo(
+					sourceCopy.getIdentifier(),
+					sourceCopy.getContentType().variable(),
+					sourceCopy.getHost(),
+					reason
+				));
+			}
 
 			this.checkRelatedContentToCopy(sourceCopy, contentsWithRelationships, destinationSite);
         } catch (final Exception e) {
+			final String errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
 			Logger.error(this, String.format("An error occurred when copying content '%s' from Site '%s' to Site '%s'." +
 					" The process will continue...", sourceCopy.getIdentifier(), sourceCopy.getHost(),
 					destinationSite.getHostname()), e);
+			failedContents.add(new FailedContentInfo(
+				sourceCopy.getIdentifier(),
+				sourceCopy.getContentType().variable(),
+				sourceCopy.getHost(),
+				errorMessage
+			));
 		}
         return newContent;
     }
@@ -1342,6 +1565,73 @@ public class HostAssetsJobImpl extends ParentProxy{
 	}
 
 	/**
+	 * Tracks information about contentlets that failed to copy during the site copy operation.
+	 */
+	private static class FailedContentInfo {
+		final String sourceIdentifier;
+		final String contentType;
+		final String host;
+		final String reason;
+
+		public FailedContentInfo(final String sourceIdentifier, final String contentType,
+								 final String host, final String reason) {
+			this.sourceIdentifier = sourceIdentifier;
+			this.contentType = contentType;
+			this.host = host;
+			this.reason = reason;
+		}
+	}
+
+	/**
+	 * Validates whether a contentlet referenced in a MultiTree entry can be used in the
+	 * destination site. This method checks if the contentlet exists and is accessible, and
+	 * determines if the MultiTree entry should be skipped.
+	 *
+	 * @param contentletId    The identifier of the contentlet to validate.
+	 * @param sourceSite      The source {@link Host} from which content is being copied.
+	 * @param destinationSite The destination {@link Host} to which content is being copied.
+	 * @param pageId          The identifier of the HTML page that references this contentlet.
+	 *
+	 * @return {@code true} if the MultiTree entry should be skipped (contentlet is not
+	 *         accessible), {@code false} if the entry should be kept.
+	 */
+	private boolean shouldSkipMultiTreeEntry(final String contentletId, final Host sourceSite,
+											  final Host destinationSite, final String pageId) {
+		try {
+			final Contentlet originalContentlet = this.contentAPI.findContentletByIdentifierAnyLanguage(
+					contentletId, false);
+
+			// Check if the contentlet is from System Host or is accessible from the destination site
+			if (originalContentlet.getHost().equals(this.SYSTEM_HOST.getIdentifier())) {
+				// Content from System Host can be referenced as-is
+				Logger.debug(HostAssetsJobImpl.class, () -> String.format(
+						"---> MultiTree references System Host contentlet '%s', keeping original reference",
+						contentletId));
+				return false;
+			} else if (!originalContentlet.getHost().equals(sourceSite.getIdentifier())
+					&& !originalContentlet.getHost().equals(destinationSite.getIdentifier())) {
+				// Content from a different site - keep reference if accessible
+				Logger.debug(HostAssetsJobImpl.class, () -> String.format(
+						"---> MultiTree references contentlet '%s' from different site, keeping original reference",
+						contentletId));
+				return false;
+			} else {
+				// Contentlet should have been copied but wasn't - skip this MultiTree entry
+				Logger.warn(this, String.format(
+						"Skipping MultiTree entry for page '%s': contentlet '%s' was not copied and is not accessible from destination site '%s'",
+						pageId, contentletId, destinationSite.getHostname()));
+				return true;
+			}
+		} catch (final Exception e) {
+			// Contentlet doesn't exist or is not accessible
+			Logger.warn(this, String.format(
+					"Skipping MultiTree entry for page '%s': contentlet '%s' could not be found or accessed: %s",
+					pageId, contentletId, e.getMessage()));
+			return true;
+		}
+	}
+
+	/**
 	 * Utility method which validates that the source and destination Sites can be pulled from the database. That is,
 	 * it makes sure that both Sites have been already persisted to the database before starting the Site Copy process.
 	 *
@@ -1404,6 +1694,46 @@ public class HostAssetsJobImpl extends ParentProxy{
 			);
 		} catch (final DotDataException | DotSecurityException e) {
 			// Notification could not be sent. Just move on
+		}
+	}
+
+	/**
+	 * Commits the current transaction and starts a new one, while also flushing and clearing
+	 * the Hibernate session to release memory. This is critical for processing large datasets
+	 * to prevent OutOfMemoryErrors.
+	 */
+	private void commitAndClearSession() {
+		try {
+			HibernateUtil.flush();
+			HibernateUtil.closeAndCommitTransaction();
+		} catch (final Exception e) {
+			Logger.error(this, "Error flushing/committing transaction", e);
+		}
+		try {
+			HibernateUtil.startTransaction();
+		} catch (final Exception e) {
+			Logger.error(this, "Error starting new transaction", e);
+		}
+	}
+
+    /**
+	 * Pauses the current thread for the configured duration to reduce system pressure during
+	 * large batch operations. This gives the system time to reclaim memory, reduce CPU load,
+	 * and prevent resource exhaustion. A minimum pause is always enforced to ensure system health.
+	 *
+	 * @param pauseMs The requested pause duration in milliseconds. The actual pause will be
+	 *                at least MIN_BATCH_PAUSE_MS (10ms), even if this value is 0 or negative.
+	 */
+	private void pauseBetweenBatches(final int pauseMs) {
+		// Always enforce a minimum pause to allow garbage collection, thread scheduling,
+		// and prevent CPU thrashing, even if config is set to 0
+		final int effectivePauseMs = Math.max(pauseMs, MIN_BATCH_PAUSE_MS);
+
+		try {
+			Thread.sleep(effectivePauseMs);
+		} catch (final InterruptedException e) {
+			Logger.warn(this, "Batch pause was interrupted", e);
+			Thread.currentThread().interrupt();
 		}
 	}
 

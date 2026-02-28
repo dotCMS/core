@@ -12,12 +12,12 @@ import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 
-import { TreeNodeItem } from '../../../../../../models/dot-edit-content-host-folder-field.interface';
 import { SearchParams } from '../../../../models/search.model';
 
 export const DEBOUNCE_TIME = 300;

@@ -51,6 +51,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -320,18 +321,17 @@ public class WebAssetHelper {
                     return false;
                 });
 
-        final Map<String, ? extends Serializable> metadata = Map.of(
-                "name", fileAsset.getUnderlyingFileName(),
-                "title", fileAsset.getFileTitle(),
-                "path", fileAsset.getPath(),
-                "sha256", fileAsset.getSha256(),
-                "contentType", fileAsset.getMimeType(),
-                "size", fileAsset.getFileSize(),
-                "isImage", fileAsset.isImage(),
-                "width", fileAsset.getWidth(),
-                "height", fileAsset.getHeight(),
-                SORT_BY, fileAsset.getModDate().toInstant()
-        );
+        final Map<String, Serializable> metadata = new HashMap<>();
+        metadata.put("name", fileAsset.getUnderlyingFileName());
+        metadata.put("title", fileAsset.getFileTitle());
+        metadata.put("path", fileAsset.getPath());
+        metadata.put("sha256", fileAsset.getSha256());
+        metadata.put("contentType", fileAsset.getMimeType());
+        metadata.put("size", fileAsset.getFileSize());
+        metadata.put("isImage", fileAsset.isImage());
+        metadata.put("width", fileAsset.getWidth());
+        metadata.put("height", fileAsset.getHeight());
+        metadata.put(SORT_BY, fileAsset.getModDate().toInstant());
 
         return AssetView.builder()
                 .sortOrder(fileAsset.getSortOrder())
@@ -884,16 +884,24 @@ public class WebAssetHelper {
         if (null != meta) {
             final String name = meta.name();
             if (UtilMethods.isSet(name)) {
+                final String currentPath = folder.getPath();
+                // /application/container/
                 //If the field name is used to rename the folder to something else that already exists
-                final String folderName = name.trim().replaceAll("^/+", "").replaceAll("/+$", "");
-                final Folder byPath = folderAPI.findFolderByPath(PATH_SEPARATOR + folderName, host, user, false);
+                final String folderName = name.toLowerCase().trim().replaceAll("^/+", "").replaceAll("/+$", "");
+
+                // Build the new path by replacing the last component of the current path
+                final String newPath = buildNewFolderPath(currentPath, folderName);
+
+                final Folder byPath = folderAPI.findFolderByPath(newPath, host, user, false);
                 if (null != byPath && UtilMethods.isSet(byPath.getInode())) {
                     throw new ConflictException(String.format("The name [%s] on [%s] already exists. ", folderName, host.getHostname()));
                 }
                 folder.setName(folderName);
+                folder.setPath(newPath);
             }
         }
         applyDetail(folder, host, meta);
+        //The returning folder must be set with the new path if changed
         return folder;
     }
 
@@ -939,71 +947,48 @@ public class WebAssetHelper {
         return Optional.empty();
     }
 
+
     /**
-     * This endpoint is intended to be used to feed content-drive it behaves quite similar to BrowserResource
-     * except that this can take a site/folder path expressed in the form //site/folder/subfolder/
-     * The set of params that can be passed here is wider as it can take multiple languages and content-types making it more flexible
-     * This is also set to use ES for text filtering while BrowserResource relies entirely on the db
-     * @param requestForm Json body request
-     * @param user Current logged in user
-     * @return a Map with all requested properties
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Builds a new folder path by replacing the last component of the current path with the new folder name.
+     * Examples:
+     * - currentPath="/images/gallery/", folderName="lol" -> "/images/lol/"
+     * - currentPath="/", folderName="lol" -> "/lol/"
+     * - currentPath="/images/", folderName="lol" -> "/lol/"
+     * @param currentPath the current folder path
+     * @param folderName the new folder name (already cleaned)
+     * @return the new folder path
      */
-    public Map<String, Object> driveSearch(final DriveRequestForm requestForm, final User user)
-            throws DotDataException, DotSecurityException {
-        final List<Long> langIds = requestForm.language().stream().map(LanguageUtil::getLanguageId).collect(Collectors.toList());
-        List<BaseContentType> baseContentTypes = BaseContentType.allBaseTypes();
-        if(null != requestForm.baseTypes()) {
-                 baseContentTypes = requestForm.baseTypes().stream()
-                    .map(s -> BaseContentType.getBaseContentType(s.toUpperCase()))
-                    .collect(Collectors.toList());
-        }
-        final ContentTypeAPI myContentTypeAPI = APILocator.getContentTypeAPI(user);
-        List<String> contentTypeIds = List.of();
-        if(null != requestForm.contentTypes()){
-            contentTypeIds = requestForm.contentTypes().stream().map(s ->
-                Try.of(() -> myContentTypeAPI.find(s).id()).getOrNull()
-            ).filter(Objects::nonNull).collect(Collectors.toList());
+    private String buildNewFolderPath(final String currentPath, final String folderName) {
+        if (!UtilMethods.isSet(currentPath)) {
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
         }
 
-        final AssetPathResolver resolver = AssetPathResolver.newInstance();
-        final String assetPath = requestForm.assetPath();
+        // Handle root folder case
+        if (PATH_SEPARATOR.equals(currentPath)) {
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
 
-            final ResolvedAssetAndPath assetAndPath = resolver.resolve(assetPath, user, false);
-            final Host host = assetAndPath.resolvedHost();
-            final Folder folder = assetAndPath.resolvedFolder();
+        // Remove trailing slash for processing
+        String pathToProcess = currentPath.endsWith(PATH_SEPARATOR)
+            ? currentPath.substring(0, currentPath.length() - 1)
+            : currentPath;
 
-            final Builder builder = BrowserQuery.builder();
-            builder.withUser(user)
-                    .withContentTypes(contentTypeIds)
-                    .withBaseTypes(baseContentTypes)
-                    .showDotAssets(requestForm.showDotAssets())
-                    .showFiles(requestForm.showFiles())
-                    .showFolders(requestForm.showFolders())
-                    .showArchived(requestForm.showArchived())
-                    .showWorking(requestForm.showWorking())
-                    .showLinks(requestForm.showLinks())
-                    .withLanguageIds(langIds)
-                    .showImages(requestForm.showImages())
-                    .showContent(requestForm.showContent())
-                    .offset(requestForm.offset())
-                    .maxResults(requestForm.maxResults())
-                    .sortBy(requestForm.sortBy());
+        // Find the last separator to replace the last component
+        int lastSeparatorIndex = pathToProcess.lastIndexOf(PATH_SEPARATOR);
 
-            //We're requesting an asset specifically therefore we need to find it and  build the response
-            if (folder.isSystemFolder()) {
-                builder.withHostOrFolderId(host.getIdentifier());
-            } else {
-                builder.withHostOrFolderId(folder.getInode());
-            }
+        if (lastSeparatorIndex == -1) {
+            // No separator found, treat as root level
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
 
-            if(null != requestForm.filter()) {
-                builder.withUseElasticsearchFiltering(true) //We rely on ES here when filtering text
-                .withFilter(requestForm.filter());
-            }
+        if (lastSeparatorIndex == 0) {
+            // Only root separator found (e.g., "/images")
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
 
-        return browserAPI.getPaginatedFolderContents(builder.build());
+        // Replace the last component
+        String parentPath = pathToProcess.substring(0, lastSeparatorIndex);
+        return parentPath + PATH_SEPARATOR + folderName + PATH_SEPARATOR;
     }
 
     /**

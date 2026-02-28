@@ -1,9 +1,8 @@
 {
-    "rewrites": [
-      {
-        "source": "/dA/:path*",
-        "destination": "https://dotcms-qa-master.dotcms.site/dA/:path*"
-      }
-    ]
-  }
-  
+  "rewrites": [
+    {
+      "source": "/dA/:path*",
+      "destination": "https://staging-latest.dotcms.cloud/dA/:path*"
+    }
+  ]
+}

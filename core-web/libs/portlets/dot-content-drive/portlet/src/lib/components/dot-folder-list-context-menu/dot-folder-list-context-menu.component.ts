@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -14,6 +13,7 @@ import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { take } from 'rxjs/operators';
 
 import {
+    DotContentletService,
     DotMessageService,
     DotRenderMode,
     DotWizardService,
@@ -25,20 +25,27 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSWorkflowAction,
+    DotContentletCanLock,
     DotProcessedWorkflowPayload,
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 
-import { ERROR_MESSAGE_LIFE } from '../../shared/constants';
+import {
+    DIALOG_TYPE,
+    ERROR_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+} from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { isFolder } from '../../utils/functions';
 
 @Component({
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
     styleUrl: './dot-folder-list-context-menu.component.scss',
-    imports: [CommonModule, ContextMenuModule],
+    imports: [ContextMenuModule],
+    providers: [DotContentletService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFolderListViewContextMenuComponent {
@@ -52,6 +59,7 @@ export class DotFolderListViewContextMenuComponent {
     #navigationService = inject(DotContentDriveNavigationService);
     #messageService = inject(MessageService);
     #dotWizardService = inject(DotWizardService);
+    #dotContentletService = inject(DotContentletService);
 
     /** The menu items for the context menu. */
     $items = signal<MenuItem[]>([]);
@@ -116,14 +124,41 @@ export class DotFolderListViewContextMenuComponent {
         }
 
         this.$items.set([]);
-
         const memoizedMenuItems = this.$memoizedMenuItems();
 
-        if (memoizedMenuItems[contentlet.inode]) {
-            this.$items.set(memoizedMenuItems[contentlet.inode]);
+        const key = isFolder(contentlet) ? contentlet.identifier : contentlet.inode;
+
+        if (memoizedMenuItems[key]) {
+            this.$items.set(memoizedMenuItems[key]);
             this.contextMenu()?.show(triggeredEvent);
             return;
         }
+
+        if (isFolder(contentlet)) {
+            const folderMenuItems = [
+                {
+                    label: this.#dotMessageService.get('content-drive.context-menu.edit-folder'),
+                    command: () => {
+                        this.#store.setDialog({
+                            type: DIALOG_TYPE.FOLDER,
+                            header: this.#dotMessageService.get(
+                                'content-drive.dialog.folder.header.edit'
+                            ),
+                            payload: contentlet
+                        });
+                    }
+                }
+            ];
+            this.$items.set(folderMenuItems);
+            this.$memoizedMenuItems.set({
+                ...this.$memoizedMenuItems(),
+                [key]: folderMenuItems
+            });
+            this.contextMenu()?.show(triggeredEvent);
+            return;
+        }
+
+        const canLockData = await this.#dotContentletService.canLock(contentlet.inode).toPromise();
 
         const workflowActions = await this.#workflowsActionsService
             .getByInode(contentlet.inode, DotRenderMode.LISTING)
@@ -141,14 +176,30 @@ export class DotFolderListViewContextMenuComponent {
             }
         });
 
-        workflowActions.map((action) => {
-            const menuItem = {
-                label: `${this.#dotMessageService.get(action.name)}`,
-                command: () => this.#executeWorkflowActions(action, contentlet)
-            };
+        if (canLockData.canLock) {
+            actionsMenu.push({
+                label: canLockData.locked
+                    ? this.#dotMessageService.get('content-drive.context-menu.unlock')
+                    : this.#dotMessageService.get('content-drive.context-menu.lock'),
+                command: () => {
+                    this.#resolveLockAction(contentlet, canLockData);
+                }
+            });
+        }
 
-            actionsMenu.push(menuItem);
-        });
+        workflowActions
+            .filter(
+                (action) =>
+                    action.name !== 'Move' || action.id !== MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+            )
+            .map((action) => {
+                const menuItem = {
+                    label: `${this.#dotMessageService.get(action.name)}`,
+                    command: () => this.#executeWorkflowActions(action, contentlet)
+                };
+
+                actionsMenu.push(menuItem);
+            });
 
         actionsMenu.push({
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
@@ -160,7 +211,7 @@ export class DotFolderListViewContextMenuComponent {
         this.$items.set(actionsMenu);
         this.$memoizedMenuItems.set({
             ...this.$memoizedMenuItems(),
-            [contentlet.inode]: this.$items()
+            [key]: this.$items()
         });
         this.contextMenu()?.show(triggeredEvent);
     }
@@ -233,5 +284,73 @@ export class DotFolderListViewContextMenuComponent {
                     console.error('Error firing workflow action', error);
                 }
             );
+    }
+
+    #resolveLockAction(contentlet: DotCMSContentlet, canLockData: DotContentletCanLock) {
+        if (canLockData.locked) {
+            this.#dotContentletService
+                .unlockContent(contentlet.inode)
+                .pipe(take(1))
+                .subscribe(
+                    ({ title }: DotCMSContentlet) => {
+                        this.#messageService.add({
+                            severity: 'success',
+                            summary: this.#dotMessageService.get(
+                                'content-drive.toast.unlock-success',
+                                title
+                            ),
+                            detail: this.#dotMessageService.get(
+                                'content-drive.toast.unlock-success-detail'
+                            )
+                        });
+
+                        this.#store.reloadContentDrive();
+                    },
+                    (error) => {
+                        console.error('Error unlocking content', error);
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get(
+                                'content-drive.toast.unlock-error'
+                            ),
+                            detail: this.#dotMessageService.get(
+                                'content-drive.toast.unlock-error-detail'
+                            ),
+                            life: ERROR_MESSAGE_LIFE
+                        });
+                        console.error('Error unlocking content', error);
+                    }
+                );
+        } else {
+            this.#dotContentletService
+                .lockContent(contentlet.inode)
+                .pipe(take(1))
+                .subscribe(
+                    ({ title }: DotCMSContentlet) => {
+                        this.#messageService.add({
+                            severity: 'success',
+                            summary: this.#dotMessageService.get(
+                                'content-drive.toast.lock-success',
+                                title
+                            ),
+                            detail: this.#dotMessageService.get(
+                                'content-drive.toast.lock-success-detail'
+                            )
+                        });
+                        this.#store.reloadContentDrive();
+                    },
+                    (error) => {
+                        console.error('Error locking content', error);
+                        this.#messageService.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('content-drive.toast.lock-error'),
+                            detail: this.#dotMessageService.get(
+                                'content-drive.toast.lock-error-detail'
+                            ),
+                            life: ERROR_MESSAGE_LIFE
+                        });
+                    }
+                );
+        }
     }
 }

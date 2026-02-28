@@ -131,6 +131,13 @@ public interface TagFactory {
     public void deleteTag ( Tag tag ) throws DotDataException;
 
     /**
+     * Deletes multiple tags in a single batch operation
+     * @param tagIds collection of tag IDs to be deleted
+     * @throws DotDataException
+     */
+    public void deleteTagsInBatch ( java.util.Collection<String> tagIds ) throws DotDataException;
+
+    /**
      * Gets all TagInodes associated to an object
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object

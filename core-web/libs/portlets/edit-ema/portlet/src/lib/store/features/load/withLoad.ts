@@ -15,7 +15,7 @@ import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams } from '../../../shared/models';
-import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
+import { isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 import { withWorkflow } from '../workflow/withWorkflow';
@@ -148,17 +148,9 @@ export function withLoad() {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
-                                            const canEditPage = computeCanEditPage(
-                                                pageAsset?.page,
-                                                currentUser,
-                                                experiment
-                                            );
-
-                                            const pageIsLocked = computePageIsLocked(
-                                                pageAsset?.page,
-                                                currentUser
-                                            );
                                             const isTraditionalPage = !pageParams.clientHost;
+
+                                            store.addHistory({ pageAsset });
 
                                             patchState(store, {
                                                 pageAPIResponse: pageAsset,
@@ -166,8 +158,6 @@ export function withLoad() {
                                                 currentUser,
                                                 experiment,
                                                 languages,
-                                                canEditPage,
-                                                pageIsLocked,
                                                 isClientReady: isTraditionalPage,
                                                 isTraditionalPage,
                                                 status: UVE_STATUS.LOADED

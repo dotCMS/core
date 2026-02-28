@@ -6,6 +6,7 @@ import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -17,10 +18,12 @@ import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.liferay.util.Xss;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -114,9 +117,9 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
      * Return the Analytics Js Code to inject
      *
      * Replaces template placeholders:
-     * - ${site_auth}: Analytics site key from the current host → data-analytics-auth
+     * - ${siteAuth}: Analytics site key from the current host → data-analytics-auth
      * - ${debug}: Debug mode flag (default: false) → data-analytics-debug
-     * - ${auto_page_view}: Auto page view tracking flag (default: true) → data-analytics-auto-page-view
+     * - ${autoPageView}: Auto page view tracking flag (default: true) → data-analytics-auto-page-view
      *
      * @param currentHost Host to use the {@link com.dotcms.analytics.app.AnalyticsApp}
      * @param request To get the Domain name
@@ -127,11 +130,23 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
         try {
 
             final StringBuilder builder = new StringBuilder(this.jsCode.get());
+            final Map<String, Secret> secrets = ContentAnalyticsUtil.getAppSecrets(currentHost);
 
-            Map.of("${site_auth}", this.analyticsKeyFunction.apply(currentHost),
-                   "${debug}", "false",
-                   "${auto_page_view}", "true")
-                    .forEach((key, value) -> {
+            final Function<String, String> getSecret = (key) -> {
+                final Secret secret = secrets.get(key);
+                return (secret != null) ? secret.getString() : StringPool.BLANK;
+            };
+
+            final Map<String, String> placeholders = new HashMap<>();
+            // Escape user-provided values to prevent XSS attacks
+            placeholders.put("${siteAuth}", Xss.escapeHTMLAttrib(getSecret.apply("siteAuth")));
+            placeholders.put("${debug}", getSecret.apply("debug"));
+            placeholders.put("${autoPageView}", getSecret.apply("autoPageView"));
+            placeholders.put("${contentImpression}", getSecret.apply("contentImpression"));
+            placeholders.put("${contentClick}", getSecret.apply("contentClick"));
+            placeholders.put("${advancedConfig}", Xss.escapeHTMLAttrib(getSecret.apply("advancedConfig")));
+
+            placeholders.forEach((key, value) -> {
 
                 int start;
                 while ((start = builder.indexOf(key)) != -1) {

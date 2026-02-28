@@ -14,19 +14,18 @@ import VtlInclude from "./VtlInclude";
 import WebPageContent from "./WebPageContent";
 
 export const dotComponents = {
-    Activity,
-    Banner,
-    BannerCarousel,
-    CallToAction,
-    CategoryFilter,
-    CustomNoComponent,
-    PageForm,
-    Product,
-    SimpleWidget,
-    StoreProductList,
-    VtlInclude,
-    calendarEvent: CalendarEvent,
-    Image: DotCMSImage,
-    webPageContent: WebPageContent,
-  };
-  
+  Activity,
+  Banner,
+  BannerCarousel,
+  CallToAction,
+  CategoryFilter,
+  CustomNoComponent,
+  PageForm,
+  Product,
+  SimpleWidget,
+  StoreProductList,
+  VtlInclude,
+  calendarEvent: CalendarEvent,
+  Image: DotCMSImage,
+  webPageContent: WebPageContent,
+};

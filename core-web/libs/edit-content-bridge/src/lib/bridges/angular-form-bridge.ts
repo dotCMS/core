@@ -1,10 +1,17 @@
 import { NgZone } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { DotBrowserSelectorComponent } from '@dotcms/ui';
+
 import {
+    BrowserSelectorController,
+    BrowserSelectorOptions,
     FieldCallback,
     FieldSubscription,
     FormBridge,
+    FormFieldAPI,
     FormFieldValue
 } from '../interfaces/form-bridge.interface';
 
@@ -14,14 +21,59 @@ import {
  *
  * Angular integration uses FormGroup for form state and NgZone for change detection.
  * Supports multiple callbacks per field, similar to addEventListener.
+ *
+ * Implements the Singleton pattern to ensure only one instance exists at a time.
+ * Use getInstance() to obtain the singleton instance.
  */
 export class AngularFormBridge implements FormBridge {
+    private static instance: AngularFormBridge | null = null;
     private fieldSubscriptions: Map<string, FieldSubscription> = new Map();
+    #dialogRef: DynamicDialogRef | null = null;
 
-    constructor(
+    private constructor(
         private form: FormGroup,
-        private zone: NgZone
+        private zone: NgZone,
+        private dialogService: DialogService
     ) {}
+
+    /**
+     * Gets the singleton instance of AngularFormBridge.
+     * If an instance already exists, returns it. Otherwise, creates a new one.
+     *
+     * @param form - The Angular FormGroup to bridge
+     * @param zone - The NgZone for change detection
+     * @param dialogService - The PrimeNG DialogService for opening dialogs
+     * @returns The singleton instance of AngularFormBridge
+     */
+    static getInstance(
+        form: FormGroup,
+        zone: NgZone,
+        dialogService: DialogService
+    ): AngularFormBridge {
+        if (!AngularFormBridge.instance) {
+            AngularFormBridge.instance = new AngularFormBridge(form, zone, dialogService);
+        } else if (
+            AngularFormBridge.instance.form !== form ||
+            AngularFormBridge.instance.zone !== zone
+        ) {
+            console.warn(
+                'AngularFormBridge: Attempted to get instance with different form or zone. ' +
+                    'Returning existing instance. Consider calling resetInstance() first if you need a new instance.'
+            );
+        }
+        return AngularFormBridge.instance;
+    }
+
+    /**
+     * Resets the singleton instance, allowing a new instance to be created.
+     * This will destroy the current instance and clear all subscriptions.
+     */
+    static resetInstance(): void {
+        if (AngularFormBridge.instance) {
+            AngularFormBridge.instance.destroy();
+            AngularFormBridge.instance = null;
+        }
+    }
 
     /**
      * Retrieves the value of a field from the Angular form.
@@ -123,11 +175,173 @@ export class AngularFormBridge implements FormBridge {
 
     /**
      * Cleans up all subscriptions when the bridge is destroyed.
+     * Also resets the singleton instance and closes any open dialogs.
      */
     destroy(): void {
         this.fieldSubscriptions.forEach((fieldSubscription) => {
             fieldSubscription.subscription.unsubscribe();
         });
         this.fieldSubscriptions.clear();
+
+        // Close any open dialog
+        this.#dialogRef?.close();
+        this.#dialogRef = null;
+
+        // Reset singleton instance if this is the current instance
+        if (AngularFormBridge.instance === this) {
+            AngularFormBridge.instance = null;
+        }
+    }
+
+    /**
+     * Gets a field API object for a specific field, providing a convenient interface
+     * to interact with the field (get/set value, onChange, enable/disable, show/hide).
+     *
+     * @param fieldId - The ID of the field to get the API for.
+     * @returns A FormFieldAPI object for the specified field.
+     */
+    getField(fieldId: string): FormFieldAPI {
+        return {
+            getValue: (): FormFieldValue => {
+                return this.get(fieldId);
+            },
+
+            setValue: (value: FormFieldValue): void => {
+                this.set(fieldId, value);
+            },
+
+            onChange: (callback: (value: FormFieldValue) => void): void => {
+                this.onChangeField(fieldId, callback);
+            },
+
+            enable: (): void => {
+                this.zone.run(() => {
+                    const control = this.form.get(fieldId);
+                    if (control) {
+                        control.enable({ emitEvent: true });
+                    }
+                });
+            },
+
+            disable: (): void => {
+                this.zone.run(() => {
+                    const control = this.form.get(fieldId);
+                    if (control) {
+                        control.disable({ emitEvent: true });
+                    }
+                });
+            }
+        };
+    }
+
+    /**
+     * Executes callback when bridge is ready, handling iframe load.
+     *
+     * @param callback - The callback function to execute when the bridge is ready.
+     */
+    ready(callback: (api: FormBridge) => void): void {
+        callback(this);
+    }
+
+    /**
+     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
+     * Uses PrimeNG DialogService to open the DotBrowserSelectorComponent.
+     *
+     * @param options - Configuration options for the browser selector.
+     * @param options.header - The title/header of the dialog. Defaults to 'Select Content' if not provided.
+     * @param options.params - The parameters for the browser selector (ContentByFolderParams).
+     * @param options.params.hostFolderId - The ID of the host folder to browse (required).
+     * @param options.params.mimeTypes - Optional array of MIME types to filter by.
+     * @param options.params.showPages - Optional flag to show pages.
+     * @param options.params.showFiles - Optional flag to show files.
+     * @param options.params.showFolders - Optional flag to show folders.
+     * @param options.params.showLinks - Optional flag to show links.
+     * @param options.params.showDotAssets - Optional flag to show dotCMS assets.
+     * @param options.params.showArchived - Optional flag to show archived content.
+     * @param options.params.showWorking - Optional flag to show working content.
+     * @param options.params.sortByDesc - Optional flag to sort in descending order.
+     * @param options.params.extensions - Optional array of file extensions to filter by.
+     * @param options.onClose - Callback function executed when the browser selector is closed.
+     * @returns A controller object to manage the dialog.
+     *
+     * @example
+     * // Select a page
+     * bridge.openBrowserModal({
+     *   header: 'Select a Page',
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     mimeTypes: ['application/dotpage']
+     *   },
+     *   onClose: (result) => console.log(result)
+     * });
+     *
+     * @example
+     * // Select an image
+     * bridge.openBrowserModal({
+     *   header: 'Select an Image',
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     mimeTypes: ['image']
+     *   },
+     *   onClose: (result) => console.log(result)
+     * });
+     *
+     * @example
+     * // Select any file with additional filters
+     * bridge.openBrowserModal({
+     *   header: 'Select a File',
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     showFiles: true,
+     *     showPages: false,
+     *     showFolders: false,
+     *     extensions: ['.jpg', '.png', '.gif']
+     *   },
+     *   onClose: (result) => console.log(result)
+     * });
+     */
+    openBrowserModal(options: BrowserSelectorOptions): BrowserSelectorController {
+        const header = options.header ?? 'Select Content';
+
+        this.zone.run(() => {
+            this.#dialogRef = this.dialogService.open(DotBrowserSelectorComponent, {
+                header,
+                appendTo: 'body',
+                closeOnEscape: false,
+                draggable: false,
+                keepInViewport: false,
+                maskStyleClass: 'p-dialog-mask-dynamic',
+                resizable: false,
+                modal: true,
+                width: '90%',
+                style: { 'max-width': '1040px' },
+                data: {
+                    ...options.params
+                }
+            });
+
+            this.#dialogRef.onClose.subscribe((content) => {
+                if (content) {
+                    options.onClose({
+                        identifier: content.identifier,
+                        inode: content.inode,
+                        title: content.title,
+                        name: content.name || content.fileName,
+                        url: content.url || content.urlMap || '',
+                        mimeType: content.mimeType,
+                        baseType: content.baseType,
+                        contentType: content.contentType
+                    });
+                } else {
+                    options.onClose(null);
+                }
+            });
+        });
+
+        return {
+            close: () => {
+                this.#dialogRef?.close();
+            }
+        };
     }
 }

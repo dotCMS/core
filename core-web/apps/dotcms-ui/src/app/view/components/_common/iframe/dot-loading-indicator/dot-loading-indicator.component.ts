@@ -1,6 +1,7 @@
 import { Component, Input, ViewEncapsulation, inject } from '@angular/core';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotSpinnerComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 @Component({
@@ -8,7 +9,7 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
     selector: 'dot-loading-indicator',
     styleUrls: ['./dot-loading-indicator.component.scss'],
     templateUrl: 'dot-loading-indicator.component.html',
-    standalone: false
+    imports: [DotSpinnerComponent]
 })
 export class DotLoadingIndicatorComponent {
     dotLoadingIndicatorService = inject(DotLoadingIndicatorService);

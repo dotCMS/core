@@ -12,8 +12,8 @@ export const INLINE_TINYMCE_SCRIPTS = `
                 innerHTML: content,
                 element,
                 eventType,
-                isNotDirty: ed.isNotDirty,
-            }
+                isNotDirty: ed.isNotDirty
+}
 
             // For full editor we are adding pointer-events: none to all it children, 
             // this is the way we can capture the click to init in the editor itself, after the editor 
@@ -35,8 +35,8 @@ export const INLINE_TINYMCE_SCRIPTS = `
 
             window.contentletEvents.next({
                 name: "inlineEdit",
-                data,
-            });
+                data
+});
         });
     }
 
@@ -44,8 +44,8 @@ export const INLINE_TINYMCE_SCRIPTS = `
         menubar: false,
         inline: true,
         valid_styles: {
-            "*": "font-size,font-family,color,text-decoration,text-align",
-        },
+            "*": "font-size,font-family,color,text-decoration,text-align"
+},
         powerpaste_word_import: "clean",
         powerpaste_html_import: "clean",
         setup: (editor) => handleInlineEditEvents(editor)
@@ -57,8 +57,8 @@ export const INLINE_TINYMCE_SCRIPTS = `
         toolbar: "bold italic underline | link",
         valid_elements: "strong,em,span[style],a[href]",
         content_css: ["//fonts.googleapis.com/css?family=Lato:300,300i,400,400i"],
-        ...defaultConfig,
-    },
+        ...defaultConfig
+},
     full: {
         plugins: ["link", "lists", "autolink", "hr", "charmap"],
         style_formats: [
@@ -75,9 +75,9 @@ export const INLINE_TINYMCE_SCRIPTS = `
         toolbar: [
         "styleselect | undo redo | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignfull | numlist bullist outdent indent | hr charmap removeformat | link",
         ],
-        ...defaultConfig,
-    },
-    };
+        ...defaultConfig
+}
+};
 
     document.addEventListener("click", function (event) {
         const { target } = event;
@@ -116,8 +116,8 @@ export const INLINE_TINYMCE_SCRIPTS = `
         tinymce
         .init({
             ...tinyMCEConfig[dataset.mode || 'minimal'],
-            selector: dataSelector,
-        })
+            selector: dataSelector
+})
         .then(([ed]) => {
             ed?.editorCommands.execCommand("mceFocus");
         });

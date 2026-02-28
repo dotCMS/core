@@ -19,6 +19,8 @@ import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+
+import com.dotcms.ai.db.PgVectorDataSource;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -27,6 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.JNDIUtil;
+import com.pgvector.PGvector;
 import io.vavr.control.Try;
 
 public class DbConnectionFactory {
@@ -740,6 +743,85 @@ public class DbConnectionFactory {
             }
         } else {
             Logger.debug(DbConnectionFactory.class, "No DataSource to shutdown");
+        }
+    }
+
+    /**
+     * Adds the PGvector type to the SQLConnection
+     * so it can be used and queried against
+     * @return
+     * @throws DotDataException
+     */
+    public static Connection getPGVectorConnection() throws DotDataException {
+
+        try {
+            final Connection conn = PgVectorDataSource.datasource.get().getConnection();
+            PGvector.addVectorType(conn);
+            return conn;
+        } catch (SQLException e) {
+
+            Logger.error(DbConnectionFactory.class, e.getMessage(), e);
+            throw new DotDataException(e);
+        }
+    }
+
+    /**
+     * Executes an operation with connection management but WITHOUT transaction semantics.
+     *
+     * <p>This method is designed for read-only operations (SELECT queries) that don't
+     * require transaction management. It provides connection lifecycle management only:
+     * opens a connection if needed, executes the operation, and closes the connection
+     * if it was opened by this call.</p>
+     *
+     * <p>This is semantically equivalent to the {@code @CloseDBIfOpened} annotation but
+     * works correctly on CDI beans where ByteBuddy annotations don't fire due to Weld proxies.</p>
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>
+     * return DbConnectionFactory.wrapConnection(() -&gt; {
+     *     return APILocator.getMetricsAPI().getValue("SELECT COUNT(*) FROM contentlet");
+     * });
+     * </pre>
+     *
+     * <p><b>When to use this vs LocalTransaction.wrapReturn():</b></p>
+     * <ul>
+     *   <li>Use this for read-only SELECT queries that don't need transactions</li>
+     *   <li>Use LocalTransaction.wrapReturn() for operations that modify data</li>
+     * </ul>
+     *
+     * @param delegate the operation to execute with connection management
+     * @param <T> the return type of the operation
+     * @return the result of the operation
+     * @throws DotDataException if a database error occurs
+     * @see com.dotmarketing.db.CloseDBIfOpened
+     * @see com.dotmarketing.db.LocalTransaction#wrapReturn
+     */
+    public static <T> T wrapConnection(final com.dotcms.util.ReturnableDelegate<T> delegate) throws DotDataException {
+        final boolean isNewConnection = !connectionExists();
+
+        try {
+            return delegate.execute();
+        } catch (final Throwable e) {
+            if (e instanceof DotDataException) {
+                throw (DotDataException) e;
+            }
+            throw new DotDataException("Error executing operation with connection", e);
+        } finally {
+            if (isNewConnection && connectionExists()) {
+                // Preserve interrupted status but ensure connection cleanup completes
+                // This prevents orphaned connections when timeout fires during cleanup
+                final boolean wasInterrupted = Thread.interrupted();
+                try {
+                    Logger.debug(DbConnectionFactory.class,
+                        "Closing connection opened by wrapConnection()");
+                    closeSilently();
+                } finally {
+                    // Restore interrupted flag after cleanup
+                    if (wasInterrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
         }
     }
 

@@ -140,12 +140,12 @@ export class DotContentletThumbnail {
             return '';
         }
 
-        const { baseType, __icon__, contentTypeIcon } = this.contentlet;
+        const { baseType, __icon__, contentTypeIcon, icon } = this.contentlet;
         const isFileAsset = baseType === 'FILEASSET';
 
         return isFileAsset
-            ? (__icon__ ?? contentTypeIcon ?? '')
-            : (contentTypeIcon ?? __icon__ ?? '');
+            ? (__icon__ ?? contentTypeIcon ?? icon ?? '')
+            : (contentTypeIcon ?? __icon__ ?? icon ?? '');
     }
 
     private shouldShowVideoThumbnail() {

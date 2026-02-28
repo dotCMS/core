@@ -23,18 +23,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Initialize the PR check process
+  # Initialize the LTS check process
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     with:
-      validation-level: 'full'
+      change-detection: 'enabled'
 
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: PR Build
     needs: [ initialize ]
-    if: needs.initialize.outputs.build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
+    if: fromJSON(needs.initialize.outputs.filters).build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
@@ -51,13 +51,13 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
-      jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
-      integration: ${{ needs.initialize.outputs.backend == 'true' }}
-      postman: ${{ needs.initialize.outputs.backend == 'true' }}
-      karate: ${{ needs.initialize.outputs.backend == 'true' }}
-      frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
-      cli: ${{ needs.initialize.outputs.cli == 'true' }}
-      e2e: ${{ needs.initialize.outputs.build == 'true' }}
+      jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
+      integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      postman: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      karate: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
+      cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' }}
+      e2e: false
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 

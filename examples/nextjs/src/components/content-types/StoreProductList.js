@@ -1,13 +1,13 @@
-import React from 'react';
-import Image from 'next/image';
+import React from "react";
+import Image from "next/image";
 
-import { EditButton } from '../editor/EditButton';
+import { EditButton } from "../editor/EditButton";
 
 export default function StoreProductList({ widgetTitle, widgetCodeJSON }) {
     const products = widgetCodeJSON.products;
 
     if (!products) {
-        console.warn('No products found in StoreProductList');
+        console.warn("No products found in StoreProductList");
         return null;
     }
 
@@ -26,10 +26,14 @@ export default function StoreProductList({ widgetTitle, widgetCodeJSON }) {
 function ProductCard({ product }) {
     const { inode, title, retailPrice, salePrice } = product;
 
-    const hasDiscount = salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
+    const hasDiscount =
+        salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
 
     return (
-        <div className="group relative" onClick={() => alert('Selected Product: ' + title)}>
+        <div
+            className="group relative"
+            onClick={() => alert("Selected Product: " + title)}
+        >
             <EditButton contentlet={product} />
             <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
                 <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
@@ -41,7 +45,7 @@ function ProductCard({ product }) {
                     />
                 </div>
 
-                <div className="p-4 flex flex-col flex-grow">
+                <div className="p-4 flex flex-col grow">
                     <h3 className="text-gray-900 font-medium text-sm mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                         {title}
                     </h3>
@@ -57,13 +61,20 @@ function ProductCard({ product }) {
                                 </span>
                             </div>
                         ) : (
-                            <span className="text-gray-900 font-semibold">${retailPrice}</span>
+                            <span className="text-gray-900 font-semibold">
+                                ${retailPrice}
+                            </span>
                         )}
 
                         {hasDiscount && (
                             <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                                {Math.round((1 - Number(salePrice) / Number(retailPrice)) * 100)}%
-                                OFF
+                                {Math.round(
+                                    (1 -
+                                        Number(salePrice) /
+                                            Number(retailPrice)) *
+                                        100,
+                                )}
+                                % OFF
                             </span>
                         )}
                     </div>

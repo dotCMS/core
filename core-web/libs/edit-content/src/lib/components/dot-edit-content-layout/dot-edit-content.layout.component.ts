@@ -1,20 +1,23 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    effect,
     inject,
     input,
     model,
-    effect,
     output
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import {
+    DotContentletService,
+    DotLanguagesService,
+    DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
@@ -25,6 +28,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
+import { DotEditContentCompareComponent } from '../dot-edit-content-compare/dot-edit-content-compare.component';
 import { DotEditContentFormComponent } from '../dot-edit-content-form/dot-edit-content-form.component';
 import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-edit-content-sidebar.component';
 
@@ -80,11 +84,16 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         ButtonModule,
         ToastModule,
         MessagesModule,
+        DynamicDialogModule,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        DotEditContentCompareComponent
     ],
     providers: [
+        DotContentletService,
+        DotLanguagesService,
+        DotVersionableService,
         DotWorkflowsActionsService,
         DotWorkflowActionsFireService,
         DotEditContentService,
@@ -127,7 +136,7 @@ export class DotEditContentLayoutComponent {
      * The store instance for managing component state.
      * Each component instance gets its own isolated store for complete state independence.
      */
-    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $store = inject(DotEditContentStore);
 
     constructor() {
         // Initialize component based on input parameters

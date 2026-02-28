@@ -3,7 +3,7 @@
 services:
   # PostgreSQL Database  
   db:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     environment:
       POSTGRES_USER: dotcmsdbuser
       POSTGRES_PASSWORD: password
@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql
     networks:
       - app-net
     healthcheck:

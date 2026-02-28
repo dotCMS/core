@@ -2,7 +2,7 @@ import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostBinding, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
 
@@ -24,8 +24,10 @@ import {
     DotTemplateDesigner,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
 
 import { DotTemplateContainersCacheService } from '../../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
 
 export const DEBOUNCE_TIME = 5000;
 
@@ -33,7 +35,7 @@ export const DEBOUNCE_TIME = 5000;
     selector: 'dot-edit-layout',
     templateUrl: './dot-edit-layout.component.html',
     styleUrls: ['./dot-edit-layout.component.scss'],
-    standalone: false
+    imports: [RouterModule, TemplateBuilderComponent, DotGlobalMessageComponent]
 })
 export class DotEditLayoutComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

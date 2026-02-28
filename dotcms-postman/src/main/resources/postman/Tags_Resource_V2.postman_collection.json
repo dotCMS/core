@@ -93,13 +93,13 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
-							"    pm.response.to.have.status(201);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
 							"pm.test(\"Retrieve and save the Tag ID to update it later\", function () {",
 							"    const jsonData = pm.response.json();    ",
-							"    const tags = jsonData.entity;",
+							"    const tags = jsonData.entity.created;",
 							"    const tag = tags.find(t => t.label === 'non-global-tag-v2');",
 							"    pm.expect(tag).to.not.be.undefined;",
 							"    pm.collectionVariables.set(\"tagForUpdateId\", tag.id);",
@@ -338,8 +338,8 @@
 							"            raw: JSON.stringify(testTags)",
 							"        }",
 							"    }, function (err, createResponse) {",
-							"        pm.expect(createResponse.code).to.eql(201);",
-							"        console.log('Created', createResponse.json().entity.length, 'test tags');",
+							"        pm.expect(createResponse.code).to.eql(200);",
+							"        console.log('Created', createResponse.json().entity.created.length, 'test tags');",
 							"        ",
 							"        // Step 3: List tags again and verify",
 							"        pm.sendRequest({",
@@ -688,13 +688,14 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 201\", function () {",
-							"    pm.response.to.have.status(201);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
 							"pm.test(\"Verify length ordering test tags were created\", function () {",
 							"    const jsonData = pm.response.json();",
 							"    pm.expect(jsonData).to.have.property('entity');",
+							"    pm.expect(jsonData.entity).to.have.property('created');",
 							"    // Save created tags for verification",
 							"    pm.collectionVariables.set('lengthOrderingTagsCreated', true);",
 							"});",
@@ -1872,7 +1873,7 @@
 							"        }])",
 							"    }",
 							"}, function (err, res) {",
-							"    pm.collectionVariables.set(\"defaultSiteTagId\", res.json().entity[0].id);",
+							"    pm.collectionVariables.set(\"defaultSiteTagId\", res.json().entity.created[0].id);",
 							"    ",
 							"    // Create same tag name on SYSTEM_HOST",
 							"    pm.sendRequest({",
@@ -1890,7 +1891,7 @@
 							"            }])",
 							"        }",
 							"    }, function (err2, res2) {",
-							"        pm.collectionVariables.set(\"systemHostTagId\", res2.json().entity[0].id);",
+							"        pm.collectionVariables.set(\"systemHostTagId\", res2.json().entity.created[0].id);",
 							"    });",
 							"});"
 						],
@@ -2005,7 +2006,7 @@
 							"        }])",
 							"    }",
 							"}, function (err, res) {",
-							"    pm.collectionVariables.set(\"fallbackTagId\", res.json().entity[0].id);",
+							"    pm.collectionVariables.set(\"fallbackTagId\", res.json().entity.created[0].id);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -2103,13 +2104,13 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
-							"    pm.response.to.have.status(201);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
 							"pm.test(\"Save tag ID for deletion\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    const tag = jsonData.entity[0];",
+							"    const tag = jsonData.entity.created[0];",
 							"    pm.collectionVariables.set(\"deleteTestTagId\", tag.id);",
 							"});",
 							""
@@ -2196,9 +2197,12 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Response body should contain boolean true\", function () {",
+							"pm.test(\"Response body should contain BulkResultView with successCount 1\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.equal(true);",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity.successCount).to.equal(1);",
+							"    pm.expect(jsonData.entity.skippedCount).to.equal(0);",
+							"    pm.expect(jsonData.entity.fails).to.be.an('array').that.is.empty;",
 							"});",
 							"",
 							"pm.test(\"Verify tag deletion via GET request\", function () {",
@@ -2255,18 +2259,17 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": ""
+					"raw": "[\n  \"{{deleteTestTagId}}\"\n]"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/{{deleteTestTagId}}",
+					"raw": "{{serverURL}}/api/v2/tags",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"tags",
-						"{{deleteTestTagId}}"
+						"tags"
 					]
 				},
 				"description": "Deletes the tag created by the previous test."
@@ -2274,7 +2277,7 @@
 			"response": []
 		},
 		{
-			"name": "Delet a non-existing Tag",
+			"name": "Delete a non-existing Tag",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -2289,14 +2292,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 404\", function () {",
-							"    pm.response.to.have.status(404);",
+							"pm.test(\"HTTP Status code must be 200 OK (bulk delete is idempotent)\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"The error message must be present\", function () {",
+							"pm.test(\"Response body should contain BulkResultView with empty results (non-existent tags are skipped silently)\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.message).to.not.be.undefined;",
-							"    pm.expect(jsonData.message).to.include(\"was not found\");",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity.successCount).to.equal(0);",
+							"    pm.expect(jsonData.entity.skippedCount).to.equal(0);",
+							"    pm.expect(jsonData.entity.fails).to.be.an('array').that.is.empty;",
 							"});",
 							""
 						],
@@ -2340,21 +2345,185 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": ""
+					"raw": "[\n  \"non-existent-tag-id-12345\"\n]"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/0",
+					"raw": "{{serverURL}}/api/v2/tags",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"tags",
-						"0"
+						"tags"
 					]
 				},
-				"description": "This tests the endpoint that brings back one specific App given the App-key."
+				"description": "Tests bulk delete with non-existent tag ID. The bulk delete API is idempotent - non-existent tags are skipped silently."
+			},
+			"response": []
+		},
+		{
+			"name": "Create Tags for Bulk Delete Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Save tag IDs for bulk delete test\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const tags = jsonData.entity.created;",
+							"    ",
+							"    const bulkTag1 = tags.find(t => t.label === 'bulk-delete-tag-1');",
+							"    const bulkTag2 = tags.find(t => t.label === 'bulk-delete-tag-2');",
+							"    const bulkTag3 = tags.find(t => t.label === 'bulk-delete-tag-3');",
+							"    ",
+							"    pm.expect(bulkTag1).to.not.be.undefined;",
+							"    pm.expect(bulkTag2).to.not.be.undefined;",
+							"    pm.expect(bulkTag3).to.not.be.undefined;",
+							"    ",
+							"    pm.collectionVariables.set('bulkDeleteTag1Id', bulkTag1.id);",
+							"    pm.collectionVariables.set('bulkDeleteTag2Id', bulkTag2.id);",
+							"    pm.collectionVariables.set('bulkDeleteTag3Id', bulkTag3.id);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n   {\n      \"name\":\"bulk-delete-tag-1\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"bulk-delete-tag-2\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"bulk-delete-tag-3\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   }\n]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Creates multiple tags for bulk delete testing."
+			},
+			"response": []
+		},
+		{
+			"name": "Bulk Delete Multiple Tags",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response body should contain BulkResultView with successCount 3\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity.successCount).to.equal(3);",
+							"    pm.expect(jsonData.entity.skippedCount).to.equal(0);",
+							"    pm.expect(jsonData.entity.fails).to.be.an('array').that.is.empty;",
+							"});",
+							"",
+							"pm.test(\"Verify all tags are deleted via GET requests\", function () {",
+							"    const tagIds = [",
+							"        pm.collectionVariables.get('bulkDeleteTag1Id'),",
+							"        pm.collectionVariables.get('bulkDeleteTag2Id'),",
+							"        pm.collectionVariables.get('bulkDeleteTag3Id')",
+							"    ];",
+							"    ",
+							"    tagIds.forEach(function(tagId, index) {",
+							"        pm.sendRequest({",
+							"            url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
+							"            method: 'GET',",
+							"            header: {",
+							"                'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"            }",
+							"        }, function (err, response) {",
+							"            pm.expect(response.code).to.eql(404, 'Tag ' + (index + 1) + ' should be deleted');",
+							"        });",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n  \"{{bulkDeleteTag1Id}}\",\n  \"{{bulkDeleteTag2Id}}\",\n  \"{{bulkDeleteTag3Id}}\"\n]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Tests bulk deletion of multiple tags using the new JSON body format."
 			},
 			"response": []
 		},
@@ -2383,12 +2552,14 @@
 							"    // Verify statistics structure",
 							"    pm.expect(stats).to.have.property('totalRows');",
 							"    pm.expect(stats).to.have.property('successCount');",
+							"    pm.expect(stats).to.have.property('duplicateCount');",
 							"    pm.expect(stats).to.have.property('failureCount');",
 							"    pm.expect(stats).to.have.property('success');",
 							"    ",
 							"    // CSV has 4 lines: 1 header + 3 data rows",
 							"    pm.expect(stats.totalRows).to.equal(4);",
 							"    pm.expect(stats.successCount).to.equal(3);",
+							"    pm.expect(stats.duplicateCount).to.equal(0);",
 							"    pm.expect(stats.failureCount).to.equal(0);",
 							"    pm.expect(stats.success).to.be.true;",
 							"});",
@@ -2520,12 +2691,14 @@
 							"    // Verify statistics structure",
 							"    pm.expect(stats).to.have.property('totalRows');",
 							"    pm.expect(stats).to.have.property('successCount');",
+							"    pm.expect(stats).to.have.property('duplicateCount');",
 							"    pm.expect(stats).to.have.property('failureCount');",
 							"    pm.expect(stats).to.have.property('success');",
 							"    ",
 							"    // CSV has 6 total rows including header: 2 valid, 3 invalid",
 							"    pm.expect(stats.totalRows).to.equal(6);",
 							"    pm.expect(stats.successCount).to.equal(2);",
+							"    pm.expect(stats.duplicateCount).to.equal(0);",
 							"    pm.expect(stats.failureCount).to.equal(3);",
 							"    pm.expect(stats.success).to.be.false; // false when there are errors",
 							"});",
@@ -3451,15 +3624,18 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
-							"    pm.response.to.have.status(201);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Response contains created tag data in array\", function () {",
+							"pm.test(\"Response contains created tag data with created/duplicates structure\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.be.an('array');",
-							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
-							"    const tag = jsonData.entity[0];",
+							"    pm.expect(jsonData.entity).to.have.property('created');",
+							"    pm.expect(jsonData.entity).to.have.property('duplicates');",
+							"    pm.expect(jsonData.entity.created).to.be.an('array');",
+							"    pm.expect(jsonData.entity.created).to.have.lengthOf(1);",
+							"    pm.expect(jsonData.entity.duplicates).to.have.lengthOf(0);",
+							"    const tag = jsonData.entity.created[0];",
 							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
 							"    pm.expect(tag.id).to.not.be.undefined;",
 							"    pm.expect(tag.siteId).to.not.be.undefined;",
@@ -3546,15 +3722,15 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
-							"    pm.response.to.have.status(201);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Tag created with correct site association in array format\", function () {",
+							"pm.test(\"Tag created with correct site association\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.be.an('array');",
-							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
-							"    const tag = jsonData.entity[0];",
+							"    pm.expect(jsonData.entity.created).to.be.an('array');",
+							"    pm.expect(jsonData.entity.created).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity.created[0];",
 							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"siteTagName\"));",
 							"    // Site has tagStorage=SYSTEM_HOST, so tag is stored in SYSTEM_HOST",
 							"    pm.expect(tag.siteId).to.equal('SYSTEM_HOST');",
@@ -3641,15 +3817,15 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
-							"    pm.response.to.have.status(201);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Tag created with owner binding in array format\", function () {",
+							"pm.test(\"Tag created with owner binding\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.be.an('array');",
-							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
-							"    const tag = jsonData.entity[0];",
+							"    pm.expect(jsonData.entity.created).to.be.an('array');",
+							"    pm.expect(jsonData.entity.created).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity.created[0];",
 							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"ownerTagName\"));",
 							"    pm.expect(tag.id).to.not.be.undefined;",
 							"    pm.expect(tag.siteName).to.not.be.undefined;",
@@ -3749,15 +3925,17 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 201 Created (idempotent operation)\", function () {",
-							"    pm.response.to.have.status(201);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Returns existing tag data in array\", function () {",
+							"pm.test(\"Duplicate tag is reported in duplicates list, not created list\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.be.an('array');",
-							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
-							"    const tag = jsonData.entity[0];",
+							"    pm.expect(jsonData.entity).to.have.property('created');",
+							"    pm.expect(jsonData.entity).to.have.property('duplicates');",
+							"    pm.expect(jsonData.entity.created).to.have.lengthOf(0);",
+							"    pm.expect(jsonData.entity.duplicates).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity.duplicates[0];",
 							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"singleTagName\"));",
 							"    pm.expect(tag.id).to.equal(pm.collectionVariables.get(\"createdSingleTagId\"));",
 							"});",
@@ -4126,15 +4304,15 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code is 201 Created (fallback behavior)\", function () {",
-							"    pm.expect(pm.response.code).to.equal(201);",
+							"pm.test(\"HTTP Status code is 200 (fallback behavior)\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
 							"});",
 							"",
-							"pm.test(\"Tag created with fallback to default site in array format\", function () {",
+							"pm.test(\"Tag created with fallback to default site\", function () {",
 							"    const jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.be.an('array');",
-							"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
-							"    const tag = jsonData.entity[0];",
+							"    pm.expect(jsonData.entity.created).to.be.an('array');",
+							"    pm.expect(jsonData.entity.created).to.have.lengthOf(1);",
+							"    const tag = jsonData.entity.created[0];",
 							"    pm.expect(tag.label).to.equal(pm.collectionVariables.get(\"invalidSiteTagName\"));",
 							"    pm.expect(tag.id).to.not.be.undefined;",
 							"    // Tag should be created in default site due to invalid site ID fallback",
@@ -4356,19 +4534,19 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
-							"    pm.response.to.have.status(201);",
+							"pm.test(\"HTTP Status code must be 200\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
 							"pm.test(\"Tags created with site-specific storage\", function () {",
 							"    const jsonData = pm.response.json();",
 							"    const targetSiteId = pm.collectionVariables.get('siteSpecificStorageSiteId');",
 							"    ",
-							"    pm.expect(jsonData.entity).to.be.an('array');",
-							"    pm.expect(jsonData.entity).to.have.lengthOf(3);",
+							"    pm.expect(jsonData.entity.created).to.be.an('array');",
+							"    pm.expect(jsonData.entity.created).to.have.lengthOf(3);",
 							"    ",
 							"    // All tags should be stored with the site's own identifier",
-							"    jsonData.entity.forEach(tag => {",
+							"    jsonData.entity.created.forEach(tag => {",
 							"        pm.expect(tag.siteId).to.equal(targetSiteId);",
 							"        pm.expect(tag.siteId).to.not.equal('SYSTEM_HOST');",
 							"        pm.expect(tag.id).to.not.be.undefined;",

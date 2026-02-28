@@ -4,7 +4,9 @@ import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.config.AiModelConfigFactory;
 import com.dotcms.ai.validator.AIAppValidator;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.system.event.local.model.KeyFilterable;
@@ -46,6 +48,7 @@ public final class AIAppListener implements EventSubscriber<AppSecretSavedEvent>
      *   <li>Logs a debug message if the event is null or the event's host identifier is blank.</li>
      *   <li>Finds the host associated with the event's host identifier.</li>
      *   <li>Resets the AI models for the found host's hostname.</li>
+     *   <li>Invalidates the AI model configuration cache for the host.</li>
      *   <li>Validates the AI configuration using the {@link AIAppValidator}.</li>
      * </ul>
      * </p>
@@ -67,7 +70,14 @@ public final class AIAppListener implements EventSubscriber<AppSecretSavedEvent>
         final String hostId = event.getHostIdentifier();
         final Host host = Try.of(() -> hostAPI.find(hostId, APILocator.systemUser(), false)).getOrNull();
 
-        Optional.ofNullable(host).ifPresent(found -> AIModels.get().resetModels(found.getHostname()));
+        Optional.ofNullable(host).ifPresent(found -> {
+            AIModels.get().resetModels(found.getHostname());
+
+            // Invalidate the model configuration cache when app config changes
+            Logger.info(this, "AI App configuration changed for site: " + hostId + ", invalidating model config cache");
+            Try.run(() -> CDIUtils.getBeanThrows(AiModelConfigFactory.class).invalidateCacheForSite(hostId));
+        });
+
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         AIAppValidator.get().validateAIConfig(appConfig, event.getUserId());

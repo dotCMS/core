@@ -28,7 +28,9 @@ export interface DotEditorAction {
  * @export
  * @class DotContentletEditorService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotContentletEditorService {
     private coreWebService = inject(CoreWebService);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);

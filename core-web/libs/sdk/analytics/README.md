@@ -1,103 +1,293 @@
-# dotCMS Content Analytics SDK (@dotcms/analytics)
+# @dotcms/analytics
 
-Lightweight JavaScript SDK for tracking content-aware events in dotCMS. Works in vanilla JS and React apps. Angular & Vue support coming soon.
+Content Analytics SDK for tracking content-aware events in dotCMS-powered React applications.
 
-## 🚀 Quick Start
+## Quick Start
 
-### Standalone (Script Tag)
-
-```html
-<script
-    src="ca.min.js"
-    data-analytics-server="https://demo.dotcms.com"
-    data-analytics-auth="SITE_AUTH"
-    data-analytics-auto-page-view="true"
-    data-analytics-debug="false"></script>
-```
-
-**npm (ES Module)**
+### 1. Install
 
 ```bash
 npm install @dotcms/analytics
 ```
+
+### 2. Create a centralized config file
 
 ```javascript
-import { initializeContentAnalytics } from '@dotcms/analytics';
-
-const analytics = initializeContentAnalytics({
-    siteAuth: 'SITE_AUTH',
-    server: 'https://demo.dotcms.com'
-});
-
-analytics.track('page-loaded');
-```
-
-### React (In Development)
-
-```bash
-npm install @dotcms/analytics
-```
-
-```tsx
-import { DotContentAnalytics } from '@dotcms/analytics/react';
-
-const config = {
-    siteAuth: 'SITE_AUTH',
-    server: 'https://demo.dotcms.com',
-    autoPageView: true // Optional, default is true in React
+// src/config/analytics.config.js
+export const analyticsConfig = {
+    siteAuth: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY,
+    server: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_HOST,
+    autoPageView: true,
+    debug: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_DEBUG === 'true',
+    impressions: true,
+    clicks: true
 };
+```
 
-export function AppRoot() {
-    return <DotContentAnalytics config={config} />;
+### 3. Add automatic page view tracking to your layout
+
+```jsx
+// src/app/layout.js
+import { DotContentAnalytics } from '@dotcms/analytics/react';
+import { analyticsConfig } from '@/config/analytics.config';
+
+export default function RootLayout({ children }) {
+    return (
+        <html lang="en">
+            <body>
+                <DotContentAnalytics config={analyticsConfig} />
+                {children}
+            </body>
+        </html>
+    );
 }
 ```
 
-> **Note:** React API is subject to change during development.
+### 4. Track events in your components
 
-## 📘 Core Concepts
+```jsx
+'use client';
+
+import { useContentAnalytics } from '@dotcms/analytics/react';
+import { analyticsConfig } from '@/config/analytics.config';
+
+function ContactForm() {
+    const { conversion } = useContentAnalytics(analyticsConfig);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // ... submit form logic ...
+
+        // Track conversion ONLY after successful submission
+        conversion('form-submit', {
+            formName: 'contact-us',
+            formType: 'lead-gen'
+        });
+    };
+
+    return <form onSubmit={handleSubmit}>{/* form fields */}</form>;
+}
+```
+
+## Understanding the Components
+
+The SDK exports two React primitives. Understanding their roles is critical for correct usage.
+
+### `<DotContentAnalytics />` -- Automatic Page View Tracker
+
+-   Its **only purpose** is to automatically track page views on route changes
+-   It is **NOT** a React Context Provider
+-   It does **NOT** share config with child components
+-   Place it once in your root layout
+
+### `useContentAnalytics(config)` -- Manual Tracking Hook
+
+-   Used for custom events, conversions, and manual page views
+-   **ALWAYS requires `config` as a parameter** -- it does not read from context
+-   Import the centralized config in every component that uses the hook
+
+```jsx
+// Every component that tracks events must import config explicitly
+import { useContentAnalytics } from '@dotcms/analytics/react';
+import { analyticsConfig } from '@/config/analytics.config';
+
+const { track, pageView, conversion } = useContentAnalytics(analyticsConfig);
+```
+
+> **Why centralize config?** You must import it in each component, but having a single file prevents duplication and makes updates easier.
+
+## Configuration
+
+### Environment Variables
+
+Add these to your `.env.local` file:
+
+```bash
+NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY=YOUR_ANALYTICS_SITE_KEY
+NEXT_PUBLIC_DOTCMS_ANALYTICS_HOST=http://localhost:8080
+NEXT_PUBLIC_DOTCMS_ANALYTICS_DEBUG=true
+```
+
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY` | Site auth key from the Content Analytics app in dotCMS |
+| `NEXT_PUBLIC_DOTCMS_ANALYTICS_HOST` | URL where your dotCMS instance is running |
+| `NEXT_PUBLIC_DOTCMS_ANALYTICS_DEBUG` | Set to `"true"` to enable verbose console logging |
+
+### Config Options
+
+| Option | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `siteAuth` | `string` | Yes | -- | Site auth from dotCMS Analytics app |
+| `server` | `string` | Yes | -- | Your dotCMS server URL |
+| `debug` | `boolean` | No | `false` | Enable verbose logging |
+| `autoPageView` | `boolean` | No | `true` | Auto track page views on route changes |
+| `queue` | `QueueConfig \| false` | No | See below | Event batching configuration |
+| `impressions` | `ImpressionConfig \| boolean` | No | `false` | Content impression tracking |
+| `clicks` | `boolean` | No | `false` | Content click tracking (300ms throttle) |
+
+### Queue Configuration
+
+Controls how events are batched before being sent to the server:
+
+-   **`false`**: Disable queuing, send events immediately
+-   **`undefined` (default)**: Enable queuing with default settings
+-   **`QueueConfig` object**: Custom settings
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `eventBatchSize` | `number` | `15` | Max events per batch -- auto-sends when reached |
+| `flushInterval` | `number` | `5000` | Time between flushes in milliseconds |
+
+How it works:
+
+-   Sends immediately when `eventBatchSize` is reached
+-   Sends pending events every `flushInterval` milliseconds
+-   Auto-flushes on page navigation/close using `visibilitychange` + `pagehide`
+-   Uses `navigator.sendBeacon()` for reliable delivery on page unload
+
+```javascript
+// Disable queuing (send immediately)
+export const analyticsConfig = {
+    siteAuth: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY,
+    server: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_HOST,
+    queue: false
+};
+
+// Custom queue settings
+export const analyticsConfig = {
+    siteAuth: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY,
+    server: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_HOST,
+    queue: {
+        eventBatchSize: 10,
+        flushInterval: 3000
+    }
+};
+```
+
+### Impression Tracking
+
+Controls automatic tracking of content visibility in the viewport:
+
+-   **`false` or `undefined` (default)**: Disabled
+-   **`true`**: Enabled with default settings
+-   **`ImpressionConfig` object**: Custom settings
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `visibilityThreshold` | `number` | `0.5` | Min percentage visible (0.0 to 1.0) |
+| `dwellMs` | `number` | `750` | Min time visible in milliseconds |
+| `maxNodes` | `number` | `1000` | Max elements to track (performance limit) |
+
+How it works:
+
+-   Tracks contentlets marked with `dotcms-contentlet` class and `data-dot-*` attributes
+-   Uses Intersection Observer API for performance
+-   Only fires when an element is visible for the configured threshold and dwell time
+-   One impression per contentlet per session (no duplicates)
+-   Automatically disabled in dotCMS editor mode
+
+```javascript
+// Enable with defaults (50% visible, 750ms dwell)
+export const analyticsConfig = {
+    // ...required fields
+    impressions: true
+};
+
+// Custom thresholds
+export const analyticsConfig = {
+    // ...required fields
+    impressions: {
+        visibilityThreshold: 0.7,
+        dwellMs: 1000,
+        maxNodes: 500
+    }
+};
+```
+
+### Click Tracking
+
+Controls automatic tracking of user clicks on content elements:
+
+-   **`false` or `undefined` (default)**: Disabled
+-   **`true`**: Enabled with 300ms throttle
+
+How it works:
+
+-   Tracks clicks on `<a>` and `<button>` elements within contentlets
+-   Contentlets must be marked with `dotcms-contentlet` class and `data-dot-*` attributes
+-   Captures semantic attributes (`href`, `aria-label`, `data-*`) and excludes CSS classes
+-   Throttles rapid clicks to prevent duplicates (300ms)
+-   Automatically disabled in dotCMS editor mode
+
+**Captured data per click:**
+
+-   **Content Info**: `identifier`, `inode`, `title`, `content_type`
+-   **Element Info**: `text`, `type` (a/button), `id`, `class`, `href`, `attributes`
+-   **Position Info**: `viewport_offset_pct`, `dom_index`
+
+You can enrich click data using `data-*` attributes in your HTML:
+
+```html
+<a
+    href="/signup"
+    id="cta-signup"
+    data-category="primary-cta"
+    data-campaign="summer-sale"
+    aria-label="Sign up for free trial">
+    Start Free Trial
+</a>
+
+<button data-action="download" data-file-type="pdf" data-category="lead-magnet">
+    Download Whitepaper
+</button>
+```
+
+## Core Concepts
+
+### Event Types
+
+The SDK sends four types of events, identified by `event_type`:
+
+| Event Type | Trigger | Requires |
+| --- | --- | --- |
+| `pageview` | Automatically on route change, or manually via `pageView()` | `autoPageView: true` or manual call |
+| `content_impression` | When a contentlet becomes visible in the viewport | `impressions` config enabled |
+| `content_click` | When a user clicks a link/button inside a contentlet | `clicks` config enabled |
+| `conversion` | Explicitly via `conversion()` after a successful business action | Manual call |
 
 ### Page Views
 
-The `pageView()` method tracks page navigation events. **It automatically enriches the event with comprehensive data**, including:
+The `pageView()` method tracks page navigation events. It **automatically enriches** the event with:
 
--   **Page data**: URL, title, referrer, path, protocol, search params, etc.
+-   **Page data**: URL, title, referrer, path, protocol, search params
 -   **Device data**: Screen resolution, viewport size, language, user agent
--   **UTM parameters**: Campaign tracking data (source, medium, campaign, etc.)
+-   **UTM parameters**: Campaign tracking data (source, medium, campaign, term, content)
 -   **Context**: Site key, session ID, user ID, timestamp
 
-You can optionally include custom data that will be sent **in addition** to all the automatic enrichment.
+You can optionally pass custom data that will be sent **in addition** to all the automatic enrichment.
 
-**Method signature:**
+### Conversion Tracking
 
-```typescript
-pageView(customData?: Record<string, unknown>): void
-```
+The `conversion()` method tracks user conversions (purchases, downloads, sign-ups, etc.).
 
-**Behavior:**
+**Only track conversions after a successful action or completed goal.** Tracking on clicks or attempts (before success) diminishes their value as conversion metrics. Track when:
 
--   **Standalone (IIFE)**: Auto-tracked only if `data-analytics-auto-page-view="true"`; otherwise call `window.dotAnalytics.pageView()` manually.
--   **React**: In development (API may change)
--   Custom data is optional and gets attached to the pageview event under the `custom` property alongside all automatically captured data.
+-   Purchase is completed and payment is confirmed
+-   Download is successfully completed
+-   Sign-up form is submitted and account is created
+-   Any business goal is actually achieved
 
 ### Custom Events
 
-The `track()` method allows you to track any custom user action with a unique event name and optional properties.
+The `track()` method tracks any custom user action with a unique event name and optional properties.
 
-**Method signature:**
-
-```typescript
-track(eventName: string, properties?: Record<string, unknown>): void
-```
-
-**Important:**
-
--   `eventName` cannot be `"pageview"` (reserved for page view tracking)
--   `eventName` should be a descriptive string like `"button-click"`, `"form-submit"`, `"video-play"`, etc.
--   `properties` is optional and can contain any custom data relevant to the event
+-   `eventName` cannot be `"pageview"` or `"conversion"` (reserved)
+-   Use descriptive names: `"button-click"`, `"form-submit"`, `"video-play"`, etc.
 
 ### Sessions
 
--   30-minute timeout
+-   30-minute inactivity timeout
 -   Resets at midnight UTC
 -   New session if UTM campaign changes
 
@@ -106,229 +296,267 @@ track(eventName: string, properties?: Record<string, unknown>): void
 -   Anonymous user ID persisted across sessions
 -   Stored in `dot_analytics_user_id`
 
-## ⚙️ Configuration Options
+## Usage Examples
 
-<<<<<<< HEAD
-| Option | Type | Required | Default | Description |
-| -------------- | --------- | -------- | ----------------------------------- | -------------------------------------- |
-| `siteAuth` | `string` | ✅ | - | Site auth from dotCMS Analytics app |
-| `server` | `string` | ✅ | - | Your dotCMS server URL |
-| `debug` | `boolean` | ❌ | `false` | Enable verbose logging |
-| `autoPageView` | `boolean` | ❌ | React: `true` / Standalone: `false` | Auto track page views on route changes |
+### Automatic Page View Tracking
 
-## 🛠️ Usage Examples
+Add `DotContentAnalytics` to your root layout. No additional code is needed -- page views are tracked on every route change.
 
-### Vanilla JavaScript
-
-**Basic Page View**
-
-```javascript
-// After init with the <script> tag, dotAnalytics is added to the window
-// Automatically captures: page, device, UTM, context (session, user, site)
-window.dotAnalytics.pageView();
-```
-
-**Page View with Additional Custom Data**
-
-```javascript
-// All automatic data (page, device, UTM, context) is STILL captured
-// Plus your custom properties are added under 'custom'
-window.dotAnalytics.pageView({
-    contentType: 'blog',
-    category: 'technology',
-    author: 'john-doe',
-    wordCount: 1500
-});
-
-// The server receives: page + device + utm + context + custom (your data)
-```
-
-**Track Custom Events**
-
-```javascript
-// Basic event tracking
-window.dotAnalytics.track('cta-click', {
-    button: 'Buy Now',
-    location: 'hero-section'
-});
-
-// Track form submission
-window.dotAnalytics.track('form-submit', {
-    formName: 'contact-form',
-    formType: 'lead-gen'
-});
-
-// Track video interaction
-window.dotAnalytics.track('video-play', {
-    videoId: 'intro-video',
-    duration: 120,
-    autoplay: false
-});
-```
-
-**Advanced: Manual Init with Custom Properties**
-
-```javascript
-const analytics = initializeContentAnalytics({
-    siteAuth: 'abc123',
-    server: 'https://your-dotcms.com',
-    debug: true,
-    autoPageView: false
-});
-
-// Track custom events with properties
-analytics.track('product-view', {
-    productId: 'SKU-12345',
-    category: 'Electronics',
-    price: 299.99,
-    inStock: true
-});
-
-// Manual page view with custom data
-// Automatic enrichment (page, device, UTM, context) + your custom data
-analytics.pageView({
-    section: 'checkout',
-    step: 'payment',
-    cartValue: 299.99
-});
-```
-
-### React
-
-> **Note:** React integration is currently in development. The API may change.
-
-**Basic Setup**
-
-```tsx
+```jsx
+// src/app/layout.js
 import { DotContentAnalytics } from '@dotcms/analytics/react';
+import { analyticsConfig } from '@/config/analytics.config';
 
-const config = {
-    siteAuth: 'SITE_KEY',
-    server: 'https://demo.dotcms.com',
-    autoPageView: true
-};
-
-export function AppRoot() {
-    return <DotContentAnalytics config={config} />;
+export default function RootLayout({ children }) {
+    return (
+        <html lang="en">
+            <body>
+                <DotContentAnalytics config={analyticsConfig} />
+                {children}
+            </body>
+        </html>
+    );
 }
 ```
 
-**Using the Hook**
+### Manual Page View with Custom Data
 
-```tsx
+```jsx
+'use client';
+
+import { useEffect } from 'react';
 import { useContentAnalytics } from '@dotcms/analytics/react';
+import { analyticsConfig } from '@/config/analytics.config';
 
-function MyComponent() {
-    const { track, pageView } = useContentAnalytics({
-        siteAuth: 'SITE_AUTH',
-        server: 'https://demo.dotcms.com'
-    });
+function BlogPost({ post }) {
+    const { pageView } = useContentAnalytics(analyticsConfig);
 
-    // Track custom events (same API as vanilla JS)
+    useEffect(() => {
+        pageView({
+            contentType: 'blog',
+            category: post.category,
+            author: post.author,
+            wordCount: post.wordCount
+        });
+    }, []);
+
+    return <article>{/* post content */}</article>;
+}
+```
+
+### Custom Event Tracking
+
+```jsx
+'use client';
+
+import { useContentAnalytics } from '@dotcms/analytics/react';
+import { analyticsConfig } from '@/config/analytics.config';
+
+function CallToAction() {
+    const { track } = useContentAnalytics(analyticsConfig);
+
     const handleClick = () => {
-        track('button-click', { label: 'CTA Button' });
+        track('cta-click', {
+            button: 'Buy Now',
+            location: 'hero-section',
+            price: 299.99
+        });
     };
 
-    return <button onClick={handleClick}>Click Me</button>;
+    return <button onClick={handleClick}>Buy Now</button>;
+}
+```
+
+### Conversion Tracking (Real-World Example)
+
+This example is based on the Contact Us form in the [Next.js example app](https://github.com/dotCMS/core/tree/main/examples/nextjs):
+
+```jsx
+'use client';
+
+import { useState } from 'react';
+import { useContentAnalytics } from '@dotcms/analytics/react';
+import { analyticsConfig } from '@/config/analytics.config';
+
+export default function ContactUs({ description }) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const { conversion } = useContentAnalytics(analyticsConfig);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        // Simulate form submission
+        setTimeout(() => {
+            setIsSuccess(true);
+
+            // Track conversion ONLY after successful submission
+            conversion('form-submit', {
+                formName: 'contact-us',
+                formType: 'lead-gen'
+            });
+        }, 3000);
+    };
+
+    return (
+        <form onSubmit={handleSubmit}>
+            {/* form fields */}
+            <button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit'}
+            </button>
+        </form>
+    );
+}
+```
+
+### E-commerce Purchase Conversion
+
+```jsx
+'use client';
+
+import { useContentAnalytics } from '@dotcms/analytics/react';
+import { analyticsConfig } from '@/config/analytics.config';
+
+function CheckoutButton({ product, quantity }) {
+    const { conversion } = useContentAnalytics(analyticsConfig);
+
+    const handlePurchase = async () => {
+        // Process payment...
+        const result = await processPayment(product, quantity);
+
+        if (result.success) {
+            // Track conversion ONLY after confirmed payment
+            conversion('purchase', {
+                value: product.price * quantity,
+                currency: 'USD',
+                productId: product.sku,
+                category: product.category
+            });
+        }
+    };
+
+    return <button onClick={handlePurchase}>Complete Purchase</button>;
 }
 ```
 
 ## API Reference
 
-```typescript
-interface DotCMSAnalytics {
-    /**
-     * Track a page view event with optional custom data
-     * @param customData - Optional object with custom properties to attach to the pageview
-     */
-    pageView: (customData?: Record<string, unknown>) => void;
+### `<DotContentAnalytics />`
 
-    /**
-     * Track a custom event
-     * @param eventName - Name of the custom event (cannot be "pageview")
-     * @param properties - Optional object with event-specific properties
-     */
-    track: (eventName: string, properties?: Record<string, unknown>) => void;
+React component for automatic page view tracking on route changes.
+
+```typescript
+interface DotContentAnalyticsProps {
+    config: DotCMSAnalyticsConfig;
 }
 ```
 
-### Page View Event Structure
+Place once in your root layout. Wraps the internal tracker in `<Suspense>` for Next.js App Router compatibility.
 
-When you call `pageView(customData?)`, the SDK **automatically enriches** the event with comprehensive data and sends:
+### `useContentAnalytics(config)`
+
+React hook that returns tracking methods. **Always requires config as a parameter.**
+
+```typescript
+function useContentAnalytics(config: DotCMSAnalyticsConfig): DotCMSAnalytics;
+
+interface DotCMSAnalytics {
+    /** Track a page view with optional custom data */
+    pageView: (customData?: Record<string, unknown>) => void;
+
+    /** Track a custom event (eventName cannot be "pageview" or "conversion") */
+    track: (eventName: string, properties?: Record<string, unknown>) => void;
+
+    /** Track a conversion after a successful business action */
+    conversion: (name: string, options?: Record<string, unknown>) => void;
+}
+```
+
+### `DotCMSAnalyticsConfig`
+
+```typescript
+interface DotCMSAnalyticsConfig {
+    server: string;
+    siteAuth: string;
+    debug?: boolean;
+    autoPageView?: boolean;
+    queue?: QueueConfig | false;
+    impressions?: ImpressionConfig | boolean;
+    clicks?: boolean;
+}
+
+interface QueueConfig {
+    eventBatchSize?: number;
+    flushInterval?: number;
+}
+
+interface ImpressionConfig {
+    visibilityThreshold?: number;
+    dwellMs?: number;
+    maxNodes?: number;
+}
+```
+
+### Event Payload Structures
+
+#### Page View Event
+
+When you call `pageView(customData?)`, the SDK sends:
 
 ```typescript
 {
-    context: {                     // 🤖 AUTOMATIC - Identity & Session
-        site_key: string;          //    Your site key
-        session_id: string;        //    Current session ID
-        user_id: string;           //    Anonymous user ID
-        device: {                  // 🤖 AUTOMATIC - Device & Browser Info
-            screen_resolution: string;  // Screen size
-            language: string;           // Browser language
-            viewport_width: string;     // Viewport width
-            viewport_height: string;    // Viewport height
+    context: {
+        site_key: string;          // Your site key
+        session_id: string;        // Current session ID
+        user_id: string;           // Anonymous user ID
+        device: {
+            screen_resolution: string;
+            language: string;
+            viewport_width: string;
+            viewport_height: string;
         }
     },
     events: [{
         event_type: "pageview",
-        local_time: string,        // 🤖 AUTOMATIC - ISO 8601 timestamp with timezone
+        local_time: string,        // ISO 8601 timestamp with timezone
         data: {
-            page: {                // 🤖 AUTOMATIC - Page Information
-                url: string;       //    Full URL
-                title: string;     //    Page title
-                referrer: string;  //    Referrer URL
-                path: string;      //    Path
-                doc_host: string;  //    Hostname
-                doc_protocol: string;  //  Protocol (http/https)
-                doc_search: string;    //  Query string
-                doc_hash: string;      //  URL hash
-                doc_encoding: string;  //  Character encoding
+            page: {                // Captured automatically
+                url: string;
+                title: string;
+                referrer: string;
+                path: string;
+                doc_host: string;
+                doc_protocol: string;
+                doc_search: string;
+                doc_hash: string;
+                doc_encoding: string;
             },
-            utm?: {                // 🤖 AUTOMATIC - Campaign Tracking (if present in URL)
-                source: string;    //    utm_source
-                medium: string;    //    utm_medium
-                campaign: string;  //    utm_campaign
-                term: string;      //    utm_term
-                content: string;   //    utm_content
+            utm?: {                // Captured automatically (if present in URL)
+                source: string;
+                medium: string;
+                campaign: string;
+                term: string;
+                content: string;
             },
-            custom?: {             // 👤 YOUR DATA (optional)
-                // Any custom properties you pass to pageView(customData)
-                contentType?: string;
-                category?: string;
-                author?: string;
-                // ... any other properties
+            custom?: {             // Your optional data from pageView(customData)
+                // Any properties you pass
             }
         }
     }]
 }
 ```
 
-**Key Points:**
+#### Custom Event
 
--   🤖 Most data is captured **automatically** - you don't need to provide it
--   👤 `custom` is where **your optional data** goes
--   All automatic data is always captured, even if you don't pass `customData`
-
-### Custom Event Structure
-
-When you call `track(eventName, properties)`, the following structure is sent:
+When you call `track(eventName, properties)`:
 
 ```typescript
 {
-    context: {
-        site_key: string;      // Your site key
-        session_id: string;    // Current session ID
-        user_id: string;       // Anonymous user ID
-        device: {              // 🤖 AUTOMATIC - Device & Browser Info
-            screen_resolution: string;  // Screen size
-            language: string;           // Browser language
-            viewport_width: string;     // Viewport width
-            viewport_height: string;    // Viewport height
-        }
-    },
+    context: { /* same as above */ },
     events: [{
-        event_type: string,    // Your custom event name
-        local_time: string,    // ISO 8601 timestamp
+        event_type: string,        // Your custom event name
+        local_time: string,
         data: {
             custom: {
                 // Your properties object
@@ -338,43 +566,132 @@ When you call `track(eventName, properties)`, the following structure is sent:
 }
 ```
 
+#### Conversion Event
+
+When you call `conversion(name, options)`:
+
+```typescript
+{
+    context: { /* same as above */ },
+    events: [{
+        event_type: "conversion",
+        local_time: string,
+        data: {
+            conversion: {
+                name: string;      // Your conversion name
+            },
+            page: {
+                url: string;
+                title: string;
+            },
+            custom?: {             // Your optional data from options parameter
+                // All properties from options
+            }
+        }
+    }]
+}
+```
+
+#### Click Event
+
+When click tracking is enabled and a user clicks on a contentlet element:
+
+```json
+{
+    "content": {
+        "identifier": "abc123",
+        "inode": "xyz789",
+        "title": "Product Page",
+        "content_type": "Page"
+    },
+    "element": {
+        "text": "Start Free Trial",
+        "type": "a",
+        "id": "cta-signup",
+        "class": "btn btn-primary",
+        "href": "/signup",
+        "attributes": [
+            "data-category:primary-cta",
+            "data-campaign:summer-sale",
+            "aria-label:Sign up for free trial"
+        ]
+    },
+    "position": {
+        "viewport_offset_pct": 45.2,
+        "dom_index": 2
+    }
+}
+```
+
 ## Under the Hood
 
 ### Storage Keys
+
+| Key | Purpose |
+| --- | --- |
+| `dot_analytics_user_id` | Anonymous user identifier (persisted across sessions) |
+| `dot_analytics_session_id` | Current session ID |
+| `dot_analytics_session_utm` | UTM campaign data for the session |
+| `dot_analytics_session_start` | Session start timestamp |
+
+### Editor Detection
+
+Analytics are automatically disabled when inside the dotCMS Universal Visual Editor (UVE). No events are sent in editor mode.
+
+### Endpoint
+
+All events are sent via `POST` to:
+
+```
+{server}/api/v1/analytics/content/event
+```
+
+Where `{server}` is the `server` value from your config.
+
+## Debugging & Troubleshooting
+
+### Enable Debug Mode
+
+Set `debug: true` in your config to see verbose logging in the browser console.
+
+### Verify Events in the Network Tab
+
+1. Open browser DevTools > Network tab
+2. Filter by `/api/v1/analytics/content/event`
+3. Perform actions in your app
+4. Inspect request payloads to see captured data
+
+### Check Storage
+
+Open browser DevTools > Application > Local Storage and look for:
 
 -   `dot_analytics_user_id`
 -   `dot_analytics_session_id`
 -   `dot_analytics_session_utm`
 -   `dot_analytics_session_start`
 
-### Editor Detection
+### Common Issues
 
-Analytics are disabled when inside the dotCMS editor.
+**Events not appearing?**
 
-## Debugging & Troubleshooting
+-   Verify `siteAuth` and `server` are correct in your config
+-   Enable `debug: true` to see console logs
+-   Ensure environment variables are set in `.env.local` (restart dev server after changes)
+-   Check that variable names start with `NEXT_PUBLIC_`
+-   Analytics are auto-disabled in dotCMS editor mode -- test in preview or published mode
 
-**Not seeing events?**
+**Queue not flushing?**
 
--   Ensure `siteKey` & `server` are correct
--   Enable debug mode
--   Check network requests to: `https://your-server/api/v1/analytics/content/event`
--   Avoid using inside dotCMS editor (auto-disabled)
+-   Check `eventBatchSize` -- the threshold might not be reached yet
+-   Verify `flushInterval` is appropriate for your use case
+-   Events auto-flush on page navigation/close via `visibilitychange`
 
-Standalone attributes to verify:
+**Session not persisting?**
 
--   `data-analytics-auth` (required)
--   `data-analytics-server` (optional, defaults to current origin)
--   `data-analytics-auto-page-view` (`true` to enable)
--   `data-analytics-debug` (`true` to enable)
+-   Check that localStorage is enabled in the browser
+-   Verify no browser extensions are blocking storage
 
-## Roadmap
-
--   Scroll depth & file download tracking
--   Form interaction analytics
--   Angular & Vue support
--   Realtime dashboard
-
-## dotCMS Support
+## Support
 
 We offer multiple channels to get help with the dotCMS Analytics SDK:
 
@@ -390,9 +707,9 @@ When reporting issues, please include:
 -   Minimal reproduction steps
 -   Expected vs. actual behavior
 
-## How To Contribute
+## Contributing
 
-GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS Analytics SDK! If you'd like to contribute, please follow these steps:
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the dotCMS Analytics SDK! If you'd like to contribute, please follow these steps:
 
 1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -402,7 +719,7 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 
 Please ensure your code follows the existing style and includes appropriate tests.
 
-## Licensing Information
+## Licensing
 
 dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
 

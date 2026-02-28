@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 /**
  * This class will return the Datasource that is configured for the ai plugin, or will return the default datasource if no specific DB is configured for AI
  */
-class PgVectorDataSource {
+public class PgVectorDataSource {
 
     private static final String AI_DB_BASE_URL_KEY = "AI_DB_BASE_URL";
     private static final String AI_DB_USERNAME_KEY = "AI_DB_USERNAME";

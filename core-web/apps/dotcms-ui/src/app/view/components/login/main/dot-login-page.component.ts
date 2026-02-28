@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
 import { pluck, take } from 'rxjs/operators';
 
@@ -10,7 +11,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
     selector: 'dot-login-page-component',
     styleUrls: ['./dot-login-page.component.scss'],
     templateUrl: 'dot-login-page.component.html',
-    standalone: false
+    imports: [RouterOutlet]
 })
 /**
  * The login component allows set the background image and background color.

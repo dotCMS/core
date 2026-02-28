@@ -1,6 +1,7 @@
 export * from './lib/add-to-bundle/add-to-bundle.service';
 export * from './lib/can-deactivate/can-deactivate-guard.service';
 export * from './lib/dot-ai/dot-ai.service';
+export * from './lib/dot-ai/dot-ai-image-size-mapper.service';
 export * from './lib/dot-alert-confirm/dot-alert-confirm.service';
 export * from './lib/dot-analytics-search/dot-analytics-search.service';
 export * from './lib/dot-analytics-tracker/dot-analytics-tracker.service';
@@ -67,3 +68,7 @@ export * from './lib/dot-workflows-actions/dot-workflows-actions.service';
 export * from './lib/ema-app-configuration/ema-app-configuration.service';
 export * from './lib/paginator/paginator.service';
 export * from './lib/push-publish/push-publish.service';
+export * from './lib/dot-page-contenttype/dot-page-contenttype.service';
+export * from './lib/dot-favorite-contenttype/dot-favorite-contenttype.service';
+export * from './lib/dot-content-drive/dot-content-drive.service';
+export * from './lib/dot-usage/dot-usage.service';

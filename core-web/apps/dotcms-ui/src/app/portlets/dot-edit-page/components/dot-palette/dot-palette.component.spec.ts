@@ -17,6 +17,13 @@ import { contentletProductDataMock } from './dot-palette-contentlets/dot-palette
 import { DotPaletteComponent } from './dot-palette.component';
 import { DotPaletteStore } from './store/dot-palette.store';
 
+import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+
+@Injectable()
+class MockDotContentletEditorService {
+    setDraggedContentType = jest.fn();
+}
+
 @Component({
     selector: 'dot-palette-content-type',
     template: '',
@@ -129,16 +136,13 @@ describe('DotPaletteComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DotPaletteComponent,
-                DotPaletteContentletsMockComponent,
-                DotPaletteContentTypeMockComponent
-            ],
-            imports: [HttpClientTestingModule, NoopAnimationsModule],
+            declarations: [DotPaletteContentletsMockComponent, DotPaletteContentTypeMockComponent],
+            imports: [DotPaletteComponent, HttpClientTestingModule, NoopAnimationsModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },
-                { provide: DotESContentService, useClass: MockESPaginatorService }
+                { provide: DotESContentService, useClass: MockESPaginatorService },
+                { provide: DotContentletEditorService, useClass: MockDotContentletEditorService }
             ]
         });
         TestBed.overrideProvider(DotPaletteStore, { useValue: storeMock });

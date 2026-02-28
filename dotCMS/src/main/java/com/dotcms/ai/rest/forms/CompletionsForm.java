@@ -48,6 +48,7 @@ public class CompletionsForm {
     @Max(2)
     public final float temperature;
     public final String model;
+    public final String embeddingModel;
     public final String operator;
     public final String site;
     public final User user;
@@ -122,6 +123,7 @@ public class CompletionsForm {
             this.temperature = builder.temperature >= 2 ? 2 : builder.temperature;
         }
         this.model = builder.model;
+        this.embeddingModel = builder.embeddingModel;
         this.user = builder.user;
         this.responseFormat = builder.responseFormat;
     }
@@ -156,6 +158,7 @@ public class CompletionsForm {
                 .threshold(form.threshold)
                 .stream(form.stream)
                 .user(form.user)
+                .embeddingModel(form.embeddingModel)
                 .responseFormat(form.responseFormat);
     }
 
@@ -179,6 +182,8 @@ public class CompletionsForm {
         private String indexName = "default";
         @JsonSetter(nulls = Nulls.SKIP)
         private String model ;
+        @JsonSetter(nulls = Nulls.SKIP)
+        private String embeddingModel;
         @JsonSetter(nulls = Nulls.SKIP)
         private String contentType;
         @JsonSetter(nulls = Nulls.SKIP)
@@ -236,6 +241,11 @@ public class CompletionsForm {
 
         public Builder model(String model) {
             this.model = model;
+            return this;
+        }
+
+        public Builder embeddingModel(String embeddingModel) {
+            this.embeddingModel = embeddingModel;
             return this;
         }
 

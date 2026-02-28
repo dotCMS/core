@@ -86,6 +86,18 @@ import org.junit.runner.RunWith;
 @RunWith(JUnit4WeldRunner.class)
 public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTestBase {
 
+    // Shared across all tests (read-only — never modified by individual tests)
+    private static Host sharedHost;
+    private static ContentType sharedContentType;
+    private static Container sharedContainer;
+    private static Role sharedRole;
+    private static User sharedUser;
+    private static User sharedAdminUser;
+
+    // Separate user/role without any permissions — used by *ThrowDotSecurityException tests
+    private static Role sharedNoPermsRole;
+    private static User sharedNoPermsUser;
+
     private HttpServletRequest request;
     private Host host;
     private User user;
@@ -98,6 +110,45 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public static void prepare () throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+
+        final User systemUser = APILocator.systemUser();
+
+        // Shared host
+        sharedHost = new SiteDataGen().nextPersisted();
+
+        // Shared content type with "title" field
+        final Field titleField = new FieldDataGen().velocityVarName("title").next();
+        sharedContentType = new ContentTypeDataGen().field(titleField).nextPersisted();
+
+        // Shared container
+        Container container = new ContainerDataGen()
+                .site(sharedHost)
+                .nextPersisted();
+        PublishFactory.publishAsset(container, systemUser, false, false);
+
+        final ContainerStructure containerStructure = new ContainerStructure();
+        containerStructure.setStructureId(sharedContentType.id());
+        containerStructure.setCode("$!{title}");
+
+        container = APILocator.getContainerAPI().save(container,
+                list(containerStructure), sharedHost, systemUser, false);
+        PublishFactory.publishAsset(container, systemUser, false, false);
+        sharedContainer = container;
+
+        // Shared role and user
+        sharedRole = new RoleDataGen().nextPersisted();
+        sharedUser = new UserDataGen().roles(sharedRole).nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), sharedUser);
+
+        // Shared admin user
+        sharedAdminUser = new UserDataGen().nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), sharedAdminUser);
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), sharedAdminUser);
+
+        // Separate no-permissions user/role for security tests
+        sharedNoPermsRole = new RoleDataGen().nextPersisted();
+        sharedNoPermsUser = new UserDataGen().roles(sharedNoPermsRole).nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), sharedNoPermsUser);
     }
 
     private void init () throws DotDataException, DotSecurityException {
@@ -105,7 +156,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     private void init (final Host host) throws DotSecurityException, DotDataException {
-        final User systemUser = APILocator.systemUser();
         request = mock(HttpServletRequest.class);
 
         session = mock(HttpSession.class);
@@ -115,15 +165,17 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         response = mock(HttpServletResponse.class);
 
-        role = new RoleDataGen().nextPersisted();
-        user = new UserDataGen().roles(role).nextPersisted();
+        // Reuse shared role/user
+        role = sharedRole;
+        user = sharedUser;
 
-        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), user);
-        this.host = host == null ? createHost() : host;
+        // Host: use passed-in or shared
+        this.host = host == null ? sharedHost : host;
 
+        // Each test still needs its own page for permission isolation
         final Template template = new TemplateDataGen().nextPersisted();
 
-        htmlPageAsset = createPage(systemUser, role, template);
+        htmlPageAsset = createPage(APILocator.systemUser(), role, template);
         when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
     }
 
@@ -139,10 +191,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         permission.setPermission(PermissionAPI.PERMISSION_READ);
         APILocator.getPermissionAPI().save(list(permission), htmlPageAsset, systemUser, false);
         return htmlPageAsset;
-    }
-
-    private Host createHost() throws DotDataException, DotSecurityException {
-        return new SiteDataGen().nextPersisted();
     }
 
     private void addPermission(final Role role, final Host host)
@@ -176,12 +224,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      */
     @Test
     public void test_getPageRenderedLivePreviewVersion_diff() throws DotDataException, DotSecurityException, WebAssetException {
-        init();
-        final User adminUser = new UserDataGen().nextPersisted();
-
-        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), adminUser);
-
-        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), adminUser);
+        final User adminUser = sharedAdminUser;
         assertTrue(APILocator.getUserAPI().isCMSAdmin(adminUser));
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         // 1) create a container with rich text
@@ -527,6 +570,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test(expected = DotSecurityException.class)
     public void shouldUseHostIdParameterAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
+
         final PageMode pageMode = PageMode.WORKING;
         when(request.getParameter("host_id")).thenReturn(this.host.getIdentifier());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
@@ -549,6 +598,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test(expected = DotSecurityException.class)
     public void shouldUseHostNameParameterAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
+
         final PageMode pageMode = PageMode.WORKING;
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getName());
@@ -570,6 +625,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test(expected = DotSecurityException.class)
     public void shouldUseSessionHostAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
+
         final PageMode pageMode = PageMode.WORKING;
         when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
@@ -591,6 +652,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test(expected = DotSecurityException.class)
     public void shouldUseDefaultHostAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
+
         final PageMode pageMode = PageMode.WORKING;
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
@@ -614,6 +681,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void shouldUseRequestServerNameAndThrowDotSecurityException()
             throws DotDataException, DotSecurityException {
         init(host);
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
 
         when(request.getServerName()).thenReturn(host.getHostname());
         final PageMode pageMode = PageMode.WORKING;
@@ -641,10 +713,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test
     public void renderPageWithDefaultVariantAndLanguage() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
         final Contentlet contentlet = createContentlet(language, host, contentType);
 
@@ -685,12 +757,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void emptyPageWithMultiContentletVersion() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language_1 = new LanguageDataGen().nextPersisted();
         final Language language_2 = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
         final Variant variant_1 = new VariantDataGen().nextPersisted();
         final Variant variant_2 = new VariantDataGen().nextPersisted();
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language_2, host, container);
         final Contentlet contentlet = createContentlet(language_1, host, contentType);
 
@@ -732,11 +804,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test
     public void renderPageWithSpecificVariantAndLanguage() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
         final Variant variant = new VariantDataGen().nextPersisted();
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
         final Contentlet contentlet = createContentlet(language, host, contentType);
 
@@ -777,11 +849,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test
     public void fallbackToDefaultVariantSameLanguage() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
         final Variant variant = new VariantDataGen().nextPersisted();
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
         final Contentlet contentlet = createContentlet(language, host, contentType);
 
@@ -828,12 +900,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         try {
             final Language language = new LanguageDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Host host = sharedHost;
             final Variant variant = new VariantDataGen().nextPersisted();
             final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
-            final ContentType contentType = createContentType();
-            final Container container = createAndPublishContainer(host, contentType);
+            final ContentType contentType = sharedContentType;
+            final Container container = sharedContainer;
             final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
             final Contentlet contentlet = createContentlet(defaultLanguage, host, contentType);
 
@@ -885,12 +957,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         try {
             final Language language = new LanguageDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Host host = sharedHost;
             final Variant variant = new VariantDataGen().nextPersisted();
             final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
-            final ContentType contentType = createContentType();
-            final Container container = createAndPublishContainer(host, contentType);
+            final ContentType contentType = sharedContentType;
+            final Container container = sharedContainer;
             final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
             final Contentlet contentlet = createContentlet(defaultLanguage, host, contentType);
 
@@ -939,12 +1011,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         try {
             final Language language = new LanguageDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Host host = sharedHost;
             final Variant variant = new VariantDataGen().nextPersisted();
             final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
 
-            final ContentType contentType = createContentType();
-            final Container container = createAndPublishContainer(host, contentType);
+            final ContentType contentType = sharedContentType;
+            final Container container = sharedContainer;
             final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
             final Contentlet contentlet = createContentlet(defaultLanguage, host, contentType);
 
@@ -988,10 +1060,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void renderPageWithDifferentVariantsVersion() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container, variant);
         final Contentlet contentlet = createContentlet(language, host, contentType);
         createNewVersion(contentlet, language, variant);
@@ -1030,10 +1102,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void renderPageWithDifferentVariantsVersionAndContentlet() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container, variant);
         final Contentlet contentlet = createContentlet(language, host, contentType);
         createNewVersion(contentlet, language, variant);
@@ -1098,10 +1170,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void usingLiveRenderCache() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container, VariantAPI.DEFAULT_VARIANT);
         final Contentlet contentlet = createContentlet(language, host, contentType);
         createNewVersion(contentlet, language, variant);
@@ -1184,10 +1256,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void usingCacheTTL() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container, VariantAPI.DEFAULT_VARIANT, 600);
         final Contentlet contentlet = createContentlet(language, host, contentType);
         createNewVersion(contentlet, language, variant);
@@ -1271,7 +1343,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test
     public void renderWidgetWithSpecificVariantAndLanguage() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
         final Variant variant = new VariantDataGen().nextPersisted();
 
         ContentType contentType = ContentTypeDataGen.createWidgetContentType("$widgetTitle")
@@ -1318,7 +1390,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test
     public void renderWidgetWithDefaultVariantAndLanguage() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
         final Variant variant = new VariantDataGen().nextPersisted();
 
         ContentType contentType = ContentTypeDataGen.createWidgetContentType("$widgetTitle")
@@ -1598,7 +1670,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             final HTMLPageAsset experimentPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
             final Host host = APILocator.getHostAPI().find(experimentPage.getHost(), APILocator.systemUser(), false);
 
-            final ContentType contentType = createContentType();
+            final ContentType contentType = sharedContentType;
             final Container container = createAndPublishContainer(host, contentType);
             final HTMLPageAsset page = createHtmlPageAssetWithHead(language, host, container,
                     "<head><title>This is a testing</title></head>");
@@ -1664,7 +1736,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             final HTMLPageAsset experimentPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
             final Host host = APILocator.getHostAPI().find(experimentPage.getHost(), APILocator.systemUser(), false);
 
-            final ContentType contentType = createContentType();
+            final ContentType contentType = sharedContentType;
             final Container container = createAndPublishContainer(host, contentType);
             final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
             final Contentlet contentlet = createContentlet(language, host, contentType);
@@ -1933,10 +2005,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void renderPageWithNoDefaultContentlet() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container, variant);
 
         final String contentletTitle = "VARIANT" + language.getId();
@@ -1991,9 +2063,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void renderVariantPageWithSystemContainer() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
-        final ContentType contentType = createContentType();
+        final ContentType contentType = sharedContentType;
         final Container systemContainer = APILocator.getContainerAPI().systemContainer();
         final HTMLPageAsset page = createHtmlPageAsset(language, host, systemContainer, VariantAPI.DEFAULT_VARIANT);
 
@@ -2046,9 +2118,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void renderVariantPageWithDotContentMap() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
         final Variant variant = new VariantDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
-        final ContentType contentType = createContentType();
+        final ContentType contentType = sharedContentType;
         final Container systemContainer = createAndPublishContainer(host, contentType, "$!{dotContentMap.title}");
         final HTMLPageAsset page = createHtmlPageAsset(language, host, systemContainer, VariantAPI.DEFAULT_VARIANT);
 
@@ -2108,10 +2180,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         try {
             final Language language = new LanguageDataGen().nextPersisted();
             final Variant variant = new VariantDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Host host = sharedHost;
 
-            final ContentType contentType = createContentType();
-            final Container container = createAndPublishContainer(host, contentType);
+            final ContentType contentType = sharedContentType;
+            final Container container = sharedContainer;
             final HTMLPageAsset page = createHtmlPageAsset(language, host, container, variant);
 
             final String contentletTitle = "VARIANT" + language.getId();
@@ -2170,10 +2242,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         try {
             final Language language = new LanguageDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Host host = sharedHost;
 
-            final ContentType contentType = createContentType();
-            final Container container = createAndPublishContainer(host, contentType);
+            final ContentType contentType = sharedContentType;
+            final Container container = sharedContainer;
             final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
             final Contentlet contentlet = createContentlet(language, host, contentType);
 
@@ -2221,10 +2293,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         try {
             ExperimentDataGen.start(experiment);
             final Language language = new LanguageDataGen().nextPersisted();
-            final Host host = new SiteDataGen().nextPersisted();
+            final Host host = sharedHost;
 
-            final ContentType contentType = createContentType();
-            final Container container = createAndPublishContainer(host, contentType);
+            final ContentType contentType = sharedContentType;
+            final Container container = sharedContainer;
             final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
             final Contentlet contentlet = createContentlet(language, host, contentType);
 
@@ -2272,7 +2344,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             throws DotDataException, DotSecurityException, WebAssetException {
 
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
         final ContentType widgetContentType = new ContentTypeDataGen()
                 .createWidgetContentType("Testing URLMap: $URLMapContent.title")
@@ -2360,7 +2432,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             throws DotDataException, DotSecurityException, WebAssetException {
 
         final Language contentletLanguage = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
         final ContentType widgetContentType = new ContentTypeDataGen()
                 .createWidgetContentType("Testing URLMap: $URLMapContent.title")
@@ -2458,7 +2530,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         final Variant variant_1 = new VariantDataGen().nextPersisted();
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
         final Field labelField = new FieldDataGen()
                 .name("label")
@@ -2599,7 +2671,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         final Variant variant_1 = new VariantDataGen().nextPersisted();
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
 
         final Field labelField = new FieldDataGen()
                 .name("label")
@@ -2744,7 +2816,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
             final HTMLPageAsset experimentPage = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
             final Host host = APILocator.getHostAPI().find(experimentPage.getHost(), APILocator.systemUser(), false);
 
-            final ContentType contentType = createContentType();
+            final ContentType contentType = sharedContentType;
             final Container container = createAndPublishContainer(host, contentType);
 
             final File defaultTemplateFile = ThemeDataGen.getDefaultTemplateFile();
@@ -2826,11 +2898,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test
     public void renderPageWithSpecificArchivedVariant() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        final Host host = sharedHost;
         final Variant variant = new VariantDataGen().nextPersisted();
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
+        final ContentType contentType = sharedContentType;
+        final Container container = sharedContainer;
         final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
         final Contentlet contentlet = createContentlet(language, host, contentType);
 
@@ -2861,29 +2933,34 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: A template has containers with LEGACY_RELATION_TYPE UUIDs
      * Should: Transform UUIDs to consistent values in both layout and rendered container fields
-     * 
+     *
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
     public void shouldTransformLegacyContainerUUIDs() throws DotDataException, DotSecurityException, WebAssetException {
-        init();
-        
-        final Host site = new SiteDataGen().nextPersisted();
+        request = mock(HttpServletRequest.class);
+        final HttpSession mockSession = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(mockSession);
+        when(request.getSession(false)).thenReturn(mockSession);
+        when(request.getSession(true)).thenReturn(mockSession);
+        response = mock(HttpServletResponse.class);
+
+        final Host site = sharedHost;
         final User systemUser = APILocator.systemUser();
-        
+
 
         final ContentType contentType = new ContentTypeDataGen()
                 .field(new FieldDataGen().name("title").velocityVarName("title").next())
                 .nextPersisted();
-                
+
 
         final Container container = new ContainerDataGen()
                 .site(site)
                 .withContentType(contentType, "$!{title}")
                 .nextPersisted();
         ContainerDataGen.publish(container, systemUser);
-        
+
 
         final Template template = new TemplateDataGen()
                 .host(site)
@@ -2896,13 +2973,13 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final HTMLPageAsset page = new HTMLPageDataGen(site, template)
                 .nextPersisted();
         HTMLPageDataGen.publish(page);
-        
+
 
         final Contentlet contentlet = new ContentletDataGen(contentType)
                 .host(site)
                 .setProperty("title", "Test Content")
                 .nextPersistedAndPublish();
-        
+
 
         new MultiTreeDataGen()
                 .setPage(page)
@@ -2910,29 +2987,99 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .setContentlet(contentlet)
                 .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
                 .nextPersisted();
-        
+
 
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
         when(request.getRequestURI()).thenReturn(page.getURI());
-        
+
 
         final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPI = new HTMLPageAssetRenderedAPIImpl();
         final PageView pageView = htmlPageAssetRenderedAPI.getPageRendered(
                 request, response, systemUser, page.getURI(), PageMode.ADMIN_MODE);
-        
-        
-        boolean foundLegacyTransformation = pageView.getLayout() != null 
+
+
+        boolean foundLegacyTransformation = pageView.getLayout() != null
                 && pageView.getLayout().getBody() != null
                 && pageView.getLayout().getBody().getRows().stream()
                     .flatMap(row -> row.getColumns().stream())
                     .flatMap(column -> column.getContainers().stream())
                     .filter(containerUUID -> container.getIdentifier().equals(containerUUID.getIdentifier()))
-                    .peek(containerUUID -> assertEquals("Legacy container UUID should be transformed to '1'", 
+                    .peek(containerUUID -> assertEquals("Legacy container UUID should be transformed to '1'",
                             ContainerUUID.UUID_START_VALUE, containerUUID.getUUID()))
                     .findAny()
                     .isPresent();
-        
+
         assertTrue("Should have found and transformed legacy container UUID", foundLegacyTransformation);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: Page exists in language 2 and language 3. Widget contentlet exists ONLY in language 3.
+     * When: Rendering page in language 2 with:
+     *       - DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true
+     *       - DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE=false
+     * Should: NOT return widget in language 3 (should return empty page since widget doesn't exist in requested language
+     *         and widget fallback is disabled)
+     *
+     */
+    @Test
+    public void shouldNotReturnWidgetInWrongLanguageWhenFallbackDisabled()
+            throws WebAssetException, DotDataException, DotSecurityException {
+
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        final boolean defaultWidgetToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        Config.setProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false);
+
+        try {
+
+            final Language language2 = new LanguageDataGen().nextPersisted();
+            final Language language3 = new LanguageDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
+
+            // Create a widget content type
+            ContentType widgetContentType = ContentTypeDataGen.createWidgetContentType("$widgetTitle")
+                    .host(host)
+                    .nextPersisted();
+
+            final Container container = createAndPublishContainer(host, widgetContentType);
+
+            // Create page in language 2
+            final HTMLPageAsset page = createHtmlPageAsset(language2, host, container);
+
+            // Create widget contentlet ONLY in language 3
+            final Contentlet widgetInLang3 = createContentlet(language3, host, widgetContentType,
+                    "widgetTitle", "Widget content in language 3");
+
+            addToPage(container, page, widgetInLang3);
+
+            // Create HTTP request for language 2
+            final HttpServletRequest mockRequest = createHttpServletRequest(language2, host,
+                    VariantAPI.DEFAULT_VARIANT, page);
+
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpSession session = createHttpSession(mockRequest);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+            // Render page in language 2
+            String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(APILocator.systemUser())
+                            .setPageUri(page.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+
+            Assert.assertFalse("Widget from language 3 should NOT appear when rendering page in language 2",
+                    html.contains("Widget content in language 3"));
+        } finally {
+            // Restore original config values
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
+            Config.setProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", defaultWidgetToDefaultLanguage);
+        }
     }
 }

@@ -11,13 +11,13 @@ import { PaginatorModule } from 'primeng/paginator';
 
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe, DotSpinnerModule } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { DotPaletteContentletsComponent } from './dot-palette-contentlets.component';
 
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotFilterPipeModule } from '../../../../../view/pipes/dot-filter/dot-filter-pipe.module';
-import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
+import { DotFilterPipe } from '../../../../../view/pipes/dot-filter/dot-filter.pipe';
+import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 export const contentletFormDataMock = {
     baseType: 'FORM',
@@ -102,19 +102,15 @@ describe('DotPaletteContentletsComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotPaletteContentletsComponent,
-                DotContentletIconMockComponent
-            ],
+            declarations: [TestHostComponent, DotContentletIconMockComponent],
             imports: [
-                DotSafeHtmlPipe,
+                DotPaletteContentletsComponent,
                 DotMessagePipe,
-                DotSpinnerModule,
-                DotIconModule,
-                DotFilterPipeModule,
+                DotSpinnerComponent,
+                DotIconComponent,
+                DotFilterPipe,
                 FormsModule,
-                DotPaletteInputFilterModule,
+                DotPaletteInputFilterComponent,
                 HttpClientTestingModule,
                 PaginatorModule
             ],

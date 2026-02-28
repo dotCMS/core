@@ -1,9 +1,9 @@
 import {
-    EditableContainerData,
-    DotCMSColumnContainer,
     DotCMSBasicContentlet,
+    DotCMSColumnContainer,
     DotCMSPageAsset,
-    DotPageAssetLayoutColumn
+    DotPageAssetLayoutColumn,
+    EditableContainerData
 } from '@dotcms/types';
 import {
     DotCMSContainerBound,
@@ -279,7 +279,10 @@ export function getDotContentletAttributes(
         'data-dot-inode': contentlet?.inode,
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
-        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1'
+        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1',
+        ...(contentlet?.dotStyleProperties && {
+            'data-dot-style-properties': JSON.stringify(contentlet.dotStyleProperties)
+        })
     };
 }
 
@@ -315,13 +318,11 @@ export const getContainersData = (
     const acceptTypes =
         containerStructures?.map((structure) => structure.contentTypeVar).join(',') ?? '';
 
-    const variantId = container?.parentPermissionable?.variantId;
     const maxContentlets = container?.maxContentlets ?? 0;
     const path = container?.path;
 
     return {
         uuid,
-        variantId,
         acceptTypes,
         maxContentlets,
         identifier: path ?? identifier

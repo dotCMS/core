@@ -34,8 +34,7 @@ describe('DotContentTypeSelectorComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentTypeSelectorComponent],
-            imports: [BrowserAnimationsModule, DropdownModule],
+            imports: [DotContentTypeSelectorComponent, BrowserAnimationsModule, DropdownModule],
             providers: [
                 {
                     provide: DotMessageService,

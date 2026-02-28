@@ -11,8 +11,7 @@ import {
 import { TabView } from 'primeng/tabview';
 
 @Directive({
-    selector: '[dotTabViewAppend]',
-    standalone: true
+    selector: '[dotTabViewAppend]'
 })
 export class TabViewInsertDirective implements AfterViewInit {
     $prependTpl = input<TemplateRef<unknown> | null>(null, { alias: 'dotTabViewPrepend' });

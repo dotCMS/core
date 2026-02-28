@@ -8,13 +8,13 @@ export async function generateMetadata(props) {
         const path = params.slug[0];
         const { pageAsset } = await getDotCMSPage(`/blog/post/${path}`);
         const urlContentMap = pageAsset?.urlContentMap;
-        const title = urlContentMap?.title || 'Page not found';
+        const title = urlContentMap?.title || "Page not found";
         return {
-            title: `${title} - Blog`
+            title: `${title} - Blog`,
         };
     } catch (e) {
         return {
-            title: 'not found'
+            title: "not found",
         };
     }
 }

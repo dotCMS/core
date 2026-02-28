@@ -20,7 +20,9 @@ export default defineConfig({
     // Configuration for building the DotExperiment as IIFE file to use in
     // plain HTML or other projects.
     build: {
-        outDir: '../../../dist/libs/sdk/experiments',
+        // Explicitly resolve outDir to prevent output from going to external dist folders
+        // This ensures reproducible builds regardless of current working directory
+        outDir: path.resolve(__dirname, '../../../dist/libs/sdk/experiments'),
         reportCompressedSize: true,
         emptyOutDir: true,
         commonjsOptions: {

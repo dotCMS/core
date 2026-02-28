@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -26,7 +25,7 @@ import {
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
 import { DotTemplateDesigner } from '@dotcms/dotcms-models';
-import { TemplateBuilderModule } from '@dotcms/template-builder';
+import { TemplateBuilderComponent } from '@dotcms/template-builder';
 
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
@@ -35,7 +34,7 @@ export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-ema-layout',
-    imports: [CommonModule, TemplateBuilderModule],
+    imports: [TemplateBuilderComponent],
     templateUrl: './edit-ema-layout.component.html',
     styleUrls: ['./edit-ema-layout.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -1,11 +1,15 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.util.ConversionUtils;
@@ -29,18 +33,15 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.mutable.MutableBoolean;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 
 /**
  * Implementation class for the {@link StoryBlockAPI}.
@@ -168,6 +169,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 : Integer.parseInt(MAX_RELATIONSHIP_DEPTH.get());
     }
 
+    @RequestCost(Price.BLOCK_EDITOR_HYDRATION)
     @CloseDBIfOpened
     @Override
     @SuppressWarnings("unchecked")
@@ -205,6 +207,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
 
                     refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
+                } else {
+                    final Object nestedContent = contentMap.get(CONTENT_KEY);
+                    if (nestedContent instanceof List) {
+                        refreshed |= this.isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) nestedContent);
+                    }
                 }
             }
         }
@@ -226,8 +233,29 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         boolean refreshed  = false;
         final Map<String, Object> attrsMap = (Map<String, Object>) contentMap.get(ATTRS_KEY);
         if (UtilMethods.isSet(attrsMap)) {
-            final Map<String, Object> dataMap = (Map<String, Object>) attrsMap.get(DATA_KEY);
-            if (UtilMethods.isSet(dataMap)) {
+            final Object dataValue = attrsMap.get(DATA_KEY);
+            if (UtilMethods.isSet(dataValue)) {
+                Map<String, Object> dataMap;
+
+                // Handle case where data is a JSON string instead of a Map
+                if (dataValue instanceof String) {
+                    try {
+                        dataMap = this.toMap(dataValue);
+                    } catch (JsonProcessingException e) {
+                        Logger.warnAndDebug(this.getClass(), String.format(
+                            "Failed to parse data field as JSON for parent contentlet '%s': %s",
+                            parentContentletIdentifier, ExceptionUtil.getErrorMessage(e)), e);
+                        return false;
+                    }
+                } else if (dataValue instanceof Map) {
+                    dataMap = (Map<String, Object>) dataValue;
+                } else {
+                    Logger.warn(this.getClass(), String.format(
+                        "Unexpected data type '%s' for data field in parent contentlet '%s'",
+                        dataValue.getClass().getName(), parentContentletIdentifier));
+                    return false;
+                }
+
                 final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
                 final long languageId = ConversionUtils.toLong(dataMap.get(LANGUAGE_ID_KEY), ()-> APILocator.getLanguageAPI().getDefaultLanguage().getId());
                 if (UtilMethods.isSet(identifier)) {
@@ -268,21 +296,21 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<String> getDependencies(final Contentlet contentlet) {
-        final ImmutableList.Builder<String> contentletIdList = new ImmutableList.Builder<>();
-        contentlet.getContentType().fields(StoryBlockField.class).forEach(field -> 
+    public List<StoryBlockDependency> getDependencies(final Contentlet contentlet) {
+        final ImmutableList.Builder<StoryBlockDependency> dependencyList = new ImmutableList.Builder<>();
+        contentlet.getContentType().fields(StoryBlockField.class).forEach(field ->
 
-            contentletIdList.addAll(this.getDependencies(contentlet.get(field.variable())))
+            dependencyList.addAll(this.getDependencies(contentlet.get(field.variable())))
 
         );
-        return contentletIdList.build();
+        return dependencyList.build();
     }
 
     @SuppressWarnings("unchecked")
     @CloseDBIfOpened
     @Override
-    public List<String> getDependencies(final Object storyBlockValue) {
-        final ImmutableList.Builder<String> contentletIdList = new ImmutableList.Builder<>();
+    public List<StoryBlockDependency> getDependencies(final Object storyBlockValue) {
+        final ImmutableList.Builder<StoryBlockDependency> dependencyList = new ImmutableList.Builder<>();
 
         try {
 
@@ -292,23 +320,52 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 if(!(contentsMap instanceof List)) {
                     return List.of();
                 }
-                
-                for (final Map<String, Object> contentMapObject : (List<Map<String, Object>>) contentsMap) {
-                    if (UtilMethods.isSet(contentMapObject)) {
-                        final String type = (String) contentMapObject.get(TYPE_KEY);
-                        if (type !=null && allowedTypes.contains(type)) {
-                            addDependencies(contentletIdList, contentMapObject);
-                        }
-                    }
-                }
+
+                // Recursively process all blocks, including nested ones
+                processBlocksRecursively(dependencyList, (List<Map<String, Object>>) contentsMap);
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when retrieving Contentlet references from Story Block field: " +
                     "%s", ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg,e);
-            
+
         }
-        return contentletIdList.build();
+        return dependencyList.build();
+    }
+
+    /**
+     * Recursively processes blocks to find all dependencies, including those nested
+     * within container blocks like lists, paragraphs, blockquotes, tables, etc.
+     * This method traverses the entire block tree structure, ensuring that dependencies
+     * (dotImage, dotContent, dotVideo) are found regardless of their nesting level.
+     *
+     * @param dependencyList The builder to collect contentlet dependencies
+     * @param blocks         The list of blocks to process
+     */
+    private void processBlocksRecursively(final ImmutableList.Builder<StoryBlockDependency> dependencyList,
+                                          final List<Map<String, Object>> blocks) {
+        if (!UtilMethods.isSet(blocks)) {
+            return;
+        }
+
+        for (final Map<String, Object> block : blocks) {
+            if (!UtilMethods.isSet(block)) {
+                continue;
+            }
+
+            final String type = (String) block.get(TYPE_KEY);
+
+            if (type != null && allowedTypes.contains(type)) {
+                addDependencies(dependencyList, block);
+                continue;
+            }
+
+            // If this block has nested content, recurse into it, commonly listItem, bulletList, orderedList
+            final Object nestedContent = block.get(CONTENT_KEY);
+            if (nestedContent instanceof List) {
+                processBlocksRecursively(dependencyList, (List<Map<String, Object>>) nestedContent);
+            }
+        }
     }
 
     @Override
@@ -398,20 +455,26 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
-     * Finds Identifiers in the specified data map in order to list the referenced Contentlets in a Story Block field.
+     * Extracts dependency information (identifier and languageId) from the specified data map in order to list the
+     * referenced Contentlets in a Story Block field.
      *
-     * @param contentletIdList The list of Contentlet Identifiers referenced by the Story Block field.
-     * @param contentMap       The Story Block data map.
+     * @param dependencyList The list of Contentlet dependencies referenced by the Story Block field.
+     * @param contentMap     The Story Block data map.
      */
     @SuppressWarnings("unchecked")
-    private static void addDependencies(final ImmutableList.Builder<String> contentletIdList,
+    private static void addDependencies(final ImmutableList.Builder<StoryBlockDependency> dependencyList,
                                         final Map contentMap) {
         final Map<String, Map<String, Object>> attrsMap = (Map) contentMap.get(ATTRS_KEY);
         if (UtilMethods.isSet(attrsMap)) {
             final Map<String, Object> dataMap = attrsMap.get(DATA_KEY);
             if (UtilMethods.isSet(dataMap)) {
                 final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
-                contentletIdList.add(identifier);
+                // Extract languageId from the stored data, falling back to default language if not present
+                final long languageId = ConversionUtils.toLong(
+                        dataMap.get(LANGUAGE_ID_KEY),
+                        () -> APILocator.getLanguageAPI().getDefaultLanguage().getId()
+                );
+                dependencyList.add(StoryBlockDependency.of(identifier, languageId));
             }
         }
     }

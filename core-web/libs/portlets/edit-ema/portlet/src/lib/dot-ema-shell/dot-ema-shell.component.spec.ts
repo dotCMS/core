@@ -1,9 +1,17 @@
 import { describe, expect } from '@jest/globals';
-import { SpyObject, createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
+import {
+    SpyObject,
+    createComponentFactory,
+    Spectator,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -20,6 +28,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotPropertiesService,
+    DotSiteService,
+    DotSystemConfigService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     PushPublishService
@@ -31,6 +41,7 @@ import {
     SiteService
 } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
@@ -143,6 +154,10 @@ const SNAPSHOT_MOCK = (
     };
 };
 
+const mockGlobalStore = {
+    addNewBreadcrumb: jest.fn()
+};
+
 /**
  * Override the snapshot of the activated route
  * To simulate the queryParams change
@@ -196,7 +211,20 @@ describe('DotEmaShellComponent', () => {
                 useValue: {
                     getCurrentUser: () => of({})
                 }
-            }
+            },
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
+            mockProvider(DotSiteService, {
+                getCurrentSite: () => of(null)
+            }),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: () => of({})
+            }),
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         declarations: [
             MockComponent(DotEmaDialogComponent),
@@ -288,6 +316,17 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            {
+                provide: DotMessageService,
+                useValue: {
+                    get: jest.fn().mockReturnValue('Mock Message'),
+                    init: jest.fn()
+                }
+            },
+            {
+                provide: GlobalStore,
+                useValue: mockGlobalStore
             }
         ]
     });
@@ -973,6 +1012,83 @@ describe('DotEmaShellComponent', () => {
 
                 spectator.detectChanges();
                 expect(reloadSpy).toHaveBeenCalled();
+            });
+        });
+
+        describe('Breadcrumb', () => {
+            it('should call GlobalStore.addNewBreadcrumb when page loads with page title, edit-page URL and identifier', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'hello world',
+                        id: '123',
+                        url: expect.stringMatching(
+                            /#\/edit-page\/content\?(?=.*url=index)(?=.*language_id=1)/
+                        )
+                    })
+                );
+            });
+
+            it('should call addNewBreadcrumb again when page response changes', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'hello world',
+                        id: '123'
+                    })
+                );
+
+                const differentPageResponse = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        title: 'Other Page',
+                        identifier: '456'
+                    }
+                };
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(differentPageResponse));
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+
+                store.loadPageAsset({
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/other-page'
+                });
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Other Page',
+                        id: '456',
+                        url: expect.stringContaining('#/edit-page/content?')
+                    })
+                );
+            });
+
+            it('should build breadcrumb URL from current friendly params', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        url: expect.stringMatching(
+                            new RegExp(
+                                `#/edit-page/content\\?(?=.*language_id=${INITIAL_PAGE_PARAMS.language_id})(?=.*url=${INITIAL_PAGE_PARAMS.url})(?=.*mode=${INITIAL_PAGE_PARAMS.mode})`
+                            )
+                        )
+                    })
+                );
             });
         });
     });

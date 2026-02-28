@@ -88,6 +88,7 @@ public class EmbeddingsDTO implements Serializable {
                 .withThreshold(form.threshold)
                 .withTemperature(form.temperature)
                 .withTokenCount(form.responseLengthTokens)
+                .withLanguage(form.language>0?form.language:APILocator.getLanguageAPI().getDefaultLanguage().getId())
                 .withUser(form.user);
     }
 

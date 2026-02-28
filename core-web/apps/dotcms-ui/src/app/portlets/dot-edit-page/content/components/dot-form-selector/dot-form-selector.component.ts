@@ -11,20 +11,21 @@ import {
 } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
-import { Table } from 'primeng/table';
+import { ButtonModule } from 'primeng/button';
+import { Table, TableModule } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
 import { PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotDialogComponent } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-form-selector',
     templateUrl: './dot-form-selector.component.html',
     styleUrls: ['./dot-form-selector.component.scss'],
-    providers: [PaginatorService],
-    standalone: false
+    imports: [TableModule, DotDialogComponent, ButtonModule, DotMessagePipe],
+    providers: [PaginatorService]
 })
 export class DotFormSelectorComponent implements OnInit, OnChanges {
     paginatorService = inject(PaginatorService);

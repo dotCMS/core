@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { animate, AnimationEvent, state, style, transition, trigger } from '@angular/animations';
+import { CommonModule } from '@angular/common';
 import { Component, inject, Input, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
@@ -14,6 +15,7 @@ import { DotPaletteState, DotPaletteStore } from './store/dot-palette.store';
     templateUrl: './dot-palette.component.html',
     styleUrls: ['./dot-palette.component.scss'],
     providers: [DotPaletteStore],
+    imports: [CommonModule, DotPaletteContentTypeComponent, DotPaletteContentletsComponent],
     animations: [
         trigger('inOut', [
             state(
@@ -30,8 +32,7 @@ import { DotPaletteState, DotPaletteStore } from './store/dot-palette.store';
             ),
             transition('* => *', animate('200ms ease-in'))
         ])
-    ],
-    standalone: false
+    ]
 })
 export class DotPaletteComponent {
     readonly #store = inject(DotPaletteStore);

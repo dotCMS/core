@@ -11,6 +11,7 @@ public class AiKeys {
     public static final String MODEL = "model";
     public static final String SYSTEM = "system";
     public static final String USER = "user";
+    public static final String ASSISTANT = "assistant";
     public static final String TEMPERATURE = "temperature";
     public static final String TITLE = "title";
     public static final String SIZE = "size";
@@ -62,6 +63,7 @@ public class AiKeys {
     public static final String COUNT = "count";
     public static final String INPUT = "input";
     public static final String RESPONSE_FORMAT = "response_format";
+    public static final String B64_JSON = "b64_json";
 
     private AiKeys() {}
 

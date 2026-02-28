@@ -88,24 +88,22 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
 
                 return observableResponse.pipe(
                     take(1),
-                    tapResponse(
-                        () => {
+                    tapResponse({
+                        next: () => {
                             this.patchState({
                                 closeDialog: true,
                                 loading: false,
                                 actionState: DotFavoritePageActionState.SAVED
                             });
                         },
-                        (error: HttpErrorResponse) => {
+                        error: (error: HttpErrorResponse) => {
                             this.dotHttpErrorManagerService.handle(error);
-
                             this.patchState({
                                 loading: false
                             });
-
                             return of(null);
                         }
-                    )
+                    })
                 );
             })
         );
@@ -121,24 +119,22 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                 });
             }),
             take(1),
-            tapResponse(
-                () => {
+            tapResponse({
+                next: () => {
                     this.patchState({
                         closeDialog: true,
                         loading: false,
                         actionState: DotFavoritePageActionState.DELETED
                     });
                 },
-                (error: HttpErrorResponse) => {
+                error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
-
                     this.patchState({
                         loading: false
                     });
-
                     return of(null);
                 }
-            )
+            })
         );
     });
 

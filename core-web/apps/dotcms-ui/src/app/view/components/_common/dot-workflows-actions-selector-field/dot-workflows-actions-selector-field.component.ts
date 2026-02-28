@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     forwardRef,
@@ -10,14 +11,15 @@ import {
     ViewChild,
     inject
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { SelectItem, SelectItemGroup } from 'primeng/api';
-import { Dropdown } from 'primeng/dropdown';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 import { tap } from 'rxjs/operators';
 
 import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
@@ -37,7 +39,7 @@ interface DropdownEvent {
             useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
         }
     ],
-    standalone: false
+    imports: [CommonModule, FormsModule, DropdownModule, DotMessagePipe]
 })
 export class DotWorkflowsActionsSelectorFieldComponent
     implements ControlValueAccessor, OnChanges, OnInit

@@ -4,31 +4,31 @@
             <div class="dot-pages__inner-container">
                 <dot-pages-favorite-panel
                     (goToUrl)="goToUrl($event)"
-                    (showActionsMenu)="showActionsMenu($event)"></dot-pages-favorite-panel>
+                    (showActionsMenu)="showActionsMenu($event)" />
                 <p-menu
                     (onHide)="closedActionsMenu($event)"
                     [popup]="true"
                     [model]="vm.pages.menuActions"
-                    #menu></p-menu>
+                    #menu />
                 <dot-pages-listing-panel
                     (goToUrl)="goToUrl($event)"
                     (showActionsMenu)="showActionsMenu($event)"
                     (pageChange)="scrollToTop()"
-                    data-testId="pages-listing-panel"></dot-pages-listing-panel>
+                    data-testId="pages-listing-panel" />
                 @if (vm.pages.addToBundleCTId) {
                     <dot-add-to-bundle
                         (cancel)="vm.pages.addToBundleCTId = null"
-                        [assetIdentifier]="vm.pages.addToBundleCTId"></dot-add-to-bundle>
+                        [assetIdentifier]="vm.pages.addToBundleCTId" />
                 }
             </div>
         } @else {
             <div class="dot-pages__spinner-container">
                 <div class="dot-pages__spinner-container dot-pages__spinner-overlay">
-                    <p-progressSpinner styleClass="p-progress-spinner-custom"></p-progressSpinner>
+                    <p-progressSpinner styleClass="p-progress-spinner-custom" />
                 </div>
             </div>
         }
     </div>
 }
 
-<router-outlet (deactivate)="loadPagesOnDeactivation()"></router-outlet>
+<router-outlet (deactivate)="loadPagesOnDeactivation()" />

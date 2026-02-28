@@ -28,6 +28,11 @@
         padding: 0 $spacing-3;
         text-transform: capitalize;
 
+        &.p-confirm-dialog-accept,
+        &.p-confirm-dialog-reject {
+            gap: 0;
+        }
+
         &.p-button-lg,
         .p-button-lg & {
             @extend #large;
@@ -175,6 +180,10 @@ a.p-button.p-button-text {
         width: $field-height-sm;
         min-width: $field-height-sm;
     }
+}
+
+.p-button-icon-only.p-button-icon-outline {
+    border: 1.5px solid $color-palette-primary;
 }
 
 // Misc

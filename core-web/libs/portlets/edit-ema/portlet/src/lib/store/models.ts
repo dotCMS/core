@@ -22,8 +22,6 @@ export interface UVEState {
     viewParams?: DotUveViewParams;
     status: UVE_STATUS;
     isTraditionalPage: boolean;
-    canEditPage: boolean;
-    pageIsLocked: boolean;
     isClientReady: boolean;
     workflowActions?: DotCMSWorkflowAction[];
 }

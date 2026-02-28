@@ -1,10 +1,12 @@
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
 
+import { DotContentCompareTableComponent } from './components/dot-content-compare-table/dot-content-compare-table.component';
 import { DotContentCompareState, DotContentCompareStore } from './store/dot-content-compare.store';
 
 @Component({
@@ -12,7 +14,7 @@ import { DotContentCompareState, DotContentCompareStore } from './store/dot-cont
     templateUrl: './dot-content-compare.component.html',
     styleUrls: ['./dot-content-compare.component.scss'],
     providers: [DotContentCompareStore],
-    standalone: false
+    imports: [CommonModule, DotContentCompareTableComponent]
 })
 export class DotContentCompareComponent {
     store = inject(DotContentCompareStore);
@@ -25,6 +27,7 @@ export class DotContentCompareComponent {
             this.store.loadData(data);
         }
     }
+    $showActions = input<boolean>(true, { alias: 'showActions' });
     @Output() shutdown = new EventEmitter<boolean>();
     @Output() letMeBringBack = new EventEmitter<{ name: string; args: string[] }>();
     vm$: Observable<DotContentCompareState> = this.store.vm$;

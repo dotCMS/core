@@ -13,6 +13,8 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
+
 import { DotContentDriveSearchInputComponent } from './dot-content-drive-search-input.component';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
@@ -29,7 +31,8 @@ describe('DotContentDriveSearchInputComponent', () => {
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
                 getFilterValue: jest.fn(),
-                setGlobalSearch: jest.fn()
+                setGlobalSearch: jest.fn(),
+                setSelectedNode: jest.fn()
             })
         ],
         detectChanges: false
@@ -99,6 +102,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             tick(500);
 
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('search term');
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
 
         it('should call removeFilter when input is empty', fakeAsync(() => {
@@ -108,6 +112,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             tick(500);
 
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('');
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
 
         it('should debounce input changes by 500ms', fakeAsync(() => {
@@ -122,6 +127,7 @@ describe('DotContentDriveSearchInputComponent', () => {
 
             tick(1);
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('test');
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
 
         it('should trim whitespace from input values', fakeAsync(() => {
@@ -131,6 +137,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             tick(500);
 
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('trimmed value');
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
 
         it('should handle special characters correctly', fakeAsync(() => {
@@ -141,6 +148,7 @@ describe('DotContentDriveSearchInputComponent', () => {
             tick(500);
 
             expect(mockStore.setGlobalSearch).toHaveBeenCalledWith(specialChars);
+            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
         }));
     });
 
@@ -159,21 +167,21 @@ describe('DotContentDriveSearchInputComponent', () => {
 
     describe('Clear Icon', () => {
         it('should appear when input has value', () => {
-            spectator.component.searchControl.setValue('test value');
+            mockStore.getFilterValue.mockReturnValue('test value');
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('search-icon-clear'))).toBeTruthy();
         });
 
         it('should not appear when input is empty', () => {
-            spectator.component.searchControl.setValue('');
+            mockStore.getFilterValue.mockReturnValue('');
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('search-icon-clear'))).not.toBeTruthy();
         });
 
         it('should clear input when clear icon is clicked', () => {
-            spectator.component.searchControl.setValue('test value');
+            mockStore.getFilterValue.mockReturnValue('test value');
             spectator.detectChanges();
 
             spectator.click(spectator.query(byTestId('search-icon-clear')));

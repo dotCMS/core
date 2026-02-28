@@ -8,7 +8,12 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.Map;
 import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
+@MetricsProfile(ProfileType.FULL)
+@ApplicationScoped
 public class TotalEmbeddingsIndexesMetricType implements MetricType {
 
     @Override

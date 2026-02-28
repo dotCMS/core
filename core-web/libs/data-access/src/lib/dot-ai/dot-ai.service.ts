@@ -24,7 +24,7 @@ const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class DotAiService {
     #http: HttpClient = inject(HttpClient);
 
@@ -78,7 +78,7 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size: string = DotAIImageOrientation.HORIZONTAL
+        size: string = '1024x1024'
     ): Observable<DotAIImageContent> {
         return this.#http
             .post<DotAIImageResponse>(
@@ -112,6 +112,21 @@ export class DotAiService {
                 map((res) => res.status === 200 && res?.body?.apiKey !== AI_PLUGIN_KEY.NOT_SET),
                 catchError(() => {
                     return of(false);
+                })
+            );
+    }
+
+    /**
+     * Gets the current AI configuration including the image model and other settings.
+     *
+     * @return {Observable<DotAICompletionsConfig>} An observable that emits the AI completions configuration.
+     */
+    getConfig(): Observable<DotAICompletionsConfig> {
+        return this.#http
+            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`)
+            .pipe(
+                catchError(() => {
+                    return throwError('Error fetching AI configuration');
                 })
             );
     }

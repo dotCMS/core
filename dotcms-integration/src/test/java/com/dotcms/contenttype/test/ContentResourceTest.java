@@ -49,7 +49,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -1366,10 +1366,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            request.setHeader("Authorization", "Basic " + new String(Base64.encode(("admin@dotcms.com:admin").getBytes())));
+            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(("admin@dotcms.com:admin").getBytes()));
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            request.setHeader("Authorization", "Basic " + new String(Base64.encode((user.getEmailAddress() + ":" + user.getPassword()).getBytes())));
+            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString((user.getEmailAddress() + ":" + user.getPassword()).getBytes()));
         }
 
         if (jsonPayload != null) {

@@ -19,8 +19,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
  * <!-- Output: Hello <span class="highlight">World</span> -->
  */
 @Pipe({
-    name: 'dotHighlight',
-    standalone: true
+    name: 'dotHighlight'
 })
 export class DotHighlightPipe implements PipeTransform {
     private sanitizer = inject(DomSanitizer);

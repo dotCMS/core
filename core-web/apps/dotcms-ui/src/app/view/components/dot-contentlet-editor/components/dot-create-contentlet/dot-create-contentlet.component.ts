@@ -1,5 +1,6 @@
 import { merge, Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -8,6 +9,7 @@ import { filter, pluck } from 'rxjs/operators';
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
 /**
  * Allow user to add a contentlet to DotCMS instance
@@ -20,7 +22,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
     selector: 'dot-create-contentlet',
     templateUrl: './dot-create-contentlet.component.html',
     styleUrls: ['./dot-create-contentlet.component.scss'],
-    standalone: false
+    imports: [CommonModule, DotContentletWrapperComponent]
 })
 export class DotCreateContentletComponent implements OnInit {
     private dotRouterService = inject(DotRouterService);

@@ -6,11 +6,11 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, pluck } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client/internal';
-import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotPagination, DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
-import { DotPageAssetParams, SavePagePayload } from '../shared/models';
+import { DotPageAssetParams, SavePagePayload, SaveStylePropertiesPayload } from '../shared/models';
 import { getFullPageURL } from '../utils';
 
 export interface DotPageApiParams {
@@ -91,6 +91,34 @@ export class DotPageApiService {
     }
 
     /**
+     * Save style properties for a specific contentlet within a container on a page.
+     *
+     * @param {SaveStylePropertiesPayload} payload - The payload for saving style properties.
+     * @param {string} payload.containerIdentifier - Identifier of the container.
+     * @param {string} payload.contentletIdentifier - Identifier of the contentlet.
+     * @param {Record<string, unknown>} payload.styleProperties - Style properties to apply.
+     * @param {string} payload.pageId - The page ID where styles are being saved.
+     * @param {string} payload.containerUUID - UUID of the container.
+     * @returns {Observable<unknown>} Observable that completes when properties are saved.
+     * @memberof DotPageApiService
+     */
+    saveStyleProperties({
+        containerIdentifier,
+        contentletIdentifier,
+        styleProperties,
+        pageId,
+        containerUUID
+    }: SaveStylePropertiesPayload): Observable<unknown> {
+        const payload = {
+            identifier: containerIdentifier,
+            uuid: containerUUID,
+            [contentletIdentifier]: styleProperties
+        };
+
+        return this.http.put(`/api/v1/page/${pageId}/styles`, [payload]);
+    }
+
+    /**
      * Get the personas from the Page API
      *
      * @param null {}
@@ -137,8 +165,10 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
+        // indexPolicy=WAIT_FOR ensures the contentlet is indexed before returning, preventing stale data.
+        // Note: We'll replace this with optimistic updates for better UX.
         return this.http.put(
-            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}`,
+            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}&indexPolicy=WAIT_FOR`,
             { contentlet }
         );
     }

@@ -48,7 +48,7 @@ const initialState: DotAiImagePromptComponentState = {
     formValue: {
         text: '',
         type: DEFAULT_INPUT_PROMPT,
-        size: DotAIImageOrientation.HORIZONTAL
+        size: '1024x1024' // Default square size
     }
 };
 
@@ -148,8 +148,8 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                 });
 
                 return this.dotAiService.generateAndPublishImage(finalPrompt, formValue.size).pipe(
-                    tapResponse(
-                        (response) => {
+                    tapResponse({
+                        next: (response) => {
                             this.updateImageState(
                                 response,
                                 formValue,
@@ -158,7 +158,7 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                                 galleryActiveIndex
                             );
                         },
-                        (error: string) => {
+                        error: (error: string) => {
                             this.updateImageState(
                                 null,
                                 formValue,
@@ -167,10 +167,9 @@ export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptCompon
                                 galleryActiveIndex,
                                 error
                             );
-
                             return of(null);
                         }
-                    )
+                    })
                 );
             })
         );

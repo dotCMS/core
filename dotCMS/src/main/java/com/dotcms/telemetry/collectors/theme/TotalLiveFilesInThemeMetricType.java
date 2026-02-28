@@ -3,10 +3,15 @@ package com.dotcms.telemetry.collectors.theme;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the total of Number of LIVE files in themes
  */
+@MetricsProfile(ProfileType.FULL)
+@ApplicationScoped
 public class TotalLiveFilesInThemeMetricType implements DBMetricType {
     @Override
     public String getName() {

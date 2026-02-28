@@ -1,7 +1,9 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -13,6 +15,8 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -55,7 +59,16 @@ describe('DotEditContentStore', () => {
             mockProvider(DotCurrentUserService),
             mockProvider(DialogService),
             mockProvider(DotVersionableService),
-            mockProvider(ConfirmationService)
+            mockProvider(ConfirmationService),
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 
@@ -73,6 +86,15 @@ describe('DotEditContentStore', () => {
         expect(store.state()).toBe(ComponentStatus.INIT);
         expect(store.error()).toBeNull();
         expect(store.isDialogMode()).toBe(false);
+    });
+
+    it('should initialize push publish history state correctly', () => {
+        expect(store.pushPublishHistory()).toEqual([]);
+        expect(store.pushPublishHistoryPagination()).toBeNull();
+        expect(store.pushPublishHistoryStatus()).toEqual({
+            status: ComponentStatus.INIT,
+            error: null
+        });
     });
 
     it('should compose with all required features', () => {
@@ -94,12 +116,19 @@ describe('DotEditContentStore', () => {
         expect(store.activeSidebarTab).toBeDefined();
         // User Feature
         expect(store.currentUser).toBeDefined();
+        // History Feature - Push Publish History
+        expect(store.pushPublishHistory).toBeDefined();
+        expect(store.pushPublishHistoryPagination).toBeDefined();
+        expect(store.pushPublishHistoryStatus).toBeDefined();
         // Methods
         expect(store.enableDialogMode).toBeDefined();
         expect(store.initializeNewContent).toBeDefined();
         expect(store.initializeExistingContent).toBeDefined();
         expect(store.initializeDialogMode).toBeDefined();
         expect(store.initializeAsPortlet).toBeDefined();
+        expect(store.loadPushPublishHistory).toBeDefined();
+        expect(store.clearPushPublishHistory).toBeDefined();
+        expect(store.deletePushPublishHistory).toBeDefined();
     });
 
     describe('initializeDialogMode', () => {
@@ -114,7 +143,7 @@ describe('DotEditContentStore', () => {
             };
             spectator
                 .inject(DotContentTypeService)
-                .getContentType.mockReturnValue(of(mockContentType as DotCMSContentType));
+                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
             spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
 
             // Act
@@ -139,7 +168,7 @@ describe('DotEditContentStore', () => {
                 .getContentById.mockReturnValue(of(mockContentlet as DotCMSContentlet));
             spectator
                 .inject(DotContentTypeService)
-                .getContentType.mockReturnValue(of({} as DotCMSContentType));
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
             spectator.inject(DotWorkflowsActionsService).getByInode.mockReturnValue(of([]));
             spectator.inject(DotWorkflowsActionsService).getWorkFlowActions.mockReturnValue(of([]));
             spectator
@@ -167,7 +196,7 @@ describe('DotEditContentStore', () => {
             };
             spectator
                 .inject(DotContentTypeService)
-                .getContentType.mockReturnValue(of(mockContentType as DotCMSContentType));
+                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
             spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
 
             // Act
@@ -195,7 +224,9 @@ describe('DotEditContentStore', () => {
             store.initializeAsPortlet();
 
             // Assert - services should not be called when in dialog mode
-            expect(spectator.inject(DotContentTypeService).getContentType).not.toHaveBeenCalled();
+            expect(
+                spectator.inject(DotContentTypeService).getContentTypeWithRender
+            ).not.toHaveBeenCalled();
             expect(spectator.inject(DotEditContentService).getContentById).not.toHaveBeenCalled();
         });
 
@@ -219,7 +250,7 @@ describe('DotEditContentStore', () => {
                 .getContentById.mockReturnValue(of(mockContentlet as DotCMSContentlet));
             spectator
                 .inject(DotContentTypeService)
-                .getContentType.mockReturnValue(of({} as DotCMSContentType));
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
             spectator.inject(DotWorkflowsActionsService).getByInode.mockReturnValue(of([]));
             spectator.inject(DotWorkflowsActionsService).getWorkFlowActions.mockReturnValue(of([]));
             spectator
@@ -250,16 +281,16 @@ describe('DotEditContentStore', () => {
             };
             spectator
                 .inject(DotContentTypeService)
-                .getContentType.mockReturnValue(of(mockContentType as DotCMSContentType));
+                .getContentTypeWithRender.mockReturnValue(of(mockContentType as DotCMSContentType));
             spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
 
             // Act
             store.initializeAsPortlet();
 
             // Assert - verify the correct service is called
-            expect(spectator.inject(DotContentTypeService).getContentType).toHaveBeenCalledWith(
-                'test-content-type'
-            );
+            expect(
+                spectator.inject(DotContentTypeService).getContentTypeWithRender
+            ).toHaveBeenCalledWith('test-content-type');
         });
     });
 });

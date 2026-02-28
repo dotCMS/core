@@ -1,13 +1,13 @@
 import { Subscription } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
     computed,
     DestroyRef,
+    DOCUMENT,
     effect,
     inject,
     OnInit,
@@ -60,6 +60,7 @@ import {
     isFilteredType,
     processFieldValue
 } from '../../utils/functions.util';
+import { blockEditorRequiredValidator } from '../../utils/validators';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 /**
@@ -95,7 +96,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         TabViewModule,
         DotWorkflowActionsComponent,
         TabViewInsertDirective,
-        NgTemplateOutlet,
         DotMessagePipe,
         InputSwitchModule,
         FormsModule,
@@ -113,7 +113,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 })
 export class DotEditContentFormComponent implements OnInit {
     readonly #rootStore = inject(GlobalStore);
-    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
@@ -309,6 +309,7 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
             this.changeDetectorRef.detectChanges();
+            this.$store.setFormStatus('invalid');
             requestAnimationFrame(() => {
                 this.scrollToFirstError();
             });
@@ -526,7 +527,13 @@ export class DotEditContentFormComponent implements OnInit {
         const validators: ValidatorFn[] = [];
 
         if (field.required) {
-            validators.push(Validators.required);
+            // Block Editor needs a custom validator that checks for actual text content,
+            // not just the presence of a JSON structure
+            if (field.fieldType === FIELD_TYPES.BLOCK_EDITOR) {
+                validators.push(blockEditorRequiredValidator());
+            } else {
+                validators.push(Validators.required);
+            }
         }
 
         if (field.regexCheck) {

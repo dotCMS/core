@@ -1,4 +1,5 @@
 import { Component, Element, Event, EventEmitter, Prop, State, Host, h } from '@stencil/core';
+
 import { DotBinaryFileEvent, DotBinaryMessageError, DotFieldStatus } from '../../../models';
 import { getErrorClass, getHintId, isFileAllowed, isValidURL } from '../../../utils';
 

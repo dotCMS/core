@@ -1,5 +1,6 @@
-import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
+import { StyleEditorFieldType } from '@dotcms/uve';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -18,7 +19,11 @@ export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 export const IFRAME_SCROLL_ZONE = 100;
 
+export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
+
 export const BASE_IFRAME_MEASURE_UNIT = 'px';
+
+export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
 
 export const COMMON_ERRORS: CommonErrorsInfo = {
     [CommonErrors.NOT_FOUND]: {
@@ -67,7 +72,10 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
 };
 
 // Add the Feature flags we want to fetch for UVE
-export const UVE_FEATURE_FLAGS = [];
+export const UVE_FEATURE_FLAGS = [
+    FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
+    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
+];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',
@@ -100,3 +108,14 @@ export const DEFAULT_DEVICES: DotDeviceListItem[] = [
         _isDefault: true
     }
 ];
+
+/**
+ * Constants for style editor field types.
+ * Use these constants in templates instead of hardcoded strings.
+ */
+export const STYLE_EDITOR_FIELD_TYPES = {
+    INPUT: 'input',
+    DROPDOWN: 'dropdown',
+    RADIO: 'radio',
+    CHECKBOX_GROUP: 'checkboxGroup'
+} as const satisfies Record<string, StyleEditorFieldType>;

@@ -12,9 +12,11 @@ import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-te
 
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
@@ -28,9 +30,16 @@ describe('DotEditContentletComponent', () => {
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
+            imports: [
+                DotEditContentletComponent,
+                DotContentletWrapperComponent,
+                DotIframeDialogComponent,
+                BrowserAnimationsModule,
+                RouterTestingModule
+            ],
             providers: [
                 DotContentletEditorService,
+                IframeOverlayService,
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
@@ -46,9 +55,14 @@ describe('DotEditContentletComponent', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
+                },
+                {
+                    provide: DotCustomEventHandlerService,
+                    useValue: {
+                        handle: jest.fn()
+                    }
                 }
-            ],
-            imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
+            ]
         });
     }));
 

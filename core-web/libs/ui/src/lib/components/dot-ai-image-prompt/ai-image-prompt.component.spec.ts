@@ -69,7 +69,7 @@ describe('DotAIImagePromptComponent', () => {
         const formMock: AIImagePrompt = {
             text: 'Test',
             type: PromptType.INPUT,
-            size: DotAIImageOrientation.VERTICAL
+            size: '1024x1792' // Portrait size
         };
         patchState(store, { formValue: formMock });
 
@@ -77,7 +77,7 @@ describe('DotAIImagePromptComponent', () => {
         expect(generateImageSpy).toHaveBeenCalled();
         expect(dotAiService.generateAndPublishImage).toHaveBeenCalledWith(
             'Test',
-            DotAIImageOrientation.VERTICAL
+            '1024x1792'
         );
     });
 

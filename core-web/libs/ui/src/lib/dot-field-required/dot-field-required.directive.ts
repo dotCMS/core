@@ -7,8 +7,7 @@ import { FormGroupDirective, Validators } from '@angular/forms';
  */
 
 @Directive({
-    selector: '[dotFieldRequired]',
-    standalone: true
+    selector: '[dotFieldRequired]'
 })
 export class DotFieldRequiredDirective {
     private el = inject(ElementRef);

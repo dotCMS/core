@@ -55,8 +55,4 @@ export class EditEmaNavigationBarComponent {
     itemAction(item: NavigationBarItem): void {
         this.action.emit(item.id);
     }
-
-    togglePalette(): void {
-        this.uveStore.setPaletteOpen(!this.uveStore.paletteOpen());
-    }
 }

@@ -1,21 +1,29 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
 
 import { map, take } from 'rxjs/operators';
 
 import { PaginatorService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTemplateContainersCacheService } from '../../../api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { PaginationEvent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
+import {
+    PaginationEvent,
+    SearchableDropdownComponent
+} from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 @Component({
     providers: [PaginatorService],
     selector: 'dot-container-selector',
     templateUrl: './dot-container-selector.component.html',
     styleUrls: ['./dot-container-selector.component.scss'],
-    standalone: false
+    imports: [CommonModule, FormsModule, ButtonModule, SearchableDropdownComponent, DotMessagePipe]
 })
 export class DotContainerSelectorComponent implements OnInit {
     paginationService = inject(PaginatorService);

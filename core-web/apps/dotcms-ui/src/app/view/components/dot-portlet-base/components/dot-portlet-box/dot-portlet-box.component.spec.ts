@@ -19,7 +19,8 @@ describe('DotPortletBoxComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotPortletBoxComponent, DefaultTestHostComponent]
+            declarations: [DefaultTestHostComponent],
+            imports: [DotPortletBoxComponent]
         }).compileComponents();
     });
 

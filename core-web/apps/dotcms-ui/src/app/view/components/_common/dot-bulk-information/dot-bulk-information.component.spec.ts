@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -12,7 +11,6 @@ import {
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotActionBulkResult } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotBulkInformationComponent } from './dot-bulk-information.component';
@@ -67,8 +65,8 @@ describe('DotBulkInformationComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotBulkInformationComponent, TestDynamicDialogComponent],
-            imports: [CommonModule, DynamicDialogModule, DotMessagePipe, BrowserAnimationsModule],
+            declarations: [TestDynamicDialogComponent],
+            imports: [DotBulkInformationComponent, DynamicDialogModule, BrowserAnimationsModule],
             providers: [
                 DynamicDialogRef,
                 DynamicDialogConfig,

@@ -1,26 +1,44 @@
 package com.dotcms.ai.api;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.api.embeddings.ContentTypeEmbeddingIndexRequest;
+import com.dotcms.ai.api.embeddings.DotPgVectorEmbeddingStore;
+import com.dotcms.ai.api.embeddings.EmbeddingIndexRequest;
+import com.dotcms.ai.api.embeddings.FixedSizeChunker;
+import com.dotcms.ai.api.embeddings.SearchMatch;
+import com.dotcms.ai.api.embeddings.TextChunker;
+import com.dotcms.ai.api.embeddings.extractor.ContentExtractor;
+import com.dotcms.ai.api.embeddings.extractor.ExtractedContent;
+import com.dotcms.ai.api.embeddings.extractor.ExtractorContentInput;
+import com.dotcms.ai.api.embeddings.retrieval.EmbeddingStoreRetriever;
+import com.dotcms.ai.api.embeddings.retrieval.RetrievalQuery;
+import com.dotcms.ai.api.embeddings.retrieval.RetrievedChunk;
+import com.dotcms.ai.api.embeddings.retrieval.Retriever;
+import com.dotcms.ai.api.provider.VendorModelProviderFactory;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.client.AIProxyClient;
 import com.dotcms.ai.client.JSONObjectAIRequest;
+import com.dotcms.ai.config.AiModelConfig;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.ai.db.EmbeddingsDTO.Builder;
 import com.dotcms.ai.db.EmbeddingsFactory;
+import com.dotcms.ai.util.AIUtil;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.EncodingUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rest.ContentHelper;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -36,6 +54,12 @@ import com.dotmarketing.util.json.JSONObject;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.liferay.portal.model.User;
+import com.liferay.util.Encryptor;
+import com.liferay.util.HashBuilder;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
@@ -43,9 +67,11 @@ import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.validation.constraints.NotNull;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,9 +102,230 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                     .build();
 
     final AppConfig config;
+    private final VendorModelProviderFactory modelProviderFactory;
+    private final ContentExtractor contentExtractor;
+    private final TextChunker textChunker;
 
     public EmbeddingsAPIImpl(final Host host) {
         this.config = ConfigService.INSTANCE.config(host);
+        this.modelProviderFactory = CDIUtils.getBeanThrows(VendorModelProviderFactory.class);
+        contentExtractor = CDIUtils.getBeanThrows(ContentExtractor.class);
+        textChunker = new FixedSizeChunker(1200, 200); // todo see this should be configurable);
+    }
+
+    public static EmbeddingModel defaultOnnxModel() {
+
+        Logger.info(EmbeddingsAPIImpl.class, "Using the default default embedding model Onnx");
+        return CDIUtils.getBeanThrows(EmbeddingModel.class, "onnx");
+    }
+
+    public int indexOne(final EmbeddingIndexRequest embeddingIndexRequest) throws Exception {
+
+        // todo: we have to
+        // 1) take in consideration the new parameters; velocityTemplate, fields and user, keep in mind all of them could be null
+        // 2) we have to pass them to the context extract
+        final String identifier = embeddingIndexRequest.getIdentifier();
+        final long languageId   = embeddingIndexRequest.getLanguageId();
+        final String vendorModelPath = embeddingIndexRequest.getVendorModelPath();
+        final String vendorName = AIUtil.getVendorFromPath(vendorModelPath);
+        final String indexName = Objects.nonNull(embeddingIndexRequest.getIndexName())?embeddingIndexRequest.getIndexName():"default";
+        final AiModelConfig modelConfig = embeddingIndexRequest.getModelConfig();
+        final EmbeddingModel embeddingModel = Objects.nonNull(vendorName)?
+                this.modelProviderFactory.getEmbedding(vendorName, modelConfig):defaultOnnxModel();
+        // todo: this could be eventually cached by factory by index and model
+        final DotPgVectorEmbeddingStore embeddingStore = DotPgVectorEmbeddingStore.builder()
+                .indexName(indexName)
+                .dimension(embeddingModel.dimension())
+                .build();
+
+        final ExtractorContentInput extractorContentInput = ExtractorContentInput.builder()
+                .withUserId(embeddingIndexRequest.getUserId()).withFields(embeddingIndexRequest.getFields())
+                .withLanguageId(languageId).withIdentifier(identifier).withVelocityTemplate(embeddingIndexRequest.getVelocityTemplate()).build();
+        final ExtractedContent extractedContent = this.contentExtractor.extract(extractorContentInput);
+        if (extractedContent == null) {
+            return 0;
+        }
+
+        final String fullText = normalize(extractedContent);
+        if (fullText == null || fullText.isEmpty()) {
+            return 0;
+        }
+
+        final String textHash = sha256(fullText); // optional idempotency helper
+        final List<String> chunks = textChunker.chunk(fullText);
+        if (chunks.isEmpty()) {
+            return 0;
+        }
+
+        int chunksIndexed = 0;
+        for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
+            final String textChunk = chunks.get(chunkIndex);
+            final TextSegment segment = buildSegment(extractedContent, textChunk, textHash, chunkIndex, modelConfig.get("model"));
+            embeddingStore.add(embeddingModel.embed(segment).content(), segment);
+            chunksIndexed++;
+        }
+        return chunksIndexed;
+    }
+
+    @Override
+    public int indexContentType(final ContentTypeEmbeddingIndexRequest contentTypeIndexRequest) {
+
+        final String host = contentTypeIndexRequest.getHost();
+        final String contentType = contentTypeIndexRequest.getContentType();
+        final Long languageId = contentTypeIndexRequest.getLanguageId().orElse(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final int pageSize = contentTypeIndexRequest.getPageSize();
+        final int batchSize = contentTypeIndexRequest.getBatchSize();
+        final String vendorModelPath = contentTypeIndexRequest.getVendorModelPath();
+        final String vendorName = AIUtil.getVendorFromPath(vendorModelPath);
+        final String indexName = Objects.nonNull(contentTypeIndexRequest.getIndexName())?contentTypeIndexRequest.getIndexName():"default";
+        final AiModelConfig modelConfig = contentTypeIndexRequest.getModelConfig();
+        final EmbeddingModel embeddingModel = Objects.nonNull(vendorName)?
+                this.modelProviderFactory.getEmbedding(vendorName, modelConfig):defaultOnnxModel();
+        // todo: this could be eventually cached by factory by index and model
+        final DotPgVectorEmbeddingStore embeddingStore = DotPgVectorEmbeddingStore.builder()
+                .indexName(indexName)
+                .dimension(embeddingModel.dimension())
+                .build();
+        final int safePageSize = Math.max(1, pageSize);
+        final int safeBatchSize = Math.max(1, batchSize);
+        final Iterator<ExtractedContent> iterator =
+                contentExtractor.iterator(host, contentType, languageId, safePageSize);
+
+        final List<TextSegment> segmentBuffer = new ArrayList<>(safeBatchSize);
+        int totalChunksIndexed = 0;
+
+        while (iterator.hasNext()) {
+            final ExtractedContent extractedContent = iterator.next();
+
+            try {
+                final String fullText = normalize(extractedContent);
+                if (fullText == null || fullText.isEmpty()) {
+                    continue;
+                }
+
+                final String textHash = sha256(fullText);
+                final List<String> chunks = textChunker.chunk(fullText);
+                if (chunks.isEmpty()) {
+                    continue;
+                }
+
+                for (int chunkIndex = 0; chunkIndex < chunks.size(); chunkIndex++) {
+                    final String textChunk = chunks.get(chunkIndex);
+                    final TextSegment segment = buildSegment(extractedContent, textChunk, textHash, chunkIndex, modelConfig.get("model"));
+                    segmentBuffer.add(segment);
+
+                    if (segmentBuffer.size() >= safeBatchSize) {
+                        totalChunksIndexed += flushBatch(segmentBuffer,
+                                embeddingStore, embeddingModel);
+                    }
+                }
+
+            } catch (Exception exception) {
+                // Policy: skip on error, continue with next content
+                Logger.error(this,  exception.getMessage(), exception);
+            }
+        }
+
+        // Flush any remaining segments
+        if (!segmentBuffer.isEmpty()) {
+            totalChunksIndexed += flushBatch(segmentBuffer,
+                    embeddingStore, embeddingModel);
+        }
+
+        return totalChunksIndexed;
+    }
+
+    // ---------- helpers ----------
+
+    private int flushBatch(final List<TextSegment> segmentBuffer, final DotPgVectorEmbeddingStore embeddingStore,
+                           final EmbeddingModel embeddingModel) {
+        try {
+            // Prefer batched embedding if model supports it; fallback to per-segment
+            final List<Embedding> embeddings = embedAllSafely(segmentBuffer, embeddingModel);
+            embeddingStore.addAll(embeddings, segmentBuffer);
+            final int batchSize = segmentBuffer.size();
+            segmentBuffer.clear();
+            return batchSize;
+        } catch (Exception exception) {
+            // If batch fails, attempt to index individually to salvage progress
+            int salvaged = 0;
+            for (TextSegment segment : new ArrayList<>(segmentBuffer)) {
+                try {
+                    embeddingStore.add(embeddingModel.embed(segment).content(), segment);
+                    salvaged++;
+                } catch (Exception ignored) {
+                    // skip individual failure
+                }
+            }
+            segmentBuffer.clear();
+            return salvaged;
+        }
+    }
+
+    private List<Embedding> embedAllSafely(final List<TextSegment> segments,
+                                           final EmbeddingModel embeddingModel) {
+        try {
+            // Many EmbeddingModel implementations provide embedAll()
+            return embeddingModel.embedAll(segments).content();
+        } catch (Throwable unsupported) {
+            // Fallback: per-segment embedding
+            final List<Embedding> embeddings = new ArrayList<>(segments.size());
+            for (TextSegment segment : segments) {
+                embeddings.add(embeddingModel.embed(segment).content());
+            }
+            return embeddings;
+        }
+    }
+
+
+    /** Combine title & body to slightly boost recall for short titles. */
+    private static String normalize(final ExtractedContent extractedContent) {
+        final String title = safe(extractedContent.getTitle());
+        final String body  = safe(extractedContent.getText());
+
+        if (title.isEmpty()) {
+            return body;
+        }
+        if (body.isEmpty()) {
+            return title;
+        }
+        return title + "\n\n" + body;
+    }
+
+    private static String sha256(final String text) {
+
+        try {
+
+            final HashBuilder hashBuilder = Encryptor.Hashing.sha256();
+            return   hashBuilder.append(text.getBytes(StandardCharsets.UTF_8)).buildUnixHash();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String safe(final String value) {
+        return (value == null) ? BLANK : value.trim();
+    }
+
+    private static TextSegment buildSegment(final ExtractedContent extractedContent,
+                                            final String textChunk,
+                                            final String textHash,
+                                            final int chunkIndex,
+                                            final String modelName) {
+
+        final Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("identifier",  extractedContent.getIdentifier());
+        metadata.put("inode",       extractedContent.getInode());
+        metadata.put("host",        extractedContent.getHost());
+        metadata.put("variant",     extractedContent.getVariant());
+        metadata.put("contentType", extractedContent.getContentType());
+        metadata.put("language",    extractedContent.getLanguage());
+        metadata.put("title",       extractedContent.getTitle());
+        metadata.put("chunkIndex",  chunkIndex);
+        metadata.put("textHash",    textHash);
+        metadata.put("modelName",   modelName);
+
+        return TextSegment.from(textChunk, new dev.langchain4j.data.document.Metadata(metadata));
     }
 
     @WrapInTransaction
@@ -340,7 +587,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final List<Integer> tokens = EncodingUtil.get()
                 .getEncoding()
-                .map(encoding -> encoding.encode(content))
+                .map(encoding -> encoding.encode(content).boxed())
                 .orElse(List.of());
         if (tokens.isEmpty()) {
             config.debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
@@ -382,6 +629,106 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     @Override
     public int deleteEmbeddings(final EmbeddingsDTO dto) {
         return EmbeddingsFactory.impl.get().deleteEmbeddings(dto);
+    }
+
+    @Override
+    public SearchContentResponse searchForContentRaw(final SearchForContentRequest searchForContentRequest) {
+
+        Logger.debug(this, ()-> "Doing search for content request: " + searchForContentRequest);
+        final AiModelConfig modelConfig = searchForContentRequest.getEmbeddingModelConfig();
+        final String vendorName = AIUtil.getVendorFromPath(searchForContentRequest.getVendorModelPath());
+        final EmbeddingModel embeddingModel = this.modelProviderFactory.getEmbedding(vendorName, modelConfig);
+        final EmbeddingStore<TextSegment> store = DotPgVectorEmbeddingStore.builder()
+                .indexName(searchForContentRequest.getSearcher().indexName!=null?searchForContentRequest.getSearcher().indexName:"default")
+                .dimension(embeddingModel.dimension())
+                .operator(SimilarityOperator.fromString(searchForContentRequest.getSearcher().operator))
+                .build();
+
+        final Retriever retriever = EmbeddingStoreRetriever.builder()
+                .store(store)
+                .embeddingModel(embeddingModel)
+                .defaultLimit(8) // check all these values
+                .maxLimit(64)
+                .overfetchFactor(3) // todo: what is this
+                .defaultThreshold(0.75) // todo: what is this
+                .build();
+        final RetrievalQuery.Builder retrievalQueryBuilder = RetrievalQuery.builder();
+        retrievalQueryBuilder.prompt(searchForContentRequest.getPrompt());
+        Optional.ofNullable(searchForContentRequest.getSearcher().host).ifPresent(retrievalQueryBuilder::site);
+        retrievalQueryBuilder.contentTypes(Objects.nonNull(searchForContentRequest.getSearcher().contentType)?
+                List.of(searchForContentRequest.getSearcher().contentType):List.of());
+        Optional.ofNullable(searchForContentRequest.getSearcher().language).ifPresent(languageId -> retrievalQueryBuilder.languageId(String.valueOf(languageId)));
+        //retrievalQueryBuilder.identifier(ragSearchRequest.getIdentifier()) ;
+        retrievalQueryBuilder.limit(searchForContentRequest.getSearcher().limit);
+        retrievalQueryBuilder.offset(searchForContentRequest.getSearcher().offset);
+        retrievalQueryBuilder.threshold(searchForContentRequest.getSearcher().threshold);
+
+        final RetrievalQuery retrievalQuery = retrievalQueryBuilder.build();
+        final long startMillis = System.currentTimeMillis();
+        final List<RetrievedChunk> chunks = retriever.search(retrievalQuery);
+        final long endMillis = System.currentTimeMillis();
+
+        final List<SearchMatch> matches = chunks.stream().map(retrievedChunk -> {
+            return SearchMatch.builder()
+                    .withId(retrievedChunk.getDocId())
+                    .withScore(retrievedChunk.getScore())
+                    .withTitle(retrievedChunk.getTitle())
+                    .withInode(retrievedChunk.getInode())
+                    .withSnippet(truncate(retrievedChunk.getText(), 600))
+                    .withIdentifier(retrievedChunk.getIdentifier())
+                    .withContentType(retrievedChunk.getContentType())
+                    .withLanguage(retrievedChunk.getLanguageId())
+                    .withHost(retrievalQuery.getSite())
+                    .withVariant(retrievedChunk.getFieldVar())
+                    .withUrl(retrievedChunk.getUrl()).build();
+        }).collect(Collectors.toList());
+
+        return SearchContentResponse.of(matches, matches.size(), Map.of("latencyMs", (endMillis - startMillis)));
+    }
+
+    public JSONObject searchForContent(final SearchForContentRequest searchForContentRequest) {
+
+        final SearchContentResponse searchContentResponse =  this.searchForContentRaw(searchForContentRequest);
+        final List<EmbeddingsDTO> searchResults =  searchContentResponse.getMatches().stream()
+                .map( searchMatch -> toEmbeddingsDTO(searchForContentRequest, searchMatch))
+                .collect(Collectors.toList());
+        return reduceChunksToContent(searchForContentRequest.getSearcher(), searchResults);
+    }
+
+    private EmbeddingsDTO toEmbeddingsDTO(final SearchForContentRequest searchForContentRequest,
+                                          final SearchMatch searchMatch) {
+
+        final EmbeddingsDTO.Builder builder = new EmbeddingsDTO.Builder();
+                if (searchMatch.getContentType().isPresent()) {
+
+                    builder.withContentType(searchMatch.getContentType().get());
+                }
+
+                if (searchMatch.getLanguage().isPresent()) {
+
+                    builder.withLanguage(ConversionUtils.toLong(searchMatch.getLanguage().get(), 0l));
+                }
+
+                if(searchMatch.getHost().isPresent()) {
+
+                    builder.withHost(searchMatch.getHost().get());
+                }
+
+                builder.withIdentifier(searchMatch.getId())
+                        .withInode(searchMatch.getInode())
+                        .withTitle(searchMatch.getTitle())
+                        .withIndexName(searchForContentRequest.getSearcher().indexName)
+                        .withOperator(searchForContentRequest.getSearcher().operator)
+                        .withThreshold(searchForContentRequest.getSearcher().threshold)
+                        .withExtractedText(searchMatch.getSnippet());
+        return builder.build();
+    }
+
+    private static String truncate(final String text, final int max) {
+        if (text == null) {
+            return null;
+        }
+        return text.length() <= max ? text : text.substring(0, Math.max(0, max - 3)) + "...";
     }
 
     private JSONObject dtoToContentJson(final EmbeddingsDTO dto, final User user) {

@@ -20,8 +20,7 @@ import { DotContainerOptionsDirective } from './dot-container-options.directive'
     imports: [DropdownModule, DotContainerOptionsDirective],
     template: `
         <p-dropdown dotContainerOptions />
-    `,
-    standalone: true
+    `
 })
 class MockContainersDropdownComponent {}
 
@@ -35,7 +34,7 @@ const sortedContainersMock = containersMock
 
 function getGroupByHostContainersMock() {
     const containerobj = sortedContainersMock.reduce((acc, option) => {
-        const { hostname } = option.value.parentPermissionable;
+        const hostname = option.value.hostName || 'SYSTEM_HOST';
 
         if (!acc[hostname]) {
             acc[hostname] = { items: [] };

@@ -6,6 +6,7 @@ export const mockDotDevices: DotDevice[] = [
         cssWidth: '200',
         name: 'iphone',
         inode: '1',
+        stInode: '1',
         identifier: 'a'
     },
     {
@@ -13,6 +14,7 @@ export const mockDotDevices: DotDevice[] = [
         cssWidth: '0',
         name: 'bad device',
         inode: '2',
+        stInode: '2',
         identifier: 'b'
     }
 ];

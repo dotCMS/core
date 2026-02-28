@@ -30,7 +30,7 @@ More info in the [Block Editor documentation](https://dev.dotcms.com/docs/block-
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `blocks` | `BlockEditorContent` | The block editor content structure to render. |
+| `blocks` | `BlockEditorNode` | The block editor content structure to render. |
 | `customRenderers` | `CustomRenderer` | Optional custom renderers for specific block types. |
 | `className` | `string` | Optional CSS class name to apply to the container. |
 | `style` | `React.CSSProperties` | Optional inline styles to apply to the container. |
@@ -44,10 +44,11 @@ You can customize how specific block types are rendered by providing a `customRe
 import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
 
 // Custom renderer for a 'myCustomBlock' type
-const MyCustomBlockRenderer = ({ node }) => (
+const MyCustomBlockRenderer = ({ node, children }) => (
   <div className="custom-block">
     <h2>{node.attrs.title}</h2>
     <p>{node.attrs.content}</p>
+    {children}
   </div>
 );
 
@@ -122,17 +123,177 @@ The component includes validation that:
 
 ## TypeScript Support
 
-The component is fully typed:
+The component is fully typed with support for custom contentlet data types:
+
+### Type Definitions
 
 ```typescript
-type CustomRenderer<T = any> = Record<string, React.FC<T>>;
+import { CustomRendererProps, CustomRendererComponent, CustomRenderer } from '@dotcms/react';
 
+// Base props for all custom renderers
+interface CustomRendererProps<TData = any> {
+    node: BlockEditorNode & {
+        attrs?: {
+            data?: TData;
+            [key: string]: any;
+        };
+    };
+    children?: React.ReactNode;
+}
+
+// Custom renderer component type
+type CustomRendererComponent<TData = any> = React.FC<CustomRendererProps<TData>>;
+
+// Map of block types to renderers
+type CustomRenderer = Record<string, CustomRendererComponent<any>>;
+
+// Main component props
 interface BlockEditorRendererProps {
-    blocks: BlockEditorContent;
+    blocks: BlockEditorNode;
     className?: string;
     style?: React.CSSProperties;
     customRenderers?: CustomRenderer;
 }
+```
+
+### Usage Levels
+
+#### Level 1: No Typing (Quickest)
+
+```typescript
+import { CustomRendererProps } from '@dotcms/react';
+
+const customRenderers = {
+    Activity: ({ node, children }: CustomRendererProps) => {
+        // node.attrs.data is 'any' type
+        const { title, description } = node.attrs.data;
+        return <div>{title}: {description}</div>;
+    }
+};
+```
+
+#### Level 2: Inline Typing (Balanced)
+
+```typescript
+import { CustomRendererProps } from '@dotcms/react';
+
+// Define your contentlet data interface
+interface ActivityData {
+    contentType: 'Activity';
+    title: string;
+    description: string;
+    date: string;
+    location?: string;
+}
+
+const customRenderers = {
+    // ✅ TypeScript knows node.attrs.data is ActivityData
+    Activity: ({ node, children }: CustomRendererProps<ActivityData>) => {
+        const { title, description, date, location } = node.attrs.data;
+        return (
+            <article>
+                <h2>{title}</h2>
+                <p>{description}</p>
+                <time>{date}</time>
+                {location && <span>{location}</span>}
+            </article>
+        );
+    },
+
+    // Standard blocks don't need data typing
+    heading: ({ node, children }: CustomRendererProps) => {
+        const Heading = `h${node.attrs?.level || 1}` as keyof JSX.IntrinsicElements;
+        return <Heading>{children}</Heading>;
+    }
+};
+```
+
+#### Level 3: Component-Level Typing (Best for Reusability)
+
+```typescript
+import { CustomRendererComponent, CustomRendererProps } from '@dotcms/react';
+
+// Define your contentlet data interfaces
+interface ActivityData {
+    contentType: 'Activity';
+    title: string;
+    description: string;
+    date: string;
+    location?: string;
+}
+
+interface BlogData {
+    contentType: 'Blog';
+    title: string;
+    body: string;
+    author: string;
+    publishDate: string;
+}
+
+// Create fully-typed reusable components
+const Activity: CustomRendererComponent<ActivityData> = ({ node, children }) => {
+    // ✅ Full autocomplete for node.attrs.data properties
+    const { title, description, date, location } = node.attrs.data;
+
+    return (
+        <article className="activity">
+            <h2>{title}</h2>
+            <p>{description}</p>
+            <time dateTime={date}>{new Date(date).toLocaleDateString()}</time>
+            {location && <address>{location}</address>}
+            {children}
+        </article>
+    );
+};
+
+const Blog: CustomRendererComponent<BlogData> = ({ node }) => {
+    // ✅ Full type safety and autocomplete
+    const { title, body, author, publishDate } = node.attrs.data;
+
+    return (
+        <article className="blog-post">
+            <h1>{title}</h1>
+            <p className="byline">By {author} on {publishDate}</p>
+            <div dangerouslySetInnerHTML={{ __html: body }} />
+        </article>
+    );
+};
+
+// Use typed components
+const customRenderers = {
+    Activity,
+    Blog,
+    heading: ({ node, children }: CustomRendererProps) => {
+        const Heading = `h${node.attrs?.level || 1}` as keyof JSX.IntrinsicElements;
+        return <Heading>{children}</Heading>;
+    }
+};
+
+<DotCMSBlockEditorRenderer
+    blocks={content}
+    customRenderers={customRenderers}
+/>
+```
+
+### Accessing Node Properties
+
+The `node` prop provides access to all block editor node properties:
+
+```typescript
+import { CustomRendererProps } from '@dotcms/react';
+
+const MyRenderer: React.FC<CustomRendererProps<MyData>> = ({ node, children }) => {
+    // Access node properties
+    const type = node.type;                    // Block type name
+    const data = node.attrs?.data;             // Contentlet data (typed as MyData)
+    const level = node.attrs?.level;           // Other attributes (e.g., heading level)
+    const style = node.attrs?.style;           // Inline styles
+    const marks = node.marks;                  // Text formatting marks
+    const content = node.content;              // Nested content nodes
+    const text = node.text;                    // Text content
+
+    return <div>{/* render based on node properties */}</div>;
+};
 ```
 
 ## Examples
@@ -180,16 +341,11 @@ function StyledArticle({ contentlet }) {
 import { DotCMSBlockEditorRenderer } from '@dotcms/react/next';
 
 // Custom renderer for a 'callout' block type
-const CalloutRenderer = ({ node }) => (
+const CalloutRenderer = ({ node, children }) => (
   <div className={`callout callout-${node.attrs.type}`}>
     <h3>{node.attrs.title}</h3>
     <p>{node.attrs.message}</p>
-    {node.content && node.content.map((child, i) => (
-      <DotCMSBlockEditorRenderer 
-        key={i} 
-        blocks={{ type: 'doc', content: [child] }}
-      />
-    ))}
+    {children}
   </div>
 );
 

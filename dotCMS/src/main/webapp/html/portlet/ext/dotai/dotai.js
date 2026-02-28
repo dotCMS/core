@@ -121,30 +121,25 @@ const writeIndexesToDropdowns = async () => {
     }
 };
 
-
 const writeModelToDropdown = async () => {
-    const modelName = document.getElementById("modelName");
-    let options = modelName.getElementsByTagName('option');
 
-    for (i = 1; i < options.length; i++) {
-        indexName.removeChild(options[i]);
-    }
+    // --- Fallback ---
+    if (dotAiState && dotAiState.config && dotAiState.config.availableModels) {
+        for (let i = 0; i < dotAiState.config.availableModels.length; i++) {
+            const model = dotAiState.config.availableModels[i];
+            if (model.type !== 'TEXT') continue;
 
-    for (i = 0; i < dotAiState.config.availableModels.length; i++) {
-        if (dotAiState.config.availableModels[i].type !== 'TEXT') {
-            continue;
+            const newOption = document.createElement("option");
+            newOption.value = model.name;
+            newOption.text = model.current
+                ? `${model.name} (default)`
+                : model.name;
+            if (model.current) newOption.selected = true;
+            modelName.appendChild(newOption);
         }
-
-        const newOption = document.createElement("option");
-        newOption.value = dotAiState.config.availableModels[i].name;
-        newOption.text = `${dotAiState.config.availableModels[i].name}`
-        if (dotAiState.config.availableModels[i].current) {
-            newOption.selected = true;
-            newOption.text = `${dotAiState.config.availableModels[i].name} (default)`
-        }
-        modelName.appendChild(newOption);
     }
 };
+
 
 
 const writeConfigTable = async () => {
@@ -607,6 +602,9 @@ const doSearchChatJson = () => {
     }, 500);
 }
 
+/////
+
+/////
 
 const doSearchChatJsonDebounced = async () => {
 
@@ -628,7 +626,7 @@ const doSearchChatJsonDebounced = async () => {
 
     const prefs = preferences();
     prefs.searchQuery = formData.prompt.trim();
-    prefs.lastIndex = formData.indexName.trim();
+    prefs.lastIndex = formData.indexName ? formData.indexName.trim() : '';
     savePreferences(prefs);
     if (responseType === "search") {
         doSearch(formData)
@@ -636,7 +634,8 @@ const doSearchChatJsonDebounced = async () => {
     } else if (responseType === "json") {
         return doJsonResponse(formData);
     } else {
-        return doChatResponse(formData);
+        //return doChatResponse(formData);
+        return doJsonResponseAsync(formData);
     }
 }
 
@@ -768,6 +767,51 @@ const doJsonResponse = async (formData) => {
     resetLoader();
 }
 
+///////
+const doJsonResponseAsync = async (formData) => {
+    const response = await fetch('/api/v1/ai/completions/async', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+    });
+
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    let fullText = "";
+    let partial = "";
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+
+        partial += chunk;
+
+        document.getElementById("answerChat").value = partial;
+    }
+
+
+    let json;
+    try {
+        json = JSON.parse(fullText);
+    } catch (e) {
+        console.error("Error parseando JSON:", e, fullText);
+        return;
+    }
+
+    document.getElementById("answerChat").value =
+        json.summaryStream +
+        "\n\n------\nRAG Response\n------\n" +
+        JSON.stringify(json.dotCMSResponse, null, 2);
+
+    resetLoader();
+};
+
+///////
 
 const doChatResponse = async (formData) => {
 

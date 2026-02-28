@@ -1,5 +1,6 @@
-import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
+import { MonacoEditorModule, MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,10 +12,11 @@ import {
     Output,
     inject
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 import { SelectItem } from 'primeng/api';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 @Component({
     selector: 'dot-textarea-content',
@@ -28,7 +30,7 @@ import { SelectItem } from 'primeng/api';
         }
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [CommonModule, FormsModule, SelectButtonModule, MonacoEditorModule]
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
     private sanitizer = inject(DomSanitizer);
