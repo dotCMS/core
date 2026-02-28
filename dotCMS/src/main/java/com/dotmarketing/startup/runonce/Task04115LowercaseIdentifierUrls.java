@@ -49,7 +49,7 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 
 	@Override
 	public boolean forceRun() {
-		return true;
+		return false;
 	}
 
     @Override
