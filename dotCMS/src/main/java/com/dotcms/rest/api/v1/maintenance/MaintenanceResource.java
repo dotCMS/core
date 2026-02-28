@@ -304,9 +304,7 @@ public class MaintenanceResource implements Serializable {
             final ClusterLogCollector collector = new ClusterLogCollector(
                     peerServers, fileName, jwt, localPort, localLogFile, myServer);
 
-            final String zipFileName = fileName.contains(".")
-                    ? fileName.substring(0, fileName.lastIndexOf('.')) + "_cluster.zip"
-                    : fileName + "_cluster.zip";
+            final String zipFileName = fileName + "_cluster.zip";
             return this.buildFileResponse(response, collector.collect(), zipFileName);
         } finally {
             // Revoke the short-lived token
