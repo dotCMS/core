@@ -19,12 +19,13 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { API_AND_SERVICES, FOOTER_RESOURCES } from './constants';
+
 import { DotAccountService } from '../../../../api/services/dot-account-service';
 
 @Component({
     selector: 'dot-onboarding-author',
     templateUrl: './onboarding-author.component.html',
-    styleUrls: ['./onboarding-author.component.scss'],
     providers: [DotAccountService],
     standalone: true,
     imports: [ButtonModule, AsyncPipe, DotMessagePipe, CheckboxModule, RouterLink]
@@ -45,6 +46,9 @@ export class DotOnboardingAuthorComponent implements OnInit {
     showCreateDataModelLink: boolean;
     showCreatePageLink: boolean;
     showCreateTemplateLink: boolean;
+
+    resources = FOOTER_RESOURCES;
+    apiAndServices = API_AND_SERVICES;
 
     readonly #destroyRef = inject(DestroyRef);
 

@@ -1,6 +1,7 @@
 import { Subscription } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -25,9 +26,9 @@ import {
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitchChangeEvent, InputSwitchModule } from 'primeng/inputswitch';
-import { MessagesModule } from 'primeng/messages';
-import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
+import { MessageModule } from 'primeng/message';
+import { TabsModule } from 'primeng/tabs';
+import { ToggleSwitchChangeEvent, ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { take } from 'rxjs/operators';
 
@@ -88,18 +89,18 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 @Component({
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
-    styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
+        CommonModule,
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
-        TabViewModule,
+        TabsModule,
         DotWorkflowActionsComponent,
         TabViewInsertDirective,
         DotMessagePipe,
-        InputSwitchModule,
+        ToggleSwitchModule,
         FormsModule,
-        MessagesModule
+        MessageModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -109,7 +110,10 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
                 animate('250ms ease-in', style({ opacity: 1 }))
             ])
         ])
-    ]
+    ],
+    host: {
+        class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden'
+    }
 })
 export class DotEditContentFormComponent implements OnInit {
     readonly #rootStore = inject(GlobalStore);
@@ -184,6 +188,31 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     $tabs = this.$store.tabs;
+
+    /**
+     * Context for the append template passed to TabViewInsertDirective.
+     * Required for embedded view to access component variables.
+     */
+    get $appendContext() {
+        const currentLocale = this.$store.currentLocale();
+        return {
+            $store: this.$store,
+            showSidebar: this.$store.isSidebarOpen(),
+            canLock: this.$store.canLock(),
+            isContentLocked: this.$store.isContentLocked(),
+            lockSwitchLabel: this.$store.lockSwitchLabel(),
+            actions: this.$store.getActions(),
+            $showPreviewLink: this.$showPreviewLink,
+            showWorkflowActions: this.$store.showWorkflowActions(),
+            contentlet: this.$store.contentlet(),
+            contentType: this.$store.contentType(),
+            currentLocaleId: currentLocale ? currentLocale.id.toString() : '',
+            currentIdentifier: this.$store.currentIdentifier(),
+            onContentLockChange: (e: ToggleSwitchChangeEvent) => this.onContentLockChange(e),
+            showPreview: () => this.showPreview(),
+            fireWorkflowAction: (e: DotWorkflowActionParams) => this.fireWorkflowAction(e)
+        };
+    }
 
     changeDetectorRef = inject(ChangeDetectorRef);
 
@@ -590,14 +619,18 @@ export class DotEditContentFormComponent implements OnInit {
     /**
      * Updates the active tab index in the store.
      *
-     * This method is triggered by the PrimeNG TabView component when the active tab changes.
+     * This method is triggered by the PrimeNG Tabs component when the active tab changes.
      * It synchronizes the UI state with the store to maintain tab selection across renders.
      *
-     * @param {TabViewChangeEvent} event - The tab change event containing the new active index
+     * @param value - The index of the active tab
      * @memberof DotEditContentFormComponent
      */
-    onActiveIndexChange({ index }: TabViewChangeEvent) {
-        this.$store.setActiveTab(index);
+    onActiveIndexChange(value: number | string) {
+        const numberValue = Number(value);
+        if (isNaN(numberValue)) {
+            return;
+        }
+        this.$store.setActiveTab(numberValue);
     }
 
     /**
@@ -606,10 +639,10 @@ export class DotEditContentFormComponent implements OnInit {
      * This method is triggered when the user toggles the content lock switch.
      * It updates the content lock state in the store based on the switch value.
      *
-     * @param {InputSwitchChangeEvent} event - The switch change event containing the new checked state
+     * @param {ToggleSwitchChangeEvent} event - The switch change event containing the new checked state
      * @memberof DotEditContentFormComponent
      */
-    onContentLockChange(event: InputSwitchChangeEvent) {
+    onContentLockChange(event: ToggleSwitchChangeEvent) {
         event.checked ? this.$store.lockContent() : this.$store.unlockContent();
     }
 

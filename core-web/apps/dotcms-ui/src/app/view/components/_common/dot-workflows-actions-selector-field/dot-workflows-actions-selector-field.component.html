@@ -1,5 +1,5 @@
 @if (actions$ | async; as actions) {
-    <p-dropdown
+    <p-select
         (onChange)="handleChange($event)"
         [(ngModel)]="value"
         [disabled]="disabled || actions.length === 0"
@@ -7,7 +7,7 @@
         [options]="actions"
         [placeholder]="'contenttypes.selector.workflow.action' | dm"
         [showClear]="true"
-        [style]="{ width: '100%' }"
+        class="w-full"
         #dropdown
         appendTo="body" />
 }

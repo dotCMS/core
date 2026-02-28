@@ -10,6 +10,7 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentCheckboxFieldComponent } from './dot-edit-content-checkbox-field.component';
 
+import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 import { CHECKBOX_FIELD_MOCK } from '../../utils/mocks';
 
 @Component({
@@ -56,7 +57,7 @@ describe('DotEditContentCheckboxFieldComponent', () => {
 
             const checkboxChecked = spectator
                 .queryAll(Checkbox)
-                .filter((checkbox) => checkbox.checked());
+                .filter((checkbox) => checkbox.checked);
             expect(checkboxChecked.length).toBe(2);
         });
     });
@@ -89,17 +90,23 @@ describe('DotEditContentCheckboxFieldComponent', () => {
         it('should dont have any checkbox checked if the form value or defaultValue is null', () => {
             const checkboxChecked = spectator
                 .queryAll(Checkbox)
-                .filter((checkbox) => checkbox.checked());
+                .filter((checkbox) => checkbox.checked);
             expect(checkboxChecked.length).toBe(0);
         });
 
-        it('should have label with for atritbute and text equal to checkbox options', () => {
+        it('should have label with for attribute and text equal to checkbox options', () => {
             spectator.detectComponentChanges();
 
-            spectator.queryAll(Checkbox).forEach((checkbox) => {
+            const options = getSingleSelectableFieldOptions(
+                CHECKBOX_FIELD_MOCK.values || '',
+                CHECKBOX_FIELD_MOCK.dataType
+            );
+            spectator.queryAll(Checkbox).forEach((checkbox, index) => {
                 const selector = `label[for="${checkbox.inputId}"]`;
-                expect(spectator.query(selector)).toBeTruthy();
-                expect(spectator.query(selector).textContent).toEqual(` ${checkbox.label}`);
+                const labelEl = spectator.query<HTMLLabelElement>(selector);
+                expect(labelEl).toBeTruthy();
+                const expectedLabel = options[index]?.label ?? '';
+                expect(labelEl?.textContent?.trim()).toEqual(expectedLabel);
             });
         });
     });
@@ -159,10 +166,15 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             spectator.detectChanges();
             const checkboxes = spectator.queryAll(Checkbox);
             expect(checkboxes.length).toBe(2);
-            expect(checkboxes[0].label).toBe('foo');
             expect(checkboxes[0].value).toBe('1');
-            expect(checkboxes[1].label).toBe('bar');
             expect(checkboxes[1].value).toBe('2');
+            const options = getSingleSelectableFieldOptions(field.values, field.dataType);
+            expect(
+                spectator.query(`label[for="${checkboxes[0].inputId}"]`)?.textContent?.trim()
+            ).toBe(options[0].label);
+            expect(
+                spectator.query(`label[for="${checkboxes[1].inputId}"]`)?.textContent?.trim()
+            ).toBe(options[1].label);
         });
 
         it('should render checkboxes for label-only format', () => {
@@ -190,10 +202,15 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             spectator.detectChanges();
             const checkboxes = spectator.queryAll(Checkbox);
             expect(checkboxes.length).toBe(2);
-            expect(checkboxes[0].label).toBe('label1');
             expect(checkboxes[0].value).toBe('label1');
-            expect(checkboxes[1].label).toBe('label2');
             expect(checkboxes[1].value).toBe('label2');
+            const options = getSingleSelectableFieldOptions(field.values, field.dataType);
+            expect(
+                spectator.query(`label[for="${checkboxes[0].inputId}"]`)?.textContent?.trim()
+            ).toBe(options[0].label);
+            expect(
+                spectator.query(`label[for="${checkboxes[1].inputId}"]`)?.textContent?.trim()
+            ).toBe(options[1].label);
         });
 
         it('should render checkboxes for comma format', () => {
@@ -221,12 +238,19 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             spectator.detectChanges();
             const checkboxes = spectator.queryAll(Checkbox);
             expect(checkboxes.length).toBe(3);
-            expect(checkboxes[0].label).toBe('1');
             expect(checkboxes[0].value).toBe('1');
-            expect(checkboxes[1].label).toBe('2');
             expect(checkboxes[1].value).toBe('2');
-            expect(checkboxes[2].label).toBe('3');
             expect(checkboxes[2].value).toBe('3');
+            const options = getSingleSelectableFieldOptions(field.values, field.dataType);
+            expect(
+                spectator.query(`label[for="${checkboxes[0].inputId}"]`)?.textContent?.trim()
+            ).toBe(options[0].label);
+            expect(
+                spectator.query(`label[for="${checkboxes[1].inputId}"]`)?.textContent?.trim()
+            ).toBe(options[1].label);
+            expect(
+                spectator.query(`label[for="${checkboxes[2].inputId}"]`)?.textContent?.trim()
+            ).toBe(options[2].label);
         });
 
         it('should render checkboxes for boolean values', () => {
@@ -255,10 +279,11 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             spectator.detectChanges();
             const checkboxes = spectator.queryAll(Checkbox);
             expect(checkboxes.length).toBe(2);
-            expect(checkboxes[0].label).toBe(null);
             expect(checkboxes[0].value).toBe(true);
-            expect(checkboxes[1].label).toBe(null);
             expect(checkboxes[1].value).toBe(false);
+            // Boolean options have empty labels - no label elements are rendered
+            expect(spectator.query(`label[for="${checkboxes[0].inputId}"]`)).toBeFalsy();
+            expect(spectator.query(`label[for="${checkboxes[1].inputId}"]`)).toBeFalsy();
         });
 
         it('should render checkboxes for numeric values', () => {

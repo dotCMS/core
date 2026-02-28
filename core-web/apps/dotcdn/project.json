@@ -19,7 +19,6 @@
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "apps/dotcdn/src/styles.scss"
                 ],
                 "stylePreprocessorOptions": {
@@ -96,7 +95,6 @@
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
                     "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "apps/dotcdn/src/styles.scss"
                 ],
                 "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],

@@ -1,13 +1,16 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     display: flex;
     cursor: pointer;
     align-content: center;
-    padding: $spacing-1 $spacing-3;
+    padding: spacing.$spacing-1 spacing.$spacing-3;
 
     &:hover {
-        background-color: $color-palette-gray-200;
+        background-color: colors.$color-palette-gray-200;
     }
 
     &.property-item__footer {
@@ -31,16 +34,16 @@
 
 .property-item__icon--selected {
     rect {
-        stroke: $color-palette-primary;
-        fill: $color-palette-primary-op-20;
+        stroke: colors.$color-palette-primary;
+        fill: colors.$color-palette-primary-op-20;
     }
 
     path {
-        fill: $color-palette-primary;
+        fill: colors.$color-palette-primary;
     }
 }
 
 .property-item__label {
-    padding-left: $spacing-1;
+    padding-left: spacing.$spacing-1;
     align-self: center;
 }

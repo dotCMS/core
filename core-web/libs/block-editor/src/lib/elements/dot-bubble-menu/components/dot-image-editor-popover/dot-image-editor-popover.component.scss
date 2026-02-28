@@ -1,37 +1,43 @@
+@use "../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .form {
     display: flex;
     flex-direction: column;
     width: 18.75rem;
-    gap: $spacing-4;
-    background-color: $white;
-    border-radius: $border-radius-md;
-    padding: $spacing-3;
-    box-shadow: $shadow-m;
+    gap: spacing.$spacing-4;
+    background-color: colors.$white;
+    border-radius: common.$border-radius-md;
+    padding: spacing.$spacing-3;
+    box-shadow: shadows.$shadow-m;
 
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: $spacing-1;
+        gap: spacing.$spacing-1;
 
         label {
-            font-weight: $font-weight-semi-bold;
-            margin-bottom: $spacing-0;
+            font-weight: fonts.$font-weight-semi-bold;
+            margin-bottom: spacing.$spacing-0;
 
             .required {
-                color: $color-palette-red;
+                color: colors.$color-palette-red;
             }
         }
 
         input[pInputText] {
-            border-radius: $border-radius-md;
-            border: 1px solid $color-palette-gray-300;
-            padding: $spacing-1 $spacing-2;
-            font-size: $font-size-lmd;
+            border-radius: common.$border-radius-md;
+            border: 1px solid colors.$color-palette-gray-300;
+            padding: spacing.$spacing-1 spacing.$spacing-2;
+            font-size: fonts.$font-size-lmd;
 
             &.ng-invalid {
-                border-color: $color-palette-red;
+                border-color: colors.$color-palette-red;
             }
         }
     }
@@ -39,6 +45,6 @@
     .bubble-menu-actions {
         display: flex;
         justify-content: flex-end;
-        gap: $spacing-1;
+        gap: spacing.$spacing-1;
     }
 }

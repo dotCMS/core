@@ -1,7 +1,8 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
-import { By } from '@angular/platform-browser';
+
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
@@ -9,49 +10,55 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 
 import { HintPropertyComponent } from './index';
 
+import { FieldProperty } from '../field-properties.model';
+
+const messageServiceMock = new MockDotMessageService({
+    'contenttypes.field.properties.hint.label': 'Hint'
+});
+
 describe('HintPropertyComponent', () => {
-    let comp: HintPropertyComponent;
-    let fixture: ComponentFixture<HintPropertyComponent>;
-    const messageServiceMock = new MockDotMessageService({
-        Hint: 'Hint'
+    let spectator: Spectator<HintPropertyComponent>;
+
+    const createComponent = createComponentFactory({
+        component: HintPropertyComponent,
+        imports: [ReactiveFormsModule, InputTextModule, DotSafeHtmlPipe, DotMessagePipe],
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [HintPropertyComponent],
-            imports: [ReactiveFormsModule, DotSafeHtmlPipe, DotMessagePipe],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(HintPropertyComponent);
-        comp = fixture.componentInstance;
-    }));
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+    });
 
     it('should have a form', () => {
-        const group = new UntypedFormGroup({});
-        comp.group = group;
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
+        const group = new UntypedFormGroup({ name: new UntypedFormControl(null) });
+        const property: FieldProperty = {
+            name: 'name',
+            value: null,
+            field: { ...dotcmsContentTypeFieldBasicMock }
+        };
+        spectator.component.group = group;
+        spectator.component.property = property;
+        spectator.detectChanges();
 
-        expect(divForm).not.toBeNull();
-        expect(group).toEqual(divForm.componentInstance.group);
+        const divForm = spectator.query('div');
+        expect(divForm).toBeTruthy();
+        expect(spectator.component.group).toEqual(group);
     });
 
     it('should have a input', () => {
-        comp.group = new UntypedFormGroup({
+        const group = new UntypedFormGroup({
             name: new UntypedFormControl('')
         });
-        comp.property = {
+        const property: FieldProperty = {
             name: 'name',
             value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
+            field: { ...dotcmsContentTypeFieldBasicMock }
         };
+        spectator.component.group = group;
+        spectator.component.property = property;
+        spectator.detectChanges();
 
-        fixture.detectChanges();
-
-        const pInput: DebugElement = fixture.debugElement.query(By.css('input[type="text"]'));
-
-        expect(pInput).not.toBeNull();
+        const pInput = spectator.query('input[type="text"]');
+        expect(pInput).toBeTruthy();
     });
 });

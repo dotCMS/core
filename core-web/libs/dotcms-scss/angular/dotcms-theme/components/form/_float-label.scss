@@ -1,17 +1,20 @@
+@use "../../../../shared/colors";
+@use "../../../../shared/spacing";
+
 @use "variables" as *;
 
 .p-float-label > label {
-    left: $spacing-2;
-    color: $black;
+    left: spacing.$spacing-2;
+    color: colors.$black;
     transition-duration: 0.2s;
 }
 
 .p-float-label .p-autocomplete-multiple-container .p-autocomplete-token {
-    padding: 0.25rem $spacing-3;
+    padding: 0.25rem spacing.$spacing-3;
 }
 
 .p-float-label .p-chips-multiple-container .p-chips-token {
-    padding: 0.25rem $spacing-3;
+    padding: 0.25rem spacing.$spacing-3;
 }
 
 .p-float-label input:focus ~ label,
@@ -20,8 +23,8 @@
 .p-float-label textarea.p-filled ~ label,
 .p-float-label .p-inputwrapper-focus ~ label,
 .p-float-label .p-inputwrapper-filled ~ label {
-    top: (-$spacing-1) !important;
-    background-color: $white;
+    top: (-(spacing.$spacing-1)) !important;
+    background-color: colors.$white;
     padding: 2px 4px;
     margin-left: -4px;
     margin-top: 0;

@@ -1,0 +1,52 @@
+@let condition = $condition();
+
+<div class="min-w-16 w-16">
+    @if ($index() !== 0) {
+        <button
+            (click)="toggleOperator()"
+            [label]="condition.operator"
+            pButton
+            severity="secondary"
+            size="small"
+            class="w-full"
+            ariaLabel="Swap And/Or"></button>
+    }
+</div>
+<p-select
+    (onChange)="onTypeChange($event.value)"
+    [ngModel]="condition.type?.key"
+    [options]="typeDropdownOptions$ | async"
+    [style]="{ width: '100%' }"
+    [placeholder]="$conditionTypePlaceholder()"
+    [filter]="true"
+    class="min-w-48 max-w-48"
+    appendTo="body" />
+<div class="flex-1">
+    @switch (condition.type?.key) {
+        @case ('NoSelection') {
+            <div></div>
+        }
+        @case ('VisitorsGeolocationConditionlet') {
+            <dot-visitors-location-container
+                (parameterValuesChange)="onParameterValuesChange($event)"
+                [componentInstance]="condition" />
+        }
+        @default {
+            <dot-serverside-condition
+                (parameterValueChange)="onParameterValueChange($event)"
+                [componentInstance]="condition" />
+        }
+    }
+</div>
+<div class="shrink-0">
+    <button
+        (click)="onDeleteConditionClicked()"
+        [disabled]="!condition.isPersisted()"
+        [rounded]="true"
+        [text]="true"
+        pButton
+        type="button"
+        severity="danger"
+        icon="pi pi-trash"
+        ariaLabel="Delete Condition"></button>
+</div>

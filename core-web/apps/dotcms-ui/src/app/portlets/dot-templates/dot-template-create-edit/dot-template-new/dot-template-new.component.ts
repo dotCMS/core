@@ -12,7 +12,6 @@ import { DotTemplateCreateEditResolver } from '../resolvers/dot-template-create-
 @Component({
     selector: 'dot-dot-template-new',
     templateUrl: './dot-template-new.component.html',
-    styleUrls: ['./dot-template-new.component.scss'],
     providers: [DialogService, DotTemplateCreateEditResolver]
 })
 export class DotTemplateNewComponent implements OnInit {

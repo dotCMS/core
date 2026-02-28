@@ -10,7 +10,14 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotEventsService, DotPropertiesService, DotRouterService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotEventsService,
+    DotPropertiesService,
+    DotRouterService,
+    DotSiteService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -22,7 +29,13 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { MockDotRouterService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+import { GlobalStore } from '@dotcms/store';
+import {
+    DotCurrentUserServiceMock,
+    MockDotRouterService,
+    mockSites,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
 import { DotToolbarAnnouncementsComponent } from './components/dot-toolbar-announcements/dot-toolbar-announcements.component';
 import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
@@ -31,7 +44,6 @@ import { DotToolbarComponent } from './dot-toolbar.component';
 
 import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
-import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
@@ -74,6 +86,9 @@ describe('DotToolbarComponent', () => {
     let spectator: Spectator<DotToolbarComponent>;
     let dotRouterService: SpyObject<DotRouterService>;
     let dotPropertiesService: SpyObject<DotPropertiesService>;
+    let iframeOverlayService: IframeOverlayService;
+    let dotSiteService: SpyObject<DotSiteService>;
+    let globalStore: SpyObject<InstanceType<typeof GlobalStore>>;
 
     const siteServiceMock = new SiteServiceMock();
     const siteMock = mockSites[0];
@@ -84,15 +99,38 @@ describe('DotToolbarComponent', () => {
             DotToolbarComponent,
             ToolbarModule,
             DotShowHideFeatureDirective,
-            MockComponent(DotCrumbtrailComponent),
-            MockComponent(DotSiteSelectorComponent)
+            MockComponent(DotCrumbtrailComponent)
         ],
         detectChanges: false,
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(true))
+                getFeatureFlag: jest.fn().mockImplementation(() => of(true))
+            }),
+            mockProvider(DotSiteService, {
+                getCurrentSite: jest.fn().mockReturnValue(of(siteMock)),
+                // switchSite API returns { hostSwitched: true }; toolbar then calls getCurrentSite() for the site
+                switchSite: jest.fn().mockReturnValue(of({ hostSwitched: true })),
+                getSites: jest.fn().mockReturnValue(
+                    of({
+                        sites: mockSites,
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 10,
+                            totalRecords: mockSites.length
+                        }
+                    })
+                ),
+                getSiteById: jest
+                    .fn()
+                    .mockImplementation((id: string) =>
+                        of(mockSites.find((s) => s.identifier === id) || siteMock)
+                    )
+            }),
+            mockProvider(GlobalStore, {
+                setCurrentSite: jest.fn()
             }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             { provide: SiteService, useValue: siteServiceMock },
@@ -113,7 +151,11 @@ describe('DotToolbarComponent', () => {
             DotEventsSocket,
             DotcmsConfigService,
             LoggerService,
-            StringUtils
+            StringUtils,
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
+            }
         ],
         componentImports: [
             [DotToolbarUserComponent, MockToolbarUsersComponent],
@@ -126,7 +168,14 @@ describe('DotToolbarComponent', () => {
         spectator = createComponent();
         dotRouterService = spectator.inject(DotRouterService);
         dotPropertiesService = spectator.inject(DotPropertiesService);
+        iframeOverlayService = spectator.inject(IframeOverlayService);
+        dotSiteService = spectator.inject(DotSiteService);
+        globalStore = spectator.inject(GlobalStore);
         jest.spyOn(spectator.component, 'siteChange');
+        jest.spyOn(iframeOverlayService, 'show');
+        jest.spyOn(iframeOverlayService, 'hide');
+        // Reset feature flag mock to return true by default
+        dotPropertiesService.getFeatureFlag.mockReturnValue(of(true));
     });
 
     it(`should has a dot-crumbtrail`, () => {
@@ -169,9 +218,12 @@ describe('DotToolbarComponent', () => {
     it(`should NOT go to site browser when site change in any portlet but edit page`, () => {
         jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
         spectator.detectChanges();
-        spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
+        spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
         expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
-        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith({ value: siteMock });
+        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock.identifier);
+        expect(dotSiteService.switchSite).toHaveBeenCalledWith(siteMock.identifier);
+        expect(dotSiteService.getCurrentSite).toHaveBeenCalled();
+        expect(globalStore.setCurrentSite).toHaveBeenCalledWith(siteMock);
     });
 
     it(`should go to site-browser when site change on edit page url`, () => {
@@ -184,16 +236,52 @@ describe('DotToolbarComponent', () => {
         });
         jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
         spectator.detectChanges();
-        spectator.triggerEventHandler('dot-site-selector', 'switch', { value: siteMock });
+        spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith({ value: siteMock });
+        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock.identifier);
+        expect(dotSiteService.switchSite).toHaveBeenCalledWith(siteMock.identifier);
+        expect(dotSiteService.getCurrentSite).toHaveBeenCalled();
+        expect(globalStore.setCurrentSite).toHaveBeenCalledWith(siteMock);
     });
 
-    it(`should pass class and width`, () => {
+    it(`should call switchSite then getCurrentSite and setCurrentSite when site changes`, () => {
         spectator.detectChanges();
-        const siteSelector = spectator.query('dot-site-selector');
-        expect(siteSelector.getAttribute('cssClass')).toContain('d-secondary');
-        expect(siteSelector.getAttribute('width')).toContain('12.5rem');
+        dotSiteService.switchSite.mockClear();
+        dotSiteService.getCurrentSite.mockClear();
+        (globalStore.setCurrentSite as jest.Mock).mockClear();
+
+        spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
+
+        expect(dotSiteService.switchSite).toHaveBeenCalledWith(siteMock.identifier);
+        expect(dotSiteService.getCurrentSite).toHaveBeenCalled();
+        expect(globalStore.setCurrentSite).toHaveBeenCalledWith(siteMock);
+    });
+
+    describe('dot-site component integration', () => {
+        it(`should render dot-site component with correct inputs and bindings`, () => {
+            spectator.detectChanges();
+            const siteComponent = spectator.query('dot-site');
+            expect(siteComponent).not.toBeNull();
+            expect(siteComponent).toHaveClass('w-64');
+
+            // Verify that value is bound to current site identifier
+            const componentInstance = spectator.component;
+            expect(componentInstance.$currentSite()).toEqual(siteMock);
+        });
+
+        it(`should call iframeOverlayService.show() when dot-site onShow event is triggered`, () => {
+            spectator.detectChanges();
+            spectator.triggerEventHandler('dot-site', 'onShow', null);
+
+            expect(iframeOverlayService.show).toHaveBeenCalled();
+        });
+
+        it(`should call iframeOverlayService.hide() when dot-site onHide event is triggered`, () => {
+            spectator.detectChanges();
+            spectator.triggerEventHandler('dot-site', 'onHide', null);
+
+            expect(iframeOverlayService.hide).toHaveBeenCalled();
+        });
     });
 });

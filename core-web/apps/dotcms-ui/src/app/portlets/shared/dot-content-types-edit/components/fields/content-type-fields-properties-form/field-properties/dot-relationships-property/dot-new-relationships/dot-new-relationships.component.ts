@@ -1,43 +1,33 @@
-import { Observable } from 'rxjs';
-
-import { AsyncPipe } from '@angular/common';
 import {
     Component,
     EventEmitter,
     Input,
     OnChanges,
-    OnInit,
     Output,
     SimpleChanges,
-    inject,
-    signal
+    inject
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DotContentTypeService, PaginatorService } from '@dotcms/data-access';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotContentTypeComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { SearchableDropdownComponent } from '../../../../../../../../../view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotCardinalitySelectorComponent } from '../dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
 @Component({
     selector: 'dot-new-relationships',
     templateUrl: './dot-new-relationships.component.html',
-    styleUrls: ['./dot-new-relationships.component.scss'],
     imports: [
-        SearchableDropdownComponent,
+        DotContentTypeComponent,
         DotCardinalitySelectorComponent,
         FormsModule,
-        AsyncPipe,
         DotMessagePipe,
         DotFieldRequiredDirective
-    ],
-    providers: [PaginatorService]
+    ]
 })
-export class DotNewRelationshipsComponent implements OnInit, OnChanges {
-    paginatorService = inject(PaginatorService);
+export class DotNewRelationshipsComponent implements OnChanges {
     private contentTypeService = inject(DotContentTypeService);
 
     @Input() cardinality: number;
@@ -48,19 +38,8 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
 
     @Output() switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    contentTypeCurrentPage: Observable<DotCMSContentType[]>;
-
     contentType: DotCMSContentType;
     currentCardinalityIndex: number;
-
-    readonly lastSearch = signal({
-        filter: null,
-        offset: null
-    });
-
-    ngOnInit() {
-        this.paginatorService.url = 'v1/contenttype';
-    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.velocityVar) {
@@ -69,6 +48,25 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
 
         if (changes.cardinality) {
             this.currentCardinalityIndex = changes.cardinality.currentValue;
+        }
+    }
+
+    /**
+     * Handle content type change from dot-content-type component
+     * Note: onChange event emits the variable (string), so we need to look up the full contentType object
+     *
+     * @param variable The selected content type variable or null
+     * @memberof DotNewRelationshipsComponent
+     */
+    onContentTypeChange(variable: string | null): void {
+        if (variable) {
+            this.contentTypeService.getContentType(variable).subscribe((contentType) => {
+                this.contentType = contentType;
+                this.triggerChanged();
+            });
+        } else {
+            this.contentType = null;
+            this.triggerChanged();
         }
     }
 
@@ -97,27 +95,6 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
         this.triggerChanged();
     }
 
-    /**
-     *Load content types by pagination
-     *
-     * @param {string} [filter=''] content types's filter
-     * @param {number} [offset=0] pagination index
-     * @memberof DotNewRelationshipsComponent
-     */
-    getContentTypeList(filter = '', offset = 0): void {
-        const shouldSkip = this.shouldSkipSearch(filter, offset);
-
-        if (shouldSkip) {
-            return;
-        }
-
-        this.paginatorService.filter = filter;
-        // Temporary fix for a customer; we can remove it after this is fixed: #33435
-        this.paginatorService.links = {};
-        this.lastSearch.set({ filter, offset });
-        this.contentTypeCurrentPage = this.paginatorService.getWithOffset(offset);
-    }
-
     private loadContentType(velocityVar: string) {
         if (velocityVar) {
             if (velocityVar.includes('.')) {
@@ -130,12 +107,5 @@ export class DotNewRelationshipsComponent implements OnInit, OnChanges {
         } else {
             this.contentType = null;
         }
-    }
-
-    private shouldSkipSearch(filter: string, offset: number): boolean {
-        return (
-            this.editing ||
-            (filter === this.lastSearch().filter && offset === this.lastSearch().offset)
-        );
     }
 }

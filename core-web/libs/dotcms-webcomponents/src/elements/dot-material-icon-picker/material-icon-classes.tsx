@@ -664,7 +664,7 @@ export const MaterialIconClasses = [
     'flight',
     'flight_land',
     'flight_takeoff',
-    'flip',
+    'animate-flip',
     'flip_camera_android',
     'flip_camera_ios',
     'flip_to_back',

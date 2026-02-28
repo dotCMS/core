@@ -3,7 +3,7 @@ import { Component, EventEmitter, Input, Output, inject, input } from '@angular/
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 
@@ -23,7 +23,7 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
         CommonModule,
         FormsModule,
         TableModule,
-        DropdownModule,
+        SelectModule,
         SelectButtonModule,
         ButtonModule,
         DotMessagePipe,

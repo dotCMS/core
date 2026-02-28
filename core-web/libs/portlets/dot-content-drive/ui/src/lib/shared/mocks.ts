@@ -31,7 +31,8 @@ export const mockItems: DotContentDriveItem[] = [
         titleImage: 'titleImage',
         titleImageId: 'titleImageId',
         stInode: 'stInode1',
-        working: true
+        working: true,
+        hasLiveVersion: true
     },
     {
         identifier: '456',

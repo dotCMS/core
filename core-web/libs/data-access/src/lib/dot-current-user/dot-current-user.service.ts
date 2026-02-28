@@ -1,11 +1,12 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
+    DotCMSAPIResponse,
     DotCurrentUser,
     DotPermissionsType,
     PermissionsType,
@@ -14,11 +15,11 @@ import {
 import { formatMessage } from '@dotcms/utils';
 @Injectable()
 export class DotCurrentUserService {
-    private coreWebService = inject(CoreWebService);
+    readonly #http = inject(HttpClient);
 
-    private currentUsersUrl = 'v1/users/current/';
-    private userPermissionsUrl = 'v1/permissions/_bypermissiontype?userid={0}';
-    private porletAccessUrl = 'v1/portlet/{0}/_doesuserhaveaccess';
+    readonly #URL_CURRENT_USER = '/api/v1/users/current/';
+    readonly #URL_USER_PERMISSIONS = '/api/v1/permissions/_bypermissiontype?userid={0}';
+    readonly #URL_PORLET_ACCESS = '/api/v1/portlet/{0}/_doesuserhaveaccess';
 
     // TODO: We need to update the LoginService to get the userId in the User object
     /**
@@ -27,10 +28,8 @@ export class DotCurrentUserService {
      * @memberof DotCurrentUserService
      */
     getCurrentUser(): Observable<DotCurrentUser> {
-        return this.coreWebService
-            .request<DotCurrentUser>({
-                url: this.currentUsersUrl
-            })
+        return this.#http
+            .get<DotCurrentUser>(this.#URL_CURRENT_USER)
             .pipe(map((res: DotCurrentUser) => res));
     }
 
@@ -48,8 +47,8 @@ export class DotCurrentUserService {
         permissionsType: PermissionsType[] = []
     ): Observable<DotPermissionsType> {
         let url = permissions.length
-            ? `${this.userPermissionsUrl}&permission={1}`
-            : this.userPermissionsUrl;
+            ? `${this.#URL_USER_PERMISSIONS}&permission={1}`
+            : this.#URL_USER_PERMISSIONS;
         url = permissionsType.length ? `${url}&permissiontype={2}` : url;
 
         const permissionsUrl = formatMessage(url, [
@@ -58,11 +57,9 @@ export class DotCurrentUserService {
             permissionsType.join(',')
         ]);
 
-        return this.coreWebService
-            .requestView({
-                url: permissionsUrl
-            })
-            .pipe(take(1), pluck('entity'));
+        return this.#http
+            .get<DotCMSAPIResponse<DotPermissionsType>>(permissionsUrl)
+            .pipe(map((res) => res.entity));
     }
 
     /**
@@ -72,10 +69,10 @@ export class DotCurrentUserService {
      * @memberof DotCurrentUserService
      */
     hasAccessToPortlet(portletid: string): Observable<boolean> {
-        return this.coreWebService
-            .requestView({
-                url: this.porletAccessUrl.replace('{0}', portletid)
-            })
-            .pipe(take(1), pluck('entity', 'response'));
+        return this.#http
+            .get<
+                DotCMSAPIResponse<{ response: boolean }>
+            >(this.#URL_PORLET_ACCESS.replace('{0}', portletid))
+            .pipe(map((res) => res.entity.response));
     }
 }

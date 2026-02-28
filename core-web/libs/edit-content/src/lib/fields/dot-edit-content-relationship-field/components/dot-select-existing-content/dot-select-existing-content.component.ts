@@ -20,7 +20,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -53,7 +53,7 @@ const STATIC_COLUMNS = 6;
         InputIconModule,
         InputTextModule,
         InputGroupModule,
-        OverlayPanelModule,
+        PopoverModule,
         ContentletStatusPipe,
         LanguagePipe,
         DatePipe,
@@ -61,7 +61,6 @@ const STATIC_COLUMNS = 6;
         FormsModule
     ],
     templateUrl: './dot-select-existing-content.component.html',
-    styleUrls: ['./dot-select-existing-content.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

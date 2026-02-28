@@ -1,0 +1,50 @@
+@use "../../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
+@use "variables" as *;
+
+:host {
+    border: 1px solid colors.$color-palette-gray-300;
+    cursor: pointer;
+    display: flex;
+    margin-right: spacing.$spacing-3;
+    margin-top: spacing.$spacing-3;
+    padding: spacing.$spacing-1 0;
+    transition: box-shadow $basic-speed ease-in;
+    width: 100%;
+
+    &:hover {
+        box-shadow: shadows.$shadow-m;
+    }
+
+    p-button {
+        margin-right: spacing.$spacing-3;
+    }
+}
+
+.dot-apps-configuration-list__host-configured {
+    display: flex;
+
+    .host-configured__warning-icon {
+        color: colors.$color-palette-primary;
+        align-self: center;
+        margin-right: spacing.$spacing-3;
+        text-align: end;
+        width: 100%;
+    }
+}
+
+.dot-apps-configuration-list__name {
+    align-self: center;
+    margin-left: spacing.$spacing-3;
+    white-space: nowrap;
+}
+
+.dot-apps-configuration-list__host-key {
+    color: colors.$color-palette-gray-700;
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    margin-left: spacing.$spacing-2;
+}

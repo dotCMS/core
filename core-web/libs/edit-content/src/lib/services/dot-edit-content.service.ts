@@ -9,7 +9,8 @@ import {
     DotContentTypeService,
     DotWorkflowActionsFireService,
     DotTagsService,
-    DotContentletService
+    DotContentletService,
+    DotSiteService
 } from '@dotcms/data-access';
 import {
     DotCMSContentType,
@@ -35,6 +36,7 @@ export class DotEditContentService {
     readonly #dotBrowsingService = inject(DotBrowsingService);
     readonly #dotTagsService = inject(DotTagsService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #siteService = inject(DotSiteService);
     readonly #http = inject(HttpClient);
 
     /**
@@ -111,7 +113,25 @@ export class DotEditContentService {
         perPage?: number;
         page?: number;
     }): Observable<TreeNodeItem[]> {
-        return this.#dotBrowsingService.getSitesTreePath(data);
+        const { filter, perPage, page } = data;
+
+        return this.#siteService.getSites({ filter, per_page: perPage, page }).pipe(
+            map(({ sites }) =>
+                sites.map((site) => ({
+                    key: site.identifier,
+                    label: site.hostname,
+                    data: {
+                        id: site.identifier,
+                        hostname: site.hostname,
+                        path: '',
+                        type: 'site'
+                    },
+                    expandedIcon: 'pi pi-folder-open',
+                    collapsedIcon: 'pi pi-folder',
+                    leaf: false
+                }))
+            )
+        );
     }
 
     /**

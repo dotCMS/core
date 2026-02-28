@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
@@ -35,7 +35,7 @@ const DEFAULT_WORKFLOW_SELECTION: WorkflowSelection = {
         SkeletonModule,
         ButtonModule,
         DialogModule,
-        DropdownModule,
+        SelectModule,
         FormsModule
     ],
     templateUrl: './dot-edit-content-sidebar-workflow.component.html',

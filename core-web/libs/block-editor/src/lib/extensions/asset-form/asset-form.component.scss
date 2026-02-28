@@ -1,13 +1,16 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
-    border: 1px solid $color-palette-gray-500;
+    border: 1px solid colors.$color-palette-gray-500;
     display: block;
 }
 
 .tabview-container {
     width: 720px;
-    background: $white;
+    background: colors.$white;
 }
 
 .wrapper {
@@ -20,7 +23,7 @@
 
 :host::ng-deep {
     .p-tabview-nav {
-        padding: 0 $spacing-5;
+        padding: 0 spacing.$spacing-5;
     }
 
     .p-tabview-panel {

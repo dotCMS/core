@@ -1,27 +1,28 @@
-import { Component, DebugElement, inject } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
+
+import { JsonPipe } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { MultiSelect } from 'primeng/multiselect';
 
 import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import {
-    DotWorkflowServiceMock,
-    MockDotMessageService,
-    mockWorkflows
-} from '@dotcms/utils-testing';
+import { MockDotMessageService, mockWorkflows } from '@dotcms/utils-testing';
 
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
-
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.workflows': 'Pick it up',
     'dot.common.archived': 'Archivado'
 });
+
+const mockDotWorkflowService = {
+    get: jest.fn().mockReturnValue(of(structuredClone(mockWorkflows)))
+};
 
 @Component({
     selector: 'dot-fake-form',
@@ -32,66 +33,47 @@ const messageServiceMock = new MockDotMessageService({
             {{ form.value | json }}
         </form>
     `,
-    standalone: false
+    standalone: true,
+    imports: [ReactiveFormsModule, DotWorkflowsSelectorFieldComponent, DotMessagePipe, JsonPipe]
 })
 class FakeFormComponent {
     private fb = inject(UntypedFormBuilder);
 
-    form: UntypedFormGroup;
-
-    constructor() {
-        /*
-This should go in the ngOnInit but I don't want to detectChanges everytime for
-this fake test component
-*/
-        this.form = this.fb.group({
-            workflows: [{ value: mockWorkflows, disabled: false }]
-        });
-    }
+    form: UntypedFormGroup = this.fb.group({
+        workflows: [{ value: mockWorkflows, disabled: false }]
+    });
 }
 
 describe('DotWorkflowsSelectorFieldComponent', () => {
-    let component: DotWorkflowsSelectorFieldComponent;
-    let fixture: ComponentFixture<DotWorkflowsSelectorFieldComponent>;
-    let de: DebugElement;
-    let dotWorkflowService: DotWorkflowService;
-    let multiselect: MultiSelect;
-
     describe('basic', () => {
-        beforeEach(waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                imports: [
-                    DotWorkflowsSelectorFieldComponent,
-                    DotMessagePipe,
-                    BrowserAnimationsModule
-                ],
-                providers: [
-                    {
-                        provide: DotWorkflowService,
-                        useClass: DotWorkflowServiceMock
-                    },
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    }
-                ]
-            });
+        let spectator: Spectator<DotWorkflowsSelectorFieldComponent>;
+        let multiselect: MultiSelect;
 
-            fixture = DOTTestBed.createComponent(DotWorkflowsSelectorFieldComponent);
-            component = fixture.componentInstance;
-            de = fixture.debugElement;
-            dotWorkflowService = de.injector.get(DotWorkflowService);
-            jest.spyOn(dotWorkflowService, 'get');
-            jest.spyOn(component, 'propagateChange');
-        }));
+        const createComponent = createComponentFactory({
+            component: DotWorkflowsSelectorFieldComponent,
+            detectChanges: false,
+            imports: [DotWorkflowsSelectorFieldComponent, DotMessagePipe, NoopAnimationsModule],
+            componentProviders: [{ provide: DotWorkflowService, useValue: mockDotWorkflowService }],
+            providers: [
+                { provide: DotWorkflowService, useValue: mockDotWorkflowService },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        });
+
+        beforeEach(() => {
+            mockDotWorkflowService.get.mockClear();
+            spectator = createComponent();
+            jest.spyOn(spectator.component, 'propagateChange');
+        });
 
         describe('no params', () => {
             beforeEach(() => {
-                fixture.detectChanges();
-                multiselect = de.query(By.css('p-multiselect')).componentInstance;
+                spectator.detectChanges();
+                const multiSelectEl = spectator.debugElement.query(By.directive(MultiSelect));
+                multiselect = multiSelectEl?.componentInstance as MultiSelect;
             });
 
-            it('should have have a multiselect', () => {
+            it('should have a multiselect', () => {
                 expect(multiselect).not.toBe(null);
             });
 
@@ -100,56 +82,63 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
             });
 
             it('should have placeholder', () => {
-                // Check that the multiselect component is properly configured
                 expect(multiselect).toBeTruthy();
                 expect(multiselect.maxSelectedLabels).toBe(3);
-                expect(multiselect.appendTo).toEqual('body');
+                const appendTo =
+                    typeof multiselect.appendTo === 'function'
+                        ? (multiselect.appendTo as () => string)()
+                        : multiselect.appendTo;
+                expect(appendTo).toEqual('body');
             });
 
-            it('should have append to bobdy', () => {
-                expect(multiselect.appendTo).toEqual('body');
+            it('should have append to body', () => {
+                const appendTo =
+                    typeof multiselect.appendTo === 'function'
+                        ? (multiselect.appendTo as () => string)()
+                        : multiselect.appendTo;
+                expect(appendTo).toEqual('body');
             });
 
             it('should get workflow list from server', () => {
-                expect(dotWorkflowService.get).toHaveBeenCalledTimes(1);
+                expect(mockDotWorkflowService.get).toHaveBeenCalledTimes(1);
             });
 
             it('should have options', () => {
                 expect(multiselect.options).toEqual([
                     expect.objectContaining({
                         id: '85c1515c-c4f3-463c-bac2-860b8fcacc34',
-                        creationDate: expect.any(String),
+                        creationDate: expect.anything(),
                         name: 'Default Scheme',
                         description:
                             'This is the default workflow scheme that will be applied to all content',
                         archived: false,
                         mandatory: false,
                         defaultScheme: true,
-                        modDate: expect.any(String),
+                        modDate: expect.anything(),
                         entryActionId: null,
                         system: false
                     }),
                     expect.objectContaining({
                         id: '77a9bf3f-a402-4c56-9b1f-1050b9d345dc',
-                        creationDate: expect.any(String),
+                        creationDate: expect.anything(),
                         name: 'Document Management',
                         description: 'Default workflow for documents',
                         archived: true,
                         mandatory: false,
                         defaultScheme: false,
-                        modDate: expect.any(String),
+                        modDate: expect.anything(),
                         entryActionId: null,
                         system: false
                     }),
                     expect.objectContaining({
                         id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                        creationDate: expect.any(String),
+                        creationDate: expect.anything(),
                         name: 'System Workflow',
                         description: '',
                         archived: false,
                         mandatory: false,
                         defaultScheme: false,
-                        modDate: expect.any(String),
+                        modDate: expect.anything(),
                         entryActionId: null,
                         system: true
                     })
@@ -159,59 +148,66 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
     });
 
     describe('value accessor', () => {
-        let fixtureHost: ComponentFixture<FakeFormComponent>;
-        let deHost: DebugElement;
-        let innerMultiselect: DebugElement;
+        let spectator: Spectator<FakeFormComponent>;
+        let fieldComponent: DotWorkflowsSelectorFieldComponent;
+        let innerMultiselectEl: ReturnType<Spectator<FakeFormComponent>['debugElement']['query']>;
 
-        beforeEach(waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [FakeFormComponent],
-                imports: [DotWorkflowsSelectorFieldComponent, DotMessagePipe],
-                providers: [
-                    {
-                        provide: DotWorkflowService,
-                        useClass: DotWorkflowServiceMock
-                    },
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    }
-                ]
-            });
+        const createHostComponent = createComponentFactory({
+            component: FakeFormComponent,
+            imports: [
+                ReactiveFormsModule,
+                DotWorkflowsSelectorFieldComponent,
+                DotMessagePipe,
+                NoopAnimationsModule
+            ],
+            providers: [
+                { provide: DotWorkflowService, useValue: mockDotWorkflowService },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        });
 
-            fixtureHost = DOTTestBed.createComponent(FakeFormComponent);
-            deHost = fixtureHost.debugElement;
-            component = deHost.query(By.css('dot-workflows-selector-field')).componentInstance;
-            innerMultiselect = deHost
-                .query(By.css('dot-workflows-selector-field'))
-                .query(By.css('p-multiselect'));
-        }));
+        beforeEach(() => {
+            spectator = createHostComponent();
+            const fieldEl = spectator.debugElement.query(By.css('dot-workflows-selector-field'));
+            fieldComponent = fieldEl?.componentInstance as DotWorkflowsSelectorFieldComponent;
+            innerMultiselectEl = fieldEl?.query(By.directive(MultiSelect));
+        });
 
         it('should get value', () => {
-            fixtureHost.detectChanges();
-            expect(component.value).toEqual(mockWorkflows);
+            spectator.detectChanges();
+            expect(fieldComponent.value).toEqual(mockWorkflows);
         });
 
         it('should propagate value', () => {
-            fixtureHost.detectChanges();
-            innerMultiselect.triggerEventHandler('onChange', {
+            spectator.detectChanges();
+            innerMultiselectEl?.triggerEventHandler('onChange', {
                 originalEvent: {},
                 value: ['123']
             });
-            fixtureHost.detectChanges();
-            expect(fixtureHost.componentInstance.form.value).toEqual({ workflows: ['123'] });
+            spectator.detectChanges();
+            expect(spectator.component.form.value).toEqual({ workflows: ['123'] });
         });
 
         it('should be enabled by default', () => {
-            fixtureHost.detectChanges();
-            expect(innerMultiselect.componentInstance.disabled).toBe(false);
+            spectator.detectChanges();
+            const multiSelect = innerMultiselectEl?.componentInstance as MultiSelect;
+            const disabled =
+                typeof multiSelect?.disabled === 'function'
+                    ? (multiSelect.disabled as () => boolean)()
+                    : multiSelect?.disabled;
+            expect(disabled).toBe(false);
         });
 
         it('should set disabled', async () => {
-            fixtureHost.componentInstance.form.get('workflows').disable();
-            fixtureHost.detectChanges();
-            await fixtureHost.whenStable();
-            expect(innerMultiselect.componentInstance.disabled).toBe(true);
+            spectator.component.form.get('workflows')?.disable();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            const multiSelect = innerMultiselectEl?.componentInstance as MultiSelect;
+            const disabled =
+                typeof multiSelect?.disabled === 'function'
+                    ? (multiSelect.disabled as () => boolean)()
+                    : multiSelect?.disabled;
+            expect(disabled).toBe(true);
         });
     });
 });

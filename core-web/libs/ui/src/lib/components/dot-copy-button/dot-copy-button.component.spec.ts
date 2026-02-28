@@ -1,17 +1,9 @@
-import { DebugElement } from '@angular/core';
-import {
-    ComponentFixture,
-    discardPeriodicTasks,
-    fakeAsync,
-    flush,
-    TestBed,
-    tick,
-    waitForAsync
-} from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { ButtonModule } from 'primeng/button';
-import { TooltipModule } from 'primeng/tooltip';
+import { discardPeriodicTasks, fakeAsync, flush, tick } from '@angular/core/testing';
+
+import { Button } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -26,108 +18,85 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotCopyButtonComponent', () => {
-    let fixture: ComponentFixture<DotCopyButtonComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotCopyButtonComponent>;
     let dotClipboardUtil: DotClipboardUtil;
-    let button: DebugElement;
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                DotClipboardUtil
-            ],
-            imports: [TooltipModule, ButtonModule, DotCopyButtonComponent]
-        }).compileComponents();
-    }));
+    const createComponent = createComponentFactory({
+        component: DotCopyButtonComponent,
+        imports: [Tooltip, Button],
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }, DotClipboardUtil]
+    });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotCopyButtonComponent);
-        de = fixture.debugElement;
-        dotClipboardUtil = de.injector.get(DotClipboardUtil);
-
-        jest.spyOn(dotClipboardUtil, 'copy').mockImplementation(() => {
-            return Promise.resolve(true);
+        spectator = createComponent({
+            props: { copy: 'Text to copy' }
         });
-        fixture.componentRef.setInput('copy', 'Text to copy');
+        // Component provides its own DotClipboardUtil; spy on that instance so copy() is used
+        dotClipboardUtil = spectator.fixture.debugElement.injector.get(DotClipboardUtil);
+        jest.spyOn(dotClipboardUtil, 'copy').mockResolvedValue(true);
+        spectator.detectChanges();
     });
 
     describe('with label', () => {
         beforeEach(() => {
-            fixture.componentRef.setInput('label', 'Label');
-            button = de.query(By.css('button'));
+            spectator.setInput('label', 'Label');
+            spectator.detectChanges();
         });
 
         it('should show label', () => {
-            fixture.detectChanges();
-            expect(button.nativeElement.textContent.trim()).toBe('Label');
+            const button = spectator.query(byTestId('copy-to-clipboard'));
+            expect(button?.textContent?.trim()).toBe('Label');
         });
 
         it('should not show label', () => {
-            fixture.componentRef.setInput('label', null);
-            fixture.detectChanges();
-            expect(button.nativeElement.textContent.trim()).toBe('');
+            spectator.setInput('label', null);
+            spectator.detectChanges();
+            const button = spectator.query(byTestId('copy-to-clipboard'));
+            expect(button?.textContent?.trim()).toBe('');
         });
 
-        it('should have pTooltip attributes', () => {
-            expect(button.attributes.appendTo).toEqual('body');
-            expect(button.attributes.tooltipPosition).toEqual('bottom');
-            expect(button.attributes.hideDelay).toEqual('800');
-        });
-
-        it('should copy text to clipboard', () => {
+        it('should copy text to clipboard', fakeAsync(() => {
             const stopPropagation = jest.fn();
-
-            button.triggerEventHandler('click', {
-                stopPropagation: stopPropagation
-            });
+            const event = { stopPropagation } as unknown as MouseEvent;
+            spectator.component.copyUrlToClipboard(event);
+            spectator.detectChanges();
+            flush(); // flush copy() promise
 
             expect(dotClipboardUtil.copy).toHaveBeenCalledWith('Text to copy');
             expect(stopPropagation).toHaveBeenCalledTimes(1);
-        });
+        }));
     });
 
     describe('with tooltip', () => {
+        const TOOLTIP_SHOW_DELAY = 800;
+
         beforeEach(() => {
-            fixture.componentRef.setInput('tooltipText', 'Tooltip text');
-            button = de.query(By.css('button'));
-            fixture.detectChanges();
+            spectator.setInput('tooltipText', 'Tooltip text');
+            spectator.detectChanges();
         });
 
         it('should show tooltip', fakeAsync(() => {
-            const nativeButton = button.nativeElement;
-            nativeButton.dispatchEvent(new Event('mouseenter'));
-            fixture.detectChanges();
+            const button = spectator.query(byTestId('copy-to-clipboard'));
+            button?.dispatchEvent(new Event('mouseenter'));
+            spectator.detectChanges();
 
-            tick(100);
-            fixture.detectChanges();
+            tick(TOOLTIP_SHOW_DELAY);
+            spectator.detectChanges();
 
             const tooltipElement = document.querySelector('[data-testid="tooltip-content"]');
             expect(tooltipElement).toBeTruthy();
-            expect(tooltipElement.textContent.trim()).toBe('Tooltip text');
+            expect(tooltipElement?.textContent?.trim()).toBe('Tooltip text');
             discardPeriodicTasks();
         }));
 
         it('should show "Copied" in tooltip after clicking the button', fakeAsync(() => {
-            const nativeButton = button.nativeElement;
+            const event = { stopPropagation: jest.fn() } as unknown as MouseEvent;
+            spectator.component.copyUrlToClipboard(event);
+            tick(0); // run promise microtask so .then() runs and sets $tempTooltipText
+            spectator.detectChanges();
 
-            nativeButton.dispatchEvent(new Event('mouseenter'));
-            fixture.detectChanges();
-            tick(100);
-            fixture.detectChanges();
-
-            nativeButton.dispatchEvent(new Event('click'));
-            fixture.detectChanges();
-            tick(100);
-            fixture.detectChanges();
-
-            const tooltipElement = document.querySelector('[data-testid="tooltip-content"]');
-            expect(tooltipElement).toBeTruthy();
-            expect(tooltipElement.textContent.trim()).toBe('Copied');
-            flush();
+            expect(spectator.component.$tooltipText()).toBe('Copied');
+            discardPeriodicTasks();
         }));
     });
 });

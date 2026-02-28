@@ -1,3 +1,8 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -7,11 +12,23 @@
         visibility: hidden;
     }
 
+    .drag-image {
+        position: absolute;
+        top: -1000px;
+        left: -1000px;
+        padding: spacing.$spacing-3;
+        width: fit-content;
+        background-color: white;
+        border: 1px solid colors.$color-palette-gray-400;
+        border-radius: common.$border-radius-lg;
+        z-index: 1;
+        visibility: visible;
+    }
     ::ng-deep {
         .p-button-raised {
-            background-color: $white;
-            color: $black;
-            box-shadow: $shadow-s;
+            background-color: colors.$white;
+            color: colors.$black;
+            box-shadow: shadows.$shadow-s;
             transition: all 0.15s ease-in-out;
 
             &:disabled {
@@ -20,15 +37,15 @@
 
             &:hover:enabled,
             &:focus:enabled {
-                background-color: $color-palette-primary-100;
-                color: $color-palette-primary-500;
-                box-shadow: $shadow-s;
+                background-color: colors.$color-palette-primary-100;
+                color: colors.$color-palette-primary-500;
+                box-shadow: shadows.$shadow-s;
                 transform: scale(1.1);
             }
         }
 
         .delete {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
     }
 }
@@ -36,7 +53,7 @@
 .bounds {
     position: absolute;
     pointer-events: none;
-    outline: solid 2px $color-palette-primary-500;
+    outline: solid 2px colors.$color-palette-primary-500;
     background-color: transparent;
     container-type: inline-size;
 
@@ -60,7 +77,7 @@
 
     .actions {
         position: absolute;
-        right: $spacing-1;
+        right: spacing.$spacing-1;
         top: 0px;
         transform: translate(0, -50%);
         pointer-events: all;
@@ -78,5 +95,5 @@
 .actions {
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-0;
+    gap: spacing.$spacing-0;
 }

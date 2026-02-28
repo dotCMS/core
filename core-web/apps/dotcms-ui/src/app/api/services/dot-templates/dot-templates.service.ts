@@ -1,15 +1,31 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
 
 export const TEMPLATE_API_URL = '/api/v1/templates/';
+
+export type DotTemplatesRequestOptions = {
+    host?: string;
+    archive?: boolean;
+    page?: number;
+    per_page?: number;
+    direction?: string;
+    orderby?: string;
+    filter?: string;
+};
+
+export const DEFAULT_PER_PAGE = 40;
+export const DEFAULT_PAGE = 1;
+export const DEFAULT_ORDERBY = 'modDate';
+export const DEFAULT_DIRECTION = 'DESC';
+export const DEFAULT_ARCHIVE = false;
 
 /**
  * Provide util methods to handle templates in the system.
@@ -18,9 +34,8 @@ export const TEMPLATE_API_URL = '/api/v1/templates/';
  */
 @Injectable()
 export class DotTemplatesService {
-    private coreWebService = inject(CoreWebService);
-    private httpErrorManagerService = inject(DotHttpErrorManagerService);
     private http = inject(HttpClient);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Return a list of templates.
@@ -50,16 +65,58 @@ export class DotTemplatesService {
     /**
      * Get the template filtered by tittle or inode .
      *
-     * @param {string} filter
-     * @returns {Observable<DotTemplate>}
+     * @param {DotTemplatesRequestOptions} options
+     * @returns {Observable<{ templates: DotTemplate[]; totalRecords: number }>}
      * @memberof DotTemplatesService
      */
-    getFiltered(filter: string): Observable<DotTemplate[]> {
-        const url = `${TEMPLATE_API_URL}?filter=${filter}`;
+    getFiltered(
+        options: DotTemplatesRequestOptions
+    ): Observable<{ templates: DotTemplate[]; totalRecords: number }> {
+        const url = `${TEMPLATE_API_URL}`;
+        const per_page = options.per_page ?? DEFAULT_PER_PAGE;
+        const page = options.page ?? DEFAULT_PAGE;
+        const orderby = options.orderby ?? DEFAULT_ORDERBY;
+        const direction = options.direction ?? DEFAULT_DIRECTION;
+        const archive = options.archive ?? DEFAULT_ARCHIVE;
+        const filter = options.filter;
 
-        return this.request<DotTemplate[]>({
-            url
-        });
+        const params = new HttpParams()
+            .set('per_page', per_page.toString())
+            .set('page', page.toString())
+            .set('orderby', orderby.toString())
+            .set('direction', direction.toString())
+            .set('archive', archive.toString())
+            .set('filter', filter.toString());
+
+        return this.request<
+            HttpResponse<{ entity: DotTemplate[]; pagination: { totalEntries: number } }>
+        >({
+            method: 'GET',
+            url,
+            params,
+            observe: 'response'
+        }).pipe(
+            map(
+                (
+                    response: HttpResponse<{
+                        entity: DotTemplate[];
+                        pagination: { totalEntries: number };
+                    }>
+                ) => {
+                    const templates = response.body?.entity || [];
+                    const totalRecords =
+                        response.body?.pagination?.totalEntries || templates.length;
+
+                    return { templates, totalRecords };
+                }
+            ),
+            catchError((error: HttpErrorResponse) => {
+                return this.httpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map(() => ({ templates: [], totalRecords: 0 }))
+                );
+            })
+        );
     }
 
     /**
@@ -194,8 +251,17 @@ export class DotTemplatesService {
         return this.request<DotTemplate>({ method: 'PUT', url });
     }
 
-    private request<T>(options: DotRequestOptionsArgs): Observable<T> {
-        const response$ = this.coreWebService.requestView<T>(options);
+    private request<T>(options: DotRequestOptionsArgs & { observe?: 'response' }): Observable<T> {
+        const response$ = this.http.request<T>(options.method || 'GET', options.url, {
+            body: options?.body,
+            params: options?.params,
+            headers: options?.headers,
+            observe: options.observe
+        });
+
+        if (options.observe === 'response') {
+            return response$ as Observable<T>;
+        }
 
         return response$.pipe(
             pluck('entity'),

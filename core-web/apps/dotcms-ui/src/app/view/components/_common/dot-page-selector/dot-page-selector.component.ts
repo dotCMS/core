@@ -5,10 +5,10 @@ import {
     Component,
     EventEmitter,
     forwardRef,
+    inject,
     Input,
     Output,
-    ViewChild,
-    inject
+    ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -52,7 +52,6 @@ enum SearchType {
 @Component({
     selector: 'dot-page-selector',
     templateUrl: './dot-page-selector.component.html',
-    styleUrls: ['./dot-page-selector.component.scss'],
     providers: [
         DotPageSelectorService,
         {
@@ -68,7 +67,10 @@ enum SearchType {
         DotDirectivesModule,
         DotFieldHelperComponent,
         DotMessagePipe
-    ]
+    ],
+    host: {
+        class: 'relative'
+    }
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
     private dotPageSelectorService = inject(DotPageSelectorService);

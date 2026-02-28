@@ -68,7 +68,7 @@ const meta: Meta<DotBulkInformationComponent> = {
             declarations: [DotBulkInformationComponent]
         }),
         componentWrapperDecorator(
-            (story) => `<div class="w-30rem border-1 mx-auto p-2">${story}</div>`
+            (story) => `<div class="w-30rem border mx-auto p-2">${story}</div>`
         )
     ],
     render: (args) => ({

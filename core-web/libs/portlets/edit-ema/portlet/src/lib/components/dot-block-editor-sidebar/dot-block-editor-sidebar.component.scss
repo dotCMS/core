@@ -1,3 +1,5 @@
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -15,13 +17,13 @@
 }
 
 ::ng-deep {
-    p-sidebar {
-        .p-sidebar-right {
+    p-drawer {
+        .p-drawer-right {
             width: 50%;
             max-width: 1040px;
         }
 
-        .p-sidebar-content {
+        .p-drawer-content {
             .container {
                 height: 100%;
             }
@@ -35,9 +37,9 @@
 footer {
     display: flex;
     justify-content: flex-end;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
 
     .p-button-secondary {
-        margin-right: $spacing-3;
+        margin-right: spacing.$spacing-3;
     }
 }

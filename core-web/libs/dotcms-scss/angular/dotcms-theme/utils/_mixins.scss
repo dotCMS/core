@@ -1,3 +1,4 @@
+@use "sass:map";
 @mixin placeholder($color) {
     &::-webkit-input-placeholder {
         color: $color;
@@ -26,15 +27,15 @@
 
 @mixin button-state($props) {
     @include button-base(
-        map-get($props, background),
-        map-get($props, border),
-        map-get($props, shadow)
+        map.get($props, background),
+        map.get($props, border),
+        map.get($props, shadow)
     );
 
     [class^="ui-button-icon"],
     .ui-button-text,
     .ui-c {
-        color: map-get($props, color);
+        color: map.get($props, color);
     }
 }
 

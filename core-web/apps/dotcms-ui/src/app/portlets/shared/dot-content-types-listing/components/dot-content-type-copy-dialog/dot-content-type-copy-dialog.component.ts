@@ -1,4 +1,4 @@
-import { combineLatest, Observable, of } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -6,12 +6,11 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    EventEmitter,
-    Input,
+    inject,
+    input,
+    OnDestroy,
     OnInit,
-    Output,
-    ViewChild,
-    inject
+    output
 } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -21,23 +20,24 @@ import {
     Validators
 } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { map } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyContentTypeDialogFormFields, DotDialogActions } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
+    DotSiteComponent,
     DotValidators
 } from '@dotcms/ui';
 
 import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
-import { DotSiteSelectorFieldComponent } from '../../../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
 
 @Component({
@@ -48,35 +48,34 @@ import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
     imports: [
         CommonModule,
         ReactiveFormsModule,
+        DialogModule,
+        ButtonModule,
         InputTextModule,
         DotFieldValidationMessageComponent,
-        DotDialogComponent,
         DotMdIconSelectorComponent,
-        DotSiteSelectorFieldComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        DotSiteComponent
     ]
 })
-export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked {
+export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked, OnDestroy {
     private readonly fb = inject(UntypedFormBuilder);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly cd = inject(ChangeDetectorRef);
+    private readonly destroy$ = new Subject<boolean>();
 
-    @ViewChild('dot-site-selector-field') siteSelector;
     dialogActions: DotDialogActions;
     inputNameWithType = '';
     dialogTitle = '';
     isVisibleDialog = false;
 
-    dialogActions$: Observable<DotDialogActions>;
+    readonly $isSaving$ = input<Observable<boolean>>(new Observable<boolean>(), {
+        alias: 'isSaving$'
+    });
+    readonly $cancelBtn = output<boolean>();
 
-    @Input()
-    isSaving$ = new Observable<boolean>();
-    @Output() cancelBtn = new EventEmitter<boolean>();
-
-    @Output()
-    validFormFields = new EventEmitter<DotCopyContentTypeDialogFormFields>();
+    readonly $validFormFields = output<DotCopyContentTypeDialogFormFields>();
     form!: UntypedFormGroup;
 
     constructor() {
@@ -117,7 +116,7 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
      */
     submitForm() {
         if (this.form.valid) {
-            this.validFormFields.emit(this.form.value);
+            this.$validFormFields.emit(this.form.value);
         }
     }
 
@@ -127,7 +126,7 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
      * @memberof DotContentTypeCopyDialogComponent
      */
     closeDialog(): void {
-        this.cancelBtn.emit(true);
+        this.$cancelBtn.emit(true);
         this.initForm();
         this.isVisibleDialog = false;
     }
@@ -137,8 +136,13 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
         this.cd.detectChanges();
     }
 
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
     private setDialogConfig(): void {
-        const dialogActions$: Observable<DotDialogActions> = of({
+        this.dialogActions = {
             accept: {
                 action: () => {
                     this.submitForm();
@@ -152,15 +156,18 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
                 },
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle.form.cancel')
             }
+        };
+
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.dialogActions = {
+                ...this.dialogActions,
+                accept: {
+                    ...this.dialogActions.accept,
+                    disabled: !this.form.valid
+                }
+            };
+            this.cd.markForCheck();
         });
-
-        this.dialogActions$ = combineLatest([dialogActions$, this.form.valueChanges]).pipe(
-            map(([dialogActions]) => {
-                dialogActions.accept.disabled = !this.form.valid;
-
-                return dialogActions;
-            })
-        );
     }
 
     private initForm(): void {

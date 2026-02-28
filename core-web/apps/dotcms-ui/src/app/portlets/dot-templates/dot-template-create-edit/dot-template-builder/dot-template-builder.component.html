@@ -1,8 +1,18 @@
-<p-tabView styleClass="dot-template-builder__new-template-builder">
-    <p-tabPanel
-        [header]="item.type === 'advanced' ? ('code' | dm) : ('design' | dm)"
-        data-testId="builder">
-        <ng-template pTemplate="content">
+<!-- ptabs is display flex by default -->
+<p-tabs [value]="0" class="h-full">
+    <p-tablist class="shrink-0">
+        <p-tab [value]="0" data-testId="builder">
+            {{ item.type === 'advanced' ? ('code' | dm) : ('design' | dm) }}
+        </p-tab>
+        <p-tab [value]="1">
+            {{ 'Permissions' | dm }}
+        </p-tab>
+        <p-tab [value]="2">
+            {{ 'History' | dm }}
+        </p-tab>
+    </p-tablist>
+    <p-tabpanels class="p-0 overflow-hidden grow basis-0">
+        <p-tabpanel [value]="0" data-testId="builder" class="h-full block">
             @switch (item.type) {
                 @case ('advanced') {
                     <dot-template-advanced
@@ -14,11 +24,12 @@
                 }
                 @case ('design') {
                     <dotcms-template-builder-lib
+                        class="h-full overflow-hidden flex flex-col"
                         (templateChange)="onTemplateItemChange($event)"
                         [layout]="item.layout"
                         [template]="{
-                            themeId: item.theme ?? item.themeId,
-                            identifier: item.identifier
+                            themeId: lastTemplate.theme ?? lastTemplate.themeId,
+                            identifier: lastTemplate.identifier
                         }"
                         [containerMap]="item.containers"
                         data-testId="new-template-builder">
@@ -26,24 +37,16 @@
                     </dotcms-template-builder-lib>
                 }
             }
-        </ng-template>
-    </p-tabPanel>
-    <p-tabPanel [header]="'Permissions' | dm">
-        <ng-template pTemplate="content">
-            <dot-portlet-box>
-                <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe" />
-            </dot-portlet-box>
-        </ng-template>
-    </p-tabPanel>
-    <p-tabPanel [header]="'History' | dm">
-        <ng-template pTemplate="content">
-            <dot-portlet-box>
-                <dot-iframe
-                    (custom)="custom.emit($event)"
-                    [src]="historyUrl"
-                    #historyIframe
-                    data-testId="historyIframe" />
-            </dot-portlet-box>
-        </ng-template>
-    </p-tabPanel>
-</p-tabView>
+        </p-tabpanel>
+        <p-tabpanel [value]="1">
+            <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe"></dot-iframe>
+        </p-tabpanel>
+        <p-tabpanel [value]="2">
+            <dot-iframe
+                (custom)="custom.emit($event)"
+                [src]="historyUrl"
+                #historyIframe
+                data-testId="historyIframe"></dot-iframe>
+        </p-tabpanel>
+    </p-tabpanels>
+</p-tabs>

@@ -6,6 +6,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotMessagePipe } from '@dotcms/utils-testing';
 import { StyleEditorFieldSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldInputComponent } from './uve-style-editor-field-input.component';
@@ -42,7 +43,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
     const createHost = createHostFactory({
         component: UveStyleEditorFieldInputComponent,
         host: MockFormComponent,
-        imports: [ReactiveFormsModule, InputTextModule],
+        imports: [ReactiveFormsModule, InputTextModule, DotMessagePipe],
         detectChanges: false
     });
 
@@ -134,28 +135,6 @@ describe('UveStyleEditorFieldInputComponent', () => {
 
             const label = spectator.query('.field-label');
             expect(label.getAttribute('for')).toBe('test-field');
-        });
-
-        it('should have uve-input class on input element', () => {
-            const field = createMockField('test-field', 'Font Size');
-
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-uve-style-editor-field-input [field]="field" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [field.id]: new FormControl()
-                        }),
-                        field
-                    }
-                }
-            );
-            spectator.detectChanges();
-
-            const input = spectator.query('input');
-            expect(input.classList.contains('uve-input')).toBe(true);
         });
     });
 

@@ -1,3 +1,7 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -5,96 +9,21 @@
     height: 100%;
     width: 100%;
     box-sizing: border-box;
-    margin-bottom: $spacing-3;
+    margin-bottom: spacing.$spacing-3;
 
     &.ProseMirror-selectednode {
         &::ng-deep {
             .p-card,
             .p-card:hover {
-                outline: 2px solid $color-palette-primary;
+                outline: 2px solid colors.$color-palette-primary;
             }
         }
-    }
-
-    .spinner__container {
-        height: 5.875rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
     }
 
     &::ng-deep {
         .p-card {
-            background: $white;
-            border: 1px solid $input-border-color;
-            color: $black;
-            display: flex;
-
             &:hover {
-                outline: 2px solid $color-palette-primary-400;
-            }
-
-            .p-card-header {
-                box-sizing: border-box;
-                padding: $spacing-3;
-                padding-right: 0;
-            }
-
-            .p-card-body {
-                box-sizing: border-box;
-                min-width: 6.25 * $dot-editor-size;
-                padding: $spacing-3;
-                padding-right: $spacing-4;
-                flex: 1;
-
-                .p-card-content {
-                    padding: 0;
-                }
-
-                .p-card-subtitle {
-                    color: $color-palette-gray-700;
-                    font-size: $font-size-sm;
-                    font-weight: regular;
-                    margin-bottom: $spacing-2;
-                }
-
-                .p-card-title {
-                    overflow: hidden;
-                    width: 100%;
-                    margin: 0;
-
-                    h3 {
-                        font-weight: 700;
-                        margin-bottom: $spacing-1;
-                        margin: 0;
-                        overflow: hidden;
-                        padding: 0;
-                        text-overflow: ellipsis;
-                        white-space: nowrap;
-                        font-size: $font-size-lg;
-                    }
-                }
-            }
-        }
-    }
-
-    dot-contentlet-thumbnail {
-        align-items: center;
-        display: block;
-        position: relative;
-        width: 5.875 * $dot-editor-size;
-        height: 5.875 * $dot-editor-size;
-    }
-
-    .state {
-        align-items: center;
-        display: flex;
-
-        & > * {
-            margin-right: $spacing-1;
-
-            &:last-child {
-                margin-right: 0;
+                outline: 2px solid colors.$color-palette-primary-400;
             }
         }
     }

@@ -1,19 +1,14 @@
 @let variableList = $variableList();
 
-<p-table
-    [value]="variableList()"
-    #table
-    dataKey="key"
-    (onRowReorder)="reorderVariables()"
-    styleClass="dotTable p-datatable-key-value">
-    <ng-template pTemplate="header" let-columns>
+<p-table [value]="variableList()" #table dataKey="key" (onRowReorder)="reorderVariables()">
+    <ng-template #header let-columns>
         <dot-key-value-table-header-row
             (save)="saveVariable($event)"
             [showHiddenField]="$showHiddenField()"
             [dragAndDrop]="$dragAndDrop()"
             [forbiddenkeys]="$forbiddenkeys()" />
     </ng-template>
-    <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
+    <ng-template #body let-variable let-rowIndex="rowIndex">
         <dot-key-value-table-row
             (delete)="deleteVariable(rowIndex)"
             (save)="updateKeyValue($event, rowIndex)"
@@ -23,12 +18,14 @@
             [dragAndDrop]="$dragAndDrop()"
             #tableRow />
     </ng-template>
-    <ng-template pTemplate="emptymessage" let-variables>
+    <ng-template #emptymessage let-variables>
         <tr>
             <td [attr.colspan]="$colspan()">
-                <div class="flex p-2 gap-2 justify-content-center" data-testId="no-rows">
+                <div class="flex p-2 gap-2 justify-center" data-testId="no-rows">
                     <i class="pi pi-folder-open"></i>
-                    <p class="text-500">{{ 'keyValue.value_no_rows.label' | dm }}</p>
+                    <p class="text-surface-500 dark:text-surface-300">
+                        {{ 'keyValue.value_no_rows.label' | dm }}
+                    </p>
                 </div>
             </td>
         </tr>

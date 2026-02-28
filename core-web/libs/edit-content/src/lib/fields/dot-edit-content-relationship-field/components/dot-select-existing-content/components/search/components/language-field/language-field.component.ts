@@ -13,7 +13,7 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -31,7 +31,7 @@ import { LanguagePipe } from '../../../../../../../../pipes/language.pipe';
  */
 @Component({
     selector: 'dot-language-field',
-    imports: [DropdownModule, ReactiveFormsModule, LanguagePipe, DotMessagePipe],
+    imports: [SelectModule, ReactiveFormsModule, LanguagePipe, DotMessagePipe],
     providers: [
         LanguageFieldStore,
         {

@@ -118,6 +118,10 @@ describe('DotEditContentRadioFieldComponent', () => {
         });
 
         it('should have label with for attribute and text equal to radio options', () => {
+            const expectedOptions = [
+                { label: 'One', value: 'one' },
+                { label: 'Two', value: 'two' }
+            ];
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-radio-field [field]="field" [contentlet]="contentlet" />
@@ -137,10 +141,11 @@ describe('DotEditContentRadioFieldComponent', () => {
             spectator.detectChanges();
 
             spectator.queryAll(RadioButton).forEach((radio) => {
-                expect(spectator.query(`label[for="${radio.inputId}"]`)).toBeTruthy();
-                expect(spectator.query(`label[for="${radio.inputId}"]`).textContent).toEqual(
-                    radio.label
-                );
+                const expectedOption = expectedOptions.find((opt) => opt.value === radio.value);
+                expect(expectedOption).toBeTruthy();
+                const labelEl = spectator.query(`label[for="${radio.inputId}"]`);
+                expect(labelEl).toBeTruthy();
+                expect(labelEl?.textContent?.trim()).toEqual(expectedOption?.label);
             });
         });
 

@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -26,7 +26,7 @@ describe('DotEditContentSidebarWorkflowComponent', () => {
             SkeletonModule,
             ButtonModule,
             DialogModule,
-            DropdownModule,
+            SelectModule,
             FormsModule
         ],
         providers: [

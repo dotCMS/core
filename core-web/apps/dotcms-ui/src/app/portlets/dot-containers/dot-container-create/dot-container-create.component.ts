@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { pluck, take } from 'rxjs/operators';
 
@@ -19,10 +19,9 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
 @Component({
     selector: 'dot-container-create',
     templateUrl: './dot-container-create.component.html',
-    styleUrls: ['./dot-container-create.component.scss'],
     imports: [
         DotPortletBaseComponent,
-        TabViewModule,
+        TabsModule,
         DotMessagePipe,
         DotContainerPropertiesComponent,
         DotContainerPermissionsComponent,
@@ -35,6 +34,7 @@ export class DotContainerCreateComponent implements OnInit {
     private dotRouterService = inject(DotRouterService);
 
     containerId = '';
+    activeTab = 0;
 
     ngOnInit() {
         this.activatedRoute.data

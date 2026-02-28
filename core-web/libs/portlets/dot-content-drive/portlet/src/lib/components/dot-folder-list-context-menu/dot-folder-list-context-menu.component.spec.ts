@@ -12,6 +12,7 @@ import { ContextMenu } from 'primeng/contextmenu';
 import {
     DotContentDriveService,
     DotContentletService,
+    DotCurrentUserService,
     DotFolderService,
     DotMessageService,
     DotRenderMode,
@@ -100,6 +101,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
             }),
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'user-123', admin: true }))
+            }),
             mockProvider(DotWizardService, {
                 open: jest.fn().mockReturnValue(of({}))
             }),

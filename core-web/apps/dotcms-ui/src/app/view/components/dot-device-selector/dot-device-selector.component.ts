@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { filter, map, flatMap, take, toArray } from 'rxjs/operators';
 
@@ -26,7 +26,7 @@ import { DotIconComponent } from '@dotcms/ui';
     templateUrl: './dot-device-selector.component.html',
     styleUrls: ['./dot-device-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DropdownModule, FormsModule, DotIconComponent],
+    imports: [SelectModule, FormsModule, DotIconComponent],
     providers: [DotDevicesService]
 })
 export class DotDeviceSelectorComponent implements OnInit, OnChanges {

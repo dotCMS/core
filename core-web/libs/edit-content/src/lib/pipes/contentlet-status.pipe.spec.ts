@@ -18,7 +18,7 @@ describe('ContentletStatusPipe', () => {
         pipe = TestBed.inject(ContentletStatusPipe);
     });
 
-    it('should transform contentlet status to "Published"', () => {
+    it('should transform contentlet status to "Published" with success classes', () => {
         const contentlet = { live: true, working: false, archived: false } as DotCMSContentlet;
 
         const result = pipe.transform(contentlet);
@@ -36,6 +36,21 @@ describe('ContentletStatusPipe', () => {
         expect(result.classes).toBe('');
     });
 
+    it('should transform contentlet status to "Changed"', () => {
+        const contentlet = {
+            live: true,
+            working: true,
+            workingInode: '1',
+            liveInode: '2',
+            archived: false
+        } as unknown as DotCMSContentlet;
+
+        const result = pipe.transform(contentlet);
+
+        expect(result.label).toBe('Changed');
+        expect(result.classes).toBe('p-chip-pink');
+    });
+
     it('should transform contentlet status to "Archived"', () => {
         const contentlet = { live: false, working: false, archived: true } as DotCMSContentlet;
 
@@ -45,8 +60,14 @@ describe('ContentletStatusPipe', () => {
         expect(result.classes).toBe('p-chip-gray');
     });
 
-    it('should transform contentlet status to "Published"', () => {
-        const contentlet = { live: true, working: true, archived: false } as DotCMSContentlet;
+    it('should transform contentlet status to "Published" when live and working inodes match', () => {
+        const contentlet = {
+            live: true,
+            working: true,
+            workingInode: '1',
+            liveInode: '1',
+            archived: false
+        } as unknown as DotCMSContentlet;
 
         const result = pipe.transform(contentlet);
 
@@ -54,7 +75,7 @@ describe('ContentletStatusPipe', () => {
         expect(result.classes).toBe('p-chip-success');
     });
 
-    it('should transform contentlet status to empty label and default classes', () => {
+    it('should transform contentlet status to empty label and classes for unknown', () => {
         const contentlet = { live: false, working: false, archived: false } as DotCMSContentlet;
 
         const result = pipe.transform(contentlet);

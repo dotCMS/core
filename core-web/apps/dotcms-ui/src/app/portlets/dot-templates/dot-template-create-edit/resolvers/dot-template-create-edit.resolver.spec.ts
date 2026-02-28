@@ -86,7 +86,9 @@ describe('DotTemplateDesignerService', () => {
     });
 
     it('should return page by inode from router', (done) => {
-        jest.spyOn(templateService, 'getFiltered').mockReturnValue(of([templateMock]));
+        jest.spyOn(templateService, 'getFiltered').mockReturnValue(
+            of({ templates: [templateMock], totalRecords: 1 })
+        );
         service
             .resolve(
                 {
@@ -99,7 +101,7 @@ describe('DotTemplateDesignerService', () => {
                 null
             )
             .subscribe((res) => {
-                expect(templateService.getFiltered).toHaveBeenCalledWith('inode123');
+                expect(templateService.getFiltered).toHaveBeenCalledWith({ filter: 'inode123' });
                 expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
                 expect<any>(res).toEqual(templateMock);
                 done();
@@ -107,7 +109,9 @@ describe('DotTemplateDesignerService', () => {
     });
 
     it('should go to the main portlet if inode is invalid', (done) => {
-        jest.spyOn(templateService, 'getFiltered').mockReturnValue(of([]));
+        jest.spyOn(templateService, 'getFiltered').mockReturnValue(
+            of({ templates: [], totalRecords: 0 })
+        );
         service
             .resolve(
                 {
@@ -120,7 +124,7 @@ describe('DotTemplateDesignerService', () => {
                 null
             )
             .subscribe(() => {
-                expect(templateService.getFiltered).toHaveBeenCalledWith('inode123');
+                expect(templateService.getFiltered).toHaveBeenCalledWith({ filter: 'inode123' });
                 expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
                 expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
                 expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);

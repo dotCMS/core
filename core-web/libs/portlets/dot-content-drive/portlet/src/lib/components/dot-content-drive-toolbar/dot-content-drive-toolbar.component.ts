@@ -1,4 +1,3 @@
-import { trigger, transition, style, animate } from '@angular/animations';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -29,14 +28,9 @@ import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
- * Animation delay in milliseconds - matches the duration of the fadeAnimation
+ * Animation delay in milliseconds - matches the duration of the enter/leave fade
  */
 const ANIMATION_DELAY = 135;
-
-/**
- * Animation duration in milliseconds - matches the duration of the fadeAnimation
- */
-const ANIMATION_DURATION = '100ms';
 
 /**
  * Interface for managing animation states of toolbar elements
@@ -61,16 +55,29 @@ interface ToolbarAnimationState {
         DotContentDriveWorkflowActionsComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
-    styleUrl: './dot-content-drive-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    animations: [
-        trigger('slideAnimation', [
-            transition(':enter', [
-                style({ opacity: 0 }),
-                animate(`${ANIMATION_DURATION} ease-out`, style({ opacity: 1 }))
-            ]),
-            transition(':leave', [animate(`${ANIMATION_DURATION} ease-in`, style({ opacity: 0 }))])
-        ])
+    host: {
+        class: 'block transition-all duration-300 ease-in-out',
+        '[style.height]': '"7.125rem"'
+    },
+    styles: [
+        `
+            .toolbar-enter {
+                animation: toolbar-fade-in 100ms ease-out;
+            }
+            @keyframes toolbar-fade-in {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+            .toolbar-leave {
+                opacity: 0;
+                transition: opacity 100ms ease-in;
+            }
+        `
     ]
 })
 export class DotContentDriveToolbarComponent {
@@ -113,6 +120,14 @@ export class DotContentDriveToolbarComponent {
      */
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
+
+    readonly $togglerStyles = computed(() => ({
+        opacity: this.$treeExpanded() ? '0' : '1',
+        visibility: this.$treeExpanded() ? 'hidden' : 'visible',
+        transition: 'all 0.3s ease-in-out',
+        width: this.$treeExpanded() ? '0' : undefined,
+        minWidth: this.$treeExpanded() ? '0' : undefined
+    }));
 
     constructor() {
         // Watch for changes in workflow actions state and handle animation sequencing

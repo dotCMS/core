@@ -1,0 +1,26 @@
+<p-dialog
+    [style]="{ width: '56.25rem' }"
+    [header]="$headerText()"
+    [visible]="!$hidden()"
+    [modal]="true"
+    [dismissableMask]="true"
+    [closable]="false"
+    [draggable]="false"
+    appendTo="body">
+    @if (!$hidden()) {
+        <div class="dot-rules-dialog-body">
+            @if (!$hidden()) {
+                <div class="h-125 w-full" id="{{ mapId }}"></div>
+            }
+        </div>
+    }
+    <ng-template pTemplate="footer">
+        <button (click)="onOkAction()" type="button" pButton severity="primary" label="Ok"></button>
+        <button
+            (click)="onCancelAction()"
+            type="button"
+            pButton
+            severity="secondary"
+            label="Cancel"></button>
+    </ng-template>
+</p-dialog>

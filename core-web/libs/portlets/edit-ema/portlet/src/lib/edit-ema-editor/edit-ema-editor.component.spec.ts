@@ -10,12 +10,12 @@ import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement, signal } from '@angular/core';
+import { DebugElement, EventEmitter, Input, Output, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -126,6 +126,21 @@ global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
 );
 
+// Mock window.matchMedia for PrimeNG components
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
+
 const messagesMock = {
     'editpage.content.contentlet.remove.confirmation_message.header': 'Deleting Content',
     'editpage.content.contentlet.remove.confirmation_message.message':
@@ -146,15 +161,57 @@ const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com')
 };
 
+// Stub components to avoid ng-mocks signal query issues
+
+@Component({
+    selector: 'dot-uve-toolbar',
+    template: '<div></div>',
+    standalone: true
+})
+class DotUveToolbarStubComponent {
+    @Output() editUrlContentMap = new EventEmitter<unknown>();
+    @Output() translatePage = new EventEmitter<unknown>();
+    @Input() set unknown(value: unknown) {
+        // void
+    }
+}
+
+@Component({
+    selector: 'dot-uve-palette',
+    template: '<div></div>',
+    standalone: true
+})
+class DotUvePaletteStubComponent {
+    @Output() onTabChange = new EventEmitter<unknown>();
+    @Input() languageId: unknown;
+    @Input() pagePath: unknown;
+    @Input() variantId: unknown;
+    @Input() activeTab: unknown;
+    @Input() showStyleEditorTab: unknown;
+    @Input() styleSchema: unknown;
+}
+
 const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
-            MockComponent(DotUvePaletteComponent),
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent)
+        ],
+        overrideComponents: [
+            [
+                EditEmaEditorComponent,
+                {
+                    remove: {
+                        imports: [DotUveToolbarComponent, DotUvePaletteComponent]
+                    },
+                    add: {
+                        imports: [DotUveToolbarStubComponent, DotUvePaletteStubComponent]
+                    }
+                }
+            ]
         ],
         detectChanges: false,
         componentProviders: [
@@ -486,7 +543,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should have a toolbar', () => {
-                const toolbar = spectator.query(DotUveToolbarComponent);
+                const toolbar = spectator.query('dot-uve-toolbar');
 
                 expect(toolbar).not.toBeNull();
             });
@@ -601,7 +658,6 @@ describe('EditEmaEditorComponent', () => {
 
                     const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
                     const saveMock = jest.spyOn(store, 'savePage');
-                    const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
                     spectator.triggerEventHandler(
                         DotUveContentletToolsComponent,
@@ -613,9 +669,9 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(confirmDialogOpen).toHaveBeenCalled();
 
-                    confirmDialog
-                        .querySelector('.p-confirm-dialog-accept')
-                        .dispatchEvent(new Event('click')); // This is the internal button, coudln't find a better way to test it
+                    // Call the accept callback directly from the confirmation service spy
+                    const confirmCall = confirmDialogOpen.mock.calls[0][0] as Confirmation;
+                    confirmCall.accept();
 
                     expect(saveMock).toHaveBeenCalledWith([
                         { contentletsId: [], identifier: '123', personaTag: undefined, uuid: '123' }
@@ -698,7 +754,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                        const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
 
                         spectator.triggerEventHandler(
                             DotUveContentletToolsComponent,
@@ -708,9 +764,8 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectComponentChanges();
 
-                        confirmDialog
-                            .querySelector('.p-confirm-dialog-accept')
-                            .dispatchEvent(new Event('click'));
+                        const confirmCall = confirmDialogOpen.mock.calls[0][0] as Confirmation;
+                        confirmCall.accept();
 
                         expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
                     });
@@ -778,7 +833,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                        const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
 
                         spectator.triggerEventHandler(
                             DotUveContentletToolsComponent,
@@ -788,9 +843,8 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectComponentChanges();
 
-                        confirmDialog
-                            .querySelector('.p-confirm-dialog-accept')
-                            .dispatchEvent(new Event('click'));
+                        const confirmCall = confirmDialogOpen.mock.calls[0][0] as Confirmation;
+                        confirmCall.accept();
 
                         expect(resetActiveContentletSpy).not.toHaveBeenCalled();
                     });
@@ -1114,7 +1168,7 @@ describe('EditEmaEditorComponent', () => {
                     const dialog = spectator.query(DotEmaDialogComponent);
                     jest.spyOn(dialog, 'editUrlContentMapContentlet');
 
-                    spectator.triggerEventHandler(DotUveToolbarComponent, 'editUrlContentMap', {
+                    spectator.triggerEventHandler(DotUveToolbarStubComponent, 'editUrlContentMap', {
                         identifier: '123',
                         inode: '456',
                         title: 'Hello World'

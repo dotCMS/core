@@ -19,7 +19,6 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-main-component',
-    styleUrls: ['./main-legacy.component.scss'],
     templateUrl: './main-legacy.component.html',
     imports: [
         RouterOutlet,

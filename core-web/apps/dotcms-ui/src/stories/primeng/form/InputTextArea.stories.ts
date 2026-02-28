@@ -4,11 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 
 const meta: Meta = {
     title: 'PrimeNG/Form/InputTextArea',
-    component: InputTextareaModule,
+    component: TextareaModule,
     parameters: {
         docs: {
             description: {
@@ -19,7 +19,7 @@ const meta: Meta = {
     },
     decorators: [
         moduleMetadata({
-            imports: [BrowserModule, BrowserAnimationsModule, InputTextareaModule, FormsModule]
+            imports: [BrowserModule, BrowserAnimationsModule, TextareaModule, FormsModule]
         })
     ]
 };
@@ -28,18 +28,18 @@ export default meta;
 type Story = StoryObj;
 
 const InputTextAreaTemplate = `
-<div class="flex flex-column gap-3">
-    <div class="flex flex-column gap-2">
+<div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-2">
         <label htmlFor="test">Label</label>
         <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Some placeholder"></textarea>
         <small id="test-help">You can resize this text area</small>
     </div>
-    <div class="flex flex-column gap-2">
+    <div class="flex flex-col gap-2">
         <label htmlFor="test-error">Label</label>
         <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Some placeholder" class="ng-invalid ng-dirty"></textarea>
         <small id="test-help-error">Please enter a valid text</small>
     </div>
-    <div class="flex flex-column gap-2">
+    <div class="flex flex-col gap-2">
         <label htmlFor="test-disabled">Disabled</label>
         <textarea pInputTextarea [rows]="5" [cols]="30" placeholder="Disabled" disabled></textarea>
     </div>
@@ -59,8 +59,8 @@ export const Basic: Story = {
 };
 
 const InputTextAreaTemplateAutoRezise = `
-<div class="flex flex-column gap-3">
-    <div class="flex flex-column gap-2">
+<div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-2">
         <label htmlFor="test">Label</label>
         <textarea
             pInputTextarea
@@ -71,7 +71,7 @@ const InputTextAreaTemplateAutoRezise = `
         ></textarea>
         <small id="test-help">You can resize this text area</small>
     </div>
-    <div class="flex flex-column gap-2">
+    <div class="flex flex-col gap-2">
         <label htmlFor="test-error">Label</label>
         <textarea
             pInputTextarea
@@ -83,7 +83,7 @@ const InputTextAreaTemplateAutoRezise = `
         ></textarea>
         <small id="test-help-error">Please enter a valid text</small>
     </div>
-    <div class="flex flex-column gap-2">
+    <div class="flex flex-col gap-2">
         <label htmlFor="test-disabled">Disabled</label>
         <textarea
             pInputTextarea
