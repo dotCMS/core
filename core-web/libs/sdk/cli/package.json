@@ -1,0 +1,25 @@
+{
+    "name": "@dotcms/cli",
+    "version": "0.0.1",
+    "type": "commonjs",
+    "main": "./src/index.js",
+    "types": "./src/index.d.ts",
+    "bin": {
+        "dotcli": "./src/bin.js"
+    },
+    "files": [
+        "src"
+    ],
+    "dependencies": {
+        "citty": "^0.1.6",
+        "ofetch": "^1.4.1",
+        "consola": "^3.4.0",
+        "@clack/prompts": "^0.9.1",
+        "gray-matter": "^4.0.3",
+        "yaml": "^2.7.0",
+        "zod": "^3.24.0",
+        "tslib": "^2.3.0"
+    },
+    "author": "dotcms <dev@dotcms.com>",
+    "license": "MIT"
+}

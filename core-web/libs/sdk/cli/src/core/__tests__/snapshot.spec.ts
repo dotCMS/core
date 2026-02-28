@@ -1,0 +1,566 @@
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+
+import {
+    checkConflict,
+    computeBinaryHash,
+    computeContentHash,
+    getFileState,
+    loadSnapshot,
+    removeSnapshotEntry,
+    saveSnapshot,
+    scanContentFiles,
+    updateSnapshotEntry
+} from '../snapshot';
+
+import type { SnapshotEntry, SnapshotStore } from '../types';
+
+describe('snapshot', () => {
+    let tmpDir: string;
+
+    beforeEach(() => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dotcli-snapshot-'));
+    });
+
+    afterEach(() => {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    // ─── Helper Functions ───────────────────────────────────────────────────
+
+    function writeContentFile(filePath: string, frontmatter: string, body: string): void {
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(filePath, `---\n${frontmatter}---\n${body}`, 'utf-8');
+    }
+
+    function makeEntry(overrides: Partial<SnapshotEntry> = {}): SnapshotEntry {
+        return {
+            hash: 'abc123',
+            pulledAt: '2025-01-01T00:00:00Z',
+            inode: 'inode-001',
+            identifier: 'id-001',
+            ...overrides
+        };
+    }
+
+    // ─── loadSnapshot / saveSnapshot ────────────────────────────────────────
+
+    describe('loadSnapshot', () => {
+        it('should return empty object when snapshot file does not exist', () => {
+            const result = loadSnapshot(tmpDir);
+            expect(result).toEqual({});
+        });
+
+        it('should load an existing snapshot file', () => {
+            const snapshot: SnapshotStore = {
+                'content/blog/test.md': makeEntry()
+            };
+            const dotcliDir = path.join(tmpDir, '.dotcli');
+            fs.mkdirSync(dotcliDir, { recursive: true });
+            fs.writeFileSync(
+                path.join(dotcliDir, 'snapshot.json'),
+                JSON.stringify(snapshot),
+                'utf-8'
+            );
+
+            const result = loadSnapshot(tmpDir);
+            expect(result).toEqual(snapshot);
+            expect(result['content/blog/test.md'].hash).toBe('abc123');
+        });
+    });
+
+    describe('saveSnapshot', () => {
+        it('should create .dotcli dir and write snapshot', () => {
+            const snapshot: SnapshotStore = {
+                'content/blog/test.md': makeEntry()
+            };
+
+            saveSnapshot(tmpDir, snapshot);
+
+            const filePath = path.join(tmpDir, '.dotcli', 'snapshot.json');
+            expect(fs.existsSync(filePath)).toBe(true);
+
+            const loaded = loadSnapshot(tmpDir);
+            expect(loaded).toEqual(snapshot);
+        });
+
+        it('should overwrite an existing snapshot', () => {
+            saveSnapshot(tmpDir, { 'a.md': makeEntry() });
+            saveSnapshot(tmpDir, { 'b.md': makeEntry({ hash: 'xyz' }) });
+
+            const loaded = loadSnapshot(tmpDir);
+            expect(loaded['a.md']).toBeUndefined();
+            expect(loaded['b.md'].hash).toBe('xyz');
+        });
+    });
+
+    describe('loadSnapshot / saveSnapshot round-trip', () => {
+        it('should preserve all entry fields through round-trip', () => {
+            const entry: SnapshotEntry = {
+                hash: 'sha256-hash-value',
+                pulledAt: '2025-06-15T10:30:00Z',
+                inode: 'abc-def-123',
+                identifier: 'id-456-789'
+            };
+            const snapshot: SnapshotStore = { 'content/Blog/my-post.md': entry };
+
+            saveSnapshot(tmpDir, snapshot);
+            const loaded = loadSnapshot(tmpDir);
+
+            expect(loaded['content/Blog/my-post.md']).toEqual(entry);
+        });
+    });
+
+    // ─── updateSnapshotEntry / removeSnapshotEntry ──────────────────────────
+
+    describe('updateSnapshotEntry', () => {
+        it('should add a new entry to an empty snapshot', () => {
+            const entry = makeEntry({ hash: 'new-hash' });
+            updateSnapshotEntry(tmpDir, 'content/blog/new.md', entry);
+
+            const loaded = loadSnapshot(tmpDir);
+            expect(loaded['content/blog/new.md']).toEqual(entry);
+        });
+
+        it('should update an existing entry', () => {
+            saveSnapshot(tmpDir, { 'file.md': makeEntry({ hash: 'old' }) });
+
+            updateSnapshotEntry(tmpDir, 'file.md', makeEntry({ hash: 'updated' }));
+
+            const loaded = loadSnapshot(tmpDir);
+            expect(loaded['file.md'].hash).toBe('updated');
+        });
+
+        it('should preserve other entries when updating one', () => {
+            saveSnapshot(tmpDir, {
+                'a.md': makeEntry({ hash: 'a-hash' }),
+                'b.md': makeEntry({ hash: 'b-hash' })
+            });
+
+            updateSnapshotEntry(tmpDir, 'a.md', makeEntry({ hash: 'a-updated' }));
+
+            const loaded = loadSnapshot(tmpDir);
+            expect(loaded['a.md'].hash).toBe('a-updated');
+            expect(loaded['b.md'].hash).toBe('b-hash');
+        });
+    });
+
+    describe('removeSnapshotEntry', () => {
+        it('should remove an entry from the snapshot', () => {
+            saveSnapshot(tmpDir, {
+                'a.md': makeEntry({ hash: 'a' }),
+                'b.md': makeEntry({ hash: 'b' })
+            });
+
+            removeSnapshotEntry(tmpDir, 'a.md');
+
+            const loaded = loadSnapshot(tmpDir);
+            expect(loaded['a.md']).toBeUndefined();
+            expect(loaded['b.md'].hash).toBe('b');
+        });
+
+        it('should be a no-op if entry does not exist', () => {
+            saveSnapshot(tmpDir, { 'a.md': makeEntry() });
+
+            removeSnapshotEntry(tmpDir, 'nonexistent.md');
+
+            const loaded = loadSnapshot(tmpDir);
+            expect(loaded['a.md']).toBeDefined();
+        });
+    });
+
+    // ─── computeContentHash ─────────────────────────────────────────────────
+
+    describe('computeContentHash', () => {
+        it('should produce a SHA-256 hex string', () => {
+            const filePath = path.join(tmpDir, 'test.md');
+            writeContentFile(
+                filePath,
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'This is the body.'
+            );
+
+            const hash = computeContentHash(filePath);
+            expect(hash).toMatch(/^[a-f0-9]{64}$/);
+        });
+
+        it('should produce the same hash regardless of YAML key order', () => {
+            const file1 = path.join(tmpDir, 'order1.md');
+            const file2 = path.join(tmpDir, 'order2.md');
+
+            writeContentFile(
+                file1,
+                'title: Hello\nauthor: Alice\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body content.'
+            );
+            writeContentFile(
+                file2,
+                'author: Alice\ntitle: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body content.'
+            );
+
+            expect(computeContentHash(file1)).toBe(computeContentHash(file2));
+        });
+
+        it('should produce the same hash regardless of YAML whitespace', () => {
+            const file1 = path.join(tmpDir, 'ws1.md');
+            const file2 = path.join(tmpDir, 'ws2.md');
+
+            writeContentFile(
+                file1,
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+            writeContentFile(
+                file2,
+                'title:   Hello\ncontentType:   Blog\nidentifier:   id1\nlanguage:   en\ninode:   abc\nmodDate:   "2025-01-01"\n',
+                'Body.'
+            );
+
+            expect(computeContentHash(file1)).toBe(computeContentHash(file2));
+        });
+
+        it('should produce the same hash regardless of YAML quote style', () => {
+            const file1 = path.join(tmpDir, 'quote1.md');
+            const file2 = path.join(tmpDir, 'quote2.md');
+
+            writeContentFile(
+                file1,
+                'title: Hello World\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+            writeContentFile(
+                file2,
+                "title: 'Hello World'\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: '2025-01-01'\n",
+                'Body.'
+            );
+
+            expect(computeContentHash(file1)).toBe(computeContentHash(file2));
+        });
+
+        it('should change hash when a user field value changes', () => {
+            const file1 = path.join(tmpDir, 'val1.md');
+            const file2 = path.join(tmpDir, 'val2.md');
+
+            writeContentFile(
+                file1,
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+            writeContentFile(
+                file2,
+                'title: Goodbye\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            expect(computeContentHash(file1)).not.toBe(computeContentHash(file2));
+        });
+
+        it('should change hash when body changes', () => {
+            const file1 = path.join(tmpDir, 'body1.md');
+            const file2 = path.join(tmpDir, 'body2.md');
+
+            writeContentFile(
+                file1,
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Original body.'
+            );
+            writeContentFile(
+                file2,
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Changed body.'
+            );
+
+            expect(computeContentHash(file1)).not.toBe(computeContentHash(file2));
+        });
+
+        it('should NOT change hash when only metadata keys change', () => {
+            const file1 = path.join(tmpDir, 'meta1.md');
+            const file2 = path.join(tmpDir, 'meta2.md');
+
+            writeContentFile(
+                file1,
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: inode-111\nmodDate: "2025-01-01"\n',
+                'Same body.'
+            );
+            writeContentFile(
+                file2,
+                'title: Same\ncontentType: Article\nidentifier: id2\nlanguage: fr\ninode: inode-222\nmodDate: "2025-12-31"\n',
+                'Same body.'
+            );
+
+            expect(computeContentHash(file1)).toBe(computeContentHash(file2));
+        });
+
+        it('should NOT change hash when bodyField metadata changes', () => {
+            const file1 = path.join(tmpDir, 'bf1.md');
+            const file2 = path.join(tmpDir, 'bf2.md');
+
+            writeContentFile(
+                file1,
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\nbodyField: body\n',
+                'Same.'
+            );
+            writeContentFile(
+                file2,
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\nbodyField: content\n',
+                'Same.'
+            );
+
+            expect(computeContentHash(file1)).toBe(computeContentHash(file2));
+        });
+
+        it('should ignore trailing whitespace differences in body', () => {
+            const file1 = path.join(tmpDir, 'trim1.md');
+            const file2 = path.join(tmpDir, 'trim2.md');
+
+            writeContentFile(
+                file1,
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body text.\n'
+            );
+            writeContentFile(
+                file2,
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body text.\n\n\n'
+            );
+
+            expect(computeContentHash(file1)).toBe(computeContentHash(file2));
+        });
+    });
+
+    // ─── computeBinaryHash ──────────────────────────────────────────────────
+
+    describe('computeBinaryHash', () => {
+        it('should produce a SHA-256 hex string for binary content', () => {
+            const filePath = path.join(tmpDir, 'image.png');
+            const buffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+            fs.writeFileSync(filePath, buffer);
+
+            const hash = computeBinaryHash(filePath);
+            expect(hash).toMatch(/^[a-f0-9]{64}$/);
+        });
+
+        it('should produce different hashes for different content', () => {
+            const file1 = path.join(tmpDir, 'bin1');
+            const file2 = path.join(tmpDir, 'bin2');
+            fs.writeFileSync(file1, Buffer.from('content-a'));
+            fs.writeFileSync(file2, Buffer.from('content-b'));
+
+            expect(computeBinaryHash(file1)).not.toBe(computeBinaryHash(file2));
+        });
+
+        it('should produce same hash for identical content', () => {
+            const file1 = path.join(tmpDir, 'same1');
+            const file2 = path.join(tmpDir, 'same2');
+            fs.writeFileSync(file1, Buffer.from('identical'));
+            fs.writeFileSync(file2, Buffer.from('identical'));
+
+            expect(computeBinaryHash(file1)).toBe(computeBinaryHash(file2));
+        });
+    });
+
+    // ─── getFileState ───────────────────────────────────────────────────────
+
+    describe('getFileState', () => {
+        it('should return "new" when file exists but has no snapshot entry', () => {
+            const filePath = path.join(tmpDir, 'new-file.md');
+            writeContentFile(
+                filePath,
+                'title: New\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            const state = getFileState(filePath, {});
+            expect(state).toBe('new');
+        });
+
+        it('should return "deleted" when snapshot entry exists but file does not', () => {
+            const filePath = path.join(tmpDir, 'deleted.md');
+            const snapshot: SnapshotStore = {
+                [filePath]: makeEntry()
+            };
+
+            const state = getFileState(filePath, snapshot);
+            expect(state).toBe('deleted');
+        });
+
+        it('should return "unchanged" when file hash matches snapshot', () => {
+            const filePath = path.join(tmpDir, 'unchanged.md');
+            writeContentFile(
+                filePath,
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            const hash = computeContentHash(filePath);
+            const snapshot: SnapshotStore = {
+                [filePath]: makeEntry({ hash })
+            };
+
+            const state = getFileState(filePath, snapshot);
+            expect(state).toBe('unchanged');
+        });
+
+        it('should return "modified" when file hash differs from snapshot', () => {
+            const filePath = path.join(tmpDir, 'modified.md');
+            writeContentFile(
+                filePath,
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            const snapshot: SnapshotStore = {
+                [filePath]: makeEntry({ hash: 'stale-hash' })
+            };
+
+            const state = getFileState(filePath, snapshot);
+            expect(state).toBe('modified');
+        });
+    });
+
+    // ─── scanContentFiles ───────────────────────────────────────────────────
+
+    describe('scanContentFiles', () => {
+        it('should find all .md files and categorize them', () => {
+            const contentDir = path.join(tmpDir, 'content');
+            fs.mkdirSync(path.join(contentDir, 'Blog'), { recursive: true });
+
+            const newFile = path.join(contentDir, 'Blog', 'new-post.md');
+            writeContentFile(
+                newFile,
+                'title: New Post\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'New body.'
+            );
+
+            const unchangedFile = path.join(contentDir, 'Blog', 'old-post.md');
+            writeContentFile(
+                unchangedFile,
+                'title: Old Post\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
+                'Old body.'
+            );
+            const unchangedHash = computeContentHash(unchangedFile);
+
+            const deletedFile = path.join(contentDir, 'Blog', 'gone.md');
+
+            const snapshot: SnapshotStore = {
+                [unchangedFile]: makeEntry({ hash: unchangedHash }),
+                [deletedFile]: makeEntry({ hash: 'deleted-hash' })
+            };
+
+            const states = scanContentFiles(contentDir, snapshot);
+
+            expect(states.get(newFile)).toBe('new');
+            expect(states.get(unchangedFile)).toBe('unchanged');
+            expect(states.get(deletedFile)).toBe('deleted');
+        });
+
+        it('should detect modified files', () => {
+            const contentDir = path.join(tmpDir, 'content');
+            fs.mkdirSync(contentDir, { recursive: true });
+
+            const filePath = path.join(contentDir, 'modified.md');
+            writeContentFile(
+                filePath,
+                'title: Original\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            const snapshot: SnapshotStore = {
+                [filePath]: makeEntry({ hash: 'old-hash-that-no-longer-matches' })
+            };
+
+            const states = scanContentFiles(contentDir, snapshot);
+            expect(states.get(filePath)).toBe('modified');
+        });
+
+        it('should respect .dotcliignore patterns', () => {
+            const contentDir = path.join(tmpDir, 'content');
+            fs.mkdirSync(path.join(contentDir, 'drafts'), { recursive: true });
+
+            const includedFile = path.join(contentDir, 'included.md');
+            writeContentFile(
+                includedFile,
+                'title: Included\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            const ignoredFile = path.join(contentDir, 'drafts', 'ignored.md');
+            writeContentFile(
+                ignoredFile,
+                'title: Ignored\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
+                'Draft body.'
+            );
+
+            // Create .dotcliignore
+            fs.writeFileSync(path.join(contentDir, '.dotcliignore'), 'drafts/**\n', 'utf-8');
+
+            const states = scanContentFiles(contentDir, {});
+
+            expect(states.has(includedFile)).toBe(true);
+            expect(states.has(ignoredFile)).toBe(false);
+        });
+
+        it('should handle empty content directory', () => {
+            const contentDir = path.join(tmpDir, 'empty-content');
+            fs.mkdirSync(contentDir, { recursive: true });
+
+            const states = scanContentFiles(contentDir, {});
+            expect(states.size).toBe(0);
+        });
+
+        it('should handle .dotcliignore with comments and blank lines', () => {
+            const contentDir = path.join(tmpDir, 'content');
+            fs.mkdirSync(path.join(contentDir, 'temp'), { recursive: true });
+
+            const includedFile = path.join(contentDir, 'keep.md');
+            writeContentFile(
+                includedFile,
+                'title: Keep\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            const ignoredFile = path.join(contentDir, 'temp', 'skip.md');
+            writeContentFile(
+                ignoredFile,
+                'title: Skip\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            fs.writeFileSync(
+                path.join(contentDir, '.dotcliignore'),
+                '# This is a comment\n\ntemp/**\n\n# Another comment\n',
+                'utf-8'
+            );
+
+            const states = scanContentFiles(contentDir, {});
+            expect(states.has(includedFile)).toBe(true);
+            expect(states.has(ignoredFile)).toBe(false);
+        });
+    });
+
+    // ─── checkConflict ──────────────────────────────────────────────────────
+
+    describe('checkConflict', () => {
+        it('should detect conflict when inodes differ', () => {
+            const entry = makeEntry({ inode: 'local-inode-123' });
+            const result = checkConflict(entry, 'server-inode-456');
+
+            expect(result.hasConflict).toBe(true);
+            expect(result.reason).toContain('local-inode-123');
+            expect(result.reason).toContain('server-inode-456');
+        });
+
+        it('should report no conflict when inodes match', () => {
+            const entry = makeEntry({ inode: 'same-inode' });
+            const result = checkConflict(entry, 'same-inode');
+
+            expect(result.hasConflict).toBe(false);
+            expect(result.reason).toBeUndefined();
+        });
+    });
+});

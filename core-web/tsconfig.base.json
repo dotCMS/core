@@ -22,6 +22,7 @@
             "@dotcms/angular": ["libs/sdk/angular/src/public_api.ts"],
             "@dotcms/app/*": ["apps/dotcms-ui/src/app/*"],
             "@dotcms/block-editor": ["libs/block-editor/src/public-api.ts"],
+            "@dotcms/cli": ["libs/sdk/cli/src/index.ts"],
             "@dotcms/client": ["libs/sdk/client/src/index.ts"],
             "@dotcms/client/internal": ["libs/sdk/client/src/internal.ts"],
             "@dotcms/contenttype-fields": ["libs/contenttype-fields/src/index.ts"],
