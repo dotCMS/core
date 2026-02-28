@@ -1,0 +1,39 @@
+::ng-deep .p-button-label {
+    text-transform: unset;
+}
+
+::ng-deep .p-button {
+    display: inline-block;
+}
+
+::ng-deep .p-button:enabled:hover,
+::ng-deep .p-button:enabled:active,
+::ng-deep .p-button:enabled:focus {
+    background: var(--color-palette-primary-500);
+}
+
+::ng-deep .p-button:disabled {
+    background-color: rgb(0, 0, 0) !important;
+    color: #fff !important;
+    opacity: 1;
+}
+
+::ng-deep .p-button.completed {
+    background: var(--color-palette-primary-500) !important;
+}
+
+.alert {
+    background: #fff;
+    color: #d82b2e;
+    border: 1px solid #d82b2e;
+    border-radius: 0.125rem;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.alert a {
+    color: #d82b2e;
+}

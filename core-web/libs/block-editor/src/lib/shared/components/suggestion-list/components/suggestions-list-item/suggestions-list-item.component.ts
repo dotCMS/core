@@ -12,7 +12,7 @@ import {
 @Component({
     selector: 'dot-suggestions-list-item',
     templateUrl: './suggestions-list-item.component.html',
-    styleUrls: ['./suggestions-list-item.component.scss'],
+    styleUrls: ['./suggestions-list-item.component.css'],
     standalone: false
 })
 export class SuggestionsListItemComponent implements FocusableOption, OnInit {

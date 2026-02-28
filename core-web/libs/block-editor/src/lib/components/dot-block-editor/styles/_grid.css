@@ -1,0 +1,95 @@
+/* =============================================================================
+   GRID BLOCK STYLES - Flexbox two-column layout with resize support
+   ============================================================================= */
+
+.grid-block {
+    display: flex;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    position: relative;
+}
+
+/* Column sizing via CSS custom properties set by renderHTML */
+
+.grid-block > .grid-block__column:first-child {
+    flex: 0 0 calc(var(--col-1, 50%) - 0.75rem);
+}
+
+.grid-block > .grid-block__column:last-child {
+    flex: 0 0 calc(var(--col-2, 50%) - 0.75rem);
+}
+
+.grid-block__column {
+    padding: 1rem;
+    border: 1px dashed var(--gray-400);
+    border-radius: 0.5rem;
+    min-height: 3rem;
+    min-width: 0;
+}
+
+.grid-block__column > *:first-child {
+    margin-top: 0;
+}
+
+.grid-block__column > *:last-child {
+    margin-bottom: 0;
+}
+
+.grid-block__column:focus-within {
+    border-color: var(--color-palette-primary-300);
+    background: var(--color-palette-primary-op-10);
+}
+
+/* Resize handle — idle state */
+
+.grid-block__resize-handle {
+    position: absolute;
+    width: 12px;
+    cursor: col-resize;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.grid-block__resize-handle::after {
+    content: '';
+    width: 3px;
+    height: 2rem;
+    background: var(--gray-400);
+    border-radius: 1.5px;
+    transition: background 0.15s, height 0.15s;
+}
+
+.grid-block__resize-handle:hover::after {
+    background: var(--color-palette-primary-500);
+    height: 100%;
+}
+
+.grid-block__resize-handle--active::after {
+    background: var(--color-palette-primary-500);
+    width: 3px;
+    height: 100%;
+    transition: none;
+}
+
+/* Drag preview overlay — sits on top of the grid during resize */
+
+.grid-block__drag-preview {
+    position: absolute;
+    display: flex;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 0.5rem;
+}
+
+.grid-block__drag-preview-col {
+    border-radius: 0.5rem;
+    border: 2px dashed var(--color-palette-primary-400);
+    background: color-mix(in srgb, var(--color-palette-primary-500) 8%, transparent);
+}
+
+.ProseMirror-selectednode.grid-block {
+    outline: 2px solid var(--color-palette-primary-500);
+    border-radius: 0.5rem;
+}

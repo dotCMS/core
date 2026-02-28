@@ -4,6 +4,7 @@ import { getUVEState } from '@dotcms/uve';
 
 import { BlockQuote, CodeBlock } from './blocks/Code';
 import { DotContent } from './blocks/DotContent';
+import { GridBlock } from './blocks/GridBlock';
 import { DotCMSImage } from './blocks/Image';
 import { BulletList, ListItem, OrderedList } from './blocks/Lists';
 import { TableRenderer } from './blocks/Table';
@@ -134,6 +135,21 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         content={node.content ?? []}
                         blockEditorItem={BlockEditorBlock}
                     />
+                );
+
+            case BlockEditorDefaultBlocks.GRID_BLOCK:
+                return (
+                    <GridBlock
+                        key={key}
+                        node={node}
+                        blockEditorBlock={BlockEditorBlock}
+                        customRenderers={customRenderers}
+                    >
+                        <BlockEditorBlock
+                            content={node.content}
+                            customRenderers={customRenderers}
+                        />
+                    </GridBlock>
                 );
 
             case BlockEditorDefaultBlocks.DOT_CONTENT:

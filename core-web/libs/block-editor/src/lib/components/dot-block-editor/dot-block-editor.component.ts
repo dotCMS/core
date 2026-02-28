@@ -66,7 +66,15 @@ import {
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
+import {
+    AIContentNode,
+    ContentletBlock,
+    GridBlock,
+    GridColumn,
+    ImageNode,
+    LoaderNode,
+    VideoNode
+} from '../../nodes';
 import {
     DEFAULT_LANG_ID,
     DotMarketingConfigService,
@@ -79,7 +87,7 @@ import {
 @Component({
     selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
-    styleUrls: ['./dot-block-editor.component.scss'],
+    styleUrls: ['./dot-block-editor.component.css'],
     providers: [
         DialogService,
         {
@@ -121,7 +129,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         ['image', ImageNode],
         ['video', VideoNode],
         ['aiContent', AIContentNode],
-        ['loader', LoaderNode]
+        ['loader', LoaderNode],
+        ['gridBlock', GridBlock]
     ]);
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
@@ -608,7 +617,10 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                         return this.#dotMessageService.get('block-editor.placeholder.quote');
                     }
 
-                    if (node.type.name === 'table') {
+                    if (
+                        node.type.name === 'table' ||
+                        node.type.name === 'gridBlock'
+                    ) {
                         return '';
                     }
 
@@ -616,7 +628,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                 }
             }),
             ...DotCMSTableExtensions,
-            DotTableCellContextMenu(this.viewContainerRef)
+            DotTableCellContextMenu(this.viewContainerRef),
+            GridColumn
         ];
 
         if (isAIPluginInstalled) {

@@ -1,0 +1,23 @@
+#parse( "static/storyblock/render.vtl" )
+##
+## Grid Block Renderer
+## Uses a 12-column CSS grid. Each column spans N of 12 columns via grid-column: span N.
+##
+#set($gridCols = false)
+#if($item.attrs && $item.attrs.columns && $item.attrs.columns.size() == 2)
+#set($gridCols = $item.attrs.columns)
+#end
+<div data-type="gridBlock" class="grid-block" style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem;">
+#set($colIndex = 0)
+#foreach($column in $item.content)
+#if($gridCols)
+#set($span = $gridCols.get($colIndex))
+#else
+#set($span = 6)
+#end
+    <div data-type="gridColumn" class="grid-block__column" style="grid-column: span ${span};">
+        #renderContentBlock($column.content)
+    </div>
+#set($colIndex = $colIndex + 1)
+#end
+</div>

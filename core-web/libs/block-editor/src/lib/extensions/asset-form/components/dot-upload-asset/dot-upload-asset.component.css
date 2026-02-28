@@ -1,0 +1,54 @@
+:host {
+    height: 100%;
+    width: 100%;
+    padding: 1rem;
+    gap: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+:host .error {
+    color: #d82b2e;
+    font-size: 1rem;
+    max-width: 100%;
+    white-space: pre-wrap;
+}
+
+:host .preview-container {
+    align-items: center;
+    display: flex;
+    flex-grow: 1;
+    justify-content: center;
+    overflow: hidden;
+    width: 100%;
+    flex-direction: column;
+}
+
+:host .preview-container img {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+}
+
+:host .action-container {
+    display: flex;
+    height: fit-content;
+    justify-content: space-between;
+    width: 100%;
+}
+
+:host .loading-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+}
+
+:host .warning {
+    display: block;
+    font-style: normal;
+    text-align: center;
+    color: #000;
+}
