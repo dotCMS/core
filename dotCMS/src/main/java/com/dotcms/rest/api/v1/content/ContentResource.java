@@ -646,7 +646,7 @@ public class ContentResource {
 
         final Contentlet contentletHydrated = new DotTransformerBuilder().contentResourceOptions(false)
                 .content(contentlet).build().hydrate().get(0);
-        return new ResponseEntityMapView(WorkflowHelper.getInstance().contentletToMap(contentlet));
+        return new ResponseEntityMapView(WorkflowHelper.getInstance().contentletToMap(contentletHydrated));
     }
 
     /**
@@ -704,7 +704,7 @@ public class ContentResource {
 
         final Contentlet contentletHydrated = new DotTransformerBuilder().contentResourceOptions(false)
                 .content(contentlet).build().hydrate().get(0);
-        return new ResponseEntityMapView(WorkflowHelper.getInstance().contentletToMap(contentlet));
+        return new ResponseEntityMapView(WorkflowHelper.getInstance().contentletToMap(contentletHydrated));
     }
 
     /**
