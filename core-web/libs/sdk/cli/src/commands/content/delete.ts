@@ -18,7 +18,7 @@ export const deleteCommand = defineCommand({
     },
     args: {
         files: { type: 'positional', description: 'File to delete', required: true },
-        instance: { type: 'string', description: 'Server instance name' }
+        to: { type: 'string', description: 'Target instance name' }
     },
     async run({ args }) {
         const projectDir = process.cwd();
@@ -59,7 +59,7 @@ export const deleteCommand = defineCommand({
             return;
         }
 
-        const instance = resolveInstance(config, args.instance as string | undefined);
+        const instance = resolveInstance(config, args.to as string | undefined);
         const token = resolveToken(projectDir, instance.name);
 
         if (!token) {
@@ -69,19 +69,26 @@ export const deleteCommand = defineCommand({
 
         const client = createHttpClient({ baseURL: instance.url, token });
 
-        // Archive via workflow fire API
+        // Archive via workflow fire API — omit inode to let the server resolve it
         const url = '/api/v1/workflow/actions/fire?systemAction=ARCHIVE';
-        await put(client, url, {
-            contentlet: {
-                identifier,
-                contentType: parsed.frontmatter.contentType,
-                inode: parsed.frontmatter.inode
-            }
-        });
+        try {
+            await put(client, url, {
+                contentlet: {
+                    identifier,
+                    contentType: parsed.frontmatter.contentType
+                }
+            });
+        } catch (error) {
+            const err = error as Error & { data?: unknown };
+            const detail = err.data ? ` — ${JSON.stringify(err.data)}` : '';
+            consola.error(`Archive failed: ${err.message}${detail}`);
+            return;
+        }
 
         // Remove local file and snapshot entry
         fs.unlinkSync(filePath);
-        removeSnapshotEntry(projectDir, filePath);
+        const contentDir = path.dirname(filePath);
+        removeSnapshotEntry(contentDir, identifier);
 
         consola.success(`Archived and removed: ${relativePath}`);
     }

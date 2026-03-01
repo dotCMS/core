@@ -6,8 +6,11 @@ import {
     checkConflict,
     computeBinaryHash,
     computeContentHash,
+    findEntryByFile,
+    findSnapshotEntry,
     getFileState,
     loadSnapshot,
+    migrateFromDotcli,
     removeSnapshotEntry,
     saveSnapshot,
     scanContentFiles,
@@ -39,10 +42,11 @@ describe('snapshot', () => {
 
     function makeEntry(overrides: Partial<SnapshotEntry> = {}): SnapshotEntry {
         return {
+            file: 'abc123.md',
+            title: 'Test Post',
             hash: 'abc123',
             pulledAt: '2025-01-01T00:00:00Z',
             inode: 'inode-001',
-            identifier: 'id-001',
             ...overrides
         };
     }
@@ -51,67 +55,74 @@ describe('snapshot', () => {
 
     describe('loadSnapshot', () => {
         it('should return empty object when snapshot file does not exist', () => {
-            const result = loadSnapshot(tmpDir);
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
+            const result = loadSnapshot(contentDir);
             expect(result).toEqual({});
         });
 
         it('should load an existing snapshot file', () => {
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
+
             const snapshot: SnapshotStore = {
-                'content/blog/test.md': makeEntry()
+                'id-001': makeEntry()
             };
-            const dotcliDir = path.join(tmpDir, '.dotcli');
-            fs.mkdirSync(dotcliDir, { recursive: true });
             fs.writeFileSync(
-                path.join(dotcliDir, 'snapshot.json'),
+                path.join(contentDir, '.snapshot.json'),
                 JSON.stringify(snapshot),
                 'utf-8'
             );
 
-            const result = loadSnapshot(tmpDir);
+            const result = loadSnapshot(contentDir);
             expect(result).toEqual(snapshot);
-            expect(result['content/blog/test.md'].hash).toBe('abc123');
+            expect(result['id-001'].hash).toBe('abc123');
         });
     });
 
     describe('saveSnapshot', () => {
-        it('should create .dotcli dir and write snapshot', () => {
+        it('should create dir and write snapshot', () => {
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
             const snapshot: SnapshotStore = {
-                'content/blog/test.md': makeEntry()
+                'id-001': makeEntry()
             };
 
-            saveSnapshot(tmpDir, snapshot);
+            saveSnapshot(contentDir, snapshot);
 
-            const filePath = path.join(tmpDir, '.dotcli', 'snapshot.json');
+            const filePath = path.join(contentDir, '.snapshot.json');
             expect(fs.existsSync(filePath)).toBe(true);
 
-            const loaded = loadSnapshot(tmpDir);
+            const loaded = loadSnapshot(contentDir);
             expect(loaded).toEqual(snapshot);
         });
 
         it('should overwrite an existing snapshot', () => {
-            saveSnapshot(tmpDir, { 'a.md': makeEntry() });
-            saveSnapshot(tmpDir, { 'b.md': makeEntry({ hash: 'xyz' }) });
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            saveSnapshot(contentDir, { 'id-a': makeEntry({ file: 'a.md' }) });
+            saveSnapshot(contentDir, { 'id-b': makeEntry({ file: 'b.md', hash: 'xyz' }) });
 
-            const loaded = loadSnapshot(tmpDir);
-            expect(loaded['a.md']).toBeUndefined();
-            expect(loaded['b.md'].hash).toBe('xyz');
+            const loaded = loadSnapshot(contentDir);
+            expect(loaded['id-a']).toBeUndefined();
+            expect(loaded['id-b'].hash).toBe('xyz');
         });
     });
 
     describe('loadSnapshot / saveSnapshot round-trip', () => {
         it('should preserve all entry fields through round-trip', () => {
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
             const entry: SnapshotEntry = {
+                file: 'e5e92e.md',
+                title: 'My Post',
                 hash: 'sha256-hash-value',
                 pulledAt: '2025-06-15T10:30:00Z',
-                inode: 'abc-def-123',
-                identifier: 'id-456-789'
+                inode: 'abc-def-123'
             };
-            const snapshot: SnapshotStore = { 'content/Blog/my-post.md': entry };
+            const snapshot: SnapshotStore = { 'id-456-789': entry };
 
-            saveSnapshot(tmpDir, snapshot);
-            const loaded = loadSnapshot(tmpDir);
+            saveSnapshot(contentDir, snapshot);
+            const loaded = loadSnapshot(contentDir);
 
-            expect(loaded['content/Blog/my-post.md']).toEqual(entry);
+            expect(loaded['id-456-789']).toEqual(entry);
         });
     });
 
@@ -119,57 +130,114 @@ describe('snapshot', () => {
 
     describe('updateSnapshotEntry', () => {
         it('should add a new entry to an empty snapshot', () => {
-            const entry = makeEntry({ hash: 'new-hash' });
-            updateSnapshotEntry(tmpDir, 'content/blog/new.md', entry);
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
 
-            const loaded = loadSnapshot(tmpDir);
-            expect(loaded['content/blog/new.md']).toEqual(entry);
+            const entry = makeEntry({ hash: 'new-hash' });
+            updateSnapshotEntry(contentDir, 'id-new', entry);
+
+            const loaded = loadSnapshot(contentDir);
+            expect(loaded['id-new']).toEqual(entry);
         });
 
         it('should update an existing entry', () => {
-            saveSnapshot(tmpDir, { 'file.md': makeEntry({ hash: 'old' }) });
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            saveSnapshot(contentDir, { 'id-1': makeEntry({ hash: 'old' }) });
 
-            updateSnapshotEntry(tmpDir, 'file.md', makeEntry({ hash: 'updated' }));
+            updateSnapshotEntry(contentDir, 'id-1', makeEntry({ hash: 'updated' }));
 
-            const loaded = loadSnapshot(tmpDir);
-            expect(loaded['file.md'].hash).toBe('updated');
+            const loaded = loadSnapshot(contentDir);
+            expect(loaded['id-1'].hash).toBe('updated');
         });
 
         it('should preserve other entries when updating one', () => {
-            saveSnapshot(tmpDir, {
-                'a.md': makeEntry({ hash: 'a-hash' }),
-                'b.md': makeEntry({ hash: 'b-hash' })
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            saveSnapshot(contentDir, {
+                'id-a': makeEntry({ file: 'a.md', hash: 'a-hash' }),
+                'id-b': makeEntry({ file: 'b.md', hash: 'b-hash' })
             });
 
-            updateSnapshotEntry(tmpDir, 'a.md', makeEntry({ hash: 'a-updated' }));
+            updateSnapshotEntry(contentDir, 'id-a', makeEntry({ file: 'a.md', hash: 'a-updated' }));
 
-            const loaded = loadSnapshot(tmpDir);
-            expect(loaded['a.md'].hash).toBe('a-updated');
-            expect(loaded['b.md'].hash).toBe('b-hash');
+            const loaded = loadSnapshot(contentDir);
+            expect(loaded['id-a'].hash).toBe('a-updated');
+            expect(loaded['id-b'].hash).toBe('b-hash');
         });
     });
 
     describe('removeSnapshotEntry', () => {
         it('should remove an entry from the snapshot', () => {
-            saveSnapshot(tmpDir, {
-                'a.md': makeEntry({ hash: 'a' }),
-                'b.md': makeEntry({ hash: 'b' })
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            saveSnapshot(contentDir, {
+                'id-a': makeEntry({ file: 'a.md', hash: 'a' }),
+                'id-b': makeEntry({ file: 'b.md', hash: 'b' })
             });
 
-            removeSnapshotEntry(tmpDir, 'a.md');
+            removeSnapshotEntry(contentDir, 'id-a');
 
-            const loaded = loadSnapshot(tmpDir);
-            expect(loaded['a.md']).toBeUndefined();
-            expect(loaded['b.md'].hash).toBe('b');
+            const loaded = loadSnapshot(contentDir);
+            expect(loaded['id-a']).toBeUndefined();
+            expect(loaded['id-b'].hash).toBe('b');
         });
 
         it('should be a no-op if entry does not exist', () => {
-            saveSnapshot(tmpDir, { 'a.md': makeEntry() });
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            saveSnapshot(contentDir, { 'id-a': makeEntry() });
 
-            removeSnapshotEntry(tmpDir, 'nonexistent.md');
+            removeSnapshotEntry(contentDir, 'nonexistent');
 
-            const loaded = loadSnapshot(tmpDir);
-            expect(loaded['a.md']).toBeDefined();
+            const loaded = loadSnapshot(contentDir);
+            expect(loaded['id-a']).toBeDefined();
+        });
+    });
+
+    // ─── findEntryByFile ───────────────────────────────────────────────────
+
+    describe('findEntryByFile', () => {
+        it('should find entry by filename', () => {
+            const snapshot: SnapshotStore = {
+                'id-1': makeEntry({ file: 'abc123.md' }),
+                'id-2': makeEntry({ file: 'def456.md' })
+            };
+
+            const result = findEntryByFile(snapshot, 'def456.md');
+            expect(result).not.toBeNull();
+            expect(result![0]).toBe('id-2');
+            expect(result![1].file).toBe('def456.md');
+        });
+
+        it('should return null when not found', () => {
+            const snapshot: SnapshotStore = {
+                'id-1': makeEntry({ file: 'abc123.md' })
+            };
+
+            const result = findEntryByFile(snapshot, 'nonexistent.md');
+            expect(result).toBeNull();
+        });
+    });
+
+    // ─── findSnapshotEntry ─────────────────────────────────────────────────
+
+    describe('findSnapshotEntry', () => {
+        it('should find entry across multiple snapshot files', () => {
+            const blogDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            const authorDir = path.join(tmpDir, 'default', 'content', 'Author');
+
+            saveSnapshot(blogDir, { 'blog-id': makeEntry({ file: 'blog.md' }) });
+            saveSnapshot(authorDir, { 'author-id': makeEntry({ file: 'author.md' }) });
+
+            const result = findSnapshotEntry(tmpDir, 'author-id');
+            expect(result).not.toBeNull();
+            expect(result!.contentDir).toBe(authorDir);
+            expect(result!.entry.file).toBe('author.md');
+        });
+
+        it('should return null when identifier not found', () => {
+            const blogDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            saveSnapshot(blogDir, { 'blog-id': makeEntry() });
+
+            const result = findSnapshotEntry(tmpDir, 'nonexistent');
+            expect(result).toBeNull();
         });
     });
 
@@ -382,7 +450,7 @@ describe('snapshot', () => {
         it('should return "deleted" when snapshot entry exists but file does not', () => {
             const filePath = path.join(tmpDir, 'deleted.md');
             const snapshot: SnapshotStore = {
-                [filePath]: makeEntry()
+                'id-1': makeEntry({ file: 'deleted.md' })
             };
 
             const state = getFileState(filePath, snapshot);
@@ -399,7 +467,7 @@ describe('snapshot', () => {
 
             const hash = computeContentHash(filePath);
             const snapshot: SnapshotStore = {
-                [filePath]: makeEntry({ hash })
+                'id-1': makeEntry({ file: 'unchanged.md', hash })
             };
 
             const state = getFileState(filePath, snapshot);
@@ -415,7 +483,7 @@ describe('snapshot', () => {
             );
 
             const snapshot: SnapshotStore = {
-                [filePath]: makeEntry({ hash: 'stale-hash' })
+                'id-1': makeEntry({ file: 'modified.md', hash: 'stale-hash' })
             };
 
             const state = getFileState(filePath, snapshot);
@@ -427,17 +495,17 @@ describe('snapshot', () => {
 
     describe('scanContentFiles', () => {
         it('should find all .md files and categorize them', () => {
-            const contentDir = path.join(tmpDir, 'content');
-            fs.mkdirSync(path.join(contentDir, 'Blog'), { recursive: true });
+            const contentDir = path.join(tmpDir, 'content', 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
 
-            const newFile = path.join(contentDir, 'Blog', 'new-post.md');
+            const newFile = path.join(contentDir, 'new-post.md');
             writeContentFile(
                 newFile,
                 'title: New Post\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
                 'New body.'
             );
 
-            const unchangedFile = path.join(contentDir, 'Blog', 'old-post.md');
+            const unchangedFile = path.join(contentDir, 'old-post.md');
             writeContentFile(
                 unchangedFile,
                 'title: Old Post\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
@@ -445,22 +513,21 @@ describe('snapshot', () => {
             );
             const unchangedHash = computeContentHash(unchangedFile);
 
-            const deletedFile = path.join(contentDir, 'Blog', 'gone.md');
+            // Create co-located snapshot
+            saveSnapshot(contentDir, {
+                id2: makeEntry({ file: 'old-post.md', hash: unchangedHash }),
+                'id-deleted': makeEntry({ file: 'gone.md', hash: 'deleted-hash' })
+            });
 
-            const snapshot: SnapshotStore = {
-                [unchangedFile]: makeEntry({ hash: unchangedHash }),
-                [deletedFile]: makeEntry({ hash: 'deleted-hash' })
-            };
-
-            const states = scanContentFiles(contentDir, snapshot);
+            const states = scanContentFiles(path.join(tmpDir, 'content'));
 
             expect(states.get(newFile)).toBe('new');
             expect(states.get(unchangedFile)).toBe('unchanged');
-            expect(states.get(deletedFile)).toBe('deleted');
+            expect(states.get(path.join(contentDir, 'gone.md'))).toBe('deleted');
         });
 
         it('should detect modified files', () => {
-            const contentDir = path.join(tmpDir, 'content');
+            const contentDir = path.join(tmpDir, 'content', 'Blog');
             fs.mkdirSync(contentDir, { recursive: true });
 
             const filePath = path.join(contentDir, 'modified.md');
@@ -470,17 +537,19 @@ describe('snapshot', () => {
                 'Body.'
             );
 
-            const snapshot: SnapshotStore = {
-                [filePath]: makeEntry({ hash: 'old-hash-that-no-longer-matches' })
-            };
+            saveSnapshot(contentDir, {
+                id1: makeEntry({ file: 'modified.md', hash: 'old-hash-that-no-longer-matches' })
+            });
 
-            const states = scanContentFiles(contentDir, snapshot);
+            const states = scanContentFiles(path.join(tmpDir, 'content'));
             expect(states.get(filePath)).toBe('modified');
         });
 
         it('should respect .dotcliignore patterns', () => {
-            const contentDir = path.join(tmpDir, 'content');
-            fs.mkdirSync(path.join(contentDir, 'drafts'), { recursive: true });
+            const rootDir = path.join(tmpDir, 'content');
+            const contentDir = path.join(rootDir, 'Blog');
+            fs.mkdirSync(path.join(rootDir, 'drafts'), { recursive: true });
+            fs.mkdirSync(contentDir, { recursive: true });
 
             const includedFile = path.join(contentDir, 'included.md');
             writeContentFile(
@@ -489,7 +558,7 @@ describe('snapshot', () => {
                 'Body.'
             );
 
-            const ignoredFile = path.join(contentDir, 'drafts', 'ignored.md');
+            const ignoredFile = path.join(rootDir, 'drafts', 'ignored.md');
             writeContentFile(
                 ignoredFile,
                 'title: Ignored\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
@@ -497,25 +566,54 @@ describe('snapshot', () => {
             );
 
             // Create .dotcliignore
-            fs.writeFileSync(path.join(contentDir, '.dotcliignore'), 'drafts/**\n', 'utf-8');
+            fs.writeFileSync(path.join(rootDir, '.dotcliignore'), 'drafts/**\n', 'utf-8');
 
-            const states = scanContentFiles(contentDir, {});
+            const states = scanContentFiles(rootDir);
 
             expect(states.has(includedFile)).toBe(true);
             expect(states.has(ignoredFile)).toBe(false);
+        });
+
+        it('should skip hidden directories like .dotcli and .git', () => {
+            const projectDir = path.join(tmpDir, 'project');
+            const contentDir = path.join(projectDir, 'default', 'content', 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
+            fs.mkdirSync(path.join(projectDir, '.dotcli', 'cache'), { recursive: true });
+            fs.mkdirSync(path.join(projectDir, '.git', 'objects'), { recursive: true });
+
+            const visibleFile = path.join(contentDir, 'post.md');
+            writeContentFile(
+                visibleFile,
+                'title: Visible\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'Body.'
+            );
+
+            const hiddenFile1 = path.join(projectDir, '.dotcli', 'cache', 'demo.md');
+            fs.writeFileSync(hiddenFile1, '---\ntitle: Hidden\n---\nShould be skipped.\n', 'utf-8');
+
+            const hiddenFile2 = path.join(projectDir, '.git', 'objects', 'pack.md');
+            fs.writeFileSync(hiddenFile2, '---\ntitle: Git\n---\nShould be skipped.\n', 'utf-8');
+
+            const states = scanContentFiles(projectDir);
+
+            expect(states.has(visibleFile)).toBe(true);
+            expect(states.has(hiddenFile1)).toBe(false);
+            expect(states.has(hiddenFile2)).toBe(false);
         });
 
         it('should handle empty content directory', () => {
             const contentDir = path.join(tmpDir, 'empty-content');
             fs.mkdirSync(contentDir, { recursive: true });
 
-            const states = scanContentFiles(contentDir, {});
+            const states = scanContentFiles(contentDir);
             expect(states.size).toBe(0);
         });
 
         it('should handle .dotcliignore with comments and blank lines', () => {
-            const contentDir = path.join(tmpDir, 'content');
-            fs.mkdirSync(path.join(contentDir, 'temp'), { recursive: true });
+            const rootDir = path.join(tmpDir, 'content');
+            const contentDir = path.join(rootDir, 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
+            fs.mkdirSync(path.join(rootDir, 'temp'), { recursive: true });
 
             const includedFile = path.join(contentDir, 'keep.md');
             writeContentFile(
@@ -524,7 +622,7 @@ describe('snapshot', () => {
                 'Body.'
             );
 
-            const ignoredFile = path.join(contentDir, 'temp', 'skip.md');
+            const ignoredFile = path.join(rootDir, 'temp', 'skip.md');
             writeContentFile(
                 ignoredFile,
                 'title: Skip\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
@@ -532,12 +630,12 @@ describe('snapshot', () => {
             );
 
             fs.writeFileSync(
-                path.join(contentDir, '.dotcliignore'),
+                path.join(rootDir, '.dotcliignore'),
                 '# This is a comment\n\ntemp/**\n\n# Another comment\n',
                 'utf-8'
             );
 
-            const states = scanContentFiles(contentDir, {});
+            const states = scanContentFiles(rootDir);
             expect(states.has(includedFile)).toBe(true);
             expect(states.has(ignoredFile)).toBe(false);
         });
@@ -561,6 +659,88 @@ describe('snapshot', () => {
 
             expect(result.hasConflict).toBe(false);
             expect(result.reason).toBeUndefined();
+        });
+    });
+
+    // ─── migrateFromDotcli ─────────────────────────────────────────────────
+
+    describe('migrateFromDotcli', () => {
+        it('should return false when no old snapshots dir exists', () => {
+            const result = migrateFromDotcli(tmpDir);
+            expect(result).toBe(false);
+        });
+
+        it('should migrate old per-instance snapshots to co-located files', () => {
+            // Create old-style snapshot
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
+            writeContentFile(
+                path.join(contentDir, 'abc123.md'),
+                'title: Test\ncontentType: Blog\n',
+                'Body.'
+            );
+
+            const oldSnapshotsDir = path.join(tmpDir, '.dotcli', 'snapshots');
+            fs.mkdirSync(oldSnapshotsDir, { recursive: true });
+
+            const filePath = path.join(contentDir, 'abc123.md');
+            const oldSnapshot = {
+                [filePath]: {
+                    hash: 'old-hash',
+                    pulledAt: '2025-01-01T00:00:00Z',
+                    inode: 'inode-1',
+                    identifier: 'id-abc123'
+                }
+            };
+            fs.writeFileSync(
+                path.join(oldSnapshotsDir, 'demo.json'),
+                JSON.stringify(oldSnapshot),
+                'utf-8'
+            );
+
+            const result = migrateFromDotcli(tmpDir);
+            expect(result).toBe(true);
+
+            // Verify co-located snapshot was created
+            const newSnapshot = loadSnapshot(contentDir);
+            expect(newSnapshot['id-abc123']).toBeDefined();
+            expect(newSnapshot['id-abc123'].file).toBe('abc123.md');
+            expect(newSnapshot['id-abc123'].hash).toBe('old-hash');
+        });
+
+        it('should not overwrite existing co-located snapshots', () => {
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
+
+            // Create existing co-located snapshot
+            saveSnapshot(contentDir, {
+                'id-existing': makeEntry({ file: 'existing.md', hash: 'keep-me' })
+            });
+
+            // Create old-style snapshot
+            const oldSnapshotsDir = path.join(tmpDir, '.dotcli', 'snapshots');
+            fs.mkdirSync(oldSnapshotsDir, { recursive: true });
+
+            const filePath = path.join(contentDir, 'abc123.md');
+            const oldSnapshot = {
+                [filePath]: {
+                    hash: 'old-hash',
+                    pulledAt: '2025-01-01T00:00:00Z',
+                    inode: 'inode-1',
+                    identifier: 'id-old'
+                }
+            };
+            fs.writeFileSync(
+                path.join(oldSnapshotsDir, 'demo.json'),
+                JSON.stringify(oldSnapshot),
+                'utf-8'
+            );
+
+            migrateFromDotcli(tmpDir);
+
+            // Existing snapshot should be preserved
+            const snapshot = loadSnapshot(contentDir);
+            expect(snapshot['id-existing'].hash).toBe('keep-me');
         });
     });
 });

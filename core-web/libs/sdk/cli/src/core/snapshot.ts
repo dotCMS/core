@@ -2,6 +2,9 @@
  * Snapshot tracking for @dotcms/cli.
  * Tracks content file states (hashing, change detection, conflict detection)
  * between pull and push operations.
+ *
+ * Snapshots are co-located with content: each content type directory has a
+ * `.snapshot.json` keyed by identifier.
  */
 import matter from 'gray-matter';
 
@@ -21,18 +24,11 @@ import {
 // ─── Snapshot Persistence ───────────────────────────────────────────────────
 
 /**
- * Resolves the path to the snapshot file for a project directory.
- */
-function snapshotPath(projectDir: string): string {
-    return path.join(projectDir, DOTCLI_DIR, SNAPSHOT_FILE);
-}
-
-/**
- * Load the snapshot store from `.dotcli/snapshot.json`.
+ * Load snapshot from {contentDir}/.snapshot.json.
  * Returns an empty object if the file doesn't exist.
  */
-export function loadSnapshot(projectDir: string): SnapshotStore {
-    const filePath = snapshotPath(projectDir);
+export function loadSnapshot(contentDir: string): SnapshotStore {
+    const filePath = path.join(contentDir, SNAPSHOT_FILE);
 
     if (!fs.existsSync(filePath)) {
         return {};
@@ -43,42 +39,79 @@ export function loadSnapshot(projectDir: string): SnapshotStore {
 }
 
 /**
- * Save a snapshot store to `.dotcli/snapshot.json`.
- * Creates the `.dotcli` directory if it doesn't exist.
+ * Save snapshot to {contentDir}/.snapshot.json.
  */
-export function saveSnapshot(projectDir: string, snapshot: SnapshotStore): void {
-    const filePath = snapshotPath(projectDir);
-    const dir = path.dirname(filePath);
-
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
+export function saveSnapshot(contentDir: string, snapshot: SnapshotStore): void {
+    if (!fs.existsSync(contentDir)) {
+        fs.mkdirSync(contentDir, { recursive: true });
     }
 
+    const filePath = path.join(contentDir, SNAPSHOT_FILE);
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
 }
 
 /**
- * Update a single entry in the snapshot store.
- * Loads the current snapshot, updates the entry, and saves.
+ * Update a single entry keyed by identifier in the co-located snapshot.
  */
 export function updateSnapshotEntry(
-    projectDir: string,
-    filePath: string,
+    contentDir: string,
+    identifier: string,
     entry: SnapshotEntry
 ): void {
-    const snapshot = loadSnapshot(projectDir);
-    snapshot[filePath] = entry;
-    saveSnapshot(projectDir, snapshot);
+    const snapshot = loadSnapshot(contentDir);
+    snapshot[identifier] = entry;
+    saveSnapshot(contentDir, snapshot);
 }
 
 /**
- * Remove a single entry from the snapshot store.
- * Loads the current snapshot, removes the entry, and saves.
+ * Remove an entry by identifier from the co-located snapshot.
  */
-export function removeSnapshotEntry(projectDir: string, filePath: string): void {
-    const snapshot = loadSnapshot(projectDir);
-    delete snapshot[filePath];
-    saveSnapshot(projectDir, snapshot);
+export function removeSnapshotEntry(contentDir: string, identifier: string): void {
+    const snapshot = loadSnapshot(contentDir);
+    delete snapshot[identifier];
+    saveSnapshot(contentDir, snapshot);
+}
+
+/**
+ * Find a snapshot entry by matching filename against entry.file values.
+ * Returns [identifier, entry] or null.
+ */
+export function findEntryByFile(
+    snapshot: SnapshotStore,
+    filename: string
+): [string, SnapshotEntry] | null {
+    for (const [identifier, entry] of Object.entries(snapshot)) {
+        if (entry.file === filename) {
+            return [identifier, entry];
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Find a snapshot entry by looking up an identifier across all
+ * .snapshot.json files under a root directory.
+ */
+export function findSnapshotEntry(
+    projectDir: string,
+    identifier: string
+): { contentDir: string; entry: SnapshotEntry } | null {
+    const snapshotFiles = walkSnapshotFiles(projectDir);
+
+    for (const snapshotFile of snapshotFiles) {
+        const raw = fs.readFileSync(snapshotFile, 'utf-8');
+        const snapshot = JSON.parse(raw) as SnapshotStore;
+
+        if (snapshot[identifier]) {
+            return {
+                contentDir: path.dirname(snapshotFile),
+                entry: snapshot[identifier]
+            };
+        }
+    }
+
+    return null;
 }
 
 // ─── Content Hashing ────────────────────────────────────────────────────────
@@ -149,6 +182,8 @@ export function computeBinaryHash(filePath: string): string {
 
 /**
  * Determine the state of a content file relative to the snapshot.
+ * The snapshot is keyed by identifier, so we look up by matching entry.file
+ * against the filename.
  *
  * - `'unchanged'` — hash matches snapshot entry
  * - `'modified'` — hash differs from snapshot entry
@@ -156,25 +191,25 @@ export function computeBinaryHash(filePath: string): string {
  * - `'deleted'` — snapshot entry exists but file doesn't exist
  */
 export function getFileState(filePath: string, snapshot: SnapshotStore): FileState {
-    const entry = snapshot[filePath];
+    const filename = path.basename(filePath);
+    const match = findEntryByFile(snapshot, filename);
     const fileExists = fs.existsSync(filePath);
 
-    if (!entry && fileExists) {
+    if (!match && fileExists) {
         return 'new';
     }
 
-    if (entry && !fileExists) {
+    if (match && !fileExists) {
         return 'deleted';
     }
 
-    if (!entry && !fileExists) {
-        // No snapshot entry and file doesn't exist — treat as deleted
+    if (!match && !fileExists) {
         return 'deleted';
     }
 
     // Both entry and file exist — compare hashes
     const currentHash = computeContentHash(filePath);
-    return currentHash === entry.hash ? 'unchanged' : 'modified';
+    return currentHash === match![1].hash ? 'unchanged' : 'modified';
 }
 
 /**
@@ -182,13 +217,48 @@ export function getFileState(filePath: string, snapshot: SnapshotStore): FileSta
  */
 function walkMdFiles(dir: string): string[] {
     const results: string[] = [];
+
+    if (!fs.existsSync(dir)) {
+        return results;
+    }
+
     const entries = fs.readdirSync(dir, { withFileTypes: true });
 
     for (const entry of entries) {
+        if (entry.name.startsWith('.')) {
+            continue;
+        }
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
             results.push(...walkMdFiles(fullPath));
         } else if (entry.isFile() && entry.name.endsWith('.md')) {
+            results.push(fullPath);
+        }
+    }
+
+    return results;
+}
+
+/**
+ * Recursively find all .snapshot.json files under a directory.
+ */
+function walkSnapshotFiles(dir: string): string[] {
+    const results: string[] = [];
+
+    if (!fs.existsSync(dir)) {
+        return results;
+    }
+
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+        if (entry.name.startsWith('.') && entry.name !== SNAPSHOT_FILE) {
+            continue;
+        }
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            results.push(...walkSnapshotFiles(fullPath));
+        } else if (entry.name === SNAPSHOT_FILE) {
             results.push(fullPath);
         }
     }
@@ -226,19 +296,17 @@ function matchesIgnorePattern(relativePath: string, patterns: string[]): boolean
 }
 
 /**
- * Scan all .md content files in a directory and compute their states.
- * Also detects deleted files (snapshot entries with no corresponding file).
+ * Scan all .md content files under a root directory and compute their states.
+ * Walks all content type directories, loads co-located .snapshot.json for each,
+ * and computes states for .md files. Also detects deleted files.
  * Respects `.dotcliignore` if present.
  */
-export function scanContentFiles(
-    contentDir: string,
-    snapshot: SnapshotStore
-): Map<string, FileState> {
+export function scanContentFiles(rootDir: string): Map<string, FileState> {
     const states = new Map<string, FileState>();
 
     // Build ignore patterns from .dotcliignore if present
     const ignorePatterns: string[] = [];
-    const ignorePath = path.join(contentDir, '.dotcliignore');
+    const ignorePath = path.join(rootDir, '.dotcliignore');
     if (fs.existsSync(ignorePath)) {
         const ignoreContent = fs.readFileSync(ignorePath, 'utf-8');
         const lines = ignoreContent
@@ -249,20 +317,50 @@ export function scanContentFiles(
     }
 
     // Find all .md files
-    const allFiles = walkMdFiles(contentDir);
+    const allFiles = walkMdFiles(rootDir);
 
-    // Filter out ignored files and compute state for each
+    // Group files by their content type directory (parent dir)
+    const filesByDir = new Map<string, string[]>();
     for (const file of allFiles) {
-        const relativePath = path.relative(contentDir, file);
-        if (!matchesIgnorePattern(relativePath, ignorePatterns)) {
-            states.set(file, getFileState(file, snapshot));
+        const dir = path.dirname(file);
+        const group = filesByDir.get(dir) ?? [];
+        group.push(file);
+        filesByDir.set(dir, group);
+    }
+
+    // For each directory with .md files, load its snapshot and compute states
+    for (const [dir, files] of filesByDir) {
+        const snapshot = loadSnapshot(dir);
+
+        for (const file of files) {
+            const relativePath = path.relative(rootDir, file);
+            if (!matchesIgnorePattern(relativePath, ignorePatterns)) {
+                states.set(file, getFileState(file, snapshot));
+            }
+        }
+
+        // Detect deleted files: snapshot entries whose files no longer exist in this dir
+        for (const [, entry] of Object.entries(snapshot)) {
+            const fullPath = path.join(dir, entry.file);
+            if (!states.has(fullPath) && !fs.existsSync(fullPath)) {
+                states.set(fullPath, 'deleted');
+            }
         }
     }
 
-    // Detect deleted files: snapshot entries whose files no longer exist
-    for (const snapshotFilePath of Object.keys(snapshot)) {
-        if (!states.has(snapshotFilePath) && !fs.existsSync(snapshotFilePath)) {
-            states.set(snapshotFilePath, 'deleted');
+    // Also scan directories that have .snapshot.json but may have no .md files left
+    const snapshotFiles = walkSnapshotFiles(rootDir);
+    for (const snapshotFile of snapshotFiles) {
+        const dir = path.dirname(snapshotFile);
+        if (!filesByDir.has(dir)) {
+            // This dir has a snapshot but no .md files — all entries are deleted
+            const snapshot = loadSnapshot(dir);
+            for (const [, entry] of Object.entries(snapshot)) {
+                const fullPath = path.join(dir, entry.file);
+                if (!states.has(fullPath)) {
+                    states.set(fullPath, 'deleted');
+                }
+            }
         }
     }
 
@@ -288,4 +386,77 @@ export function checkConflict(
     }
 
     return { hasConflict: false };
+}
+
+// ─── Migration ──────────────────────────────────────────────────────────────
+
+/**
+ * One-time migration from .dotcli/snapshots/*.json to co-located .snapshot.json files.
+ * Reads old per-instance snapshot files, parses each entry's file path to determine
+ * the content type directory, and writes co-located snapshot files.
+ *
+ * Returns true if migration occurred.
+ * Does NOT delete old files — let the user clean up.
+ */
+export function migrateFromDotcli(projectDir: string): boolean {
+    const oldSnapshotsDir = path.join(projectDir, DOTCLI_DIR, 'snapshots');
+
+    if (!fs.existsSync(oldSnapshotsDir)) {
+        return false;
+    }
+
+    const files = fs.readdirSync(oldSnapshotsDir).filter((f) => f.endsWith('.json'));
+    if (files.length === 0) {
+        return false;
+    }
+
+    let migrated = false;
+
+    for (const file of files) {
+        const filePath = path.join(oldSnapshotsDir, file);
+        const raw = fs.readFileSync(filePath, 'utf-8');
+
+        let oldSnapshot: Record<
+            string,
+            { hash: string; pulledAt: string; inode: string; identifier: string }
+        >;
+        try {
+            oldSnapshot = JSON.parse(raw);
+        } catch {
+            continue;
+        }
+
+        // Group entries by their content type directory
+        const byDir = new Map<string, SnapshotStore>();
+
+        for (const [oldFilePath, oldEntry] of Object.entries(oldSnapshot)) {
+            // Old filePath is absolute, e.g. /project/default/content/Blog/e5e92e.md
+            // We need to determine the contentDir from it
+            const contentDir = path.dirname(oldFilePath);
+            const filename = path.basename(oldFilePath);
+
+            const dirSnapshot = byDir.get(contentDir) ?? {};
+            dirSnapshot[oldEntry.identifier] = {
+                file: filename,
+                title: '', // Old snapshots don't have title
+                hash: oldEntry.hash,
+                pulledAt: oldEntry.pulledAt,
+                inode: oldEntry.inode
+            };
+            byDir.set(contentDir, dirSnapshot);
+        }
+
+        // Write co-located snapshots
+        for (const [contentDir, snapshot] of byDir) {
+            const snapshotPath = path.join(contentDir, SNAPSHOT_FILE);
+            if (!fs.existsSync(snapshotPath)) {
+                if (fs.existsSync(contentDir)) {
+                    saveSnapshot(contentDir, snapshot);
+                    migrated = true;
+                }
+            }
+        }
+    }
+
+    return migrated;
 }

@@ -10,6 +10,9 @@ import { saveConfig } from '../core/config';
 import { AUTH_FILE, CACHE_DIR, DOTCLI_DIR, type DotCliConfig } from '../core/types';
 
 const DEFAULT_DOTCLIIGNORE = [
+    '# Ignore dotcli internal directory',
+    '.dotcli/**',
+    '',
     '# Ignore binary asset caches',
     '**/assets/',
     '',
@@ -25,7 +28,7 @@ const DEFAULT_DOTCLIIGNORE = [
 const GITIGNORE_ENTRIES = [
     `.dotcli/${AUTH_FILE}`,
     `.dotcli/${CACHE_DIR}/`,
-    `.dotcli/snapshot.json`
+    `.dotcli/snapshot.json` // legacy cleanup
 ];
 
 export const initCommand = defineCommand({

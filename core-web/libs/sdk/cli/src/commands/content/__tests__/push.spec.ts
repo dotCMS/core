@@ -40,7 +40,8 @@ jest.mock('../../../core/snapshot', () => ({
     scanContentFiles: jest.fn().mockReturnValue(new Map()),
     computeContentHash: jest.fn().mockReturnValue('hash123'),
     updateSnapshotEntry: jest.fn(),
-    checkConflict: jest.fn().mockReturnValue({ hasConflict: false })
+    checkConflict: jest.fn().mockReturnValue({ hasConflict: false }),
+    findEntryByFile: jest.fn().mockReturnValue(null)
 }));
 
 jest.mock('../../../handlers/content', () => ({
@@ -52,6 +53,10 @@ jest.mock('../../../handlers/content', () => ({
     })
 }));
 
+jest.mock('../../../core/resolve', () => ({
+    resolveIdentifiersOnServer: jest.fn().mockResolvedValue(new Map())
+}));
+
 jest.mock('../../../handlers/binary', () => ({
     buildMultipartPayload: jest.fn()
 }));
@@ -60,8 +65,9 @@ import { resolveToken } from '../../../core/auth';
 import { getCachedContentType } from '../../../core/cache';
 import { loadConfig, resolveInstance } from '../../../core/config';
 import { createHttpClient, put } from '../../../core/http';
-import { scanContentFiles, updateSnapshotEntry } from '../../../core/snapshot';
-import { parseContentFile, validateContentFile } from '../../../handlers/content';
+import { resolveIdentifiersOnServer } from '../../../core/resolve';
+import { loadSnapshot, scanContentFiles, updateSnapshotEntry } from '../../../core/snapshot';
+import { buildPushPayload, parseContentFile, validateContentFile } from '../../../handlers/content';
 import { pushCommand } from '../push';
 
 import type { ContentTypeSchema } from '../../../core/types';
@@ -112,6 +118,11 @@ describe('content push command', () => {
         (put as jest.Mock).mockResolvedValue({
             entity: { identifier: 'id-1', inode: 'new-inode', modDate: '2024-01-02' }
         });
+        (validateContentFile as jest.Mock).mockReturnValue({ valid: true, errors: [] });
+        (buildPushPayload as jest.Mock).mockReturnValue({
+            contentlet: { contentType: 'Blog', identifier: 'id-1', title: 'Test' },
+            binaries: []
+        });
         (parseContentFile as jest.Mock).mockReturnValue({
             frontmatter: {
                 contentType: 'Blog',
@@ -157,6 +168,14 @@ describe('content push command', () => {
         expect(consola.info).toHaveBeenCalledWith(expect.stringContaining('No changes'));
     });
 
+    it('should scope scan to project root when no files specified', async () => {
+        (scanContentFiles as jest.Mock).mockReturnValue(new Map());
+
+        await pushCommand.run!({ args: {} } as never);
+
+        expect(scanContentFiles).toHaveBeenCalledWith(tmpDir);
+    });
+
     it('should push modified files', async () => {
         const testFile = path.join(tmpDir, 'test.md');
         fs.writeFileSync(
@@ -169,7 +188,11 @@ describe('content push command', () => {
         await pushCommand.run!({ args: {} } as never);
 
         expect(put).toHaveBeenCalled();
-        expect(updateSnapshotEntry).toHaveBeenCalled();
+        expect(updateSnapshotEntry).toHaveBeenCalledWith(
+            path.dirname(testFile),
+            expect.any(String),
+            expect.objectContaining({ hash: 'hash123' })
+        );
         expect(consola.info).toHaveBeenCalledWith(expect.stringContaining('Push complete'));
     });
 
@@ -262,5 +285,153 @@ describe('content push command', () => {
 
         // Should stop after first error (no schema cache)
         expect(consola.error).toHaveBeenCalledWith(expect.stringContaining('Failed'));
+    });
+
+    // ─── Cross-instance push tests ──────────────────────────────────────────
+
+    describe('cross-instance push', () => {
+        it('should strip identifier when destination snapshot has no entry (new content)', async () => {
+            const testFile = path.join(tmpDir, 'test.md');
+            fs.writeFileSync(
+                testFile,
+                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Test\n---\nHello\n'
+            );
+
+            // File has identifier from source instance, but destination snapshot is empty
+            (loadSnapshot as jest.Mock).mockReturnValue({});
+            (scanContentFiles as jest.Mock).mockReturnValue(new Map([[testFile, 'new']]));
+            const mockContentlet = {
+                contentType: 'Blog',
+                identifier: 'source-id',
+                title: 'Test'
+            };
+            (buildPushPayload as jest.Mock).mockReturnValue({
+                contentlet: mockContentlet,
+                binaries: []
+            });
+            (put as jest.Mock).mockResolvedValue({
+                entity: {
+                    identifier: 'new-dest-id',
+                    inode: 'new-inode',
+                    modDate: '2024-01-02'
+                }
+            });
+
+            await pushCommand.run!({ args: {} } as never);
+
+            expect(put).toHaveBeenCalled();
+            // The contentlet should have had identifier deleted before being sent
+            expect(mockContentlet.identifier).toBeUndefined();
+        });
+
+        it('should use resolved server identifier when content exists on target (cross-instance)', async () => {
+            const testFile = path.join(tmpDir, 'test.md');
+            fs.writeFileSync(
+                testFile,
+                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Test\n---\nHello\n'
+            );
+
+            // No snapshot entry for this file (new to this instance)
+            (loadSnapshot as jest.Mock).mockReturnValue({});
+            (scanContentFiles as jest.Mock).mockReturnValue(new Map([[testFile, 'new']]));
+
+            // parseContentFile must return source-id so pre-resolution can find it
+            (parseContentFile as jest.Mock).mockReturnValue({
+                frontmatter: {
+                    contentType: 'Blog',
+                    identifier: 'source-id',
+                    language: 'en-US',
+                    inode: 'old-inode',
+                    modDate: '2024-01-01',
+                    title: 'Test'
+                },
+                body: 'Hello',
+                filePath: testFile
+            });
+
+            // But the content exists on the target server (resolved via batch query)
+            (resolveIdentifiersOnServer as jest.Mock).mockResolvedValue(
+                new Map([['source-id', { identifier: 'source-id', inode: 'server-inode' }]])
+            );
+
+            const mockContentlet = {
+                contentType: 'Blog',
+                identifier: 'source-id',
+                title: 'Test'
+            };
+            (buildPushPayload as jest.Mock).mockReturnValue({
+                contentlet: mockContentlet,
+                binaries: []
+            });
+            (put as jest.Mock).mockResolvedValue({
+                entity: {
+                    identifier: 'source-id',
+                    inode: 'new-server-inode',
+                    modDate: '2024-01-02'
+                }
+            });
+
+            await pushCommand.run!({ args: {} } as never);
+
+            expect(put).toHaveBeenCalled();
+            // Should use the resolved identifier (update, not create)
+            expect(mockContentlet.identifier).toBe('source-id');
+        });
+
+        it('should use destination identifier when destination snapshot has entry', async () => {
+            const testFile = path.join(tmpDir, 'test.md');
+            fs.writeFileSync(
+                testFile,
+                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Test\n---\nHello\n'
+            );
+
+            // parseContentFile must return source-id to match snapshot key
+            (parseContentFile as jest.Mock).mockReturnValue({
+                frontmatter: {
+                    contentType: 'Blog',
+                    identifier: 'source-id',
+                    language: 'en-US',
+                    inode: 'old-inode',
+                    modDate: '2024-01-01',
+                    title: 'Test'
+                },
+                body: 'Hello',
+                filePath: testFile
+            });
+
+            // Destination snapshot has its own entry keyed by identifier
+            (loadSnapshot as jest.Mock).mockReturnValue({
+                'source-id': {
+                    file: 'test.md',
+                    title: 'Test',
+                    hash: 'old-hash',
+                    pulledAt: '2024-01-01',
+                    inode: 'dest-inode'
+                }
+            });
+            (scanContentFiles as jest.Mock).mockReturnValue(new Map([[testFile, 'modified']]));
+            const mockContentlet = {
+                contentType: 'Blog',
+                identifier: 'source-id',
+                title: 'Test'
+            };
+            (buildPushPayload as jest.Mock).mockReturnValue({
+                contentlet: mockContentlet,
+                binaries: []
+            });
+            (put as jest.Mock).mockResolvedValue({
+                entity: {
+                    identifier: 'source-id',
+                    inode: 'updated-inode',
+                    modDate: '2024-01-02'
+                }
+            });
+
+            await pushCommand.run!({ args: {} } as never);
+
+            expect(put).toHaveBeenCalled();
+            // The contentlet should keep the identifier since it's in snapshot
+            expect(mockContentlet.identifier).toBe('source-id');
+        });
     });
 });

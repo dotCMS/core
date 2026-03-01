@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 
 import { deleteCommand } from './delete';
 import { diffCommand } from './diff';
+import { listCommand } from './list';
 import { pullCommand } from './pull';
 import { pushCommand } from './push';
 import { statusCommand } from './status';
@@ -16,6 +17,7 @@ export const contentCommand = defineCommand({
         push: pushCommand,
         status: statusCommand,
         diff: diffCommand,
-        delete: deleteCommand
+        delete: deleteCommand,
+        list: listCommand
     }
 });

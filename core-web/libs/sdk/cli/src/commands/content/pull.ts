@@ -8,13 +8,13 @@ import { resolveToken } from '../../core/auth';
 import { cacheContentType, getCachedContentType } from '../../core/cache';
 import { loadConfig, resolveInstance } from '../../core/config';
 import { createHttpClient, get, graphql } from '../../core/http';
+import { fetchLanguageMap } from '../../core/languages';
 import { computeContentHash, updateSnapshotEntry } from '../../core/snapshot';
 import {
     CACHE_DIR,
     DOTCLI_DIR,
     type ContentletRecord,
     type ContentTypeSchema,
-    type LanguageEntry,
     type LanguageMap,
     type PullConfigEntry,
     type SnapshotEntry
@@ -39,7 +39,7 @@ export const pullCommand = defineCommand({
         type: { type: 'string', description: 'Content type variable name' },
         site: { type: 'string', description: 'Site hostname' },
         id: { type: 'string', description: 'Specific contentlet identifier' },
-        instance: { type: 'string', description: 'Server instance name' },
+        from: { type: 'string', description: 'Source instance name' },
         query: { type: 'string', description: 'Lucene query filter' },
         language: { type: 'string', description: 'Language code (e.g., es-ES)' },
         'with-binaries': { type: 'boolean', description: 'Download binary sidecar files' }
@@ -56,7 +56,7 @@ export const pullCommand = defineCommand({
             return;
         }
 
-        const instance = resolveInstance(config, args.instance as string | undefined);
+        const instance = resolveInstance(config, args.from as string | undefined);
         const token = resolveToken(projectDir, instance.name);
 
         if (!token) {
@@ -129,23 +129,6 @@ function buildPullEntries(
     return configPull ?? [];
 }
 
-async function fetchLanguageMap(client: $Fetch): Promise<LanguageMap> {
-    try {
-        const response = await get<{ entity: LanguageEntry[] }>(client, '/api/v2/languages');
-        const map: LanguageMap = {};
-        for (const lang of response.entity) {
-            const code = lang.countryCode
-                ? `${lang.languageCode}-${lang.countryCode}`
-                : lang.languageCode;
-            map[String(lang.id)] = code;
-        }
-        return map;
-    } catch {
-        consola.warn('Could not fetch languages, using default (1 → en-US).');
-        return { '1': 'en-US' };
-    }
-}
-
 async function fetchOrCacheSchema(
     client: $Fetch,
     cacheDir: string,
@@ -201,13 +184,14 @@ async function pullSingleContentlet(
 
     // Update snapshot
     const hash = computeContentHash(filePath);
-    const entry: SnapshotEntry = {
+    const snapshotEntry: SnapshotEntry = {
+        file: result.filename,
+        title: (record['title'] as string) || '',
         hash,
         pulledAt: new Date().toISOString(),
-        inode: record['inode'] as string,
-        identifier: record['identifier'] as string
+        inode: record['inode'] as string
     };
-    updateSnapshotEntry(projectDir, filePath, entry);
+    updateSnapshotEntry(contentDir, identifier, snapshotEntry);
 
     if (withBinaries && result.binaries.length > 0) {
         await downloadContentBinaries(client, record, schema, contentDir);
@@ -259,13 +243,15 @@ async function pullContentType(
 
             // Update snapshot
             const hash = computeContentHash(filePath);
+            const recordIdentifier = record['identifier'] as string;
             const snapshotEntry: SnapshotEntry = {
+                file: result.filename,
+                title: (record['title'] as string) || '',
                 hash,
                 pulledAt: new Date().toISOString(),
-                inode: record['inode'] as string,
-                identifier: record['identifier'] as string
+                inode: record['inode'] as string
             };
-            updateSnapshotEntry(projectDir, filePath, snapshotEntry);
+            updateSnapshotEntry(contentDir, recordIdentifier, snapshotEntry);
 
             if (withBinaries && result.binaries.length > 0) {
                 await downloadContentBinaries(client, record, schema, contentDir);

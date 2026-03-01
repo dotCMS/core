@@ -107,14 +107,15 @@ export function isSystemField(field: ContentTypeField): boolean {
 // ─── Snapshot ────────────────────────────────────────────────────────────────
 
 export interface SnapshotStore {
-    [filePath: string]: SnapshotEntry;
+    [identifier: string]: SnapshotEntry;
 }
 
 export interface SnapshotEntry {
-    hash: string;
-    pulledAt: string;
-    inode: string;
-    identifier: string;
+    file: string; // filename only (e.g., "e5e92e.md")
+    title: string; // contentlet title for list display
+    hash: string; // content hash for change detection
+    pulledAt: string; // ISO timestamp of last pull
+    inode: string; // remote version for conflict detection
 }
 
 export type FileState = 'unchanged' | 'modified' | 'new' | 'deleted';
@@ -225,7 +226,7 @@ export interface LanguageEntry {
 export const DOTCLI_DIR = '.dotcli';
 export const CONFIG_FILE = 'config.yml';
 export const AUTH_FILE = '.auth.json';
-export const SNAPSHOT_FILE = 'snapshot.json';
+export const SNAPSHOT_FILE = '.snapshot.json';
 export const CACHE_DIR = 'cache';
 export const CONTENT_TYPES_CACHE_DIR = 'content-types';
 export const PUSH_ERRORS_FILE = 'last-push-errors.json';

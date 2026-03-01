@@ -8,6 +8,7 @@ import { resolveToken } from '../../core/auth';
 import { getCachedContentType } from '../../core/cache';
 import { loadConfig, resolveInstance } from '../../core/config';
 import { createHttpClient, graphql, put } from '../../core/http';
+import { type ResolvedIdentifier, resolveIdentifiersOnServer } from '../../core/resolve';
 import {
     checkConflict,
     computeContentHash,
@@ -23,8 +24,7 @@ import {
     type ContentTypeSchema,
     type PushErrorLog,
     type PushResult,
-    type SnapshotEntry,
-    type SnapshotStore
+    type SnapshotEntry
 } from '../../core/types';
 import { buildMultipartPayload } from '../../handlers/binary';
 import { buildPushPayload, parseContentFile, validateContentFile } from '../../handlers/content';
@@ -38,7 +38,7 @@ export const pushCommand = defineCommand({
     },
     args: {
         files: { type: 'positional', description: 'File or directory to push', required: false },
-        instance: { type: 'string', description: 'Server instance name' },
+        to: { type: 'string', description: 'Target instance name' },
         action: { type: 'string', description: 'Workflow system action (default: PUBLISH)' },
         'dry-run': { type: 'boolean', description: 'Show what would be pushed without pushing' },
         force: { type: 'boolean', description: 'Skip conflict check' },
@@ -70,7 +70,7 @@ export const pushCommand = defineCommand({
             return;
         }
 
-        const instance = resolveInstance(config, args.instance as string | undefined);
+        const instance = resolveInstance(config, args.to as string | undefined);
         const token = resolveToken(projectDir, instance.name);
 
         if (!token) {
@@ -82,7 +82,6 @@ export const pushCommand = defineCommand({
 
         const client = createHttpClient({ baseURL: instance.url, token });
         const cacheDir = path.join(projectDir, DOTCLI_DIR, CACHE_DIR);
-        const snapshot = loadSnapshot(projectDir);
 
         // 2. Determine files to push
         let filesToPush: string[];
@@ -97,7 +96,7 @@ export const pushCommand = defineCommand({
         } else if (args.files) {
             const target = path.resolve(projectDir, args.files as string);
             if (fs.statSync(target).isDirectory()) {
-                const states = scanContentFiles(target, snapshot);
+                const states = scanContentFiles(target);
                 filesToPush = [...states.entries()]
                     .filter(([, state]) => state === 'modified' || state === 'new')
                     .map(([file]) => file);
@@ -105,8 +104,8 @@ export const pushCommand = defineCommand({
                 filesToPush = [target];
             }
         } else {
-            // Scan entire project for changed files
-            const states = scanContentFiles(projectDir, snapshot);
+            // Scan project root for changed files
+            const states = scanContentFiles(projectDir);
             filesToPush = [...states.entries()]
                 .filter(([, state]) => state === 'modified' || state === 'new')
                 .map(([file]) => file);
@@ -126,7 +125,10 @@ export const pushCommand = defineCommand({
             return;
         }
 
-        // 4. Push each file
+        // 4. Pre-resolve identifiers for files without snapshot entries (cross-instance safety)
+        const resolvedMap = await preResolveIdentifiers(client, cacheDir, filesToPush);
+
+        // 5. Push each file
         const results: PushResult[] = [];
         const failures: Array<{ file: string; error: string; identifier?: string }> = [];
 
@@ -136,10 +138,10 @@ export const pushCommand = defineCommand({
                     client,
                     projectDir,
                     cacheDir,
-                    snapshot,
                     filePath,
                     systemAction,
-                    force
+                    force,
+                    resolvedMap
                 );
                 results.push(result);
 
@@ -177,7 +179,7 @@ export const pushCommand = defineCommand({
             }
         }
 
-        // 5. Write errors file
+        // 6. Write errors file
         if (failures.length > 0) {
             const errLog: PushErrorLog = {
                 timestamp: new Date().toISOString(),
@@ -191,7 +193,7 @@ export const pushCommand = defineCommand({
             fs.writeFileSync(errPath, JSON.stringify(errLog, null, 2), 'utf-8');
         }
 
-        // 6. Log summary
+        // 7. Log summary
         const created = results.filter((r) => r.status === 'created').length;
         const updated = results.filter((r) => r.status === 'updated').length;
         const skipped = results.filter((r) => r.status === 'skipped').length;
@@ -202,6 +204,59 @@ export const pushCommand = defineCommand({
         );
     }
 });
+
+/**
+ * Pre-resolve identifiers on the server for files that have no snapshot entry.
+ * Groups files by content type and batch-queries the server for each group.
+ * Returns a map of identifier → server data (or null if not found).
+ */
+async function preResolveIdentifiers(
+    client: $Fetch,
+    cacheDir: string,
+    filesToPush: string[]
+): Promise<Map<string, ResolvedIdentifier | null>> {
+    const resolvedMap = new Map<string, ResolvedIdentifier | null>();
+
+    // Collect identifiers from files without snapshot entries, grouped by content type
+    const byContentType = new Map<string, string[]>();
+
+    for (const filePath of filesToPush) {
+        // Check if already tracked in co-located snapshot
+        const contentDir = path.dirname(filePath);
+        const snapshot = loadSnapshot(contentDir);
+        const filename = path.basename(filePath);
+        const tracked = Object.values(snapshot).some((e) => e.file === filename);
+        if (tracked) continue;
+
+        try {
+            const fileContent = fs.readFileSync(filePath, 'utf-8');
+            const parsed = parseContentFile(filePath, fileContent);
+            const identifier = parsed.frontmatter.identifier;
+            const contentType = parsed.frontmatter.contentType;
+
+            if (!identifier || !contentType) continue;
+
+            const group = byContentType.get(contentType) ?? [];
+            group.push(identifier);
+            byContentType.set(contentType, group);
+        } catch {
+            // Skip files that can't be parsed
+        }
+    }
+
+    // Batch-resolve each content type group
+    for (const [contentType, identifiers] of byContentType) {
+        const schema = getCachedContentType(cacheDir, contentType);
+        if (!schema) continue;
+
+        const resolved = await resolveIdentifiersOnServer(client, schema.variable, identifiers);
+        for (const [id, entry] of resolved) {
+            resolvedMap.set(id, entry);
+        }
+    }
+
+    return resolvedMap;
+}
 
 function loadRetryFiles(projectDir: string): string[] {
     const errPath = path.join(projectDir, DOTCLI_DIR, PUSH_ERRORS_FILE);
@@ -218,15 +273,17 @@ async function pushFile(
     client: $Fetch,
     projectDir: string,
     cacheDir: string,
-    snapshot: SnapshotStore,
     filePath: string,
     systemAction: string,
-    force: boolean
+    force: boolean,
+    resolvedMap: Map<string, ResolvedIdentifier | null>
 ): Promise<PushResult> {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const parsed = parseContentFile(filePath, fileContent);
     const contentType = parsed.frontmatter.contentType;
     const identifier = parsed.frontmatter.identifier;
+    const contentDir = path.dirname(filePath);
+    const snapshot = loadSnapshot(contentDir);
 
     // Get schema from cache
     const schema = getCachedContentType(cacheDir, contentType);
@@ -250,11 +307,12 @@ async function pushFile(
         };
     }
 
-    // Conflict check
-    if (!force && identifier && snapshot[filePath]) {
+    // Conflict check — look up by identifier in co-located snapshot
+    const snapshotEntry = identifier ? snapshot[identifier] : undefined;
+    if (!force && identifier && snapshotEntry) {
         const serverInode = await fetchServerInode(client, identifier, schema);
         if (serverInode) {
-            const conflict = checkConflict(snapshot[filePath], serverInode);
+            const conflict = checkConflict(snapshotEntry, serverInode);
             if (conflict.hasConflict) {
                 return {
                     file: filePath,
@@ -268,7 +326,28 @@ async function pushFile(
 
     // Build payload
     const { contentlet, binaries } = buildPushPayload(parsed, schema);
-    const isNew = !identifier;
+
+    // Determine destination identifier:
+    // 1. Snapshot entry → use that (existing behavior for same-instance or previously pushed)
+    // 2. Pre-resolved on server → use server's identifier + inode (cross-instance update)
+    // 3. Neither → strip identifier (create as new)
+    let destinationIdentifier = snapshotEntry ? identifier : undefined;
+    let isNew = !destinationIdentifier;
+
+    if (!destinationIdentifier && identifier) {
+        // Check pre-resolved map for cross-instance safety
+        const resolved = resolvedMap.get(identifier);
+        if (resolved) {
+            destinationIdentifier = resolved.identifier;
+            isNew = false;
+        }
+    }
+
+    if (destinationIdentifier) {
+        contentlet['identifier'] = destinationIdentifier;
+    } else {
+        delete contentlet['identifier'];
+    }
 
     // Push via workflow fire API (default action)
     // Remove inode — let the server resolve it from identifier
@@ -307,13 +386,14 @@ async function pushFile(
 
     // Update snapshot
     const hash = computeContentHash(filePath);
-    const snapshotEntry: SnapshotEntry = {
+    const newSnapshotEntry: SnapshotEntry = {
+        file: path.basename(filePath),
+        title: (parsed.frontmatter.title as string) || '',
         hash,
         pulledAt: new Date().toISOString(),
-        inode: newInode,
-        identifier: newIdentifier
+        inode: newInode
     };
-    updateSnapshotEntry(projectDir, filePath, snapshotEntry);
+    updateSnapshotEntry(contentDir, newIdentifier, newSnapshotEntry);
 
     const relativePath = path.relative(projectDir, filePath);
     consola.success(`${isNew ? 'Created' : 'Updated'}: ${relativePath}`);

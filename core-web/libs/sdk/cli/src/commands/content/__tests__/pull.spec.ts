@@ -37,7 +37,8 @@ jest.mock('../../../core/cache', () => ({
 
 jest.mock('../../../core/snapshot', () => ({
     computeContentHash: jest.fn().mockReturnValue('abc123hash'),
-    updateSnapshotEntry: jest.fn()
+    updateSnapshotEntry: jest.fn(),
+    loadSnapshot: jest.fn().mockReturnValue({})
 }));
 
 jest.mock('../../../handlers/content', () => ({
@@ -209,11 +210,10 @@ describe('content pull command', () => {
         expect(consola.error).toHaveBeenCalledWith(expect.stringContaining('No content types'));
     });
 
-    it('should write content files to disk', async () => {
+    it('should write content files under host directory (flat working copy)', async () => {
         await pullCommand.run!({ args: {} } as never);
 
-        // The serialized content should have been written
-        // Since we mock serializeContentlet to return a filename, verify the directory was created
+        // Files should be written under {hostName}/content/{type} (no instance prefix)
         const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
         expect(fs.existsSync(contentDir)).toBe(true);
     });
