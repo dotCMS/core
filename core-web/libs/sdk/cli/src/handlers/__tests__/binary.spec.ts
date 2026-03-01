@@ -256,8 +256,8 @@ describe('downloadContentBinaries', () => {
             identifier: 'abcdef123456',
             inode: 'inode-abc',
             title: 'Test Post',
-            heroImage: { idPath: '/data/abc/heroImage', name: 'hero.jpg' },
-            thumbnail: { idPath: '/data/abc/thumbnail', name: 'thumb.png' }
+            heroImage: { name: 'hero.jpg', size: 12345 },
+            thumbnail: { fileName: 'thumb.png', sortOrder: 0, description: 'thumb.png' }
         };
 
         const mockClient = jest
@@ -282,7 +282,7 @@ describe('downloadContentBinaries', () => {
         const record = {
             identifier: 'abcdef123456',
             inode: 'inode-abc',
-            heroImage: { idPath: '/data/abc/heroImage', name: 'hero.jpg' },
+            heroImage: { name: 'hero.jpg', size: 12345 },
             optionalFile: null
         };
 
@@ -321,7 +321,7 @@ describe('downloadContentBinaries', () => {
         const record = {
             identifier: 'abcdef123456',
             inode: 'inode-abc',
-            heroImage: { idPath: '/some/path' } // no name
+            heroImage: { sortOrder: 0 } // no fileName
         };
 
         const mockClient = jest.fn() as unknown as $Fetch;
@@ -464,6 +464,71 @@ describe('buildMultipartPayload', () => {
         expect(allFiles).toHaveLength(2);
         expect(allFiles[0]).toBeInstanceOf(Blob);
         expect(allFiles[1]).toBeInstanceOf(Blob);
+    });
+
+    it('should include binaryFields array in the JSON part', async () => {
+        const filePath = join(tempDir, 'photo.jpg');
+        await writeFile(filePath, 'fake image data');
+
+        const contentletJson = {
+            contentType: 'Blog',
+            title: 'Test',
+            identifier: 'abc123'
+        };
+
+        const binaries: BinaryFieldInfo[] = [
+            {
+                fieldVariable: 'heroImage',
+                localPath: './photo.jpg',
+                fileName: 'photo.jpg'
+            }
+        ];
+
+        const contentFile = join(tempDir, 'content.md');
+        const formData = await buildMultipartPayload(contentletJson, binaries, contentFile);
+
+        const jsonBlob = formData.get('json') as Blob;
+        const jsonText = await jsonBlob.text();
+        const parsed = JSON.parse(jsonText);
+
+        expect(parsed.binaryFields).toEqual(['heroImage']);
+        expect(parsed.contentlet).toEqual(contentletJson);
+    });
+
+    it('should include multiple field names in binaryFields', async () => {
+        await writeFile(join(tempDir, 'image.jpg'), 'image data');
+        await writeFile(join(tempDir, 'doc.pdf'), 'pdf data');
+
+        const binaries: BinaryFieldInfo[] = [
+            { fieldVariable: 'heroImage', localPath: './image.jpg', fileName: 'image.jpg' },
+            { fieldVariable: 'attachment', localPath: './doc.pdf', fileName: 'doc.pdf' }
+        ];
+
+        const formData = await buildMultipartPayload(
+            { contentType: 'Blog' },
+            binaries,
+            join(tempDir, 'content.md')
+        );
+
+        const jsonBlob = formData.get('json') as Blob;
+        const jsonText = await jsonBlob.text();
+        const parsed = JSON.parse(jsonText);
+
+        expect(parsed.binaryFields).toEqual(['heroImage', 'attachment']);
+    });
+
+    it('should include empty binaryFields when no binaries provided', async () => {
+        const formData = await buildMultipartPayload(
+            { contentType: 'Blog' },
+            [],
+            join(tempDir, 'content.md')
+        );
+
+        const jsonBlob = formData.get('json') as Blob;
+        const jsonText = await jsonBlob.text();
+        const parsed = JSON.parse(jsonText);
+
+        expect(parsed.binaryFields).toEqual([]);
     });
 
     it('should include only JSON when no binaries provided', async () => {

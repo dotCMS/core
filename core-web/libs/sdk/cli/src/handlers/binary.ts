@@ -117,7 +117,8 @@ export async function downloadBinary(
 
 /**
  * Download all binary fields for a contentlet.
- * Binary fields in GraphQL return `{ idPath, name }` objects.
+ * Image/File fields (DotFileasset) return `{ fileName, sortOrder, description }`.
+ * Binary fields return a flat object with `{ name, size, ... }`.
  */
 export async function downloadContentBinaries(
     client: $Fetch,
@@ -143,8 +144,8 @@ export async function downloadContentBinaries(
             continue;
         }
 
-        const binaryMeta = fieldValue as { idPath?: string; name?: string; fileName?: string };
-        const binaryName = binaryMeta.name || binaryMeta.fileName;
+        const binaryMeta = fieldValue as { fileName?: string; name?: string };
+        const binaryName = binaryMeta.fileName || binaryMeta.name;
         if (!binaryName) {
             continue;
         }
@@ -211,7 +212,12 @@ export async function buildMultipartPayload(
     const formData = new FormData();
 
     // Add contentlet JSON as a part — must be wrapped in { contentlet: ... }
-    const wrappedJson = JSON.stringify({ contentlet: contentletJson });
+    // Include binaryFields array so the server knows which fields receive uploaded files
+    const binaryFieldNames = binaries.map(b => b.fieldVariable);
+    const wrappedJson = JSON.stringify({
+        contentlet: contentletJson,
+        binaryFields: binaryFieldNames
+    });
     formData.append('json', new Blob([wrappedJson], { type: 'application/json' }));
 
     // Add each binary file — dotCMS expects "file" as the multipart field name

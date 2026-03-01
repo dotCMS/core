@@ -27,10 +27,10 @@ import {
 // ─── Field type sets for quick lookup ────────────────────────────────────────
 
 const BODY_TYPES_SET = new Set<string>(BODY_FIELD_TYPES);
-const BINARY_TYPES_SET = new Set<string>(BINARY_FIELD_TYPES);
+export const BINARY_TYPES_SET = new Set<string>(BINARY_FIELD_TYPES);
 
 /** Field types that should be omitted from frontmatter entirely */
-const OMIT_FIELD_TYPES = new Set([
+export const OMIT_FIELD_TYPES = new Set([
     'Constant',
     'Hidden',
     'Custom-Field',
@@ -44,11 +44,14 @@ const OMIT_FIELD_TYPES = new Set([
 /** Field types serialized as YAML lists */
 const LIST_FIELD_TYPES = new Set(['MultiSelect', 'Checkbox', 'Tag', 'Category', 'Relationship']);
 
+/** Relationship fields — skip during push (server manages relationships separately) */
+const RELATIONSHIP_TYPES_SET = new Set(['Relationship']);
+
 /** Field types serialized as YAML maps or nested structures */
 const MAP_FIELD_TYPES = new Set(['KeyValue', 'Key-Value']);
 
 /** Field types serialized as nested YAML (JSON-like) */
-const JSON_FIELD_TYPES = new Set(['JSON', 'Story-Block', 'StoryBlock']);
+export const JSON_FIELD_TYPES = new Set(['JSON', 'Story-Block', 'StoryBlock']);
 
 // ─── Schema analysis ────────────────────────────────────────────────────────
 
@@ -89,11 +92,16 @@ export interface GraphQLQueryOptions {
     offset?: number;
 }
 
-/** Map of dotCMS field types to their GraphQL subfield selections */
+/**
+ * Map of dotCMS field types to their GraphQL subfield selections.
+ *
+ * Binary fields return a flat object with `name` (not `fileName`).
+ * Image/File fields return the `DotFileasset` type with `fileName` at top level.
+ */
 const GRAPHQL_SUBSELECTIONS: Record<string, string> = {
-    Binary: '{ versionPath name idPath size }',
-    Image: '{ versionPath name idPath size }',
-    File: '{ versionPath name idPath size }',
+    Binary: '{ name size }',
+    Image: '{ fileName sortOrder description }',
+    File: '{ fileName sortOrder description }',
     'Story-Block': '{ json }',
     StoryBlock: '{ json }',
     'Key-Value': '{ key value }',
@@ -323,9 +331,13 @@ export function buildPushPayload(
         if (metadataSet.has(key)) continue;
         if (value === undefined || value === null) continue;
 
-        // Detect binary fields with local file paths
+        // Look up the field in the schema — skip unknown frontmatter keys
         const field = schema.fields.find((f) => f.variable === key);
-        if (field && BINARY_TYPES_SET.has(field.fieldType)) {
+        if (!field) {
+            continue; // not a known schema field, skip
+        }
+
+        if (BINARY_TYPES_SET.has(field.fieldType)) {
             if (typeof value === 'string' && value.startsWith('./')) {
                 // Sidecar files are named {fieldVar}.{originalFileName}
                 // Strip the field variable prefix to get the original filename
@@ -343,8 +355,13 @@ export function buildPushPayload(
             continue; // binary fields handled via multipart, not JSON
         }
 
+        // Relationship fields: skip — server manages relationships separately
+        if (RELATIONSHIP_TYPES_SET.has(field.fieldType)) {
+            continue;
+        }
+
         // JSON/StoryBlock fields: the API expects a JSON string, not an object
-        if (field && JSON_FIELD_TYPES.has(field.fieldType) && typeof value === 'object') {
+        if (JSON_FIELD_TYPES.has(field.fieldType) && typeof value === 'object') {
             contentlet[key] = JSON.stringify(value);
         } else {
             contentlet[key] = value;
@@ -428,6 +445,72 @@ export function validateContentFile(
     }
 
     return { valid: errors.length === 0, errors };
+}
+
+// ─── Diff normalization ─────────────────────────────────────────────────────
+
+/**
+ * Normalize a field value for diff comparison so that semantically
+ * identical values from local files and server responses compare equal.
+ *
+ * Handles:
+ * - Binary fields: object → sidecar path string
+ * - Date objects (gray-matter auto-parse) → ISO string
+ * - Server date strings ("2019-07-12 18:15:00.0") → ISO string
+ * - JSON/StoryBlock objects → JSON string
+ */
+export function normalizeForDiff(
+    value: unknown,
+    field: ContentTypeField,
+    shortId: string
+): string {
+    if (value === undefined || value === null) return '';
+
+    // Binary fields: convert object to sidecar path
+    if (BINARY_TYPES_SET.has(field.fieldType)) {
+        if (typeof value === 'object') {
+            const obj = value as Record<string, unknown>;
+            const fileName = (obj['fileName'] || obj['name']) as string;
+            if (fileName) return `./assets/${shortId}/${field.variable}.${fileName}`;
+            return '';
+        }
+        return String(value);
+    }
+
+    // Date objects (gray-matter auto-parse) → ISO string
+    if (value instanceof Date) {
+        return value.toISOString();
+    }
+
+    // Server date strings like "2019-07-12 18:15:00.0" → try ISO normalization
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}[\sT]/.test(value)) {
+        const parsed = new Date(value);
+        if (!isNaN(parsed.getTime())) return parsed.toISOString();
+    }
+
+    // JSON/StoryBlock fields: unwrap GraphQL { json: ... } envelope, then stringify
+    if (JSON_FIELD_TYPES.has(field.fieldType)) {
+        let inner: unknown = value;
+
+        // Server returns StoryBlock as { json: ... } — unwrap
+        if (typeof inner === 'object' && inner !== null && 'json' in (inner as Record<string, unknown>)) {
+            const jsonVal = (inner as Record<string, unknown>)['json'];
+            if (typeof jsonVal === 'string') {
+                try { inner = JSON.parse(jsonVal); } catch { inner = jsonVal; }
+            } else {
+                inner = jsonVal;
+            }
+        }
+
+        // JSON string → parse to object for consistent stringify
+        if (typeof inner === 'string') {
+            try { inner = JSON.parse(inner); } catch { /* keep as string */ }
+        }
+
+        return typeof inner === 'object' ? JSON.stringify(inner) : String(inner ?? '');
+    }
+
+    return String(value);
 }
 
 // ─── Internal helpers ───────────────────────────────────────────────────────
@@ -517,7 +600,7 @@ function serializeBinaryField(
 
     if (typeof value === 'object' && value !== null) {
         const obj = value as Record<string, unknown>;
-        // GraphQL returns: DotFileasset { fileAsset, fileName } or DotBinary { name, versionPath }
+        // Image/File (DotFileasset) → { fileName }, Binary (flat) → { name }
         const fileName = (obj['fileName'] || obj['name']) as string;
         if (fileName) {
             return `./assets/${shortId}/${field.variable}.${fileName}`;

@@ -12,7 +12,8 @@ import {
     serializeContentlet,
     parseContentFile,
     buildPushPayload,
-    validateContentFile
+    validateContentFile,
+    normalizeForDiff
 } from '../content';
 
 // ─── Test fixtures ──────────────────────────────────────────────────────────
@@ -240,14 +241,25 @@ describe('buildGraphQLQuery', () => {
         expect(query).toContain('body');
     });
 
-    it('should use subfield selections for binary fields', () => {
+    it('should use subfield selections for Binary fields (flat: name, size)', () => {
         const schema = makeSchema([
             makeField({ variable: 'title', fieldType: 'Text', sortOrder: 1 }),
             makeField({ variable: 'photo', fieldType: 'Binary', sortOrder: 2 })
         ]);
         const query = buildGraphQLQuery(schema);
 
-        expect(query).toContain('photo { versionPath name idPath size }');
+        expect(query).toContain('photo { name size }');
+    });
+
+    it('should use subfield selections for Image/File fields (DotFileasset)', () => {
+        const schema = makeSchema([
+            makeField({ variable: 'thumbnail', fieldType: 'Image', sortOrder: 1 }),
+            makeField({ variable: 'attachment', fieldType: 'File', sortOrder: 2 })
+        ]);
+        const query = buildGraphQLQuery(schema);
+
+        expect(query).toContain('thumbnail { fileName sortOrder description }');
+        expect(query).toContain('attachment { fileName sortOrder description }');
     });
 
     it('should omit Constant and Hidden field types', () => {
@@ -305,7 +317,7 @@ describe('serializeContentlet', () => {
         title: 'Hello World',
         body: '<p>This is the body content</p>',
         author: 'John Doe',
-        image: { idPath: '/dA/abc123/image/photo.jpg', name: 'photo.jpg' },
+        image: { name: 'photo.jpg', size: 12345 },
         tags: 'tech,blog,dotcms'
     };
 
@@ -528,6 +540,85 @@ describe('buildPushPayload', () => {
         });
         // Binary fields should NOT be in contentlet JSON
         expect(result.contentlet['image']).toBeUndefined();
+    });
+
+    it('should exclude relationship fields from push payload', () => {
+        const schemaWithRelationship = makeSchema([
+            makeField({ variable: 'title', fieldType: 'Text', sortOrder: 1 }),
+            makeField({ variable: 'body', fieldType: 'WYSIWYG', sortOrder: 2 }),
+            makeField({
+                variable: 'activities',
+                fieldType: 'Relationship',
+                sortOrder: 3,
+                dataType: 'TEXT'
+            })
+        ]);
+
+        const parsed = {
+            frontmatter: {
+                contentType: 'BlogPost',
+                identifier: 'abc123def456',
+                language: 'en-US',
+                inode: 'inode-001',
+                modDate: '2024-01-15T10:30:00Z',
+                bodyField: 'body',
+                title: 'Post with Relationships',
+                activities: [
+                    { identifier: 'rel-1', title: 'Activity 1' },
+                    { identifier: 'rel-2', title: 'Activity 2' }
+                ]
+            } as ContentletRecord & {
+                contentType: string;
+                identifier: string;
+                language: string;
+                inode: string;
+                modDate: string;
+                bodyField: string;
+            },
+            body: '<p>Body</p>',
+            filePath: '/path/to/abc123.md'
+        };
+
+        const result = buildPushPayload(parsed, schemaWithRelationship);
+
+        // Relationship fields should NOT be in the contentlet payload
+        expect(result.contentlet['activities']).toBeUndefined();
+        // Other fields should still be present
+        expect(result.contentlet['title']).toBe('Post with Relationships');
+        expect(result.contentlet['body']).toBe('<p>Body</p>');
+    });
+
+    it('should exclude unknown frontmatter keys not in schema', () => {
+        const parsed = {
+            frontmatter: {
+                contentType: 'BlogPost',
+                identifier: 'abc123def456',
+                language: 'en-US',
+                inode: 'inode-001',
+                modDate: '2024-01-15T10:30:00Z',
+                bodyField: 'body',
+                title: 'Test',
+                unknownField: [{ identifier: 'rel-1', title: 'Related' }],
+                anotherUnknown: 'some value'
+            } as ContentletRecord & {
+                contentType: string;
+                identifier: string;
+                language: string;
+                inode: string;
+                modDate: string;
+                bodyField: string;
+            },
+            body: '<p>Body</p>',
+            filePath: '/path/to/abc123.md'
+        };
+
+        const result = buildPushPayload(parsed, schema);
+
+        // Unknown fields should NOT be in the contentlet payload
+        expect(result.contentlet['unknownField']).toBeUndefined();
+        expect(result.contentlet['anotherUnknown']).toBeUndefined();
+        // Known fields should still be present
+        expect(result.contentlet['title']).toBe('Test');
     });
 
     it('should not include metadata fields as user content', () => {
@@ -877,5 +968,118 @@ describe('multi-language filename generation', () => {
         };
         const result = serializeContentlet(record, schema, defaultLanguageMap);
         expect(result.filename).toBe('abc123.99.md');
+    });
+});
+
+// ─── normalizeForDiff ──────────────────────────────────────────────────────
+
+describe('normalizeForDiff', () => {
+    it('should return empty string for null and undefined', () => {
+        const field = makeField({ variable: 'title', fieldType: 'Text' });
+        expect(normalizeForDiff(null, field, 'abc123')).toBe('');
+        expect(normalizeForDiff(undefined, field, 'abc123')).toBe('');
+    });
+
+    it('should convert Date objects to ISO string', () => {
+        const field = makeField({ variable: 'publishDate', fieldType: 'Date', dataType: 'DATE' });
+        const date = new Date('2019-07-12T18:15:00.000Z');
+        expect(normalizeForDiff(date, field, 'abc123')).toBe('2019-07-12T18:15:00.000Z');
+    });
+
+    it('should normalize server date strings to ISO format', () => {
+        const field = makeField({ variable: 'publishDate', fieldType: 'Date', dataType: 'DATE' });
+        const result = normalizeForDiff('2019-07-12 18:15:00.0', field, 'abc123');
+        // Should parse to a valid ISO date
+        expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+
+    it('should produce same output for Date object and server date string', () => {
+        const field = makeField({ variable: 'publishDate', fieldType: 'Date', dataType: 'DATE' });
+        const dateObj = new Date('2019-07-12T18:15:00.000Z');
+        const dateStr = '2019-07-12T18:15:00.000Z';
+
+        expect(normalizeForDiff(dateObj, field, 'abc123')).toBe(
+            normalizeForDiff(dateStr, field, 'abc123')
+        );
+    });
+
+    it('should convert binary object to sidecar path', () => {
+        const field = makeField({ variable: 'image', fieldType: 'Binary', dataType: 'BINARY' });
+        const obj = { name: 'photo.jpg', size: 12345 };
+        expect(normalizeForDiff(obj, field, 'abc123')).toBe('./assets/abc123/image.photo.jpg');
+    });
+
+    it('should convert Image field object to sidecar path using fileName', () => {
+        const field = makeField({ variable: 'thumbnail', fieldType: 'Image', dataType: 'SYSTEM' });
+        const obj = { fileName: 'hero.png', sortOrder: 0 };
+        expect(normalizeForDiff(obj, field, 'abc123')).toBe('./assets/abc123/thumbnail.hero.png');
+    });
+
+    it('should return empty string for binary object without filename', () => {
+        const field = makeField({ variable: 'image', fieldType: 'Binary', dataType: 'BINARY' });
+        const obj = { size: 12345 };
+        expect(normalizeForDiff(obj, field, 'abc123')).toBe('');
+    });
+
+    it('should pass through binary string values as-is', () => {
+        const field = makeField({ variable: 'image', fieldType: 'Binary', dataType: 'BINARY' });
+        expect(normalizeForDiff('./assets/abc123/image.photo.jpg', field, 'abc123')).toBe(
+            './assets/abc123/image.photo.jpg'
+        );
+    });
+
+    it('should JSON.stringify JSON field objects', () => {
+        const field = makeField({ variable: 'data', fieldType: 'JSON' });
+        const obj = { key: 'value', nested: { a: 1 } };
+        expect(normalizeForDiff(obj, field, 'abc123')).toBe(JSON.stringify(obj));
+    });
+
+    it('should JSON.stringify StoryBlock field objects', () => {
+        const field = makeField({ variable: 'story', fieldType: 'Story-Block' });
+        const obj = { type: 'doc', content: [] };
+        expect(normalizeForDiff(obj, field, 'abc123')).toBe(JSON.stringify(obj));
+    });
+
+    it('should unwrap GraphQL { json: ... } envelope for StoryBlock server values', () => {
+        const field = makeField({ variable: 'blogContent', fieldType: 'Story-Block' });
+        const inner = { type: 'doc', content: [{ type: 'paragraph' }] };
+        const serverValue = { json: inner };
+        const localValue = inner;
+
+        expect(normalizeForDiff(serverValue, field, 'abc123')).toBe(
+            normalizeForDiff(localValue, field, 'abc123')
+        );
+        // Both should produce the same JSON without the { json: } wrapper
+        expect(normalizeForDiff(serverValue, field, 'abc123')).toBe(JSON.stringify(inner));
+    });
+
+    it('should unwrap GraphQL { json: "string" } envelope for StoryBlock', () => {
+        const field = makeField({ variable: 'data', fieldType: 'StoryBlock' });
+        const inner = { type: 'doc', content: [] };
+        const serverValue = { json: JSON.stringify(inner) };
+
+        expect(normalizeForDiff(serverValue, field, 'abc123')).toBe(JSON.stringify(inner));
+    });
+
+    it('should parse JSON strings for StoryBlock fields', () => {
+        const field = makeField({ variable: 'data', fieldType: 'JSON' });
+        const obj = { key: 'value' };
+        const jsonStr = JSON.stringify(obj);
+
+        expect(normalizeForDiff(jsonStr, field, 'abc123')).toBe(
+            normalizeForDiff(obj, field, 'abc123')
+        );
+    });
+
+    it('should convert plain values to string', () => {
+        const field = makeField({ variable: 'title', fieldType: 'Text' });
+        expect(normalizeForDiff('Hello World', field, 'abc123')).toBe('Hello World');
+        expect(normalizeForDiff(42, field, 'abc123')).toBe('42');
+        expect(normalizeForDiff(true, field, 'abc123')).toBe('true');
+    });
+
+    it('should not normalize non-date strings', () => {
+        const field = makeField({ variable: 'title', fieldType: 'Text' });
+        expect(normalizeForDiff('Hello World', field, 'abc123')).toBe('Hello World');
     });
 });
