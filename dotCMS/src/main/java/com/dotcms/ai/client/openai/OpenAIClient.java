@@ -128,6 +128,8 @@ public class OpenAIClient implements AIClient {
             throw new DotAIModelNotOperationalException(String.format("Model [%s] is not operational", modelName));
         }
 
+        sanitizePayloadForModel(payload, modelName);
+
         try {
             CircuitBreakerUrl.builder()
                     .setMethod(resolveMethod(jsonRequest))
@@ -152,6 +154,29 @@ public class OpenAIClient implements AIClient {
             Logger.warn(this, " -  " + jsonRequest.getMethod() + " : " + payload);
 
             throw new DotAIClientConnectException("Error while sending request to OpenAI", e);
+        }
+    }
+
+    /**
+     * Removes request parameters that are unsupported by certain OpenAI models.
+     * <p>
+     * GPT-5 family models ({@code gpt-5}, {@code gpt-5-mini}, {@code gpt-5-nano}) and reasoning
+     * models ({@code o1}, {@code o3}, {@code o4-mini}) reject the {@code temperature} parameter
+     * with HTTP 400. They also require {@code max_completion_tokens} instead of the legacy
+     * {@code max_tokens}.
+     * </p>
+     *
+     * @param payload   mutable request JSON to sanitize in-place
+     * @param modelName resolved model name used for this request
+     */
+    private static void sanitizePayloadForModel(final JSONObject payload, final String modelName) {
+        if (!AiKeys.isTemperatureUnsupported(modelName)) {
+            return;
+        }
+        payload.remove(AiKeys.TEMPERATURE);
+        if (payload.has(AiKeys.MAX_TOKENS)) {
+            payload.put(AiKeys.MAX_COMPLETION_TOKENS, payload.opt(AiKeys.MAX_TOKENS));
+            payload.remove(AiKeys.MAX_TOKENS);
         }
     }
 
