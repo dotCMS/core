@@ -315,7 +315,8 @@ export function buildPushPayload(
         if (bodyField && JSON_FIELD_TYPES.has(bodyField.fieldType)) {
             // StoryBlock/JSON body: parse YAML back to object, then JSON.stringify for the API
             try {
-                const parsed2 = parseYaml(body);
+                let parsed2 = parseYaml(body);
+                parsed2 = stripDotContentData(parsed2);
                 contentlet[bodyFieldVar] = JSON.stringify(parsed2);
             } catch {
                 contentlet[bodyFieldVar] = body;
@@ -362,7 +363,7 @@ export function buildPushPayload(
 
         // JSON/StoryBlock fields: the API expects a JSON string, not an object
         if (JSON_FIELD_TYPES.has(field.fieldType) && typeof value === 'object') {
-            contentlet[key] = JSON.stringify(value);
+            contentlet[key] = JSON.stringify(stripDotContentData(value));
         } else {
             contentlet[key] = value;
         }
@@ -459,11 +460,7 @@ export function validateContentFile(
  * - Server date strings ("2019-07-12 18:15:00.0") → ISO string
  * - JSON/StoryBlock objects → JSON string
  */
-export function normalizeForDiff(
-    value: unknown,
-    field: ContentTypeField,
-    shortId: string
-): string {
+export function normalizeForDiff(value: unknown, field: ContentTypeField, shortId: string): string {
     if (value === undefined || value === null) return '';
 
     // Binary fields: convert object to sidecar path
@@ -493,10 +490,18 @@ export function normalizeForDiff(
         let inner: unknown = value;
 
         // Server returns StoryBlock as { json: ... } — unwrap
-        if (typeof inner === 'object' && inner !== null && 'json' in (inner as Record<string, unknown>)) {
+        if (
+            typeof inner === 'object' &&
+            inner !== null &&
+            'json' in (inner as Record<string, unknown>)
+        ) {
             const jsonVal = (inner as Record<string, unknown>)['json'];
             if (typeof jsonVal === 'string') {
-                try { inner = JSON.parse(jsonVal); } catch { inner = jsonVal; }
+                try {
+                    inner = JSON.parse(jsonVal);
+                } catch {
+                    inner = jsonVal;
+                }
             } else {
                 inner = jsonVal;
             }
@@ -504,7 +509,11 @@ export function normalizeForDiff(
 
         // JSON string → parse to object for consistent stringify
         if (typeof inner === 'string') {
-            try { inner = JSON.parse(inner); } catch { /* keep as string */ }
+            try {
+                inner = JSON.parse(inner);
+            } catch {
+                /* keep as string */
+            }
         }
 
         return typeof inner === 'object' ? JSON.stringify(inner) : String(inner ?? '');
@@ -514,6 +523,53 @@ export function normalizeForDiff(
 }
 
 // ─── Internal helpers ───────────────────────────────────────────────────────
+
+/**
+ * Strip expanded dotContent nodes in StoryBlock JSON down to just
+ * `{ identifier, languageId }`.
+ *
+ * When content is pulled via GraphQL, dotContent nodes embed the full
+ * contentlet data (including relationship arrays). The server expects
+ * only `{ identifier, languageId }` — sending full objects causes a
+ * ClassCastException (LinkedHashMap → Contentlet).
+ */
+function stripDotContentData(value: unknown): unknown {
+    if (value === null || value === undefined || typeof value !== 'object') {
+        return value;
+    }
+
+    if (Array.isArray(value)) {
+        return value.map((item) => stripDotContentData(item));
+    }
+
+    const obj = value as Record<string, unknown>;
+
+    // dotContent node: strip attrs.data to { identifier, languageId }
+    if (obj['type'] === 'dotContent' && typeof obj['attrs'] === 'object' && obj['attrs'] !== null) {
+        const attrs = obj['attrs'] as Record<string, unknown>;
+        if (typeof attrs['data'] === 'object' && attrs['data'] !== null) {
+            const data = attrs['data'] as Record<string, unknown>;
+            return {
+                ...obj,
+                attrs: {
+                    ...attrs,
+                    data: {
+                        identifier: data['identifier'],
+                        languageId: data['languageId']
+                    }
+                }
+            };
+        }
+    }
+
+    // Recurse into child nodes (e.g. content arrays)
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(obj)) {
+        result[key] = stripDotContentData(val);
+    }
+
+    return result;
+}
 
 /**
  * Serialize a field value for YAML frontmatter based on its field type.

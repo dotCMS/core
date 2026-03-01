@@ -165,6 +165,48 @@ export const authCommand = defineCommand({
                 consola.success(`Default instance set to "${name}".`);
             }
         }),
+        select: defineCommand({
+            meta: { name: 'select', description: 'Interactively select the active instance' },
+            async run() {
+                const projectDir = process.cwd();
+
+                let config;
+                try {
+                    config = loadConfig(projectDir);
+                } catch {
+                    consola.error('No dotcli project found. Run `dotcli init` first.');
+                    return;
+                }
+
+                const auth = loadAuth(projectDir);
+                const instances = Object.keys(config.instances);
+
+                if (instances.length === 0) {
+                    consola.error('No instances configured. Run `dotcli auth add` first.');
+                    return;
+                }
+
+                const selected = await prompts.select({
+                    message: 'Select active instance',
+                    options: instances.map((name) => ({
+                        value: name,
+                        label: name,
+                        hint: `${config.instances[name].url}${name === config.default ? ' (current)' : ''}${auth[name]?.token ? '' : ' [no auth]'}`
+                    }))
+                });
+
+                if (prompts.isCancel(selected)) {
+                    consola.info('Aborted.');
+                    return;
+                }
+
+                config.default = selected as string;
+                saveConfig(projectDir, config);
+                consola.success(
+                    `Active instance: "${selected}" (${config.instances[selected as string].url})`
+                );
+            }
+        }),
         remove: defineCommand({
             meta: { name: 'remove', description: 'Remove a server instance' },
             args: {

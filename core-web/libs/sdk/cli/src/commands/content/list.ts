@@ -38,7 +38,9 @@ export const listCommand = defineCommand({
 
             totalContentlets += entries.length;
             const label = entries.length === 1 ? 'contentlet' : 'contentlets';
-            consola.log(`\n${contentType} (${entries.length} ${label})`);
+            const source = Object.values(snapshot)[0]?.source;
+            const sourceLabel = source ? ` — from ${source}` : '';
+            consola.log(`\n${contentType} (${entries.length} ${label})${sourceLabel}`);
 
             for (const [identifier, entry] of entries) {
                 const shortId = identifier.slice(0, 6);

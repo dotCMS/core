@@ -441,7 +441,8 @@ export function migrateFromDotcli(projectDir: string): boolean {
                 title: '', // Old snapshots don't have title
                 hash: oldEntry.hash,
                 pulledAt: oldEntry.pulledAt,
-                inode: oldEntry.inode
+                inode: oldEntry.inode,
+                source: '' // Old snapshots don't track source
             };
             byDir.set(contentDir, dirSnapshot);
         }

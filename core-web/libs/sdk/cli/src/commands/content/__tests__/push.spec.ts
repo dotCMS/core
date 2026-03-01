@@ -191,7 +191,7 @@ describe('content push command', () => {
         expect(updateSnapshotEntry).toHaveBeenCalledWith(
             path.dirname(testFile),
             expect.any(String),
-            expect.objectContaining({ hash: 'hash123' })
+            expect.objectContaining({ hash: 'hash123', source: 'demo' })
         );
         expect(consola.info).toHaveBeenCalledWith(expect.stringContaining('Push complete'));
     });
@@ -406,7 +406,8 @@ describe('content push command', () => {
                     title: 'Test',
                     hash: 'old-hash',
                     pulledAt: '2024-01-01',
-                    inode: 'dest-inode'
+                    inode: 'dest-inode',
+                    source: 'demo'
                 }
             });
             (scanContentFiles as jest.Mock).mockReturnValue(new Map([[testFile, 'modified']]));

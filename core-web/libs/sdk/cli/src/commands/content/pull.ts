@@ -9,7 +9,13 @@ import { cacheContentType, getCachedContentType } from '../../core/cache';
 import { loadConfig, resolveInstance } from '../../core/config';
 import { createHttpClient, get, graphql } from '../../core/http';
 import { fetchLanguageMap } from '../../core/languages';
-import { computeContentHash, updateSnapshotEntry } from '../../core/snapshot';
+import {
+    computeContentHash,
+    findEntryByFile,
+    loadSnapshot,
+    saveSnapshot,
+    updateSnapshotEntry
+} from '../../core/snapshot';
 import {
     CACHE_DIR,
     DOTCLI_DIR,
@@ -81,7 +87,8 @@ export const pullCommand = defineCommand({
                 cacheDir,
                 languageMap,
                 args.id as string,
-                !!args['with-binaries']
+                !!args['with-binaries'],
+                instance.name
             );
         } else {
             const pullEntries = buildPullEntries(config.pull, args);
@@ -101,7 +108,8 @@ export const pullCommand = defineCommand({
                     cacheDir,
                     languageMap,
                     entry,
-                    !!args['with-binaries']
+                    !!args['with-binaries'],
+                    instance.name
                 );
                 totalPulled += count;
             }
@@ -155,7 +163,8 @@ async function pullSingleContentlet(
     cacheDir: string,
     languageMap: LanguageMap,
     identifier: string,
-    withBinaries: boolean
+    withBinaries: boolean,
+    instanceName: string
 ): Promise<void> {
     // Fetch contentlet by identifier using REST API to get content type first
     const response = await get<{ entity: ContentletRecord }>(
@@ -180,6 +189,19 @@ async function pullSingleContentlet(
     fs.mkdirSync(contentDir, { recursive: true });
 
     const filePath = path.join(contentDir, result.filename);
+
+    // Warn if overwriting local modifications
+    if (fs.existsSync(filePath)) {
+        const snapshot = loadSnapshot(contentDir);
+        const match = findEntryByFile(snapshot, result.filename);
+        if (match) {
+            const currentHash = computeContentHash(filePath);
+            if (currentHash !== match[1].hash) {
+                consola.warn(`Overwriting local changes: ${path.relative(projectDir, filePath)}`);
+            }
+        }
+    }
+
     fs.writeFileSync(filePath, result.content, 'utf-8');
 
     // Update snapshot
@@ -189,7 +211,8 @@ async function pullSingleContentlet(
         title: (record['title'] as string) || '',
         hash,
         pulledAt: new Date().toISOString(),
-        inode: record['inode'] as string
+        inode: record['inode'] as string,
+        source: instanceName
     };
     updateSnapshotEntry(contentDir, identifier, snapshotEntry);
 
@@ -206,7 +229,8 @@ async function pullContentType(
     cacheDir: string,
     languageMap: LanguageMap,
     entry: PullConfigEntry,
-    withBinaries: boolean
+    withBinaries: boolean,
+    instanceName: string
 ): Promise<number> {
     const schema = await fetchOrCacheSchema(client, cacheDir, entry.type);
 
@@ -216,6 +240,11 @@ async function pullContentType(
     const limit = entry.limit ?? DEFAULT_PAGE_SIZE;
     let totalPulled = 0;
     let hasMore = true;
+
+    // Track identifiers pulled in this run to clean up stale entries afterwards
+    const pulledIdentifiers = new Set<string>();
+    // Track content dirs we write to (for cleanup pass)
+    const touchedContentDirs = new Set<string>();
 
     while (hasMore) {
         const queryOptions: GraphQLQueryOptions = {
@@ -236,9 +265,25 @@ async function pullContentType(
             const hostName = (host?.['hostName'] || record['hostName'] || 'default') as string;
             const contentDir = path.join(projectDir, hostName, 'content', entry.type);
             fs.mkdirSync(contentDir, { recursive: true });
+            touchedContentDirs.add(contentDir);
 
             const result = serializeContentlet(record, schema, languageMap);
             const filePath = path.join(contentDir, result.filename);
+
+            // Warn if overwriting local modifications
+            if (fs.existsSync(filePath)) {
+                const snapshot = loadSnapshot(contentDir);
+                const match = findEntryByFile(snapshot, result.filename);
+                if (match) {
+                    const currentHash = computeContentHash(filePath);
+                    if (currentHash !== match[1].hash) {
+                        consola.warn(
+                            `Overwriting local changes: ${path.relative(projectDir, filePath)}`
+                        );
+                    }
+                }
+            }
+
             fs.writeFileSync(filePath, result.content, 'utf-8');
 
             // Update snapshot
@@ -249,9 +294,11 @@ async function pullContentType(
                 title: (record['title'] as string) || '',
                 hash,
                 pulledAt: new Date().toISOString(),
-                inode: record['inode'] as string
+                inode: record['inode'] as string,
+                source: instanceName
             };
             updateSnapshotEntry(contentDir, recordIdentifier, snapshotEntry);
+            pulledIdentifiers.add(recordIdentifier);
 
             if (withBinaries && result.binaries.length > 0) {
                 await downloadContentBinaries(client, record, schema, contentDir);
@@ -262,6 +309,32 @@ async function pullContentType(
 
         hasMore = records.length === limit;
         offset += limit;
+    }
+
+    // Clean up stale entries: remove snapshot entries and files that were not
+    // part of this pull (e.g., content from a different instance or deleted on server)
+    for (const contentDir of touchedContentDirs) {
+        const snapshot = loadSnapshot(contentDir);
+        const staleIds = Object.keys(snapshot).filter((id) => !pulledIdentifiers.has(id));
+
+        if (staleIds.length > 0) {
+            for (const staleId of staleIds) {
+                const staleEntry = snapshot[staleId];
+                const stalePath = path.join(contentDir, staleEntry.file);
+
+                // Remove the file if it exists
+                if (fs.existsSync(stalePath)) {
+                    fs.unlinkSync(stalePath);
+                    consola.info(
+                        `Removed stale: ${path.relative(projectDir, stalePath)} (not in ${instanceName})`
+                    );
+                }
+
+                delete snapshot[staleId];
+            }
+
+            saveSnapshot(contentDir, snapshot);
+        }
     }
 
     consola.success(`Pulled ${totalPulled} ${entry.type} contentlet(s).`);

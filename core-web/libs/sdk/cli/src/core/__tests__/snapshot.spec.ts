@@ -47,6 +47,7 @@ describe('snapshot', () => {
             hash: 'abc123',
             pulledAt: '2025-01-01T00:00:00Z',
             inode: 'inode-001',
+            source: 'demo',
             ...overrides
         };
     }
@@ -115,7 +116,8 @@ describe('snapshot', () => {
                 title: 'My Post',
                 hash: 'sha256-hash-value',
                 pulledAt: '2025-06-15T10:30:00Z',
-                inode: 'abc-def-123'
+                inode: 'abc-def-123',
+                source: 'staging'
             };
             const snapshot: SnapshotStore = { 'id-456-789': entry };
 
@@ -706,6 +708,40 @@ describe('snapshot', () => {
             expect(newSnapshot['id-abc123']).toBeDefined();
             expect(newSnapshot['id-abc123'].file).toBe('abc123.md');
             expect(newSnapshot['id-abc123'].hash).toBe('old-hash');
+        });
+
+        it('should set empty source for migrated entries', () => {
+            // Create old-style snapshot
+            const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+            fs.mkdirSync(contentDir, { recursive: true });
+            writeContentFile(
+                path.join(contentDir, 'abc123.md'),
+                'title: Test\ncontentType: Blog\n',
+                'Body.'
+            );
+
+            const oldSnapshotsDir = path.join(tmpDir, '.dotcli', 'snapshots');
+            fs.mkdirSync(oldSnapshotsDir, { recursive: true });
+
+            const filePath = path.join(contentDir, 'abc123.md');
+            const oldSnapshot = {
+                [filePath]: {
+                    hash: 'old-hash',
+                    pulledAt: '2025-01-01T00:00:00Z',
+                    inode: 'inode-1',
+                    identifier: 'id-abc123'
+                }
+            };
+            fs.writeFileSync(
+                path.join(oldSnapshotsDir, 'demo.json'),
+                JSON.stringify(oldSnapshot),
+                'utf-8'
+            );
+
+            migrateFromDotcli(tmpDir);
+
+            const newSnapshot = loadSnapshot(contentDir);
+            expect(newSnapshot['id-abc123'].source).toBe('');
         });
 
         it('should not overwrite existing co-located snapshots', () => {

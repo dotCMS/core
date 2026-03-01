@@ -15,6 +15,7 @@
         "ofetch": "^1.4.1",
         "consola": "^3.4.0",
         "@clack/prompts": "^0.9.1",
+        "diff": "4.0.4",
         "gray-matter": "^4.0.3",
         "yaml": "^2.7.0",
         "zod": "^3.24.0",

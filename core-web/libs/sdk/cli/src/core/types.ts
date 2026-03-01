@@ -116,6 +116,7 @@ export interface SnapshotEntry {
     hash: string; // content hash for change detection
     pulledAt: string; // ISO timestamp of last pull
     inode: string; // remote version for conflict detection
+    source: string; // instance name where this was pulled/pushed from
 }
 
 export type FileState = 'unchanged' | 'modified' | 'new' | 'deleted';

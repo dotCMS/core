@@ -52,14 +52,16 @@ describe('content list command', () => {
                     title: 'My First Post',
                     hash: 'h1',
                     pulledAt: '2025-01-01',
-                    inode: 'i1'
+                    inode: 'i1',
+                    source: 'demo'
                 },
                 'id-2': {
                     file: '2b100a.md',
                     title: 'Getting Started',
                     hash: 'h2',
                     pulledAt: '2025-01-01',
-                    inode: 'i2'
+                    inode: 'i2',
+                    source: 'demo'
                 }
             }),
             'utf-8'
@@ -76,7 +78,8 @@ describe('content list command', () => {
                     title: 'John Doe',
                     hash: 'h3',
                     pulledAt: '2025-01-01',
-                    inode: 'i3'
+                    inode: 'i3',
+                    source: 'staging'
                 }
             }),
             'utf-8'
@@ -84,9 +87,11 @@ describe('content list command', () => {
 
         await listCommand.run!({ args: {} } as never);
 
-        // Should list both content types
+        // Should list both content types with source
         expect(consola.log).toHaveBeenCalledWith(expect.stringContaining('Blog'));
+        expect(consola.log).toHaveBeenCalledWith(expect.stringContaining('from demo'));
         expect(consola.log).toHaveBeenCalledWith(expect.stringContaining('Author'));
+        expect(consola.log).toHaveBeenCalledWith(expect.stringContaining('from staging'));
         expect(consola.log).toHaveBeenCalledWith(expect.stringContaining('My First Post'));
         expect(consola.log).toHaveBeenCalledWith(expect.stringContaining('John Doe'));
     });
@@ -102,7 +107,8 @@ describe('content list command', () => {
                     title: 'Blog Post',
                     hash: 'h1',
                     pulledAt: '2025-01-01',
-                    inode: 'i1'
+                    inode: 'i1',
+                    source: 'demo'
                 }
             }),
             'utf-8'
@@ -118,7 +124,8 @@ describe('content list command', () => {
                     title: 'Author Name',
                     hash: 'h2',
                     pulledAt: '2025-01-01',
-                    inode: 'i2'
+                    inode: 'i2',
+                    source: 'demo'
                 }
             }),
             'utf-8'
@@ -143,7 +150,8 @@ describe('content list command', () => {
                     title: 'Test',
                     hash: 'h1',
                     pulledAt: '2025-01-01',
-                    inode: 'i1'
+                    inode: 'i1',
+                    source: 'demo'
                 }
             }),
             'utf-8'
@@ -166,7 +174,8 @@ describe('content list command', () => {
                     title: 'Test',
                     hash: 'h1',
                     pulledAt: '2025-01-01',
-                    inode: 'i1'
+                    inode: 'i1',
+                    source: 'demo'
                 }
             }),
             'utf-8'

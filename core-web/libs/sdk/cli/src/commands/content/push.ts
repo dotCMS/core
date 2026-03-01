@@ -141,7 +141,8 @@ export const pushCommand = defineCommand({
                     filePath,
                     systemAction,
                     force,
-                    resolvedMap
+                    resolvedMap,
+                    instance.name
                 );
                 results.push(result);
 
@@ -276,7 +277,8 @@ async function pushFile(
     filePath: string,
     systemAction: string,
     force: boolean,
-    resolvedMap: Map<string, ResolvedIdentifier | null>
+    resolvedMap: Map<string, ResolvedIdentifier | null>,
+    instanceName: string
 ): Promise<PushResult> {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const parsed = parseContentFile(filePath, fileContent);
@@ -391,7 +393,8 @@ async function pushFile(
         title: (parsed.frontmatter.title as string) || '',
         hash,
         pulledAt: new Date().toISOString(),
-        inode: newInode
+        inode: newInode,
+        source: instanceName
     };
     updateSnapshotEntry(contentDir, newIdentifier, newSnapshotEntry);
 

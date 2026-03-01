@@ -213,7 +213,7 @@ export async function buildMultipartPayload(
 
     // Add contentlet JSON as a part — must be wrapped in { contentlet: ... }
     // Include binaryFields array so the server knows which fields receive uploaded files
-    const binaryFieldNames = binaries.map(b => b.fieldVariable);
+    const binaryFieldNames = binaries.map((b) => b.fieldVariable);
     const wrappedJson = JSON.stringify({
         contentlet: contentletJson,
         binaryFields: binaryFieldNames

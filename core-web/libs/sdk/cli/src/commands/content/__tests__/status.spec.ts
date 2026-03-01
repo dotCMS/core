@@ -96,12 +96,15 @@ describe('content status command', () => {
         expect(scanContentFiles).toHaveBeenCalledWith(tmpDir);
     });
 
-    it('should display instance name in status header', async () => {
+    it('should display generic status header without instance name', async () => {
         (scanContentFiles as jest.Mock).mockReturnValue(new Map());
 
         await statusCommand.run!({ args: {} } as never);
 
-        expect(consola.info).toHaveBeenCalledWith(expect.stringContaining('instance: demo'));
+        expect(consola.info).toHaveBeenCalledWith(expect.stringContaining('Content status:'));
+        // Should NOT include instance name in header
+        const infoCalls = consola.info.mock.calls.map((c: unknown[]) => String(c[0]));
+        expect(infoCalls.some((l) => l.includes('instance:'))).toBe(false);
     });
 
     it('should use --from flag to target specific instance', async () => {
@@ -151,6 +154,33 @@ describe('content status command', () => {
         await statusCommand.run!({ args: {} } as never);
 
         expect(consola.log).toHaveBeenCalledWith(expect.stringContaining('M'));
+    });
+
+    it('should display source per file for modified files', async () => {
+        const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+        fs.mkdirSync(contentDir, { recursive: true });
+        // Create a snapshot with source info
+        fs.writeFileSync(
+            path.join(contentDir, '.snapshot.json'),
+            JSON.stringify({
+                'id-1': {
+                    file: 'abc123.md',
+                    title: 'Test',
+                    hash: 'h1',
+                    pulledAt: '2025-01-01',
+                    inode: 'i1',
+                    source: 'staging'
+                }
+            }),
+            'utf-8'
+        );
+
+        const filePath = path.join(contentDir, 'abc123.md');
+        (scanContentFiles as jest.Mock).mockReturnValue(new Map([[filePath, 'modified']]));
+
+        await statusCommand.run!({ args: {} } as never);
+
+        expect(consola.log).toHaveBeenCalledWith(expect.stringContaining('from staging'));
     });
 
     it('should display new files with + prefix', async () => {

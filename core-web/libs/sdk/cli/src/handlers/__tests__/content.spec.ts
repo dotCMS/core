@@ -621,6 +621,144 @@ describe('buildPushPayload', () => {
         expect(result.contentlet['title']).toBe('Test');
     });
 
+    it('should strip dotContent nodes in StoryBlock body to identifier + languageId', () => {
+        const storyBlockSchema = makeSchema([
+            makeField({ variable: 'title', fieldType: 'Text', sortOrder: 1 }),
+            makeField({
+                variable: 'blogContent',
+                fieldType: 'Story-Block',
+                sortOrder: 2,
+                dataType: 'TEXT'
+            })
+        ]);
+
+        // StoryBlock body as YAML (how it appears in the .md file after pull)
+        const storyBlockBody = [
+            'type: doc',
+            'content:',
+            '  - type: dotContent',
+            '    attrs:',
+            '      data:',
+            '        identifier: abc-123',
+            '        languageId: 1',
+            '        title: French Alps',
+            '        contentType: Destination',
+            '        activities:',
+            '          - identifier: rel-1',
+            '            title: Skiing',
+            '          - identifier: rel-2',
+            '            title: Snowboarding',
+            '  - type: paragraph',
+            '    content:',
+            '      - type: text',
+            '        text: Hello'
+        ].join('\n');
+
+        const parsed = {
+            frontmatter: {
+                contentType: 'BlogPost',
+                identifier: 'abc123def456',
+                language: 'en-US',
+                inode: 'inode-001',
+                modDate: '2024-01-15T10:30:00Z',
+                bodyField: 'blogContent',
+                title: 'Test Blog'
+            } as ContentletRecord & {
+                contentType: string;
+                identifier: string;
+                language: string;
+                inode: string;
+                modDate: string;
+                bodyField: string;
+            },
+            body: storyBlockBody,
+            filePath: '/path/to/abc123.md'
+        };
+
+        const result = buildPushPayload(parsed, storyBlockSchema);
+
+        // blogContent should be a JSON string
+        expect(typeof result.contentlet['blogContent']).toBe('string');
+
+        const blogContent = JSON.parse(result.contentlet['blogContent'] as string);
+        const dotContentNode = blogContent.content[0];
+
+        // dotContent should only have identifier and languageId
+        expect(dotContentNode.type).toBe('dotContent');
+        expect(dotContentNode.attrs.data).toEqual({
+            identifier: 'abc-123',
+            languageId: 1
+        });
+        // Expanded fields should be stripped
+        expect(dotContentNode.attrs.data.title).toBeUndefined();
+        expect(dotContentNode.attrs.data.activities).toBeUndefined();
+
+        // Non-dotContent nodes should be preserved
+        const paragraphNode = blogContent.content[1];
+        expect(paragraphNode.type).toBe('paragraph');
+        expect(paragraphNode.content[0].text).toBe('Hello');
+    });
+
+    it('should strip dotContent nodes in StoryBlock frontmatter fields', () => {
+        const storyBlockSchema = makeSchema([
+            makeField({ variable: 'title', fieldType: 'Text', sortOrder: 1 }),
+            makeField({
+                variable: 'extraContent',
+                fieldType: 'StoryBlock',
+                sortOrder: 2,
+                dataType: 'TEXT'
+            })
+        ]);
+
+        const storyBlockObj = {
+            type: 'doc',
+            content: [
+                {
+                    type: 'dotContent',
+                    attrs: {
+                        data: {
+                            identifier: 'xyz-789',
+                            languageId: 1,
+                            title: 'Embedded Content',
+                            contentType: 'Activity',
+                            body: '<p>Full body text</p>'
+                        }
+                    }
+                }
+            ]
+        };
+
+        const parsed = {
+            frontmatter: {
+                contentType: 'BlogPost',
+                identifier: 'abc123def456',
+                language: 'en-US',
+                inode: 'inode-001',
+                modDate: '2024-01-15T10:30:00Z',
+                bodyField: 'body',
+                title: 'Test',
+                extraContent: storyBlockObj
+            } as ContentletRecord & {
+                contentType: string;
+                identifier: string;
+                language: string;
+                inode: string;
+                modDate: string;
+                bodyField: string;
+            },
+            body: '',
+            filePath: '/path/to/abc123.md'
+        };
+
+        const result = buildPushPayload(parsed, storyBlockSchema);
+
+        const extraContent = JSON.parse(result.contentlet['extraContent'] as string);
+        expect(extraContent.content[0].attrs.data).toEqual({
+            identifier: 'xyz-789',
+            languageId: 1
+        });
+    });
+
     it('should not include metadata fields as user content', () => {
         const parsed = {
             frontmatter: {

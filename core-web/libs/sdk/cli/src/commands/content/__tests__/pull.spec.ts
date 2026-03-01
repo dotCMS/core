@@ -38,7 +38,9 @@ jest.mock('../../../core/cache', () => ({
 jest.mock('../../../core/snapshot', () => ({
     computeContentHash: jest.fn().mockReturnValue('abc123hash'),
     updateSnapshotEntry: jest.fn(),
-    loadSnapshot: jest.fn().mockReturnValue({})
+    loadSnapshot: jest.fn().mockReturnValue({}),
+    findEntryByFile: jest.fn().mockReturnValue(null),
+    saveSnapshot: jest.fn()
 }));
 
 jest.mock('../../../handlers/content', () => ({
@@ -58,7 +60,12 @@ import { resolveToken } from '../../../core/auth';
 import { getCachedContentType } from '../../../core/cache';
 import { loadConfig, resolveInstance } from '../../../core/config';
 import { createHttpClient, get, graphql } from '../../../core/http';
-import { updateSnapshotEntry } from '../../../core/snapshot';
+import {
+    findEntryByFile,
+    loadSnapshot,
+    saveSnapshot,
+    updateSnapshotEntry
+} from '../../../core/snapshot';
 import { serializeContentlet } from '../../../handlers/content';
 import { pullCommand } from '../pull';
 
@@ -186,6 +193,75 @@ describe('content pull command', () => {
         expect(serializeContentlet).toHaveBeenCalled();
         expect(updateSnapshotEntry).toHaveBeenCalled();
         expect(consola.success).toHaveBeenCalledWith(expect.stringContaining('Pulled'));
+    });
+
+    it('should include source in snapshot entry', async () => {
+        await pullCommand.run!({ args: {} } as never);
+
+        expect(updateSnapshotEntry).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.any(String),
+            expect.objectContaining({ source: 'demo' })
+        );
+    });
+
+    it('should warn when overwriting locally modified files', async () => {
+        const entry = {
+            file: 'abc123.md',
+            title: 'Test',
+            hash: 'old-hash-before-local-edit',
+            pulledAt: '2025-01-01',
+            inode: 'inode-1',
+            source: 'demo'
+        };
+
+        // findEntryByFile looks up by filename — return a match with stale hash
+        (findEntryByFile as jest.Mock).mockReturnValue(['abc12345-6789', entry]);
+        // loadSnapshot returns the snapshot (needed for stale cleanup)
+        (loadSnapshot as jest.Mock).mockReturnValue({
+            'abc12345-6789': entry
+        });
+        // computeContentHash returns 'abc123hash' by default which differs from 'old-hash-before-local-edit'
+
+        // Create the file on disk so fs.existsSync returns true
+        const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+        fs.mkdirSync(contentDir, { recursive: true });
+        fs.writeFileSync(path.join(contentDir, 'abc123.md'), 'existing content', 'utf-8');
+
+        await pullCommand.run!({ args: {} } as never);
+
+        expect(consola.warn).toHaveBeenCalledWith(
+            expect.stringContaining('Overwriting local changes')
+        );
+    });
+
+    it('should remove stale entries not in current pull', async () => {
+        const staleEntry = {
+            file: 'stale1.md',
+            title: 'Stale',
+            hash: 'stale-hash',
+            pulledAt: '2025-01-01',
+            inode: 'stale-inode',
+            source: 'other-instance'
+        };
+
+        // loadSnapshot returns the stale entry (identifier differs from pulled one)
+        (loadSnapshot as jest.Mock).mockReturnValue({
+            'stale-id-999': staleEntry
+        });
+
+        // Create the stale file on disk
+        const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+        fs.mkdirSync(contentDir, { recursive: true });
+        fs.writeFileSync(path.join(contentDir, 'stale1.md'), 'old content', 'utf-8');
+
+        await pullCommand.run!({ args: {} } as never);
+
+        // Stale file should be removed
+        expect(fs.existsSync(path.join(contentDir, 'stale1.md'))).toBe(false);
+        // saveSnapshot should be called to persist the cleanup
+        expect(saveSnapshot).toHaveBeenCalled();
+        expect(consola.info).toHaveBeenCalledWith(expect.stringContaining('Removed stale'));
     });
 
     it('should pull by --type flag', async () => {

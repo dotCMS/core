@@ -10,7 +10,13 @@ import { loadConfig, resolveInstance } from '../../core/config';
 import { createHttpClient } from '../../core/http';
 import { resolveIdentifiersOnServer } from '../../core/resolve';
 import { scanContentFiles } from '../../core/snapshot';
-import { CACHE_DIR, DOTCLI_DIR, type FileState } from '../../core/types';
+import {
+    CACHE_DIR,
+    DOTCLI_DIR,
+    SNAPSHOT_FILE,
+    type FileState,
+    type SnapshotStore
+} from '../../core/types';
 import { parseContentFile } from '../../handlers/content';
 
 export const statusCommand = defineCommand({
@@ -116,7 +122,10 @@ export const statusCommand = defineCommand({
             }
         }
 
-        consola.info(`Content status (instance: ${instance.name}):\n`);
+        // Build a map of file → source from co-located snapshots
+        const sourceMap = buildSourceMap(projectDir);
+
+        consola.info('Content status:\n');
         consola.log(`  ${grouped.unchanged.length} unchanged`);
         consola.log(`  ${grouped.modified.length} modified`);
         consola.log(`  ${grouped.new.length} new`);
@@ -128,7 +137,10 @@ export const statusCommand = defineCommand({
         if (grouped.modified.length > 0) {
             consola.log('\nModified:');
             for (const file of grouped.modified) {
-                consola.log(`  M  ${path.relative(projectDir, file)}`);
+                const rel = path.relative(projectDir, file);
+                const source = sourceMap.get(file);
+                const sourceLabel = source ? ` (from ${source})` : '';
+                consola.log(`  M  ${rel}${sourceLabel}`);
             }
         }
 
@@ -149,7 +161,10 @@ export const statusCommand = defineCommand({
         if (grouped.deleted.length > 0) {
             consola.log('\nDeleted:');
             for (const file of grouped.deleted) {
-                consola.log(`  -  ${path.relative(projectDir, file)}`);
+                const rel = path.relative(projectDir, file);
+                const source = sourceMap.get(file);
+                const sourceLabel = source ? ` (from ${source})` : '';
+                consola.log(`  -  ${rel}${sourceLabel}`);
             }
         }
 
@@ -163,3 +178,46 @@ export const statusCommand = defineCommand({
         }
     }
 });
+
+/**
+ * Build a map of absolute file path → source instance name by reading
+ * co-located .snapshot.json files under the project directory.
+ */
+function buildSourceMap(projectDir: string): Map<string, string> {
+    const sourceMap = new Map<string, string>();
+    walkForSourceMap(projectDir, sourceMap);
+    return sourceMap;
+}
+
+function walkForSourceMap(dir: string, sourceMap: Map<string, string>): void {
+    if (!fs.existsSync(dir)) return;
+
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+        if (entry.name.startsWith('.') && entry.name !== SNAPSHOT_FILE) {
+            continue;
+        }
+
+        const fullPath = path.join(dir, entry.name);
+
+        if (entry.isDirectory()) {
+            walkForSourceMap(fullPath, sourceMap);
+        } else if (entry.name === SNAPSHOT_FILE) {
+            try {
+                const raw = fs.readFileSync(fullPath, 'utf-8');
+                const snapshot = JSON.parse(raw) as SnapshotStore;
+                const contentDir = path.dirname(fullPath);
+
+                for (const [, snapshotEntry] of Object.entries(snapshot)) {
+                    if (snapshotEntry.source) {
+                        const filePath = path.join(contentDir, snapshotEntry.file);
+                        sourceMap.set(filePath, snapshotEntry.source);
+                    }
+                }
+            } catch {
+                // Skip unreadable snapshots
+            }
+        }
+    }
+}
