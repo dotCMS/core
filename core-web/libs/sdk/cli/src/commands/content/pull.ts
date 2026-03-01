@@ -1,3 +1,4 @@
+import * as prompts from '@clack/prompts';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 
@@ -48,7 +49,8 @@ export const pullCommand = defineCommand({
         from: { type: 'string', description: 'Source instance name' },
         query: { type: 'string', description: 'Lucene query filter' },
         language: { type: 'string', description: 'Language code (e.g., es-ES)' },
-        'with-binaries': { type: 'boolean', description: 'Download binary sidecar files' }
+        'with-binaries': { type: 'boolean', description: 'Download binary sidecar files' },
+        force: { type: 'boolean', description: 'Overwrite local changes without confirmation' }
     },
     async run({ args }) {
         const projectDir = process.cwd();
@@ -80,6 +82,8 @@ export const pullCommand = defineCommand({
         const languageMap = await fetchLanguageMap(client);
 
         // 4. Pull by ID or by content types
+        const force = !!args.force;
+
         if (args.id) {
             await pullSingleContentlet(
                 client,
@@ -88,7 +92,8 @@ export const pullCommand = defineCommand({
                 languageMap,
                 args.id as string,
                 !!args['with-binaries'],
-                instance.name
+                instance.name,
+                force
             );
         } else {
             const pullEntries = buildPullEntries(config.pull, args);
@@ -109,7 +114,8 @@ export const pullCommand = defineCommand({
                     languageMap,
                     entry,
                     !!args['with-binaries'],
-                    instance.name
+                    instance.name,
+                    force
                 );
                 totalPulled += count;
             }
@@ -164,7 +170,8 @@ async function pullSingleContentlet(
     languageMap: LanguageMap,
     identifier: string,
     withBinaries: boolean,
-    instanceName: string
+    instanceName: string,
+    force: boolean
 ): Promise<void> {
     // Fetch contentlet by identifier using REST API to get content type first
     const response = await get<{ entity: ContentletRecord }>(
@@ -190,14 +197,26 @@ async function pullSingleContentlet(
 
     const filePath = path.join(contentDir, result.filename);
 
-    // Warn if overwriting local modifications
+    // Check for local modifications and confirm before overwriting
     if (fs.existsSync(filePath)) {
         const snapshot = loadSnapshot(contentDir);
         const match = findEntryByFile(snapshot, result.filename);
         if (match) {
             const currentHash = computeContentHash(filePath);
             if (currentHash !== match[1].hash) {
-                consola.warn(`Overwriting local changes: ${path.relative(projectDir, filePath)}`);
+                const relativePath = path.relative(projectDir, filePath);
+                if (!force) {
+                    consola.warn(`Local changes detected: ${relativePath}`);
+                    const confirmed = await prompts.confirm({
+                        message: `Overwrite local changes in ${relativePath}?`
+                    });
+                    if (prompts.isCancel(confirmed) || !confirmed) {
+                        consola.info(`Skipped: ${relativePath}`);
+                        return;
+                    }
+                } else {
+                    consola.warn(`Overwriting local changes: ${relativePath}`);
+                }
             }
         }
     }
@@ -230,7 +249,8 @@ async function pullContentType(
     languageMap: LanguageMap,
     entry: PullConfigEntry,
     withBinaries: boolean,
-    instanceName: string
+    instanceName: string,
+    force: boolean
 ): Promise<number> {
     const schema = await fetchOrCacheSchema(client, cacheDir, entry.type);
 
@@ -246,6 +266,9 @@ async function pullContentType(
     // Track content dirs we write to (for cleanup pass)
     const touchedContentDirs = new Set<string>();
 
+    // Collect all records first so we can detect conflicts before writing
+    const allRecords: ContentletRecord[] = [];
+
     while (hasMore) {
         const queryOptions: GraphQLQueryOptions = {
             site: entry.site,
@@ -259,56 +282,70 @@ async function pullContentType(
         const data = await graphql<Record<string, ContentletRecord[]>>(client, gqlQuery);
         const collectionName = `${schema.variable}Collection`;
         const records = data[collectionName] ?? [];
-
-        for (const record of records) {
-            const host = record['host'] as Record<string, unknown> | undefined;
-            const hostName = (host?.['hostName'] || record['hostName'] || 'default') as string;
-            const contentDir = path.join(projectDir, hostName, 'content', entry.type);
-            fs.mkdirSync(contentDir, { recursive: true });
-            touchedContentDirs.add(contentDir);
-
-            const result = serializeContentlet(record, schema, languageMap);
-            const filePath = path.join(contentDir, result.filename);
-
-            // Warn if overwriting local modifications
-            if (fs.existsSync(filePath)) {
-                const snapshot = loadSnapshot(contentDir);
-                const match = findEntryByFile(snapshot, result.filename);
-                if (match) {
-                    const currentHash = computeContentHash(filePath);
-                    if (currentHash !== match[1].hash) {
-                        consola.warn(
-                            `Overwriting local changes: ${path.relative(projectDir, filePath)}`
-                        );
-                    }
-                }
-            }
-
-            fs.writeFileSync(filePath, result.content, 'utf-8');
-
-            // Update snapshot
-            const hash = computeContentHash(filePath);
-            const recordIdentifier = record['identifier'] as string;
-            const snapshotEntry: SnapshotEntry = {
-                file: result.filename,
-                title: (record['title'] as string) || '',
-                hash,
-                pulledAt: new Date().toISOString(),
-                inode: record['inode'] as string,
-                source: instanceName
-            };
-            updateSnapshotEntry(contentDir, recordIdentifier, snapshotEntry);
-            pulledIdentifiers.add(recordIdentifier);
-
-            if (withBinaries && result.binaries.length > 0) {
-                await downloadContentBinaries(client, record, schema, contentDir);
-            }
-
-            totalPulled++;
-        }
+        allRecords.push(...records);
 
         hasMore = records.length === limit;
         offset += limit;
+    }
+
+    // Detect locally modified files that would be overwritten
+    if (!force) {
+        const modifiedFiles = detectLocallyModifiedFiles(
+            allRecords,
+            schema,
+            languageMap,
+            projectDir,
+            entry.type
+        );
+
+        if (modifiedFiles.length > 0) {
+            for (const f of modifiedFiles) {
+                consola.warn(`Local changes detected: ${f}`);
+            }
+
+            const confirmed = await prompts.confirm({
+                message: `Overwrite ${modifiedFiles.length} locally modified file(s)?`
+            });
+
+            if (prompts.isCancel(confirmed) || !confirmed) {
+                consola.info('Pull aborted.');
+                return 0;
+            }
+        }
+    }
+
+    // Write all records
+    for (const record of allRecords) {
+        const host = record['host'] as Record<string, unknown> | undefined;
+        const hostName = (host?.['hostName'] || record['hostName'] || 'default') as string;
+        const contentDir = path.join(projectDir, hostName, 'content', entry.type);
+        fs.mkdirSync(contentDir, { recursive: true });
+        touchedContentDirs.add(contentDir);
+
+        const result = serializeContentlet(record, schema, languageMap);
+        const filePath = path.join(contentDir, result.filename);
+
+        fs.writeFileSync(filePath, result.content, 'utf-8');
+
+        // Update snapshot
+        const hash = computeContentHash(filePath);
+        const recordIdentifier = record['identifier'] as string;
+        const snapshotEntry: SnapshotEntry = {
+            file: result.filename,
+            title: (record['title'] as string) || '',
+            hash,
+            pulledAt: new Date().toISOString(),
+            inode: record['inode'] as string,
+            source: instanceName
+        };
+        updateSnapshotEntry(contentDir, recordIdentifier, snapshotEntry);
+        pulledIdentifiers.add(recordIdentifier);
+
+        if (withBinaries && result.binaries.length > 0) {
+            await downloadContentBinaries(client, record, schema, contentDir);
+        }
+
+        totalPulled++;
     }
 
     // Clean up stale entries: remove snapshot entries and files that were not
@@ -339,4 +376,40 @@ async function pullContentType(
 
     consola.success(`Pulled ${totalPulled} ${entry.type} contentlet(s).`);
     return totalPulled;
+}
+
+/**
+ * Scans fetched records against existing local files to find ones with local modifications.
+ * Returns relative paths of locally modified files that would be overwritten.
+ */
+function detectLocallyModifiedFiles(
+    records: ContentletRecord[],
+    schema: ContentTypeSchema,
+    languageMap: LanguageMap,
+    projectDir: string,
+    contentType: string
+): string[] {
+    const modified: string[] = [];
+
+    for (const record of records) {
+        const host = record['host'] as Record<string, unknown> | undefined;
+        const hostName = (host?.['hostName'] || record['hostName'] || 'default') as string;
+        const contentDir = path.join(projectDir, hostName, 'content', contentType);
+
+        const result = serializeContentlet(record, schema, languageMap);
+        const filePath = path.join(contentDir, result.filename);
+
+        if (fs.existsSync(filePath)) {
+            const snapshot = loadSnapshot(contentDir);
+            const match = findEntryByFile(snapshot, result.filename);
+            if (match) {
+                const currentHash = computeContentHash(filePath);
+                if (currentHash !== match[1].hash) {
+                    modified.push(path.relative(projectDir, filePath));
+                }
+            }
+        }
+    }
+
+    return modified;
 }

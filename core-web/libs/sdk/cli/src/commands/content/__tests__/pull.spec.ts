@@ -1,3 +1,5 @@
+import * as prompts from '@clack/prompts';
+
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -13,6 +15,11 @@ const mockConsola = {
 jest.mock('consola', () => ({
     __esModule: true,
     default: mockConsola
+}));
+
+jest.mock('@clack/prompts', () => ({
+    confirm: jest.fn().mockResolvedValue(true),
+    isCancel: jest.fn().mockReturnValue(false)
 }));
 
 jest.mock('../../../core/config', () => ({
@@ -205,7 +212,7 @@ describe('content pull command', () => {
         );
     });
 
-    it('should warn when overwriting locally modified files', async () => {
+    it('should prompt for confirmation when overwriting locally modified files', async () => {
         const entry = {
             file: 'abc123.md',
             title: 'Test',
@@ -228,11 +235,73 @@ describe('content pull command', () => {
         fs.mkdirSync(contentDir, { recursive: true });
         fs.writeFileSync(path.join(contentDir, 'abc123.md'), 'existing content', 'utf-8');
 
+        (prompts.confirm as jest.Mock).mockResolvedValue(true);
+
         await pullCommand.run!({ args: {} } as never);
 
         expect(consola.warn).toHaveBeenCalledWith(
-            expect.stringContaining('Overwriting local changes')
+            expect.stringContaining('Local changes detected')
         );
+        expect(prompts.confirm).toHaveBeenCalledWith(
+            expect.objectContaining({ message: expect.stringContaining('Overwrite') })
+        );
+        // Should proceed with pull after confirmation
+        expect(updateSnapshotEntry).toHaveBeenCalled();
+    });
+
+    it('should abort pull when user declines overwrite confirmation', async () => {
+        const entry = {
+            file: 'abc123.md',
+            title: 'Test',
+            hash: 'old-hash-before-local-edit',
+            pulledAt: '2025-01-01',
+            inode: 'inode-1',
+            source: 'demo'
+        };
+
+        (findEntryByFile as jest.Mock).mockReturnValue(['abc12345-6789', entry]);
+        (loadSnapshot as jest.Mock).mockReturnValue({
+            'abc12345-6789': entry
+        });
+
+        const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+        fs.mkdirSync(contentDir, { recursive: true });
+        fs.writeFileSync(path.join(contentDir, 'abc123.md'), 'existing content', 'utf-8');
+
+        (prompts.confirm as jest.Mock).mockResolvedValue(false);
+
+        await pullCommand.run!({ args: {} } as never);
+
+        expect(consola.info).toHaveBeenCalledWith('Pull aborted.');
+        // Should NOT write any files
+        expect(updateSnapshotEntry).not.toHaveBeenCalled();
+    });
+
+    it('should skip confirmation with --force flag', async () => {
+        const entry = {
+            file: 'abc123.md',
+            title: 'Test',
+            hash: 'old-hash-before-local-edit',
+            pulledAt: '2025-01-01',
+            inode: 'inode-1',
+            source: 'demo'
+        };
+
+        (findEntryByFile as jest.Mock).mockReturnValue(['abc12345-6789', entry]);
+        (loadSnapshot as jest.Mock).mockReturnValue({
+            'abc12345-6789': entry
+        });
+
+        const contentDir = path.join(tmpDir, 'default', 'content', 'Blog');
+        fs.mkdirSync(contentDir, { recursive: true });
+        fs.writeFileSync(path.join(contentDir, 'abc123.md'), 'existing content', 'utf-8');
+
+        await pullCommand.run!({ args: { force: true } } as never);
+
+        // Should NOT prompt
+        expect(prompts.confirm).not.toHaveBeenCalled();
+        // Should proceed with pull
+        expect(updateSnapshotEntry).toHaveBeenCalled();
     });
 
     it('should remove stale entries not in current pull', async () => {
