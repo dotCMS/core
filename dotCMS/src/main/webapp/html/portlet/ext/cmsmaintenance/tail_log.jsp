@@ -922,13 +922,13 @@
 
 <div dojoType="dijit.Dialog" id="downloadLogDialog" title="<%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download") %>" style="width:350px;">
     <div style="padding:15px; text-align:center;">
-        <p style="margin-bottom:15px;"><%= com.liferay.portal.language.LanguageUtil.get(pageContext,"Download-log-from") %></p>
+        <p style="margin-bottom:15px;"><%= com.liferay.portal.language.LanguageUtil.get(pageContext,"maintenance.logs.download.prompt") %></p>
         <div class="buttonRow" style="display:flex; justify-content:center; gap:10px;">
             <button dojoType="dijit.form.Button" onClick="downloadSingleLog()">
-                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"This-Server") %>
+                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"maintenance.logs.download.this-server") %>
             </button>
             <button dojoType="dijit.form.Button" onClick="downloadClusterLogs()">
-                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"All-Cluster-Nodes") %>
+                <%= com.liferay.portal.language.LanguageUtil.get(pageContext,"maintenance.logs.download.all-cluster-nodes") %>
             </button>
         </div>
     </div>
