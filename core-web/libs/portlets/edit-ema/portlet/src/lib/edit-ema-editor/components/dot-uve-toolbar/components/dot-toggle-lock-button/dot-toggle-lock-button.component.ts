@@ -25,7 +25,6 @@ export interface ToggleLockEvent {
 @Component({
     selector: 'dot-toggle-lock-button',
     templateUrl: './dot-toggle-lock-button.component.html',
-    styleUrls: ['./dot-toggle-lock-button.component.scss'],
     imports: [ButtonModule, TooltipModule, DotMessagePipe]
 })
 export class DotToggleLockButtonComponent {

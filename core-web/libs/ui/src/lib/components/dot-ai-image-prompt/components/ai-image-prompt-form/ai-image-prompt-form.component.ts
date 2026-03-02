@@ -19,13 +19,12 @@ import {
     Validators
 } from '@angular/forms';
 
-import { AccordionModule } from 'primeng/accordion';
+import { Accordion, AccordionPanel, AccordionHeader, AccordionContent } from 'primeng/accordion';
 import { SelectItem } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { RadioButtonModule } from 'primeng/radiobutton';
-import { TooltipModule } from 'primeng/tooltip';
+import { Button } from 'primeng/button';
+import { RadioButton } from 'primeng/radiobutton';
+import { Select } from 'primeng/select';
+import { Textarea } from 'primeng/textarea';
 
 import { filter } from 'rxjs/operators';
 
@@ -46,14 +45,16 @@ import { DotValidators } from './../../../../validators/dotValidators';
     selector: 'dot-ai-image-prompt-form',
     templateUrl: './ai-image-prompt-form.component.html',
     imports: [
-        ButtonModule,
-        AccordionModule,
-        TooltipModule,
-        RadioButtonModule,
+        Button,
+        Accordion,
+        AccordionPanel,
+        AccordionHeader,
+        AccordionContent,
+        RadioButton,
         ReactiveFormsModule,
         FormsModule,
-        DropdownModule,
-        InputTextareaModule,
+        Select,
+        Textarea,
         DotFieldRequiredDirective,
         DotMessagePipe,
         DotCopyButtonComponent

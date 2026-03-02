@@ -73,8 +73,8 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should display lock-open icon when page is unlocked', () => {
-            const icon = spectator.query('.lock-button i.pi-lock-open');
-            expect(icon).toBeTruthy();
+            const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+            expect(button?.querySelector('.pi-lock-open')).toBeTruthy();
         });
 
         it('should display unlocked label', () => {
@@ -118,8 +118,8 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should display lock icon', () => {
-            const icon = spectator.query('.lock-button i.pi-lock');
-            expect(icon).toBeTruthy();
+            const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+            expect(button?.querySelector('.pi-lock')).toBeTruthy();
         });
 
         it('should display locked label', () => {
@@ -197,8 +197,10 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should disable button when loading', () => {
-            const button = spectator.query(byTestId('toggle-lock-button'));
-            expect(button).toBeDisabled();
+            const host = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+            const button = host?.querySelector('button') as HTMLButtonElement | null;
+            expect(button).toBeTruthy();
+            expect(button?.disabled).toBe(true);
         });
 
         it('should not emit event when button is clicked during loading', () => {

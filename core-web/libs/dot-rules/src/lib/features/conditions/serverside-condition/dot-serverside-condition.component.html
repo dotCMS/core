@@ -1,0 +1,128 @@
+<div class="w-full">
+    <div class="w-full gap-3 items-center flex flex-row flex-1">
+        @for (input of inputs; track $index) {
+            @if (input.type === 'spacer') {
+                <div class="dot-rules-input dot-rules-input-placeholder flex-1">&nbsp;</div>
+            }
+            @if (input.type === 'dropdown') {
+                <p-select
+                    (onChange)="onDropdownChange(input, $event.value)"
+                    [ngModel]="input.value"
+                    [ngModelOptions]="{ standalone: true }"
+                    [options]="input.options$ | async"
+                    [style]="{ width: '100%' }"
+                    [required]="input.required"
+                    [placeholder]="input.placeholder | async"
+                    [editable]="input.allowAdditions"
+                    [filter]="true"
+                    [class.min-w-24]="input.name === 'comparison'"
+                    [class.max-w-24]="input.name === 'comparison'"
+                    [class.flex-none]="input.name === 'comparison'"
+                    [class.dot-rules-last]="isLast"
+                    [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
+                    class="dot-rules-input flex-1"
+                    appendTo="body" />
+            }
+            @if (input.type === 'restDropdown') {
+                <div
+                    [class.dot-rules-last]="isLast"
+                    class="dot-rules-input flex-1 w-full min-h-full flex flex-col">
+                    @if (input.maxSelections > 1) {
+                        <p-multiSelect
+                            (onChange)="onRestDropdownChange(input, $event.value)"
+                            [ngModel]="input.modelValue"
+                            [ngModelOptions]="{ standalone: true }"
+                            [options]="input.options$ | async"
+                            [style]="{ width: '100%' }"
+                            [placeholder]="input.placeholder | async"
+                            [hidden]="
+                                input.argIndex !== null && input.argIndex >= rightHandArgCount
+                            "
+                            [class.min-w-24]="input.name === 'comparison'"
+                            [class.max-w-24]="input.name === 'comparison'"
+                            [class.flex-none]="input.name === 'comparison'"
+                            [class.dot-rules-last]="isLast"
+                            class="dot-rules-input flex-1"
+                            appendTo="body"
+                            #rdInputMulti="ngModel" />
+                        @if (
+                            (rdInputMulti.touched || input.control.touched) &&
+                            (!rdInputMulti.valid || input.control.errors) &&
+                            (input.argIndex === null || input.argIndex < rightHandArgCount)
+                        ) {
+                            <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
+                                {{ getErrorMessage(input) }}
+                            </div>
+                        }
+                    } @else {
+                        <p-select
+                            (onChange)="onRestDropdownChange(input, $event.value)"
+                            [ngModel]="input.value"
+                            [ngModelOptions]="{ standalone: true }"
+                            [options]="input.options$ | async"
+                            [style]="{ width: '100%' }"
+                            [required]="input.required"
+                            [placeholder]="input.placeholder | async"
+                            [editable]="input.allowAdditions"
+                            [filter]="true"
+                            [hidden]="
+                                input.argIndex !== null && input.argIndex >= rightHandArgCount
+                            "
+                            [class.min-w-24]="input.name === 'comparison'"
+                            [class.max-w-24]="input.name === 'comparison'"
+                            [class.flex-none]="input.name === 'comparison'"
+                            [class.dot-rules-last]="isLast"
+                            class="dot-rules-input flex-1"
+                            appendTo="body"
+                            #rdInputSingle="ngModel" />
+                        @if (
+                            rdInputSingle.touched &&
+                            !rdInputSingle.valid &&
+                            (input.argIndex === null || input.argIndex < rightHandArgCount)
+                        ) {
+                            <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
+                                {{ getErrorMessage(input) }}
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            @if (input.type === 'text' || input.type === 'number') {
+                <div
+                    [class.dot-rules-last]="isLast"
+                    class="dot-rules-input flex-1 w-full min-h-full flex flex-col">
+                    <input
+                        (blur)="onBlur(input)"
+                        [placeholder]="input.placeholder | async"
+                        [formControl]="input.control"
+                        [type]="input.type"
+                        [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
+                        pInputText
+                        #fInput="ngForm" />
+                    @if (
+                        fInput.touched &&
+                        !fInput.valid &&
+                        (input.argIndex === null || input.argIndex < rightHandArgCount)
+                    ) {
+                        <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
+                            {{ getErrorMessage(input) }}
+                        </div>
+                    }
+                </div>
+            }
+            @if (input.type === 'datetime') {
+                <p-datePicker
+                    (ngModelChange)="onDateChange(input, $event)"
+                    [ngModel]="input.dateValue"
+                    [ngModelOptions]="{ standalone: true }"
+                    [showTime]="true"
+                    [showButtonBar]="true"
+                    [class.dot-rules-last]="isLast"
+                    [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
+                    hourFormat="12"
+                    class="dot-rules-input flex-1 w-full min-h-full"
+                    appendTo="body" />
+            }
+        }
+    </div>
+</div>

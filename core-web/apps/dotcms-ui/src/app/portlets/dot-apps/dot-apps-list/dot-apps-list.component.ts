@@ -1,22 +1,29 @@
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+import { patchState, signalState } from '@ngrx/signals';
+import { fromEvent as observableFromEvent } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, AfterViewInit, inject, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, map, take } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/data-access';
-import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
-import { DotIconComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
+import { DotAppsService, DotRouterService } from '@dotcms/data-access';
+import { DotApp } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+import { DotAppsImportExportDialogStore } from '../dot-apps-import-export-dialog/store/dot-apps-import-export-dialog.store';
+
+interface DotAppsListState {
+    allApps: DotApp[];
+    displayedApps: DotApp[];
+}
 
 @Component({
     selector: 'dot-apps-list',
@@ -27,118 +34,110 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
         ButtonModule,
         DotAppsCardComponent,
         DotAppsImportExportDialogComponent,
-        DotNotLicenseComponent,
-        DotIconComponent,
         DotPortletBaseComponent,
         DotMessagePipe
     ]
 })
-export class DotAppsListComponent implements OnInit, OnDestroy {
-    private route = inject(ActivatedRoute);
-    private dotRouterService = inject(DotRouterService);
-    private dotAppsService = inject(DotAppsService);
+export class DotAppsListComponent implements AfterViewInit {
+    readonly #route = inject(ActivatedRoute);
+    readonly #dotRouterService = inject(DotRouterService);
+    readonly #dotAppsService = inject(DotAppsService);
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #dialogStore = inject(DotAppsImportExportDialogStore);
 
-    @ViewChild('searchInput') searchInput: ElementRef;
-    @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
-    apps: DotApp[];
-    appsCopy: DotApp[];
-    canAccessPortlet: boolean;
-    importExportDialogAction: string;
-    showDialog = false;
+    readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    readonly state = signalState<DotAppsListState>({
+        allApps: [],
+        displayedApps: []
+    });
 
-    ngOnInit() {
-        this.route.data
-            .pipe(pluck('dotAppsListResolverData'), takeUntil(this.destroy$))
-            .subscribe((resolverData: DotAppsListResolverData) => {
-                if (resolverData.isEnterpriseLicense) {
-                    this.getApps(resolverData.apps);
-                }
-
-                this.canAccessPortlet = resolverData.isEnterpriseLicense;
-            });
+    constructor() {
+        // Subscribe to import success to reload apps data
+        this.#dialogStore.importSuccess$
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => this.reloadAppsData());
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
+    ngAfterViewInit(): void {
+        this.#route.data
+            .pipe(
+                map((data) => data['dotAppsListResolverData']),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((apps: DotApp[]) => {
+                this.initAppsState(apps);
+            });
     }
 
     /**
      * Redirects to apps configuration listing page
-     *
-     * @param string key
-     * @memberof DotAppsListComponent
      */
     goToApp(key: string): void {
-        this.dotRouterService.goToAppsConfiguration(key);
+        this.#dotRouterService.goToAppsConfiguration(key);
     }
 
     /**
-     * Opens the Import/Export dialog for all configurations
-     *
-     * @memberof DotAppsConfigurationComponent
+     * Opens the Import dialog
      */
-    confirmImportExport(action: string): void {
-        this.showDialog = true;
-        this.importExportDialogAction = action;
+    openImportDialog(): void {
+        this.#dialogStore.openImport();
     }
 
     /**
-     * Updates dialog show/hide state
-     *
-     * @memberof DotAppsConfigurationComponent
+     * Opens the Export dialog for all configurations
      */
-    onClosedDialog(): void {
-        this.showDialog = false;
+    openExportDialog(): void {
+        // For export all, we don't pass an app - the store handles this
+        this.#dialogStore.openExport(null as unknown as DotApp);
     }
 
     /**
      * Checks if export button is disabled based on existing configurations
-     *
-     * @returns {boolean}
-     * @memberof DotAppsListComponent
      */
     isExportButtonDisabled(): boolean {
-        return this.apps.filter((app: DotApp) => app.configurationsCount).length > 0;
+        return this.state.allApps().filter((app: DotApp) => app.configurationsCount).length > 0;
     }
 
     /**
      * Reloads data of all apps configuration listing to update the UI
-     *
-     * @memberof DotAppsListComponent
      */
     reloadAppsData(): void {
-        this.dotAppsService
+        this.#dotAppsService
             .get()
             .pipe(take(1))
             .subscribe((apps: DotApp[]) => {
-                this.getApps(apps);
+                this.initAppsState(apps);
             });
     }
 
-    private getApps(apps: DotApp[]): void {
-        this.apps = apps;
-        this.appsCopy = structuredClone(apps);
-        setTimeout(() => {
-            this.attachFilterEvents();
-        }, 0);
+    private initAppsState(apps: DotApp[]): void {
+        patchState(this.state, {
+            allApps: apps,
+            displayedApps: apps
+        });
+
+        this.attachFilterEvents();
     }
 
     private attachFilterEvents(): void {
-        observableFromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(500), takeUntil(this.destroy$))
+        const searchInputEl = this.searchInput();
+        if (!searchInputEl) return;
+
+        observableFromEvent(searchInputEl.nativeElement, 'keyup')
+            .pipe(debounceTime(500), takeUntilDestroyed(this.#destroyRef))
             .subscribe((keyboardEvent: Event) => {
-                this.filterApps(keyboardEvent.target['value']);
+                this.filterApps((keyboardEvent.target as HTMLInputElement).value);
             });
 
-        this.searchInput.nativeElement.focus();
+        searchInputEl.nativeElement.focus();
     }
 
     private filterApps(searchCriteria?: string): void {
-        this.dotAppsService.get(searchCriteria).subscribe((apps: DotApp[]) => {
-            this.appsCopy = apps;
+        this.#dotAppsService.get(searchCriteria).subscribe((apps: DotApp[]) => {
+            patchState(this.state, {
+                displayedApps: apps
+            });
         });
     }
 }

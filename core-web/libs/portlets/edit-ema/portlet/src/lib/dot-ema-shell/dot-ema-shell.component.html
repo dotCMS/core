@@ -1,18 +1,18 @@
 @if ($canRead()) {
     @if ($showLockBanner() && $showBanner()) {
-        <p-messages severity="warning" data-testid="message">
+        <p-message severity="warn" data-testid="message">
             <ng-template pTemplate="content">
-                <div class="flex align-items-center justify-content-between gap-2 w-full">
-                    <div class="flex align-items-center gap-2">
+                <div class="flex w-full items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
                         <i class="pi pi-info-circle"></i>
-                        <span class="lock-message" data-testid="message-content">
+                        <span class="inline leading-6" data-testid="message-content">
                             {{
                                 'uve.shell.page.locked.locked.by'
                                     | dm: [$workflowLockOptions()?.lockedBy ?? '']
                             }}
                             @if ($workflowLockOptions()?.canLock) {
                                 <button
-                                    class="unlock-link"
+                                    class="inline-flex items-center underline text-blue-600 hover:text-blue-700"
                                     type="button"
                                     [disabled]="$workflowLockIsLoading()"
                                     (click)="toggleLock()">
@@ -30,14 +30,15 @@
                         </span>
                     </div>
                     <p-button
-                        styleClass="p-button-text p-button-sm p-button-icon-only clear-button"
+                        [text]="true"
+                        size="small"
                         type="button"
                         icon="pi pi-times"
                         data-testid="close-message"
                         (click)="onCloseMessage()" />
                 </div>
             </ng-template>
-        </p-messages>
+        </p-message>
     }
 
     <router-outlet />
@@ -50,8 +51,8 @@
 } @else {
     @if ($errorDisplay()?.code === 401) {
         <dot-not-license />
-    } @else if ($errorDisplay()?.pageInfo) {
-        <dot-info-page [info]="$errorDisplay().pageInfo" />
+    } @else if ($errorDisplay()?.pageInfo; as infoPage) {
+        <dot-info-page [info]="infoPage" />
     }
 }
 
@@ -61,11 +62,7 @@
     #dialog
     data-testId="ema-dialog" />
 <p-confirmDialog
-    [style]="{
-        width: '400px'
-    }"
+    styleClass="w-[400px]"
     key="shell-confirm-dialog"
-    rejectIcon="hidden"
-    acceptIcon="hidden"
     rejectButtonStyleClass="p-button-outlined"
     data-testId="confirm-dialog" />

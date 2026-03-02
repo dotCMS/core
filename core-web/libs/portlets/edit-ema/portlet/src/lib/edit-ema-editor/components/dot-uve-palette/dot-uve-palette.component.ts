@@ -1,5 +1,6 @@
-import { patchState, signalState } from '@ngrx/signals';
+import { signalState } from '@ngrx/signals';
 
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -9,7 +10,7 @@ import {
     inject
 } from '@angular/core';
 
-import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
@@ -21,6 +22,12 @@ import { DotUVEPaletteListTypes } from './models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
+interface TabHeaderConfig {
+    value: UVE_PALETTE_TABS;
+    icon: string;
+    tooltip: string;
+}
+
 /**
  * Standalone palette component used by the EMA editor to display and switch
  * between different UVE-related resources (content types, components, styles, etc.).
@@ -30,7 +37,13 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
  */
 @Component({
     selector: 'dot-uve-palette',
-    imports: [TabViewModule, DotUvePaletteListComponent, TooltipModule, DotRowReorderComponent],
+    imports: [
+        NgClass,
+        TabsModule,
+        TooltipModule,
+        DotRowReorderComponent,
+        DotUvePaletteListComponent
+    ],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -38,6 +51,27 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 export class DotUvePaletteComponent {
     protected readonly uveStore = inject(UVEStore);
     protected readonly dotPageLayoutService = inject(DotPageLayoutService);
+    protected readonly $tabHeaders = computed<TabHeaderConfig[]>(() => {
+        const tabs: TabHeaderConfig[] = [
+            { value: UVE_PALETTE_TABS.CONTENT_TYPES, icon: 'pi-stop', tooltip: 'Content types' },
+            { value: UVE_PALETTE_TABS.WIDGETS, icon: 'pi-th-large', tooltip: 'Widgets' },
+            { value: UVE_PALETTE_TABS.FAVORITES, icon: 'pi-star', tooltip: 'Favorites' },
+            { value: UVE_PALETTE_TABS.LAYERS, icon: 'pi-table', tooltip: 'Layers' }
+        ];
+        return tabs;
+    });
+
+    /**
+     * Tabs PT so we can style Prime's internal root element with Tailwind instead of ::ng-deep SCSS.
+     */
+    readonly tabsPt = {
+        root: { class: 'h-full min-h-0' }
+    };
+
+    /**
+     * Emits whenever the active tab in the palette changes.
+     */
+    @Output() onTabChange = new EventEmitter<UVE_PALETTE_TABS>();
 
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
@@ -77,9 +111,13 @@ export class DotUvePaletteComponent {
      * Called whenever the tab changes, either by user interaction or via the `activeIndex` property.
      * Updates local component state using patchState instead of dispatching to global store.
      *
-     * @param event TabView change event containing the new active index.
+     * @param value The new tab value.
      */
-    protected handleTabChange(event: TabViewChangeEvent) {
-        patchState(this.#localState, { currentTab: event.index });
+    protected handleTabChange(value: string | number | undefined): void {
+        if (value !== undefined && value !== null) {
+            const tab = value as UVE_PALETTE_TABS;
+            this.#localState.patchState({ currentTab: tab });
+            this.onTabChange.emit(tab);
+        }
     }
 }

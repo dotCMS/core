@@ -1,4 +1,4 @@
-import { TreeNode } from 'primeng/api';
+import type { TreeNode } from 'primeng/api';
 
 /**
  * @export

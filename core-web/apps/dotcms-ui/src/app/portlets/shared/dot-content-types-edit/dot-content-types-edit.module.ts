@@ -10,13 +10,13 @@ import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
 import { SplitButtonModule } from 'primeng/splitbutton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -29,13 +29,13 @@ import {
     DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
-    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotIconComponent,
     DotMenuComponent,
     DotMessagePipe,
-    DotSafeHtmlPipe
+    DotSafeHtmlPipe,
+    DotSiteComponent
 } from '@dotcms/ui';
 
 import { DotBinarySettingsComponent } from './components/dot-binary-settings/dot-binary-settings.component';
@@ -76,7 +76,6 @@ import { DotDirectivesModule } from '../../../shared/dot-directives.module';
 import { DotInlineEditComponent } from '../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { DotMdIconSelectorComponent } from '../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
 import { DotPageSelectorComponent } from '../../../view/components/_common/dot-page-selector/dot-page-selector.component';
-import { DotSiteSelectorFieldComponent } from '../../../view/components/_common/dot-site-selector-field/dot-site-selector-field.component';
 import { DotTextareaContentComponent } from '../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotWorkflowsActionsSelectorFieldComponent } from '../../../view/components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
@@ -90,15 +89,12 @@ import { DotFieldHelperComponent } from '../../../view/components/dot-field-help
 import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 import { DotPortletBoxComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotRelationshipTreeComponent } from '../../../view/components/dot-relationship-tree/dot-relationship-tree.component';
-import { DotSecondaryToolbarComponent } from '../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotMaxlengthDirective } from '../../../view/directives/dot-maxlength/dot-maxlength.directive';
 import { DotAddToMenuComponent } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.service';
 
 @NgModule({
     declarations: [
-        DotConvertToBlockInfoComponent,
-        DotConvertWysiwygToBlockComponent,
         CategoriesPropertyComponent,
         CheckboxPropertyComponent,
         ContentTypesFieldDragabbleItemComponent,
@@ -119,6 +115,8 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
+        DotConvertToBlockInfoComponent,
+        DotConvertWysiwygToBlockComponent,
         ContentTypesLayoutComponent,
         ContentTypesFormComponent,
         ButtonModule,
@@ -135,10 +133,8 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotContentTypeFieldsVariablesComponent,
         RouterModule.forChild(dotContentTypesEditRoutes),
         DotCopyLinkComponent,
-        DotDialogComponent,
         DotDirectivesModule,
         DotSafeHtmlPipe,
-        DotSecondaryToolbarComponent,
         DotFieldHelperComponent,
         DotFieldValidationMessageComponent,
         DotBinarySettingsComponent,
@@ -152,27 +148,27 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotWorkflowsActionsSelectorFieldComponent,
         DotWorkflowsSelectorFieldComponent,
         DragulaModule,
-        DropdownModule,
+        SelectModule,
         FormsModule,
         IframeComponent,
         DotInlineEditComponent,
         DotLoadingIndicatorComponent,
         InputTextModule,
         MultiSelectModule,
-        OverlayPanelModule,
+        PopoverModule,
         RadioButtonModule,
         ReactiveFormsModule,
         SearchableDropdownComponent,
-        DotSiteSelectorFieldComponent,
+        DotSiteComponent,
         SplitButtonModule,
-        TabViewModule,
+        TabsModule,
         DotRelationshipTreeComponent,
         DotPortletBoxComponent,
         DotMdIconSelectorComponent,
         DotAddToMenuComponent,
         DotFieldRequiredDirective,
         DotCopyButtonComponent,
-        OverlayPanelModule,
+        PopoverModule,
         DotMessagePipe
     ],
     providers: [

@@ -1,10 +1,7 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent, ngMocks } from 'ng-mocks';
 
-import { computed, DebugElement, signal } from '@angular/core';
-import { By } from '@angular/platform-browser';
-
-import { TabView } from 'primeng/tabview';
+import { computed, signal } from '@angular/core';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
 
@@ -17,17 +14,19 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
 /**
  * Helper function to trigger tab change event
- * Simulates the onChange event that p-tabView emits when a tab is clicked
+ * Simulates the valueChange event that p-tabs (PrimeNG v21) emits when a tab is clicked.
+ * Also updates the host's activeTab to reflect the change (simulating real parent behavior).
+ */
+/**
+ * Triggers a tab change by calling the component's handleTabChange (same as p-tabs valueChange).
  */
 function triggerTabChange(spectator: Spectator<DotUvePaletteComponent>, index: number): void {
-    const tabViewDebugElement: DebugElement = spectator.debugElement.query(By.directive(TabView));
-    const tabViewComponent: TabView = tabViewDebugElement?.componentInstance;
-
-    if (tabViewComponent && tabViewComponent.onChange) {
-        // Trigger the onChange event with the expected structure
-        tabViewComponent.onChange.emit({ originalEvent: new Event('click'), index });
-        spectator.detectChanges();
-    }
+    (
+        spectator.component as DotUvePaletteComponent & {
+            handleTabChange: (value: number) => void;
+        }
+    ).handleTabChange(index);
+    spectator.fixture.detectChanges();
 }
 
 /**
@@ -112,7 +111,7 @@ describe('DotUvePaletteComponent', () => {
         });
 
         it('should update local state and rendering when switching to Widget tab via onChange event', () => {
-            // Trigger tab change via user interaction
+            // Trigger tab change via handleTabChange (same as p-tabs valueChange)
             triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
 
             expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.WIDGETS);
@@ -123,7 +122,7 @@ describe('DotUvePaletteComponent', () => {
         });
 
         it('should update local state and rendering when switching to Favorites tab via onChange event', () => {
-            // Trigger tab change via user interaction
+            // Trigger tab change via handleTabChange (same as p-tabs valueChange)
             triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
 
             expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.FAVORITES);
@@ -200,45 +199,24 @@ describe('DotUvePaletteComponent', () => {
 
     describe('Local State Management', () => {
         it('should update local state when user clicks Widget tab', () => {
-            // Trigger the onChange event from p-tabView by simulating user interaction
-            triggerTabChange(spectator, 1);
+            triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
 
             expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.WIDGETS);
         });
 
         it('should update local state with correct tab index when switching to Favorites tab', () => {
             // Switch to Favorites tab
-            triggerTabChange(spectator, 2);
+            triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
 
             expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.FAVORITES);
         });
 
         it('should update local state when switching back to Content tab', () => {
-            // First go to Widget tab
-            triggerTabChange(spectator, 1);
-            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.WIDGETS);
-
-            // Then go back to Content tab
-            triggerTabChange(spectator, 0);
-            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
-        });
-
-        xit('should switch to STYLE_EDITOR tab when activeContentlet changes', () => {
-            // Start on Widget tab
             triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
             expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.WIDGETS);
 
-            // When activeContentlet is set in store (simulating user selecting a contentlet)
-            mockUVEStore.editorActiveContentlet.set({
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test',
-                contentType: 'test'
-            });
-            spectator.detectChanges();
-
-            // Should auto-switch to STYLE_EDITOR tab via effect()
-            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.STYLE_EDITOR);
+            triggerTabChange(spectator, UVE_PALETTE_TABS.CONTENT_TYPES);
+            expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
         });
     });
 
@@ -257,7 +235,7 @@ describe('DotUvePaletteComponent', () => {
         });
 
         it('should pass all required inputs to Widget tab palette list', () => {
-            // Switch to Widget tab via user interaction
+            // Switch to Widget tab via handleTabChange
             triggerTabChange(spectator, UVE_PALETTE_TABS.WIDGETS);
 
             // Find the mocked component DebugElement
@@ -273,7 +251,7 @@ describe('DotUvePaletteComponent', () => {
         });
 
         it('should pass all required inputs to Favorites tab palette list', () => {
-            // Switch to Favorites tab via user interaction
+            // Switch to Favorites tab via handleTabChange
             triggerTabChange(spectator, UVE_PALETTE_TABS.FAVORITES);
 
             // Find the mocked component DebugElement

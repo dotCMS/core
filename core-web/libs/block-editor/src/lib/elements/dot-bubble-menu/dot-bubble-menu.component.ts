@@ -6,22 +6,22 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
+    DestroyRef,
     ElementRef,
     inject,
     input,
+    OnInit,
     SecurityContext,
     signal,
-    viewChild,
-    OnInit,
-    DestroyRef,
-    computed
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -71,16 +71,16 @@ const BUBBLE_MENU_VISIBLE_NODES = {
     imports: [
         TiptapBubbleMenuDirective,
         FormsModule,
-        DropdownModule,
+        Button,
+        Select,
         DotLinkEditorPopoverComponent,
         DotImageEditorPopoverComponent,
-        OverlayPanelModule,
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBubbleMenuComponent implements OnInit {
-    dropdown = viewChild<Dropdown>('dropdown');
+    dropdown = viewChild<Select>('dropdown');
     linkModal = viewChild.required<DotLinkEditorPopoverComponent>('linkModal');
     imageModal = viewChild.required<DotImageEditorPopoverComponent>('imageModal');
     bubbleMenuRef = viewChild.required<ElementRef<HTMLElement>>('bubbleMenu');
@@ -191,7 +191,7 @@ export class DotBubbleMenuComponent implements OnInit {
             modifiers: [
                 // This modifier is needed to flip the bubble menu when it is too close to the edge of the screen
                 {
-                    name: 'flip',
+                    name: 'animate-flip',
                     options: {
                         fallbackPlacements: ['top', 'bottom']
                     }

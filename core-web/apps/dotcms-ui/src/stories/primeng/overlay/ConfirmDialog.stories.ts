@@ -3,7 +3,7 @@ import { Meta, StoryObj, moduleMetadata, componentWrapperDecorator } from '@stor
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
 import { ConfirmDialogComponent } from './ConfirmDialog.component';
@@ -22,7 +22,7 @@ const meta: Meta<ConfirmDialogComponent> = {
     },
     decorators: [
         moduleMetadata({
-            imports: [MessagesModule, BrowserAnimationsModule, ToastModule],
+            imports: [MessageModule, BrowserAnimationsModule, ToastModule],
             providers: [ConfirmationService],
             declarations: []
         }),

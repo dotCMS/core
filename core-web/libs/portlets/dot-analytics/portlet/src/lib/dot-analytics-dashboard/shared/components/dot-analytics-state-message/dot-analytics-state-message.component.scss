@@ -1,9 +1,8 @@
 @use "variables" as *;
+
 :host {
     flex: 1;
-}
-i {
-    color: $color-palette-gray-500;
+    height: 100%;
 }
 
 .state-message {

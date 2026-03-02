@@ -5,7 +5,7 @@ import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe, fadeInContent } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCountUpDirective } from '../../directives';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
@@ -27,16 +27,15 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-metric.component.html',
-    styleUrl: './dot-analytics-metric.component.scss',
-    animations: [fadeInContent]
+    styleUrl: './dot-analytics-metric.component.scss'
 })
 export class DotAnalyticsMetricComponent {
     // Inputs
     /** Optional title displayed above the card */
     readonly $title = input<string>('', { alias: 'title' });
 
-    /** Metric value (number will be formatted with separators, or string for special formats like "2/3") */
-    readonly $value = input.required<number | string>({ alias: 'value' });
+    /** Metric value (number will be formatted with separators, string for special formats like "2/3", null for empty) */
+    readonly $value = input.required<number | string | null>({ alias: 'value' });
 
     /** Optional secondary text below the metric value */
     readonly $subtitle = input<string>('', { alias: 'subtitle' });
@@ -48,7 +47,9 @@ export class DotAnalyticsMetricComponent {
     readonly $trend = input<number | undefined>(undefined, { alias: 'trend' });
 
     /** Component status for loading/error states */
-    readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
+    readonly $status = input<keyof typeof ComponentStatus>(ComponentStatus.INIT, {
+        alias: 'status'
+    });
 
     /** Whether to animate numeric values with count-up effect */
     readonly $animated = input<boolean>(true, { alias: 'animated' });
@@ -174,8 +175,8 @@ export class DotAnalyticsMetricComponent {
             return false;
         }
 
-        // Show empty state only when we have NO data (null/undefined)
+        // Show empty state only when we have NO data (null/undefined/empty string)
         // 0 is a valid metric value and should NOT be considered empty
-        return value === null || value === undefined;
+        return value === null || value === undefined || value === '';
     });
 }

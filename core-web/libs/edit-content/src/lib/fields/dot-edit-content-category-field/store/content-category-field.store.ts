@@ -76,7 +76,7 @@ export const CategoryFieldStore = signalStore(
         /**
          * Categories for render with added properties
          */
-        categoryList: computed(() =>
+        categoryList: computed<DotCategoryFieldKeyValueObj[][]>(() =>
             store.categories().map((column) => transformCategories(column, store.keyParentPath()))
         ),
 
@@ -124,7 +124,7 @@ export const CategoryFieldStore = signalStore(
         /**
          * Categories for render with added properties
          */
-        searchCategoryList: computed(() =>
+        searchCategoryList: computed<DotCategoryFieldKeyValueObj[]>(() =>
             store
                 .searchCategories()
                 .map((column) => transformCategories(column, store.keyParentPath()))

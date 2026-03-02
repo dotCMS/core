@@ -5,12 +5,12 @@ import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { computed, signal } from '@angular/core';
+import { Component, computed, EventEmitter, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 
 import {
     DotAnalyticsTrackerService,
@@ -23,7 +23,9 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
+import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -39,7 +41,6 @@ import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-e
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
@@ -51,6 +52,7 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
+import { DotPageAssetParams } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { Orientation, PageType } from '../../../store/models';
 import {
@@ -59,6 +61,22 @@ import {
     getFullPageURL,
     sanitizeURL
 } from '../../../utils';
+
+/**
+ * Stub used in tests to avoid ng-mocks auto-mocking `DotLanguageSelectorComponent`,
+ * which uses Angular's signal-based `viewChild()` and can crash when mocked.
+ * Uses model() for value to match the real component's API so [value] binds correctly.
+ * Keeps EventEmitter for onChange so triggerEventHandler('onChange', id) works in tests.
+ */
+@Component({
+    selector: 'dot-language-selector',
+    template: '',
+    standalone: true
+})
+class StubDotLanguageSelectorComponent {
+    value = model<number | DotLanguage | null>(null);
+    onChange = new EventEmitter<number>();
+}
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
 jest.mock('../../../utils', () => ({
@@ -71,7 +89,7 @@ jest.mock('../../../utils', () => ({
 
 const API_URL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
-const params = HEADLESS_BASE_QUERY_PARAMS;
+const params: DotPageAssetParams = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
 
 const pageAPIQueryParams = getFullPageURL({ url, params });
@@ -310,12 +328,36 @@ describe('DotUveToolbarComponent', () => {
     const fixedDate = new Date('2024-01-01');
     jest.spyOn(global, 'Date').mockImplementation(() => fixedDate);
 
+    // Use Jest's fake timers for controlled date testing instead of mocking Date constructor
+    // which breaks PrimeNG's internal date handling
+    beforeAll(() => {
+        jest.useFakeTimers();
+        jest.setSystemTime(new Date('2024-01-01'));
+    });
+
+    afterAll(() => {
+        jest.useRealTimers();
+    });
+
     const createComponent = createComponentFactory({
         component: DotUveToolbarComponent,
+        overrideComponents: [
+            [
+                DotUveToolbarComponent,
+                {
+                    remove: {
+                        imports: [DotLanguageSelectorComponent]
+                    },
+                    add: {
+                        imports: [StubDotLanguageSelectorComponent]
+                    }
+                }
+            ]
+        ],
         imports: [
             HttpClientTestingModule,
             FormsModule,
-            CalendarModule,
+            DatePickerModule,
             MockComponent(DotEmaBookmarksComponent),
             DotEmaInfoDisplayComponent,
             MockComponent(DotEmaRunningExperimentComponent),
@@ -418,10 +460,13 @@ describe('DotUveToolbarComponent', () => {
                 const contentlet = {
                     identifier: '123',
                     inode: '456',
-                    title: 'My super awesome blog post'
+                    title: 'My super awesome blog post',
+                    contentType: 'Blog'
                 };
                 const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
 
+                // The edit URL content map button is only rendered in EDIT mode and when the map exists
+                baseUVEState.pageParams.set({ ...params, mode: UVE_MODE.EDIT });
                 baseUVEState.$urlContentMap.set(contentlet);
                 spectator.detectChanges();
 
@@ -469,13 +514,12 @@ describe('DotUveToolbarComponent', () => {
         /* TODO: Implement $pageURLS feature and uncomment these tests
         describe('$pageURLS computed signal', () => {
             it('should call createFullURL to generate version URL', () => {
-                const mockCreateFullURL = createFullURL as jest.Mock;
-                mockCreateFullURL.mockClear();
-
+                const clientHost = 'https://example.com';
+                const path = '/my-page';
                 baseUVEState.pageParams.set({
                     ...params,
-                    url: '/my-page',
-                    clientHost: 'https://example.com'
+                    url: path,
+                    clientHost
                 });
                 spectator.detectChanges();
 
@@ -484,11 +528,12 @@ describe('DotUveToolbarComponent', () => {
                     (u) => u.label === 'uve.toolbar.page.current.view.url'
                 );
 
-                expect(mockCreateFullURL).toHaveBeenCalledWith(
-                    expect.any(Object),
-                    expect.any(String)
-                );
                 expect(versionUrl).toBeTruthy();
+                expect(versionUrl?.value).toBeTruthy();
+                expect(typeof versionUrl?.value).toBe('string');
+                // createFullURL builds URL from clientHost + url + query string from params
+                expect(versionUrl?.value.startsWith(`${clientHost}${path}`)).toBe(true);
+                expect(versionUrl?.value).toContain('?');
             });
 
             it('should construct URL with clientHost and url from pageParams', () => {
@@ -876,7 +921,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call pageLoad when language is selected and exists that page translated', () => {
                 const spyLoadPageAsset = jest.spyOn(baseUVEState, 'pageLoad');
 
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 1);
+                spectator.triggerEventHandler(StubDotLanguageSelectorComponent, 'onChange', 1);
 
                 expect(spyLoadPageAsset).toHaveBeenCalled();
             });
@@ -884,7 +929,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
                 const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
 
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
+                spectator.triggerEventHandler(StubDotLanguageSelectorComponent, 'onChange', 2);
                 spectator.detectChanges();
                 expect(spyConfirmationService).toHaveBeenCalled();
             });
@@ -918,9 +963,10 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.$workflowLockOptions.set(createLockOptions());
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.classList.contains('lock-button--unlocked')).toBe(true);
-                expect(button.classList.contains('lock-button--locked')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                expect(button).toBeTruthy();
+                expect(button.querySelector('.pi-lock-open')).toBeTruthy();
+                expect(button.querySelector('.pi-lock')).toBeNull();
             });
 
             it('should display locked state when page is locked by current user', () => {
@@ -934,9 +980,10 @@ describe('DotUveToolbarComponent', () => {
                 );
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.classList.contains('lock-button--locked')).toBe(true);
-                expect(button.classList.contains('lock-button--unlocked')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                expect(button).toBeTruthy();
+                expect(button.querySelector('.pi-lock')).toBeTruthy();
+                expect(button.querySelector('.pi-lock-open')).toBeNull();
             });
 
             it('should call store.toggleLock when unlocked button is clicked', () => {
@@ -977,8 +1024,9 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.workflowLockIsLoading.set(true);
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.hasAttribute('disabled')).toBe(true);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                const nativeButton = button.querySelector('button') as HTMLButtonElement | null;
+                expect(nativeButton?.disabled).toBe(true);
             });
 
             it('should enable button when lock operation is not loading', () => {
@@ -986,8 +1034,9 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.workflowLockIsLoading.set(false);
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.hasAttribute('disabled')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                const nativeButton = button.querySelector('button') as HTMLButtonElement | null;
+                expect(nativeButton?.disabled).toBe(false);
             });
 
             it('should call store.toggleLock with correct params for page locked by another user', () => {
@@ -1059,7 +1108,7 @@ describe('DotUveToolbarComponent', () => {
             it('should not show calendar when in preview mode', () => {
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeFalsy();
+                expect(spectator.query('p-datepicker')).toBeFalsy();
             });
         });
     });
@@ -1154,14 +1203,14 @@ describe('DotUveToolbarComponent', () => {
                 liveSocialMediaSignal.set(null);
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeTruthy();
+                expect(spectator.query('p-datepicker')).toBeTruthy();
             });
 
             it('should not show calendar when socialMedia has a value', () => {
                 liveSocialMediaSignal.set('facebook');
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeFalsy();
+                expect(spectator.query('p-datepicker')).toBeFalsy();
             });
 
             it('should not show calendar when not in live mode', () => {
@@ -1169,14 +1218,16 @@ describe('DotUveToolbarComponent', () => {
                 liveViewModeSignal.set(UVE_MODE.EDIT);
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeFalsy();
+                expect(spectator.query('p-datepicker')).toBeFalsy();
             });
 
             it('should have a minDate of current date on 0h 0min 0s 0ms', () => {
                 liveSocialMediaSignal.set(null);
                 spectator.detectChanges();
 
-                const calendar = spectator.query('p-calendar');
+                const datepicker = spectator.query('p-datepicker');
+                // Verify the datepicker is rendered
+                expect(datepicker).toBeTruthy();
 
                 const expectedMinDate = new Date(fixedDate);
 
@@ -1184,9 +1235,9 @@ describe('DotUveToolbarComponent', () => {
 
                 // In Angular 20, ng-reflect-* attributes may not be available
                 // Check if calendar exists and has minDate property
-                expect(calendar).toBeTruthy();
-                if (calendar) {
-                    const minDateAttr = calendar.getAttribute('ng-reflect-min-date');
+                expect(datepicker).toBeTruthy();
+                if (datepicker) {
+                    const minDateAttr = datepicker.getAttribute('ng-reflect-min-date');
                     if (minDateAttr) {
                         expect(new Date(minDateAttr)).toEqual(expectedMinDate);
                     }

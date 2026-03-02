@@ -18,9 +18,9 @@ import { CardModule } from 'primeng/card';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
-import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
@@ -50,7 +50,6 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
     ],
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
-    styleUrls: ['./dot-container-properties.component.scss'],
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -59,7 +58,7 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
         InputTextModule,
         CardModule,
         DotTextareaContentComponent,
-        TabViewModule,
+        TabsModule,
         MenuModule,
         DotMessagePipe,
         DotLoopEditorComponent,
@@ -117,7 +116,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             });
 
         this.form.valueChanges
-            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
+            .pipe(
+                takeUntil(this.destroy$),
+                startWith(this.form.value),
+                pairwise(),
+                debounceTime(100)
+            )
             .subscribe(([prevValue, currValue]) => {
                 this.#store.updateFormStatus({
                     invalidForm: !this.form.valid,

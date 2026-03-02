@@ -33,7 +33,8 @@
                     <p-button
                         (click)="menuVTL.toggle($event)"
                         data-testId="edit-vtl-button"
-                        styleClass="p-button-rounded p-button-raised"
+                        [rounded]="true"
+                        [raised]="true"
                         icon="pi pi-code" />
                     <p-menu
                         [model]="vtlMenuItems()"
@@ -48,7 +49,8 @@
                     data-type="contentlet"
                     draggable="true"
                     data-testId="drag-button"
-                    styleClass="p-button-rounded p-button-raised"
+                    [rounded]="true"
+                    [raised]="true"
                     icon="pi pi-arrows-alt" />
                 <p-button
                     (click)="deleteContent.emit(selectedContext)"
@@ -57,25 +59,27 @@
                     tooltipPosition="bottom"
                     [escape]="false"
                     data-testId="delete-button"
-                    styleClass="p-button-rounded p-button-raised delete"
+                    [rounded]="true"
+                    [raised]="true"
+                    styleClass="delete"
                     icon="pi pi-times" />
-
-                <p-button
-                    (click)="editContent.emit(selectedContext)"
-                    data-testId="edit-button"
-                    styleClass="p-button-rounded p-button-raised"
-                    icon="pi pi-pencil" />
-
-                @if (showStyleEditorOption()) {
-                    <p-button
-                        (click)="selectContent.emit(selectedContext)"
-                        data-testId="palette-button"
-                        styleClass="p-button-rounded p-button-raised"
-                        icon="pi pi-palette" />
-                }
             </div>
         }
 
+        <p-button
+            (click)="editContent.emit(selectedContext)"
+            data-testId="edit-button"
+            styleClass="p-button-rounded p-button-raised"
+            icon="pi pi-pencil" />
+
+        @if (showStyleEditorOption()) {
+            <p-button
+                (click)="selectContent.emit(selectedContext)"
+                data-testId="palette-button"
+                [rounded]="true"
+                [raised]="true"
+                icon="pi pi-palette" />
+        }
         <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
     </div>
 }

@@ -1,14 +1,22 @@
 @if ($workflowLockOptions()) {
     <button
+        pButton
         class="lock-button"
         [class.lock-button--locked]="$workflowLockOptions().isLocked"
         [class.lock-button--unlocked]="!$workflowLockOptions().isLocked"
         [class.lock-button--disabled]="!$workflowLockOptions().canLock"
         [disabled]="$workflowLockIsLoading()"
         [pTooltip]="
-            $workflowLockOptions().canLock ? null : ('uve.editor.toggle.lock.button.disabled' | dm)
+            $workflowLockOptions().canLock
+                ? undefined
+                : ('uve.editor.toggle.lock.button.disabled' | dm)
         "
         tooltipPosition="bottom"
+        [icon]="$workflowLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"
+        [label]="$buttonLabel() | dm"
+        [loading]="$workflowLockIsLoading()"
+        size="small"
+        [outlined]="true"
         (click)="toggleLock()"
         data-testId="toggle-lock-button">
         <i

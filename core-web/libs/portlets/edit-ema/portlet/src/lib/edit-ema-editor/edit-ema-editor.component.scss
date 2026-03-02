@@ -1,3 +1,7 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -154,8 +158,8 @@ dot-results-seo-tool {
 }
 
 .iframe-wrapper--device {
-    box-shadow: $shadow-l;
-    background: linear-gradient(135deg, $white 0%, rgba(240, 240, 240, 1) 100%);
+    box-shadow: shadows.$shadow-l;
+    background: linear-gradient(135deg, colors.$white 0%, rgba(240, 240, 240, 1) 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#f0f0f0', GradientType=1);
 }
 

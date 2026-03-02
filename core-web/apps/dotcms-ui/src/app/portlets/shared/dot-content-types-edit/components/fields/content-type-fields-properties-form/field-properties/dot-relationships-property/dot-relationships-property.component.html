@@ -1,35 +1,42 @@
 @if (!editing) {
-    <div class="field relationship__type">
-        <p-radioButton
-            (click)="clean()"
-            [(ngModel)]="status"
-            [label]="'contenttypes.field.properties.relationship.new.label' | dm"
-            [value]="STATUS_NEW" />
-        <p-radioButton
-            (click)="clean()"
-            [(ngModel)]="status"
-            [label]="'contenttypes.field.properties.relationship.existing.label' | dm"
-            [value]="STATUS_EXISTING" />
+    <div class="mb-4 flex flex-row items-center gap-4">
+        <div class="flex gap-2 items-center">
+            <p-radioButton
+                (click)="clean()"
+                [(ngModel)]="status"
+                [inputId]="'relationship-new'"
+                [value]="STATUS_NEW" />
+            <label class="font-medium" [for]="'relationship-new'">
+                {{ 'contenttypes.field.properties.relationship.new.label' | dm }}
+            </label>
+        </div>
+        <div class="flex gap-2 items-center">
+            <p-radioButton
+                (click)="clean()"
+                [(ngModel)]="status"
+                [inputId]="'relationship-existing'"
+                [value]="STATUS_EXISTING" />
+            <label class="font-medium" [for]="'relationship-existing'">
+                {{ 'contenttypes.field.properties.relationship.existing.label' | dm }}
+            </label>
+        </div>
     </div>
 }
 
-<div class="relationship__config">
+<div class="flex flex-col gap-2">
     @if (status === STATUS_NEW) {
         <dot-new-relationships
+            class="contents"
             (switch)="handleChange($event)"
             [velocityVar]="group.get(property.name).value.velocityVar"
             [cardinality]="group.get(property.name).value.cardinality"
-            [editing]="editing"
-            class="relationships__new" />
+            [editing]="editing" />
     } @else {
         <div class="field">
             <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
                 Relationship
             </label>
-            <dot-edit-relationships
-                (switch)="handleChange($event)"
-                [id]="property.name"
-                class="relationships__existing" />
+            <dot-edit-relationships (switch)="handleChange($event)" [id]="property.name" />
         </div>
     }
 

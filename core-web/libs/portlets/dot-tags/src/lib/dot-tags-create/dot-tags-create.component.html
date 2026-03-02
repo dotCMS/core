@@ -1,0 +1,31 @@
+<form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="field">
+        <label for="tagName" dotFieldRequired>{{ 'tags.form.tag-name' | dm }}</label>
+        <input
+            pInputText
+            id="tagName"
+            formControlName="name"
+            data-testid="tag-name-input"
+            class="w-full" />
+    </div>
+    <div class="field">
+        <label for="tagSite">{{ 'tags.form.site' | dm }}</label>
+        <dot-site
+            id="tagSite"
+            formControlName="siteId"
+            [placeholder]="'tags.form.site.placeholder' | dm"
+            data-testid="tag-site-select" />
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+        <p-button
+            [label]="'tags.cancel' | dm"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="ref.close()" />
+        <p-button
+            [label]="isEdit ? ('tags.update' | dm) : ('tags.save' | dm)"
+            type="submit"
+            [disabled]="!form.valid"
+            data-testid="tag-save-btn" />
+    </div>
+</form>

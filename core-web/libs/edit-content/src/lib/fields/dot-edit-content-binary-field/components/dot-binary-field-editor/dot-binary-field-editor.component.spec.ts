@@ -93,7 +93,7 @@ describe('DotBinaryFieldEditorComponent', () => {
             detectChanges: false,
             props: {
                 allowFileNameEdit: true
-            }
+            } as unknown
         });
 
         component = spectator.component;
@@ -108,7 +108,7 @@ describe('DotBinaryFieldEditorComponent', () => {
     it('should emit cancel event on escape keydown', () => {
         const event = new KeyboardEvent('keydown', { key: 'Escape' });
 
-        const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
+        const cancelSpy = jest.spyOn(spectator.component.$cancel, 'emit');
         const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
         const stopPropagationSpy = jest.spyOn(event, 'stopPropagation');
 
@@ -205,7 +205,7 @@ describe('DotBinaryFieldEditorComponent', () => {
             expect(component.mimeType).toBe('plain/text');
         }));
         it('should emit cancel event when cancel button is clicked', () => {
-            const spy = jest.spyOn(component.cancel, 'emit');
+            const spy = jest.spyOn(component.$cancel, 'emit');
             const cancelBtn = spectator.query(byTestId('cancel-button'));
 
             spectator.click(cancelBtn);
@@ -214,7 +214,7 @@ describe('DotBinaryFieldEditorComponent', () => {
         });
 
         it('should emit tempFileUploaded event when import button is clicked if form is valid', () => {
-            const spy = jest.spyOn(component.tempFileUploaded, 'emit');
+            const spy = jest.spyOn(component.$tempFileUploaded, 'emit');
             const spyFormDisabled = jest.spyOn(component.form, 'disable');
             const spyFormEnabled = jest.spyOn(component.form, 'enable');
             const spyFileUpload = jest
@@ -238,7 +238,7 @@ describe('DotBinaryFieldEditorComponent', () => {
         });
 
         it('should not emit tempFileUploaded event when import button is clicked if form is invalid', () => {
-            const spy = jest.spyOn(component.tempFileUploaded, 'emit');
+            const spy = jest.spyOn(component.$tempFileUploaded, 'emit');
             const spyFormDisabled = jest.spyOn(component.form, 'disable');
             const spyFormEnabled = jest.spyOn(component.form, 'enable');
             const spyFileUpload = jest
