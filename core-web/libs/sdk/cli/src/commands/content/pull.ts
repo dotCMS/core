@@ -281,15 +281,19 @@ async function pullContentType(
         offset += limit;
     }
 
+    // Serialize all records once upfront (avoids double serialization for conflict detection + write)
+    const serialized = allRecords.map((record) => {
+        const host = record['host'] as Record<string, unknown> | undefined;
+        const hostName = (host?.['hostName'] || record['hostName'] || 'default') as string;
+        const contentDir = path.join(projectDir, hostName, 'content', entry.type);
+        const result = serializeContentlet(record, schema, languageMap);
+
+        return { record, hostName, contentDir, result };
+    });
+
     // Detect locally modified files that would be overwritten
     if (!force) {
-        const modifiedFiles = detectLocallyModifiedFiles(
-            allRecords,
-            schema,
-            languageMap,
-            projectDir,
-            entry.type
-        );
+        const modifiedFiles = detectLocallyModifiedFiles(serialized, projectDir);
 
         if (modifiedFiles.length > 0) {
             for (const f of modifiedFiles) {
@@ -308,14 +312,10 @@ async function pullContentType(
     }
 
     // Write all records
-    for (const record of allRecords) {
-        const host = record['host'] as Record<string, unknown> | undefined;
-        const hostName = (host?.['hostName'] || record['hostName'] || 'default') as string;
-        const contentDir = path.join(projectDir, hostName, 'content', entry.type);
+    for (const { record, contentDir, result } of serialized) {
         fs.mkdirSync(contentDir, { recursive: true });
         touchedContentDirs.add(contentDir);
 
-        const result = serializeContentlet(record, schema, languageMap);
         const filePath = path.join(contentDir, result.filename);
 
         fs.writeFileSync(filePath, result.content, 'utf-8');
@@ -365,24 +365,16 @@ async function pullContentType(
 }
 
 /**
- * Scans fetched records against existing local files to find ones with local modifications.
+ * Scans pre-serialized records against existing local files to find ones with local modifications.
  * Returns relative paths of locally modified files that would be overwritten.
  */
 function detectLocallyModifiedFiles(
-    records: ContentletRecord[],
-    schema: ContentTypeSchema,
-    languageMap: LanguageMap,
-    projectDir: string,
-    contentType: string
+    serialized: Array<{ contentDir: string; result: { filename: string } }>,
+    projectDir: string
 ): string[] {
     const modified: string[] = [];
 
-    for (const record of records) {
-        const host = record['host'] as Record<string, unknown> | undefined;
-        const hostName = (host?.['hostName'] || record['hostName'] || 'default') as string;
-        const contentDir = path.join(projectDir, hostName, 'content', contentType);
-
-        const result = serializeContentlet(record, schema, languageMap);
+    for (const { contentDir, result } of serialized) {
         const filePath = path.join(contentDir, result.filename);
 
         if (fs.existsSync(filePath)) {
