@@ -201,6 +201,9 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         const page = Math.ceil(event.last / this.ITEMS_PER_PAGE) + 1;
 
         if (this.$state.canLoadMore() && page > this.$state.currentPage()) {
+            // We sync the current page with the page we are loading to avoid duplicates
+            this.updateState({ currentPage: page });
+
             this.loadContentTypes({
                 page,
                 filter: this.$state.filter(),
@@ -217,6 +220,8 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                         this.$state.contentTypes().length + contentTypes.length <
                         pagination.totalEntries,
                     loading: false,
+
+                    // We set the current page again to prevent unsynced state
                     currentPage:
                         pagination.currentPage > this.$state.currentPage()
                             ? pagination.currentPage
