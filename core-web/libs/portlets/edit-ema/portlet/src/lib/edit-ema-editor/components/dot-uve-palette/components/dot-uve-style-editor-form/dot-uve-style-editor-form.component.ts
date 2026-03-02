@@ -70,8 +70,8 @@ export class DotUveStyleEditorFormComponent {
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $sections = computed(() => this.$schema().sections);
-    $form = computed(() => this.#form());
+    readonly $sections = computed(() => this.$schema().sections);
+    readonly $form = computed(() => this.#form());
 
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
@@ -84,11 +84,10 @@ export class DotUveStyleEditorFormComponent {
     });
 
     /**
-     * Effect that observes changes in the schema and rebuilds the form accordingly.
-     *
-     * This effect is triggered whenever the schema changes, ensuring that the most
-     * up-to-date schema is used to construct the form. It uses `untracked` to avoid
-     * causing unnecessary dependency tracking on this.$schema().
+     * Effect that (by design) only runs once, using `untracked()` to read the style editor form schema
+     * without subscribing to future changes. This allows the form to be (re)built a single time
+     * in reaction to schema input, ensuring no further re-execution even if the schema changes.
+     * Intended for one-time initialization rather than reactive synchronization.
      */
     $reloadSchemaEffect = effect(() => {
         const schema = untracked(() => this.$schema());
