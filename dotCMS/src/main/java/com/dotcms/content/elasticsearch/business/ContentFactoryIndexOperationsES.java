@@ -5,6 +5,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -412,7 +413,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
 
         // Use the ESContentletScrollImpl inner class to handle all scroll logic
         // Using configurable batch size instead of MAX_LIMIT for better memory management
-        try (ESContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
+        try (IndexContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
                 false, scrollBatchSize, sortBy)) {
 
             contentletSearchList.setTotalResults(contentletScroll.getTotalHits());
@@ -455,7 +456,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
      * {@inheritDoc}
      */
     @Override
-    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+    public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
             final boolean respectFrontendRoles, final int batchSize,
             final String sortBy) {
         return new ESContentletScrollImpl(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
@@ -465,7 +466,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
      * {@inheritDoc}
      */
     @Override
-    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+    public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
             final boolean respectFrontendRoles, final int batchSize) {
         return createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, "title asc");
     }

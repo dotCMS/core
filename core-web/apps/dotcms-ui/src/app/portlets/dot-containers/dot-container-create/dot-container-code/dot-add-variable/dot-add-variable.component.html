@@ -1,26 +1,24 @@
 @if (vm$ | async; as vm) {
-    <p-dataView [value]="vm.fields" layout="list">
-        <ng-template pTemplate="list" let-data>
-            @for (field of data; track $index) {
-                <div class="dot-add-variable-list__item">
-                    <div class="item__info">
-                        <h3 [attr.data-testId]="'h3' + field.variable" class="info__title">
-                            {{ field?.name }}
-                        </h3>
-                        <small class="info__label">
-                            {{ field?.fieldTypeLabel }}
-                        </small>
-                    </div>
-                    <div class="item__action">
-                        <button
-                            (click)="addCustomCode(field)"
-                            [attr.data-testId]="field.variable"
-                            [label]="'Add' | dm"
-                            class="p-button-outlined p-button-primary p-button-sm"
-                            pButton></button>
-                    </div>
+    <div class="mb-8">
+        @for (field of vm.fields; track field.variable) {
+            <div class="flex w-full py-2 px-6 justify-between items-center">
+                <div>
+                    <h3 [attr.data-testId]="'h3' + field.variable" class="text-base m-0">
+                        {{ field?.name }}
+                    </h3>
+                    <small class="m-0 text-gray-700">
+                        {{ field?.fieldTypeLabel }}
+                    </small>
                 </div>
-            }
-        </ng-template>
-    </p-dataView>
+                <div class="flex items-center">
+                    <button
+                        (click)="addCustomCode(field)"
+                        [attr.data-testId]="field.variable"
+                        [label]="'Add' | dm"
+                        class="p-button-outlined p-button-primary p-button-sm"
+                        pButton></button>
+                </div>
+            </div>
+        }
+    </div>
 }

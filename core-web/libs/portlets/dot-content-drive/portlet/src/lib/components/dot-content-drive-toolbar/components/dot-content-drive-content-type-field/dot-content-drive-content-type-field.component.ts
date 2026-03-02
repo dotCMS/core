@@ -46,7 +46,6 @@ type DotContentDriveContentTypeFieldState = {
     selector: 'dot-content-drive-content-type-field',
     imports: [MultiSelectModule, FormsModule, SkeletonModule, DotMessagePipe],
     templateUrl: './dot-content-drive-content-type-field.component.html',
-    styleUrl: './dot-content-drive-content-type-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentDriveContentTypeFieldComponent implements OnInit {

@@ -1,15 +1,20 @@
-<div
-    (blur)="changeLabel($event)"
-    (keydown.enter)="changeLabel($event)"
-    [textContent]="label"
-    class="tab__label no-drag"
-    dotMaxlength="255"
-    contenteditable="true"></div>
+@if (fieldTab) {
+    <div
+        (blur)="changeLabel($event)"
+        (keydown.enter)="changeLabel($event)"
+        [textContent]="label"
+        class="no-drag border border-gray-700 border-b-gray-200 rounded-t-[5px] cursor-text text-sm h-8 leading-8 min-w-25 px-2 text-center uppercase z-10 mr-18 overflow-hidden wrap-break-word focus:outline-none"
+        dotMaxlength="255"
+        contenteditable="true"></div>
 
-<p-button
-    (click)="removeItem($event)"
-    [pTooltip]="'contenttypes.action.delete' | dm"
-    class="field__actions-delete"
-    icon="pi pi-trash"
-    styleClass="p-button-rounded p-button-text p-button-sm p-button-danger" />
-<hr />
+    <p-button
+        (click)="removeItem($event)"
+        [pTooltip]="'contenttypes.action.delete' | dm"
+        class="absolute right-0 top-0"
+        icon="pi pi-trash"
+        severity="danger"
+        [text]="true"
+        [rounded]="true"
+        size="small" />
+    <hr class="bg-gray-700 border-0 bottom-0 h-px m-0 absolute w-full" />
+}

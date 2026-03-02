@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { Sidebar } from 'primeng/sidebar';
+import { Drawer } from 'primeng/drawer';
 
 import { DotSidebarHeaderComponent } from './dot-sidebar-header.component';
 
@@ -11,7 +11,7 @@ describe('DotSidebarHeaderComponent', () => {
         component: DotSidebarHeaderComponent,
         providers: [
             {
-                provide: Sidebar,
+                provide: Drawer,
                 useValue: {
                     hide: jest.fn()
                 }

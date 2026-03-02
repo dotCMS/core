@@ -91,12 +91,15 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
             'When the experiment start'
         );
         expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText('Setup');
-        expect(spectator.query(byTestId('schedule-step-done'))).not.toHaveClass('isDone');
+        expect(spectator.query(byTestId('schedule-step-done'))).toHaveClass('text-gray-500');
     });
 
     it('should open sidebar on button click', () => {
         jest.spyOn(store, 'openSidebar');
-        spectator.click(byTestId('scheduling-setup-button'));
+
+        const setupButton = spectator.query(byTestId('scheduling-setup-button'));
+        const button = setupButton.querySelector('button') || setupButton;
+        spectator.click(button);
 
         expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.SCHEDULING);
     });
@@ -117,7 +120,9 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
 
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('scheduling-setup-button'))).toHaveAttribute('disabled');
+        const setupButton = spectator.query(byTestId('scheduling-setup-button'));
+        const button = setupButton.querySelector('button') || setupButton;
+        expect(button.hasAttribute('disabled')).toBe(true);
         expect(spectator.query(Tooltip).disabled).toEqual(false);
     });
 
@@ -127,6 +132,6 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         store.loadExperiment(EXPERIMENT_MOCK.id);
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('schedule-step-done'))).toHaveClass('isDone');
+        expect(spectator.query(byTestId('schedule-step-done'))).toHaveClass('text-green-600');
     });
 });

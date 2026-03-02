@@ -1,9 +1,16 @@
+import { of } from 'rxjs';
+
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
-import { map, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService, DotUiColorsService } from '@dotcms/data-access';
+import {
+    DEFAULT_COLORS,
+    DotLicenseService,
+    DotMessageService,
+    DotUiColorsService
+} from '@dotcms/data-access';
 import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
@@ -35,6 +42,18 @@ export class AppComponent implements OnInit {
                         navBar: config.logos?.navBar,
                         license: config.license
                     };
+                }),
+                // Handle errors gracefully - use default colors if config fails to load
+                // This ensures the app works even if user is not authenticated or endpoint fails
+                catchError((error) => {
+                    console.warn('Failed to load configuration, using defaults:', error);
+                    // Return default values that allow the app to continue functioning
+                    return of({
+                        buildDate: null,
+                        colors: DEFAULT_COLORS,
+                        navBar: null,
+                        license: null
+                    });
                 })
             )
             .subscribe(
@@ -44,15 +63,30 @@ export class AppComponent implements OnInit {
                     navBar,
                     license
                 }: {
-                    buildDate: string;
+                    buildDate: string | null;
                     colors: DotUiColors;
-                    navBar: string;
-                    license: DotLicense;
+                    navBar: string | null;
+                    license: DotLicense | null;
                 }) => {
-                    this.dotMessageService.init({ buildDate });
-                    this.dotNavLogoService.setLogo(navBar);
-                    this.dotUiColors.setColors(document.querySelector('html'), colors);
-                    this.dotLicense.setLicense(license);
+                    // Initialize services with loaded or default values
+                    if (buildDate) {
+                        this.dotMessageService.init({ buildDate });
+                    }
+
+                    if (navBar) {
+                        this.dotNavLogoService.setLogo(navBar);
+                    }
+
+                    // Always set colors (will use defaults if config failed)
+                    // This ensures PrimeNG theme is always initialized
+                    const htmlElement = document.querySelector('html') as HTMLElement;
+                    if (htmlElement) {
+                        this.dotUiColors.setColors(htmlElement, colors);
+                    }
+
+                    if (license) {
+                        this.dotLicense.setLicense(license);
+                    }
                 }
             );
     }

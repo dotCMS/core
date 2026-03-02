@@ -9,7 +9,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 
 import { DotPropertiesService, DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -62,7 +62,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         host: MockFormComponent,
         imports: [
             ReactiveFormsModule,
-            DropdownModule,
+            SelectModule,
             NoopAnimationsModule,
             ConfirmDialogModule,
             DotMessagePipe
@@ -128,14 +128,11 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         });
 
         it('should render editor selection dropdown', () => {
+            const select = spectator.query(Select);
+            expect(select).toBeTruthy();
             expect(spectator.query(byTestId('editor-selector'))).toBeTruthy();
-
-            // Open dropdown
-            const dropdownTrigger = spectator.query('.p-dropdown-trigger');
-            spectator.click(dropdownTrigger);
-            spectator.detectChanges();
-
-            expect(spectator.queryAll('.p-dropdown-item').length).toBe(EditorOptions.length);
+            expect(select.options).toEqual(EditorOptions);
+            expect(select.options.length).toBe(EditorOptions.length);
         });
 
         it('should render editor selection dropdown and switch to Monaco editor when selected', () => {
@@ -144,19 +141,17 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
             const onEditorChangeSpy = jest.spyOn(spectator.component, 'onEditorChange');
 
-            // Open dropdown
-            const dropdownTrigger = spectator.query('.p-dropdown-trigger');
-            spectator.click(dropdownTrigger);
-            spectator.detectChanges();
+            // Trigger onChange event with Monaco editor option
+            const monacoOption = EditorOptions.find((opt) => opt.value === AvailableEditor.Monaco);
+            expect(monacoOption).toBeTruthy();
 
-            const options = spectator.queryAll('.p-dropdown-item');
-            spectator.click(options[1]);
+            spectator.triggerEventHandler(Select, 'onChange', { value: monacoOption.value });
             spectator.detectChanges();
 
             const content = spectator.component.$fieldContent();
 
             expect(content.length).toBe(0);
-            expect(onEditorChangeSpy).toHaveBeenCalled();
+            expect(onEditorChangeSpy).toHaveBeenCalledWith(AvailableEditor.Monaco);
             expect(spectator.query(DotWysiwygTinymceComponent)).toBeNull();
             expect(spectator.query(DotEditContentMonacoEditorControlComponent)).toBeTruthy();
         });

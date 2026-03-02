@@ -1,7 +1,7 @@
 import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotContainer, DotContainerMap, DotLayoutSideBar } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -11,9 +11,9 @@ import { TemplateBuilderBoxComponent } from '../template-builder-box/template-bu
 
 @Component({
     selector: 'dotcms-template-builder-sidebar',
-    imports: [DropdownModule, FormsModule, TemplateBuilderBoxComponent, DotMessagePipe],
+    imports: [SelectModule, FormsModule, TemplateBuilderBoxComponent, DotMessagePipe],
     templateUrl: './template-builder-sidebar.component.html',
-    styleUrls: ['./template-builder-sidebar.component.scss']
+    styleUrls: ['./template-builder-sidebar.component.css']
 })
 export class TemplateBuilderSidebarComponent {
     private store = inject(DotTemplateBuilderStore);

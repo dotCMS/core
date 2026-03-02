@@ -28,7 +28,7 @@ export class BlockEditorMockComponent implements OnInit {
 
         this.editor.on('create', () => {
             if (this.value) {
-                this.editor.commands.setContent(this.value, true);
+                this.editor.commands.setContent(this.value, false);
                 // Emit valueChange after setting content
                 setTimeout(() => {
                     this.valueChange.emit(this.editor.getJSON());

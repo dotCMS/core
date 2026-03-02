@@ -443,7 +443,7 @@ describe('DotFavoritePageComponent', () => {
             );
 
             expect(image.nativeElement['src'].includes('123')).toBe(true);
-            expect(reloadBtn.nativeElement.textContent).toBe('Reload');
+            expect(reloadBtn.nativeElement.textContent.trim()).toBe('Reload');
         });
 
         it('should button Remove Favorite be enabled', () => {
@@ -521,8 +521,9 @@ describe('DotFavoritePageComponent', () => {
         });
 
         it('should display empty skeleton component and hide render thumbnail component', () => {
-            expect(de.query(By.css('[data-testId="thumbnailField"]'))).toBeNull();
-            expect(de.query(By.css('.dot-pages-favorite-page-empty-skeleton'))).toBeDefined();
+            expect(de.query(By.css('[data-testId="thumbnailField"]'))).not.toBeNull();
+            expect(de.query(By.css('dot-pages-favorite-page-empty-skeleton'))).not.toBeNull();
+            expect(de.query(By.css('[data-testId="favoriteCardImageContainer"]'))).toBeNull();
         });
 
         it('should set empty value for thumbnail on formState', () => {

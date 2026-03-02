@@ -111,10 +111,14 @@ export function withSidebar() {
             },
 
             /**
-             * Updates the folders array
+             * Updates the folders array.
+             * Uses structuredClone to create a deep copy of the folders array.
+             * This is necessary because TreeNode objects have nested properties (children, data)
+             * and a shallow copy would maintain references to the original objects,
+             * preventing Angular's change detection from detecting updates.
              */
             updateFolders: (folders: DotFolderTreeNodeItem[]) => {
-                patchState(store, { folders: [...folders] });
+                patchState(store, { folders: structuredClone(folders) });
             }
         })),
         withHooks((store) => {

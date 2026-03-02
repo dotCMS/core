@@ -3,18 +3,19 @@ import { Subject } from 'rxjs';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
 import { DotDialogActions } from '@dotcms/dotcms-models';
-import { DotClipboardUtil, DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-generate-secure-password',
     templateUrl: './dot-generate-secure-password.component.html',
     styleUrls: ['./dot-generate-secure-password.component.scss'],
-    imports: [ButtonModule, DotDialogComponent, DotMessagePipe],
+    imports: [ButtonModule, DialogModule, DotMessagePipe],
     providers: [DotClipboardUtil]
 })
 export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {

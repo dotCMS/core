@@ -3,11 +3,13 @@ export default {
     displayName: 'portlet',
     preset: '../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+    globals: {},
     coverageDirectory: '../../../coverage/libs/portlets/dot-usage',
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
             {
+                isolatedModules: true,
                 tsconfig: '<rootDir>/tsconfig.spec.json',
                 stringifyContentPathRegex: '\\.(html|svg)$'
             }
@@ -18,5 +20,6 @@ export default {
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',
         'jest-preset-angular/build/serializers/html-comment'
-    ]
+    ],
+    testEnvironment: '@happy-dom/jest-environment'
 };

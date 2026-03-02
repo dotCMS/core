@@ -23,7 +23,10 @@ const meta: Meta<DynamicDialogButtonComponent> = {
                     'Dialogs can be created dynamically with any component as the content using a DialogService: https://primefaces.org/primeng/showcase/#/dynamicdialog'
             },
             source: {
-                code: `<button type="button" (click)="show()" pButton icon="pi pi-info-circle" label="Show"></button>`
+                code: `<button type="button" (click)="show()" pButton>
+    <i class="pi pi-info-circle" pButtonIcon></i>
+    <span pButtonLabel>Show</span>
+</button>`
             },
             iframeHeight: 300
         }

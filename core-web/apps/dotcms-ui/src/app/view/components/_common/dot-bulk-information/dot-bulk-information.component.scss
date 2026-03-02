@@ -1,11 +1,16 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .bulk-information__success-message {
-    color: $color-palette-gray-700;
-    font-size: $font-size-lmd;
+    color: colors.$color-palette-gray-700;
+    font-size: fonts.$font-size-lmd;
     text-align: center;
-    padding-top: $spacing-3;
-    padding-bottom: $spacing-5;
+    padding-top: spacing.$spacing-3;
+    padding-bottom: spacing.$spacing-5;
 }
 
 .bulk-information__fail-container {
@@ -13,14 +18,14 @@
     flex-direction: column;
 
     > .bulk-information__fail-item + * {
-        margin-top: $spacing-3;
+        margin-top: spacing.$spacing-3;
     }
 }
 
 .bulk-information__fail-message {
     background: hsl(7, 68%, 96%);
-    color: $red;
-    padding: 0.2rem $spacing-3; // 0.2rem hard coded as $spacing-1 is a bit too much
+    color: colors.$red;
+    padding: 0.2rem spacing.$spacing-3; // 0.2rem hard coded as $spacing-1 is a bit too much
     border-radius: 1.8rem;
     display: inline-block;
     text-align: center;
@@ -39,9 +44,9 @@
         padding: 0;
     }
     h5 {
-        padding-bottom: $spacing-1;
-        font-size: $font-size-lmd;
+        padding-bottom: spacing.$spacing-1;
+        font-size: fonts.$font-size-lmd;
     }
-    padding: $spacing-3;
-    box-shadow: $shadow-xs;
+    padding: spacing.$spacing-3;
+    box-shadow: shadows.$shadow-xs;
 }
