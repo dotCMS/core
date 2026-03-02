@@ -500,7 +500,7 @@ public class ContentMapTest extends IntegrationTestBase {
      * ExpectedResult: getDotStyleProperties returns the style properties map
      */
     @Test
-    public void testGetDotStyleProperties_WhenPresent() {
+    public void testGetDotStyleProperties_WhenPresent() throws DotDataException, DotSecurityException {
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .host(defaultHost)
@@ -528,7 +528,7 @@ public class ContentMapTest extends IntegrationTestBase {
      * ExpectedResult: getDotStyleProperties returns null
      */
     @Test
-    public void testGetDotStyleProperties_WhenAbsent() {
+    public void testGetDotStyleProperties_WhenAbsent() throws DotDataException, DotSecurityException {
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .host(defaultHost)
