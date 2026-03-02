@@ -136,7 +136,7 @@ describe('DotAnalyticsSparklineComponent', () => {
             expect(chartData.datasets[0].borderDash).toBeUndefined();
             expect(chartData.datasets[0].fill).toBe(true);
             expect(chartData.datasets[1].borderDash).toEqual([4, 2]);
-            expect(chartData.datasets[1].fill).toBe(false);
+            expect(chartData.datasets[1].fill).toBe(true);
         });
 
         it('should have fill enabled', () => {

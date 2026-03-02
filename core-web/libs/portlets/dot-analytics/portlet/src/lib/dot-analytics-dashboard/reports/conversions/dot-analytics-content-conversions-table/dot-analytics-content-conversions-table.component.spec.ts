@@ -38,8 +38,7 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
     describe('Loading State', () => {
         beforeEach(() => {
             spectator = createComponent({ detectChanges: false });
-            spectator.setInput('data', []);
-            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.setInput({ data: [], status: ComponentStatus.LOADING });
             spectator.detectChanges();
         });
 
@@ -56,8 +55,7 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
     describe('Error State', () => {
         beforeEach(() => {
             spectator = createComponent({ detectChanges: false });
-            spectator.setInput('data', []);
-            spectator.setInput('status', ComponentStatus.ERROR);
+            spectator.setInput({ data: [], status: ComponentStatus.ERROR });
             spectator.detectChanges();
         });
 
@@ -74,8 +72,7 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
     describe('Empty State', () => {
         beforeEach(() => {
             spectator = createComponent({ detectChanges: false });
-            spectator.setInput('data', []);
-            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput({ data: [], status: ComponentStatus.LOADED });
             spectator.detectChanges();
         });
 
@@ -92,8 +89,7 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
     describe('Data Display', () => {
         beforeEach(() => {
             spectator = createComponent({ detectChanges: false });
-            spectator.setInput('data', mockData);
-            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput({ data: mockData, status: ComponentStatus.LOADED });
             spectator.detectChanges();
         });
 
@@ -117,7 +113,7 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
             // Column 1: Title cell contains both title and identifier
             const titleCell = firstRowCells[1];
-            expect(titleCell.querySelector('.content-title')?.textContent?.trim()).toBe(
+            expect(titleCell.querySelector('div > div:first-child')?.textContent?.trim()).toBe(
                 mockData[0].title
             );
             expect(titleCell.querySelector('.content-identifier')?.textContent?.trim()).toBe(
