@@ -1,5 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
-import { addDays, format, parse, startOfDay } from 'date-fns';
+import { addDays, format, isBefore, parse, startOfDay } from 'date-fns';
 
 import {
     ChangeDetectionStrategy,
@@ -69,8 +69,8 @@ export class DotAnalyticsFiltersComponent {
 
     /**
      * Dates that cannot be selected as end date after a start date is chosen.
-     * Disables dates that would create a range shorter than MIN_CUSTOM_DATE_RANGE_DAYS.
-     * Resets to an empty array when no start date is active.
+     * Disables dates (both forward and backward) that would create a range shorter
+     * than MIN_CUSTOM_DATE_RANGE_DAYS. Resets to an empty array when no start date is active.
      */
     readonly $disabledDates = computed<Date[]>(() => {
         const start = this.$rangeStart();
@@ -79,11 +79,14 @@ export class DotAnalyticsFiltersComponent {
             return [];
         }
 
-        // Disable dates from start+1 to start+(MIN-2), inclusive
+        // Disable dates from start±1 to start±(MIN-2), inclusive
         // These would result in a range shorter than MIN_CUSTOM_DATE_RANGE_DAYS days
-        return Array.from({ length: MIN_CUSTOM_DATE_RANGE_DAYS - 2 }, (_, i) =>
-            addDays(start, i + 1)
-        );
+        const offsets = Array.from({ length: MIN_CUSTOM_DATE_RANGE_DAYS - 2 }, (_, i) => i + 1);
+
+        return [
+            ...offsets.map((i) => addDays(start, i)), // forward: too close after start
+            ...offsets.map((i) => addDays(start, -i)) // backward: too close before start
+        ];
     });
 
     /** Check if custom time range is selected */
@@ -106,28 +109,36 @@ export class DotAnalyticsFiltersComponent {
 
     /** Handle change time range */
     onChangeTimeRange(event: SelectChangeEvent): void {
-        if (event.value === TIME_RANGE_OPTIONS.custom) {
-            return;
-        }
-
         this.changeFilters.emit(event.value);
     }
 
     /**
      * Handles each date click in the calendar (range mode).
      * Tracks the first selected date to compute disabledDates for the minimum range.
-     * On the second click, validates and emits the complete range.
+     *
+     * On each click PrimeNG updates its internal model BEFORE firing (onSelect).
+     * However, since $customDateRange is a model() signal used via ControlValueAccessor,
+     * its value may not reflect the latest PrimeNG state synchronously. To avoid this
+     * timing issue, we compute the range directly from $rangeStart + the date argument.
+     *
+     * PrimeNG range-mode resets the selection when the second click is before the first.
+     * We detect this by comparing timestamps and treat it as a new first click.
      */
     onDateSelect(date: Date): void {
         const start = this.$rangeStart();
 
-        if (start === null) {
-            // First date click — record start for disabledDates computation
-            this.$rangeStart.set(date);
+        if (start === null || isBefore(date, start)) {
+            // First date click, or user clicked before start (PrimeNG reset) — start fresh
+            this.$rangeStart.set(startOfDay(date));
         } else {
-            // Second date click — range selection complete
+            // Second date click — compute range directly and emit
             this.$rangeStart.set(null);
-            this.onChangeCustomDateRange();
+            const fromDate = format(start, 'yyyy-MM-dd');
+            const toDate = format(date, 'yyyy-MM-dd');
+
+            if (isValidCustomDateRange(fromDate, toDate)) {
+                this.changeFilters.emit([fromDate, toDate]);
+            }
         }
     }
 
