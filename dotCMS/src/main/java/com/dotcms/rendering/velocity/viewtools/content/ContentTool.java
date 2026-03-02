@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -18,6 +19,7 @@ import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -28,7 +30,9 @@ import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -151,6 +155,8 @@ public class ContentTool implements ViewTool {
 				c = myTransformer.hydrate().get(0);
 			}
 
+			addStylePropertiesFromMultiTree(c);
+
     		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
 	    }
 	    catch(Throwable ex) {
@@ -159,6 +165,47 @@ public class ContentTool implements ViewTool {
             }
             throw new RuntimeException(ex);
         }
+	}
+
+	/**
+	 * When loading content in a page/container context (e.g. via $dotcontent.load in VTL), this
+	 * method fetches dotStyleProperties from the MultiTree and adds them to the contentlet's map.
+	 * This exposes $dotContentMap.dotStyleProperties in VTL for UVE style editor data.
+	 */
+	private void addStylePropertiesFromMultiTree(final Contentlet contentlet) {
+		if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true)) {
+			return;
+		}
+		final String pageId = (String) context.get("HTMLPAGE_IDENTIFIER");
+		final String containerId = (String) context.get("CONTAINER_IDENTIFIER");
+		String containerInstance = (String) context.get("CONTAINER_UNIQUE_ID");
+		if (!UtilMethods.isSet(pageId) || !UtilMethods.isSet(containerId) || !UtilMethods.isSet(containerInstance)) {
+			return;
+		}
+		containerInstance = ContainerUUID.UUID_LEGACY_VALUE.equals(containerInstance)
+				? ContainerUUID.UUID_START_VALUE : containerInstance;
+		final String pTag = Try.of(() -> WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(req))
+				.getOrElse(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+		final String contentletId = contentlet.getIdentifier();
+		try {
+			final List<MultiTree> multiTrees = new ArrayList<>();
+			multiTrees.addAll(APILocator.getMultiTreeAPI().getMultiTrees(pageId, containerId, containerInstance, pTag));
+			if (ContainerUUID.UUID_START_VALUE.equals(containerInstance)) {
+				multiTrees.addAll(APILocator.getMultiTreeAPI().getMultiTrees(pageId, containerId,
+						ContainerUUID.UUID_LEGACY_VALUE, pTag));
+			}
+			for (final MultiTree mt : multiTrees) {
+				if (contentletId.equals(mt.getChild())) {
+					final Map<String, Object> styleProperties = mt.getStyleProperties();
+					if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
+						contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
+					}
+					break;
+				}
+			}
+		} catch (Exception e) {
+			Logger.debug(ContentTool.class, "Could not load style properties for contentlet " + contentletId, e);
+		}
 	}
 	
 	/**

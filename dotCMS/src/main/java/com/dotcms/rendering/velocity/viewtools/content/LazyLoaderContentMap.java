@@ -7,6 +7,7 @@ import io.vavr.Lazy;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -104,5 +105,15 @@ public class LazyLoaderContentMap implements Serializable {
     public Object getFieldVariablesJson(final String fieldVariableName) {
 
         return load().getFieldVariablesJson(fieldVariableName);
+    }
+
+    /**
+     * Returns the style properties for this contentlet when rendered in a page container.
+     * Available in VTL as {@code $dotContentMap.dotStyleProperties}.
+     *
+     * @return The style properties map, or null if none are set.
+     */
+    public Map<String, Object> getDotStyleProperties() {
+        return load().getDotStyleProperties();
     }
 }

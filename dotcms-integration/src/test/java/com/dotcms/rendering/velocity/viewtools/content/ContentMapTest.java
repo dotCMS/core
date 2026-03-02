@@ -47,6 +47,7 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -491,6 +492,54 @@ public class ContentMapTest extends IntegrationTestBase {
 
         final Object title = contentMap.get("title");
         Assert.assertNotNull(title);
+    }
+
+    /**
+     * Method to test: {@link ContentMap#getDotStyleProperties()}
+     * Given Scenario: Contentlet has dotStyleProperties in its map (from UVE style editor / MultiTree)
+     * ExpectedResult: getDotStyleProperties returns the style properties map
+     */
+    @Test
+    public void testGetDotStyleProperties_WhenPresent() {
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .host(defaultHost)
+                .setProperty("title", "Test")
+                .nextPersisted();
+
+        final Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("fontSize", "18px");
+        styleProperties.put("color", "#333");
+        contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
+
+        final Context velocityContext = mock(Context.class);
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                PageMode.LIVE, defaultHost, velocityContext);
+
+        final Map<String, Object> result = contentMap.getDotStyleProperties();
+        assertNotNull(result);
+        assertEquals("18px", result.get("fontSize"));
+        assertEquals("#333", result.get("color"));
+    }
+
+    /**
+     * Method to test: {@link ContentMap#getDotStyleProperties()}
+     * Given Scenario: Contentlet has no dotStyleProperties (not on a page container or no styles set)
+     * ExpectedResult: getDotStyleProperties returns null
+     */
+    @Test
+    public void testGetDotStyleProperties_WhenAbsent() {
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .host(defaultHost)
+                .setProperty("title", "Test")
+                .nextPersisted();
+
+        final Context velocityContext = mock(Context.class);
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                PageMode.LIVE, defaultHost, velocityContext);
+
+        Assert.assertNull(contentMap.getDotStyleProperties());
     }
 
 }
