@@ -4,6 +4,11 @@
             "type": "stdio",
             "command": "npx",
             "args": ["-y", "@primeng/mcp"]
+        },
+        "nx-mcp": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["nx", "mcp"]
         }
     }
 }

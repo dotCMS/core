@@ -1,0 +1,11 @@
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="7.390831999999995">
+<testsuite name="tests/login/login.spec.ts" timestamp="2026-02-23T22:18:36.672Z" hostname="chromium" tests="1" failures="0" skipped="0" time="5.544" errors="0">
+<testcase name="Login with Valid Credentials: admin@dotcms.com" classname="tests/login/login.spec.ts" time="5.544">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-login-login-Login-wi-9a594-redentials-admin-dotcms-com-chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>
