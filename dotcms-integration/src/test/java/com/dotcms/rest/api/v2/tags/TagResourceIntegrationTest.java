@@ -238,9 +238,13 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final List<String> allNames = List.of(chinese, japanese, arabic, korean, cyrillic, mixed);
 
         try {
-            final List<TagForm> forms = allNames.stream()
-                    .map(name -> new TagForm(name, Host.SYSTEM_HOST, null, null))
-                    .toList();
+            final List<TagForm> forms = List.of(
+                    new TagForm(chinese, Host.SYSTEM_HOST, null, null),
+                    new TagForm(japanese, Host.SYSTEM_HOST, null, null),
+                    new TagForm(arabic, Host.SYSTEM_HOST, null, null),
+                    new TagForm(korean, Host.SYSTEM_HOST, null, null),
+                    new TagForm(cyrillic, Host.SYSTEM_HOST, null, null),
+                    new TagForm(mixed, Host.SYSTEM_HOST, null, null));
 
             final List<RestTag> created = createTagsAndGetCreated(forms);
             assertEquals("All 6 Unicode tags should be created", 6, created.size());
