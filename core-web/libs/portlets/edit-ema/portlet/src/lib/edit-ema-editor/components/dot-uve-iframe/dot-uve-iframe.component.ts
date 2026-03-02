@@ -24,6 +24,8 @@ import {
 } from '@dotcms/data-access';
 import { SafeUrlPipe } from '@dotcms/ui';
 
+import { IFRAME_HEIGHT_REPORTER_SCRIPT } from './iframe-height-reporter.script';
+
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
@@ -52,9 +54,9 @@ export class DotUveIframeComponent {
 
     /**
      * URL to load in the iframe.
-     * @type {string | null}
+     * @type {string}
      */
-    @Input() src!: string | null;
+    @Input() src!: string;
     /**
      * Accessible title for the iframe.
      * @type {string}
@@ -212,7 +214,7 @@ export class DotUveIframeComponent {
      * @returns {string} HTML with the editor script injected.
      */
     private addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
+        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>${IFRAME_HEIGHT_REPORTER_SCRIPT}`;
         const bodyExists = rendered.includes('</body>');
 
         if (!bodyExists) {
