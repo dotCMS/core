@@ -1844,7 +1844,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     /**
      * Method to test exhaustive pagination with permission filtering using getContentUnderParentFromDB
-     * <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int, int)}</li>
+     * <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
      * Given scenario: Creating alternating content with and without read permissions in the same folder,
      * then testing that pagination system exhaustively collects enough accessible content to complete
      * the requested page size despite permission filtering reducing intermediate results.
@@ -1927,6 +1927,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .withUser(limitedUser)
                 .forceSystemHost(false)
                 .showContent(true)
+                .contentCursor(0)
                 .showFiles(false)
                 .showFolders(false)
                 .showLinks(false)
@@ -1938,29 +1939,29 @@ public class BrowserAPITest extends IntegrationTestBase {
         // Using reflection to access the package-private method for direct testing
         final BrowserAPIImpl browserAPIImpl = (BrowserAPIImpl) browserAPI;
 
-        final var results1 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 5);
+        final var results1 = browserAPIImpl.getContentUnderParentFromDB(query1, 5);
         assertEquals("Should return exactly 5 accessible contentlets", 5, results1.contentlets.size());
         assertTrue("Should indicate more pages available", results1.hasMore);
 
         // Test Case 2: Request page size of 8 - should get exactly 8 accessible items
-        final var results2 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 8);
+        final var results2 = browserAPIImpl.getContentUnderParentFromDB(query1, 8);
         assertEquals("Should return exactly 8 accessible contentlets", 8, results2.contentlets.size());
         assertTrue("Should indicate more pages available", results2.hasMore);
 
         // Test Case 3: Request page size of 10 - should get all 10 accessible items
-        final var results3 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 10);
+        final var results3 = browserAPIImpl.getContentUnderParentFromDB(query1, 10);
         assertEquals("Should return exactly 10 accessible contentlets", 10, results3.contentlets.size());
         assertFalse("Should indicate no more pages available", results3.hasMore);
 
         // Test Case 4: Request more than available - should get all 10 accessible items
-        final var results4 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 15);
+        final var results4 = browserAPIImpl.getContentUnderParentFromDB(query1, 15);
         assertEquals("Should return all 10 accessible contentlets", 10, results4.contentlets.size());
         assertFalse("Should indicate no more pages available", results4.hasMore);
 
         // Test Case 5: Cursor-based pagination
         // first page returns 5 items and a cursor,
         // second page continues from that cursor and returns the remaining 5 items.
-        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 5);
+        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 5);
         assertEquals("Should return exactly 5 accessible contentlets on page 1", 5, results5.contentlets.size());
         assertTrue("Should indicate more pages available after page 1", results5.hasMore);
 
@@ -1968,7 +1969,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         final BrowserQuery query2 = BrowserQuery.from(query1)
                 .contentCursor(results5.nextDbCursor)
                 .build();
-        final var results6 = browserAPIImpl.getContentUnderParentFromDB(query2, 0, 8);
+        final var results6 = browserAPIImpl.getContentUnderParentFromDB(query2, 8);
         assertEquals("Should return remaining 5 accessible contentlets on page 2", 5, results6.contentlets.size());
         assertFalse("Should indicate no more pages available after page 2", results6.hasMore);
  }
