@@ -1,6 +1,6 @@
 import { createFakeEvent } from '@ngneat/spectator';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { addDays, format } from 'date-fns';
+import { addDays, format, startOfDay } from 'date-fns';
 
 import { Select } from 'primeng/select';
 
@@ -154,22 +154,24 @@ describe('DotAnalyticsFiltersComponent', () => {
             expect(spectator.component.$disabledDates()).toEqual([]);
         });
 
-        it('should return 5 disabled dates (start+1 to start+5) after first date is selected', () => {
+        it('should return 10 disabled dates (5 forward + 5 backward) after first date is selected', () => {
             const startDate = new Date('2024-01-01T00:00:00');
             spectator.component.onDateSelect(startDate);
 
             const disabled = spectator.component.$disabledDates();
-            expect(disabled).toHaveLength(5);
-            expect(disabled[0]).toEqual(addDays(startDate, 1));
-            expect(disabled[4]).toEqual(addDays(startDate, 5));
+            expect(disabled).toHaveLength(10);
+            // Forward: start+1 to start+5
+            expect(disabled[0]).toEqual(startOfDay(addDays(startDate, 1)));
+            expect(disabled[4]).toEqual(startOfDay(addDays(startDate, 5)));
+            // Backward: start-1 to start-5
+            expect(disabled[5]).toEqual(startOfDay(addDays(startDate, -1)));
+            expect(disabled[9]).toEqual(startOfDay(addDays(startDate, -5)));
         });
 
         it('should clear disabled dates after second date is selected', () => {
             const startDate = new Date('2024-01-01T00:00:00');
             const endDate = new Date('2024-01-15T00:00:00');
             spectator.component.onDateSelect(startDate);
-            // Simulate model update PrimeNG would do before emitting (onSelect)
-            spectator.component.$customDateRange.set([startDate, endDate]);
             spectator.component.onDateSelect(endDate);
 
             expect(spectator.component.$disabledDates()).toEqual([]);
@@ -331,14 +333,14 @@ describe('DotAnalyticsFiltersComponent', () => {
             expect(changeFiltersSpy).toHaveBeenCalledWith(TIME_RANGE_OPTIONS.last7days);
         });
 
-        it('should not emit when time range is a custom date range', () => {
+        it('should emit the custom value when custom time range is selected from dropdown', () => {
             const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
             spectator.triggerEventHandler(Select, 'onChange', {
                 value: TIME_RANGE_OPTIONS.custom,
                 originalEvent: createFakeEvent('change')
             });
 
-            expect(changeFiltersSpy).not.toHaveBeenCalled();
+            expect(changeFiltersSpy).toHaveBeenCalledWith(TIME_RANGE_OPTIONS.custom);
         });
     });
 });
