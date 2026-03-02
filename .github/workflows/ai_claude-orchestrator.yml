@@ -1,10 +1,5 @@
 name: Claude AI Orchestrator
 
-# Concurrency control to prevent multiple jobs running for the same PR/issue
-concurrency:
-  group: claude-${{ github.event.pull_request.number || github.event.issue.number || 'manual' }}
-  cancel-in-progress: false
-
 on:
   workflow_dispatch:
     inputs:
@@ -65,6 +60,10 @@ jobs:
   # Interactive Claude mentions (simplified using centralized logic)
   claude-interactive:
     needs: security-check
+    # Never cancel in-progress interactive sessions — a user may be mid-conversation
+    concurrency:
+      group: claude-interactive-${{ github.event.pull_request.number || github.event.issue.number || 'manual' }}
+      cancel-in-progress: false
     if: |
       needs.security-check.outputs.authorized == 'true' &&
       (
@@ -98,6 +97,10 @@ jobs:
   # Automatic PR reviews (no @claude mention)
   claude-automatic-review:
     needs: security-check
+    # Cancel in-progress automatic reviews when a new push arrives — always review latest state
+    concurrency:
+      group: claude-automatic-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     if: |
       needs.security-check.outputs.authorized == 'true' &&
       github.event_name == 'pull_request' &&
