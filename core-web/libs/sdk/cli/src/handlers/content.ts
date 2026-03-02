@@ -213,7 +213,6 @@ export function serializeContentlet(
     frontmatterObj['identifier'] = identifier;
     frontmatterObj['language'] = langCode;
     frontmatterObj['inode'] = record['inode'] as string;
-    frontmatterObj['modDate'] = record['modDate'] as string;
 
     if (bodyFieldVar) {
         frontmatterObj['bodyField'] = bodyFieldVar;
@@ -364,6 +363,9 @@ export function buildPushPayload(
         // JSON/StoryBlock fields: the API expects a JSON string, not an object
         if (JSON_FIELD_TYPES.has(field.fieldType) && typeof value === 'object') {
             contentlet[key] = JSON.stringify(stripDotContentData(value));
+        } else if (LIST_FIELD_TYPES.has(field.fieldType) && Array.isArray(value)) {
+            // Checkbox, MultiSelect, Tag, Category: API expects comma-separated string
+            contentlet[key] = value.join(',');
         } else {
             contentlet[key] = value;
         }

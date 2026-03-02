@@ -169,7 +169,8 @@ describe('content status command', () => {
                     hash: 'h1',
                     pulledAt: '2025-01-01',
                     inode: 'i1',
-                    source: 'staging'
+                    source: 'staging',
+                    modDate: '2024-01-01'
                 }
             }),
             'utf-8'

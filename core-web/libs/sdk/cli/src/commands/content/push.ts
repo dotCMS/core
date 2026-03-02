@@ -388,13 +388,15 @@ async function pushFile(
 
     // Update snapshot
     const hash = computeContentHash(filePath);
+    const newModDate = (entity?.['modDate'] as string) || '';
     const newSnapshotEntry: SnapshotEntry = {
         file: path.basename(filePath),
         title: (parsed.frontmatter.title as string) || '',
         hash,
         pulledAt: new Date().toISOString(),
         inode: newInode,
-        source: instanceName
+        source: instanceName,
+        modDate: newModDate
     };
     updateSnapshotEntry(contentDir, newIdentifier, newSnapshotEntry);
 

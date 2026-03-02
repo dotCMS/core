@@ -53,7 +53,8 @@ describe('content list command', () => {
                     hash: 'h1',
                     pulledAt: '2025-01-01',
                     inode: 'i1',
-                    source: 'demo'
+                    source: 'demo',
+                    modDate: '2024-01-01'
                 },
                 'id-2': {
                     file: '2b100a.md',
@@ -61,7 +62,8 @@ describe('content list command', () => {
                     hash: 'h2',
                     pulledAt: '2025-01-01',
                     inode: 'i2',
-                    source: 'demo'
+                    source: 'demo',
+                    modDate: '2024-01-01'
                 }
             }),
             'utf-8'
@@ -79,7 +81,8 @@ describe('content list command', () => {
                     hash: 'h3',
                     pulledAt: '2025-01-01',
                     inode: 'i3',
-                    source: 'staging'
+                    source: 'staging',
+                    modDate: '2024-01-01'
                 }
             }),
             'utf-8'
@@ -108,7 +111,8 @@ describe('content list command', () => {
                     hash: 'h1',
                     pulledAt: '2025-01-01',
                     inode: 'i1',
-                    source: 'demo'
+                    source: 'demo',
+                    modDate: '2024-01-01'
                 }
             }),
             'utf-8'
@@ -125,7 +129,8 @@ describe('content list command', () => {
                     hash: 'h2',
                     pulledAt: '2025-01-01',
                     inode: 'i2',
-                    source: 'demo'
+                    source: 'demo',
+                    modDate: '2024-01-01'
                 }
             }),
             'utf-8'
@@ -151,7 +156,8 @@ describe('content list command', () => {
                     hash: 'h1',
                     pulledAt: '2025-01-01',
                     inode: 'i1',
-                    source: 'demo'
+                    source: 'demo',
+                    modDate: '2024-01-01'
                 }
             }),
             'utf-8'
@@ -175,7 +181,8 @@ describe('content list command', () => {
                     hash: 'h1',
                     pulledAt: '2025-01-01',
                     inode: 'i1',
-                    source: 'demo'
+                    source: 'demo',
+                    modDate: '2024-01-01'
                 }
             }),
             'utf-8'

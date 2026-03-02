@@ -129,7 +129,6 @@ describe('content push command', () => {
                 identifier: 'id-1',
                 language: 'en-US',
                 inode: 'old-inode',
-                modDate: '2024-01-01',
                 title: 'Test'
             },
             body: 'Hello world',
@@ -180,7 +179,7 @@ describe('content push command', () => {
         const testFile = path.join(tmpDir, 'test.md');
         fs.writeFileSync(
             testFile,
-            '---\ncontentType: Blog\nidentifier: id-1\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Test\n---\nHello world\n'
+            '---\ncontentType: Blog\nidentifier: id-1\nlanguage: en-US\ninode: old-inode\ntitle: Test\n---\nHello world\n'
         );
 
         (scanContentFiles as jest.Mock).mockReturnValue(new Map([[testFile, 'modified']]));
@@ -212,7 +211,7 @@ describe('content push command', () => {
         const testFile = path.join(tmpDir, 'test.md');
         fs.writeFileSync(
             testFile,
-            '---\ncontentType: Blog\nidentifier: id-1\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Test\n---\nHello\n'
+            '---\ncontentType: Blog\nidentifier: id-1\nlanguage: en-US\ninode: old-inode\ntitle: Test\n---\nHello\n'
         );
 
         await pushCommand.run!({ args: { files: 'test.md' } } as never);
@@ -248,7 +247,7 @@ describe('content push command', () => {
         const testFile = path.join(tmpDir, 'retry-test.md');
         fs.writeFileSync(
             testFile,
-            '---\ncontentType: Blog\nidentifier: id-1\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Retry\n---\nRetry content\n'
+            '---\ncontentType: Blog\nidentifier: id-1\nlanguage: en-US\ninode: old-inode\ntitle: Retry\n---\nRetry content\n'
         );
 
         fs.writeFileSync(
@@ -294,7 +293,7 @@ describe('content push command', () => {
             const testFile = path.join(tmpDir, 'test.md');
             fs.writeFileSync(
                 testFile,
-                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Test\n---\nHello\n'
+                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\ntitle: Test\n---\nHello\n'
             );
 
             // File has identifier from source instance, but destination snapshot is empty
@@ -328,7 +327,7 @@ describe('content push command', () => {
             const testFile = path.join(tmpDir, 'test.md');
             fs.writeFileSync(
                 testFile,
-                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Test\n---\nHello\n'
+                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\ntitle: Test\n---\nHello\n'
             );
 
             // No snapshot entry for this file (new to this instance)
@@ -342,7 +341,6 @@ describe('content push command', () => {
                     identifier: 'source-id',
                     language: 'en-US',
                     inode: 'old-inode',
-                    modDate: '2024-01-01',
                     title: 'Test'
                 },
                 body: 'Hello',
@@ -382,7 +380,7 @@ describe('content push command', () => {
             const testFile = path.join(tmpDir, 'test.md');
             fs.writeFileSync(
                 testFile,
-                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\nmodDate: 2024-01-01\ntitle: Test\n---\nHello\n'
+                '---\ncontentType: Blog\nidentifier: source-id\nlanguage: en-US\ninode: old-inode\ntitle: Test\n---\nHello\n'
             );
 
             // parseContentFile must return source-id to match snapshot key
@@ -392,7 +390,6 @@ describe('content push command', () => {
                     identifier: 'source-id',
                     language: 'en-US',
                     inode: 'old-inode',
-                    modDate: '2024-01-01',
                     title: 'Test'
                 },
                 body: 'Hello',

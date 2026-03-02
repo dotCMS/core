@@ -219,7 +219,8 @@ describe('content pull command', () => {
             hash: 'old-hash-before-local-edit',
             pulledAt: '2025-01-01',
             inode: 'inode-1',
-            source: 'demo'
+            source: 'demo',
+            modDate: '2024-01-01'
         };
 
         // findEntryByFile looks up by filename — return a match with stale hash
@@ -256,7 +257,8 @@ describe('content pull command', () => {
             hash: 'old-hash-before-local-edit',
             pulledAt: '2025-01-01',
             inode: 'inode-1',
-            source: 'demo'
+            source: 'demo',
+            modDate: '2024-01-01'
         };
 
         (findEntryByFile as jest.Mock).mockReturnValue(['abc12345-6789', entry]);
@@ -284,7 +286,8 @@ describe('content pull command', () => {
             hash: 'old-hash-before-local-edit',
             pulledAt: '2025-01-01',
             inode: 'inode-1',
-            source: 'demo'
+            source: 'demo',
+            modDate: '2024-01-01'
         };
 
         (findEntryByFile as jest.Mock).mockReturnValue(['abc12345-6789', entry]);
@@ -311,7 +314,8 @@ describe('content pull command', () => {
             hash: 'stale-hash',
             pulledAt: '2025-01-01',
             inode: 'stale-inode',
-            source: 'other-instance'
+            source: 'other-instance',
+            modDate: '2024-01-01'
         };
 
         // loadSnapshot returns the stale entry (identifier differs from pulled one)

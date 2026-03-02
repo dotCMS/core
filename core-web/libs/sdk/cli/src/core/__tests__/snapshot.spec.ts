@@ -48,6 +48,7 @@ describe('snapshot', () => {
             pulledAt: '2025-01-01T00:00:00Z',
             inode: 'inode-001',
             source: 'demo',
+            modDate: '2025-01-01T00:00:00Z',
             ...overrides
         };
     }
@@ -117,7 +118,8 @@ describe('snapshot', () => {
                 hash: 'sha256-hash-value',
                 pulledAt: '2025-06-15T10:30:00Z',
                 inode: 'abc-def-123',
-                source: 'staging'
+                source: 'staging',
+                modDate: '2025-06-15T10:30:00Z'
             };
             const snapshot: SnapshotStore = { 'id-456-789': entry };
 
@@ -250,7 +252,7 @@ describe('snapshot', () => {
             const filePath = path.join(tmpDir, 'test.md');
             writeContentFile(
                 filePath,
-                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'This is the body.'
             );
 
@@ -264,12 +266,12 @@ describe('snapshot', () => {
 
             writeContentFile(
                 file1,
-                'title: Hello\nauthor: Alice\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Hello\nauthor: Alice\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body content.'
             );
             writeContentFile(
                 file2,
-                'author: Alice\ntitle: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'author: Alice\ntitle: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body content.'
             );
 
@@ -282,12 +284,12 @@ describe('snapshot', () => {
 
             writeContentFile(
                 file1,
-                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
             writeContentFile(
                 file2,
-                'title:   Hello\ncontentType:   Blog\nidentifier:   id1\nlanguage:   en\ninode:   abc\nmodDate:   "2025-01-01"\n',
+                'title:   Hello\ncontentType:   Blog\nidentifier:   id1\nlanguage:   en\ninode:   abc\n',
                 'Body.'
             );
 
@@ -300,12 +302,12 @@ describe('snapshot', () => {
 
             writeContentFile(
                 file1,
-                'title: Hello World\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Hello World\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
             writeContentFile(
                 file2,
-                "title: 'Hello World'\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: '2025-01-01'\n",
+                "title: 'Hello World'\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n",
                 'Body.'
             );
 
@@ -318,12 +320,12 @@ describe('snapshot', () => {
 
             writeContentFile(
                 file1,
-                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
             writeContentFile(
                 file2,
-                'title: Goodbye\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Goodbye\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
 
@@ -336,12 +338,12 @@ describe('snapshot', () => {
 
             writeContentFile(
                 file1,
-                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Original body.'
             );
             writeContentFile(
                 file2,
-                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Changed body.'
             );
 
@@ -354,12 +356,12 @@ describe('snapshot', () => {
 
             writeContentFile(
                 file1,
-                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: inode-111\nmodDate: "2025-01-01"\n',
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: inode-111\n',
                 'Same body.'
             );
             writeContentFile(
                 file2,
-                'title: Same\ncontentType: Article\nidentifier: id2\nlanguage: fr\ninode: inode-222\nmodDate: "2025-12-31"\n',
+                'title: Same\ncontentType: Article\nidentifier: id2\nlanguage: fr\ninode: inode-222\n',
                 'Same body.'
             );
 
@@ -372,12 +374,12 @@ describe('snapshot', () => {
 
             writeContentFile(
                 file1,
-                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\nbodyField: body\n',
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nbodyField: body\n',
                 'Same.'
             );
             writeContentFile(
                 file2,
-                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\nbodyField: content\n',
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nbodyField: content\n',
                 'Same.'
             );
 
@@ -390,12 +392,12 @@ describe('snapshot', () => {
 
             writeContentFile(
                 file1,
-                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body text.\n'
             );
             writeContentFile(
                 file2,
-                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Same\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body text.\n\n\n'
             );
 
@@ -441,7 +443,7 @@ describe('snapshot', () => {
             const filePath = path.join(tmpDir, 'new-file.md');
             writeContentFile(
                 filePath,
-                'title: New\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: New\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
 
@@ -463,7 +465,7 @@ describe('snapshot', () => {
             const filePath = path.join(tmpDir, 'unchanged.md');
             writeContentFile(
                 filePath,
-                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
 
@@ -480,7 +482,7 @@ describe('snapshot', () => {
             const filePath = path.join(tmpDir, 'modified.md');
             writeContentFile(
                 filePath,
-                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Hello\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
 
@@ -503,14 +505,14 @@ describe('snapshot', () => {
             const newFile = path.join(contentDir, 'new-post.md');
             writeContentFile(
                 newFile,
-                'title: New Post\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: New Post\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'New body.'
             );
 
             const unchangedFile = path.join(contentDir, 'old-post.md');
             writeContentFile(
                 unchangedFile,
-                'title: Old Post\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
+                'title: Old Post\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\n',
                 'Old body.'
             );
             const unchangedHash = computeContentHash(unchangedFile);
@@ -535,7 +537,7 @@ describe('snapshot', () => {
             const filePath = path.join(contentDir, 'modified.md');
             writeContentFile(
                 filePath,
-                'title: Original\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Original\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
 
@@ -556,14 +558,14 @@ describe('snapshot', () => {
             const includedFile = path.join(contentDir, 'included.md');
             writeContentFile(
                 includedFile,
-                'title: Included\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Included\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
 
             const ignoredFile = path.join(rootDir, 'drafts', 'ignored.md');
             writeContentFile(
                 ignoredFile,
-                'title: Ignored\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
+                'title: Ignored\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\n',
                 'Draft body.'
             );
 
@@ -586,7 +588,7 @@ describe('snapshot', () => {
             const visibleFile = path.join(contentDir, 'post.md');
             writeContentFile(
                 visibleFile,
-                'title: Visible\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Visible\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
 
@@ -620,14 +622,14 @@ describe('snapshot', () => {
             const includedFile = path.join(contentDir, 'keep.md');
             writeContentFile(
                 includedFile,
-                'title: Keep\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\nmodDate: "2025-01-01"\n',
+                'title: Keep\ncontentType: Blog\nidentifier: id1\nlanguage: en\ninode: abc\n',
                 'Body.'
             );
 
             const ignoredFile = path.join(rootDir, 'temp', 'skip.md');
             writeContentFile(
                 ignoredFile,
-                'title: Skip\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\nmodDate: "2025-01-01"\n',
+                'title: Skip\ncontentType: Blog\nidentifier: id2\nlanguage: en\ninode: def\n',
                 'Body.'
             );
 

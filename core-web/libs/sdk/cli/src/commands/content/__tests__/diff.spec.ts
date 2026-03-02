@@ -97,7 +97,7 @@ describe('content diff command', () => {
     };
 
     const localFileContent =
-        '---\ncontentType: Blog\nidentifier: abc12345-6789\nlanguage: en-US\ninode: inode-1\nmodDate: "2024-01-01"\nbodyField: body\ntitle: Test Post\n---\nHello world\n';
+        '---\ncontentType: Blog\nidentifier: abc12345-6789\nlanguage: en-US\ninode: inode-1\nbodyField: body\ntitle: Test Post\n---\nHello world\n';
 
     beforeEach(() => {
         tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'dotcli-diff-')));
@@ -122,7 +122,6 @@ describe('content diff command', () => {
                 identifier: 'abc12345-6789',
                 language: 'en-US',
                 inode: 'inode-1',
-                modDate: '2024-01-01',
                 bodyField: 'body',
                 title: 'Test Post'
             },
@@ -267,7 +266,7 @@ describe('content diff command', () => {
 
         // Server version has different title
         const serverContent =
-            '---\ncontentType: Blog\nidentifier: abc12345-6789\nlanguage: en-US\ninode: inode-1\nmodDate: "2024-01-01"\nbodyField: body\ntitle: Original Title\n---\nHello world\n';
+            '---\ncontentType: Blog\nidentifier: abc12345-6789\nlanguage: en-US\ninode: inode-1\nbodyField: body\ntitle: Original Title\n---\nHello world\n';
 
         (serializeContentlet as jest.Mock).mockReturnValue({
             filename: 'abc123.md',

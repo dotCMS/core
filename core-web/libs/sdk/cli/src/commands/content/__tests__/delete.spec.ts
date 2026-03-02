@@ -90,8 +90,7 @@ describe('content delete command', () => {
                 contentType: 'Blog',
                 identifier: 'id-1',
                 inode: 'stale-inode',
-                language: 'en-US',
-                modDate: '2024-01-01'
+                language: 'en-US'
             },
             body: '',
             filePath: testFile
@@ -123,8 +122,7 @@ describe('content delete command', () => {
                 contentType: 'Blog',
                 identifier: 'id-1',
                 inode: 'stale-inode',
-                language: 'en-US',
-                modDate: '2024-01-01'
+                language: 'en-US'
             },
             body: '',
             filePath: testFile
@@ -151,8 +149,7 @@ describe('content delete command', () => {
                 contentType: 'Blog',
                 identifier: 'id-1',
                 inode: 'stale-inode',
-                language: 'en-US',
-                modDate: '2024-01-01'
+                language: 'en-US'
             },
             body: '',
             filePath: testFile

@@ -117,6 +117,7 @@ export interface SnapshotEntry {
     pulledAt: string; // ISO timestamp of last pull
     inode: string; // remote version for conflict detection
     source: string; // instance name where this was pulled/pushed from
+    modDate: string; // server's last modified date (auto-generated, for audit)
 }
 
 export type FileState = 'unchanged' | 'modified' | 'new' | 'deleted';
@@ -129,7 +130,6 @@ export interface ContentletFrontmatter {
     identifier: string;
     language: string;
     inode: string;
-    modDate: string;
     bodyField?: string;
     [fieldVariable: string]: unknown;
 }
@@ -241,7 +241,6 @@ export const METADATA_KEYS = [
     'identifier',
     'language',
     'inode',
-    'modDate',
     'bodyField'
 ] as const;
 

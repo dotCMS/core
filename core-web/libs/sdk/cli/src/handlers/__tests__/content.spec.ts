@@ -421,7 +421,6 @@ contentType: BlogPost
 identifier: abc123def456
 language: en-US
 inode: inode-001
-modDate: "2024-01-15T10:30:00Z"
 bodyField: body
 title: Hello World
 ---
@@ -481,7 +480,6 @@ describe('buildPushPayload', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'body',
                 title: 'Hello World',
                 author: 'John Doe'
@@ -490,7 +488,6 @@ describe('buildPushPayload', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
                 bodyField: string;
             },
             body: '<p>This is the body</p>',
@@ -514,7 +511,6 @@ describe('buildPushPayload', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'body',
                 title: 'Post with Image',
                 image: './assets/abc123/image.photo.jpg'
@@ -523,7 +519,6 @@ describe('buildPushPayload', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
                 bodyField: string;
             },
             body: '<p>Body</p>',
@@ -560,7 +555,6 @@ describe('buildPushPayload', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'body',
                 title: 'Post with Relationships',
                 activities: [
@@ -572,7 +566,6 @@ describe('buildPushPayload', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
                 bodyField: string;
             },
             body: '<p>Body</p>',
@@ -595,7 +588,6 @@ describe('buildPushPayload', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'body',
                 title: 'Test',
                 unknownField: [{ identifier: 'rel-1', title: 'Related' }],
@@ -605,7 +597,6 @@ describe('buildPushPayload', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
                 bodyField: string;
             },
             body: '<p>Body</p>',
@@ -660,7 +651,6 @@ describe('buildPushPayload', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'blogContent',
                 title: 'Test Blog'
             } as ContentletRecord & {
@@ -668,7 +658,6 @@ describe('buildPushPayload', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
                 bodyField: string;
             },
             body: storyBlockBody,
@@ -734,7 +723,6 @@ describe('buildPushPayload', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'body',
                 title: 'Test',
                 extraContent: storyBlockObj
@@ -743,7 +731,6 @@ describe('buildPushPayload', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
                 bodyField: string;
             },
             body: '',
@@ -766,7 +753,6 @@ describe('buildPushPayload', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'body',
                 title: 'Test'
             } as ContentletRecord & {
@@ -774,7 +760,6 @@ describe('buildPushPayload', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
                 bodyField: string;
             },
             body: 'Body content',
@@ -786,6 +771,43 @@ describe('buildPushPayload', () => {
         // These should be set via system field mapping, not duplicated
         expect(result.contentlet['modDate']).toBeUndefined();
         expect(result.contentlet['bodyField']).toBeUndefined();
+    });
+
+    it('should join checkbox and multiselect arrays into comma-separated strings', () => {
+        const schemaWithCheckbox = makeSchema([
+            makeField({ variable: 'title', fieldType: 'Text', sortOrder: 1 }),
+            makeField({ variable: 'body', fieldType: 'WYSIWYG', sortOrder: 2 }),
+            makeField({ variable: 'searchEngineIndex', fieldType: 'Checkbox', sortOrder: 3 }),
+            makeField({ variable: 'tags', fieldType: 'Tag', sortOrder: 4 }),
+            makeField({ variable: 'options', fieldType: 'MultiSelect', sortOrder: 5 })
+        ]);
+
+        const parsed = {
+            frontmatter: {
+                contentType: 'BlogPost',
+                identifier: 'abc123',
+                language: 'en-US',
+                inode: 'inode-001',
+                bodyField: 'body',
+                searchEngineIndex: ['index', 'follow', 'snippet'],
+                tags: ['travel', 'winter'],
+                options: ['optA', 'optB']
+            } as ContentletRecord & {
+                contentType: string;
+                identifier: string;
+                language: string;
+                inode: string;
+                bodyField: string;
+            },
+            body: '<p>Body</p>',
+            filePath: '/path/to/abc123.md'
+        };
+
+        const result = buildPushPayload(parsed, schemaWithCheckbox);
+
+        expect(result.contentlet['searchEngineIndex']).toBe('index,follow,snippet');
+        expect(result.contentlet['tags']).toBe('travel,winter');
+        expect(result.contentlet['options']).toBe('optA,optB');
     });
 });
 
@@ -801,7 +823,6 @@ describe('validateContentFile', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'body'
             },
             body: '<p>Valid body</p>',
@@ -823,7 +844,6 @@ describe('validateContentFile', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
             },
             body: 'Body',
             filePath: '/path/to/abc123.md'
@@ -844,7 +864,6 @@ describe('validateContentFile', () => {
                 identifier: string;
                 language: string;
                 inode: string;
-                modDate: string;
             },
             body: 'Body',
             filePath: '/path/to/abc123.md'
@@ -861,8 +880,7 @@ describe('validateContentFile', () => {
                 contentType: 'WrongType',
                 identifier: 'abc123def456',
                 language: 'en-US',
-                inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z'
+                inode: 'inode-001'
             },
             body: 'Body',
             filePath: '/path/to/abc123.md'
@@ -889,8 +907,7 @@ describe('validateContentFile', () => {
                 contentType: 'BlogPost',
                 identifier: 'abc123def456',
                 language: 'en-US',
-                inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z'
+                inode: 'inode-001'
                 // title is missing!
             },
             body: 'Body content',
@@ -919,7 +936,6 @@ describe('validateContentFile', () => {
                 identifier: 'abc123def456',
                 language: 'en-US',
                 inode: 'inode-001',
-                modDate: '2024-01-15T10:30:00Z',
                 bodyField: 'body',
                 title: 'Test'
             },

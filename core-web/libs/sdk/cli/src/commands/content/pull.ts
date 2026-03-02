@@ -231,7 +231,8 @@ async function pullSingleContentlet(
         hash,
         pulledAt: new Date().toISOString(),
         inode: record['inode'] as string,
-        source: instanceName
+        source: instanceName,
+        modDate: (record['modDate'] as string) || ''
     };
     updateSnapshotEntry(contentDir, identifier, snapshotEntry);
 
@@ -336,7 +337,8 @@ async function pullContentType(
             hash,
             pulledAt: new Date().toISOString(),
             inode: record['inode'] as string,
-            source: instanceName
+            source: instanceName,
+            modDate: (record['modDate'] as string) || ''
         };
         updateSnapshotEntry(contentDir, recordIdentifier, snapshotEntry);
         pulledIdentifiers.add(recordIdentifier);
