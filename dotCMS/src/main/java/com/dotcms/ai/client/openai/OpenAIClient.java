@@ -174,9 +174,10 @@ public class OpenAIClient implements AIClient {
             return;
         }
         payload.remove(AiKeys.TEMPERATURE);
-        if (payload.has(AiKeys.MAX_TOKENS)) {
-            payload.put(AiKeys.MAX_COMPLETION_TOKENS, payload.opt(AiKeys.MAX_TOKENS));
-            payload.remove(AiKeys.MAX_TOKENS);
+        final int maxTokens = payload.optInt(AiKeys.MAX_TOKENS, 0);
+        payload.remove(AiKeys.MAX_TOKENS);
+        if (maxTokens > 0) {
+            payload.put(AiKeys.MAX_COMPLETION_TOKENS, maxTokens);
         }
     }
 
