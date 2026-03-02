@@ -23,7 +23,6 @@ describe('DotAnalyticsFiltersComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsFiltersComponent,
-        mocks: [DotMessageService],
         providers: [
             {
                 provide: DotMessageService,
