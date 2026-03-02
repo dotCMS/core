@@ -1,12 +1,16 @@
-import { isBefore, isDate, isSameDay, parse } from 'date-fns';
+import { differenceInCalendarDays, isBefore, isDate, isSameDay, parse } from 'date-fns';
 
 import { TIME_RANGE_OPTIONS, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
 
+/** Minimum number of days required for a custom date range (inclusive) */
+export const MIN_CUSTOM_DATE_RANGE_DAYS = 7;
+
 /**
- * Validates custom date range parameters
- * @param fromDate - Start date string (ISO format)
- * @param toDate - End date string (ISO format)
- * @returns true if the date range is valid
+ * Validates custom date range parameters.
+ * The range must span at least MIN_CUSTOM_DATE_RANGE_DAYS days (inclusive).
+ * @param fromDate - Start date string (yyyy-MM-dd)
+ * @param toDate - End date string (yyyy-MM-dd)
+ * @returns true if the date range is valid and meets the minimum span
  */
 export const isValidCustomDateRange = (fromDate: string, toDate: string): boolean => {
     const fromDateObj = parse(fromDate, 'yyyy-MM-dd', new Date());
@@ -17,17 +21,33 @@ export const isValidCustomDateRange = (fromDate: string, toDate: string): boolea
         return false;
     }
 
-    // Check if from date is before or equal to to date
-    return isBefore(fromDateObj, toDateObj) || isSameDay(fromDateObj, toDateObj);
+    // Check order: from must be before or equal to to
+    if (!isBefore(fromDateObj, toDateObj) && !isSameDay(fromDateObj, toDateObj)) {
+        return false;
+    }
+
+    // Enforce minimum 7-day span (inclusive: day 1 to day 7 = 6 calendar days difference)
+    return differenceInCalendarDays(toDateObj, fromDateObj) >= MIN_CUSTOM_DATE_RANGE_DAYS - 1;
 };
 
+/** Time range values that are no longer supported as URL params */
+const EXCLUDED_TIME_RANGE_URL_VALUES: string[] = [
+    TIME_RANGE_OPTIONS.today,
+    TIME_RANGE_OPTIONS.yesterday
+];
+
 /**
- * Validates and returns a valid time range from URL value
+ * Validates and returns a valid time range from a URL parameter value.
+ * `today` and `yesterday` are excluded as they are no longer supported options.
  * @param urlValue - URL parameter value for time range
- * @returns Valid TimeRange or null if invalid
+ * @returns Valid TimeRange or null if invalid or excluded
  */
 export const getValidTimeRangeUrl = (urlValue: string): TimeRange | null => {
     if (!urlValue || typeof urlValue !== 'string') {
+        return null;
+    }
+
+    if (EXCLUDED_TIME_RANGE_URL_VALUES.includes(urlValue)) {
         return null;
     }
 
