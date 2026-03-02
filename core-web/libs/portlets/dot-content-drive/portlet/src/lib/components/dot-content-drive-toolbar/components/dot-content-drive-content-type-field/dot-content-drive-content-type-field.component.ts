@@ -15,10 +15,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
+import { LazyLoadEvent } from 'primeng/api';
 import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { catchError, debounceTime, skip, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, map, skip, switchMap, tap } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import {
@@ -28,16 +29,13 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import {
-    DEBOUNCE_TIME,
-    MAP_NUMBERS_TO_BASE_TYPES,
-    PANEL_SCROLL_HEIGHT
-} from '../../../../shared/constants';
+import { DEBOUNCE_TIME, MAP_NUMBERS_TO_BASE_TYPES } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 type DotContentDriveContentTypeFieldState = {
     filter: string;
     loading: boolean;
+    currentPage: number;
     canLoadMore: boolean;
     contentTypes: DotCMSContentType[];
 };
@@ -54,13 +52,14 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     readonly #contentTypesService = inject(DotContentTypeService);
     readonly #searchSubject = new Subject<{ baseType?: string; filter: string }>();
 
-    protected readonly MULTISELECT_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
+    protected readonly ITEMS_PER_PAGE = 10;
 
     readonly $state = signalState<DotContentDriveContentTypeFieldState>({
         filter: '',
         loading: true,
         canLoadMore: true,
-        contentTypes: []
+        contentTypes: [],
+        currentPage: 1
     });
 
     readonly $selectedContentTypes = linkedSignal<DotCMSContentType[]>(
@@ -198,6 +197,35 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         this.updateState({ filter: '' });
     }
 
+    protected onLazyLoad(event: LazyLoadEvent) {
+        const page = Math.ceil(event.last / this.ITEMS_PER_PAGE) + 1;
+
+        if (this.$state.canLoadMore() && page > this.$state.currentPage()) {
+            this.loadContentTypes({
+                page,
+                filter: this.$state.filter(),
+                type: this.$mappedBaseTypes()
+            }).subscribe(({ contentTypes, pagination }) => {
+                if (contentTypes.length === 0) {
+                    this.updateState({ canLoadMore: false });
+                    return;
+                }
+
+                this.updateState({
+                    contentTypes: [...this.$state.contentTypes(), ...contentTypes],
+                    canLoadMore:
+                        this.$state.contentTypes().length + contentTypes.length <
+                        pagination.totalEntries,
+                    loading: false,
+                    currentPage:
+                        pagination.currentPage > this.$state.currentPage()
+                            ? pagination.currentPage
+                            : this.$state.currentPage()
+                });
+            });
+        }
+    }
+
     /**
      * Utility method to update the component state.
      *
@@ -243,7 +271,8 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
         this.#contentTypesService
             .getContentTypesWithPagination({
                 type: this.$mappedBaseTypes(),
-                ensure: this.$mappedEnsuredContentTypes()
+                ensure: this.$mappedEnsuredContentTypes(),
+                per_page: this.ITEMS_PER_PAGE
             })
             .pipe(
                 tap(() => this.updateState({ loading: true })),
@@ -263,12 +292,13 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                     pagination: DotPagination;
                 }) => {
                     const dotCMSContentTypes = this.filterContentTypes(contentTypes);
-                    const canLoadMore = pagination.currentPage < pagination.totalEntries;
+                    const canLoadMore = contentTypes.length < pagination.totalEntries;
 
                     this.updateState({
                         contentTypes: dotCMSContentTypes,
                         canLoadMore,
-                        loading: false
+                        loading: false,
+                        currentPage: pagination.currentPage
                     });
                 }
             );
@@ -295,19 +325,50 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 debounceTime(DEBOUNCE_TIME),
                 takeUntilDestroyed(this.#destroyRef),
                 switchMap(({ filter, baseType: type }) =>
-                    this.#contentTypesService
-                        .getContentTypes({
-                            filter,
-                            type,
-                            ensure: this.$mappedEnsuredContentTypes()
-                        })
-                        .pipe(catchError(() => of([])))
+                    this.loadContentTypes({ page: 1, filter, type })
                 )
             )
-            .subscribe((dotCMSContentTypes: DotCMSContentType[] = []) => {
-                const contentTypes = this.filterContentTypes(dotCMSContentTypes);
-
-                this.updateState({ contentTypes, loading: false });
+            .subscribe(({ contentTypes, pagination }) => {
+                this.updateState({
+                    contentTypes,
+                    loading: false,
+                    canLoadMore: contentTypes.length < pagination.totalEntries,
+                    currentPage: pagination.currentPage
+                });
             });
+    }
+
+    private loadContentTypes({
+        page,
+        filter,
+        type
+    }: {
+        page: number;
+        filter: string;
+        type: string;
+    }) {
+        return this.#contentTypesService
+            .getContentTypesWithPagination({
+                filter,
+                type,
+                ensure: this.$mappedEnsuredContentTypes(),
+                page,
+                per_page: this.ITEMS_PER_PAGE
+            })
+            .pipe(
+                catchError(() =>
+                    of({
+                        contentTypes: [],
+                        pagination: { currentPage: 1, totalEntries: 0 } as DotPagination
+                    })
+                ),
+                map(({ contentTypes, pagination }) => {
+                    const filteredContentTypes = this.filterContentTypes(contentTypes);
+                    return {
+                        contentTypes: filteredContentTypes,
+                        pagination
+                    };
+                })
+            );
     }
 }
