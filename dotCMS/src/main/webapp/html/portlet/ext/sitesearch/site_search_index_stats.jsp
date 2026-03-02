@@ -9,8 +9,8 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="org.apache.commons.lang.StringUtils"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
+<%@page import="com.dotcms.content.index.domain.ClusterIndexHealth"%>
+<%@ page import="com.dotcms.content.index.domain.IndexStats" %>
 <%@ include file="/html/common/init.jsp"%>
 
 <%

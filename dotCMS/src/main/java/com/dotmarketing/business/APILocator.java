@@ -34,8 +34,10 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.VersionedIndicesAPI;
-import com.dotcms.content.index.opensearch.OpenSearchIndexAPI;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
@@ -728,11 +730,11 @@ public class APILocator extends Locator<APIIndex> {
     }
 
     /**
-     * Open Search Index API
-     * @return {@link OpenSearchIndexAPI}
+     * Vendor-neutral Index API router (currently routes to Elasticsearch).
+     * @return {@link IndexAPI}
      */
-    public static OpenSearchIndexAPI getOpenSearchIndexAPI(){
-        return (OpenSearchIndexAPI) getInstance(APIIndex.OPENSEARCH_INDEX_API);
+    public static IndexAPI getIndexAPI(){
+        return (IndexAPI) getInstance(APIIndex.INDEX_API);
     }
 
 	/**
@@ -1430,7 +1432,8 @@ enum APIIndex
     REQUEST_COST_API,
     ANALYTICS_CUSTOM_ATTRIBUTE_API,
     VERSIONED_INDICES_API,
-    OPENSEARCH_INDEX_API
+    OPENSEARCH_INDEX_API,
+    INDEX_API
     ;
 
 	Object create() {
@@ -1532,7 +1535,8 @@ enum APIIndex
                 return new OpenAIVisionAPIImpl();
             case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
             case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
-            case OPENSEARCH_INDEX_API: return CDIUtils.getBeanThrows(OpenSearchIndexAPI.class);
+            case OPENSEARCH_INDEX_API: return new OSIndexAPIImpl();
+            case INDEX_API: return new IndexAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

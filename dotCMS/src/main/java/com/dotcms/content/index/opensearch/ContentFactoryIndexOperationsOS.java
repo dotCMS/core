@@ -1,7 +1,5 @@
 package com.dotcms.content.index.opensearch;
 
-import static com.dotcms.content.index.opensearch.OpenSearchIndexAPI.INDEX_OPERATIONS_TIMEOUT;
-
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.IndexContentletScroll;
@@ -236,7 +234,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         searchRequestBuilder.query(searchQuery);
 
         // Set timeout
-        searchRequestBuilder.timeout(INDEX_OPERATIONS_TIMEOUT);
+        searchRequestBuilder.timeout(ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT);
 
         // Set source fields
         searchRequestBuilder.source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));

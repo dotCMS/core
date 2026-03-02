@@ -56,7 +56,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexResponse;
+import com.dotcms.content.index.domain.CreateIndexStatus;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -367,9 +367,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
 
         //create index
-        CreateIndexResponse cir = indexApi.createIndex(indexName, settings, shards);
+        CreateIndexStatus cir = indexApi.createIndex(indexName, settings, shards);
         int i = 0;
-        while(!cir.isAcknowledged()){
+        while(!cir.acknowledged()){
 
             try {
                 Thread.sleep(100);

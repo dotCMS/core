@@ -7,8 +7,8 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
+<%@page import="com.dotcms.content.index.domain.ClusterIndexHealth"%>
+<%@ page import="com.dotcms.content.index.domain.IndexStats" %>
 <%@ include file="/html/common/init.jsp"%>
 <%
 

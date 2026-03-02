@@ -1,7 +1,7 @@
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
+<%@page import="com.dotcms.content.index.domain.ClusterIndexHealth"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
@@ -13,7 +13,7 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="org.apache.commons.lang.StringUtils"%>
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
-<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
+<%@ page import="com.dotcms.content.index.domain.IndexStats" %>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();

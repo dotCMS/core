@@ -5,6 +5,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 import java.net.URI;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
@@ -62,6 +63,10 @@ class ConfigurableOpenSearchProvider {
 
     private static final String HTTPS_PROTOCOL = "https";
     private static final String HTTP_PROTOCOL = "http";
+
+    //TODO: Find a better place for this property to live
+    public static final String INDEX_OPERATIONS_TIMEOUT = Lazy.of(
+            () -> Config.getStringProperty("OPENSEARCH_INDEX_OPERATIONS_TIMEOUT", "15s")).get();
 
     private OpenSearchClient client;
     private OpenSearchTransport transport;
