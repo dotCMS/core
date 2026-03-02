@@ -294,21 +294,3 @@ Type : Copy
 | Feature | `Type : New Functionality` | — |
 | Epic | `Type : New Functionality` | — |
 | UX | `Type : Visual Design` | — |
-
----
-
-## Native GitHub Issue Types
-
-Set via REST PATCH immediately after `gh issue create`. This is GitHub's first-class type system — separate from labels.
-
-| Template | Native type name | Type ID (reference only) |
-|---|---|---|
-| Defect | `Bug` | 156992 |
-| Task | `Task` | 156989 |
-| Spike | `Spike` | 26128527 |
-| Feature | `Feature` | 156996 |
-| Epic | `Epic` | 26685397 |
-| UX | `Task` | 156989 |
-| Pillar | `Pillar` | 28738322 |
-
-The name string is all that's needed for the PATCH call — ID is for reference only.

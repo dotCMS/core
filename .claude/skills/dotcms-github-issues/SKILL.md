@@ -96,15 +96,9 @@ Note: `dotCMS : Content Management` is a specific label for issues about core co
 
 Set via REST PATCH immediately after creation. This is GitHub's first-class type system.
 
-| Template | Native type value |
-|---|---|
-| Defect | `Bug` |
-| Task | `Task` |
-| Spike | `Spike` |
-| Feature | `Feature` |
-| Epic | `Epic` |
-| UX | `Task` |
-| Pillar | `Pillar` |
+Read the matching template file in `.github/ISSUE_TEMPLATE/` (e.g. `defect.yaml`, `task.yaml`) and use its `type:` field value — that is the exact string for the REST PATCH call. For example, `defect.yaml` has `type: bug` → use `Bug` (capitalize first letter).
+
+> **Exception:** `ux.yaml` has no `type:` field. Use `Task` for UX issues.
 
 ### Step 4c — Select `Type :` label (OPTIONAL)
 
