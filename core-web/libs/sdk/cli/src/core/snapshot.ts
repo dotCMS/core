@@ -157,8 +157,16 @@ const metadataKeySet = new Set<string>(METADATA_KEYS);
  */
 export function computeContentHash(filePath: string): string {
     const raw = fs.readFileSync(filePath, 'utf-8');
-    const { data: frontmatter, content: body } = matter(raw);
-    const fileDir = path.dirname(filePath);
+
+    return computeContentHashFromString(raw, path.dirname(filePath));
+}
+
+/**
+ * Compute a deterministic SHA-256 hash from an in-memory content string.
+ * Avoids a disk read when the content is already available (e.g. right after writing a file).
+ */
+export function computeContentHashFromString(content: string, fileDir: string): string {
+    const { data: frontmatter, content: body } = matter(content);
 
     // Strip metadata keys, keep only user fields
     const userFields: Record<string, unknown> = {};

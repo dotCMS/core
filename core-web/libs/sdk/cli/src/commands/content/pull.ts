@@ -13,10 +13,10 @@ import { fetchLanguageMap } from '../../core/languages';
 import {
     buildSnapshotEntry,
     computeContentHash,
+    computeContentHashFromString,
     findEntryByFile,
     loadSnapshot,
-    saveSnapshot,
-    updateSnapshotEntry
+    saveSnapshot
 } from '../../core/snapshot';
 import {
     CACHE_DIR,
@@ -223,10 +223,11 @@ async function pullSingleContentlet(
 
     fs.writeFileSync(filePath, result.content, 'utf-8');
 
-    // Update snapshot
-    const hash = computeContentHash(filePath);
-    const snapshotEntry = buildSnapshotEntry(record, result.filename, hash, instanceName);
-    updateSnapshotEntry(contentDir, identifier, snapshotEntry);
+    // Update snapshot (hash from in-memory content to avoid re-reading the file)
+    const hash = computeContentHashFromString(result.content, contentDir);
+    const snapshot = loadSnapshot(contentDir);
+    snapshot[identifier] = buildSnapshotEntry(record, result.filename, hash, instanceName);
+    saveSnapshot(contentDir, snapshot);
 
     if (withBinaries && result.binaries.length > 0) {
         await downloadContentBinaries(client, record, schema, contentDir);
@@ -288,7 +289,7 @@ async function pullContentType(
         const contentDir = path.join(projectDir, hostName, 'content', entry.type);
         const result = serializeContentlet(record, schema, languageMap);
 
-        return { record, hostName, contentDir, result };
+        return { record, contentDir, result };
     });
 
     // Detect locally modified files that would be overwritten
@@ -311,20 +312,32 @@ async function pullContentType(
         }
     }
 
+    // Create all needed directories once (avoids repeated mkdirSync per record)
+    const uniqueDirs = new Set(serialized.map((s) => s.contentDir));
+    for (const dir of uniqueDirs) {
+        fs.mkdirSync(dir, { recursive: true });
+        touchedContentDirs.add(dir);
+    }
+
+    // Accumulate snapshot entries in memory, flush once per directory
+    const snapshotAccumulator = new Map<string, import('../../core/types').SnapshotStore>();
+
     // Write all records
     for (const { record, contentDir, result } of serialized) {
-        fs.mkdirSync(contentDir, { recursive: true });
-        touchedContentDirs.add(contentDir);
-
         const filePath = path.join(contentDir, result.filename);
 
         fs.writeFileSync(filePath, result.content, 'utf-8');
 
-        // Update snapshot
-        const hash = computeContentHash(filePath);
+        // Hash from in-memory content to avoid re-reading the file
+        const hash = computeContentHashFromString(result.content, contentDir);
         const recordIdentifier = record['identifier'] as string;
         const snapshotEntry = buildSnapshotEntry(record, result.filename, hash, instanceName);
-        updateSnapshotEntry(contentDir, recordIdentifier, snapshotEntry);
+
+        // Accumulate (load once per directory on first encounter)
+        if (!snapshotAccumulator.has(contentDir)) {
+            snapshotAccumulator.set(contentDir, loadSnapshot(contentDir));
+        }
+        snapshotAccumulator.get(contentDir)![recordIdentifier] = snapshotEntry;
         pulledIdentifiers.add(recordIdentifier);
 
         if (withBinaries && result.binaries.length > 0) {
@@ -334,30 +347,26 @@ async function pullContentType(
         totalPulled++;
     }
 
-    // Clean up stale entries: remove snapshot entries and files that were not
-    // part of this pull (e.g., content from a different instance or deleted on server)
+    // Clean up stale entries and flush snapshots (one write per directory)
     for (const contentDir of touchedContentDirs) {
-        const snapshot = loadSnapshot(contentDir);
+        const snapshot = snapshotAccumulator.get(contentDir) ?? loadSnapshot(contentDir);
         const staleIds = Object.keys(snapshot).filter((id) => !pulledIdentifiers.has(id));
 
-        if (staleIds.length > 0) {
-            for (const staleId of staleIds) {
-                const staleEntry = snapshot[staleId];
-                const stalePath = path.join(contentDir, staleEntry.file);
+        for (const staleId of staleIds) {
+            const staleEntry = snapshot[staleId];
+            const stalePath = path.join(contentDir, staleEntry.file);
 
-                // Remove the file if it exists
-                if (fs.existsSync(stalePath)) {
-                    fs.unlinkSync(stalePath);
-                    consola.info(
-                        `Removed stale: ${path.relative(projectDir, stalePath)} (not in ${instanceName})`
-                    );
-                }
-
-                delete snapshot[staleId];
+            if (fs.existsSync(stalePath)) {
+                fs.unlinkSync(stalePath);
+                consola.info(
+                    `Removed stale: ${path.relative(projectDir, stalePath)} (not in ${instanceName})`
+                );
             }
 
-            saveSnapshot(contentDir, snapshot);
+            delete snapshot[staleId];
         }
+
+        saveSnapshot(contentDir, snapshot);
     }
 
     consola.success(`Pulled ${totalPulled} ${entry.type} contentlet(s).`);
@@ -373,12 +382,16 @@ function detectLocallyModifiedFiles(
     projectDir: string
 ): string[] {
     const modified: string[] = [];
+    const snapshotCache = new Map<string, import('../../core/types').SnapshotStore>();
 
     for (const { contentDir, result } of serialized) {
         const filePath = path.join(contentDir, result.filename);
 
         if (fs.existsSync(filePath)) {
-            const snapshot = loadSnapshot(contentDir);
+            if (!snapshotCache.has(contentDir)) {
+                snapshotCache.set(contentDir, loadSnapshot(contentDir));
+            }
+            const snapshot = snapshotCache.get(contentDir)!;
             const match = findEntryByFile(snapshot, result.filename);
             if (match) {
                 const currentHash = computeContentHash(filePath);

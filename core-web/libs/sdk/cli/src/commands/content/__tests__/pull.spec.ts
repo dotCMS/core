@@ -44,7 +44,7 @@ jest.mock('../../../core/cache', () => ({
 
 jest.mock('../../../core/snapshot', () => ({
     computeContentHash: jest.fn().mockReturnValue('abc123hash'),
-    updateSnapshotEntry: jest.fn(),
+    computeContentHashFromString: jest.fn().mockReturnValue('abc123hash'),
     buildSnapshotEntry: jest.fn().mockReturnValue({
         file: 'abc123.md',
         title: '',
@@ -76,12 +76,7 @@ import { resolveToken } from '../../../core/auth';
 import { getCachedContentType } from '../../../core/cache';
 import { loadConfig, resolveInstance } from '../../../core/config';
 import { createHttpClient, get, graphql } from '../../../core/http';
-import {
-    findEntryByFile,
-    loadSnapshot,
-    saveSnapshot,
-    updateSnapshotEntry
-} from '../../../core/snapshot';
+import { findEntryByFile, loadSnapshot, saveSnapshot } from '../../../core/snapshot';
 import { serializeContentlet } from '../../../handlers/content';
 import { pullCommand } from '../pull';
 
@@ -207,17 +202,18 @@ describe('content pull command', () => {
 
         expect(graphql).toHaveBeenCalled();
         expect(serializeContentlet).toHaveBeenCalled();
-        expect(updateSnapshotEntry).toHaveBeenCalled();
+        expect(saveSnapshot).toHaveBeenCalled();
         expect(consola.success).toHaveBeenCalledWith(expect.stringContaining('Pulled'));
     });
 
     it('should include source in snapshot entry', async () => {
         await pullCommand.run!({ args: {} } as never);
 
-        expect(updateSnapshotEntry).toHaveBeenCalledWith(
+        expect(saveSnapshot).toHaveBeenCalledWith(
             expect.any(String),
-            expect.any(String),
-            expect.objectContaining({ source: 'demo' })
+            expect.objectContaining({
+                'abc12345-6789': expect.objectContaining({ source: 'demo' })
+            })
         );
     });
 
@@ -256,7 +252,7 @@ describe('content pull command', () => {
             expect.objectContaining({ message: expect.stringContaining('Overwrite') })
         );
         // Should proceed with pull after confirmation
-        expect(updateSnapshotEntry).toHaveBeenCalled();
+        expect(saveSnapshot).toHaveBeenCalled();
     });
 
     it('should abort pull when user declines overwrite confirmation', async () => {
@@ -285,7 +281,7 @@ describe('content pull command', () => {
 
         expect(consola.info).toHaveBeenCalledWith('Pull aborted.');
         // Should NOT write any files
-        expect(updateSnapshotEntry).not.toHaveBeenCalled();
+        expect(saveSnapshot).not.toHaveBeenCalled();
     });
 
     it('should skip confirmation with --force flag', async () => {
@@ -313,7 +309,7 @@ describe('content pull command', () => {
         // Should NOT prompt
         expect(prompts.confirm).not.toHaveBeenCalled();
         // Should proceed with pull
-        expect(updateSnapshotEntry).toHaveBeenCalled();
+        expect(saveSnapshot).toHaveBeenCalled();
     });
 
     it('should remove stale entries not in current pull', async () => {

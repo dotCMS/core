@@ -46,7 +46,7 @@ export const OMIT_FIELD_TYPES = new Set([
 const LIST_FIELD_TYPES = new Set(['MultiSelect', 'Checkbox', 'Tag', 'Category', 'Relationship']);
 
 /** List field types whose array values should be joined for the push API (excludes Relationship) */
-const JOINABLE_LIST_TYPES = new Set(['MultiSelect', 'Checkbox', 'Tag', 'Category']);
+const JOINABLE_LIST_TYPES = new Set([...LIST_FIELD_TYPES].filter((t) => t !== 'Relationship'));
 
 /** Relationship fields — skip during push (server manages relationships separately) */
 const RELATIONSHIP_TYPES_SET = new Set(['Relationship']);
