@@ -28,6 +28,7 @@ import {
 
 const BODY_TYPES_SET = new Set<string>(BODY_FIELD_TYPES);
 export const BINARY_TYPES_SET = new Set<string>(BINARY_FIELD_TYPES);
+const METADATA_KEY_SET = new Set<string>(METADATA_KEYS);
 
 /** Field types that should be omitted from frontmatter entirely */
 export const OMIT_FIELD_TYPES = new Set([
@@ -43,6 +44,9 @@ export const OMIT_FIELD_TYPES = new Set([
 
 /** Field types serialized as YAML lists */
 const LIST_FIELD_TYPES = new Set(['MultiSelect', 'Checkbox', 'Tag', 'Category', 'Relationship']);
+
+/** List field types whose array values should be joined for the push API (excludes Relationship) */
+const JOINABLE_LIST_TYPES = new Set(['MultiSelect', 'Checkbox', 'Tag', 'Category']);
 
 /** Relationship fields — skip during push (server manages relationships separately) */
 const RELATIONSHIP_TYPES_SET = new Set(['Relationship']);
@@ -307,10 +311,13 @@ export function buildPushPayload(
         contentlet['languageId'] = resolveLanguageId(frontmatter.language);
     }
 
+    // Build field lookup map for O(1) access
+    const fieldMap = new Map(schema.fields.map((f) => [f.variable, f]));
+
     // Map body content back to the body field
     const bodyFieldVar = frontmatter.bodyField || getBodyField(schema);
     if (bodyFieldVar && body) {
-        const bodyField = schema.fields.find((f) => f.variable === bodyFieldVar);
+        const bodyField = fieldMap.get(bodyFieldVar);
         if (bodyField && JSON_FIELD_TYPES.has(bodyField.fieldType)) {
             // StoryBlock/JSON body: parse YAML back to object, then JSON.stringify for the API
             try {
@@ -326,13 +333,12 @@ export function buildPushPayload(
     }
 
     // Map user fields from frontmatter
-    const metadataSet = new Set<string>(METADATA_KEYS);
     for (const [key, value] of Object.entries(frontmatter)) {
-        if (metadataSet.has(key)) continue;
+        if (METADATA_KEY_SET.has(key)) continue;
         if (value === undefined || value === null) continue;
 
         // Look up the field in the schema — skip unknown frontmatter keys
-        const field = schema.fields.find((f) => f.variable === key);
+        const field = fieldMap.get(key);
         if (!field) {
             continue; // not a known schema field, skip
         }
@@ -363,7 +369,7 @@ export function buildPushPayload(
         // JSON/StoryBlock fields: the API expects a JSON string, not an object
         if (JSON_FIELD_TYPES.has(field.fieldType) && typeof value === 'object') {
             contentlet[key] = JSON.stringify(stripDotContentData(value));
-        } else if (LIST_FIELD_TYPES.has(field.fieldType) && Array.isArray(value)) {
+        } else if (JOINABLE_LIST_TYPES.has(field.fieldType) && Array.isArray(value)) {
             // Checkbox, MultiSelect, Tag, Category: API expects comma-separated string
             contentlet[key] = value.join(',');
         } else {

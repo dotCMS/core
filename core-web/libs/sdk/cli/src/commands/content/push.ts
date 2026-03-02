@@ -187,9 +187,7 @@ export const pushCommand = defineCommand({
                 failed: failures
             };
             const errDir = path.join(projectDir, DOTCLI_DIR);
-            if (!fs.existsSync(errDir)) {
-                fs.mkdirSync(errDir, { recursive: true });
-            }
+            fs.mkdirSync(errDir, { recursive: true });
             const errPath = path.join(errDir, PUSH_ERRORS_FILE);
             fs.writeFileSync(errPath, JSON.stringify(errLog, null, 2), 'utf-8');
         }

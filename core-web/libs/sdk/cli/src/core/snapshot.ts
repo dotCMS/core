@@ -16,6 +16,7 @@ import {
     DOTCLI_DIR,
     METADATA_KEYS,
     SNAPSHOT_FILE,
+    type ContentletRecord,
     type FileState,
     type SnapshotEntry,
     type SnapshotStore
@@ -42,9 +43,7 @@ export function loadSnapshot(contentDir: string): SnapshotStore {
  * Save snapshot to {contentDir}/.snapshot.json.
  */
 export function saveSnapshot(contentDir: string, snapshot: SnapshotStore): void {
-    if (!fs.existsSync(contentDir)) {
-        fs.mkdirSync(contentDir, { recursive: true });
-    }
+    fs.mkdirSync(contentDir, { recursive: true });
 
     const filePath = path.join(contentDir, SNAPSHOT_FILE);
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
@@ -61,6 +60,26 @@ export function updateSnapshotEntry(
     const snapshot = loadSnapshot(contentDir);
     snapshot[identifier] = entry;
     saveSnapshot(contentDir, snapshot);
+}
+
+/**
+ * Build a SnapshotEntry from a pulled contentlet record.
+ */
+export function buildSnapshotEntry(
+    record: ContentletRecord,
+    filename: string,
+    hash: string,
+    instanceName: string
+): SnapshotEntry {
+    return {
+        file: filename,
+        title: (record['title'] as string) || '',
+        hash,
+        pulledAt: new Date().toISOString(),
+        inode: record['inode'] as string,
+        source: instanceName,
+        modDate: (record['modDate'] as string) || ''
+    };
 }
 
 /**

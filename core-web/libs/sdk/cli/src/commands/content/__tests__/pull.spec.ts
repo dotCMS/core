@@ -45,6 +45,15 @@ jest.mock('../../../core/cache', () => ({
 jest.mock('../../../core/snapshot', () => ({
     computeContentHash: jest.fn().mockReturnValue('abc123hash'),
     updateSnapshotEntry: jest.fn(),
+    buildSnapshotEntry: jest.fn().mockReturnValue({
+        file: 'abc123.md',
+        title: '',
+        hash: 'abc123hash',
+        pulledAt: '2024-01-01T00:00:00.000Z',
+        inode: 'inode-1',
+        source: 'demo',
+        modDate: '2024-01-01'
+    }),
     loadSnapshot: jest.fn().mockReturnValue({}),
     findEntryByFile: jest.fn().mockReturnValue(null),
     saveSnapshot: jest.fn()

@@ -11,6 +11,7 @@ import { loadConfig, resolveInstance } from '../../core/config';
 import { createHttpClient, get, graphql } from '../../core/http';
 import { fetchLanguageMap } from '../../core/languages';
 import {
+    buildSnapshotEntry,
     computeContentHash,
     findEntryByFile,
     loadSnapshot,
@@ -23,8 +24,7 @@ import {
     type ContentletRecord,
     type ContentTypeSchema,
     type LanguageMap,
-    type PullConfigEntry,
-    type SnapshotEntry
+    type PullConfigEntry
 } from '../../core/types';
 import { downloadContentBinaries } from '../../handlers/binary';
 import {
@@ -225,15 +225,7 @@ async function pullSingleContentlet(
 
     // Update snapshot
     const hash = computeContentHash(filePath);
-    const snapshotEntry: SnapshotEntry = {
-        file: result.filename,
-        title: (record['title'] as string) || '',
-        hash,
-        pulledAt: new Date().toISOString(),
-        inode: record['inode'] as string,
-        source: instanceName,
-        modDate: (record['modDate'] as string) || ''
-    };
+    const snapshotEntry = buildSnapshotEntry(record, result.filename, hash, instanceName);
     updateSnapshotEntry(contentDir, identifier, snapshotEntry);
 
     if (withBinaries && result.binaries.length > 0) {
@@ -331,15 +323,7 @@ async function pullContentType(
         // Update snapshot
         const hash = computeContentHash(filePath);
         const recordIdentifier = record['identifier'] as string;
-        const snapshotEntry: SnapshotEntry = {
-            file: result.filename,
-            title: (record['title'] as string) || '',
-            hash,
-            pulledAt: new Date().toISOString(),
-            inode: record['inode'] as string,
-            source: instanceName,
-            modDate: (record['modDate'] as string) || ''
-        };
+        const snapshotEntry = buildSnapshotEntry(record, result.filename, hash, instanceName);
         updateSnapshotEntry(contentDir, recordIdentifier, snapshotEntry);
         pulledIdentifiers.add(recordIdentifier);
 
