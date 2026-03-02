@@ -19,7 +19,7 @@ import { LazyLoadEvent } from 'primeng/api';
 import { MultiSelectFilterEvent, MultiSelectModule } from 'primeng/multiselect';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { catchError, debounceTime, map, skip, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, map, skip, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import {
@@ -198,7 +198,12 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
     }
 
     protected onLazyLoad(event: LazyLoadEvent) {
-        const page = Math.ceil(event.last / this.ITEMS_PER_PAGE) + 1;
+        const last = typeof event.last === 'number' ? event.last : NaN;
+        if (!Number.isFinite(last)) {
+            return;
+        }
+        const lastIndexNeeded = last;
+        const page = Math.ceil(lastIndexNeeded / this.ITEMS_PER_PAGE) + 1;
 
         if (this.$state.canLoadMore() && page > this.$state.currentPage()) {
             // We sync the current page with the page we are loading to avoid duplicates
@@ -284,7 +289,7 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 catchError(() =>
                     of({
                         contentTypes: [],
-                        pagination: {}
+                        pagination: { currentPage: 1, totalEntries: 0 } as DotPagination
                     })
                 )
             )
@@ -361,6 +366,8 @@ export class DotContentDriveContentTypeFieldComponent implements OnInit {
                 per_page: this.ITEMS_PER_PAGE
             })
             .pipe(
+                take(1),
+                takeUntilDestroyed(this.#destroyRef),
                 catchError(() =>
                     of({
                         contentTypes: [],

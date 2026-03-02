@@ -529,7 +529,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             const selectedContentTypes = [
                 { ...MOCK_CONTENT_TYPES[0], baseType: 'CONTENT' }, // Should be kept
                 { ...MOCK_CONTENT_TYPES[1], baseType: 'WIDGET' }, // Should be kept
-                { ...MOCK_CONTENT_TYPES[2], baseType: 'PESRONA' } // Should be filtered out
+                { ...MOCK_CONTENT_TYPES[2], baseType: 'PERSONA' } // Should be filtered out
             ];
             mockStore.getFilterValue.mockReturnValue([
                 selectedContentTypes[0].variable,
@@ -548,7 +548,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
             expect(
                 filteredContentTypes.every((ct) => ['CONTENT', 'WIDGET'].includes(ct.baseType))
             ).toBe(true);
-            expect(filteredContentTypes.some((ct) => ct.baseType === 'PESRONA')).toBe(false);
+            expect(filteredContentTypes.some((ct) => ct.baseType === 'PERSONA')).toBe(false);
         });
 
         it('should call onChange when filtering selected content types based on base types', () => {
