@@ -59,20 +59,20 @@ export class DotAnalyticsFiltersComponent {
     $timeOptions = signal<FilterOption[]>(TIME_PERIOD_OPTIONS);
 
     /** Maximum selectable date — today (no future dates allowed) */
-    $today = signal<Date>(startOfDay(new Date()));
+    readonly $today = signal<Date>(startOfDay(new Date()));
 
     /**
      * Tracks the first date selected during range picking.
      * Used to compute which intermediate dates should be disabled.
      */
-    $rangeStart = signal<Date | null>(null);
+    readonly $rangeStart = signal<Date | null>(null);
 
     /**
      * Dates that cannot be selected as end date after a start date is chosen.
      * Disables dates that would create a range shorter than MIN_CUSTOM_DATE_RANGE_DAYS.
      * Resets to an empty array when no start date is active.
      */
-    $disabledDates = computed<Date[]>(() => {
+    readonly $disabledDates = computed<Date[]>(() => {
         const start = this.$rangeStart();
 
         if (!start) {
@@ -139,7 +139,13 @@ export class DotAnalyticsFiltersComponent {
             return;
         }
 
-        const [from, to] = customDateRange;
+        const from = customDateRange[0];
+        const to = customDateRange[1];
+
+        if (!(from instanceof Date) || !(to instanceof Date)) {
+            return;
+        }
+
         const fromDate = format(from, 'yyyy-MM-dd');
         const toDate = format(to, 'yyyy-MM-dd');
 
