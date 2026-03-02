@@ -9,11 +9,11 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotCMSClazzes, DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -32,7 +32,7 @@ export type ContentletField = Pick<
 };
 
 export interface ContentletEditData {
-    container: ContainerPayload;
+    container: ContainerPayload | undefined;
     contentlet: DotCMSContentlet;
     fields: ContentletField[];
 }
@@ -60,11 +60,11 @@ export interface ContentletEditData {
         ReactiveFormsModule,
         ButtonModule,
         CheckboxModule,
-        DropdownModule,
         InputTextModule,
-        InputTextareaModule,
         MultiSelectModule,
         RadioButtonModule,
+        SelectModule,
+        TextareaModule,
         DotMessagePipe
     ],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',

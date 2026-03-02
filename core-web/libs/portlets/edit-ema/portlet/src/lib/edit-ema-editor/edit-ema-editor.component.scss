@@ -81,7 +81,7 @@ dot-results-seo-tool {
     }
 
     ::ng-deep {
-        .p-tabview-panels {
+        .p-tabpanels {
             height: 100%;
             flex: 1;
             overflow: hidden;
@@ -171,6 +171,10 @@ a:active {
 
 :host ::ng-deep {
     .browser-toolbar {
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 1000;
         justify-content: center;
     }
 }

@@ -29,9 +29,9 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -52,7 +52,8 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
-    SeoMetaTags
+    SeoMetaTags,
+    SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import {
@@ -163,12 +164,12 @@ const MESSAGE_KEY = {
         DotUveIframeComponent,
         ButtonModule,
         ToolbarModule,
-        TabViewModule,
+        TabsModule,
         InputGroupModule,
         InputGroupAddonModule,
         DotUveZoomControlsComponent,
         ClipboardModule,
-        OverlayPanelModule,
+        PopoverModule,
         TooltipModule,
         DotMessagePipe
     ],
@@ -367,8 +368,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         };
     });
 
-    // toObservable requires a Signal, so computed() is necessary here
-    readonly ogTagsResults$ = toObservable(computed(() => this.uveStore.viewOgTagsResults()));
+    readonly ogTagsResults$ = toObservable<SeoMetaTagsResult[]>(this.uveStore.viewOgTagsResults);
 
     get $paletteOpen() {
         return this.uveStore.editorPaletteOpen();
@@ -499,8 +499,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     /**
      * Handle right sidebar tab changes
      */
-    protected handleRightSidebarTabChange(event: TabViewChangeEvent): void {
-        patchState(this.#rightSidebarTabState, { currentTab: event.index });
+    protected handleRightSidebarTabChange(index: string | number | undefined): void {
+        if (index === undefined) {
+            return;
+        }
+
+        const currentTab = Number(index);
+
+        if (isNaN(currentTab)) {
+            return;
+        }
+
+        patchState(this.#rightSidebarTabState, { currentTab });
     }
 
     /**

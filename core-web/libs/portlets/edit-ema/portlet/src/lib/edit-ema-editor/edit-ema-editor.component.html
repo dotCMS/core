@@ -7,11 +7,13 @@
     (editUrlContentMap)="editContentMap($event)" />
 
 @if (showSEOTool) {
-    <dot-results-seo-tool
-        [seoMedia]="$seoResults().socialMedia"
-        [seoOGTags]="$seoResults().ogTags"
-        [seoOGTagsResults]="ogTagsResults"
-        data-testId="results-seo-tool" />
+    @if ($seoResults(); as seoResults) {
+        <dot-results-seo-tool
+            [seoMedia]="seoResults.socialMedia"
+            [seoOGTags]="seoResults.ogTags"
+            [seoOGTagsResults]="ogTagsResults"
+            data-testId="results-seo-tool" />
+    }
 }
 
 @if (uveStore.editorCanEditContent()) {
@@ -27,38 +29,33 @@
     [ngStyle]="$editorContentStyles()"
     [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
     data-testId="editor-content">
-    <p-toolbar
-        styleClass="browser-toolbar"
-        [style]="{
-            position: 'sticky',
-            top: 0,
-            left: 0,
-            zIndex: 1000
-        }">
-        <ng-template pTemplate="start">
-            @if (uveStore.viewMode() === UVE_MODE.EDIT) {
-                <button
-                    pButton
-                    type="button"
-                    class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
-                    (click)="togglePalette()"
-                    data-testId="uve-toolbar-palette-toggle">
-                    <img
-                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
-                        alt="Left Panel Open"
-                        [class.hidden]="!$paletteOpen"
-                        draggable="false"
-                        data-testId="palette-open-icon" />
-                    <img
-                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
-                        alt="Left Panel Close"
-                        [class.hidden]="$paletteOpen"
-                        draggable="false"
-                        data-testId="palette-close-icon" />
-                </button>
-            }
+    <p-toolbar class="browser-toolbar">
+        <ng-template #start>
+            <div class="flex items-center gap-1">
+                @if (uveStore.viewMode() === UVE_MODE.EDIT) {
+                    <p-button
+                        (click)="togglePalette()"
+                        [text]="true"
+                        size="small"
+                        [rounded]="true"
+                        data-testId="uve-toolbar-palette-toggle">
+                        <img
+                            src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
+                            alt="Left Panel Open"
+                            [class.hidden]="!$paletteOpen"
+                            draggable="false"
+                            data-testId="palette-open-icon" />
+                        <img
+                            src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
+                            alt="Left Panel Close"
+                            [class.hidden]="$paletteOpen"
+                            draggable="false"
+                            data-testId="palette-close-icon" />
+                    </p-button>
+                }
+            </div>
         </ng-template>
-        <ng-template pTemplate="center">
+        <ng-template #center>
             <div class="browser-url-bar-container">
                 <div class="flex">
                     <p-button
@@ -66,9 +63,10 @@
                         [pTooltip]="'editpage.header.copy' | dm"
                         tooltipPosition="bottom"
                         icon="pi pi-copy"
-                        styleClass="p-button-text p-button-sm"
+                        [text]="true"
+                        size="small"
                         data-testId="uve-toolbar-copy-url">
-                        <p-overlayPanel #copyUrlOverlay>
+                        <p-popover #copyUrlOverlay>
                             <div class="url-list">
                                 @for (url of $pageURLS(); track url.value) {
                                     <div class="url-item">
@@ -82,7 +80,9 @@
                                             </a>
                                             <p-button
                                                 icon="pi pi-copy"
-                                                styleClass="p-button-text p-button-sm p-button-rounded"
+                                                [text]="true"
+                                                size="small"
+                                                [rounded]="true"
                                                 (cdkCopyToClipboardCopied)="triggerCopyToast()"
                                                 [cdkCopyToClipboard]="url.value"
                                                 data-testId="copy-url-button" />
@@ -90,37 +90,39 @@
                                     </div>
                                 }
                             </div>
-                        </p-overlayPanel>
+                        </p-popover>
                     </p-button>
                     <div class="browser-url-bar">{{ $pageURL() }}</div>
                 </div>
                 <dot-uve-zoom-controls />
             </div>
         </ng-template>
-        <ng-template pTemplate="end">
-            @if (uveStore.viewMode() === UVE_MODE.EDIT) {
-                <button
-                    pButton
-                    type="button"
-                    class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
-                    (click)="toggleRightSidebar()"
-                    data-testId="right-sidebar-toggle">
-                    <img
-                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
-                        alt="Right Panel Open"
-                        [class.hidden]="!$rightSidebarOpen"
-                        class="flip-horizontal"
-                        draggable="false"
-                        data-testId="right-sidebar-open-icon" />
-                    <img
-                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
-                        alt="Right Panel Close"
-                        [class.hidden]="$rightSidebarOpen"
-                        class="flip-horizontal"
-                        draggable="false"
-                        data-testId="right-sidebar-close-icon" />
-                </button>
-            }
+        <ng-template #end>
+            <div class="flex items-center gap-1">
+                @if (uveStore.viewMode() === UVE_MODE.EDIT) {
+                    <p-button
+                        (click)="toggleRightSidebar()"
+                        [text]="true"
+                        size="small"
+                        [rounded]="true"
+                        data-testId="right-sidebar-toggle">
+                        <img
+                            src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
+                            alt="Right Panel Open"
+                            [class.hidden]="!$rightSidebarOpen"
+                            class="flip-horizontal"
+                            draggable="false"
+                            data-testId="right-sidebar-open-icon" />
+                        <img
+                            src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
+                            alt="Right Panel Close"
+                            [class.hidden]="$rightSidebarOpen"
+                            class="flip-horizontal"
+                            draggable="false"
+                            data-testId="right-sidebar-close-icon" />
+                    </p-button>
+                }
+            </div>
         </ng-template>
     </p-toolbar>
     <div class="canvas-viewport">
@@ -196,44 +198,50 @@
 
 @if (uveStore.viewMode() === UVE_MODE.EDIT) {
     <div class="right-sidebar-wrapper" [class.open]="$rightSidebarOpen">
-        <p-tabView
+        <p-tabs
             styleClass="flex flex-column w-full h-full"
-            [activeIndex]="$rightSidebarActiveTab()"
-            (onChange)="handleRightSidebarTabChange($event)">
-            <p-tabPanel>
-                <ng-template pTemplate="header">
+            [value]="$rightSidebarActiveTab()"
+            (valueChange)="handleRightSidebarTabChange($event)">
+            <p-tablist>
+                <p-tab [value]="0">
                     <div class="tab-header" pTooltip="Content Editor" tooltipPosition="bottom">
                         <i class="pi pi-pencil"></i>
                     </div>
-                </ng-template>
-                @if ($rightSidebarActiveTab() === 0) {
-                    <dot-uve-contentlet-quick-edit
-                        [data]="$contentletEditData()"
-                        [loading]="$isSubmitting()"
-                        (submit)="onFormSubmit($event)"
-                        (cancel)="onCancel()" />
-                }
-            </p-tabPanel>
-            @if ($showStyleEditorTab()) {
-                <p-tabPanel>
-                    <ng-template pTemplate="header">
+                </p-tab>
+                @if ($showStyleEditorTab()) {
+                    <p-tab [value]="1">
                         <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
                             <i class="pi pi-palette"></i>
                         </div>
-                    </ng-template>
-                    @if ($rightSidebarActiveTab() === 1) {
-                        <div
-                            class="w-full h-full flex flex-column justify-content-center align-items-center gap-2">
-                            @if ($styleSchema()) {
-                                <dot-uve-style-editor-form [schema]="$styleSchema()" />
-                            } @else {
-                                <dot-uve-style-editor-empty-state />
-                            }
-                        </div>
+                    </p-tab>
+                }
+            </p-tablist>
+            <p-tabpanels>
+                <p-tabpanel [value]="0">
+                    @if ($rightSidebarActiveTab() === 0) {
+                        <dot-uve-contentlet-quick-edit
+                            [data]="$contentletEditData()"
+                            [loading]="$isSubmitting()"
+                            (submit)="onFormSubmit($event)"
+                            (cancel)="onCancel()" />
                     }
-                </p-tabPanel>
-            }
-        </p-tabView>
+                </p-tabpanel>
+                @if ($showStyleEditorTab()) {
+                    <p-tabpanel [value]="1">
+                        @if ($rightSidebarActiveTab() === 1) {
+                            <div
+                                class="w-full h-full flex flex-column justify-content-center align-items-center gap-2">
+                                @if ($styleSchema()) {
+                                    <dot-uve-style-editor-form [schema]="$styleSchema()!" />
+                                } @else {
+                                    <dot-uve-style-editor-empty-state />
+                                }
+                            </div>
+                        }
+                    </p-tabpanel>
+                }
+            </p-tabpanels>
+        </p-tabs>
     </div>
 }
 

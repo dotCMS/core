@@ -35,8 +35,10 @@
                                     [formControlName]="field.variable"
                                     [value]="option.value"
                                     [inputId]="field.variable + '-' + option.value"
-                                    [label]="option.label"
-                                    [binary]="false"></p-checkbox>
+                                    [binary]="false" />
+                                <label [for]="field.variable + '-' + option.value">
+                                    {{ option.label }}
+                                </label>
                             }
                         </div>
                     } @else {
@@ -46,7 +48,7 @@
                             [binary]="true"></p-checkbox>
                     }
                 } @else if (field.clazz === DotCMSClazzes.SELECT) {
-                    <p-dropdown
+                    <p-select
                         [formControlName]="field.variable"
                         [inputId]="field.variable"
                         [options]="field.options"
@@ -54,7 +56,7 @@
                         optionValue="value"
                         [showClear]="true"
                         [disabled]="field.readOnly"
-                        [placeholder]="'Select ' + field.name"></p-dropdown>
+                        [placeholder]="'Select ' + field.name"></p-select>
                 } @else if (field.clazz === DotCMSClazzes.RADIO) {
                     <div class="field flex flex-column gap-2">
                         @for (option of field.options; track option.value) {
@@ -62,8 +64,10 @@
                                 [formControlName]="field.variable"
                                 [value]="option.value"
                                 [inputId]="field.variable + '-' + option.value"
-                                [label]="option.label"
                                 [disabled]="field.readOnly"></p-radioButton>
+                            <label [for]="field.variable + '-' + option.value">
+                                {{ option.label }}
+                            </label>
                         }
                     </div>
                 } @else if (field.clazz === DotCMSClazzes.MULTI_SELECT) {

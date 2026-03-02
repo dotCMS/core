@@ -1,4 +1,4 @@
-import { signalState } from '@ngrx/signals';
+import { patchState, signalState } from '@ngrx/signals';
 
 import { NgClass } from '@angular/common';
 import {
@@ -116,7 +116,7 @@ export class DotUvePaletteComponent {
     protected handleTabChange(value: string | number | undefined): void {
         if (value !== undefined && value !== null) {
             const tab = value as UVE_PALETTE_TABS;
-            this.#localState.patchState({ currentTab: tab });
+            patchState(this.#localState, { currentTab: tab });
             this.onTabChange.emit(tab);
         }
     }
