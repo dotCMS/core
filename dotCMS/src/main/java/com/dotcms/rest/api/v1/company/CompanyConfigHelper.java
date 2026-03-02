@@ -6,6 +6,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidTimeZoneException;
 import com.dotmarketing.util.Logger;
@@ -110,7 +111,7 @@ public class CompanyConfigHelper {
             throw e;
         } catch (Exception e) {
             Logger.error(this, "Error saving basic info for company: " + e.getMessage(), e);
-            throw new RuntimeException("Error saving company basic info", e);
+            throw new DotRuntimeException("Error saving company basic info", e);
         } finally {
             PrincipalThreadLocal.setName(null);
         }
@@ -135,7 +136,7 @@ public class CompanyConfigHelper {
             return toView(company);
         } catch (Exception e) {
             Logger.error(this, "Error saving auth type for company: " + e.getMessage(), e);
-            throw new RuntimeException("Error saving company auth type", e);
+            throw new DotRuntimeException("Error saving company auth type", e);
         } finally {
             PrincipalThreadLocal.setName(null);
         }
@@ -160,7 +161,7 @@ public class CompanyConfigHelper {
             throw e;
         } catch (Exception e) {
             Logger.error(this, "Error saving locale information for company: " + e.getMessage(), e);
-            throw new RuntimeException("Error saving locale information", e);
+            throw new DotRuntimeException("Error saving locale information", e);
         } finally {
             PrincipalThreadLocal.setName(null);
         }
