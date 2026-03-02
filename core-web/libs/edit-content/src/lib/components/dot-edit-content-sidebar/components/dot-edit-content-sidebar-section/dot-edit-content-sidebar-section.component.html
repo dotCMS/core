@@ -1,16 +1,25 @@
-<section class="dot-section h-full" data-testid="dot-section">
+<section
+    class="dot-section flex flex-col border-b border-[var(--gray-300)] pb-3 pt-0"
+    data-testid="dot-section">
     @if ($title()) {
-        <div class="dot-section__header" data-testid="dot-section-header">
-            <h2 class="dot-section__title" data-testid="dot-section-title">{{ $title() }}</h2>
-
+        <div
+            class="sticky top-0 z-10 flex min-h-12 flex-shrink-0 items-center justify-between py-1"
+            data-testid="dot-section-header">
+            <h2
+                class="m-0 text-base font-bold text-[var(--gray-900)]"
+                data-testid="dot-section-title">
+                {{ $title() }}
+            </h2>
             @if (actionTemplate) {
-                <div class="dot-section__action" data-testid="dot-section-action">
-                    <ng-container [ngTemplateOutlet]="actionTemplate" />
+                <div
+                    class="text-sm text-[var(--color-primary-500)]"
+                    data-testid="dot-section-action">
+                    <ng-container *ngTemplateOutlet="actionTemplate" />
                 </div>
             }
         </div>
     }
-    <div class="dot-section__content h-full" data-testid="dot-section-content">
+    <div data-testid="dot-section-content">
         <ng-content />
     </div>
 </section>

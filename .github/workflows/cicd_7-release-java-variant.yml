@@ -13,7 +13,7 @@
 # This variant workflow:
 # - Uses alternate Java version for compilation (e.g., Java 25 vs Java 21)
 # - Overrides -Dchangelist at runtime to create different Maven version
-#   (e.g., 25.02.16-01-java25 vs 25.02.16-01)
+#   (e.g., 25.02.16-01-java-25 vs 25.02.16-01)
 # - Adds artifact suffix to distinguish build artifacts and Docker tags
 # - Skips operations already performed by primary (javadocs, plugins, labels)
 #
@@ -24,7 +24,7 @@
 # Configuration:
 # Set repository variables for automatic parallel builds:
 #   RELEASE_JAVA_VARIANT_VERSION: Java version in SDKMAN format (e.g., 25.0.2-ms)
-#   RELEASE_JAVA_VARIANT_SUFFIX: Artifact suffix without separator (e.g., java25-ms)
+#   RELEASE_JAVA_VARIANT_SUFFIX: Artifact suffix without separator (e.g., java-25-ms)
 #
 
 name: '-7 Release Java Variant'
@@ -46,7 +46,7 @@ on:
         type: string
         default: ''
       artifact_suffix:
-        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java-25).'
         required: false
         type: string
         default: ''

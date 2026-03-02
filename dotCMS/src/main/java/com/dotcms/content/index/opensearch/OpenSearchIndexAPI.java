@@ -1,6 +1,8 @@
 package com.dotcms.content.index.opensearch;
 
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
 import java.io.IOException;
 import java.util.Map;
 import org.opensearch.client.opensearch.indices.CreateIndexResponse;
@@ -12,6 +14,9 @@ import org.opensearch.client.opensearch.indices.CreateIndexResponse;
  * @author fabrizio
  */
 public interface OpenSearchIndexAPI {
+
+    String INDEX_OPERATIONS_TIMEOUT = Lazy.of(
+            () -> Config.getStringProperty("OPENSEARCH_INDEX_OPERATIONS_TIMEOUT", "15s")).get();
 
     /**
      * Checks if an index exists in OpenSearch

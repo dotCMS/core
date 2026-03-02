@@ -5,6 +5,8 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.EnvironmentDataGen;
 import com.dotcms.datagen.FilterDescriptorDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -38,9 +40,19 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.PublisherTestUtil;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -51,8 +63,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import com.dotcms.publisher.business.EndpointDetail;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.*;
@@ -969,6 +979,99 @@ public class PublishingResourceIntegrationTest {
         return request;
     }
 
+    /**
+     * Creates a fully published bundle (with tar.gz + manifest on disk), sets its
+     * audit status to the given targetStatus, and retries it with forcePush=false.
+     * Follows the established pattern from PublisherAPITest.test_publish_fail_retry().
+     */
+    private RetryBundleResultView createPublishedBundleAndRetry(
+            final String bundleName,
+            final Status targetStatus) throws Exception {
+
+        Environment environment = null;
+        PublishingEndPoint endpoint = null;
+        Bundle bundle = null;
+
+        try {
+            // Setup environment and endpoint
+            environment = PublisherTestUtil.createEnvironment(adminUser);
+            endpoint = PublisherTestUtil.createEndpoint(environment);
+
+            // Create bundle linked to environment
+            bundle = PublisherTestUtil.createBundle(bundleName, adminUser, environment);
+            final String bundleId = bundle.getId();
+            createdBundleIds.add(bundleId);
+
+            // Create folder asset (folders are simpler to bundle than contentlets)
+            final var site = new SiteDataGen().nextPersisted();
+            final var folder = new FolderDataGen().site(site).nextPersisted();
+
+            // Setup audit history (required before publish)
+            final PublishAuditHistory historyPojo = new PublishAuditHistory();
+            final Map<String, String> assetsAsMap = new HashMap<>();
+            assetsAsMap.put(folder.getInode(), PusheableAsset.FOLDER.getType());
+            historyPojo.setAssets(assetsAsMap);
+            final PublishAuditStatus auditStatus = new PublishAuditStatus(bundleId);
+            auditStatus.setStatusPojo(historyPojo);
+            publishAuditAPI.insertPublishAuditStatus(auditStatus);
+
+            // Setup queue element and publisher config
+            final PublishQueueElement queueElement = new PublishQueueElement();
+            queueElement.setId(1);
+            queueElement.setOperation(1);
+            queueElement.setAsset(folder.getInode());
+            queueElement.setEnteredDate(new Date());
+            queueElement.setPublishDate(new Date());
+            queueElement.setBundleId(bundleId);
+            queueElement.setType(PusheableAsset.FOLDER.getType());
+
+            final PushPublisherConfig publisherConfig = new PushPublisherConfig();
+            publisherConfig.setId(bundleId);
+            publisherConfig.setOperation(Operation.PUBLISH);
+            publisherConfig.setLanguage(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            publisherConfig.setAssets(Lists.newArrayList(queueElement));
+            publisherConfig.setLuceneQueries(Lists.newArrayList());
+            publisherConfig.setUser(APILocator.getUserAPI().getSystemUser());
+            publisherConfig.setStartDate(new Date());
+            publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
+
+            // Ensure a default filter descriptor exists (required by DependencyBundler)
+            final String filterKey = bundleName + "-filter.yml";
+            APILocator.getPublisherAPI().addFilterDescriptor(
+                    new FilterDescriptor(filterKey, bundleName + " Filter",
+                            ImmutableMap.of("dependencies", true, "relationships", true),
+                            true, "DOTCMS_BACK_END_USER"));
+
+            // Publish - creates tar.gz with manifest on disk
+            APILocator.getPublisherAPI().publish(publisherConfig);
+
+            // Clear queue so retry doesn't reject as "already in queue"
+            PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundleId);
+
+            // Set audit status to target status
+            publishAuditAPI.updatePublishAuditStatus(
+                    bundleId, targetStatus, new PublishAuditHistory());
+
+            // Retry with forcePush=false
+            final RetryBundlesForm form = RetryBundlesForm.builder()
+                    .bundleIds(List.of(bundleId))
+                    .forcePush(false)
+                    .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                    .build();
+
+            final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                    mockAuthenticatedRequest(), response, form);
+
+            assertNotNull(result);
+            assertEquals(1, result.getEntity().size());
+
+            return result.getEntity().get(0);
+
+        } finally {
+            PublisherTestUtil.cleanBundleEndpointEnv(bundle, endpoint, environment);
+        }
+    }
+
     // =========================================================================
     // DELETE ENDPOINT TESTS
     // =========================================================================
@@ -1086,6 +1189,326 @@ public class PublishingResourceIntegrationTest {
     public void test_deleteBundle_emptyBundleId() throws Exception {
         publishingResource.deletePublishingJob(
                 mockAuthenticatedRequest(), response, "");
+    }
+
+    // =========================================================================
+    // RETRY ENDPOINT TESTS - POST /v1/publishing/retry
+    // =========================================================================
+
+    /**
+     * Given: Bundle with FAILED_TO_PUBLISH status exists
+     * When: Retry request with single bundleId
+     * Then: Returns result for that bundle (success or failure based on configuration)
+     */
+    @Test
+    public void test_retryBundles_singleBundleReturnsResult() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-single-test", Status.FAILED_TO_PUBLISH);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertNotNull(result.getEntity());
+        assertEquals("Should have one result", 1, result.getEntity().size());
+
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertEquals("BundleId should match", bundleId, bundleResult.bundleId());
+        assertNotNull("Message should not be null", bundleResult.message());
+        assertEquals("DeliveryStrategy should match", DeliveryStrategy.ALL_ENDPOINTS, bundleResult.deliveryStrategy());
+    }
+
+    /**
+     * Given: Multiple bundles with different statuses exist
+     * When: Retry request with multiple bundleIds
+     * Then: Returns per-bundle results
+     */
+    @Test
+    public void test_retryBundles_multipleBundlesReturnsPerBundleResults() throws Exception {
+        final String failedId = createBundleWithStatus("retry-multi-failed", Status.FAILED_TO_PUBLISH);
+        final String successId = createBundleWithStatus("retry-multi-success", Status.SUCCESS);
+        final String bundlingId = createBundleWithStatus("retry-multi-bundling", Status.BUNDLING);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(failedId, successId, bundlingId))
+                .forcePush(true)
+                .deliveryStrategy(DeliveryStrategy.FAILED_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertNotNull(result.getEntity());
+        assertEquals("Should have three results", 3, result.getEntity().size());
+
+        // Verify each bundle has a result
+        final boolean foundFailed = result.getEntity().stream()
+                .anyMatch(r -> failedId.equals(r.bundleId()));
+        final boolean foundSuccess = result.getEntity().stream()
+                .anyMatch(r -> successId.equals(r.bundleId()));
+        final boolean foundBundling = result.getEntity().stream()
+                .anyMatch(r -> bundlingId.equals(r.bundleId()));
+
+        assertTrue("Should have result for failed bundle", foundFailed);
+        assertTrue("Should have result for success bundle", foundSuccess);
+        assertTrue("Should have result for bundling bundle", foundBundling);
+
+        // Bundling bundle should fail (non-retryable status)
+        final RetryBundleResultView bundlingResult = result.getEntity().stream()
+                .filter(r -> bundlingId.equals(r.bundleId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertFalse("BUNDLING status should not be retryable", bundlingResult.success());
+        assertTrue("Message should indicate cannot retry",
+                bundlingResult.message().contains("Cannot retry"));
+    }
+
+    /**
+     * Given: Bundle with non-retryable status (BUNDLING)
+     * When: Retry request made
+     * Then: Returns failure result with appropriate message
+     */
+    @Test
+    public void test_retryBundles_nonRetryableStatus_returnsFailure() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-non-retryable", Status.BUNDLING);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertEquals(1, result.getEntity().size());
+
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertFalse("Should fail for non-retryable status", bundleResult.success());
+        assertTrue("Message should mention status restriction",
+                bundleResult.message().toLowerCase().contains("cannot retry") ||
+                bundleResult.message().toLowerCase().contains("status"));
+    }
+
+    /**
+     * Given: Bundle with SENDING_TO_ENDPOINTS status (in progress)
+     * When: Retry request made
+     * Then: Returns failure result
+     */
+    @Test
+    public void test_retryBundles_sendingStatus_returnsFailure() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-sending", Status.SENDING_TO_ENDPOINTS);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertFalse("Should fail for in-progress status", bundleResult.success());
+    }
+
+    /**
+     * Given: Empty bundleIds list
+     * When: Retry request made
+     * Then: BadRequestException thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_retryBundles_emptyBundleIds_throwsBadRequest() throws Exception {
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of())
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        publishingResource.retryBundles(mockAuthenticatedRequest(), response, form);
+    }
+
+    /**
+     * Given: Null form
+     * When: Retry request made
+     * Then: BadRequestException thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_retryBundles_nullForm_throwsBadRequest() throws Exception {
+        publishingResource.retryBundles(mockAuthenticatedRequest(), response, null);
+    }
+
+    /**
+     * Given: Non-existent bundleId
+     * When: Retry request made
+     * Then: Returns failure result (not exception)
+     */
+    @Test
+    public void test_retryBundles_nonExistentBundle_returnsFailure() throws Exception {
+        final String nonExistentId = "non-existent-bundle-id-xyz-123";
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(nonExistentId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertEquals(1, result.getEntity().size());
+
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertFalse("Should fail for non-existent bundle", bundleResult.success());
+        assertTrue("Message should indicate bundle not found",
+                bundleResult.message().toLowerCase().contains("not found"));
+    }
+
+    /**
+     * Given: Bundle with SUCCESS status and full bundle files on disk
+     * When: Retry request with forcePush=false
+     * Then: Result shows forcePush=true (auto-enabled for successful bundles)
+     */
+    @Test
+    public void test_retryBundles_successfulBundle_autoEnablesForcePush() throws Exception {
+        final RetryBundleResultView bundleResult =
+                createPublishedBundleAndRetry("retry-force-push", Status.SUCCESS);
+
+        assertTrue("Retry should succeed but got: " + bundleResult.message(),
+                bundleResult.success());
+        assertTrue("forcePush should be auto-enabled for SUCCESS bundles",
+                bundleResult.forcePush());
+    }
+
+    /**
+     * Given: Bundle with SUCCESS_WITH_WARNINGS status and full bundle files on disk
+     * When: Retry request with forcePush=false
+     * Then: Retry succeeds and forcePush is auto-enabled
+     */
+    @Test
+    public void test_retryBundles_successWithWarnings_isRetryableAndAutoEnablesForcePush() throws Exception {
+        final RetryBundleResultView bundleResult =
+                createPublishedBundleAndRetry("retry-warnings", Status.SUCCESS_WITH_WARNINGS);
+
+        assertTrue("Retry should succeed for SUCCESS_WITH_WARNINGS but got: " + bundleResult.message(),
+                bundleResult.success());
+        assertTrue("forcePush should be auto-enabled for SUCCESS_WITH_WARNINGS bundles",
+                bundleResult.forcePush());
+    }
+
+    /**
+     * Given: Bundle with FAILED_TO_SEND_TO_ALL_GROUPS status
+     * When: Retry request made
+     * Then: Status is retryable (returns result, not status error)
+     */
+    @Test
+    public void test_retryBundles_failedToSendToAllGroups_isRetryable() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-all-groups-failed", Status.FAILED_TO_SEND_TO_ALL_GROUPS);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.FAILED_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        // Should not fail due to non-retryable status
+        if (!bundleResult.success()) {
+            assertFalse("Should not fail due to status restriction",
+                    bundleResult.message().toLowerCase().contains("cannot retry bundles with status"));
+        }
+    }
+
+    /**
+     * Given: Request with FAILED_ENDPOINTS delivery strategy
+     * When: Retry request made
+     * Then: Result shows FAILED_ENDPOINTS strategy
+     */
+    @Test
+    public void test_retryBundles_failedEndpointsStrategy_reflected() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-strategy-test", Status.FAILED_TO_PUBLISH);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.FAILED_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertEquals("DeliveryStrategy should be FAILED_ENDPOINTS",
+                DeliveryStrategy.FAILED_ENDPOINTS, bundleResult.deliveryStrategy());
+    }
+
+    /**
+     * Given: Bundle ID with whitespace
+     * When: Retry request made
+     * Then: Bundle ID is trimmed and processed
+     */
+    @Test
+    public void test_retryBundles_bundleIdWithWhitespace_isTrimmed() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-whitespace-test", Status.FAILED_TO_PUBLISH);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of("  " + bundleId + "  "))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertEquals(1, result.getEntity().size());
+        // The trimmed bundleId should be in the result
+        // (bundleId in result is the trimmed version)
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertEquals("BundleId should be trimmed", bundleId, bundleResult.bundleId());
+    }
+
+    /**
+     * Given: Empty string bundleId in list
+     * When: Retry request made
+     * Then: Returns failure result for that bundle
+     */
+    @Test
+    public void test_retryBundles_emptyBundleIdInList_returnsFailure() throws Exception {
+        final String validBundleId = createBundleWithStatus("retry-with-empty", Status.FAILED_TO_PUBLISH);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(validBundleId, "", "   "))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertEquals("Should have three results", 3, result.getEntity().size());
+
+        // Find results for empty/whitespace IDs
+        final long failedEmptyCount = result.getEntity().stream()
+                .filter(r -> !r.success() && r.message().toLowerCase().contains("required"))
+                .count();
+
+        assertTrue("Should have failures for empty bundle IDs", failedEmptyCount >= 1);
     }
 
     // =========================================================================

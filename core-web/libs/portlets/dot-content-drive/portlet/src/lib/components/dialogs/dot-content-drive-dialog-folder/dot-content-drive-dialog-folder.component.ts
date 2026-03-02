@@ -13,11 +13,11 @@ import { MessageService } from 'primeng/api';
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
-import { TabViewModule } from 'primeng/tabview';
+import { SelectModule } from 'primeng/select';
+import { TabsModule } from 'primeng/tabs';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotContentTypeService, DotFolderService, DotMessageService } from '@dotcms/data-access';
 import { DotContentDriveFolder, DotFolderEntity } from '@dotcms/dotcms-models';
@@ -40,12 +40,12 @@ interface FolderForm {
 @Component({
     selector: 'dot-content-drive-dialog-folder',
     imports: [
-        TabViewModule,
+        TabsModule,
         ReactiveFormsModule,
         InputTextModule,
         DotMessagePipe,
-        DropdownModule,
-        InputSwitchModule,
+        SelectModule,
+        ToggleSwitchModule,
         ButtonModule,
         InputNumberModule,
         AutoCompleteModule,
@@ -53,7 +53,7 @@ interface FolderForm {
         DotFieldRequiredDirective
     ],
     templateUrl: './dot-content-drive-dialog-folder.component.html',
-    styleUrls: ['./dot-content-drive-dialog-folder.component.scss']
+    host: { class: 'block' }
 })
 export class DotContentDriveDialogFolderComponent {
     #fb = inject(FormBuilder);
@@ -65,7 +65,7 @@ export class DotContentDriveDialogFolderComponent {
 
     #hostName = this.#store.currentSite().hostname;
 
-    $folder = input<DotContentDriveFolder>(null, { alias: 'folder' });
+    $folder = input<DotContentDriveFolder | undefined>(undefined, { alias: 'folder' });
 
     readonly $fileAssetTypes = toSignal(
         this.#dotContentTypeService.getContentTypes({ type: 'FILEASSET' })

@@ -1,4 +1,4 @@
-import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
+import type { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 
 export interface CustomMenuItem<T = unknown> extends Omit<MenuItem, 'command'> {
     command?(event?: T): void;

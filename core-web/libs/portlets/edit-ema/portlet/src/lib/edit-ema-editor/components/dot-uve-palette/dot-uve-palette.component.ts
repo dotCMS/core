@@ -1,6 +1,14 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
+import { NgClass } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    computed,
+    input,
+    Output
+} from '@angular/core';
 
-import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
@@ -13,6 +21,12 @@ import { DotUVEPaletteListTypes } from './models';
 
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
+interface TabHeaderConfig {
+    value: UVE_PALETTE_TABS;
+    icon: string;
+    tooltip: string;
+}
+
 /**
  * Standalone palette component used by the EMA editor to display and switch
  * between different UVE-related resources (content types, components, styles, etc.).
@@ -23,7 +37,8 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 @Component({
     selector: 'dot-uve-palette',
     imports: [
-        TabViewModule,
+        NgClass,
+        TabsModule,
         DotUvePaletteListComponent,
         TooltipModule,
         DotUveStyleEditorFormComponent,
@@ -34,6 +49,31 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteComponent {
+    protected readonly $tabHeaders = computed<TabHeaderConfig[]>(() => {
+        const tabs: TabHeaderConfig[] = [
+            { value: UVE_PALETTE_TABS.CONTENT_TYPES, icon: 'pi-stop', tooltip: 'Content types' },
+            { value: UVE_PALETTE_TABS.WIDGETS, icon: 'pi-th-large', tooltip: 'Widgets' },
+            { value: UVE_PALETTE_TABS.FAVORITES, icon: 'pi-star', tooltip: 'Favorites' }
+        ];
+
+        if (this.$showStyleEditorTab()) {
+            tabs.push({
+                value: UVE_PALETTE_TABS.STYLE_EDITOR,
+                icon: 'pi-palette',
+                tooltip: 'Style Editor'
+            });
+        }
+
+        return tabs;
+    });
+
+    /**
+     * Tabs PT so we can style Prime's internal root element with Tailwind instead of ::ng-deep SCSS.
+     */
+    readonly tabsPt = {
+        root: { class: 'h-full min-h-0' }
+    };
+
     /**
      * Absolute path of the page currently being edited.
      */
@@ -73,11 +113,12 @@ export class DotUvePaletteComponent {
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
 
     /**
-     * Called whenever the tab changes, either by user interaction or via the `activeIndex` property.
+     * Called whenever the tab changes in the p-tabs component (PrimeNG v21).
+     * The valueChange event emits the new tab value directly.
      *
-     * @param event TabView change event containing the new active index.
+     * @param value The new tab value.
      */
-    protected handleTabChange(event: TabViewChangeEvent) {
-        this.onTabChange.emit(event.index);
+    protected handleTabChange(value: string | number): void {
+        this.onTabChange.emit(value as UVE_PALETTE_TABS);
     }
 }

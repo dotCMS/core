@@ -12,6 +12,7 @@ export default defineConfig(() => {
     const outDir = resolve(__dirname, '../../dist/libs/edit-content-bridge');
 
     return {
+        root: __dirname,
         plugins: [nxViteTsPaths()],
         build: {
             // Explicitly set outDir to prevent Vite from resolving paths incorrectly

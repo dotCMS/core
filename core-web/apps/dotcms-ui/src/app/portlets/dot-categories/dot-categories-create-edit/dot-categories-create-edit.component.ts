@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -19,7 +19,7 @@ import { DotCategoriesPermissionsComponent } from '../dot-categories-permissions
     imports: [
         CommonModule,
         DotMessagePipe,
-        TabViewModule,
+        TabsModule,
         DotCategoriesListComponent,
         DotPortletBaseComponent,
         DotCategoriesPermissionsComponent

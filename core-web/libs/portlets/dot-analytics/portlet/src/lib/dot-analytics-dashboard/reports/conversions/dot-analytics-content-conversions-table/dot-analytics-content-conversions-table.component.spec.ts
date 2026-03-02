@@ -37,17 +37,14 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
     describe('Loading State', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    data: [],
-                    status: ComponentStatus.LOADING
-                } as unknown
-            });
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput({ data: [], status: ComponentStatus.LOADING });
+            spectator.detectChanges();
         });
 
         it('should display loading skeleton when isLoading is true', () => {
             expect(spectator.query(byTestId('content-conversions-loading'))).toBeTruthy();
-            expect(spectator.queryAll('.skeleton-cell').length).toBeGreaterThan(0);
+            expect(spectator.queryAll('.skeleton-table__row').length).toBe(5);
         });
 
         it('should not display table when loading', () => {
@@ -57,12 +54,9 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
     describe('Error State', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    data: [],
-                    status: ComponentStatus.ERROR
-                } as unknown
-            });
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput({ data: [], status: ComponentStatus.ERROR });
+            spectator.detectChanges();
         });
 
         it('should display error message when isError is true', () => {
@@ -77,17 +71,14 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
     describe('Empty State', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    data: [],
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput({ data: [], status: ComponentStatus.LOADED });
+            spectator.detectChanges();
         });
 
         it('should display empty message when isEmpty is true', () => {
             expect(spectator.query(byTestId('content-conversions-empty'))).toBeTruthy();
-            expect(spectator.query('dot-analytics-state-message')).toBeTruthy();
+            expect(spectator.query('dot-analytics-empty-state')).toBeTruthy();
         });
 
         it('should not display table when empty', () => {
@@ -97,12 +88,9 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
     describe('Data Display', () => {
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    data: mockData,
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput({ data: mockData, status: ComponentStatus.LOADED });
+            spectator.detectChanges();
         });
 
         it('should display table with data', () => {
@@ -125,7 +113,7 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
             // Column 1: Title cell contains both title and identifier
             const titleCell = firstRowCells[1];
-            expect(titleCell.querySelector('.content-title')?.textContent?.trim()).toBe(
+            expect(titleCell.querySelector('div > div:first-child')?.textContent?.trim()).toBe(
                 mockData[0].title
             );
             expect(titleCell.querySelector('.content-identifier')?.textContent?.trim()).toBe(

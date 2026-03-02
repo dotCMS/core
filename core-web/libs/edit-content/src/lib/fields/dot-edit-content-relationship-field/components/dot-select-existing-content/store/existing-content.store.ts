@@ -5,8 +5,8 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { TablePageEvent } from 'primeng/table';
+import { ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
 
 import { filter, switchMap, tap } from 'rxjs/operators';
 
@@ -241,7 +241,7 @@ export const ExistingContentStore = signalStore(
              * Changes the view mode between all and selected items.
              * @param event The event containing the checked property.
              */
-            changeViewMode: (event: InputSwitchChangeEvent) => {
+            changeViewMode: (event: ToggleSwitchChangeEvent) => {
                 const viewMode = event.checked ? ViewMode.selected : ViewMode.all;
                 const isSelectedView = viewMode === ViewMode.selected;
 

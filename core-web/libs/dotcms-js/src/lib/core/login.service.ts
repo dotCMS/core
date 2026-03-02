@@ -1,6 +1,6 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
+import type { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { map, pluck, tap } from 'rxjs/operators';

@@ -76,6 +76,12 @@ export const AnalyticsChartColors = {
         line: '#E5E7EB',
         fill: 'rgba(229, 231, 235, 0.15)',
         bar: 'rgba(229, 231, 235, 0.6)'
+    },
+    // Neutral dark: Gray for secondary/compare lines
+    neutralDark: {
+        line: '#9CA3AF',
+        fill: 'rgba(156, 163, 175, 0.15)',
+        bar: 'rgba(156, 163, 175, 0.6)'
     }
 } as const;
 

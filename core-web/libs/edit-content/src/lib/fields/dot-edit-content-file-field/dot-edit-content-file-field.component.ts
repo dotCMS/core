@@ -30,7 +30,6 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
     ],
     providers: [DotFileFieldUploadService, FileFieldStore, DialogService],
     templateUrl: './dot-edit-content-file-field.component.html',
-    styleUrls: ['./dot-edit-content-file-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {

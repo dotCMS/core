@@ -121,12 +121,11 @@ describe('IframeFieldComponent', () => {
             expect(iframe?.classList.contains('legacy-custom-field__iframe')).toBe(true);
         });
 
-        it('should not render iframe when src is empty', () => {
-            spectator.setHostInput('field', null);
-            spectator.detectChanges();
-
+        it('should render iframe when src is not empty', () => {
+            // Test that when field and contentType are valid, iframe is rendered
+            expect(spectator.component.$src()).not.toBe('');
             const iframe = spectator.query(byTestId('custom-field-iframe'));
-            expect(iframe).toBeFalsy();
+            expect(iframe).toBeTruthy();
         });
     });
 
@@ -166,11 +165,69 @@ describe('IframeFieldComponent', () => {
             expect(spectator.component.$src()).toContain('modal=true');
         });
 
-        it('should return empty string when field is null', () => {
-            spectator.setHostInput('field', null);
-            spectator.detectChanges();
+        it('should compute src url when field is valid', () => {
+            // Test that when field is valid, src is computed correctly
+            // The null field case is tested in the "Null Field Handling" describe block
+            expect(spectator.component.$src()).not.toBe('');
+            expect(spectator.component.$src()).toContain('legacy-custom-field.jsp');
+        });
+    });
 
-            expect(spectator.component.$src()).toBe('');
+    describe('Null Field Handling', () => {
+        it('should not render iframe when field is null from start', () => {
+            const nullFieldSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-iframe-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [CUSTOM_FIELD_WITHOUT_MODAL.variable]: new FormControl('')
+                        }),
+                        field: null,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [CUSTOM_FIELD_WITHOUT_MODAL.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            nullFieldSpectator.detectChanges();
+
+            const iframe = nullFieldSpectator.query(byTestId('custom-field-iframe'));
+            expect(iframe).toBeFalsy();
+            expect(nullFieldSpectator.component.$src()).toBe('');
+        });
+
+        it('should return empty string when field is null from start', () => {
+            const nullFieldSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-iframe-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: new FormControl('')
+                        }),
+                        field: null,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [CUSTOM_FIELD_WITH_VARIABLES.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            nullFieldSpectator.detectChanges();
+
+            expect(nullFieldSpectator.component.$src()).toBe('');
         });
     });
 
@@ -564,14 +621,25 @@ describe('IframeFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
             // Wait for defer to load
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 300));
 
-            const doneButton = spectator.query('p-button[label="Done"]');
-            if (doneButton) {
-                spectator.click(doneButton);
-                spectator.detectChanges();
+            const doneButtonComponent = spectator.query('p-button[label="Done"]');
+            if (doneButtonComponent) {
+                // Get the actual button element inside PrimeNG component
+                const actualButton = doneButtonComponent.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                if (actualButton) {
+                    spectator.click(actualButton);
+                    spectator.detectChanges();
 
-                expect(spectator.component.$showModal()).toBe(false);
+                    expect(spectator.component.$showModal()).toBe(false);
+                } else {
+                    // Fallback: trigger the onClick handler directly
+                    spectator.triggerEventHandler('p-button', 'onClick', null);
+                    spectator.detectChanges();
+                    expect(spectator.component.$showModal()).toBe(false);
+                }
             }
         });
     });

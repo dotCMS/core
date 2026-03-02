@@ -118,9 +118,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         test('should render the card', () => {
             expect(spectator.queryAll(Card).length).toEqual(1);
             expect(spectator.query(byTestId('goals-card-name'))).toContainText('Goal');
-            expect(spectator.query(byTestId('goals-card-name'))).toHaveClass(
-                'p-label-input-required'
-            );
+            expect(spectator.query(byTestId('goals-card-name'))).toHaveClass("after:content-['*']");
             expect(spectator.query(byTestId('goals-add-button'))).toExist();
         });
 
@@ -138,8 +136,10 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.component.vm$ = of(getVmMock());
             spectator.detectComponentChanges();
 
-            const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
-            expect(addButton.disabled).toBe(true);
+            const addButton = spectator.query(byTestId('goals-add-button'));
+            const button = addButton.querySelector('button') || addButton;
+            // Check the disabled attribute directly
+            expect(button.hasAttribute('disabled')).toBe(true);
             expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
         });
 
@@ -147,18 +147,26 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.component.vm$ = of(getVmMock(null, 'error'));
             spectator.detectComponentChanges();
 
-            const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
-            expect(addButton.disabled).toBe(true);
-            expect(spectator.query(Tooltip).disabled).toEqual(false);
+            const addButton = spectator.query(byTestId('goals-add-button'));
+            const button = addButton.querySelector('button') || addButton;
+            // Check the disabled attribute directly
+            expect(button.hasAttribute('disabled')).toBe(true);
+
+            // Verify the tooltip is enabled to show error message
+            const tooltips = spectator.queryAll(Tooltip);
+            const addButtonTooltip = tooltips.find((tooltip) => !tooltip.disabled);
+            expect(addButtonTooltip).toBeDefined();
         });
 
         test('should call openSelectGoalSidebar if you click the add goal button', () => {
-            jest.spyOn(spectator.component, 'openSelectGoalSidebar');
+            jest.spyOn(store, 'openSidebar');
 
-            const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
-            spectator.click(addButton);
+            const addButton = spectator.query(byTestId('goals-add-button'));
+            // Find the actual button element inside the p-button component
+            const button = addButton.querySelector('button') || addButton;
+            spectator.click(button);
 
-            expect(spectator.component.openSelectGoalSidebar).toHaveBeenCalledTimes(1);
+            expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.GOAL);
         });
 
         test('should show sidebar and close (remove it)', () => {
@@ -192,24 +200,43 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             jest.spyOn(confirmationService, 'confirm');
 
             // Configure vm$ with goals that have no conditions to show the delete button
-            spectator.component.vm$ = of(
-                getVmMock({
+            spectator.component.vm$ = of({
+                experimentId: EXPERIMENT_MOCK_WITH_GOAL.id,
+                goals: {
                     primary: {
                         ...GoalsMock.primary,
                         conditions: []
                     }
-                })
-            );
+                },
+                status: {
+                    status: ComponentStatus.IDLE,
+                    isOpen: false,
+                    experimentStep: null
+                },
+                isExperimentADraft: true,
+                disabledTooltipLabel: null
+            });
             spectator.detectComponentChanges();
 
-            const deleteIcon = spectator.query(byTestId('goal-delete-button'));
+            const deleteButton = spectator.query(byTestId('goal-delete-button'));
 
-            expect(deleteIcon).toExist();
+            expect(deleteButton).toExist();
 
-            spectator.dispatchMouseEvent(deleteIcon, 'click');
+            // Find the actual button element inside the p-button component
+            const button = deleteButton.querySelector('button') || deleteButton;
+            spectator.click(button);
             spectator.detectComponentChanges();
 
             expect(confirmationService.confirm).toHaveBeenCalled();
+
+            // Get the confirm options and call accept to verify store method is called
+            const confirmOptions = (confirmationService.confirm as jest.Mock).mock.calls[0][0];
+            confirmOptions.accept();
+
+            expect(store.deleteGoal).toHaveBeenCalledWith({
+                goalLevel: 'primary',
+                experimentId: EXPERIMENT_MOCK_WITH_GOAL.id
+            });
         });
 
         test('should render the params header correctly', () => {

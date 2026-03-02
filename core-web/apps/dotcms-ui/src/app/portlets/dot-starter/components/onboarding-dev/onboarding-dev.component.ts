@@ -1,17 +1,15 @@
 import { MarkdownModule } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
 import { KnobModule } from 'primeng/knob';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { RadioButtonModule } from 'primeng/radiobutton';
-import { TabViewModule } from 'primeng/tabview';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -22,24 +20,24 @@ import { OnboardingFramework } from './models';
 @Component({
     selector: 'dot-onboarding-dev',
     templateUrl: './onboarding-dev.component.html',
-    styleUrls: ['./onboarding-dev.component.scss'],
     imports: [
         AccordionModule,
         DotCopyButtonComponent,
         ButtonModule,
         CommonModule,
-        ButtonModule,
         FormsModule,
         KnobModule,
         MarkdownModule,
-        OverlayPanelModule,
         ProgressBarModule,
         RadioButtonModule,
         RouterModule,
         TagModule,
-        TooltipModule,
-        TabViewModule
-    ]
+        TooltipModule
+    ],
+    host: {
+        style: 'background: linear-gradient(135deg, #d8e9ff 0%, #ffffff 70%, #faf5ff 100%); padding-block-start: 1.5rem;',
+        class: 'h-full flex flex-col flex-1 overflow-auto gap-5'
+    }
 })
 export class DotOnboardingDevComponent {
     @Output() eventEmitter = new EventEmitter<'reset-user-profile'>();
