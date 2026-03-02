@@ -1,8 +1,11 @@
 package com.dotcms.content.elasticsearch.business.field;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.JsonUtil;
@@ -264,8 +267,10 @@ public class FieldHandlerStrategyFactory {
     private void textStrategy(final Contentlet contentlet, final Field field, final Object value) throws DotContentletStateException {
 
         try {
-            // Special handling for checkbox fields that receive array values
-            if (field instanceof CheckboxField && value instanceof Collection) {
+            // Special handling for multi-value fields that receive array values
+            if ((field instanceof CheckboxField || field instanceof MultiSelectField || 
+                 field instanceof TagField || field instanceof CategoryField) && 
+                 value instanceof Collection) {
                 final Collection<?> arrayValue = (Collection<?>) value;
                 final String commaSeparatedValue = arrayValue.stream()
                         .filter(Objects::nonNull)
@@ -273,8 +278,8 @@ public class FieldHandlerStrategyFactory {
                         .collect(Collectors.joining(","));
                 
                 Logger.debug(this, () -> String.format(
-                    "Converting array value %s to comma-separated string '%s' for checkbox field '%s'",
-                    arrayValue, commaSeparatedValue, field.variable()
+                    "Converting array value %s to comma-separated string '%s' for %s field '%s'",
+                    arrayValue, commaSeparatedValue, field.getClass().getSimpleName(), field.variable()
                 ));
                 
                 contentlet.setStringProperty(field.variable(), commaSeparatedValue);
