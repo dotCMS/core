@@ -27,7 +27,6 @@ import com.liferay.portal.model.User;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
@@ -185,11 +184,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         try {
             tagAPI.getTagAndCreate(tagName, "", Host.SYSTEM_HOST, false, false);
 
-            final ResponseEntityPaginatedDataView listResult = resource.list(
-                    request, response, tagName, true, site.getIdentifier(),
-                    1, 25, "tagname", "ASC");
-
-            final List<?> items = (List<?>) listResult.getEntity();
+            final List<?> items = listTags(tagName, true, site.getIdentifier());
             assertFalse("GET with siteId should find tags in effective tag storage",
                     items.isEmpty());
         } finally {
@@ -383,8 +378,12 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
      * Lists tags by filter and siteId, returns the entity list.
      */
     private List<?> listTags(final String filter, final String siteId) {
+        return listTags(filter, false, siteId);
+    }
+
+    private List<?> listTags(final String filter, final boolean global, final String siteId) {
         final ResponseEntityPaginatedDataView result = resource.list(
-                request, response, filter, false, siteId,
+                request, response, filter, global, siteId,
                 1, 25, "tagname", "ASC");
         return (List<?>) result.getEntity();
     }
@@ -394,7 +393,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> importCsvAndGetStats(final String csvContent) throws Exception {
-        final FormDataMultiPart multipart = createMultipartWithCsv(csvContent, StandardCharsets.UTF_8);
+        final FormDataMultiPart multipart = createMultipartWithCsv(csvContent);
         final ResponseEntityTagOperationView result =
                 resource.importTags(request, response, multipart);
         assertNotNull(result);
@@ -429,12 +428,13 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                 .build();
     }
 
-    private FormDataMultiPart createMultipartWithCsv(
-            final String csvContent, final Charset charset) throws Exception {
+    private FormDataMultiPart createMultipartWithCsv(final String csvContent) throws Exception {
 
         final File tempDir = Files.createTempDirectory("tmp_upload_test").toFile();
+        tempDir.deleteOnExit();
         final File csvFile = new File(tempDir, "tags-import.csv");
-        Files.write(csvFile.toPath(), csvContent.getBytes(charset));
+        csvFile.deleteOnExit();
+        Files.write(csvFile.toPath(), csvContent.getBytes(StandardCharsets.UTF_8));
 
         final InputStream fileInputStream = Files.newInputStream(csvFile.toPath());
         final FormDataBodyPart bodyPart = mock(FormDataBodyPart.class);
