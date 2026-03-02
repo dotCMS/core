@@ -8832,6 +8832,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private List<Contentlet> groupContentletsByLanguage(List<Contentlet> contentsInRelationship) {
 
     return new ArrayList<>(contentsInRelationship.stream()
+            .filter(content -> content instanceof Contentlet)  // Type safety check to prevent ClassCastException
             .collect(Collectors.toMap(
                     Contentlet::getIdentifier,
                     Function.identity(),
