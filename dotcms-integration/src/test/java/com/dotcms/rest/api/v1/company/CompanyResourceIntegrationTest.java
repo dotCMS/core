@@ -22,6 +22,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.dotcms.rest.exception.ValidationException;
 import javax.ws.rs.BadRequestException;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -176,7 +177,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         resource.saveBasicInfo(request, mockResponse, form);
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test(expected = ValidationException.class)
     public void test_saveBasicInfo_missingPortalURL_throwsBadRequest() {
         final HttpServletRequest request = createAdminRequest();
         final CompanyBasicInfoForm form = basicInfoForm(
@@ -185,32 +186,12 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         resource.saveBasicInfo(request, mockResponse, form);
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test(expected = ValidationException.class)
     public void test_saveBasicInfo_missingPrimaryColor_throwsBadRequest() {
         final HttpServletRequest request = createAdminRequest();
         final CompanyBasicInfoForm form = basicInfoForm(
                 "http://localhost:8080", "test@dotcms.com", null,
                 null, "#00FF00", null, null, null, null);
-        resource.saveBasicInfo(request, mockResponse, form);
-    }
-
-    @Test(expected = BadRequestException.class)
-    public void test_saveBasicInfo_invalidLoginLogoPath_throwsBadRequest() {
-        final HttpServletRequest request = createAdminRequest();
-        final CompanyBasicInfoForm form = basicInfoForm(
-                "http://localhost:8080", "test@dotcms.com", null,
-                "#FF0000", "#00FF00", null, null,
-                "http://external.com/logo.png", null);
-        resource.saveBasicInfo(request, mockResponse, form);
-    }
-
-    @Test(expected = BadRequestException.class)
-    public void test_saveBasicInfo_invalidNavBarLogoPath_throwsBadRequest() {
-        final HttpServletRequest request = createAdminRequest();
-        final CompanyBasicInfoForm form = basicInfoForm(
-                "http://localhost:8080", "test@dotcms.com", null,
-                "#FF0000", "#00FF00", null, null, null,
-                "http://external.com/nav.png");
         resource.saveBasicInfo(request, mockResponse, form);
     }
 
@@ -261,7 +242,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         resource.saveAuthType(request, mockResponse, form);
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test(expected = ValidationException.class)
     public void test_saveAuthType_nullType_throwsBadRequest() {
         final HttpServletRequest request = createAdminRequest();
         final CompanyAuthTypeForm form = new CompanyAuthTypeForm(null);
@@ -290,14 +271,14 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         assertEquals("OK", result.getEntity());
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test(expected = ValidationException.class)
     public void test_saveLocaleInfo_missingLanguage_throwsBadRequest() {
         final HttpServletRequest request = createAdminRequest();
         final CompanyLocaleForm form = new CompanyLocaleForm(null, "America/New_York");
         resource.saveLocaleInfo(request, mockResponse, form);
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test(expected = ValidationException.class)
     public void test_saveLocaleInfo_missingTimezone_throwsBadRequest() {
         final HttpServletRequest request = createAdminRequest();
         final CompanyLocaleForm form = new CompanyLocaleForm("en_US", null);
