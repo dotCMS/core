@@ -1,6 +1,9 @@
-import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStoreFeature, withHooks, withMethods, withState } from '@ngrx/signals';
+
+import { effect, inject } from '@angular/core';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 
 import { UVE_STATUS } from '../../../shared/enums';
 
@@ -63,6 +66,19 @@ export function withUve() {
             setUveCurrentUser(currentUser: CurrentUser | null) {
                 patchState(store, { uveCurrentUser: currentUser });
             }
-        }))
+        })),
+        withHooks({
+            /**
+             * Keep uveCurrentUser in sync with GlobalStore.loggedUser reactively.
+             * Handles late-loaded user (null initially) and changes (logout, login-as).
+             */
+            onInit(store) {
+                const globalStore = inject(GlobalStore);
+                effect(() => {
+                    const loggedUser = globalStore.loggedUser();
+                    store.setUveCurrentUser(loggedUser);
+                });
+            }
+        })
     );
 }

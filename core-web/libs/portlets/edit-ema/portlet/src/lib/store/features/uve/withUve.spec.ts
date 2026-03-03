@@ -3,6 +3,7 @@ import { signalStore, withState } from '@ngrx/signals';
 import { TestBed } from '@angular/core/testing';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 
 import { withUve } from './withUve';
 
@@ -15,7 +16,7 @@ describe('withUve', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [TestStore]
+            providers: [TestStore, { provide: GlobalStore, useValue: { loggedUser: () => null } }]
         });
         store = TestBed.inject(TestStore);
     });

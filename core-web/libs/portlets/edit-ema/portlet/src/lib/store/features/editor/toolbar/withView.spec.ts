@@ -57,12 +57,7 @@ export const uveStoreMock = signalStore(
             return isLockedByOther || false;
         })
     })),
-    // Use withFeature to access store and pass reactive dependency
-    withFeature((store) =>
-        withView({
-            $isPageLocked: () => store.$isPageLocked() // Call the computed above
-        })
-    )
+    withFeature(() => withView())
 );
 
 describe('withView', () => {

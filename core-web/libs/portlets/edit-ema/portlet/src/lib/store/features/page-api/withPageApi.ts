@@ -14,7 +14,6 @@ import {
     DotLanguagesService,
     DotPageLayoutService
 } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
 
@@ -119,7 +118,6 @@ export function withPageApi(deps: WithPageApiDeps) {
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
             const dotExperimentsService = inject(DotExperimentsService);
-            const loginService = inject(LoginService);
             const dotPageLayoutService = inject(DotPageLayoutService);
             const iframeMessenger = inject(UveIframeMessengerService);
 
@@ -149,32 +147,26 @@ export function withPageApi(deps: WithPageApiDeps) {
                             });
                         }),
                         switchMap((pageParams) => {
-                            return forkJoin({
-                                pageAsset: dotPageApiService.get(pageParams).pipe(
-                                    // This logic should be handled in the Shell component using an effect
-                                    switchMap((pageAsset) => {
-                                        const { vanityUrl } = pageAsset;
+                            return dotPageApiService.get(pageParams).pipe(
+                                // This logic should be handled in the Shell component using an effect
+                                switchMap((pageAsset) => {
+                                    const { vanityUrl } = pageAsset;
 
-                                        // If there is not vanity and is not a redirect we just return the pageAPI response
-                                        if (isForwardOrPage(vanityUrl)) {
-                                            return of(pageAsset);
-                                        }
+                                    // If there is not vanity and is not a redirect we just return the pageAPI response
+                                    if (isForwardOrPage(vanityUrl)) {
+                                        return of(pageAsset);
+                                    }
 
-                                        // Maybe we can use retryWhen() instead of this navigate.
-                                        router.navigate([], {
-                                            queryParamsHandling: 'merge',
-                                            queryParams: { url: vanityUrl.forwardTo }
-                                        });
+                                    // Maybe we can use retryWhen() instead of this navigate.
+                                    router.navigate([], {
+                                        queryParamsHandling: 'merge',
+                                        queryParams: { url: vanityUrl.forwardTo }
+                                    });
 
-                                        // EMPTY is a simple Observable that only emits the complete notification.
-                                        return EMPTY;
-                                    })
-                                ),
-                                // This can be done in the Withhook: onInit if this ticket is done: https://github.com/dotCMS/core/issues/30760
-                                // Reference: https://ngrx.io/guide/signals/signal-store/lifecycle-hooks
-                                currentUser: loginService.getCurrentUser()
-                            }).pipe(
-                                tap(({ pageAsset }) => {
+                                    // EMPTY is a simple Observable that only emits the complete notification.
+                                    return EMPTY;
+                                }),
+                                tap((pageAsset) => {
                                     deps.workflowFetch(pageAsset?.page?.inode);
                                 }),
                                 catchError((err: HttpErrorResponse) => {
@@ -188,7 +180,7 @@ export function withPageApi(deps: WithPageApiDeps) {
 
                                     return EMPTY;
                                 }),
-                                switchMap(({ pageAsset, currentUser }) => {
+                                switchMap((pageAsset) => {
                                     const experimentId =
                                         pageParams?.experimentId ?? pageAsset?.runningExperimentId;
 
@@ -215,8 +207,8 @@ export function withPageApi(deps: WithPageApiDeps) {
                                             deps.setPageAssetResponse({ pageAsset });
                                             deps.addHistory({ pageAsset });
 
+                                            // uveCurrentUser is synced reactively from GlobalStore in withUve onInit effect
                                             patchState(store, {
-                                                uveCurrentUser: currentUser,
                                                 pageExperiment: experiment,
                                                 pageLanguages: languages,
                                                 pageType: pageParams.clientHost
