@@ -307,6 +307,7 @@ export class AngularFormBridge implements FormBridge {
             this.#dialogRef = this.dialogService.open(DotBrowserSelectorComponent, {
                 header,
                 appendTo: 'body',
+                closable: true,
                 closeOnEscape: false,
                 draggable: false,
                 keepInViewport: false,

@@ -31,7 +31,7 @@
     https://github.com/primefaces/primeng/issues/19191
 -->
 <p-tieredmenu
-    (onHide)="closeMenu()"
+    (onHide)="menuItems.set([])"
     [appendTo]="'body'"
     [popup]="true"
     #menu
