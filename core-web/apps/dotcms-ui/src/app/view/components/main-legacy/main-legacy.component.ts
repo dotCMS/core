@@ -41,6 +41,9 @@ export class MainComponentLegacyComponent implements OnInit {
     ngOnInit(): void {
         document.body.style.backgroundColor = '';
         document.body.style.backgroundImage = '';
+        document.body.style.backgroundPosition = '';
+        document.body.style.backgroundRepeat = '';
+        document.body.style.backgroundSize = '';
     }
 
     /**
