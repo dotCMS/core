@@ -131,12 +131,12 @@ describe('UVEStore - Integration Tests ', () => {
         describe('editor panels', () => {
             it('should have palette and rightSidebar state', () => {
                 expect(store.editorPaletteOpen()).toBeDefined();
-                expect(store.editorRightSidebarOpen()).toBeDefined();
+                expect(store.editorEditPanelOpen()).toBeDefined();
             });
 
             it('should initialize panels with default values', () => {
                 expect(store.editorPaletteOpen()).toBe(true); // Default: palette open
-                expect(store.editorRightSidebarOpen()).toBe(false); // Default: sidebar closed
+                expect(store.editorEditPanelOpen()).toBe(false); // Default: sidebar closed
             });
 
             it('should update palette.open via setPaletteOpen', () => {
@@ -149,27 +149,27 @@ describe('UVEStore - Integration Tests ', () => {
                 expect(store.editorPaletteOpen()).toBe(true);
             });
 
-            it('should update rightSidebar.open via setRightSidebarOpen', () => {
-                store.setRightSidebarOpen(true);
+            it('should update rightSidebar.open via setEditPanelOpen', () => {
+                store.setEditPanelOpen(true);
 
-                expect(store.editorRightSidebarOpen()).toBe(true);
+                expect(store.editorEditPanelOpen()).toBe(true);
 
-                store.setRightSidebarOpen(false);
+                store.setEditPanelOpen(false);
 
-                expect(store.editorRightSidebarOpen()).toBe(false);
+                expect(store.editorEditPanelOpen()).toBe(false);
             });
 
             it('should preserve other panel state when updating one panel', () => {
                 // Set initial state
                 store.setPaletteOpen(false);
-                store.setRightSidebarOpen(true);
+                store.setEditPanelOpen(true);
 
                 // Update only palette
                 store.setPaletteOpen(true);
 
                 // Verify palette changed but rightSidebar remained
                 expect(store.editorPaletteOpen()).toBe(true);
-                expect(store.editorRightSidebarOpen()).toBe(true); // Unchanged
+                expect(store.editorEditPanelOpen()).toBe(true); // Unchanged
             });
         });
 
@@ -184,7 +184,7 @@ describe('UVEStore - Integration Tests ', () => {
 
                 // UI panels (separate)
                 expect(store.editorPaletteOpen()).toBeDefined();
-                expect(store.editorRightSidebarOpen()).toBeDefined();
+                expect(store.editorEditPanelOpen()).toBeDefined();
 
                 // Editor data
                 expect(store.editorOgTags()).toBeDefined();
@@ -200,7 +200,7 @@ describe('UVEStore - Integration Tests ', () => {
 
                 // Panel state should be unaffected
                 expect(store.editorPaletteOpen()).toBe(true);
-                expect(store.editorRightSidebarOpen()).toBe(false);
+                expect(store.editorEditPanelOpen()).toBe(false);
             });
 
             it('should handle bounds state independently from panels', () => {
@@ -271,11 +271,11 @@ describe('UVEStore - Integration Tests ', () => {
             store.setEditorBounds(getBoundsMock(ACTION_MOCK));
             store.setContentletArea(MOCK_CONTENTLET_AREA);
             store.setPaletteOpen(false);
-            store.setRightSidebarOpen(true);
+            store.setEditPanelOpen(true);
 
             // Remember panel state
             const paletteWasOpen = store.editorPaletteOpen();
-            const sidebarWasOpen = store.editorRightSidebarOpen();
+            const sidebarWasOpen = store.editorEditPanelOpen();
 
             // Reset editor properties
             store.resetEditorProperties();
@@ -288,7 +288,7 @@ describe('UVEStore - Integration Tests ', () => {
 
             // Panel state should be preserved (user preferences)
             expect(store.editorPaletteOpen()).toBe(paletteWasOpen);
-            expect(store.editorRightSidebarOpen()).toBe(sidebarWasOpen);
+            expect(store.editorEditPanelOpen()).toBe(sidebarWasOpen);
         });
     });
 

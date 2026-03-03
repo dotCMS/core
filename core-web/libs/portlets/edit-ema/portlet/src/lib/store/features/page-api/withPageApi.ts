@@ -55,9 +55,6 @@ export interface WithPageApiDeps {
     // Client configuration
     resetClientConfiguration: () => void;
 
-    // Workflow
-    workflowFetch: (inode: string) => void;
-
     // Request metadata
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
     $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
@@ -166,9 +163,6 @@ export function withPageApi(deps: WithPageApiDeps) {
                                     // EMPTY is a simple Observable that only emits the complete notification.
                                     return EMPTY;
                                 }),
-                                tap((pageAsset) => {
-                                    deps.workflowFetch(pageAsset?.page?.inode);
-                                }),
                                 catchError((err: HttpErrorResponse) => {
                                     const errorStatus = err.status;
                                     console.error('Error UVEStore', err);
@@ -255,7 +249,6 @@ export function withPageApi(deps: WithPageApiDeps) {
                             return pageRequest.pipe(
                                 tap((pageAsset) => {
                                     deps.setPageAsset({ pageAsset });
-                                    deps.workflowFetch(pageAsset?.page?.inode);
                                 }),
                                 switchMap((pageAsset) => {
                                     return dotLanguagesService.getLanguagesUsedPage(

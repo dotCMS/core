@@ -366,8 +366,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     get $paletteOpen() {
         return this.uveStore.editorPaletteOpen();
     }
-    get $rightSidebarOpen() {
-        return this.uveStore.editorRightSidebarOpen();
+    get $editPanelOpen() {
+        return this.uveStore.editorEditPanelOpen();
     }
     readonly $lockOptions = this.uveStore.$lockOptions;
     readonly $showLockOverlay = computed(() => this.$lockOptions()?.isLocked ?? false);
@@ -1559,8 +1559,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.setPaletteOpen(!this.$paletteOpen);
     }
 
-    protected toggleRightSidebar(): void {
-        this.uveStore.setRightSidebarOpen(!this.$rightSidebarOpen);
+    protected toggleEditPanel(): void {
+        this.uveStore.setEditPanelOpen(!this.$editPanelOpen);
     }
 
     readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {

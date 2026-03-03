@@ -95,7 +95,7 @@ export interface UVEState {
     editorActiveContentlet: ActionPayload | null;
     editorContentArea: ContentletArea | null;
     editorPaletteOpen: boolean;
-    editorRightSidebarOpen: boolean;
+    editorEditPanelOpen: boolean;
     editorOgTags: SeoMetaTags | null;
     editorStyleSchemas: StyleEditorFormSchema[];
 

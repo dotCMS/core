@@ -410,9 +410,9 @@ export function withEditor() {
                         editorPaletteOpen: open
                     });
                 },
-                setRightSidebarOpen(open: boolean) {
+                setEditPanelOpen(open: boolean) {
                     patchState(store, {
-                        editorRightSidebarOpen: open
+                        editorEditPanelOpen: open
                     });
                 }
             };

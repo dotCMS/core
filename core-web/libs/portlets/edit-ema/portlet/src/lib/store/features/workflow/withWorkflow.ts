@@ -4,6 +4,7 @@ import {
     signalStoreFeature,
     type,
     withComputed,
+    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
@@ -11,7 +12,7 @@ import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject, Signal } from '@angular/core';
+import { computed, effect, inject, Signal, untracked } from '@angular/core';
 
 import { map, switchMap, tap } from 'rxjs/operators';
 
@@ -299,6 +300,20 @@ export function withWorkflow() {
                     }
                 }
             };
+        }),
+        withHooks({
+            /**
+             * When page inode changes, fetch workflow actions asynchronously.
+             * Decouples workflow load from page load so the page can show LOADED without waiting.
+             */
+            onInit(store) {
+                effect(() => {
+                    const inode = store.pageAsset()?.page?.inode;
+                    if (inode) {
+                        untracked(() => store.workflowFetch(inode));
+                    }
+                });
+            }
         })
     );
 }

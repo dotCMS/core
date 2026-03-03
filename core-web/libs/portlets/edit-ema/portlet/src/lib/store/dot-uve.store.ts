@@ -43,7 +43,7 @@ const initialState: UVEState = {
     editorActiveContentlet: null,
     editorContentArea: null,
     editorPaletteOpen: true,
-    editorRightSidebarOpen: false,
+    editorEditPanelOpen: false,
     editorOgTags: null,
     editorStyleSchemas: [],
     // View state (device, orientation, social media, zoom)
@@ -79,10 +79,8 @@ const initialState: UVEState = {
  * 10. withEditor - Editor UI (needs PageComputed, WorkflowLockComputed, ViewComputed)
  * 11. withPageApi - Backend API (needs all above, provides pageReload)
  *
- * Note: Circular dependency exists between withWorkflow and withPageApi:
- * - withWorkflow needs pageReload() from withPageApi (accessed via type assertion)
- * - withPageApi needs workflowFetch() from withWorkflow (accessed via dependency injection)
- * Current order is optimal - do not change without addressing this circular dependency.
+ * Note: withWorkflow needs pageReload() from withPageApi (accessed via type assertion).
+ * Workflow fetch runs reactively when page inode changes (withWorkflow onInit effect), not from page-api.
  *
  * @example
  * ```typescript
@@ -130,9 +128,6 @@ export const UVEStore = signalStore(
         withPageApi({
             // Client configuration
             resetClientConfiguration: () => store.resetClientConfiguration(),
-
-            // Workflow
-            workflowFetch: (inode: string) => store.workflowFetch(inode),
 
             // Request metadata
             requestMetadata: () => store.requestMetadata(),

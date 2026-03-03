@@ -8,6 +8,7 @@ import {
 import { signalStore, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
+import { flushEffects } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import {
@@ -97,10 +98,13 @@ describe('withLoad', () => {
         expect(store.workflowIsLoading()).toBe(true);
     });
 
-    it('should react to the pageAssetResponse', () => {
+    it('should fetch workflow actions when page asset inode changes (effect)', () => {
+        const getByInodeSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
         store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
-        expect(store.workflowActions()).toEqual([]);
-        expect(store.workflowIsLoading()).toBe(true);
+        flushEffects();
+        expect(getByInodeSpy).toHaveBeenCalledWith(MOCK_RESPONSE_HEADLESS.page.inode);
+        expect(store.workflowActions()).toEqual(mockWorkflowsActions);
+        expect(store.workflowIsLoading()).toBe(false);
     });
 
     describe('withMethods', () => {

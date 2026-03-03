@@ -23,7 +23,7 @@ export const BASE_UVE_STATE: UVEState = {
     editorActiveContentlet: null,
     editorContentArea: null,
     editorPaletteOpen: true,
-    editorRightSidebarOpen: false,
+    editorEditPanelOpen: false,
     editorOgTags: null,
     editorStyleSchemas: [],
     viewDevice: null,
