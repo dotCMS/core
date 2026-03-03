@@ -370,7 +370,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
      * Creates tags via the resource and extracts the "created" list from the response.
      */
     @SuppressWarnings("unchecked")
-    private List<RestTag> createTagsAndGetCreated(final List<TagForm> forms) {
+    private List<RestTag> createTagsAndGetCreated(final List<TagForm> forms) throws Exception {
         final Response result = resource.createTags(request, response, forms);
         assertEquals(200, result.getStatus());
         final ResponseEntityView<Map<String, Object>> entity =
@@ -381,11 +381,11 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
     /**
      * Lists tags by filter and siteId, returns the entity list.
      */
-    private List<?> listTags(final String filter, final String siteId) {
+    private List<?> listTags(final String filter, final String siteId) throws Exception {
         return listTags(filter, false, siteId);
     }
 
-    private List<?> listTags(final String filter, final boolean global, final String siteId) {
+    private List<?> listTags(final String filter, final boolean global, final String siteId) throws Exception {
         final ResponseEntityPaginatedDataView result = resource.list(
                 request, response, filter, global, siteId,
                 1, 25, "tagname", "ASC");
