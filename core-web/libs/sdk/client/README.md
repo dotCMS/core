@@ -32,6 +32,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   [How-to Guides](#how-to-guides)
     -   [How to Fetch Complete Pages](#how-to-fetch-complete-pages)
     -   [How to Query Content Collections](#how-to-query-content-collections)
+        -   [Including System Host Content](#including-system-host-content)
     -   [How to Run Raw Lucene Content Queries](#how-to-run-raw-lucene-content-queries)
     -   [How to Use AI-Powered Search](#how-to-use-ai-powered-search)
     -   [How to Work with GraphQL](#how-to-work-with-graphql)
