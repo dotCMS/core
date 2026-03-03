@@ -1,0 +1,26 @@
+{
+  "allowedTools": [
+    "Bash(git branch --show-current*)",
+    "Bash(ls .github/ISSUE_TEMPLATE*)",
+    "Read(.github/ISSUE_TEMPLATE/*)",
+    "Bash(gh issue list*)",
+    "Bash(gh issue view*)",
+    "Bash(gh issue create*)",
+    "Bash(gh issue edit*)",
+    "Bash(gh issue close*)",
+    "Bash(gh issue comment*)",
+    "Bash(gh pr list*)",
+    "Bash(gh pr view*)",
+    "Bash(gh pr create*)",
+    "Bash(gh run list*)",
+    "Bash(gh run view*)",
+    "Bash(gh api*)",
+    "Bash(gh label list*)",
+    "Bash(gh auth refresh*)",
+    "Bash(jq*)",
+    "Bash(cat ~/.config/dotcms/create-issue/*)",
+    "Bash(mkdir -p ~/.config/dotcms/create-issue*)",
+    "Bash(rm ~/.config/dotcms/create-issue/default-team*)",
+    "Bash(echo*)"
+  ]
+}
