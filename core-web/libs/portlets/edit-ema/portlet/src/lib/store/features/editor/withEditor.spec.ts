@@ -106,7 +106,7 @@ describe('withEditor', () => {
         spectator = createService();
         store = spectator.service;
         patchStoreState(store, initialState);
-        store.setPageAssetResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
+        store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
     // Toolbar tests removed - toolbar functionality should be tested in withToolbar.spec.ts
@@ -148,7 +148,7 @@ describe('withEditor', () => {
 
         describe('$reloadEditorContent', () => {
             it('should return the expected data for Headless', () => {
-                store.setPageAsset(MOCK_RESPONSE_HEADLESS);
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
                 patchStoreState(store, {
                     pageType: PageType.HEADLESS
                 });
@@ -160,7 +160,7 @@ describe('withEditor', () => {
                 });
             });
             it('should return the expected data for VTL', () => {
-                store.setPageAsset(MOCK_RESPONSE_VTL);
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_VTL });
                 patchStoreState(store, {
                     pageType: PageType.TRADITIONAL
                 });
@@ -186,10 +186,12 @@ describe('withEditor', () => {
 
             it('should return false when canEditPage is false', () => {
                 store.setPageAsset({
-                    ...MOCK_RESPONSE_HEADLESS,
-                    page: {
-                        ...MOCK_RESPONSE_HEADLESS.page,
-                        canEdit: false
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false
+                        }
                     }
                 });
                 patchStoreState(store, {
@@ -396,7 +398,7 @@ describe('withEditor', () => {
             });
 
             it('should be an instance of String in src when the page is traditional', () => {
-                store.setPageAsset(MOCK_RESPONSE_VTL);
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_VTL });
                 patchStoreState(store, {
                     pageType: PageType.TRADITIONAL
                 });
@@ -405,7 +407,7 @@ describe('withEditor', () => {
             });
 
             it('should be an empty string in src when the page is traditional', () => {
-                store.setPageAsset(MOCK_RESPONSE_VTL);
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_VTL });
                 patchStoreState(store, {
                     pageType: PageType.TRADITIONAL
                 });
@@ -415,10 +417,12 @@ describe('withEditor', () => {
 
             it('should contain the right url when the page is a vanity url  ', () => {
                 store.setPageAsset({
-                    ...MOCK_RESPONSE_HEADLESS,
-                    vanityUrl: {
-                        ...MOCK_RESPONSE_HEADLESS.vanityUrl,
-                        url: 'first'
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        vanityUrl: {
+                            ...MOCK_RESPONSE_HEADLESS.vanityUrl,
+                            url: 'first'
+                        }
                     }
                 });
                 patchStoreState(store, {

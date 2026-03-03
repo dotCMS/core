@@ -87,7 +87,7 @@ describe('withView', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        store.setPageAssetResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
+        store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
     describe('Computed', () => {
@@ -136,10 +136,12 @@ describe('withView', () => {
                         }
                     });
                     store.setPageAsset({
-                        ...MOCK_RESPONSE_HEADLESS,
-                        viewAs: {
-                            ...MOCK_RESPONSE_HEADLESS.viewAs,
-                            variantId: variantID
+                        pageAsset: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                variantId: variantID
+                            }
                         }
                     });
 
@@ -168,10 +170,12 @@ describe('withView', () => {
                         }
                     });
                     store.setPageAsset({
-                        ...MOCK_RESPONSE_HEADLESS,
-                        viewAs: {
-                            ...MOCK_RESPONSE_HEADLESS.viewAs,
-                            variantId: variantID
+                        pageAsset: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                variantId: variantID
+                            }
                         }
                     });
 
@@ -201,10 +205,12 @@ describe('withView', () => {
                         }
                     });
                     store.setPageAsset({
-                        ...MOCK_RESPONSE_HEADLESS,
-                        viewAs: {
-                            ...MOCK_RESPONSE_HEADLESS.viewAs,
-                            variantId: variantID
+                        pageAsset: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            viewAs: {
+                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                variantId: variantID
+                            }
                         }
                     });
 
@@ -239,10 +245,12 @@ describe('withView', () => {
                     }
                 });
                 store.setPageAsset({
-                    ...MOCK_RESPONSE_HEADLESS,
-                    viewAs: {
-                        ...MOCK_RESPONSE_HEADLESS.viewAs,
-                        variantId: DEFAULT_VARIANT_ID
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        viewAs: {
+                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            variantId: DEFAULT_VARIANT_ID
+                        }
                     }
                 });
                 expect(store.$showWorkflowsActions()).toBe(true);
@@ -250,10 +258,12 @@ describe('withView', () => {
 
             it('should return false when not in preview mode and is not default variant', () => {
                 store.setPageAsset({
-                    ...MOCK_RESPONSE_HEADLESS,
-                    viewAs: {
-                        ...MOCK_RESPONSE_HEADLESS.viewAs,
-                        variantId: 'some-other-variant'
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        viewAs: {
+                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            variantId: 'some-other-variant'
+                        }
                     }
                 });
                 expect(store.$showWorkflowsActions()).toBe(false);

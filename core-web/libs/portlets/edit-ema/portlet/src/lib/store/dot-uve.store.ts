@@ -114,7 +114,7 @@ export const UVEStore = signalStore(
         return {
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
                 // Single source of truth - pageAsset properties accessed via store.pageAsset()
-                store.setPageAssetResponse({ pageAsset: pageAPIResponse });
+                store.setPageAsset({ pageAsset: pageAPIResponse });
                 store.setUveStatus(UVE_STATUS.LOADED);
             }
         };
@@ -139,7 +139,7 @@ export const UVEStore = signalStore(
             $requestWithParams: store.$requestWithParams,
 
             // Page asset management
-            setPageAssetResponse: (response) => store.setPageAssetResponse(response),
+            setPageAsset: (payload) => store.setPageAsset(payload),
             rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
 
             // History management

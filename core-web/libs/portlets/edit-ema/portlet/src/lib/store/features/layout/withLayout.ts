@@ -12,7 +12,10 @@ import { PageSnapshot } from '../page/withPage';
 
 interface LayoutStoreDeps {
     pageAsset: () => PageSnapshot;
-    setPageAsset: (pageAsset: DotCMSPageAsset) => void;
+    setPageAsset: (payload: {
+        pageAsset: DotCMSPageAsset;
+        content?: Record<string, unknown>;
+    }) => void;
 }
 
 /** Store type with layout dependencies (pageAsset, setPageAsset); use for type assertion in feature callbacks. */
@@ -62,8 +65,7 @@ export function withLayout() {
                         delete asset.requestMetadata;
                         delete asset.clientResponse;
                         store.setPageAsset({
-                            ...asset,
-                            layout
+                            pageAsset: { ...asset, layout }
                         });
                     }
                 }

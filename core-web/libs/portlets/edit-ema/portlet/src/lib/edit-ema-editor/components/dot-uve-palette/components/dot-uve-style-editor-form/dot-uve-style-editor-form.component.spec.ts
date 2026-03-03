@@ -290,7 +290,7 @@ describe('DotUveStyleEditorFormComponent', () => {
                 pageId: 'test-page'
             });
 
-            mockUveStore.setPageAsset(createMockPageAsset(16));
+            mockUveStore.setPageAsset({ pageAsset: createMockPageAsset(16) });
 
             spectator = createTestComponent();
             spectator.detectChanges();
@@ -302,7 +302,9 @@ describe('DotUveStyleEditorFormComponent', () => {
         const makeRollbackOnSaveFailure = (rolledBackFontSize: number) => {
             mockUveStore.saveStyleEditor.mockReturnValue(
                 throwError(() => {
-                    mockUveStore.setPageAsset(createMockPageAsset(rolledBackFontSize));
+                    mockUveStore.setPageAsset({
+                        pageAsset: createMockPageAsset(rolledBackFontSize)
+                    });
                     return new Error('Save failed');
                 })
             );

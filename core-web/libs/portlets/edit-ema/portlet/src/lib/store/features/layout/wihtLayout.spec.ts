@@ -52,7 +52,7 @@ describe('withLayout', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        store.setPageAssetResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
+        store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
     describe('withComputed', () => {

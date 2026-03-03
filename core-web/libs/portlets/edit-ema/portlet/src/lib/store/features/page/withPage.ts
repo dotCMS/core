@@ -21,13 +21,12 @@ import { withHistory } from '../history/withHistory';
  * Page loading configuration state
  *
  * Manages the configuration and state for loading page data from the server.
- * This includes request metadata (query/variables), response format, and the loaded page asset.
+ * This includes request metadata (query/variables) and the loaded page asset.
  *
  * @export
  * @interface PageLoadingConfigState
  */
 export interface PageLoadingConfigState {
-    legacyResponseFormat: boolean;
     isClientReady: boolean;
     requestMetadata: {
         query: string;
@@ -39,13 +38,11 @@ export interface PageLoadingConfigState {
     };
 }
 
-export type PageClientResponse =
-    | DotCMSPageAsset
-    | {
-          pageAsset: DotCMSPageAsset;
-          content?: Record<string, unknown>;
-          requestMetadata: { query: string; variables: Record<string, string> } | null;
-      };
+export type PageClientResponse = {
+    pageAsset: DotCMSPageAsset;
+    content?: Record<string, unknown>;
+    requestMetadata: { query: string; variables: Record<string, string> } | null;
+};
 
 export type PageSnapshot =
     | (DotCMSPageAsset & {
@@ -79,19 +76,18 @@ export interface WithPageMethods extends PageComputed {
         content?: Record<string, unknown>;
     } | null;
     isClientReady: () => boolean;
-    legacyResponseFormat: () => boolean;
 
     // Page loading configuration methods
     setIsClientReady: (isClientReady: boolean) => void;
-    setCustomClient: (
-        requestMetadata: { query: string; variables: Record<string, string> },
-        legacyResponseFormat: boolean
-    ) => void;
-    setPageAssetResponse: (pageAssetResponse: {
+    setCustomClient: (requestMetadata: {
+        query: string;
+        variables: Record<string, string>;
+    }) => void;
+    /** Updates page asset (and optionally content). Omit content to merge; include content to replace. */
+    setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
     }) => void;
-    setPageAsset: (pageAsset: DotCMSPageAsset) => void;
     resetClientConfiguration: () => void;
     addCurrentPageToHistory: () => void;
     resetHistoryToCurrent: () => void;
@@ -103,8 +99,7 @@ export interface WithPageMethods extends PageComputed {
 const pageLoadingConfigState: PageLoadingConfigState = {
     requestMetadata: null,
     pageAssetResponse: null,
-    isClientReady: false,
-    legacyResponseFormat: false
+    isClientReady: false
 };
 
 /**
@@ -116,7 +111,7 @@ const pageLoadingConfigState: PageLoadingConfigState = {
  * Responsibilities:
  * - Page asset data (page, site, containers, template, layout, viewAs, etc.)
  * - Page context (language, URI, variant, translation props, friendly params)
- * - Page loading configuration (request metadata, response format, client readiness)
+ * - Page loading configuration (request metadata, client readiness)
  * - Time machine for undo/redo of page changes
  *
  * @returns Signal store feature with page data and loading configuration
@@ -138,26 +133,21 @@ export function withPage() {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setCustomClient: ({ query, variables }, legacyResponseFormat) => {
+                setCustomClient: ({ query, variables }) => {
                     patchState(store, {
-                        legacyResponseFormat,
                         requestMetadata: {
                             query,
                             variables
                         }
                     });
                 },
-                setPageAssetResponse: (pageAssetResponse) => {
-                    patchState(store, { pageAssetResponse });
-                },
-                setPageAsset: (pageAsset) => {
-                    const currentResponse = store.pageAssetResponse();
-                    const nextResponse = currentResponse
-                        ? {
-                              ...currentResponse,
-                              pageAsset
-                          }
-                        : { pageAsset };
+                setPageAsset: (payload) => {
+                    const current = store.pageAssetResponse();
+                    const content = 'content' in payload ? payload.content : current?.content;
+                    const nextResponse = {
+                        pageAsset: payload.pageAsset,
+                        ...(content !== undefined && { content })
+                    };
                     patchState(store, { pageAssetResponse: nextResponse });
                 },
                 setPageAssetResponseOptimistic: (
@@ -208,12 +198,10 @@ export function withPage() {
 
                 const asset = response.pageAsset;
                 const requestMetadata = store.requestMetadata();
-                const clientResponse = store.legacyResponseFormat()
-                    ? asset
-                    : {
-                          ...response,
-                          requestMetadata
-                      };
+                const clientResponse = {
+                    ...response,
+                    requestMetadata
+                };
 
                 return {
                     ...asset,

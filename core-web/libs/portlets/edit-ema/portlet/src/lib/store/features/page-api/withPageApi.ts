@@ -63,7 +63,7 @@ export interface WithPageApiDeps {
     $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
 
     // Page asset management
-    setPageAssetResponse: (response: {
+    setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
     }) => void;
@@ -204,7 +204,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
-                                            deps.setPageAssetResponse({ pageAsset });
+                                            deps.setPageAsset({ pageAsset });
                                             deps.addHistory({ pageAsset });
 
                                             // uveCurrentUser is synced reactively from GlobalStore in withUve onInit effect
@@ -243,13 +243,18 @@ export function withPageApi(deps: WithPageApiDeps) {
                             const pageRequest = !deps.requestMetadata()
                                 ? dotPageApiService.get(store.pageParams())
                                 : dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
-                                      tap((response) => deps.setPageAssetResponse(response)),
+                                      tap((response) =>
+                                          deps.setPageAsset({
+                                              pageAsset: response.pageAsset,
+                                              content: response.content
+                                          })
+                                      ),
                                       map((response) => response.pageAsset)
                                   );
 
                             return pageRequest.pipe(
                                 tap((pageAsset) => {
-                                    deps.setPageAssetResponse({ pageAsset });
+                                    deps.setPageAsset({ pageAsset });
                                     deps.workflowFetch(pageAsset?.page?.inode);
                                 }),
                                 switchMap((pageAsset) => {
@@ -304,14 +309,17 @@ export function withPageApi(deps: WithPageApiDeps) {
                                               .get(store.pageParams())
                                               .pipe(
                                                   tap((pageAsset) =>
-                                                      deps.setPageAssetResponse({ pageAsset })
+                                                      deps.setPageAsset({ pageAsset })
                                                   )
                                               )
                                         : dotPageApiService
                                               .getGraphQLPage(deps.$requestWithParams())
                                               .pipe(
                                                   tap((response) =>
-                                                      deps.setPageAssetResponse(response)
+                                                      deps.setPageAsset({
+                                                          pageAsset: response.pageAsset,
+                                                          content: response.content
+                                                      })
                                                   ),
                                                   map((response) => response.pageAsset)
                                               );
@@ -402,7 +410,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                     }),
                                     tapResponse(
                                         (pageRender: DotCMSPageAsset) => {
-                                            deps.setPageAssetResponse({ pageAsset: pageRender });
+                                            deps.setPageAsset({ pageAsset: pageRender });
                                             patchState(store, {
                                                 uveStatus: UVE_STATUS.LOADED
                                             });

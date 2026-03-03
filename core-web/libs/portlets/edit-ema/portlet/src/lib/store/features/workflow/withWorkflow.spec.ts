@@ -45,7 +45,7 @@ export const uveStoreMock = signalStore(
     withWorkflow(),
     withMethods((store) => ({
         setPageAPIResponse: (pageAssetResponse: DotCMSPageAsset) => {
-            store.setPageAssetResponse({ pageAsset: pageAssetResponse });
+            store.setPageAsset({ pageAsset: pageAssetResponse });
         }
     }))
 );

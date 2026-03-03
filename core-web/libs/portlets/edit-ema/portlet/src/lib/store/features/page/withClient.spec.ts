@@ -64,7 +64,6 @@ describe('UVEStore', () => {
         expect(store.requestMetadata()).toEqual(null);
         expect(store.pageAssetResponse()).toEqual(null);
         expect(store.isClientReady()).toBe(false);
-        expect(store.legacyResponseFormat()).toBe(false);
     });
 
     describe('withMethods', () => {
@@ -83,7 +82,7 @@ describe('UVEStore', () => {
                     }
                 };
 
-                store.setCustomClient(graphql, true);
+                store.setCustomClient(graphql);
 
                 expect(store.requestMetadata()).toEqual(graphql);
             });
@@ -92,10 +91,10 @@ describe('UVEStore', () => {
         it('should reset the client configuration', () => {
             const graphql = {
                 query: 'test',
-                variables: null
+                variables: {}
             };
 
-            store.setCustomClient(graphql, true);
+            store.setCustomClient(graphql);
             store.resetClientConfiguration();
 
             expect(store.requestMetadata()).toEqual(null);
@@ -129,7 +128,7 @@ describe('UVEStore', () => {
             };
 
             patchStoreState(store, { pageParams });
-            store.setCustomClient(graphql, false);
+            store.setCustomClient(graphql);
 
             const result = store.$requestWithParams();
 
@@ -164,7 +163,7 @@ describe('UVEStore', () => {
             };
 
             patchStoreState(store, { pageParams });
-            store.setCustomClient(graphql, false);
+            store.setCustomClient(graphql);
 
             const result = store.$requestWithParams();
 
@@ -198,7 +197,7 @@ describe('UVEStore', () => {
             };
 
             patchStoreState(store, { pageParams });
-            store.setCustomClient(graphql, false);
+            store.setCustomClient(graphql);
 
             const result = store.$requestWithParams();
 

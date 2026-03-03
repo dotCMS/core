@@ -215,10 +215,12 @@ export class DotUveActionsHandlerService {
 
                 const { graphql, params, query: rawQuery } = devConfig || {};
                 const { query = rawQuery, variables } = graphql || {};
-                const legacyResponseFormat = !!rawQuery;
 
                 if (query || rawQuery) {
-                    uveStore.setCustomClient({ query, variables }, legacyResponseFormat);
+                    uveStore.setCustomClient({
+                        query,
+                        variables: (variables ?? {}) as Record<string, string>
+                    });
                 }
 
                 const pageParams = convertClientParamsToPageParams(params);

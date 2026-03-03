@@ -76,7 +76,7 @@ interface WorkflowPageApiDeps {
         query: string;
         variables: Record<string, string>;
     } | null;
-    setPageAssetResponse: (response: {
+    setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
     }) => void;
@@ -177,7 +177,14 @@ export function withWorkflow() {
                         const pageResponse =
                             'pageAsset' in response ? response : { pageAsset: response };
 
-                        pageStore.setPageAssetResponse(pageResponse);
+                        const content =
+                            'content' in pageResponse
+                                ? (pageResponse as { content?: Record<string, unknown> }).content
+                                : undefined;
+                        pageStore.setPageAsset({
+                            pageAsset: pageResponse.pageAsset,
+                            ...(content !== undefined && { content })
+                        });
 
                         dotLanguagesService
                             .getLanguagesUsedPage(pageResponse.pageAsset.page.identifier)

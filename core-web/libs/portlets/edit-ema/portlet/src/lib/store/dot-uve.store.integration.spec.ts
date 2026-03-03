@@ -311,7 +311,7 @@ describe('UVEStore - Integration Tests ', () => {
                 }
             };
 
-            store.setPageAssetResponse({ pageAsset: pageResponse });
+            store.setPageAsset({ pageAsset: pageResponse });
             store.setUveStatus(UVE_STATUS.LOADED);
             store.setUveCurrentUser({ ...CurrentUserDataMock, loginAs: false });
 

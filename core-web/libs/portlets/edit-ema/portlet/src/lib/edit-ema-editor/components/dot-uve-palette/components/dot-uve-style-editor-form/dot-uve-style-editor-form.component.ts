@@ -255,7 +255,7 @@ export class DotUveStyleEditorFormComponent {
 
             // Optimistic update: Update state WITHOUT saving to history
             // History is only saved when we actually call the API (in #saveStyleProperties)
-            this.#uveStore.setPageAsset(updatedInternalResponse);
+            this.#uveStore.setPageAsset({ pageAsset: updatedInternalResponse });
 
             // Send updated response to iframe immediately for instant feedback
             // Get the updated custom response (computed will reflect the changes)
