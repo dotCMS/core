@@ -142,7 +142,6 @@ export class DotEmaShellComponent implements OnInit {
 
     // Component builds SEO params locally
     protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
-        // Removed pageAPIResponse - use normalized accessors
         const url = sanitizeURL(this.uveStore.pageAsset()?.page?.pageURI);
         const currentUrl = url.startsWith('/') ? url : '/' + url;
         const requestHostName = getRequestHostName(this.uveStore.pageParams());

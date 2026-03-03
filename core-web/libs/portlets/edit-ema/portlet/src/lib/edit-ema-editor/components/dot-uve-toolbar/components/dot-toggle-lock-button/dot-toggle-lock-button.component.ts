@@ -5,7 +5,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-export interface ToggleLockOptions {
+export interface ToggleLockButtonOptions {
     inode: string;
     isLocked: boolean;
     isLockedByCurrentUser: boolean;
@@ -29,7 +29,7 @@ export interface ToggleLockEvent {
 })
 export class DotToggleLockButtonComponent {
     // Inputs - data down from container
-    toggleLockOptions = input.required<ToggleLockOptions>();
+    toggleLockOptions = input.required<ToggleLockButtonOptions>();
 
     // Outputs - events up to container
     toggleLockClick = output<ToggleLockEvent>();

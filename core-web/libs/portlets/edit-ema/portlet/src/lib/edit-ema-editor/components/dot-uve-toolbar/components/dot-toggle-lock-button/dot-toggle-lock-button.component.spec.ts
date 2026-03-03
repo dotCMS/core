@@ -10,7 +10,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotToggleLockButtonComponent,
     ToggleLockEvent,
-    ToggleLockOptions
+    ToggleLockButtonOptions
 } from './dot-toggle-lock-button.component';
 
 describe('DotToggleLockButtonComponent - Presentational', () => {
@@ -53,7 +53,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('when page is unlocked', () => {
         beforeEach(() => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -103,7 +103,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('when page is locked by current user', () => {
         beforeEach(() => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode-locked',
                 isLocked: true,
                 isLockedByCurrentUser: true,
@@ -148,7 +148,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('when page is locked by another user', () => {
         beforeEach(() => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode-locked-other',
                 isLocked: true,
                 isLockedByCurrentUser: false,
@@ -182,7 +182,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('when loading', () => {
         beforeEach(() => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -214,7 +214,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('when canLock is false', () => {
         beforeEach(() => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -236,7 +236,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('computed $buttonLabel', () => {
         it('should return unlocked label when isLocked is false', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -255,7 +255,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should return locked label when isLocked is true', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: true,
                 isLockedByCurrentUser: true,
@@ -274,7 +274,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('toggleLock method', () => {
         it('should emit correct event parameters', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'method-test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -298,7 +298,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should handle locked state in event emission', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'locked-method-inode',
                 isLocked: true,
                 isLockedByCurrentUser: true,
@@ -324,7 +324,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('computed $workflowLockIsLoading', () => {
         it('should return true when loading', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -341,7 +341,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should return false when not loading', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -360,7 +360,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('computed $workflowLockOptions', () => {
         it('should be an alias for toggleLockOptions input', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'alias-test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -379,7 +379,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('tooltip behavior', () => {
         it('should display tooltip when button is disabled and canLock is false', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -400,7 +400,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should not display tooltip when canLock is true', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -421,7 +421,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('CSS classes', () => {
         it('should have disabled class when canLock is false', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -439,7 +439,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should not have disabled class when canLock is true', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -459,7 +459,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
     describe('edge cases', () => {
         it('should handle toggleLock when canLock is false and not emit event', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,
@@ -480,7 +480,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
 
         it('should handle rapid toggleLock calls', () => {
-            const lockOptions: ToggleLockOptions = {
+            const lockOptions: ToggleLockButtonOptions = {
                 inode: 'rapid-test-inode',
                 isLocked: false,
                 isLockedByCurrentUser: false,

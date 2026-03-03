@@ -25,11 +25,18 @@ import { DotCMSPageAsset } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
-import { ToggleLockOptions } from '../../../shared/models';
 import { computeIsPageLocked } from '../../../utils';
 import { UVEState } from '../../models';
 
 import type { PageComputed } from '../page/withPage';
+
+export interface WorkflowLockOptions {
+    inode: string;
+    isLocked: boolean;
+    lockedBy: string;
+    canLock: boolean;
+    isLockedByCurrentUser: boolean;
+}
 
 interface WithWorkflowState {
     workflowActions: DotCMSWorkflowAction[];
@@ -40,7 +47,7 @@ interface WithWorkflowState {
 export interface WorkflowComputed {
     workflowIsPageLocked: Signal<boolean>;
     systemIsLockFeatureEnabled: Signal<boolean>;
-    $workflowLockOptions: Signal<ToggleLockOptions | null>;
+    $workflowLockOptions: Signal<WorkflowLockOptions | null>;
 }
 
 /**
@@ -92,7 +99,7 @@ export function withWorkflow() {
                 () => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
             );
 
-            const $workflowLockOptions = computed<ToggleLockOptions | null>(() => {
+            const $workflowLockOptions = computed<WorkflowLockOptions | null>(() => {
                 const page = store.pageAsset()?.page;
                 const user = store.uveCurrentUser();
 

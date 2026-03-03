@@ -15,16 +15,6 @@ import { PersonaSelectorProps } from '../models';
 const VIEW_CANVAS_BASE_WIDTH = 1520;
 
 /**
- * Dependencies interface for withView
- * Currently no external dependencies needed - all accessed from store
- * Kept for future extensibility
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
-export interface WithViewDeps {
-    // No dependencies needed - all accessed from store
-}
-
-/**
  * View feature for UVE store - manages editor view modes, preview configuration, and zoom controls.
  *
  * This feature consolidates all view-related concerns in one place:
@@ -51,7 +41,7 @@ export interface WithViewDeps {
  *
  * @returns Signal store feature with view management capabilities
  */
-export function withView(_deps?: WithViewDeps) {
+export function withView() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
