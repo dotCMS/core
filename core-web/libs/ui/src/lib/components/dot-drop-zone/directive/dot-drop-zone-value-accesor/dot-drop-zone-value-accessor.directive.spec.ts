@@ -47,9 +47,7 @@ describe('DotDropZoneValueAccessorDirective', () => {
                         Content
                     </div>
                 </div>`);
-            }).toThrow(
-                'dot-drop-zone-value-accessor can only be used inside of a dot-drop-zone'
-            );
+            }).toThrow('dot-drop-zone-value-accessor can only be used inside of a dot-drop-zone');
         });
     });
 });
