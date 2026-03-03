@@ -273,6 +273,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotFormImportUrlComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -318,6 +319,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -367,6 +369,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
