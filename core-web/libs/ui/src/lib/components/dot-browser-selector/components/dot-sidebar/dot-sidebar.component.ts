@@ -10,7 +10,7 @@ import {
     signal
 } from '@angular/core';
 
-import { TreeNode } from 'primeng/api';
+import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
 

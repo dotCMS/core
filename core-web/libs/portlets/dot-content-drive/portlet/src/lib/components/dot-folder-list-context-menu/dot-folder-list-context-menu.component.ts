@@ -43,10 +43,10 @@ import { isFolder } from '../../utils/functions';
 @Component({
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
-    styleUrl: './dot-folder-list-context-menu.component.scss',
     imports: [ContextMenuModule],
     providers: [DotContentletService],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'relative' }
 })
 export class DotFolderListViewContextMenuComponent {
     contextMenu = viewChild<ContextMenu>('contextMenu');

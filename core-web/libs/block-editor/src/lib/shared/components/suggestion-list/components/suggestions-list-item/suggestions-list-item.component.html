@@ -20,7 +20,7 @@
     }
     @if (data?.contentlet) {
         <div class="state">
-            <dot-state-icon [state]="data.contentlet" size="16px" />
+            <dot-contentlet-status-chip [state]="data.contentlet" />
             <dot-badge bordered="true">{{ data.contentlet.language | lowercase }}</dot-badge>
         </div>
     }

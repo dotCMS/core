@@ -8,7 +8,7 @@ import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
@@ -61,7 +61,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
             imports: [
                 DotDeviceSelectorSeoComponent,
                 HttpClientTestingModule,
-                OverlayPanelModule,
+                PopoverModule,
                 NoopAnimationsModule,
                 RouterTestingModule
             ],

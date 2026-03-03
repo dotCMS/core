@@ -235,28 +235,28 @@ describe('DotWorkflowActionsComponent', () => {
 
         it('should have default size', () => {
             const { button, splitButton } = getComponents(spectator);
-            expect(button.styleClass.trim()).toBe('');
-            expect(splitButton.styleClass.trim()).toBe('');
+            expect(button.size).toBeUndefined();
+            expect(splitButton.size).toBeUndefined();
         });
 
-        it('should set style class p-button-sm', () => {
+        it('should set size to small', () => {
             spectator.setInput('size', 'small');
             spectator.detectChanges();
 
             const { button, splitButton } = getComponents(spectator);
 
-            expect(splitButton.styleClass.trim()).toBe('p-button-sm');
-            expect(button.styleClass.trim()).toBe('p-button-sm');
+            expect(splitButton.size).toBe('small');
+            expect(button.size).toBe('small');
         });
 
-        it('should set style class p-button-lg', () => {
+        it('should set size to large', () => {
             spectator.setInput('size', 'large');
             spectator.detectChanges();
 
             const { button, splitButton } = getComponents(spectator);
 
-            expect(button.styleClass.trim()).toBe('p-button-lg');
-            expect(splitButton.styleClass.trim()).toBe('p-button-lg');
+            expect(button.size).toBe('large');
+            expect(splitButton.size).toBe('large');
         });
     });
 });

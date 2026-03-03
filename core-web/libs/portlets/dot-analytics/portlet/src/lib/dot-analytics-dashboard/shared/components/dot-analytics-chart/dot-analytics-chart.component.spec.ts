@@ -51,13 +51,12 @@ describe('DotAnalyticsChartComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                type: 'line' as ChartType,
-                data: createMockChartData(),
-                status: ComponentStatus.LOADED,
-                options: {}
-            } as unknown
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput({
+            type: 'line' as ChartType,
+            data: createMockChartData(),
+            status: ComponentStatus.LOADED,
+            options: {}
         });
     });
 
@@ -131,15 +130,8 @@ describe('DotAnalyticsChartComponent', () => {
 
     describe('Loading State', () => {
         it('should show loading skeleton when status is LOADING', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADING,
-                    options: {}
-                } as unknown
-            });
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
 
             const skeleton = spectator.query('.chart-skeleton');
             expect(skeleton).toExist();
@@ -147,15 +139,8 @@ describe('DotAnalyticsChartComponent', () => {
         });
 
         it('should show loading skeleton when status is INIT', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.INIT,
-                    options: {}
-                } as unknown
-            });
+            spectator.setInput('status', ComponentStatus.INIT);
+            spectator.detectChanges();
 
             const skeleton = spectator.query('.chart-skeleton');
             expect(skeleton).toExist();
@@ -163,75 +148,43 @@ describe('DotAnalyticsChartComponent', () => {
         });
 
         it('should show line chart skeleton for line chart type', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADING,
-                    options: {}
-                } as unknown
-            });
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
 
             const lineSkeleton = spectator.query('.chart-skeleton--line');
             expect(lineSkeleton).toExist();
         });
 
         it('should show pie chart skeleton for pie chart type', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'pie' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADING,
-                    options: {}
-                } as unknown
-            });
+            spectator.setInput('type', 'pie' as ChartType);
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
 
             const pieSkeleton = spectator.query('.chart-skeleton--pie');
             expect(pieSkeleton).toExist();
         });
 
         it('should show pie chart skeleton for doughnut chart type', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'doughnut' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADING,
-                    options: {}
-                } as unknown
-            });
+            spectator.setInput('type', 'doughnut' as ChartType);
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
 
             const pieSkeleton = spectator.query('.chart-skeleton--pie');
             expect(pieSkeleton).toExist();
         });
 
         it('should show default skeleton for other chart types', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'bar' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADING,
-                    options: {}
-                } as unknown
-            });
+            spectator.setInput('type', 'bar' as ChartType);
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
 
             const defaultSkeleton = spectator.query('.chart-skeleton--default');
             expect(defaultSkeleton).toExist();
         });
 
         it('should hide chart when loading', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADING,
-                    options: {}
-                } as unknown
-            });
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
 
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -239,32 +192,16 @@ describe('DotAnalyticsChartComponent', () => {
 
     describe('Error State', () => {
         it('should show error message when status is ERROR', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
+            spectator.setInput('status', ComponentStatus.ERROR);
+            spectator.detectChanges();
 
-                    status: ComponentStatus.ERROR,
-                    options: {}
-                } as unknown
-            });
-
-            const errorElement = spectator.query('.chart-error');
-            expect(errorElement).toExist();
             expect(spectator.query('dot-analytics-state-message')).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
 
         it('should show error icon when in error state', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.ERROR,
-                    options: {}
-                } as unknown
-            });
+            spectator.setInput('status', ComponentStatus.ERROR);
+            spectator.detectChanges();
 
             const errorIcon = spectator.query('.pi-exclamation-triangle');
             expect(errorIcon).toExist();
@@ -273,86 +210,37 @@ describe('DotAnalyticsChartComponent', () => {
 
     describe('Computed Properties', () => {
         it('should correctly identify loading state', () => {
-            // Test INIT state
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
+            spectator.setInput('status', ComponentStatus.INIT);
+            spectator.detectChanges();
+            expect(spectator.query('.chart-skeleton')).toExist();
 
-                    status: ComponentStatus.INIT
-                } as unknown
-            });
-            expect(spectator.component['$isLoading']()).toBe(true);
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
+            expect(spectator.query('.chart-skeleton')).toExist();
 
-            // Test LOADING state
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADING
-                } as unknown
-            });
-            expect(spectator.component['$isLoading']()).toBe(true);
-
-            // Test LOADED state
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
-            expect(spectator.component['$isLoading']()).toBe(false);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+            expect(spectator.query('.chart-skeleton')).not.toExist();
         });
 
         it('should correctly identify error state', () => {
-            // Test ERROR state
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
+            spectator.setInput('status', ComponentStatus.ERROR);
+            spectator.detectChanges();
+            expect(spectator.query('dot-analytics-state-message')).toExist();
 
-                    status: ComponentStatus.ERROR
-                } as unknown
-            });
-            expect(spectator.component['$isError']()).toBe(true);
-
-            // Test non-ERROR state
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
-            expect(spectator.component['$isError']()).toBe(false);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+            expect(spectator.query('dot-analytics-state-message')).not.toExist();
         });
 
         it('should correctly identify empty state', () => {
-            // Test with empty data
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: { labels: [], datasets: [] },
+            spectator.setInput('data', { labels: [], datasets: [] });
+            spectator.detectChanges();
+            expect(spectator.query('dot-analytics-empty-state')).toExist();
 
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
-            expect(spectator.component['$isEmpty']()).toBe(true);
-
-            // Test with valid data
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
-            expect(spectator.component['$isEmpty']()).toBe(false);
+            spectator.setInput('data', createMockChartData());
+            spectator.detectChanges();
+            expect(spectator.query('dot-analytics-empty-state')).not.toExist();
         });
     });
 
@@ -386,28 +274,12 @@ describe('DotAnalyticsChartComponent', () => {
 
     describe('Custom Dimensions', () => {
         it('should calculate height automatically based on chart type', () => {
-            // Test line chart height
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
-
             expect(spectator.component['$height']()).toBeDefined();
             expect(typeof spectator.component['$height']()).toBe('string');
 
             // Test pie chart height
-            spectator = createComponent({
-                props: {
-                    type: 'pie' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
+            spectator.setInput('type', 'pie' as ChartType);
+            spectator.detectChanges();
 
             expect(spectator.component['$height']()).toBeDefined();
             expect(typeof spectator.component['$height']()).toBe('string');
@@ -416,45 +288,24 @@ describe('DotAnalyticsChartComponent', () => {
 
     describe('Empty State', () => {
         it('should show empty state when data is empty', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: { labels: [], datasets: [] },
+            spectator.setInput('data', { labels: [], datasets: [] });
+            spectator.detectChanges();
 
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
-
-            const emptyState = spectator.query('.chart-empty');
+            const emptyState = spectator.query('dot-analytics-empty-state');
             expect(emptyState).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
 
         it('should show empty state icon and messages', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: { labels: [], datasets: [] },
+            spectator.setInput('data', { labels: [], datasets: [] });
+            spectator.detectChanges();
 
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
-
-            const stateMessage = spectator.query('dot-analytics-state-message');
-            expect(stateMessage).toExist();
+            const emptyState = spectator.query('dot-analytics-empty-state');
+            expect(emptyState).toExist();
         });
 
         it('should not show empty state when data is available', () => {
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-
-                    status: ComponentStatus.LOADED
-                } as unknown
-            });
-
-            const emptyState = spectator.query('.chart-empty');
+            const emptyState = spectator.query('dot-analytics-empty-state');
             expect(emptyState).not.toExist();
             expect(spectator.query(UIChart)).toExist();
         });

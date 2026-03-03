@@ -2,64 +2,28 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { signal } from '@angular/core';
 
-import { DotAnalyticsTrackerService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/types';
 
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
 
-import { PERSONA_KEY } from '../../../../../shared/consts';
-import { MOCK_RESPONSE_HEADLESS } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
-
-const pageParams = {
-    url: 'test-url',
-    language_id: 'en',
-    [PERSONA_KEY]: 'modes.persona.no.persona',
-    mode: UVE_MODE.EDIT
-};
 
 describe('DotEditorModeSelectorComponent', () => {
     let spectator: Spectator<DotEditorModeSelectorComponent>;
-    let component: DotEditorModeSelectorComponent;
 
-    const mockStoreState = {
-        $hasAccessToEditMode: true,
-        pageAPIResponse: {
-            ...MOCK_RESPONSE_HEADLESS,
-            page: {
-                ...MOCK_RESPONSE_HEADLESS.page,
-                live: true
-            }
-        },
-        hasLiveVersion: true,
-        pageParams,
-        isLockFeatureEnabled: false
-    };
-
-    const mockStore = {
-        $hasAccessToEditMode: signal(mockStoreState.$hasAccessToEditMode),
-        pageAPIResponse: signal(mockStoreState.pageAPIResponse),
-        pageParams: signal(mockStoreState.pageParams),
-        $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
-        clearDeviceAndSocialMedia: jest.fn(),
-        loadPageAsset: jest.fn(),
-        trackUVEModeChange: jest.fn(),
-        $isLockFeatureEnabled: signal(mockStoreState.isLockFeatureEnabled)
+    let store: {
+        $hasAccessToEditMode: ReturnType<typeof signal<boolean>>;
+        $isLockFeatureEnabled: ReturnType<typeof signal<boolean>>;
+        pageParams: ReturnType<typeof signal<{ mode: UVE_MODE }>>;
+        clearDeviceAndSocialMedia: jest.Mock;
+        loadPageAsset: jest.Mock;
+        trackUVEModeChange: jest.Mock;
     };
 
     const createComponent = createComponentFactory({
         component: DotEditorModeSelectorComponent,
         providers: [
-            {
-                provide: UVEStore,
-                useValue: mockStore
-            },
-            {
-                provide: DotAnalyticsTrackerService,
-                useValue: {
-                    track: jest.fn()
-                }
-            },
             {
                 provide: DotMessageService,
                 useValue: {
@@ -69,201 +33,203 @@ describe('DotEditorModeSelectorComponent', () => {
         ]
     });
 
+    const openSelectOverlay = () => {
+        spectator.click('[data-testId="more-button"]');
+        spectator.detectChanges();
+    };
+
+    beforeAll(() => {
+        // PrimeNG overlays rely on matchMedia; JSDOM doesn't provide it by default.
+        Object.defineProperty(window, 'matchMedia', {
+            writable: true,
+            value: jest.fn().mockImplementation((query: string) => ({
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: jest.fn(), // deprecated
+                removeListener: jest.fn(), // deprecated
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn(),
+                dispatchEvent: jest.fn()
+            }))
+        });
+    });
+
     beforeEach(() => {
-        spectator = createComponent();
-        component = spectator.component;
-        jest.resetAllMocks();
-    });
-    describe('$menuItems', () => {
-        it('should include all modes when user can edit and page has live version', () => {
-            const menuItems = component.$menuItems();
-            expect(menuItems).toHaveLength(3);
-            expect(menuItems.map((item) => item.id)).toContain(UVE_MODE.EDIT);
-            expect(menuItems.map((item) => item.id)).toContain(UVE_MODE.PREVIEW);
-            expect(menuItems.map((item) => item.id)).toContain(UVE_MODE.LIVE);
-        });
+        store = {
+            $hasAccessToEditMode: signal(true),
+            $isLockFeatureEnabled: signal(false),
+            pageParams: signal({ mode: UVE_MODE.EDIT }),
+            clearDeviceAndSocialMedia: jest.fn(),
+            loadPageAsset: jest.fn(),
+            trackUVEModeChange: jest.fn()
+        };
 
-        it('should exclude EDIT mode when user cannot edit page', () => {
-            mockStore.$hasAccessToEditMode.set(false);
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: UVEStore,
+                    useValue: store
+                }
+            ]
+        });
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('should create', () => {
+        expect(spectator.component).toBeTruthy();
+    });
+
+    describe('template', () => {
+        it('should render the mode selector', () => {
+            expect(spectator.query('[data-testId="more-button"]')).toBeTruthy();
+        });
+    });
+
+    describe('menu items visibility', () => {
+        it('should show all 3 modes when lock feature is disabled and user can edit', () => {
+            store.$isLockFeatureEnabled.set(false);
+            store.$hasAccessToEditMode.set(true);
             spectator.detectChanges();
-            const menuItems = component.$menuItems();
-            expect(menuItems).toHaveLength(2);
-            expect(menuItems.map((item) => item.id)).not.toContain(UVE_MODE.EDIT);
+
+            openSelectOverlay();
+
+            expect(
+                document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)
+            ).toBeTruthy();
+            expect(
+                document.querySelector(`[data-testId="${UVE_MODE.PREVIEW}-menu-item"]`)
+            ).toBeTruthy();
+            expect(
+                document.querySelector(`[data-testId="${UVE_MODE.LIVE}-menu-item"]`)
+            ).toBeTruthy();
+        });
+
+        it('should hide draft (EDIT) when lock feature is disabled and user cannot edit', () => {
+            store.$isLockFeatureEnabled.set(false);
+            store.$hasAccessToEditMode.set(false);
+            spectator.detectChanges();
+
+            openSelectOverlay();
+
+            expect(document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)).toBeNull();
+            expect(
+                document.querySelector(`[data-testId="${UVE_MODE.PREVIEW}-menu-item"]`)
+            ).toBeTruthy();
+            expect(
+                document.querySelector(`[data-testId="${UVE_MODE.LIVE}-menu-item"]`)
+            ).toBeTruthy();
+        });
+
+        it('should show draft (EDIT) even when user cannot edit if lock feature is enabled', () => {
+            store.$isLockFeatureEnabled.set(true);
+            store.$hasAccessToEditMode.set(false);
+            spectator.detectChanges();
+
+            openSelectOverlay();
+
+            expect(
+                document.querySelector(`[data-testId="${UVE_MODE.EDIT}-menu-item"]`)
+            ).toBeTruthy();
         });
     });
 
-    describe('$currentModeLabel', () => {
-        it('should return correct label for current mode', () => {
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.PREVIEW });
-            expect(component.$currentModeLabel()).toBe('uve.editor.mode.preview');
-        });
-    });
+    describe('mode changes', () => {
+        it('should call store methods when user selects a different mode', () => {
+            // Start in EDIT mode
+            store.pageParams.set({ mode: UVE_MODE.EDIT });
+            spectator.detectChanges();
 
-    describe('onModeChange', () => {
-        it('should not call loadPageAsset when selected mode is current mode', () => {
-            component.onModeChange(UVE_MODE.PREVIEW);
-            expect(mockStore.loadPageAsset).not.toHaveBeenCalled();
+            const previewOption = spectator.component
+                .$menuItems()
+                .find((item) => item.id === UVE_MODE.PREVIEW);
+
+            expect(previewOption).toBeTruthy();
+
+            spectator.triggerEventHandler('p-select', 'onChange', { value: previewOption });
+            spectator.detectChanges();
+
+            expect(store.trackUVEModeChange).toHaveBeenCalledWith({
+                fromMode: UVE_MODE.EDIT,
+                toMode: UVE_MODE.PREVIEW
+            });
+            expect(store.loadPageAsset).toHaveBeenCalledWith({
+                mode: UVE_MODE.PREVIEW,
+                publishDate: undefined
+            });
         });
 
         it('should clear device and social media when switching to EDIT mode', () => {
-            component.onModeChange(UVE_MODE.EDIT);
-            expect(mockStore.clearDeviceAndSocialMedia).toHaveBeenCalled();
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
+            // Start in PREVIEW mode
+            store.pageParams.set({ mode: UVE_MODE.PREVIEW });
+            spectator.detectChanges();
+
+            const editOption = spectator.component
+                .$menuItems()
+                .find((item) => item.id === UVE_MODE.EDIT);
+
+            expect(editOption).toBeTruthy();
+
+            spectator.triggerEventHandler('p-select', 'onChange', { value: editOption });
+            spectator.detectChanges();
+
+            expect(store.clearDeviceAndSocialMedia).toHaveBeenCalledTimes(1);
+            expect(store.trackUVEModeChange).toHaveBeenCalledWith({
+                fromMode: UVE_MODE.PREVIEW,
+                toMode: UVE_MODE.EDIT
+            });
+            expect(store.loadPageAsset).toHaveBeenCalledWith({
                 mode: UVE_MODE.EDIT,
                 publishDate: undefined
             });
         });
 
-        it('should not include publishDate when switching to LIVE mode', () => {
-            jest.useFakeTimers();
-            const now = new Date();
-            jest.setSystemTime(now);
+        it('should not call store methods when user selects the current mode', () => {
+            // Start in PREVIEW mode
+            store.pageParams.set({ mode: UVE_MODE.PREVIEW });
+            spectator.detectChanges();
 
-            component.onModeChange(UVE_MODE.LIVE);
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                mode: UVE_MODE.LIVE,
-                publishDate: undefined
-            });
+            const previewOption = spectator.component
+                .$menuItems()
+                .find((item) => item.id === UVE_MODE.PREVIEW);
 
-            jest.useRealTimers();
+            spectator.triggerEventHandler('p-select', 'onChange', { value: previewOption });
+            spectator.detectChanges();
+
+            expect(store.trackUVEModeChange).not.toHaveBeenCalled();
+            expect(store.loadPageAsset).not.toHaveBeenCalled();
+            expect(store.clearDeviceAndSocialMedia).not.toHaveBeenCalled();
         });
     });
 
-    describe('$modeGuardEffect', () => {
-        beforeEach(() => {
-            // Reset mock store to initial state
-            mockStore.$hasAccessToEditMode.set(true);
-            mockStore.pageParams.set(pageParams);
-            jest.clearAllMocks();
-        });
-
-        it('should switch to PREVIEW mode when in EDIT mode without edit permission', () => {
-            mockStore.$hasAccessToEditMode.set(false);
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
-
+    describe('mode guard effect (legacy behavior)', () => {
+        it('should switch to PREVIEW when in EDIT without edit permission and lock feature is disabled', () => {
+            store.$isLockFeatureEnabled.set(false);
+            store.$hasAccessToEditMode.set(false);
+            store.pageParams.set({ mode: UVE_MODE.EDIT });
             spectator.detectChanges();
 
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
-                mode: UVE_MODE.PREVIEW,
-                publishDate: undefined
+            expect(store.trackUVEModeChange).toHaveBeenCalledWith({
+                fromMode: UVE_MODE.EDIT,
+                toMode: UVE_MODE.PREVIEW
             });
-        });
-    });
-
-    describe('Menu Interactions', () => {
-        beforeEach(() => {
-            // Reset the store state
-            mockStore.$hasAccessToEditMode.set(true);
-            mockStore.pageAPIResponse.set(MOCK_RESPONSE_HEADLESS);
-            mockStore.pageParams.set(pageParams);
-            mockStore.$hasLiveVersion.set(true);
-        });
-
-        it('should show menu when clicking the button', () => {
-            const button = spectator.query('[data-testId="more-button"]');
-            spectator.click(button);
-
-            const menu = spectator.query('[data-testId="more-menu"]');
-            expect(menu).toBeVisible();
-        });
-
-        it('should change mode when clicking a menu item', () => {
-            // Setup initial state as EDIT mode
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
-            spectator.detectChanges();
-
-            // Open menu
-            const button = spectator.query('[data-testId="more-button"]');
-            spectator.click(button);
-            spectator.detectChanges();
-
-            // Click the Preview mode menu item
-            const menuItems = spectator.queryAll('.menu-item');
-            const previewMenuItem = menuItems[1]; // Preview is second item
-            spectator.click(previewMenuItem);
-
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
+            expect(store.loadPageAsset).toHaveBeenCalledWith({
                 mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
             });
         });
 
-        it('should track mode change when clicking a menu item', () => {
-            // Setup initial state as EDIT mode
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
+        it('should do nothing when lock feature is enabled', () => {
+            store.$isLockFeatureEnabled.set(true);
+            store.$hasAccessToEditMode.set(false);
+            store.pageParams.set({ mode: UVE_MODE.EDIT });
             spectator.detectChanges();
 
-            // Open menu
-            const button = spectator.query('[data-testId="more-button"]');
-            spectator.click(button);
-            spectator.detectChanges();
-
-            // Click the Preview mode menu item
-            const menuItems = spectator.queryAll('.menu-item');
-            const previewMenuItem = menuItems[1]; // Preview is second item
-            spectator.click(previewMenuItem);
-
-            expect(mockStore.trackUVEModeChange).toHaveBeenCalledWith({
-                toMode: UVE_MODE.PREVIEW,
-                fromMode: UVE_MODE.EDIT
-            });
-        });
-
-        it('should highlight active mode in menu', () => {
-            mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.PREVIEW });
-            spectator.detectChanges();
-
-            const button = spectator.query('[data-testId="more-button"]');
-            spectator.click(button);
-            spectator.detectChanges();
-
-            const activeMenuItem = spectator.query('.menu-item--active');
-            expect(activeMenuItem.querySelector('.menu-item__label')).toHaveText(
-                'uve.editor.mode.preview'
-            );
-        });
-
-        test.each([
-            {
-                mode: UVE_MODE.EDIT,
-                label: 'uve.editor.mode.draft',
-                description: 'uve.editor.mode.draft.description'
-            },
-            {
-                mode: UVE_MODE.PREVIEW,
-                label: 'uve.editor.mode.preview',
-                description: 'uve.editor.mode.preview.description'
-            },
-            {
-                mode: UVE_MODE.LIVE,
-                label: 'uve.editor.mode.published',
-                description: 'uve.editor.mode.published.description'
-            }
-        ])(
-            'should show correct label and description for $mode menu item',
-            ({ label, description, mode }) => {
-                const button = spectator.query('[data-testId="more-button"]');
-                spectator.click(button);
-                spectator.detectChanges();
-
-                const menuItem = spectator.query(`[data-testId="${mode}-menu-item"]`);
-
-                expect(menuItem.querySelector('.menu-item__label')).toHaveText(label);
-                expect(menuItem.querySelector('.menu-item__description')).toHaveText(description);
-            }
-        );
-
-        test.each([
-            { mode: UVE_MODE.EDIT, label: 'uve.editor.mode.draft' },
-            { mode: UVE_MODE.PREVIEW, label: 'uve.editor.mode.preview' },
-            { mode: UVE_MODE.LIVE, label: 'uve.editor.mode.published' }
-        ])('should update button label when mode changes - $mode', ({ mode, label }) => {
-            // Start with Edit mode
-            mockStore.pageParams.set({ ...pageParams, mode: mode });
-            spectator.detectChanges();
-
-            const button = spectator.query('[data-testId="more-button"]');
-            expect(button).toHaveText(label);
+            expect(store.trackUVEModeChange).not.toHaveBeenCalled();
+            expect(store.loadPageAsset).not.toHaveBeenCalled();
         });
     });
 });

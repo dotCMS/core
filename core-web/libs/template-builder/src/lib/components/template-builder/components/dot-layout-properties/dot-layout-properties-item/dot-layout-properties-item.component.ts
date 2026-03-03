@@ -27,7 +27,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
         /**/
     };
 
-    @HostListener('click', ['$event'])
+    @HostListener('click')
     onClick() {
         this.value = !this.value;
         this.propagateChange(this.value);

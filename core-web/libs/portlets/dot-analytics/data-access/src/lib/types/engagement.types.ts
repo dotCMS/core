@@ -6,17 +6,22 @@ export interface SparklineDataPoint {
     value: number;
 }
 
+/** Current and previous period data for sparkline comparison */
+export interface EngagementSparklineData {
+    current: SparklineDataPoint[];
+    previous: SparklineDataPoint[] | null;
+}
+
 export interface EngagementKPI {
     value: number | string;
     trend: number;
     label: string;
     /** Optional subtitle text */
     subtitle?: string;
-    /** Optional sparkline data points for trend visualization */
-    sparklineData?: SparklineDataPoint[];
 }
 
 export interface EngagementKPIs {
+    totalSessions: EngagementKPI;
     engagementRate: EngagementKPI;
     avgInteractions: EngagementKPI;
     avgSessionTime: EngagementKPI;
@@ -33,7 +38,6 @@ export interface EngagementPlatformMetrics {
 export interface EngagementPlatforms {
     device: EngagementPlatformMetrics[];
     browser: EngagementPlatformMetrics[];
-    language: EngagementPlatformMetrics[];
 }
 
 export interface EngagementData {

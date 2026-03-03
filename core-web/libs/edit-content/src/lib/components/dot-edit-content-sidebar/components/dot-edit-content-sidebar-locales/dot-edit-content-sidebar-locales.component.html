@@ -6,16 +6,32 @@
     <p-skeleton />
 } @else {
     @for (locale of $localesToShow(); track locale.id) {
-        <p-chip
-            [label]="locale.isoCode | dotIsoCode"
-            (click)="currentLocale?.id !== locale.id ? switchLocale.emit(locale) : null"
-            [styleClass]="getStyleClass(locale)" />
+        @if (locale.id === currentLocale?.id) {
+            <p-overlaybadge severity="danger">
+                <p-button
+                    [label]="locale.isoCode | dotIsoCode"
+                    [severity]="getSeverity(locale)"
+                    [outlined]="isOutlined(locale)"
+                    size="small"
+                    (onClick)="
+                        currentLocale?.id !== locale.id ? switchLocale.emit(locale) : null
+                    " />
+            </p-overlaybadge>
+        } @else {
+            <p-button
+                [label]="locale.isoCode | dotIsoCode"
+                [severity]="getSeverity(locale)"
+                [outlined]="isOutlined(locale)"
+                size="small"
+                (onClick)="currentLocale?.id !== locale.id ? switchLocale.emit(locale) : null" />
+        }
     }
     @if (locales?.length > $maxLocaleChips()) {
-        <p-chip
+        <p-button
             [label]="$btnLabel()"
-            styleClass="p-chip-white p-chip-sm"
+            severity="secondary"
+            size="small"
             data-testid="show-more-button"
-            (click)="toggleShowAll()" />
+            (onClick)="toggleShowAll()" />
     }
 }

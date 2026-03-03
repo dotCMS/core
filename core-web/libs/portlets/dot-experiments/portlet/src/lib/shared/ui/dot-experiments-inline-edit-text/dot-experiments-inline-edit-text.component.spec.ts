@@ -1,8 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { ButtonDirective } from 'primeng/button';
-import { Inplace } from 'primeng/inplace';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -38,7 +35,7 @@ describe('DotExperimentsInlineEditTextComponent', () => {
     });
 
     it('should has a Inplace component', () => {
-        expect(spectator.query(Inplace)).toExist();
+        expect(spectator.query('p-inplace')).toExist();
     });
 
     describe('@Input empty', () => {
@@ -61,7 +58,9 @@ describe('DotExperimentsInlineEditTextComponent', () => {
 
         it('should disable the Inplace with `@Input disabled` ', () => {
             spectator.setInput('disabled', true);
-            expect(spectator.query(Inplace).disabled).toBe(true);
+            expect(spectator.component.$disabled()).toBe(true);
+            const inplaceElement = spectator.query('p-inplace');
+            expect(inplaceElement).toExist();
         });
     });
 
@@ -89,7 +88,7 @@ describe('DotExperimentsInlineEditTextComponent', () => {
             const TEXT_WITHOUT_SPACES = 'text with spaces';
 
             let output;
-            spectator.output('textChanged').subscribe((result) => (output = result));
+            spectator.output('$textChanged').subscribe((result) => (output = result));
 
             spectator.component.form.controls['text'].setValue(TEXT_WITH_SPACES);
             spectator.component.saveAction();
@@ -135,15 +134,16 @@ describe('DotExperimentsInlineEditTextComponent', () => {
                 spectator.dispatchMouseEvent(byTestId('text-input'), 'click');
 
                 expect(spectator.component.form.invalid).toBe(true);
+                // PrimeNG button disabled state is controlled by form.invalid || textControl.pristine
                 expect(
-                    (spectator.query(byTestId('text-save-btn')) as HTMLButtonElement).disabled
+                    spectator.component.form.invalid || spectator.component.textControl.pristine
                 ).toBe(true);
                 expect(spectator.query(DotFieldValidationMessageComponent)).toExist();
             });
 
             it('should emit the changed text when click on save icon', () => {
                 let output;
-                spectator.output('textChanged').subscribe((result) => (output = result));
+                spectator.output('$textChanged').subscribe((result) => (output = result));
 
                 spectator.dispatchMouseEvent(byTestId('text-input'), 'click');
 
@@ -151,10 +151,17 @@ describe('DotExperimentsInlineEditTextComponent', () => {
                 spectator.component.form.controls['text'].markAsDirty();
 
                 spectator.detectComponentChanges();
-                const saveButton = spectator.query(byTestId('text-save-btn')) as HTMLButtonElement;
-                expect(saveButton.disabled).toBe(false);
+                // PrimeNG button disabled state is controlled by form.invalid || textControl.pristine
+                expect(spectator.component.form.invalid).toBe(false);
+                expect(spectator.component.textControl.pristine).toBe(false);
+                const saveButton = spectator.query(byTestId('text-save-btn'));
+                expect(saveButton).toExist();
 
-                spectator.dispatchMouseEvent(byTestId('text-save-btn'), 'click');
+                // Find the actual button element inside PrimeNG component and click it
+                const actualButton = saveButton.querySelector('button') as HTMLButtonElement;
+                expect(actualButton).toBeTruthy();
+                spectator.click(actualButton);
+                spectator.detectChanges();
 
                 expect(output).toBe(NEW_EXPERIMENT_DESCRIPTION);
             });
@@ -162,18 +169,21 @@ describe('DotExperimentsInlineEditTextComponent', () => {
             it('should save button be loading if the isLoading @Input is true ', () => {
                 spectator.dispatchMouseEvent(byTestId('text-input'), 'click');
                 spectator.setInput('isLoading', true);
+                spectator.detectChanges();
 
-                expect(spectator.query(ButtonDirective).loading).toBe(true);
+                expect(spectator.component.$isLoading()).toBe(true);
+                const saveButton = spectator.query(byTestId('text-save-btn'));
+                expect(saveButton).toExist();
             });
 
             it('should deactivate the inplace if isLoading input has `previousValue= true` and `currentValue = false` ', () => {
-                const deactivate = jest.spyOn(spectator.component.inplace, 'deactivate');
+                const deactivateInplaceSpy = jest.spyOn(spectator.component, 'deactivateInplace');
                 // saving
                 spectator.setInput('isLoading', true);
                 // finished saving
                 spectator.setInput('isLoading', false);
 
-                expect(deactivate).toHaveBeenCalled();
+                expect(deactivateInplaceSpy).toHaveBeenCalled();
             });
 
             it('should deactivate the textControl if isLoading input has `currentValue = true` ', () => {

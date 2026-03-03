@@ -10,8 +10,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -320,7 +322,12 @@ public class DeterministicIdentifierAPITest {
             //Test it is idempotent
             assertEquals(generatedId1, generatedId2);
 
-            for(final Field field : testCase.contentType.fields()){
+            // RowField and ColumnField are layout-only fields that may already exist in the DB
+            // with pre-assigned deterministic IDs (e.g. from system initialization). Including them
+            // causes isFieldInode() to find the hash taken and fall back to a random UUID, breaking
+            // idempotency. Since they carry no content semantics, they are excluded from this check.
+            for(final Field field : testCase.contentType.fields().stream()
+                    .filter(f -> !(f instanceof RowField) && !(f instanceof ColumnField)).collect(Collectors.toList())){
 
                 final String fieldIdentifier1 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
                 assertTrue(UUIDUtil.isUUID(fieldIdentifier1));
