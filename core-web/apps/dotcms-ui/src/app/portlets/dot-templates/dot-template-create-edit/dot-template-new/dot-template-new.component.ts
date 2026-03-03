@@ -38,6 +38,8 @@ export class DotTemplateNewComponent implements OnInit {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
             header: this.dotMessageService.get('templates.select.template.title'),
             width: '37rem',
+            closable: true,
+            draggable: false,
             data: { options: this.options },
             contentStyle: { padding: '0px' }
         });

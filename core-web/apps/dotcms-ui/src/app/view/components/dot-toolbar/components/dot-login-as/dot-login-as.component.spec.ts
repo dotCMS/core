@@ -334,16 +334,75 @@ describe('DotLoginAsComponent', () => {
 
     describe('Dialog interaction', () => {
         it('should close dialog when cancel button is clicked', () => {
-            // Arrange
             jest.spyOn(component, 'close');
             spectator.setInput('visible', true);
             spectator.detectChanges();
 
-            // Act
             spectator.click(byTestId('dot-login-as-cancel-button'));
 
-            // Assert
             expect(component.close).toHaveBeenCalled();
+        });
+    });
+
+    describe('close()', () => {
+        it('should emit cancel, reset form state when visible is true', () => {
+            const cancelSpy = jest.fn();
+            spectator.output('cancel').subscribe(cancelSpy);
+
+            spectator.setInput('visible', true);
+            spectator.detectChanges();
+
+            component.form.get('loginAsUser').setValue(mockUser());
+            component.errorMessage.set('some error');
+            component.needPassword.set(true);
+
+            component.close();
+
+            expect(cancelSpy).toHaveBeenCalledWith(true);
+            expect(component.form.get('loginAsUser').value).toBeNull();
+            expect(component.errorMessage()).toBe('');
+            expect(component.needPassword()).toBe(false);
+        });
+
+        it('should not emit cancel or reset state when visible is false (guard)', () => {
+            const cancelSpy = jest.fn();
+            spectator.output('cancel').subscribe(cancelSpy);
+
+            spectator.setInput('visible', false);
+            spectator.detectChanges();
+
+            component.errorMessage.set('some error');
+            component.needPassword.set(true);
+
+            component.close();
+
+            expect(cancelSpy).not.toHaveBeenCalled();
+            expect(component.errorMessage()).toBe('some error');
+            expect(component.needPassword()).toBe(true);
+        });
+
+        it('should emit cancel when p-dialog emits onHide and visible is true', () => {
+            const cancelSpy = jest.fn();
+            spectator.output('cancel').subscribe(cancelSpy);
+
+            spectator.setInput('visible', true);
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('p-dialog', 'onHide', null);
+
+            expect(cancelSpy).toHaveBeenCalledWith(true);
+        });
+
+        it('should not emit cancel when p-dialog emits onHide and visible is false', () => {
+            const cancelSpy = jest.fn();
+            spectator.output('cancel').subscribe(cancelSpy);
+
+            spectator.setInput('visible', false);
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('p-dialog', 'onHide', null);
+
+            expect(cancelSpy).not.toHaveBeenCalled();
         });
     });
 });
