@@ -148,7 +148,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 return doElasticSearchTextFiltering(browserQuery, maxRows, dcSelect);
             }
 
-            // When pagination is not requested (public overload passes -1/-1), fetch everything at once.
+            // When pagination is not requested (public overload passes -1), fetch everything at once.
             if (maxRows <= 0) {
                 final List<String> allInodesOrdered = collectInodesFromDB(dcSelect);
                 final List<Contentlet> filtered = getContentFilteredByRole(browserQuery, allInodesOrdered);
@@ -1386,14 +1386,21 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         // Contentlets — cursor-based: slice starting from contentCursor.
-        if (browserQuery.showContent && maxResults > 0) {
-            final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, maxResults);
-            hasMoreContent = fromDB.hasMore;
-            nextContentCursor = fromDB.nextDbCursor;
+        if (browserQuery.showContent) {
+            if (maxResults > 0) {
+                final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, maxResults);
+                hasMoreContent = fromDB.hasMore;
+                nextContentCursor = fromDB.nextDbCursor;
 
-            final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
-            contentCount = contentlets.size();
-            list.addAll(contentlets);
+                final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
+                contentCount = contentlets.size();
+                list.addAll(contentlets);
+            } else {
+                // maxResults was exhausted by folders — probe with limit=1 to detect
+                // whether content exists without adding items to this page.
+                final ContentUnderParent probe = getContentUnderParentFromDB(browserQuery, 1);
+                hasMoreContent = !probe.contentlets.isEmpty();
+            }
         }
 
         list.sort(new GenericMapFieldComparator(browserQuery.sortBy, browserQuery.sortByDesc));

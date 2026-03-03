@@ -1974,4 +1974,64 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertFalse("Should indicate no more pages available after page 2", results6.hasMore);
  }
 
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder contains exactly N sub-folders and some contentlets.
+     *     When the client requests a page of size N, folders fill the page completely, leaving
+     *     {@code maxResults = 0} before the content block is reached.</li>
+     *     <li><b>Expected Result:</b> Even though no contentlets are added to the current page,
+     *     {@code hasMoreContent} must be {@code true} so the client knows a next page exists.
+     *     The {@code nextContentCursor} must remain at 0 since no content was consumed yet.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_foldersExactlyFillPage_hasMoreContentIsTrue()
+            throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create exactly 5 sub-folders
+        final int folderCount = 5;
+        for (int i = 0; i < folderCount; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Create 3 contentlets — they must NOT appear in this page but must be detectable
+        for (int i = 0; i < 3; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Request exactly as many results as there are folders — page is filled by folders alone
+        final BrowserQuery query = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(true)
+                .showFiles(true)
+                .showDotAssets(true)
+                .showLinks(false)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .folderCursor(0)
+                .contentCursor(0)
+                .maxResults(folderCount)
+                .build();
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(query);
+
+        assertNotNull("Result should not be null", result);
+        assertEquals("Page should contain only the folders", folderCount, result.list.size());
+        assertEquals("folderCount should equal the number of sub-folders", folderCount, result.folderCount);
+        assertEquals("contentCount should be 0 — no content added to this page", 0, result.contentCount);
+        assertFalse("hasMoreFolders should be false — all folders fit in this page", result.hasMoreFolders);
+        assertTrue("hasMoreContent must be true — content exists but was not yet shown", result.hasMoreContent);
+        assertEquals("nextContentCursor should stay at 0 — no content was consumed", 0, result.nextContentCursor);
+    }
+
 }
