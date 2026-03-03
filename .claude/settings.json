@@ -1,4 +1,17 @@
 {
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-commit-review.sh"
+          }
+        ]
+      }
+    ]
+  },
   "allowedTools": [
     "Bash(git branch --show-current*)",
     "Bash(ls .github/ISSUE_TEMPLATE*)",
