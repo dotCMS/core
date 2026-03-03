@@ -166,7 +166,7 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public void clearIndex(final String indexName)
-            throws DotStateException, IOException, DotDataException {
+            throws DotStateException, IOException {
         if (indexName == null || !indexExists(indexName)) {
             throw new DotStateException("Index " + indexName + " does not exist");
         }
