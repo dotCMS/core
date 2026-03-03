@@ -5,7 +5,7 @@
         "types": [],
         "target": "ES2022",
         "useDefineForClassFields": false,
-        "module": "es2022",
+        "module": "preserve",
         "moduleResolution": "bundler",
         "resolvePackageJsonExports": true,
         "incremental": true,

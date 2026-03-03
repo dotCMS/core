@@ -103,8 +103,8 @@ export function withPageview() {
 
                             return analyticsService.cubeQuery<TotalPageViewsEntity>(query).pipe(
                                 map((entities) => entities[0]),
-                                tapResponse(
-                                    (data) => {
+                                tapResponse({
+                                    next: (data) => {
                                         patchState(store, {
                                             totalPageViews: {
                                                 status: ComponentStatus.LOADED,
@@ -113,7 +113,7 @@ export function withPageview() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -127,7 +127,7 @@ export function withPageview() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -156,8 +156,8 @@ export function withPageview() {
 
                             return analyticsService.cubeQuery<UniqueVisitorsEntity>(query).pipe(
                                 map((entities) => entities[0]),
-                                tapResponse(
-                                    (data) => {
+                                tapResponse({
+                                    next: (data) => {
                                         patchState(store, {
                                             uniqueVisitors: {
                                                 status: ComponentStatus.LOADED,
@@ -166,7 +166,7 @@ export function withPageview() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -180,7 +180,7 @@ export function withPageview() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -215,8 +215,8 @@ export function withPageview() {
 
                             return analyticsService.cubeQuery<TopPagePerformanceEntity>(query).pipe(
                                 map((entities) => entities[0]),
-                                tapResponse(
-                                    (data) => {
+                                tapResponse({
+                                    next: (data) => {
                                         patchState(store, {
                                             topPagePerformance: {
                                                 status: ComponentStatus.LOADED,
@@ -225,7 +225,7 @@ export function withPageview() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -239,7 +239,7 @@ export function withPageview() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -279,8 +279,8 @@ export function withPageview() {
                                         createEmptyAnalyticsEntity
                                     )
                                 ),
-                                tapResponse(
-                                    (data) => {
+                                tapResponse({
+                                    next: (data) => {
                                         patchState(store, {
                                             pageViewTimeLine: {
                                                 status: ComponentStatus.LOADED,
@@ -289,7 +289,7 @@ export function withPageview() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         patchState(store, {
                                             pageViewTimeLine: {
                                                 status: ComponentStatus.ERROR,
@@ -302,7 +302,7 @@ export function withPageview() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -338,8 +338,8 @@ export function withPageview() {
                             return analyticsService
                                 .cubeQuery<PageViewDeviceBrowsersEntity>(query)
                                 .pipe(
-                                    tapResponse(
-                                        (data) => {
+                                    tapResponse({
+                                        next: (data) => {
                                             patchState(store, {
                                                 pageViewDeviceBrowsers: {
                                                     status: ComponentStatus.LOADED,
@@ -348,7 +348,7 @@ export function withPageview() {
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -362,7 +362,7 @@ export function withPageview() {
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )
@@ -395,8 +395,8 @@ export function withPageview() {
                             return analyticsService
                                 .cubeQuery<TopPerformanceTableEntity>(query)
                                 .pipe(
-                                    tapResponse(
-                                        (data) => {
+                                    tapResponse({
+                                        next: (data) => {
                                             patchState(store, {
                                                 topPagesTable: {
                                                     status: ComponentStatus.LOADED,
@@ -405,7 +405,7 @@ export function withPageview() {
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -419,7 +419,7 @@ export function withPageview() {
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )

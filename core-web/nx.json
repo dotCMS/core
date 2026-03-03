@@ -209,7 +209,6 @@
             "options": {
                 "buildTargetName": "build",
                 "previewTargetName": "preview",
-                "testTargetName": "test",
                 "serveTargetName": "serve",
                 "serveStaticTargetName": "serve-static"
             }
@@ -224,6 +223,12 @@
             "plugin": "@nx/playwright/plugin",
             "options": {
                 "targetName": "e2e"
+            }
+        },
+        {
+            "plugin": "@nx/vitest",
+            "options": {
+                "testTargetName": "test"
             }
         }
     ],
