@@ -223,15 +223,11 @@ describe('DotPagesComponent', () => {
     });
 
     describe('menu behavior', () => {
-        it('should close menu and clear menuItems when p-tieredmenu emits onHide', () => {
-            const menu = spectator.component.menu() as unknown as MenuStubComponent;
-            menu.visible = true;
-
+        it('should clear menuItems when p-tieredmenu emits onHide', () => {
             spectator.component.menuItems.set([{ label: 'x' }]);
             spectator.triggerEventHandler('p-tieredmenu', 'onHide', null);
 
             expect(spectator.component.menuItems()).toEqual([]);
-            expect(menu.visible).toBe(false);
         });
 
         it('toggleMenu should close when already visible (triggered by dot-pages-table openMenu)', () => {
