@@ -9,6 +9,18 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+// Monaco Editor is a global object loaded by the editor library at runtime.
+// In jsdom, it is never defined, so any timer callbacks that reach getLanguage()
+// (e.g. the debounced name.valueChanges subscription in DotBinaryFieldEditorComponent)
+// would throw a ReferenceError that leaks across tests. Define a minimal mock here.
+globalThis.monaco = {
+    languages: {
+        getLanguages: () => [],
+        register: jest.fn(),
+        setMonarchTokensProvider: jest.fn()
+    }
+} as unknown as typeof monaco;
+
 import { provideHttpClient } from '@angular/common/http';
 import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
