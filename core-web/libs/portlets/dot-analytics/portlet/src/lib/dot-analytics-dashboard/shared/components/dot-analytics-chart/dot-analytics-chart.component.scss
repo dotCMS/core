@@ -11,39 +11,32 @@ $chart-grid-opacity: 0.6;
     display: flex;
     flex-direction: column;
     width: 100%;
-    flex: 1;
+    height: 100%;
 }
 
 .chart-card {
     flex: 1;
     width: 100%;
+    display: flex;
+    flex-direction: column;
 
     ::ng-deep .p-card {
-        border: $field-border-size solid $color-palette-gray-400;
-        border-radius: $border-radius-xl;
-    }
+        flex: 1;
+        display: flex;
+        flex-direction: column;
 
-    &.chart-card--loading,
-    &.chart-card--empty,
-    &.chart-card--error {
-        height: 100%;
+        .p-card-body {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
 
-        ::ng-deep .p-card {
-            height: 100%;
-
-            .p-card-body {
-                height: 100%;
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .p-card-content {
-                flex: 1;
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-            }
+        .p-card-content {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
         }
     }
 }
@@ -51,14 +44,6 @@ $chart-grid-opacity: 0.6;
 .chart-container {
     width: 100%;
     position: relative;
-}
-
-.chart-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-bold;
-    color: $black;
-    line-height: $line-height-relative;
-    margin: 0;
 }
 
 .chart-skeleton {

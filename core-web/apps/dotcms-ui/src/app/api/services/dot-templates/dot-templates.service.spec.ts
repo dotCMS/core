@@ -109,16 +109,19 @@ describe('DotTemplatesService', () => {
     });
 
     it('should get a templates by filter', () => {
-        service.getFiltered('123').subscribe((template) => {
-            expect(template as any).toEqual([
+        service.getFiltered({ filter: '123' }).subscribe((response) => {
+            expect(response.templates as any).toEqual([
                 {
                     identifier: '123',
                     name: 'Theme name'
                 }
             ]);
+            expect(response.totalRecords).toBe(1);
         });
 
-        const req = httpMock.expectOne(`${TEMPLATE_API_URL}?filter=123`);
+        const req = httpMock.expectOne((request) => {
+            return request.url === TEMPLATE_API_URL && request.params.get('filter') === '123';
+        });
 
         expect(req.request.method).toBe('GET');
 
@@ -128,7 +131,10 @@ describe('DotTemplatesService', () => {
                     identifier: '123',
                     name: 'Theme name'
                 }
-            ]
+            ],
+            pagination: {
+                totalEntries: 1
+            }
         });
     });
 

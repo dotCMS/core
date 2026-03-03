@@ -69,7 +69,7 @@ describe('DotBinaryFieldUrlModeComponent', () => {
 
     describe('Actions', () => {
         it('should upload file by url form when click on import button', async () => {
-            const spy = jest.spyOn(component.tempFileUploaded, 'emit');
+            const spy = jest.spyOn(component.$tempFileUploaded, 'emit');
             const spyUploadFileByUrl = jest.spyOn(store, 'uploadFileByUrl');
             const importButton = spectator.query('[data-testId="import-button"] button');
             const form = spectator.component.form;
@@ -83,7 +83,7 @@ describe('DotBinaryFieldUrlModeComponent', () => {
         });
 
         it('should cancel when click on cancel button', () => {
-            const spyCancel = jest.spyOn(spectator.component.cancel, 'emit');
+            const spyCancel = jest.spyOn(spectator.component.$cancel, 'emit');
             const cancelButton = spectator.query('[data-testId="cancel-button"] button');
 
             spectator.click(cancelButton);

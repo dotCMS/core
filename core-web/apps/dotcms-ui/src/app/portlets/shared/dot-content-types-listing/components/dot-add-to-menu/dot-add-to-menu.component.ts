@@ -4,13 +4,14 @@ import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
-    EventEmitter,
-    Input,
+    inject,
+    input,
+    OnChanges,
     OnDestroy,
     OnInit,
-    Output,
-    ViewChild,
-    inject
+    output,
+    SimpleChanges,
+    viewChild
 } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -19,9 +20,11 @@ import {
     Validators
 } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SelectModule } from 'primeng/select';
 
 import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
@@ -29,7 +32,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType, DotDialogActions, DotMenu } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogComponent,
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
@@ -47,17 +49,18 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
     imports: [
         CommonModule,
         ReactiveFormsModule,
-        DropdownModule,
+        DialogModule,
+        ButtonModule,
+        SelectModule,
         InputTextModule,
         RadioButtonModule,
         DotAutofocusDirective,
-        DotDialogComponent,
         DotFieldValidationMessageComponent,
         DotFieldRequiredDirective,
         DotMessagePipe
     ]
 })
-export class DotAddToMenuComponent implements OnInit, OnDestroy {
+export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     fb = inject(UntypedFormBuilder);
     private dotMessageService = inject(DotMessageService);
     private dotMenuService = inject(DotMenuService);
@@ -69,10 +72,10 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
     dialogShow = false;
     dialogActions: DotDialogActions;
 
-    @Input() contentType: DotCMSContentType;
-    @Output() cancel = new EventEmitter<boolean>();
+    readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
+    readonly $cancel = output<boolean>();
 
-    @ViewChild('titleName', { static: true }) titleName: ElementRef;
+    readonly $titleName = viewChild.required<ElementRef>('titleName');
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -89,6 +92,15 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
         );
     }
 
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes.$contentType) {
+            this.dialogShow = !!this.$contentType();
+            if (this.$contentType()) {
+                this.initForm();
+            }
+        }
+    }
+
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
@@ -99,7 +111,8 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
      * @memberof DotAddToBundleComponent
      */
     close(): void {
-        this.cancel.emit(true);
+        this.$cancel.emit(true);
+        this.dialogShow = false;
     }
 
     /**
@@ -110,7 +123,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
         if (this.form.valid) {
             const params: DotCreateCustomTool = {
                 portletName: this.form.get('title').value,
-                contentTypes: this.contentType.variable,
+                contentTypes: this.$contentType().variable,
                 dataViewMode: this.form.get('defaultView').value
             };
 
@@ -138,7 +151,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy {
         this.form = this.fb.group({
             defaultView: ['list', [Validators.required]],
             menuOption: ['', [Validators.required]],
-            title: [this.contentType.name, [Validators.required]]
+            title: [this.$contentType().name, [Validators.required]]
         });
     }
 

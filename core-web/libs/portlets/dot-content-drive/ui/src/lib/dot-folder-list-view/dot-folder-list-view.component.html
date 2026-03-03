@@ -1,7 +1,7 @@
 <p-table
     #dataTable
     [value]="$items()"
-    [tableStyle]="{ width: '100%' }"
+    [tableStyle]="{ width: '100%', maxHeight: '100%' }"
     [paginator]="$showPagination()"
     [rows]="MIN_ROWS_PER_PAGE"
     [rowsPerPageOptions]="rowsPerPageOptions"
@@ -9,7 +9,6 @@
     [lazy]="true"
     [lazyLoadOnInit]="true"
     [scrollable]="true"
-    [styleClass]="$styleClass()"
     [(selection)]="selectedItems"
     (selectionChange)="onSelectionChange()"
     (onPage)="onPage($event)"
@@ -22,8 +21,9 @@
     sortField="modDate"
     [sortOrder]="-1"
     data-testId="table"
-    scrollHeight="flex">
-    <ng-template pTemplate="header">
+    scrollHeight="flex"
+    [pt]="$ptConfig()">
+    <ng-template #header>
         <tr data-testId="header-row">
             <th [style.width]="'3rem'">
                 <p-tableHeaderCheckbox data-testId="header-checkbox" />
@@ -46,30 +46,19 @@
         </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-item>
-        @let status = item | dotContentletStatus;
+    <ng-template #body let-item>
         @let isFolder = item.type === 'folder';
 
         @if ($loading() || !$items().length) {
-            <tr data-testId="loading-row" class="content-drive-table__loading-row">
-                <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
-                    <span class="skeleton-wrapper">
-                        <p-skeleton height="1.5rem" width="2.5rem" />
-                    </span>
-                </td>
-                @for (column of HEADER_COLUMNS; track column.field) {
-                    <td [style.width]="column.width">
-                        <span class="skeleton-wrapper">
-                            <p-skeleton height="1.5rem" width="100%" />
-                        </span>
-                    </td>
-                }
-            </tr>
+            <ng-container [ngTemplateOutlet]="loadingRow"></ng-container>
         } @else {
             <tr
-                class="content-drive-table__row"
-                [class.is-dragging]="state.isDragging()"
-                [class.is-drag-over]="state.dragOverRowId() === item.identifier"
+                class="group transition-colors duration-200"
+                [class.cursor-grabbing]="state.isDragging()"
+                [class.text-[var(--text-color-hover)]]="state.dragOverRowId() === item.identifier"
+                [class.bg-[var(--color-palette-primary-100)]]="
+                    state.dragOverRowId() === item.identifier
+                "
                 [pSelectableRow]="item"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
@@ -82,9 +71,11 @@
                 <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
                     <p-tableCheckbox [value]="item" />
                 </td>
-                <td class="list-view-title" data-testId="item-title">
+                <td
+                    class="grid grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 w-full pl-3"
+                    data-testId="item-title">
                     <div
-                        class="container-thumbnail hoverable"
+                        class="cursor-pointer p-1 h-14 max-h-14 bg-(--color-palette-primary-100)"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         @if (!isFolder) {
                             <dot-contentlet-thumbnail
@@ -94,16 +85,19 @@
                                 data-testId="contentlet-thumbnail"
                                 [attr.data-table-id]="item.identifier" />
                         } @else {
-                            <i class="pi pi-folder folder-icon" data-testId="folder-icon"></i>
+                            <i
+                                class="pi pi-folder text-4xl! flex! items-center! justify-center! w-full! h-full! text-gray-700"
+                                data-testId="folder-icon"
+                                [attr.data-table-id]="item.identifier"></i>
                         }
                     </div>
                     <span
                         data-testId="item-title-text"
-                        class="truncate-text hoverable"
+                        class="truncate cursor-pointer block"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         {{ isFolder ? item.name : item.title }}
                     </span>
-                    <span data-testId="lock-hint">
+                    <span data-testId="lock-hint" class="text-gray-700">
                         @if (!isFolder) {
                             @if (item.locked) {
                                 <i class="pi pi-lock" data-testId="lock-icon"></i>
@@ -115,19 +109,13 @@
                 </td>
                 <td data-testId="item-status">
                     @if (!isFolder) {
-                        @if (status === 'Published') {
-                            <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />
-                        } @else if (status === 'Archived') {
-                            <p-chip styleClass="p-chip-sm p-chip-danger" [label]="status" />
-                        } @else {
-                            <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
-                        }
+                        <dot-contentlet-status-chip [state]="item" />
                     }
                 </td>
                 <td data-testId="item-language">
                     @if (!isFolder) {
                         <p-chip
-                            styleClass="p-chip-sm p-chip-blue"
+                            class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
                             [label]="item.languageId | dotLocaleTag: state.languagesMap()" />
                     }
                 </td>
@@ -141,7 +129,7 @@
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
                 <td data-testId="item-actions" class="text-center">
                     <p-button
-                        class="content-drive-table__actions-button"
+                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         icon="pi pi-ellipsis-v"
                         [text]="true"
                         [rounded]="true"
@@ -154,22 +142,45 @@
         }
     </ng-template>
     <ng-template pTemplate="emptymessage">
-        <tr class="no-highlight">
-            <td colspan="7" class="empty-state">
-                <div class="empty-state-content">
-                    <div class="empty-state-icon">
-                        <i class="pi pi-folder-open"></i>
+        @if (!$loading()) {
+            <tr class="hover:bg-transparent! h-max">
+                <td colspan="7" class="p-6 text-center h-full border-none">
+                    <div class="flex flex-col items-center gap-4 max-w-100 mx-auto">
+                        <div class="flex items-center justify-center w-20 h-20 rounded-full">
+                            <i class="pi pi-folder-open text-(--surface-500) text-6xl!"></i>
+                        </div>
+                        <div class="flex flex-col text-center">
+                            <h3 class="m-0 text-lg font-medium text-gray-800">
+                                {{ 'content.drive.empty.state.title' | dm }}
+                            </h3>
+                            <p class="m-0 text-text-color text-base leading-6">
+                                {{ 'content.drive.empty.state.description' | dm }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="empty-state-message">
-                        <h3 class="empty-state-title">
-                            {{ 'content.drive.empty.state.title' | dm }}
-                        </h3>
-                        <p class="empty-state-description">
-                            {{ 'content.drive.empty.state.description' | dm }}
-                        </p>
-                    </div>
-                </div>
-            </td>
-        </tr>
+                </td>
+            </tr>
+        } @else {
+            @for (i of $loadingRows(); track $index) {
+                <ng-container [ngTemplateOutlet]="loadingRow"></ng-container>
+            }
+        }
     </ng-template>
 </p-table>
+
+<ng-template #loadingRow>
+    <tr data-testId="loading-row" class="cursor-default h-17 hover:bg-transparent!">
+        <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
+            <span class="flex items-center justify-center h-full w-fit">
+                <p-skeleton height="1.5rem" width="1.5rem" />
+            </span>
+        </td>
+        @for (column of HEADER_COLUMNS; track column.field) {
+            <td [style.width]="column.width">
+                <span class="flex items-center justify-center h-full first:text-left">
+                    <p-skeleton height="1.5rem" width="100%" />
+                </span>
+            </td>
+        }
+    </tr>
+</ng-template>

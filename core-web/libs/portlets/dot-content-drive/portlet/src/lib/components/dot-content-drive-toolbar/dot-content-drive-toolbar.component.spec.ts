@@ -1,9 +1,9 @@
-import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { By } from '@angular/platform-browser';
+import { signal } from '@angular/core';
 
 import { DotContentTypeService, DotLanguagesService } from '@dotcms/data-access';
 
@@ -17,12 +17,14 @@ describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
+    // Real signal so the component's computed $togglerStyles re-runs when it changes
+    const isTreeExpandedSignal = signal(false);
+
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                // Tree collapsed at start to render the toggle button on toolbar
-                isTreeExpanded: jest.fn().mockReturnValue(false),
+                isTreeExpanded: isTreeExpandedSignal,
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -61,10 +63,11 @@ describe('DotContentDriveToolbarComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+        isTreeExpandedSignal.set(false);
     });
 
     it('should render toolbar container', () => {
-        const toolbar = spectator.query('.dot-content-drive-toolbar');
+        const toolbar = spectator.query('p-toolbar');
         expect(toolbar).toBeTruthy();
     });
 
@@ -82,9 +85,9 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(button).toBeTruthy();
     });
 
-    it('should render start and end groups', () => {
-        expect(spectator.query('.p-toolbar-group-top')).toBeTruthy();
-        expect(spectator.query('.p-toolbar-group-bottom')).toBeTruthy();
+    it('should render grid layout with rows', () => {
+        expect(spectator.query('.row-start-1.col-start-2')).toBeTruthy();
+        expect(spectator.query('.row-start-2.col-start-2')).toBeTruthy();
     });
 
     it('should render the content type field', () => {
@@ -114,12 +117,15 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should add the hidden class to the tree toggler when tree is expanded', () => {
-            store.isTreeExpanded.mockReturnValue(true);
+        it('should hide the tree toggler with styles when tree is expanded', () => {
+            isTreeExpandedSignal.set(true);
             spectator.detectChanges();
-            const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
-            expect(toggler).toBeDefined();
-            expect(toggler?.classes['sidebar-expanded']).toBe(true);
+
+            const toggler = spectator.query('[data-testid="tree-toggler"]') as HTMLElement;
+            expect(toggler).toBeTruthy();
+            expect(toggler.style.opacity).toBe('0');
+            expect(toggler.style.visibility).toBe('hidden');
+            expect(toggler.style.width).toBe('0px');
         });
     });
 

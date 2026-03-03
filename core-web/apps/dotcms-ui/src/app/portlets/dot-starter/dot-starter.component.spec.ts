@@ -49,15 +49,17 @@ describe('DotStarterComponent', () => {
 
         it('should render profile selection with heading, paragraph and role cards', () => {
             expect(spectator.query('[data-testid="profile-selection"]')).toBeTruthy();
-            expect(spectator.query('h1.heading')?.textContent?.trim()).toBe('Welcome to dotCMS');
+            expect(spectator.query('[data-testid="welcome-heading"]')?.textContent?.trim()).toBe(
+                'Welcome to dotCMS'
+            );
             expect(spectator.query('[data-testid="developer-card"]')).toBeTruthy();
             expect(spectator.query('[data-testid="marketer-card"]')).toBeTruthy();
-            expect(
-                spectator.query('[data-testid="developer-card"] .card-heading')?.textContent?.trim()
-            ).toBe('Developer');
-            expect(
-                spectator.query('[data-testid="marketer-card"] .card-heading')?.textContent?.trim()
-            ).toBe('Marketer');
+            expect(spectator.query('[data-testid="developer-card"] h3')?.textContent?.trim()).toBe(
+                'Developer'
+            );
+            expect(spectator.query('[data-testid="marketer-card"] h3')?.textContent?.trim()).toBe(
+                'Marketer'
+            );
             expect(spectator.query('dot-onboarding-dev')).toBeFalsy();
             expect(spectator.query('dot-onboarding-author')).toBeFalsy();
         });

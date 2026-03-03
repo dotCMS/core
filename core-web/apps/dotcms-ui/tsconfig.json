@@ -3,22 +3,16 @@
     "files": [],
     "include": [],
     "references": [
-        {
-            "path": "./tsconfig.app.json"
-        },
-        {
-            "path": "./tsconfig.spec.json"
-        },
-        {
-            "path": "./tsconfig.editor.json"
-        },
-        {
-            "path": "./.storybook/tsconfig.json"
-        }
+        { "path": "./tsconfig.app.json" },
+        { "path": "./tsconfig.spec.json" },
+        { "path": "./tsconfig.editor.json" },
+        { "path": "./.storybook/tsconfig.json" }
     ],
     "compilerOptions": {
         "target": "ES2022",
         "lib": ["es2022", "dom", "dom.iterable"],
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "moduleResolution": "bundler",
+        "resolvePackageJsonExports": true
     }
 }

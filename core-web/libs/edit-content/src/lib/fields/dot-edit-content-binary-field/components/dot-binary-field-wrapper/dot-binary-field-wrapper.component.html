@@ -1,6 +1,7 @@
 @let field = $field();
 @let showLabel = $showLabel();
 @let fieldHasError = $hasError();
+@let valueUpdated = $valueUpdated;
 
 <dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
@@ -13,7 +14,7 @@
             [formControlName]="field.variable"
             [contentlet]="$contentlet()"
             [field]="field"
-            (valueUpdated)="valueUpdated.emit($event)"
+            ($valueUpdated)="valueUpdated.emit($event)"
             [attr.data-testId]="'field-' + field.variable" />
     </dot-card-field-content>
     <dot-card-field-footer>

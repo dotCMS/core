@@ -1,6 +1,5 @@
 package com.dotcms.content.index;
 
-import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -104,7 +103,7 @@ public interface ContentFactoryIndexOperations {
      * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
      * @return ESContentletScroll instance for iterating through results
      */
-    ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+    IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
             final boolean respectFrontendRoles, final int batchSize,
             final String sortBy);
 
@@ -119,6 +118,6 @@ public interface ContentFactoryIndexOperations {
      * @return ESContentletScroll instance for iterating through results
      * @see #createScrollQuery(String, User, boolean, int, String)
      */
-    ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+    IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
             final boolean respectFrontendRoles, final int batchSize);
 }

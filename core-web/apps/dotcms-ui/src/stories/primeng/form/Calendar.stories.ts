@@ -9,7 +9,7 @@ import {
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { Calendar, CalendarModule } from 'primeng/calendar';
+import { DatePicker, DatePickerModule } from 'primeng/datepicker';
 import { ChevronLeftIcon } from 'primeng/icons/chevronleft';
 
 const TODAY = new Date();
@@ -18,12 +18,12 @@ const DISABLED_DAYS: Date[] = [...Array(DAYS_TO_DISABLE)].map(
     (_, index) => new Date(Date.now() + (index + 1) * 24 * 60 * 60 * 1000)
 );
 
-const meta: Meta<Calendar> = {
-    title: 'PrimeNG/Form/Calendar',
-    component: Calendar,
+const meta: Meta<DatePicker> = {
+    title: 'PrimeNG/Form/DatePicker',
+    component: DatePicker,
     decorators: [
         moduleMetadata({
-            imports: [BrowserAnimationsModule, ButtonModule, CalendarModule, ChevronLeftIcon]
+            imports: [BrowserAnimationsModule, ButtonModule, DatePickerModule, ChevronLeftIcon]
         }),
         componentWrapperDecorator((story) => `<div class="h-30rem">${story}</div>`)
     ],
@@ -83,13 +83,13 @@ const meta: Meta<Calendar> = {
     },
     render: (args) => ({
         props: args,
-        template: `<p-calendar ${argsToTemplate(args)} />`
+        template: `<p-datePicker ${argsToTemplate(args)} />`
     })
 };
 
 export default meta;
 
-type Story = StoryObj<Calendar>;
+type Story = StoryObj<DatePicker>;
 
 export const Default: Story = {};
 

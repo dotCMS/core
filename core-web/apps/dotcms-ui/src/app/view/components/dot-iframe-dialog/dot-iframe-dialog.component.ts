@@ -3,15 +3,12 @@ import {
     EventEmitter,
     Input,
     OnChanges,
-    OnInit,
     Output,
     SimpleChanges,
     ViewChild
 } from '@angular/core';
 
-import { filter } from 'rxjs/operators';
-
-import { DotDialogComponent } from '@dotcms/ui';
+import { DialogModule, Dialog } from 'primeng/dialog';
 
 import { IframeComponent } from '../_common/iframe/iframe-component/iframe.component';
 
@@ -19,11 +16,11 @@ import { IframeComponent } from '../_common/iframe/iframe-component/iframe.compo
     selector: 'dot-iframe-dialog',
     templateUrl: './dot-iframe-dialog.component.html',
     styleUrls: ['./dot-iframe-dialog.component.scss'],
-    imports: [DotDialogComponent, IframeComponent]
+    imports: [DialogModule, IframeComponent]
 })
-export class DotIframeDialogComponent implements OnChanges, OnInit {
+export class DotIframeDialogComponent implements OnChanges {
     @ViewChild('dialog', { static: true })
-    dotDialog: DotDialogComponent;
+    dotDialog: Dialog;
 
     @Input()
     url: string;
@@ -50,16 +47,6 @@ export class DotIframeDialogComponent implements OnChanges, OnInit {
 
     show: boolean;
 
-    ngOnInit() {
-        if (this.beforeClose.observers.length) {
-            this.dotDialog.beforeClose
-                .pipe(filter(() => this.show))
-                .subscribe((event: { close: () => void }) => {
-                    this.beforeClose.emit(event);
-                });
-        }
-    }
-
     ngOnChanges(changes: SimpleChanges) {
         if (changes.url) {
             this.show = !!changes.url.currentValue;
@@ -80,7 +67,7 @@ export class DotIframeDialogComponent implements OnChanges, OnInit {
         this.keyWasDown.emit($event);
 
         if ($event.key === 'Escape') {
-            this.dotDialog.close();
+            this.show = false;
         }
     }
 

@@ -53,13 +53,10 @@ describe('DotDropZoneComponent', () => {
                 </div>
             </dot-drop-zone>`,
             {
-                hostProps: {
-                    disabled: false
-                }
+                hostProps: { disabled: false },
+                detectChanges: false
             }
         );
-
-        spectator.detectChanges();
     });
 
     beforeEach(() => {
@@ -71,6 +68,7 @@ describe('DotDropZoneComponent', () => {
     });
 
     it('should have content', () => {
+        spectator.detectChanges();
         expect(spectator.query('#dot-drop-zone__content')).toBeTruthy();
     });
 

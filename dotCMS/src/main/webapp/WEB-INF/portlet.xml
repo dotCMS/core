@@ -291,7 +291,7 @@
     </portlet>
 
     <portlet>
-        <portlet-name>tags</portlet-name>
+        <portlet-name>tags-legacy</portlet-name>
         <display-name>Tag Manager</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
@@ -458,6 +458,13 @@
         <portlet-name>usage</portlet-name>
         <display-name>Usage</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>tags</portlet-name>
+        <display-name>Tags</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/tags</portlet-url>
     </portlet>
 
 </portlet-app>
