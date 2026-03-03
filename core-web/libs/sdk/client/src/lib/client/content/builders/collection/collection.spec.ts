@@ -470,13 +470,14 @@ describe('CollectionBuilder', () => {
                 )
                 .draft() // To retrieve the draft content
                 .variant('legends-forceSensitive') // Variant of the content
-                .query('+modDate:2024-05-28 +conhost:MyCoolSite'); // Raw query to append to the main query // Fetch the content
+                .query('+modDate:2024-05-28 +conhost:MyCoolSite') // Raw query to append to the main query
+                .includeSystemHost(); // Include System Host content
 
             // Check that the request was made with the correct query
             expect(mockRequest).toHaveBeenCalledWith(requestURL, {
                 ...baseRequest,
                 body: JSON.stringify({
-                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +(live:false AND working:true AND deleted:false) +conhost:test-site +modDate:2024-05-28 +conhost:MyCoolSite',
+                    query: '+forceSensitive.kyberCrystal:red AND blue +forceSensitive.master:Yoda OR Obi-Wan +contentType:forceSensitive +variant:legends-forceSensitive +languageId:13 +(live:false AND working:true AND deleted:false) +modDate:2024-05-28 +(conhost:test-site conhost:MyCoolSite conhost:SYSTEM_HOST)',
                     render: true,
                     sort: 'name asc,midichlorians desc',
                     limit: 20,
@@ -620,6 +621,148 @@ describe('CollectionBuilder', () => {
                     languageId: 1
                 })
             });
+        });
+    });
+
+    describe('includeSystemHost', () => {
+        it('should group configured siteId with SYSTEM_HOST when called with no arguments', async () => {
+            const collectionBuilder = createCollectionBuilder('Blog');
+
+            await collectionBuilder.includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +(conhost:test-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should add +conhost:SYSTEM_HOST alone when no siteId is configured', async () => {
+            const configWithoutSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token'
+            };
+            const collectionBuilder = createCollectionBuilder('Blog', configWithoutSite);
+
+            await collectionBuilder.includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +conhost:SYSTEM_HOST',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should not add SYSTEM_HOST when called with false', async () => {
+            const collectionBuilder = createCollectionBuilder('Blog');
+
+            await collectionBuilder.includeSystemHost(false);
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +conhost:test-site',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should be idempotent — calling multiple times does not duplicate the constraint', async () => {
+            const collectionBuilder = createCollectionBuilder('Blog');
+
+            await collectionBuilder.includeSystemHost().includeSystemHost().includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +(conhost:test-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should include all raw-path conhosts and SYSTEM_HOST in the group', async () => {
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = createCollectionBuilder('Blog', configWithSite);
+
+            // Raw conhost is appended after the siteId decision — includeSystemHost must
+            // see both and group them correctly
+            await collectionBuilder.query('+conhost:extra-site').includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +(conhost:my-default-site conhost:extra-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
+        });
+
+        it('should group builder-path conhost with SYSTEM_HOST when user sets conhost via query builder', async () => {
+            const configWithSite: DotCMSClientConfig = {
+                dotcmsUrl: 'http://localhost:8080',
+                authToken: 'test-token',
+                siteId: 'my-default-site'
+            };
+            const collectionBuilder = createCollectionBuilder('Blog', configWithSite);
+
+            // Builder-path conhost prevents siteId auto-injection; includeSystemHost
+            // must still group the explicit conhost with SYSTEM_HOST
+            await collectionBuilder
+                .query((qb) => qb.field('conhost').equals('user-specified-site'))
+                .includeSystemHost();
+
+            expect(mockRequest).toHaveBeenCalledWith(
+                requestURL,
+                expect.objectContaining({
+                    body: JSON.stringify({
+                        query: '+contentType:Blog +languageId:1 +live:true +(conhost:user-specified-site conhost:SYSTEM_HOST)',
+                        render: false,
+                        limit: 10,
+                        offset: 0,
+                        depth: 0,
+                        languageId: 1
+                    })
+                })
+            );
         });
     });
 
