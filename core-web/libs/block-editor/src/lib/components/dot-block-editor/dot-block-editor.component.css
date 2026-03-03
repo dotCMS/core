@@ -264,7 +264,9 @@ tiptap-editor ::ng-deep .grid-block__resize-handle::after {
     height: 2rem;
     background: var(--gray-400);
     border-radius: 1.5px;
-    transition: background 0.15s, height 0.15s;
+    transition:
+        background 0.15s,
+        height 0.15s;
 }
 
 tiptap-editor ::ng-deep .grid-block__resize-handle:hover::after {

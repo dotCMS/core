@@ -143,8 +143,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         key={key}
                         node={node}
                         blockEditorBlock={BlockEditorBlock}
-                        customRenderers={customRenderers}
-                    >
+                        customRenderers={customRenderers}>
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
