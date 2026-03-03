@@ -1,6 +1,6 @@
 import { InferInputSignals } from '@ngneat/spectator';
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { of, throwError, timer } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { computed, signal } from '@angular/core';
@@ -11,6 +11,8 @@ import { Accordion, AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
+import { mergeMap, tap } from 'rxjs/operators';
+
 import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSPageAsset } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -18,9 +20,12 @@ import { StyleEditorFormSchema } from '@dotcms/uve';
 import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME } from '../../../../../shared/consts';
+import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { PageType } from '../../../../../store/models';
 
 // Workaround: the `schema` input alias causes a compilation error when used directly.
 const SCHEMA_INPUT_KEY = 'schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>;
@@ -29,10 +34,12 @@ type MockUveStore = {
     currentIndex: ReturnType<typeof signal<number>>;
     editorActiveContentlet: ReturnType<typeof signal<ActionPayload | null>>;
     pageAsset: ReturnType<typeof computed<DotCMSPageAsset | null>>;
+    pageType: ReturnType<typeof signal<PageType>>;
     saveStyleEditor: jest.Mock;
     rollbackPageAssetResponse: jest.Mock;
     addCurrentPageToHistory: jest.Mock;
     setPageAsset: jest.Mock;
+    setUveStatus: jest.Mock;
 };
 
 const createMockSchema = (): StyleEditorFormSchema => ({
@@ -121,6 +128,7 @@ const createMockPageAsset = (fontSize: number): DotCMSPageAsset =>
 describe('DotUveStyleEditorFormComponent', () => {
     let spectator: Spectator<DotUveStyleEditorFormComponent>;
     let mockUveStore: MockUveStore;
+    let mockIframeMessenger: { reloadPage: jest.Mock; sendPageData: jest.Mock };
 
     const createComponent = createComponentFactory({
         component: DotUveStyleEditorFormComponent,
@@ -134,6 +142,10 @@ describe('DotUveStyleEditorFormComponent', () => {
             {
                 provide: UVEStore,
                 useFactory: () => mockUveStore
+            },
+            {
+                provide: UveIframeMessengerService,
+                useFactory: () => mockIframeMessenger
             }
         ]
     });
@@ -144,6 +156,11 @@ describe('DotUveStyleEditorFormComponent', () => {
     beforeEach(() => {
         const pageAssetSignal = signal<DotCMSPageAsset | null>(null);
 
+        mockIframeMessenger = {
+            reloadPage: jest.fn(),
+            sendPageData: jest.fn()
+        };
+
         mockUveStore = {
             currentIndex: signal(0),
             editorActiveContentlet: signal(null),
@@ -151,12 +168,14 @@ describe('DotUveStyleEditorFormComponent', () => {
                 const pageAsset = pageAssetSignal();
                 return pageAsset ? { ...pageAsset, clientResponse: pageAsset } : null;
             }),
+            pageType: signal(PageType.HEADLESS),
             saveStyleEditor: jest.fn().mockReturnValue(of({})),
             rollbackPageAssetResponse: jest.fn().mockReturnValue(true),
             addCurrentPageToHistory: jest.fn(),
-            setPageAsset: jest.fn((response: DotCMSPageAsset | null) => {
-                pageAssetSignal.set(response);
-            })
+            setPageAsset: jest.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
+                pageAssetSignal.set(payload?.pageAsset ?? null);
+            }),
+            setUveStatus: jest.fn()
         };
 
         spectator = createTestComponent();
@@ -393,6 +412,145 @@ describe('DotUveStyleEditorFormComponent', () => {
                 originalActiveContentlet?.container.identifier
             );
             expect(saveCall.pageId).toBe(originalActiveContentlet?.pageId);
+        }));
+    });
+
+    describe('traditional page', () => {
+        beforeEach(() => {
+            mockUveStore.pageType.set(PageType.TRADITIONAL);
+            mockUveStore.editorActiveContentlet.set({
+                contentlet: {
+                    identifier: 'test-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'test-content-type',
+                    dotStyleProperties: {
+                        'font-size': 16,
+                        'font-family': 'Arial',
+                        'text-decoration': { underline: false, overline: false },
+                        alignment: 'left'
+                    }
+                },
+                container: {
+                    acceptTypes: 'test',
+                    identifier: 'test-container',
+                    maxContentlets: 1,
+                    uuid: 'test-uuid'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'test-page'
+            });
+            mockUveStore.setPageAsset({ pageAsset: createMockPageAsset(16) });
+        });
+
+        it('should save immediately without debounce when form changes', fakeAsync(() => {
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            mockUveStore.saveStyleEditor.mockClear();
+
+            const form = spectator.component.$form();
+            form?.patchValue({ 'font-size': 20 });
+
+            // Traditional: save is immediate, no need to wait for debounce
+            spectator.detectChanges();
+
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalledTimes(1);
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentletIdentifier: 'test-id',
+                    containerIdentifier: 'test-container',
+                    styleProperties: expect.objectContaining({ 'font-size': 20 })
+                })
+            );
+        }));
+
+        it('should call setUveStatus(LOADING) before save and reloadPage on success', fakeAsync(() => {
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            mockUveStore.setUveStatus.mockClear();
+            mockIframeMessenger.reloadPage.mockClear();
+
+            const form = spectator.component.$form();
+            form?.patchValue({ 'font-size': 20 });
+            spectator.detectChanges();
+
+            expect(mockUveStore.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADING);
+
+            // Simulate async success (saveStyleEditor returns of({}))
+            tick(0);
+            spectator.detectChanges();
+
+            expect(mockIframeMessenger.reloadPage).toHaveBeenCalled();
+            expect(mockUveStore.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADED);
+        }));
+
+        it('should NOT call updateHeadlessIframeOptimistically (no optimistic update)', fakeAsync(() => {
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            mockUveStore.setPageAsset.mockClear();
+
+            const form = spectator.component.$form();
+            form?.patchValue({ 'font-size': 20 });
+            spectator.detectChanges();
+
+            // Traditional pages do not use optimistic iframe update; setPageAsset
+            // is only called from #updateIframeOptimistically (headless path)
+            expect(mockUveStore.setPageAsset).not.toHaveBeenCalled();
+        }));
+
+        it('should call setUveStatus(LOADED) on save error and restore form', fakeAsync(() => {
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            const rolledBackResponse = createMockPageAsset(16);
+            mockUveStore.saveStyleEditor.mockReturnValue(
+                timer(0).pipe(
+                    tap(() => mockUveStore.setPageAsset({ pageAsset: rolledBackResponse })),
+                    mergeMap(() => throwError(() => new Error('Save failed')))
+                )
+            );
+
+            mockUveStore.setUveStatus.mockClear();
+
+            const form = spectator.component.$form();
+            form?.patchValue({ 'font-size': 20 });
+            tick(0); // Let error handler run
+            spectator.detectChanges();
+
+            expect(mockUveStore.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADED);
+            expect(spectator.component.$form()?.get('font-size')?.value).toBe(16);
         }));
     });
 });

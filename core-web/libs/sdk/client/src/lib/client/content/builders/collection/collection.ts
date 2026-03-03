@@ -8,7 +8,11 @@ import {
 
 import { BaseBuilder } from '../../../base/builder/base-builder';
 import { BuildQuery } from '../../shared/types';
-import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../shared/utils';
+import {
+    buildConhostWithSystemHost,
+    sanitizeQueryForContentType,
+    shouldAddSiteIdConstraint
+} from '../../shared/utils';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
 import { sanitizeQuery } from '../query/utils';
@@ -27,6 +31,7 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
     #rawQuery?: string;
     #languageId: number | string = 1;
     #draft = false;
+    #includeSystemHost = false;
 
     /**
      * Creates an instance of CollectionBuilder.
@@ -151,6 +156,34 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
      */
     draft(): this {
         this.#draft = true;
+
+        return this;
+    }
+
+    /**
+     * Includes content from the dotCMS System Host in the query results.
+     *
+     * When enabled, content from the System Host is returned alongside content from
+     * the configured site. All positive `+conhost:` constraints present in the
+     * assembled query are collected and grouped into a single `+(conhost:X conhost:SYSTEM_HOST)`
+     * constraint, so dotCMS returns content from any of those hosts.
+     *
+     * Calling this method multiple times is idempotent — the constraint is only added once.
+     *
+     * @example
+     * ```ts
+     * client.content
+     *   .getCollection<Blog>('Blog')
+     *   .includeSystemHost()
+     *   .limit(10)
+     *   .then(({ contentlets }) => console.log(contentlets));
+     * ```
+     *
+     * @return {CollectionBuilder} A CollectionBuilder instance.
+     * @memberof CollectionBuilder
+     */
+    includeSystemHost(): this {
+        this.#includeSystemHost = true;
 
         return this;
     }
@@ -288,6 +321,15 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
         // Append raw query if provided (raw query is NOT sanitized for content type)
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
-        return sanitizeQuery(query);
+        const assembled = sanitizeQuery(query);
+
+        // If includeSystemHost is active, collect all +conhost: values from the fully
+        // assembled query (including those from the raw path), group them, and append
+        // SYSTEM_HOST so dotCMS returns content from any of the matched hosts.
+        if (this.#includeSystemHost) {
+            return buildConhostWithSystemHost(assembled);
+        }
+
+        return assembled;
     }
 }

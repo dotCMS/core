@@ -32,6 +32,9 @@ export class DotLoginPageComponent implements OnInit {
                     dotLoginUserSystemInformation.backgroundPicture
                         ? `url('${dotLoginUserSystemInformation.backgroundPicture}')`
                         : '';
+                document.body.style.backgroundPosition = 'top center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundSize = 'cover';
             });
     }
 }
