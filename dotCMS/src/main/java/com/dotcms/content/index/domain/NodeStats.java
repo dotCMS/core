@@ -19,16 +19,22 @@ import org.immutables.value.Value;
 public interface NodeStats {
 
     /** Returns the node name. */
-    @Nullable
-    String name();
+    @Value.Default
+    default String name() {
+        return "unknown";
+    }
 
     /** Returns the node host address. */
-    @Nullable
-    String host();
+    @Value.Default
+    default String host() {
+        return "unknown";
+    }
 
     /** Returns the node transport address. */
-    @Nullable
-    String transportAddress();
+    @Value.Default
+    default String transportAddress() {
+        return "unknown";
+    }
 
     /** Returns {@code true} if this node is the cluster master. */
     boolean master();
