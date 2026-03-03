@@ -54,8 +54,11 @@ export function withPageContext() {
                 const $isEditMode = computed(() => pageParams()?.mode === UVE_MODE.EDIT);
                 const $isLockFeatureEnabled = computed(() => flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
                 const $isStyleEditorEnabled = computed(() => {
-                    const isHeadless = !isTraditionalPage();
-                    return flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
+                    if (isTraditionalPage()) {
+                        return flags().FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+                    }
+
+                    return flags().FEATURE_FLAG_UVE_STYLE_EDITOR;
                 });
                 const $isPageLocked = computed(() => {
                     return computeIsPageLocked(page(), currentUser());
