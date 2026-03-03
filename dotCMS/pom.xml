@@ -408,6 +408,10 @@
             <artifactId>dot.webp-imageio-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.gotson</groupId>
+            <artifactId>webp-imageio</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.woodstox-core-lgpl</artifactId>
         </dependency>
@@ -973,10 +977,6 @@
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-tiff</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-webp</artifactId>
         </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.servlet</groupId>
