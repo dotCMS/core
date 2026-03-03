@@ -138,7 +138,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     @CloseDBIfOpened
     ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int maxRows) {
-        final SelectAndCountQueries sqlQuery = this.selectAndCountQueries(browserQuery);
+        final SelectQuery sqlQuery = this.selectQuery(browserQuery);
         final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
         final DotConnect dcSelect = getDotConnect(sqlQuery);
 
@@ -250,13 +250,13 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     /**
      * Creates a {@link DotConnect} preloaded with the select query and its bound parameters from a
-     * {@link SelectAndCountQueries} pair. Callers may further configure pagination
+     * {@link SelectQuery} may further configure pagination
      * ({@code setStartRow}/{@code setMaxRows}) before executing.
      *
      * @param sqlQuery the pre-built SQL select query containing: string query and parameters
      * @return a {@link DotConnect} ready to execute
      */
-    private static DotConnect getDotConnect(final SelectAndCountQueries sqlQuery) {
+    private static DotConnect getDotConnect(final SelectQuery sqlQuery) {
         final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
         sqlQuery.params.forEach(dcSelect::addParam);
         return dcSelect;
@@ -553,7 +553,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 browserQuery.contentCursor >= 0 ? browserQuery.contentCursor : startRow,
                 browserQuery.sortBy,
                 browserQuery.user,
-                false // respectFrontEndRoles — false for backend searches
+                browserQuery.respectFrontEndRoles // false for backend searches
             );
 
             final long totalMatches = contentletAPI.indexCount(esQuery, browserQuery.user, false);
@@ -1593,27 +1593,23 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Generates both the select and count SQL queries with all filtering criteria applied.
-     * This method ensures that both queries use identical filtering logic for consistency.
+     * Builds the SQL select query with all filtering criteria applied from the given
+     * {@link BrowserQuery}. The resulting query is used by the cursor-based scanner
+     * and does not include a count query — total counts are derived from the chunk loop itself.
      *
      * @param browserQuery The filtering criteria set via the {@link BrowserQuery}.
-     * @return The {@link SelectAndCountQueries} object containing both select and count queries with parameters.
+     * @return The {@link SelectQuery} object containing the select query string and its bound parameters.
      */
-    private SelectAndCountQueries selectAndCountQueries(final BrowserQuery browserQuery) {
+    private SelectQuery selectQuery(final BrowserQuery browserQuery) {
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
 
-        final BaseQuery baseQueries = buildBaseQuery(browserQuery, workingLiveInode);
-        final StringBuilder selectQuery = new StringBuilder(baseQueries.selectQuery);
-        final StringBuilder countQuery = new StringBuilder(baseQueries.countQuery);
+        final StringBuilder selectQuery = new StringBuilder(buildSelectBaseQuery(browserQuery, workingLiveInode));
 
         final List<Object> parameters = new ArrayList<>();
-        final List<Object> dump = new ArrayList<>();
 
         if (!browserQuery.languageIds.isEmpty()) {
             appendLanguageQuery(selectQuery, browserQuery.languageIds,
-                    browserQuery.showDefaultLangItems);
-            appendLanguageQuery(countQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
         }
         // Handle site filtering based on ignoreSiteForFolders flag
@@ -1623,128 +1619,95 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (browserQuery.site != null) {
                 appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
                         browserQuery.forceSystemHost, parameters);
-                appendSiteQuery(countQuery, browserQuery.site.getIdentifier(),
-                        browserQuery.forceSystemHost, dump);
             } else {
                 if (browserQuery.forceSystemHost) {
                     appendSystemHostQuery(selectQuery);
-                    appendSystemHostQuery(countQuery);
                 }
             }
         }
         //This property allows the exclusion of the folder in the base query
         if (browserQuery.folder != null && !browserQuery.skipFolder) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
-            appendFolderQuery(countQuery, browserQuery.folder.getPath(), dump);
         }
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
                 appendFilterQuery(selectQuery, browserQuery.filter, parameters);
-                appendFilterQuery(countQuery, browserQuery.filter, dump);
             }
             if (UtilMethods.isSet(browserQuery.fileName)) {
                 appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
-                appendFileNameQuery(countQuery, browserQuery.fileName, dump);
             }
         }
         if (browserQuery.showMenuItemsOnly) {
             appendShowOnMenuQuery(selectQuery);
-            appendShowOnMenuQuery(countQuery);
         }
         if (!browserQuery.showArchived) {
             appendExcludeArchivedQuery(selectQuery);
-            appendExcludeArchivedQuery(countQuery);
         }
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
             appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes);
-            appendMIMETypeQuery(countQuery, browserQuery.mimeTypes);
         }
         if (null != browserQuery.sortBy) {
             appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
         }
 
         Logger.debug(this, "Select Query: " + selectQuery);
-        Logger.debug(this, "Count Query: " + countQuery);
 
-        return new SelectAndCountQueries(selectQuery.toString(), countQuery.toString(), parameters);
+        return new SelectQuery(selectQuery.toString(), parameters);
     }
 
     /**
      * Simple inner class to pass around data and make things a bit easier to understand
      */
-    static class SelectAndCountQueries {
+    static class SelectQuery {
         final String selectQuery;
-        final String countQuery;
         final List<Object> params;
-        SelectAndCountQueries(String selectQuery, String countQuery, List<Object> params) {
+        SelectQuery(String selectQuery, List<Object> params) {
             this.selectQuery = selectQuery;
-            this.countQuery = countQuery;
             this.params = params;
         }
     }
 
     /**
-     * Builds the base SQL queries (both regular and count) for content retrieval based on specific filtering criteria.
+     * Builds the base SQL select query for content retrieval based on specific filtering criteria.
      *
      * @param browserQuery     The {@link BrowserQuery} object specifying the filtering criteria.
      * @param workingLiveInode The identifier of the working live inode.
-     * @return The {@link BaseQuery} object containing both regular and count SQL queries.
+     * @return The base SQL SELECT query string.
      */
-    private BaseQuery buildBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
+    private String buildSelectBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
 
-        // Common base clause shared between select and count queries
         final String baseClause = " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
                 + DEFAULT_VARIANT.name() + "' ";
 
-        // Build the main query
         final StringBuilder baseQuery = new StringBuilder(
                 "select cvi." + workingLiveInode + " as inode " + baseClause);
-
-        // Build the count query
-        final StringBuilder countQuery = new StringBuilder(
-                "select count(cvi." + workingLiveInode + ") as count " + baseClause);
 
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         if (!showAllBaseTypes) {
             final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType()))
                             .collect(Collectors.toList());
-            String baseTypeFilter = " and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ";
-            baseQuery.append(baseTypeFilter);
-            countQuery.append(baseTypeFilter);
+            baseQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes))
+                    .append(") ");
         }
 
-        if(!browserQuery.contentTypeIds.isEmpty()){
-            String contentTypeFilter = " and struc.inode in (" +
-                    browserQuery.contentTypeIds.stream()
-                            .map(id -> "'" + id + "'")
-                            .collect(Collectors.joining(" , ")) + ") ";
-            baseQuery.append(contentTypeFilter);
-            countQuery.append(contentTypeFilter);
+        if (!browserQuery.contentTypeIds.isEmpty()) {
+            baseQuery.append(" and struc.inode in (").append(browserQuery.contentTypeIds.stream()
+                    .map(id -> "'" + id + "'")
+                    .collect(Collectors.joining(" , "))).append(") ");
         }
 
         if (!browserQuery.excludedContentTypeIds.isEmpty()) {
-            String excludeTypesFilter = " and struc.inode not in (" +
-                    browserQuery.excludedContentTypeIds.stream()
+            baseQuery.append(" and struc.inode not in (")
+                    .append(browserQuery.excludedContentTypeIds.stream()
                             .map(id -> "'" + id + "'")
-                            .collect(Collectors.joining(" , ")) + ") ";
-            baseQuery.append(excludeTypesFilter);
-            countQuery.append(excludeTypesFilter);
+                            .collect(Collectors.joining(" , "))).append(") ");
         }
 
-        return new BaseQuery(baseQuery.toString(), countQuery.toString());
-    }
-
-    static class BaseQuery {
-        final String selectQuery;
-        final String countQuery;
-        BaseQuery(String selectQuery, String countQuery) {
-            this.selectQuery = selectQuery;
-            this.countQuery = countQuery;
-        }
+        return baseQuery.toString();
     }
 
     /**
