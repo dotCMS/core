@@ -19,22 +19,16 @@ import org.immutables.value.Value;
 public interface NodeStats {
 
     /** Returns the node name. */
-    @Value.Default
-    default String name() {
-        return "unknown";
-    }
+    @Nullable
+    String name();
 
     /** Returns the node host address. */
-    @Value.Default
-    default String host() {
-        return "unknown";
-    }
+    @Nullable
+    String host();
 
     /** Returns the node transport address. */
-    @Value.Default
-    default String transportAddress() {
-        return "unknown";
-    }
+    @Nullable
+    String transportAddress();
 
     /** Returns {@code true} if this node is the cluster master. */
     boolean master();
@@ -47,6 +41,18 @@ public interface NodeStats {
 
     /** Returns the human-readable formatted storage size (e.g., "1.2gb"). */
     String size();
+
+    @Value.Check
+    default NodeStats normalize() {
+        if (name() == null || host() == null || transportAddress() == null) {
+            return ImmutableNodeStats.builder().from(this)
+                    .name(name() != null ? name() : "unknown")
+                    .host(host() != null ? host() : "unknown")
+                    .transportAddress(transportAddress() != null ? transportAddress() : "unknown")
+                    .build();
+        }
+        return this;
+    }
 
     static ImmutableNodeStats.Builder builder() {
         return ImmutableNodeStats.builder();
