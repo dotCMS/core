@@ -9,7 +9,7 @@ AI-agent-native skill for managing GitHub issues in `dotCMS/core`. Infers where 
 
 **Contents:** [Mode Detection](#step-0--mode-detection) · [CREATE](#create-mode) · [UPDATE](#update-mode) · [QUERY](#query-mode) · [FIND](#find-mode) · [Authorization](#authorization)
 
-**References:** [feature-labels.md](references/feature-labels.md) · [project-fields.md](references/project-fields.md) · [github-apis.md](references/github-apis.md)
+**References:** [feature-labels.md](references/feature-labels.md) · [project-fields.md](references/project-fields.md) · [github-apis.md](references/github-apis.md) · [issue-refinement.md](references/issue-refinement.md)
 
 ## Step 0 — Mode Detection
 
@@ -184,9 +184,49 @@ Scan user's description for:
 
 Ask only if partially specified (e.g., "it's a sub-issue" but no number given).
 
+### Step 7a — Quick-draft detection (skip AC Clarity when requested)
+
+**Trigger:** User explicitly asks to create the issue without going through ambiguity resolution. Treat as quick-draft when the request includes any of:
+
+- **English:** "draft", "quick", "quick draft", "without full details", "skip ambiguities", "create quickly", "minimal details"
+- **Spanish:** "draft rápido", "rápido", "sin detalles completos", "sin resolver ambigüedades", "crear rápido", "sin pasar por ambigüedades"
+
+When **quick-draft** is set:
+
+- **Skip Step 7b** (AC Clarity loop) entirely — do not run Phase 1–6, do not ask clarification questions.
+- In Step 8, for the Acceptance Criteria section use a short placeholder, e.g.:
+  - "**Acceptance criteria** — To be refined. (Quick draft; details to be added later.)"
+  - Or 1–3 bullet points derived only from the user's raw description, with no Gherkin or ambiguity resolution.
+- Proceed directly from Step 7 to Step 8 after relationships are captured.
+
+When quick-draft is **not** set, continue to Step 7b as usual.
+
+### Step 7b — Issue Refinement Loop (REQUIRED before writing body, unless quick-draft)
+
+Read [references/issue-refinement.md](references/issue-refinement.md) and execute the full loop against the user's description.
+
+**Goal:** Produce unambiguous, testable Acceptance Criteria as checkbox items before the issue body is written.
+
+**Execute in strict order:**
+
+1. **Phase 1 — Decompose**: Extract problem, actor, expected behavior, business rules, out-of-scope.
+2. **Phase 2 — Ambiguity Scan**: Flag every ambiguity by type and severity (CRITICAL / MAJOR / MINOR).
+3. **Phase 3 — Clarification Questions**: For each CRITICAL and MAJOR ambiguity, ask one precise question with concrete options. Present all questions at once.
+4. **Phase 4 — Wait**: Print `>>> WAITING FOR ANSWERS.` and stop. Do NOT guess. Do NOT proceed.
+5. **Phase 5 — Re-Analyze**: After user replies, confirm resolutions, check for new ambiguities. If new CRITICAL/MAJOR found → return to Phase 3.
+6. **Phase 6 — Rewrite**: When all CRITICAL + MAJOR are resolved (or loop 3 reached), write Gherkin Scenarios covering happy path, sad path, and edge cases. Score the result (min 80/100 to proceed).
+
+**Loop control:** Max 3 clarification rounds. After round 3 — rewrite with best available info, flag unresolved items with `⚠ UNRESOLVED`.
+
+**Skip condition:** If the user's request is a Defect/Bug and contains reproduction steps with expected vs actual results — ambiguity scan still runs, but the bar for CRITICAL is higher (focus on missing edge cases and error handling rather than unclear outcomes).
+
+The checkbox output from Phase 6 becomes the **Acceptance Criteria section** of the issue body in Step 8.
+
 ### Step 8 — Build issue body
 
 Match the template structure read in Step 2. Populate all fields substantively from the user's description.
+
+**When quick-draft was set (Step 7a):** Use a short Acceptance Criteria placeholder (e.g. "To be refined" or 1–3 bullets from the description); do not run or reuse the AC Clarity loop.
 
 Best-practice patterns:
 - Tables for comparisons
@@ -253,6 +293,10 @@ Report back:
 - Native type set
 - Technology field set in Project #7
 - Any relationships established
+
+**Quick-draft tip (only when AC Clarity ran):** If the AC Clarity loop (Step 7b) was executed (i.e., quick-draft was **not** set), append a brief tip after the confirmation:
+
+> *Tip: Say "quick draft" or "rápido" next time to skip the AC clarification step.*
 
 ---
 
