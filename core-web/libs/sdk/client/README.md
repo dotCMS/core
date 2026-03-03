@@ -220,6 +220,33 @@ const products = await client.content
     .limit(10);
 ```
 
+#### Including System Host Content
+
+By default, `getCollection()` scopes queries to the configured `siteId`. Call `.includeSystemHost()` to also return content that belongs to the dotCMS **System Host** — shared content available across all sites.
+
+```typescript
+// Return content from both the configured site AND the System Host
+const blogs = await client.content
+    .getCollection('Blog')
+    .includeSystemHost()
+    .limit(10);
+```
+
+Under the hood, all positive `+conhost:` constraints in the assembled query are collected and grouped into a single `+(conhost:<siteId> conhost:SYSTEM_HOST)` OR group, so dotCMS returns content from any of the matched hosts.
+
+```typescript
+// Multiple sites + System Host (multisite scenario)
+const blogs = await client.content
+    .getCollection('Blog')
+    .query('+conhost:site-a')
+    .includeSystemHost()
+    .limit(10);
+// Resulting conhost constraint: +(conhost:site-a conhost:<configured-siteId> conhost:SYSTEM_HOST)
+```
+
+> [!NOTE]
+> Negative conhost exclusions (`-conhost:excluded-site`) in raw queries are preserved as-is and are not affected by `includeSystemHost()`.
+
 ### How to Run Raw Lucene Content Queries
 
 Use `client.content.query()` when you want to execute a **raw Lucene query string** (without the query-builder DSL), and you want full control over constraints like `contentType`, `live`, `languageId`, `conhost`, etc.

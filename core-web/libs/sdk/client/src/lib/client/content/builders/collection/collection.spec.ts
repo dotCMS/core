@@ -669,16 +669,17 @@ describe('CollectionBuilder', () => {
             );
         });
 
-        it('should not add SYSTEM_HOST when called with false', async () => {
+        it('should not touch negative conhost exclusions (-conhost) when grouping', async () => {
             const collectionBuilder = createCollectionBuilder('Blog');
 
-            await collectionBuilder.includeSystemHost(false);
+            // Raw query contains a negative conhost exclusion — it must be preserved as-is
+            await collectionBuilder.query('-conhost:excluded-site').includeSystemHost();
 
             expect(mockRequest).toHaveBeenCalledWith(
                 requestURL,
                 expect.objectContaining({
                     body: JSON.stringify({
-                        query: '+contentType:Blog +languageId:1 +live:true +conhost:test-site',
+                        query: '+contentType:Blog +languageId:1 +live:true -conhost:excluded-site +(conhost:test-site conhost:SYSTEM_HOST)',
                         render: false,
                         limit: 10,
                         offset: 0,

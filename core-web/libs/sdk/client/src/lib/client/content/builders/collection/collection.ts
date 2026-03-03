@@ -179,12 +179,11 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
      *   .then(({ contentlets }) => console.log(contentlets));
      * ```
      *
-     * @param {boolean} [enabled=true] - Pass `false` to explicitly disable System Host inclusion.
      * @return {CollectionBuilder} A CollectionBuilder instance.
      * @memberof CollectionBuilder
      */
-    includeSystemHost(enabled = true): this {
-        this.#includeSystemHost = enabled;
+    includeSystemHost(): this {
+        this.#includeSystemHost = true;
 
         return this;
     }
