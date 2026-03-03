@@ -148,7 +148,7 @@ const pageSnapshotSignal = signal({
     ...MOCK_RESPONSE_VTL,
     clientResponse: MOCK_RESPONSE_VTL
 });
-const systemIsLockFeatureEnabledSignal = signal(true);
+const $lockFeatureEnabledSignal = signal(true);
 
 /** Shared language list used across store mocks. */
 const MOCK_PAGE_LANGUAGES = [
@@ -205,8 +205,8 @@ const baseUVEState = {
     }),
     $infoDisplayProps: infoDisplayPropsSignal, // Mutable for tests
     $urlContentMap: urlContentMapSignal, // Mutable for tests
-    $workflowLockOptions: toggleLockOptionsSignal, // Mutable for tests
-    systemIsLockFeatureEnabled: systemIsLockFeatureEnabledSignal,
+    $lockOptions: toggleLockOptionsSignal, // Mutable for tests
+    $lockFeatureEnabled: $lockFeatureEnabledSignal,
     pageReload: jest.fn(),
     editorPaletteOpen: signal(true),
     editorCanEditContent: signal(true),
@@ -435,7 +435,7 @@ describe('DotUveToolbarComponent', () => {
 
     describe('base state', () => {
         beforeEach(() => {
-            systemIsLockFeatureEnabledSignal.set(true);
+            $lockFeatureEnabledSignal.set(true);
             spectator = createComponent({
                 providers: [mockProvider(UVEStore, baseUVEState)]
             });
@@ -945,22 +945,22 @@ describe('DotUveToolbarComponent', () => {
 
         describe('toggle lock button', () => {
             it('should not display toggle lock button when feature is disabled', () => {
-                systemIsLockFeatureEnabledSignal.set(false);
-                baseUVEState.$workflowLockOptions.set(createLockOptions());
+                $lockFeatureEnabledSignal.set(false);
+                baseUVEState.$lockOptions.set(createLockOptions());
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('toggle-lock-button'))).toBeNull();
             });
 
             it('should display toggle lock button when toggle lock options are available', () => {
-                baseUVEState.$workflowLockOptions.set(createLockOptions());
+                baseUVEState.$lockOptions.set(createLockOptions());
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('toggle-lock-button'))).toBeTruthy();
             });
 
             it('should display unlocked state when page is not locked', () => {
-                baseUVEState.$workflowLockOptions.set(createLockOptions());
+                baseUVEState.$lockOptions.set(createLockOptions());
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
@@ -970,7 +970,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should display locked state when page is locked by current user', () => {
-                baseUVEState.$workflowLockOptions.set(
+                baseUVEState.$lockOptions.set(
                     createLockOptions({
                         inode: 'test-inode',
                         isLocked: true,
@@ -989,9 +989,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call store.toggleLock when unlocked button is clicked', () => {
                 const spy = jest.spyOn(store, 'workflowToggleLock');
 
-                baseUVEState.$workflowLockOptions.set(
-                    createLockOptions({ inode: 'test-inode-unlock' })
-                );
+                baseUVEState.$lockOptions.set(createLockOptions({ inode: 'test-inode-unlock' }));
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('toggle-lock-button'));
@@ -1003,7 +1001,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call store.toggleLock when locked button is clicked', () => {
                 const spy = jest.spyOn(store, 'workflowToggleLock');
 
-                baseUVEState.$workflowLockOptions.set(
+                baseUVEState.$lockOptions.set(
                     createLockOptions({
                         inode: 'test-inode-lock',
                         isLocked: true,
@@ -1020,7 +1018,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should disable button when lock operation is loading', () => {
-                baseUVEState.$workflowLockOptions.set(createLockOptions());
+                baseUVEState.$lockOptions.set(createLockOptions());
                 baseUVEState.workflowLockIsLoading.set(true);
                 spectator.detectChanges();
 
@@ -1030,7 +1028,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should enable button when lock operation is not loading', () => {
-                baseUVEState.$workflowLockOptions.set(createLockOptions());
+                baseUVEState.$lockOptions.set(createLockOptions());
                 baseUVEState.workflowLockIsLoading.set(false);
                 spectator.detectChanges();
 
@@ -1042,7 +1040,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call store.toggleLock with correct params for page locked by another user', () => {
                 const spy = jest.spyOn(store, 'workflowToggleLock');
 
-                baseUVEState.$workflowLockOptions.set(
+                baseUVEState.$lockOptions.set(
                     createLockOptions({
                         inode: 'test-inode-other',
                         isLocked: true,
@@ -1628,20 +1626,20 @@ describe('DotUveToolbarComponent', () => {
 
         describe('DotToggleLockButtonComponent', () => {
             describe('Computed Properties', () => {
-                describe('$workflowLockOptions', () => {
+                describe('$lockOptions', () => {
                     it('should return null when store options are null', () => {
-                        baseUVEState.$workflowLockOptions.set(null);
+                        baseUVEState.$lockOptions.set(null);
                         spectator.detectChanges();
 
-                        expect(spectator.component.$workflowLockOptions()).toBeNull();
+                        expect(spectator.component.$lockOptions()).toBeNull();
                     });
 
                     it('should build complete options object with loading state', () => {
-                        baseUVEState.$workflowLockOptions.set(createLockOptions());
+                        baseUVEState.$lockOptions.set(createLockOptions());
                         baseUVEState.workflowLockIsLoading.set(true);
                         spectator.detectChanges();
 
-                        const options = spectator.component.$workflowLockOptions();
+                        const options = spectator.component.$lockOptions();
 
                         expect(options).toEqual({
                             inode: 'test-inode',
@@ -1656,7 +1654,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should set disabled true when canLock is false', () => {
-                        baseUVEState.$workflowLockOptions.set(
+                        baseUVEState.$lockOptions.set(
                             createLockOptions({
                                 isLocked: true,
                                 lockedBy: 'another-user',
@@ -1666,7 +1664,7 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.workflowLockIsLoading.set(false);
                         spectator.detectChanges();
 
-                        const options = spectator.component.$workflowLockOptions();
+                        const options = spectator.component.$lockOptions();
 
                         expect(options.disabled).toBe(true);
                         expect(options.message).toBe('editpage.locked-by');
@@ -1674,7 +1672,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should include lockedBy in args when provided', () => {
-                        baseUVEState.$workflowLockOptions.set(
+                        baseUVEState.$lockOptions.set(
                             createLockOptions({
                                 isLocked: true,
                                 lockedBy: 'john.doe@example.com',
@@ -1683,7 +1681,7 @@ describe('DotUveToolbarComponent', () => {
                         );
                         spectator.detectChanges();
 
-                        const options = spectator.component.$workflowLockOptions();
+                        const options = spectator.component.$lockOptions();
 
                         expect(options.args).toEqual(['john.doe@example.com']);
                     });
@@ -1693,7 +1691,7 @@ describe('DotUveToolbarComponent', () => {
             describe('Handler Methods', () => {
                 describe('handleToggleLock', () => {
                     beforeEach(() => {
-                        baseUVEState.$workflowLockOptions.set(createLockOptions());
+                        baseUVEState.$lockOptions.set(createLockOptions());
                         baseUVEState.workflowLockIsLoading.set(false);
                         spectator.detectChanges();
                     });
@@ -1755,7 +1753,7 @@ describe('DotUveToolbarComponent', () => {
 
             describe('Template Bindings', () => {
                 beforeEach(() => {
-                    baseUVEState.$workflowLockOptions.set(createLockOptions());
+                    baseUVEState.$lockOptions.set(createLockOptions());
                     baseUVEState.workflowLockIsLoading.set(false);
                     spectator.detectChanges();
                 });

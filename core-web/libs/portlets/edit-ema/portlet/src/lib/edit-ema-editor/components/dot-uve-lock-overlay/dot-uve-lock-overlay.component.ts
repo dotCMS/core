@@ -15,10 +15,10 @@ import { UVEStore } from '../../../store/dot-uve.store';
 export class DotUveLockOverlayComponent {
     readonly #store = inject(UVEStore);
 
-    $workflowLockOptions = this.#store.$workflowLockOptions;
+    $lockOptions = this.#store.$lockOptions;
 
     $overlayMessages = computed(() => {
-        const lockOptions = this.$workflowLockOptions();
+        const lockOptions = this.$lockOptions();
         if (!lockOptions) {
             return null;
         }

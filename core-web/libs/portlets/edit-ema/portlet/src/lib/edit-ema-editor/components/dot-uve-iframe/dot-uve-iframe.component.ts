@@ -315,8 +315,7 @@ export class DotUveIframeComponent {
 
         this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
             const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
-            this.uveStore.setOgTags(ogTags);
-            this.uveStore.viewSetOGTagResults(results);
+            this.uveStore.setSeoData({ ogTags, ogTagsResults: results });
         });
     }
 }

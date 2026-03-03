@@ -370,8 +370,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     get $rightSidebarOpen() {
         return this.uveStore.editorRightSidebarOpen();
     }
-    readonly $workflowLockOptions = this.uveStore.$workflowLockOptions;
-    readonly $showLockOverlay = computed(() => this.$workflowLockOptions()?.isLocked ?? false);
+    readonly $lockOptions = this.uveStore.$lockOptions;
+    readonly $showLockOverlay = computed(() => this.$lockOptions()?.isLocked ?? false);
     readonly $showContentletControls = this.uveStore.$showContentletControls;
     get $contentArea() {
         return this.uveStore.editorContentArea();
@@ -481,7 +481,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * selection should be cleared to prevent editing conflicts.
      */
     readonly $resetActiveContentletOnUnlockEffect = effect(() => {
-        // const toggleLockOptions = this.$workflowLockOptions();
+        // const toggleLockOptions = this.$lockOptions();
         // const activeContentlet = this.uveStore.editorActiveContentlet();
         // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
         // if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {

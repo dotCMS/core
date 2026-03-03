@@ -189,12 +189,12 @@ export class DotUveToolbarComponent {
     });
 
     // Build complete toggle lock options for presentational component
-    readonly $workflowLockOptions = computed(() => {
-        if (!this.#store.systemIsLockFeatureEnabled()) {
+    readonly $lockOptions = computed(() => {
+        if (!this.#store.$lockFeatureEnabled()) {
             return null;
         }
 
-        const storeLockOptions = this.#store.$workflowLockOptions();
+        const storeLockOptions = this.#store.$lockOptions();
 
         if (!storeLockOptions) {
             return null;

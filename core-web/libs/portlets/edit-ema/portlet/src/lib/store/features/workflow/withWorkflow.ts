@@ -44,17 +44,21 @@ interface WithWorkflowState {
     workflowLockIsLoading: boolean;
 }
 
-export interface WorkflowComputed {
-    workflowIsPageLocked: Signal<boolean>;
-    systemIsLockFeatureEnabled: Signal<boolean>;
-    $workflowLockOptions: Signal<WorkflowLockOptions | null>;
+export interface WorkflowLockComputed {
+    $lockIsPageLocked: Signal<boolean>;
+    $lockFeatureEnabled: Signal<boolean>;
+    $lockOptions: Signal<WorkflowLockOptions | null>;
 }
 
 /**
  * Interface defining the methods provided by withWorkflow
  * Use this as props type in dependent features
+ *
+ * TODO: Move lock/unlock state + methods to a dedicated signal-store feature.
+ * Locking does not use dotCMS Workflow Actions API (`DotWorkflowsActionsService`);
+ * it uses `DotContentletLockerService`, so this concern should be separated.
  */
-export interface WithWorkflowMethods extends WorkflowComputed {
+export interface WithWorkflowMethods extends WorkflowLockComputed {
     workflowFetch: RxMethod<string>;
     setWorkflowActionLoading: (workflowIsLoading: boolean) => void;
     workflowToggleLock: (
@@ -64,6 +68,22 @@ export interface WithWorkflowMethods extends WorkflowComputed {
         lockedBy?: string
     ) => void;
 }
+
+/** Page API deps used by workflow for reload-after-lock (not in props to avoid composition type conflicts). */
+interface WorkflowPageApiDeps {
+    requestMetadata: () => { query: string; variables: Record<string, string> } | null;
+    $requestWithParams: () => {
+        query: string;
+        variables: Record<string, string>;
+    } | null;
+    setPageAssetResponse: (response: {
+        pageAsset: DotCMSPageAsset;
+        content?: Record<string, unknown>;
+    }) => void;
+}
+
+/** Store type with page API deps needed by workflow; use for type assertion in feature callbacks. */
+type StoreWithWorkflowPageApiDeps<T> = T & WorkflowPageApiDeps;
 
 /**
  * Workflow and lock management feature
@@ -91,15 +111,13 @@ export function withWorkflow() {
             workflowLockIsLoading: false
         }),
         withComputed((store) => {
-            const workflowIsPageLocked = computed(() => {
+            const $lockIsPageLocked = computed(() => {
                 return computeIsPageLocked(store.pageAsset()?.page ?? null, store.uveCurrentUser());
             });
 
-            const systemIsLockFeatureEnabled = computed(
-                () => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
-            );
+            const $lockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
 
-            const $workflowLockOptions = computed<WorkflowLockOptions | null>(() => {
+            const $lockOptions = computed<WorkflowLockOptions | null>(() => {
                 const page = store.pageAsset()?.page;
                 const user = store.uveCurrentUser();
 
@@ -125,27 +143,17 @@ export function withWorkflow() {
             });
 
             return {
-                workflowIsPageLocked,
-                systemIsLockFeatureEnabled,
-                $workflowLockOptions
-            } satisfies WorkflowComputed;
+                $lockIsPageLocked,
+                $lockFeatureEnabled,
+                $lockOptions
+            } satisfies WorkflowLockComputed;
         }),
         withMethods((store) => {
             const dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
             const dotContentletLockerService = inject(DotContentletLockerService);
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
-            const pageStore = store as typeof store & {
-                requestMetadata: () => { query: string; variables: Record<string, string> } | null;
-                $requestWithParams: () => {
-                    query: string;
-                    variables: Record<string, string>;
-                } | null;
-                setPageAssetResponse: (response: {
-                    pageAsset: DotCMSPageAsset;
-                    content?: Record<string, unknown>;
-                }) => void;
-            };
+            const pageStore = store as StoreWithWorkflowPageApiDeps<typeof store>;
 
             const reloadPageAfterLockChange = () => {
                 const params = store.pageParams();

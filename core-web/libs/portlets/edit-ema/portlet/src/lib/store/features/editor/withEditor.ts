@@ -2,7 +2,12 @@ import { patchState, signalStoreFeature, type, withComputed, withMethods } from 
 
 import { computed, inject, Signal, untracked } from '@angular/core';
 
-import { DotExperimentStatus, DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
+import {
+    DotExperimentStatus,
+    DotTreeNode,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -33,7 +38,7 @@ import {
 import { PageType, UVEState } from '../../models';
 import { PageComputed } from '../page/withPage';
 
-import type { WorkflowComputed } from '../workflow/withWorkflow';
+import type { WorkflowLockComputed } from '../workflow/withWorkflow';
 
 export interface ViewComputed {
     viewMode: Signal<UVE_MODE>;
@@ -45,6 +50,11 @@ export interface EditorComputed {
     editorCanEditStyles: Signal<boolean>;
     editorEnableInlineEdit: Signal<boolean>;
     editorHasAccessToEditMode: Signal<boolean>;
+}
+
+export interface SetSeoDataParams {
+    ogTags: SeoMetaTags;
+    ogTagsResults: SeoMetaTagsResult[];
 }
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
@@ -70,14 +80,14 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
  * Dependencies:
  * - UVEState: Flat editor state (editorDragItem, editorBounds, etc.)
  * - PageComputed: Access to page data for edit checks
- * - WorkflowComputed: Access to lock state for permission checks
+ * - WorkflowLockComputed: Access to lock state for permission checks
  * - ViewComputed: Access to viewMode for edit/preview mode checks
  */
 export function withEditor() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageComputed & WorkflowComputed & ViewComputed>()
+            props: type<PageComputed & WorkflowLockComputed & ViewComputed>()
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
@@ -94,12 +104,12 @@ export function withEditor() {
                 }
 
                 // When feature flag is enabled, always allow access (user can toggle lock)
-                if (store.systemIsLockFeatureEnabled()) {
+                if (store.$lockFeatureEnabled()) {
                     return true;
                 }
 
                 // Legacy behavior: block access if page is locked
-                return !store.workflowIsPageLocked();
+                return !store.$lockIsPageLocked();
             });
 
             const hasPermissionToEditLayout = computed(() => {
@@ -113,7 +123,7 @@ export function withEditor() {
                 return (
                     (canEditPage || canDrawTemplate) &&
                     !isExperimentRunning &&
-                    !store.workflowIsPageLocked()
+                    !store.$lockIsPageLocked()
                 );
             });
 
@@ -124,7 +134,7 @@ export function withEditor() {
             //         DotExperimentStatus.SCHEDULED
             //     ].includes(store.pageExperiment()?.status);
 
-            //     return canEditPage && !isExperimentRunning && !store.workflowIsPageLocked();
+            //     return canEditPage && !isExperimentRunning && !store.$lockIsPageLocked();
             // });
 
             // Public capabilities (exported via EditorComputed interface)
@@ -386,6 +396,13 @@ export function withEditor() {
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, {
                         editorOgTags: ogTags
+                    });
+                },
+                /** Updates both editor OG tags and view OG tag results in a single state update. */
+                setSeoData({ ogTags, ogTagsResults }: SetSeoDataParams) {
+                    patchState(store, {
+                        editorOgTags: ogTags,
+                        viewOgTagsResults: ogTagsResults
                     });
                 },
                 setPaletteOpen(open: boolean) {

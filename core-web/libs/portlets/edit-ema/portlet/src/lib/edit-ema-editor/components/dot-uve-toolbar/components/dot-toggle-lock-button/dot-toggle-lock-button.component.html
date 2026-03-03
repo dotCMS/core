@@ -1,18 +1,16 @@
-@if ($workflowLockOptions()) {
+@if ($lockOptions()) {
     <button
         pButton
         class="lock-button"
-        [class.lock-button--locked]="$workflowLockOptions().isLocked"
-        [class.lock-button--unlocked]="!$workflowLockOptions().isLocked"
-        [class.lock-button--disabled]="!$workflowLockOptions().canLock"
+        [class.lock-button--locked]="$lockOptions().isLocked"
+        [class.lock-button--unlocked]="!$lockOptions().isLocked"
+        [class.lock-button--disabled]="!$lockOptions().canLock"
         [disabled]="$workflowLockIsLoading()"
         [pTooltip]="
-            $workflowLockOptions().canLock
-                ? undefined
-                : ('uve.editor.toggle.lock.button.disabled' | dm)
+            $lockOptions().canLock ? undefined : ('uve.editor.toggle.lock.button.disabled' | dm)
         "
         tooltipPosition="bottom"
-        [icon]="$workflowLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"
+        [icon]="$lockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"
         [label]="$buttonLabel() | dm"
         [loading]="$workflowLockIsLoading()"
         size="small"
@@ -23,7 +21,7 @@
             [class]="
                 $workflowLockIsLoading()
                     ? 'pi pi-spinner pi-spin'
-                    : $workflowLockOptions().isLocked
+                    : $lockOptions().isLocked
                       ? 'pi pi-lock'
                       : 'pi pi-lock-open'
             "></i>

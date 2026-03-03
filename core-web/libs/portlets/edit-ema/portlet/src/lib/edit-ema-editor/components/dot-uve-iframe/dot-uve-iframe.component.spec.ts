@@ -70,8 +70,7 @@ describe('DotUveIframeComponent', () => {
                 $pageRender: signal(mockPageRender),
                 editorEnableInlineEdit: signal(false),
                 pageType: signal(PageType.HEADLESS),
-                setOgTags: jest.fn(),
-                viewSetOGTagResults: jest.fn()
+                setSeoData: jest.fn()
             })
         ]
     });
@@ -560,19 +559,15 @@ describe('DotUveIframeComponent', () => {
             expect(mockDotSeoMetaTagsUtilService.getMetaTags).toHaveBeenCalledWith(mockDoc);
         });
 
-        it('should set OG tags in store', () => {
+        it('should set OG tags and results in store in a single update', () => {
             (component as any).setSeoData();
             // Wait for observable to complete
             setTimeout(() => {
-                expect(mockUVEStore.setOgTags).toHaveBeenCalledWith(mockOgTags);
-            }, 0);
-        });
-
-        it('should set OG tag results in store', () => {
-            (component as any).setSeoData();
-            // Wait for observable to complete
-            setTimeout(() => {
-                expect(mockUVEStore.viewSetOGTagResults).toHaveBeenCalledWith(mockSeoResults);
+                expect(mockUVEStore.setSeoData).toHaveBeenCalledTimes(1);
+                expect(mockUVEStore.setSeoData).toHaveBeenCalledWith({
+                    ogTags: mockOgTags,
+                    ogTagsResults: mockSeoResults
+                });
             }, 0);
         });
 

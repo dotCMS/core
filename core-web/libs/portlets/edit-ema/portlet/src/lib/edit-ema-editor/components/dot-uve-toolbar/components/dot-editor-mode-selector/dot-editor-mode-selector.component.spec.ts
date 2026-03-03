@@ -14,7 +14,7 @@ describe('DotEditorModeSelectorComponent', () => {
 
     let store: {
         editorHasAccessToEditMode: ReturnType<typeof signal<boolean>>;
-        systemIsLockFeatureEnabled: ReturnType<typeof signal<boolean>>;
+        $lockFeatureEnabled: ReturnType<typeof signal<boolean>>;
         pageParams: ReturnType<typeof signal<{ mode: UVE_MODE }>>;
         viewClearDeviceAndSocialMedia: jest.Mock;
         pageLoad: jest.Mock;
@@ -58,7 +58,7 @@ describe('DotEditorModeSelectorComponent', () => {
     beforeEach(() => {
         store = {
             editorHasAccessToEditMode: signal(true),
-            systemIsLockFeatureEnabled: signal(false),
+            $lockFeatureEnabled: signal(false),
             pageParams: signal({ mode: UVE_MODE.EDIT }),
             viewClearDeviceAndSocialMedia: jest.fn(),
             pageLoad: jest.fn(),
@@ -91,7 +91,7 @@ describe('DotEditorModeSelectorComponent', () => {
 
     describe('menu items visibility', () => {
         it('should show all 3 modes when lock feature is disabled and user can edit', () => {
-            store.systemIsLockFeatureEnabled.set(false);
+            store.$lockFeatureEnabled.set(false);
             store.editorHasAccessToEditMode.set(true);
             spectator.detectChanges();
 
@@ -109,7 +109,7 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should hide draft (EDIT) when lock feature is disabled and user cannot edit', () => {
-            store.systemIsLockFeatureEnabled.set(false);
+            store.$lockFeatureEnabled.set(false);
             store.editorHasAccessToEditMode.set(false);
             spectator.detectChanges();
 
@@ -125,7 +125,7 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should show draft (EDIT) even when user cannot edit if lock feature is enabled', () => {
-            store.systemIsLockFeatureEnabled.set(true);
+            store.$lockFeatureEnabled.set(true);
             store.editorHasAccessToEditMode.set(false);
             spectator.detectChanges();
 
@@ -206,7 +206,7 @@ describe('DotEditorModeSelectorComponent', () => {
 
     describe('mode guard effect (legacy behavior)', () => {
         it('should switch to PREVIEW when in EDIT without edit permission and lock feature is disabled', () => {
-            store.systemIsLockFeatureEnabled.set(false);
+            store.$lockFeatureEnabled.set(false);
             store.editorHasAccessToEditMode.set(false);
             store.pageParams.set({ mode: UVE_MODE.EDIT });
             spectator.detectChanges();
@@ -222,7 +222,7 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should do nothing when lock feature is enabled', () => {
-            store.systemIsLockFeatureEnabled.set(true);
+            store.$lockFeatureEnabled.set(true);
             store.editorHasAccessToEditMode.set(false);
             store.pageParams.set({ mode: UVE_MODE.EDIT });
             spectator.detectChanges();

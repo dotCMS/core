@@ -38,7 +38,7 @@ describe('DotUveLockOverlayComponent', () => {
             {
                 provide: UVEStore,
                 useValue: {
-                    $workflowLockOptions: mockWorkflowLockOptions
+                    $lockOptions: mockWorkflowLockOptions
                 }
             }
         ],

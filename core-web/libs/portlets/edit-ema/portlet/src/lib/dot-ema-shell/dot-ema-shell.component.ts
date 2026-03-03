@@ -73,10 +73,10 @@ export class DotEmaShellComponent implements OnInit {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
-    protected readonly $workflowLockOptions = this.uveStore.$workflowLockOptions;
+    protected readonly $lockOptions = this.uveStore.$lockOptions;
     protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
     protected readonly $showLockBanner = computed(() => {
-        const lockOptions = this.$workflowLockOptions();
+        const lockOptions = this.$lockOptions();
         return !!lockOptions?.isLocked && !lockOptions.isLockedByCurrentUser;
     });
 
@@ -301,10 +301,10 @@ export class DotEmaShellComponent implements OnInit {
 
     /**
      * Toggles the lock state of the current page
-     * Gets lock options from workflowLockOptions signal and calls store method to handle the lock/unlock
+     * Gets lock options from $lockOptions signal and calls store method to handle the lock/unlock
      */
     toggleLock() {
-        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = this.$workflowLockOptions();
+        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = this.$lockOptions();
         this.uveStore.workflowToggleLock(inode, isLocked, isLockedByCurrentUser, lockedBy);
     }
 

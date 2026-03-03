@@ -39,7 +39,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
      * Without feature flag: Only show if user can edit the page
      */
     readonly $shouldShowDraftMode = computed(() => {
-        const isLockFeatureEnabled = this.#store.systemIsLockFeatureEnabled();
+        const isLockFeatureEnabled = this.#store.$lockFeatureEnabled();
 
         // With new lock feature, draft mode is always available
         // Users can toggle lock to edit when ready
@@ -96,7 +96,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
     readonly $modeGuardEffect = effect(() => {
         const currentMode = untracked(() => this.$currentMode());
         const hasAccessToEditMode = this.#store.editorHasAccessToEditMode();
-        const isToggleUnlockEnabled = this.#store.systemIsLockFeatureEnabled();
+        const isToggleUnlockEnabled = this.#store.$lockFeatureEnabled();
 
         if (isToggleUnlockEnabled) {
             return;

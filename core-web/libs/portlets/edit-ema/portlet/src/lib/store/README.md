@@ -185,7 +185,7 @@ if (store.canUndo()) store.undo();
 ### Checking Permissions
 
 ```typescript
-if (store.editorCanEditContent() && !store.workflowIsPageLocked()) {
+if (store.editorCanEditContent() && !store.$lockIsPageLocked()) {
   // Show edit UI
 }
 ```

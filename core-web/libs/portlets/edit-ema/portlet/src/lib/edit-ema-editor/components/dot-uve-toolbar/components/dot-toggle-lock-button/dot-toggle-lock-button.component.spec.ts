@@ -358,7 +358,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
     });
 
-    describe('computed $workflowLockOptions', () => {
+    describe('computed $lockOptions', () => {
         it('should be an alias for toggleLockOptions input', () => {
             const lockOptions: ToggleLockButtonOptions = {
                 inode: 'alias-test-inode',
@@ -373,7 +373,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
             spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
 
-            expect(spectator.component.$workflowLockOptions()).toEqual(lockOptions);
+            expect(spectator.component.$lockOptions()).toEqual(lockOptions);
         });
     });
 

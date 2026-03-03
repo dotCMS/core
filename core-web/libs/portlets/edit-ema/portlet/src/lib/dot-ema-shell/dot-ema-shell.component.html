@@ -8,9 +8,9 @@
                         <span class="inline leading-6" data-testid="message-content">
                             {{
                                 'uve.shell.page.locked.locked.by'
-                                    | dm: [$workflowLockOptions()?.lockedBy ?? '']
+                                    | dm: [$lockOptions()?.lockedBy ?? '']
                             }}
-                            @if ($workflowLockOptions()?.canLock) {
+                            @if ($lockOptions()?.canLock) {
                                 <button
                                     class="inline-flex items-center underline text-blue-600 hover:text-blue-700"
                                     type="button"

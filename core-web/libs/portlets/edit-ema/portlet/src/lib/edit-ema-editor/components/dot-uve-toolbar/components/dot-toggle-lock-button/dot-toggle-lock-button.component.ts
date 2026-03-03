@@ -43,7 +43,7 @@ export class DotToggleLockButtonComponent {
     });
 
     // Computeds consumed by template
-    $workflowLockOptions = this.toggleLockOptions;
+    $lockOptions = this.toggleLockOptions;
     $workflowLockIsLoading = computed(() => this.toggleLockOptions().loading);
 
     /**

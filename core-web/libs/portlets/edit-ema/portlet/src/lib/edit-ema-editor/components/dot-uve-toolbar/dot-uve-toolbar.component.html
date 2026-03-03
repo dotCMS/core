@@ -70,7 +70,7 @@
 
     <ng-template #end>
         <div class="flex items-center gap-1 uve-toolbar-end-actions">
-            @if ($workflowLockOptions(); as lockOptions) {
+            @if ($lockOptions(); as lockOptions) {
                 <dot-toggle-lock-button
                     [toggleLockOptions]="lockOptions"
                     (toggleLockClick)="handleToggleLock($event)"

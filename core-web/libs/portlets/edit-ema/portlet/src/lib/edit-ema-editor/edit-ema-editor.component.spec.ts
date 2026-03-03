@@ -1198,8 +1198,8 @@ describe('EditEmaEditorComponent', () => {
                     expect(resetActiveContentletSpy).not.toHaveBeenCalled();
 
                     // Verify toggleLockOptions has a value (feature flag enabled)
-                    expect(store.$workflowLockOptions()).not.toBeNull();
-                    expect(store.$workflowLockOptions()?.isLocked).toBe(true);
+                    expect(store.$lockOptions()).not.toBeNull();
+                    expect(store.$lockOptions()?.isLocked).toBe(true);
 
                     // Unlock the page (this should trigger the effect)
                     const lockedResponse = getPageAsset();
