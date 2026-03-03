@@ -408,10 +408,6 @@
             <artifactId>dot.webp-imageio-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.gotson</groupId>
-            <artifactId>webp-imageio</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.woodstox-core-lgpl</artifactId>
         </dependency>
@@ -906,6 +902,10 @@
 
 
         <!-- Image Processing -->
+        <dependency>
+            <groupId>com.github.gotson</groupId>
+            <artifactId>webp-imageio</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-batik</artifactId>
