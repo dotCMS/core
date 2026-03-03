@@ -101,15 +101,6 @@ public class CompanyBasicInfoForm extends Validated {
         if (!UtilMethods.isSet(secondaryColor)) {
             throw new BadRequestException("secondaryColor is required");
         }
-        if (UtilMethods.isSet(backgroundImage) && !backgroundImage.startsWith("/dA")) {
-            throw new BadRequestException("backgroundImage must be a dotAsset path starting with /dA");
-        }
-        if (UtilMethods.isSet(loginScreenLogo) && !loginScreenLogo.startsWith("/dA")) {
-            throw new BadRequestException("loginScreenLogo must be a dotAsset path starting with /dA");
-        }
-        if (UtilMethods.isSet(navBarLogo) && !navBarLogo.startsWith("/dA")) {
-            throw new BadRequestException("navBarLogo must be a dotAsset path starting with /dA");
-        }
     }
 
     public String getPortalURL() {
