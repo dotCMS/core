@@ -121,6 +121,7 @@
         <p-dialog
             [(visible)]="dialogOpen"
             [appendTo]="'body'"
+            [closable]="true"
             [closeOnEscape]="false"
             [draggable]="false"
             [header]="dialogHeaderMap[vm.mode] | dm"
