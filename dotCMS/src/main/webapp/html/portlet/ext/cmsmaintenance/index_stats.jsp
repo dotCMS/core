@@ -131,13 +131,13 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<td><%=UtilMethods.webifyString(myDate) %></td>
 
 					<td align="center">
-						<%=status !=null ? status.getDocumentCount() : "n/a"%>
+						<%=status !=null ? status.documentCount() : "n/a"%>
 					</td>
-					<td align="center"><%=(health !=null) ? health.getNumberOfShards() : "n/a"%></td>
-					<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
-					<td align="center"><%=status !=null ? status.getSize(): "n/a"%></td>
+					<td align="center"><%=(health !=null) ? health.numberOfShards() : "n/a"%></td>
+					<td align="center"><%=(health !=null) ? health.numberOfReplicas(): "n/a"%></td>
+					<td align="center"><%=status !=null ? status.size(): "n/a"%></td>
 					<td align="center">
-					          <div onclick="showIndexClusterStatus('<%=x%>')"  style='cursor:pointer;background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'>
+					          <div onclick="showIndexClusterStatus('<%=x%>')"  style='cursor:pointer;background:<%=(health !=null) ? health.status().toString(): "n/a"%>; width:20px;height:20px;'>
 					          </div>
 					</td>
 				</tr>

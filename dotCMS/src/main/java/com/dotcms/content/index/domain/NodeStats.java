@@ -1,5 +1,6 @@
 package com.dotcms.content.index.domain;
 
+import com.dotcms.annotations.Nullable;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -18,12 +19,15 @@ import org.immutables.value.Value;
 public interface NodeStats {
 
     /** Returns the node name. */
+    @Nullable
     String name();
 
     /** Returns the node host address. */
+    @Nullable
     String host();
 
     /** Returns the node transport address. */
+    @Nullable
     String transportAddress();
 
     /** Returns {@code true} if this node is the cluster master. */

@@ -3,10 +3,12 @@ package com.dotcms.content.index.opensearch;
 import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
 import static com.dotcms.content.index.opensearch.ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT;
 
-import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexAPI;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Default;
+import javax.inject.Inject;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
@@ -60,13 +62,25 @@ import org.opensearch.client.opensearch.indices.IndexSettings;
  *
  * @author Fabrizio Araya
  */
+@ApplicationScoped
+@Default
 public class OSIndexAPIImpl implements IndexAPI {
 
-    private final OpenSearchDefaultClientProvider clientProvider;
+    @Inject
+    private OpenSearchDefaultClientProvider clientProvider;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
-    private final Lazy<String> clusterPrefix;
+    private Lazy<String> clusterPrefix =
+            Lazy.of(() -> CLUSTER_PREFIX + ClusterFactory.getClusterId() + ".");
+
+    /**
+     * No-arg constructor required by CDI for proxy creation.
+     * The {@code clientProvider} dependency is injected via field injection after construction.
+     */
+    public OSIndexAPIImpl() {
+        // CDI uses this constructor; clientProvider is injected via @Inject field
+    }
 
     /**
      * Package-private constructor for testing.
@@ -74,11 +88,6 @@ public class OSIndexAPIImpl implements IndexAPI {
     OSIndexAPIImpl(OpenSearchDefaultClientProvider clientProvider, Lazy<String> clusterPrefix) {
         this.clientProvider = clientProvider;
         this.clusterPrefix = clusterPrefix;
-    }
-
-    public OSIndexAPIImpl() {
-        this(CDIUtils.getBeanThrows(OpenSearchDefaultClientProvider.class),
-                Lazy.of(() -> CLUSTER_PREFIX + ClusterFactory.getClusterId() + "."));
     }
 
     // =========================================================================

@@ -1,5 +1,6 @@
 package com.dotcms.content.index;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexAPI;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
@@ -36,7 +37,7 @@ public class IndexAPIImpl implements IndexAPI {
 
     public IndexAPIImpl() {
         this.esImpl = new ESIndexAPI();
-        this.osImpl = new OSIndexAPIImpl();
+        this.osImpl = CDIUtils.getBeanThrows(OSIndexAPIImpl.class);
     }
 
     /**
