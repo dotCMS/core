@@ -130,12 +130,12 @@
             <div class="canvas-gutter" aria-hidden="true"></div>
             <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
                 <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
-                    <div
-                        [ngClass]="{
-                            'iframe-wrapper--device': $iframeProps().wrapper
+                        <div
+                            [ngClass]="{
+                            'iframe-wrapper--device': $iframeWrapper()
                         }"
-                        [ngStyle]="$iframeWrapperStyles()"
-                        class="iframe-wrapper">
+                            [ngStyle]="$iframeWrapperStyles()"
+                            class="iframe-wrapper">
                         @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
                             <dot-uve-page-version-not-found />
                         }

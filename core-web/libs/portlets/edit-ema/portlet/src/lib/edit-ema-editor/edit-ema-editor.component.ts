@@ -296,27 +296,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return canEditPage && isEditState && isEnterprise;
     });
 
-    protected readonly $iframeProps = computed(() => {
-        // Use it to create dependencies to the pageAPIResponse
+    protected readonly $isIframeLoading = computed<boolean>(() => {
         const mode = this.uveStore.viewMode();
         const pageType = this.uveStore.pageType();
         const isClientReady = this.uveStore.isClientReady();
-        const state = this.uveStore.editorState();
+        const isEditMode = mode === UVE_MODE.EDIT;
+        const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
+
+        return !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
+    });
+
+    protected readonly $iframeWrapper = computed(() => {
         const device = this.uveStore.viewDevice();
         const orientation = this.uveStore.viewDeviceOrientation();
 
-        const isEditMode = mode === UVE_MODE.EDIT;
-        const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
-        const isLoading = !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
-        const { dragIsActive } = getEditorStates(state);
-        const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
-        const wrapper = getWrapperMeasures(device, orientation);
-
-        return {
-            opacity: iframeOpacity,
-            pointerEvents: dragIsActive ? 'none' : 'auto',
-            wrapper: device ? wrapper : null
-        };
+        return device ? getWrapperMeasures(device, orientation) : null;
     });
 
     protected readonly $progressBar = computed<boolean>(() => {
@@ -397,7 +391,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $viewCanvasInnerStyles = this.uveStore.$viewCanvasInnerStyles;
 
     readonly $iframeWrapperStyles = computed((): Record<string, string> => {
-        const wrapper = this.$iframeProps().wrapper;
+        const wrapper = this.$iframeWrapper();
         if (!wrapper) {
             return {};
         }
@@ -413,12 +407,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return (typeof url === 'string' ? url : '') || '';
     });
     readonly $iframePointerEvents = computed((): string => {
-        const events = this.$iframeProps().pointerEvents;
-        return (typeof events === 'string' ? events : '') || '';
+        const { dragIsActive } = getEditorStates(this.uveStore.editorState());
+        return dragIsActive ? 'none' : 'auto';
     });
     readonly $iframeOpacity = computed((): number => {
-        const opacity = this.$iframeProps().opacity;
-        return (typeof opacity === 'number' ? opacity : 1) || 1;
+        return this.$isIframeLoading() ? 0.5 : 1;
     });
 
     readonly $pageURL = computed((): string => {

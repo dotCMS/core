@@ -15,16 +15,19 @@ interface LayoutStoreDeps {
     setPageAsset: (pageAsset: DotCMSPageAsset) => void;
 }
 
+/** Store type with layout dependencies (pageAsset, setPageAsset); use for type assertion in feature callbacks. */
+type StoreWithLayoutDeps<T> = T & LayoutStoreDeps;
+
 export function withLayout() {
     return signalStoreFeature(
         {
             state: type<UVEState>()
         },
-        withComputed((store) => {
-            const s = store as typeof store & LayoutStoreDeps;
+        withComputed((uveStore) => {
+            const store = uveStore as StoreWithLayoutDeps<typeof uveStore>;
             return {
                 $layoutProps: computed<LayoutProps>(() => {
-                    const page = s.pageAsset();
+                    const page = store.pageAsset();
                     const pageData = page?.page;
                     const containersData = page?.containers;
                     const layoutData = page?.layout;
@@ -44,11 +47,11 @@ export function withLayout() {
                 })
             };
         }),
-        withMethods((store) => {
-            const s = store as typeof store & LayoutStoreDeps;
+        withMethods((uveStore) => {
+            const store = uveStore as StoreWithLayoutDeps<typeof uveStore>;
             return {
                 updateLayout: (layout: DotCMSLayout) => {
-                    const page = s.pageAsset();
+                    const page = store.pageAsset();
                     if (page) {
                         const asset = { ...page } as DotCMSPageAsset & {
                             content?: unknown;
@@ -58,7 +61,7 @@ export function withLayout() {
                         delete asset.content;
                         delete asset.requestMetadata;
                         delete asset.clientResponse;
-                        s.setPageAsset({
+                        store.setPageAsset({
                             ...asset,
                             layout
                         });
