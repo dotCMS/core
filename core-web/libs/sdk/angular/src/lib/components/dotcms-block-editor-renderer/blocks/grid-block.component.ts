@@ -35,9 +35,14 @@ export class DotGridBlock {
     blockEditorItem = DotCMSBlockEditorItemComponent;
 
     get gridTemplateColumns(): string {
-        const cols = Array.isArray(this.node?.attrs?.['columns'])
+        const rawCols = Array.isArray(this.node?.attrs?.['columns'])
             ? this.node.attrs['columns']
             : [6, 6];
+        const cols =
+            rawCols.length === 2 &&
+            rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v))
+                ? rawCols
+                : [6, 6];
         const pct1 = (cols[0] / 12) * 100;
         const pct2 = (cols[1] / 12) * 100;
 

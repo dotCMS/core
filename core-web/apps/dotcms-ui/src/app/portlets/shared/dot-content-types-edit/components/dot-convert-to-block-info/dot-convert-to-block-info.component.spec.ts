@@ -40,21 +40,14 @@ describe('DotConvertToBlockInfoComponent', () => {
         expect(learnMore.textContent?.trim()).toBe('Learn More');
     });
 
-    // TODO: Fix this test - setInput() with signal inputs appears to have issues in TestBed
-    // The component was migrated from @Input() to input() signals but the test wasn't updated
-    // The same UI behavior is tested in the first test (learn more button when no currentField)
-    it.skip('should render info and info button', () => {
+    it('should render info and info button', () => {
         const fixture = TestBed.createComponent(DotConvertToBlockInfoComponent);
         const de = fixture.debugElement;
 
-        fixture.componentRef.setInput('currentField', {
+        fixture.componentRef.setInput('$currentField', {
             id: '123'
         });
 
-        // First detectChanges to initialize
-        fixture.detectChanges();
-
-        // Second detectChanges to ensure signals are updated
         fixture.detectChanges();
 
         const infoContent = de.query(By.css('[data-testId="infoContent"]'));

@@ -11,7 +11,13 @@
 #set($colIndex = 0)
 #foreach($column in $item.content)
 #if($gridCols)
-#set($span = $gridCols.get($colIndex))
+#set($rawSpan = $gridCols.get($colIndex))
+## Validate span is a number between 1 and 12 to prevent XSS injection
+#if($rawSpan && $rawSpan.toString().matches("^[0-9]+$") && $rawSpan >= 1 && $rawSpan <= 12)
+#set($span = $rawSpan)
+#else
+#set($span = 6)
+#end
 #else
 #set($span = 6)
 #end

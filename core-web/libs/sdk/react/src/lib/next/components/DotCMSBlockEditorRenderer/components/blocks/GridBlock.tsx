@@ -4,7 +4,6 @@ import { CustomRenderer } from '../../DotCMSBlockEditorRenderer';
 
 interface GridBlockProps {
     node: BlockEditorNode;
-    children: React.ReactNode;
     customRenderers?: CustomRenderer;
     blockEditorBlock: React.FC<{
         content: BlockEditorNode[] | undefined;
@@ -21,7 +20,12 @@ interface GridBlockProps {
  */
 export const GridBlock = ({ node, blockEditorBlock, customRenderers }: GridBlockProps) => {
     const BlockEditorBlockComponent = blockEditorBlock;
-    const cols = Array.isArray(node.attrs?.columns) ? node.attrs.columns : [6, 6];
+    const rawCols = Array.isArray(node.attrs?.columns) ? node.attrs.columns : [6, 6];
+    const cols =
+        rawCols.length === 2 &&
+        rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v))
+            ? rawCols
+            : [6, 6];
     const pct1 = (cols[0] / 12) * 100;
     const pct2 = (cols[1] / 12) * 100;
 

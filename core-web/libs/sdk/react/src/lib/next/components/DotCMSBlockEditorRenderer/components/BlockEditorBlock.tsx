@@ -143,12 +143,8 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         key={key}
                         node={node}
                         blockEditorBlock={BlockEditorBlock}
-                        customRenderers={customRenderers}>
-                        <BlockEditorBlock
-                            content={node.content}
-                            customRenderers={customRenderers}
-                        />
-                    </GridBlock>
+                        customRenderers={customRenderers}
+                    />
                 );
 
             case BlockEditorDefaultBlocks.DOT_CONTENT:
