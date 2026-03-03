@@ -88,7 +88,6 @@ describe('DotUveContentletToolsComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                isEnterprise: false,
                 contentletArea: MOCK_CONTENTLET_AREA,
                 allowContentDelete: true,
                 showStyleEditorOption: false
@@ -321,10 +320,7 @@ describe('DotUveContentletToolsComponent', () => {
                 });
             });
 
-            it('should emit addContent with type "form" when enterprise and selecting form from menu', () => {
-                spectator.setInput('isEnterprise', true);
-                spectator.detectChanges();
-
+            it('should emit addContent with type "form" when selecting form from menu', () => {
                 const addBottomButton = spectator.query(byTestId('add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
@@ -482,9 +478,6 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('menuItems', () => {
             it('should have 3 items (content, widget, form)', () => {
-                spectator.setInput('isEnterprise', false);
-                spectator.detectChanges();
-
                 const items = spectator.component.menuItems();
                 expect(items).toHaveLength(3);
                 expect(items[0].label).toBe('Content');

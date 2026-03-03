@@ -130,12 +130,12 @@
             <div class="canvas-gutter" aria-hidden="true"></div>
             <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
                 <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
-                        <div
-                            [ngClass]="{
+                    <div
+                        [ngClass]="{
                             'iframe-wrapper--device': $iframeWrapper()
                         }"
-                            [ngStyle]="$iframeWrapperStyles()"
-                            class="iframe-wrapper">
+                        [ngStyle]="$iframeWrapperStyles()"
+                        class="iframe-wrapper">
                         @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
                             <dot-uve-page-version-not-found />
                         }
@@ -172,7 +172,6 @@
                                 (addContent)="handleAddContent($event)"
                                 (selectContent)="handleSelectContent($event)"
                                 [contentletArea]="$contentArea"
-                                [isEnterprise]="uveStore.uveIsEnterprise()"
                                 [allowContentDelete]="$allowContentDelete()"
                                 [showStyleEditorOption]="uveStore.editorCanEditStyles()"
                                 data-testId="contentlet-tools" />

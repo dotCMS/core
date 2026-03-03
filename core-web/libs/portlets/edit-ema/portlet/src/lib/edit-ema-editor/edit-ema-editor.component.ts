@@ -292,8 +292,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
-        const isEnterprise = this.uveStore.uveIsEnterprise();
-        return canEditPage && isEditState && isEnterprise;
+        return canEditPage && isEditState;
     });
 
     protected readonly $isIframeLoading = computed<boolean>(() => {
@@ -1483,15 +1482,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         type: DotCMSInlineEditingType;
         data?: DotCMSInlineEditingPayload;
     }) {
-        if (!this.uveStore.uveIsEnterprise()) {
-            this.#dotAlertConfirmService.alert({
-                header: this.dotMessageService.get('dot.common.license.enterprise.only.error'),
-                message: this.dotMessageService.get('editpage.not.lincese.error')
-            });
-
-            return;
-        }
-
         switch (type) {
             case 'BLOCK_EDITOR':
                 this.blockSidebar?.open(data);

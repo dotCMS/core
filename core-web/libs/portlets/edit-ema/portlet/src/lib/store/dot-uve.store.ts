@@ -21,7 +21,6 @@ import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 const initialState: UVEState = {
     // UVE system state (managed by withUve)
     uveStatus: UVE_STATUS.LOADING,
-    uveIsEnterprise: false,
     uveCurrentUser: null,
     // Flags (managed by withFlags)
     flags: {}, // Will be populated by withFlags feature
@@ -69,7 +68,7 @@ const initialState: UVEState = {
  * ## Feature Composition Order (CRITICAL - Do not reorder without reviewing dependencies)
  *
  * 1. withState - Base state
- * 2. withUve - Global system state (status, enterprise, user)
+ * 2. withUve - Global system state (status, user)
  * 3. withFlags - Feature flags
  * 4. withPage - Page data + history (composes withHistory)
  * 5. withTrack - Analytics (standalone)

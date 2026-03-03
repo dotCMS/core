@@ -87,7 +87,6 @@ export class DotEmaShellComponent implements OnInit {
         const page = this.uveStore.pageAsset()?.page;
         const template = this.uveStore.pageAsset()?.template;
         const isLoading = this.uveStore.uveStatus() === UVE_STATUS.LOADING;
-        const isEnterpriseLicense = this.uveStore.uveIsEnterprise();
         const templateDrawed = template?.drawed;
         const isLayoutDisabled = !page?.canEdit || !templateDrawed;
         const canSeeRulesExists = page && 'canSeeRules' in page;
@@ -104,7 +103,7 @@ export class DotEmaShellComponent implements OnInit {
                 label: 'editema.editor.navbar.layout',
                 href: 'layout',
                 id: 'layout',
-                isDisabled: isLayoutDisabled || !isEnterpriseLicense,
+                isDisabled: isLayoutDisabled,
                 tooltip: templateDrawed
                     ? null
                     : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
@@ -114,17 +113,14 @@ export class DotEmaShellComponent implements OnInit {
                 label: 'editema.editor.navbar.rules',
                 id: 'rules',
                 href: `rules/${page?.identifier}`,
-                isDisabled:
-                    (canSeeRulesExists && !page.canSeeRules) ||
-                    !page?.canEdit ||
-                    !isEnterpriseLicense
+                isDisabled: (canSeeRulesExists && !page.canSeeRules) || !page?.canEdit
             },
             {
                 iconURL: 'experiments',
                 label: 'editema.editor.navbar.experiments',
                 href: `experiments/${page?.identifier}`,
                 id: 'experiments',
-                isDisabled: !page?.canEdit || !isEnterpriseLicense
+                isDisabled: !page?.canEdit
             },
             {
                 icon: 'pi-th-large',

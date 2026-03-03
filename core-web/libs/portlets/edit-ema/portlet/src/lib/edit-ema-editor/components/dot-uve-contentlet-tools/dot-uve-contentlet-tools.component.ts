@@ -41,11 +41,6 @@ export class DotUveContentletToolsComponent {
     readonly menuVTL = viewChild<Menu>('menuVTL');
 
     /**
-     * Whether the current environment is Enterprise.
-     * When `true`, additional Enterprise-only actions (such as adding forms) are enabled.
-     */
-    readonly isEnterprise = input<boolean>(false, { alias: 'isEnterprise' });
-    /**
      * Positional and contextual data for the currently hovered contentlet.
      * This comes from the iframe mouse enter events.
      */

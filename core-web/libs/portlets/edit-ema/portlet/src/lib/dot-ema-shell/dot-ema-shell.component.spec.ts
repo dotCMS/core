@@ -26,7 +26,6 @@ import {
     DotCurrentUserService,
     DotExperimentsService,
     DotLanguagesService,
-    DotLicenseService,
     DotMessageService,
     DotPageLayoutService,
     DotPropertiesService,
@@ -45,7 +44,6 @@ import {
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
-import { DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     DotExperimentsServiceMock,
@@ -183,7 +181,6 @@ describe('DotEmaShellComponent', () => {
     let location: Location;
     let siteService: SiteServiceMock;
     let activatedRoute: ActivatedRoute;
-    let dotLicenseService: DotLicenseService;
     let dotPageApiService: DotPageApiService;
 
     const createComponent = createComponentFactory({
@@ -352,24 +349,13 @@ describe('DotEmaShellComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            providers: [
-                {
-                    provide: DotLicenseService,
-                    useValue: {
-                        isEnterprise: () => of(true),
-                        canAccessEnterprisePortlet: () => of(true)
-                    }
-                }
-            ]
-        });
+        spectator = createComponent();
         siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
         store = spectator.inject(UVEStore, true);
         router = spectator.inject(Router, true);
         location = spectator.inject(Location, true);
         activatedRoute = spectator.inject(ActivatedRoute, true);
         dotPageApiService = spectator.inject(DotPageApiService, true);
-        dotLicenseService = spectator.inject(DotLicenseService, true);
     });
 
     describe('with queryParams', () => {
@@ -1134,18 +1120,6 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
-    describe('without license', () => {
-        beforeEach(() => {
-            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
-            jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(false));
-            spectator.detectChanges();
-        });
-
-        it('should render not-license component', () => {
-            expect(spectator.query(DotNotLicenseComponent)).toBeDefined();
-        });
-    });
-
     describe('without read permission', () => {
         beforeEach(() => {
             jest.spyOn(dotPageApiService, 'get').mockReturnValue(
@@ -1192,16 +1166,6 @@ describe('DotEmaShellComponent', () => {
                         }
                     })
                 );
-                spectator.detectChanges();
-
-                const menuItems = spectator.component['$menuItems']();
-                const layoutItem = menuItems.find((item) => item.id === 'layout');
-
-                expect(layoutItem.isDisabled).toBe(true);
-            });
-
-            it('should disable layout for non-enterprise license', () => {
-                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 spectator.detectChanges();
 
                 const menuItems = spectator.component['$menuItems']();

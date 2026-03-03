@@ -11,7 +11,6 @@ import {
     DotContentletLockerService,
     DotExperimentsService,
     DotLanguagesService,
-    DotLicenseService,
     DotMessageService,
     DotPageLayoutService,
     DotPropertiesService,
@@ -74,12 +73,6 @@ describe('UVEStore - Integration Tests ', () => {
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
                     save: jest.fn()
-                }
-            },
-            {
-                provide: DotLicenseService,
-                useValue: {
-                    isEnterprise: () => of(true)
                 }
             },
             {
@@ -321,7 +314,6 @@ describe('UVEStore - Integration Tests ', () => {
             store.setPageAssetResponse({ pageAsset: pageResponse });
             store.setUveStatus(UVE_STATUS.LOADED);
             store.setUveCurrentUser({ ...CurrentUserDataMock, loginAs: false });
-            store.setUveIsEnterprise(true);
 
             // IDLE state - should show controls if can edit
             store.setEditorState(EDITOR_STATE.IDLE);

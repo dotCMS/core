@@ -70,7 +70,6 @@ export interface ViewState {
 export interface UVEState {
     // ============ UVE SYSTEM (withUve) ============
     uveStatus: UVE_STATUS;
-    uveIsEnterprise: boolean;
     uveCurrentUser: CurrentUser | null;
 
     // ============ FLAGS (withFlags) ============

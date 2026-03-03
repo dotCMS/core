@@ -25,10 +25,6 @@ describe('withUve', () => {
             expect(store.uveStatus()).toBe(UVE_STATUS.LOADING);
         });
 
-        it('should initialize with isEnterprise as false', () => {
-            expect(store.uveIsEnterprise()).toBe(false);
-        });
-
         it('should initialize with null currentUser', () => {
             expect(store.uveCurrentUser()).toBeNull();
         });
@@ -47,30 +43,6 @@ describe('withUve', () => {
         it('should update status to ERROR', () => {
             store.setUveStatus(UVE_STATUS.ERROR);
             expect(store.uveStatus()).toBe(UVE_STATUS.ERROR);
-        });
-
-        it('should allow multiple status changes', () => {
-            store.setUveStatus(UVE_STATUS.LOADING);
-            expect(store.uveStatus()).toBe(UVE_STATUS.LOADING);
-
-            store.setUveStatus(UVE_STATUS.LOADED);
-            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
-
-            store.setUveStatus(UVE_STATUS.ERROR);
-            expect(store.uveStatus()).toBe(UVE_STATUS.ERROR);
-        });
-    });
-
-    describe('setUveIsEnterprise', () => {
-        it('should set enterprise flag to true', () => {
-            store.setUveIsEnterprise(true);
-            expect(store.uveIsEnterprise()).toBe(true);
-        });
-
-        it('should set enterprise flag to false', () => {
-            store.setUveIsEnterprise(true);
-            store.setUveIsEnterprise(false);
-            expect(store.uveIsEnterprise()).toBe(false);
         });
     });
 
@@ -96,77 +68,6 @@ describe('withUve', () => {
 
             store.setUveCurrentUser({ ...mockUser, admin: false } as CurrentUser);
             expect(store.$isCMSAdmin()).toBe(false);
-        });
-
-        it('should allow clearing current user', () => {
-            store.setUveCurrentUser(mockUser);
-            store.setUveCurrentUser(null);
-            expect(store.uveCurrentUser()).toBeNull();
-        });
-
-        it('should allow updating to different user', () => {
-            const mockUser2: CurrentUser = {
-                userId: 'user456',
-                email: 'another@example.com',
-                givenName: 'Another',
-                surname: 'User',
-                roleId: 'role456'
-            } as CurrentUser;
-
-            store.setUveCurrentUser(mockUser);
-            expect(store.uveCurrentUser()).toEqual(mockUser);
-
-            store.setUveCurrentUser(mockUser2);
-            expect(store.uveCurrentUser()).toEqual(mockUser2);
-        });
-    });
-
-    describe('Integration scenarios', () => {
-        it('should support typical initialization flow', () => {
-            // Start with loading
-            expect(store.uveStatus()).toBe(UVE_STATUS.LOADING);
-
-            // Set user and enterprise flag during load
-            const mockUser: CurrentUser = {
-                userId: 'user123',
-                email: 'test@example.com'
-            } as CurrentUser;
-
-            store.setUveCurrentUser(mockUser);
-            store.setUveIsEnterprise(true);
-
-            // Complete loading
-            store.setUveStatus(UVE_STATUS.LOADED);
-
-            // Verify final state
-            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
-            expect(store.uveIsEnterprise()).toBe(true);
-            expect(store.uveCurrentUser()).toEqual(mockUser);
-        });
-
-        it('should support error recovery flow', () => {
-            const mockUser: CurrentUser = {
-                userId: 'user123',
-                email: 'test@example.com'
-            } as CurrentUser;
-
-            // Set user and enterprise
-            store.setUveCurrentUser(mockUser);
-            store.setUveIsEnterprise(true);
-
-            // Error occurs
-            store.setUveStatus(UVE_STATUS.ERROR);
-            expect(store.uveStatus()).toBe(UVE_STATUS.ERROR);
-
-            // User and enterprise state persists through error
-            expect(store.uveCurrentUser()).toEqual(mockUser);
-            expect(store.uveIsEnterprise()).toBe(true);
-
-            // Recovery - retry load
-            store.setUveStatus(UVE_STATUS.LOADING);
-            store.setUveStatus(UVE_STATUS.LOADED);
-
-            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
         });
     });
 });

@@ -7,7 +7,6 @@ import { Orientation, PageType, UVEState } from '../models';
  */
 export const BASE_UVE_STATE: UVEState = {
     uveStatus: UVE_STATUS.LOADED,
-    uveIsEnterprise: true,
     uveCurrentUser: null,
     flags: {},
     pageParams: null,

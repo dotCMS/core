@@ -7,12 +7,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import {
     DotExperimentsService,
     DotLanguagesService,
-    DotLicenseService,
     DotPageLayoutService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -120,7 +119,6 @@ export function withPageApi(deps: WithPageApiDeps) {
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
             const dotExperimentsService = inject(DotExperimentsService);
-            const dotLicenseService = inject(DotLicenseService);
             const loginService = inject(LoginService);
             const dotPageLayoutService = inject(DotPageLayoutService);
             const iframeMessenger = inject(UveIframeMessengerService);
@@ -174,9 +172,6 @@ export function withPageApi(deps: WithPageApiDeps) {
                                 ),
                                 // This can be done in the Withhook: onInit if this ticket is done: https://github.com/dotCMS/core/issues/30760
                                 // Reference: https://ngrx.io/guide/signals/signal-store/lifecycle-hooks
-                                isEnterprise: dotLicenseService
-                                    .isEnterprise()
-                                    .pipe(take(1), shareReplay()),
                                 currentUser: loginService.getCurrentUser()
                             }).pipe(
                                 tap(({ pageAsset }) => {
@@ -193,7 +188,7 @@ export function withPageApi(deps: WithPageApiDeps) {
 
                                     return EMPTY;
                                 }),
-                                switchMap(({ pageAsset, isEnterprise, currentUser }) => {
+                                switchMap(({ pageAsset, currentUser }) => {
                                     const experimentId =
                                         pageParams?.experimentId ?? pageAsset?.runningExperimentId;
 
@@ -221,7 +216,6 @@ export function withPageApi(deps: WithPageApiDeps) {
                                             deps.addHistory({ pageAsset });
 
                                             patchState(store, {
-                                                uveIsEnterprise: isEnterprise,
                                                 uveCurrentUser: currentUser,
                                                 pageExperiment: experiment,
                                                 pageLanguages: languages,

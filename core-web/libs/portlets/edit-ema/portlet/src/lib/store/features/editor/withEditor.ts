@@ -72,7 +72,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
  * - Editor UI state (drag/drop, bounds, active contentlet, content area)
  * - Editor panel preferences (palette, right sidebar)
  * - Edit capabilities (canEditContent, canEditLayout, canEditStyles)
- * - Inline editing mode (based on enterprise license and edit mode)
+ * - Inline editing mode (based on edit mode)
  * - Page render data and iframe URL generation
  * - Style schemas for contentlet styling
  * - SEO/OG tags management
@@ -152,7 +152,7 @@ export function withEditor() {
             });
 
             const editorEnableInlineEdit = computed(() => {
-                return store.viewMode() === UVE_MODE.EDIT && store.uveIsEnterprise();
+                return store.viewMode() === UVE_MODE.EDIT;
             });
 
             return {

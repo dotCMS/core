@@ -37,7 +37,6 @@ import {
     DotHttpErrorManagerService,
     DotIframeService,
     DotLanguagesService,
-    DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
     DotPageLayoutService,
@@ -310,12 +309,6 @@ const createRouting = () =>
                 provide: LoginService,
                 useClass: LoginServiceMock
             },
-            {
-                provide: DotLicenseService,
-                useValue: {
-                    isEnterprise: () => of(true)
-                }
-            },
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             {
                 provide: DotActionUrlService,
@@ -490,10 +483,8 @@ describe('EditEmaEditorComponent', () => {
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: jest.SpyInstance;
-        let dotLicenseService: DotLicenseService;
         let dotCopyContentModalService: DotCopyContentModalService;
         let dotCopyContentService: DotCopyContentService;
-        let dotAlertConfirmService: DotAlertConfirmService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
         let dotTempFileUploadService: DotTempFileUploadService;
         let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
@@ -522,16 +513,13 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(UVEStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
-            dotLicenseService = spectator.inject(DotLicenseService, true);
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
-            dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
             dotTempFileUploadService = spectator.inject(DotTempFileUploadService, true);
             dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
             dotPageApiService = spectator.inject(DotPageApiService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
-            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
             store.pageLoad({
                 clientHost: 'http://localhost:3000',
@@ -1395,41 +1383,6 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectComponentChanges();
 
                     expect(spy).toHaveBeenCalledWith({});
-                });
-
-                it('should show a message and not notify the event if there is not enterprise lincese', () => {
-                    const spyAlert = jest.spyOn(dotAlertConfirmService, 'alert');
-
-                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
-
-                    spectator.detectChanges();
-
-                    store.pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'index',
-                        language_id: '1',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-
-                    spectator.detectChanges();
-
-                    window.dispatchEvent(
-                        new MessageEvent('message', {
-                            origin: HOST,
-                            data: {
-                                action: DotCMSUVEAction.INIT_INLINE_EDITING,
-                                payload: {}
-                            }
-                        })
-                    );
-
-                    spectator.detectComponentChanges();
-
-                    expect(spyAlert).toHaveBeenCalledWith({
-                        header: 'Enterprise Only',
-                        message:
-                            'Inline editing is available only with an enterprise license. Please contact support to upgrade your license.'
-                    });
                 });
 
                 describe('reorder navigation', () => {
