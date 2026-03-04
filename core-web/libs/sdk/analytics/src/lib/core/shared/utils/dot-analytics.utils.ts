@@ -617,6 +617,9 @@ export const enrichPagePayloadOptimized = (
         }
     });
 
+    // TODO: Fix this when we detect the locale_id of the page in not server side
+    const locale_id = payload.context?.device?.language?.toLowerCase();
+
     const pageData: DotCMSEventPageData = {
         url: location.href,
         doc_encoding: staticData.doc_encoding,
@@ -625,7 +628,8 @@ export const enrichPagePayloadOptimized = (
         doc_search: location.search,
         doc_host: location.hostname,
         doc_path: location.pathname,
-        title: (properties.title as string) ?? document?.title
+        title: (properties.title as string) ?? document?.title,
+        ...(locale_id && { locale_id })
     };
 
     // Extract UTM parameters from the current URL (already transformed to DotCMS format)
