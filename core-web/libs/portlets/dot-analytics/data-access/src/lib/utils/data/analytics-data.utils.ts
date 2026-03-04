@@ -5,7 +5,6 @@ import {
     endOfDay,
     format,
     isSameDay,
-    isSameMonth,
     parse,
     startOfDay,
     subDays
@@ -58,68 +57,6 @@ export function createInitialRequestState<T>(): RequestState<T> {
         data: null,
         error: null
     };
-}
-
-/**
- * Helper functions to extract numeric values from analytics entities
- */
-
-/**
- * Determines the appropriate granularity for analytics queries based on the time range.
- *
- * This utility centralizes the logic for selecting granularity levels to ensure
- * optimal data visualization and performance across different time periods.
- *
- * @param timeRange - The time range for the analytics query
- * @returns The appropriate granularity level for the given time range
- */
-export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Granularity {
-    if (Array.isArray(timeRange)) {
-        const [fromDate, toDate] = timeRange.map((date) => parse(date, 'yyyy-MM-dd', new Date()));
-
-        if (isSameDay(fromDate, toDate)) {
-            return 'hour';
-        } else if (isSameMonth(fromDate, toDate)) {
-            return 'day';
-        } else {
-            return 'month';
-        }
-    }
-
-    switch (timeRange) {
-        case TIME_RANGE_OPTIONS.today:
-
-        // falls through
-        case TIME_RANGE_OPTIONS.yesterday:
-            // For today/yesterday, use hourly granularity for detailed intraday analysis
-            return 'hour';
-
-        case TIME_RANGE_OPTIONS.last7days:
-            // For last 7 days, use daily granularity
-            return 'day';
-
-        case TIME_RANGE_OPTIONS.last30days:
-            // For last 30 days, use daily granularity
-            return 'day';
-
-        default: {
-            // For custom ranges or other periods, extract days and decide
-            const daysMatch = timeRange.match(/from (\d+) days ago to now/);
-            if (daysMatch) {
-                const numDays = parseInt(daysMatch[1], 10);
-                if (numDays > 90) {
-                    return 'month';
-                } else if (numDays > 30) {
-                    return 'week';
-                } else {
-                    return 'day';
-                }
-            } else {
-                // For custom date ranges, default to day
-                return 'day';
-            }
-        }
-    }
 }
 
 /**
@@ -700,14 +637,6 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
     }
 
     switch (timeRange) {
-        case TIME_RANGE_OPTIONS.today:
-            return [startOfDay(today), endOfDay(today)];
-        case TIME_RANGE_OPTIONS.yesterday: {
-            const yesterday = subDays(today, 1);
-
-            return [startOfDay(yesterday), endOfDay(yesterday)];
-        }
-
         case TIME_RANGE_OPTIONS.last7days: {
             const sevenDaysAgo = subDays(today, 6);
 

@@ -30,7 +30,6 @@ import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
     createEmptyAnalyticsEntity,
     createInitialRequestState,
-    determineGranularityForTimeRange,
     fillMissingDates,
     toTimeRangeCubeJS
 } from '../../utils/data/analytics-data.utils';
@@ -261,13 +260,12 @@ export function withPageview() {
                             })
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
-                            const granularity = determineGranularityForTimeRange(timeRange);
                             const query = createCubeQuery()
                                 .fromCube('EventSummary')
                                 .pageviews()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), granularity)
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
                                 .build();
 
                             return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
@@ -275,7 +273,7 @@ export function withPageview() {
                                     fillMissingDates<PageViewTimeLineEntity>(
                                         entities,
                                         timeRange,
-                                        granularity,
+                                        'day',
                                         createEmptyAnalyticsEntity
                                     )
                                 ),

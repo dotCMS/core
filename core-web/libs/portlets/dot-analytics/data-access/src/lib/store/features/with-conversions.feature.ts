@@ -30,7 +30,6 @@ import {
     createEmptyAnalyticsEntity,
     createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
-    determineGranularityForTimeRange,
     fillMissingDates,
     toTimeRangeCubeJS,
     TrafficVsConversionsEntity
@@ -180,14 +179,12 @@ export function withConversions() {
                                 .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
                                 .build();
 
-                            const granularity = determineGranularityForTimeRange(timeRange);
-
                             return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
                                 map((entities) =>
                                     fillMissingDates<ConversionTrendEntity>(
                                         entities,
                                         timeRange,
-                                        granularity,
+                                        'day',
                                         createEmptyAnalyticsEntity
                                     )
                                 ),
@@ -303,8 +300,6 @@ export function withConversions() {
                                 .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
                                 .build();
 
-                            const granularity = determineGranularityForTimeRange(timeRange);
-
                             return analyticsService
                                 .cubeQuery<TrafficVsConversionsEntity>(query)
                                 .pipe(
@@ -312,7 +307,7 @@ export function withConversions() {
                                         fillMissingDates(
                                             entities,
                                             timeRange,
-                                            granularity,
+                                            'day',
                                             createEmptyTrafficVsConversionsEntity
                                         )
                                     ),
