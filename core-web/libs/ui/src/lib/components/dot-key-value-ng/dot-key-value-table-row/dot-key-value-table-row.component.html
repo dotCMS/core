@@ -5,45 +5,45 @@
 
 <tr class="dot-key-value-table-row" [pReorderableRow]="index">
     @if ($dragAndDrop()) {
-        <td>
+        <td class="p-2 align-middle">
             <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
         </td>
     }
-    <td data-testId="dot-key-value-key">
-        <p class="pl-2">{{ variable.key }}</p>
+    <td class="p-2 align-middle" data-testId="dot-key-value-key">
+        <span>{{ variable.key }}</span>
     </td>
     @if (isHiddenField) {
-        <td data-testId="dot-key-value-label">
-            <p>
-                <i class="pi pi-lock inline-block"></i>
+        <td class="p-2 align-middle" data-testId="dot-key-value-label">
+            <span>
+                <i class="pi pi-lock inline-block mr-1"></i>
                 {{ 'keyValue.value_hidden' | dm }}
-            </p>
+            </span>
         </td>
     } @else {
-        <td data-testId="dot-key-value-editable-column">
+        <td class="p-2 align-middle" data-testId="dot-key-value-editable-column">
             <input
                 (keydown.enter)="onPressEnter($event)"
                 [placeholder]="'keyValue.value_input.placeholder' | dm"
                 [type]="inputType"
                 [formControl]="valueControl"
-                class="dot-key-value-table-row__value-input"
+                class="w-full"
                 autocomplete="false"
                 data-testId="dot-key-value-input"
-                pInputText />
+                pInputText
+                pSize="small" />
         </td>
     }
     @if (showHiddenField) {
-        <td class="dot-key-value-table-row__variables-hidden">
+        <td class="p-2 align-middle">
             @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
-                <p-inputSwitch
-                    class="dot-key-value-table-row__hidden-switch"
+                <p-toggleSwitch
                     [formControl]="hiddenControl"
                     data-testId="dot-key-value-hidden-switch" />
             }
         </td>
     }
 
-    <td class="dot-key-value-table-row__variables-actions">
+    <td class="p-2 align-middle">
         <p-button
             (click)="delete.emit()"
             data-testId="dot-key-value-delete-button"

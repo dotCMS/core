@@ -3,7 +3,7 @@ import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { Dropdown } from 'primeng/dropdown';
+import { Select } from 'primeng/select';
 
 import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uve';
 
@@ -91,8 +91,8 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const dropdown = spectator.query(Dropdown);
-            expect(dropdown).toBeTruthy();
+            const select = spectator.query(Select);
+            expect(select).toBeTruthy();
         });
 
         it('should set correct inputId on dropdown', () => {
@@ -115,8 +115,8 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const dropdown = spectator.query(Dropdown);
-            expect(dropdown.inputId).toBe('test-field');
+            const select = spectator.query(Select);
+            expect(select.inputId).toBe('test-field');
         });
 
         it('should set correct optionLabel and optionValue on dropdown', () => {
@@ -139,9 +139,9 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const dropdown = spectator.query(Dropdown);
-            expect(dropdown.optionLabel).toBe('label');
-            expect(dropdown.optionValue).toBe('value');
+            const select = spectator.query(Select);
+            expect(select.optionLabel).toBe('label');
+            expect(select.optionValue).toBe('value');
         });
 
         it('should set showClear to false on dropdown', () => {
@@ -164,8 +164,8 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const dropdown = spectator.query(Dropdown);
-            expect(dropdown.showClear).toBe(false);
+            const select = spectator.query(Select);
+            expect(select.showClear).toBe(false);
         });
     });
 
@@ -218,8 +218,8 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const dropdown = spectator.query(Dropdown);
-            expect(dropdown.options).toEqual(options);
+            const select = spectator.query(Select);
+            expect(select.options).toEqual(options);
         });
 
         it('should return empty array when options are not provided', () => {
@@ -299,8 +299,8 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const dropdown = spectator.query(Dropdown);
-            expect(dropdown.value).toBe('Arial');
+            const select = spectator.query(Select);
+            expect(select.value).toBe('Arial');
             expect(formControl.value).toBe('Arial');
         });
 
@@ -327,13 +327,13 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const dropdown = spectator.query(Dropdown);
+            const select = spectator.query(Select);
             expect(formControl.value).toBe('Arial');
 
             formControl.setValue('Helvetica');
             spectator.detectChanges();
 
-            expect(dropdown.value).toBe('Helvetica');
+            expect(select.value).toBe('Helvetica');
             expect(formControl.value).toBe('Helvetica');
         });
 
@@ -359,9 +359,9 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const dropdown = spectator.query(Dropdown);
             expect(formControl.value).toBeNull();
-            expect(dropdown.value).toBeNull();
+            const select = spectator.query(Select);
+            expect(select.value).toBeNull();
         });
     });
 });

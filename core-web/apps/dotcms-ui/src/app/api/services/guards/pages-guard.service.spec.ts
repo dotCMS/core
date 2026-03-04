@@ -7,7 +7,12 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { PagesGuardService } from './pages-guard.service';
 
-import { MockDotPropertiesService } from '../../../portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component.spec';
+// Mock service for DotPropertiesService (replacement for removed dot-edit-page module)
+class MockDotPropertiesService {
+    getFeatureFlag(_flag: string) {
+        return of(false);
+    }
+}
 
 describe('PagesGuardService', () => {
     let pagesGuardService: PagesGuardService;

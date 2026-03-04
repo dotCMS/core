@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, TemplateRef, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { Sidebar } from 'primeng/sidebar';
+import { Drawer } from 'primeng/drawer';
 
 /**
  * Used to add a header bar to Sidebar (PrimeNg)
@@ -16,11 +16,13 @@ import { Sidebar } from 'primeng/sidebar';
     selector: 'dot-sidebar-header',
     imports: [CommonModule, ButtonModule],
     templateUrl: './dot-sidebar-header.component.html',
-    styleUrls: ['./dot-sidebar-header.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block w-full'
+    }
 })
 export class DotSidebarHeaderComponent {
-    private readonly sidebarComponent = inject(Sidebar, { optional: true, host: true });
+    private readonly sidebarComponent = inject(Drawer, { optional: true, host: true });
 
     /**
      * Title of the sidebar
@@ -37,7 +39,7 @@ export class DotSidebarHeaderComponent {
 
     constructor() {
         if (!this.sidebarComponent) {
-            console.warn('DotSidebarHeaderComponent is for use inside of a PrimeNg Sidebar');
+            console.warn('DotSidebarHeaderComponent is for use inside of a PrimeNg Drawer');
         }
     }
 

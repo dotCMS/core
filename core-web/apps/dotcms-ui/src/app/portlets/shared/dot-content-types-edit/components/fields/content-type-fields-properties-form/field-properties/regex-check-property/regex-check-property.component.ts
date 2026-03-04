@@ -13,7 +13,6 @@ export interface RegexTemplate {
 @Component({
     selector: 'dot-regex-check-property',
     templateUrl: './regex-check-property.component.html',
-    styleUrls: ['./regex-check-property.component.scss'],
     standalone: false
 })
 export class RegexCheckPropertyComponent implements OnInit {

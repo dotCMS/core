@@ -29,6 +29,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { monacoMock } from '@dotcms/utils-testing';
 
@@ -261,6 +262,15 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             provideHttpClient(),
             provideHttpClientTesting(),
             ...(fieldTestBed?.providers || []),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -361,6 +371,15 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -513,6 +532,15 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -580,6 +608,15 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -646,6 +683,15 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -710,6 +756,15 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(

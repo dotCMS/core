@@ -1,6 +1,6 @@
-<div class="engagement-dashboard flex flex-column gap-4">
+<div class="engagement-dashboard flex flex-col gap-10">
     @let kpis = $kpis();
-    @let status = $status();
+    @let kpisStatus = $kpisStatus();
 
     <div class="engagement-dashboard__top-row">
         <dot-analytics-metric
@@ -9,71 +9,67 @@
             [value]="(kpis?.engagementRate?.value ?? '') + (kpis?.engagementRate?.value ? '%' : '')"
             [trend]="kpis?.engagementRate?.trend ?? 0"
             [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
-            [status]="status">
+            [status]="kpisStatus">
             <i
                 titleAction
+                data-testid="engagement-info-icon"
                 class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
                 (click)="$showCalculationDialog.set(true)"></i>
             <dot-analytics-sparkline
-                [data]="kpis?.engagementRate?.sparklineData ?? []"
+                [datasets]="$sparklineDatasets()"
                 [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
                 valueSuffix="%"
-                [status]="status" />
+                [status]="$sparklineStatus()" />
         </dot-analytics-metric>
     </div>
 
-    <div class="engagement-dashboard__metrics-row grid">
-        <div class="col-12 md:col-4">
-            <dot-analytics-metric
-                [title]="'analytics.engagement.metrics.avg-interactions'"
-                [value]="kpis?.avgInteractions?.value ?? ''"
-                [trend]="kpis?.avgInteractions?.trend ?? 0"
-                icon="pi-bullseye"
-                [status]="status" />
-        </div>
-        <div class="col-12 md:col-4">
-            <dot-analytics-metric
-                [title]="'analytics.engagement.metrics.avg-session-time'"
-                [value]="kpis?.avgSessionTime?.value ?? ''"
-                [trend]="kpis?.avgSessionTime?.trend ?? 0"
-                icon="pi-clock"
-                [status]="status" />
-        </div>
-        <div class="col-12 md:col-4">
-            <dot-analytics-metric
-                [title]="'analytics.engagement.metrics.total-sessions'"
-                [value]="kpis?.conversionRate?.value ?? ''"
-                [trend]="kpis?.conversionRate?.trend ?? 0"
-                icon="pi-bullseye"
-                [status]="status" />
-        </div>
+    <div class="engagement-dashboard__metrics-row grid grid-cols-1 md:grid-cols-3 gap-6">
+        <dot-analytics-metric
+            [title]="'analytics.engagement.metrics.avg-interactions'"
+            [value]="kpis?.avgInteractions?.value ?? ''"
+            [trend]="kpis?.avgInteractions?.trend ?? 0"
+            icon="pi-bullseye"
+            [status]="kpisStatus" />
+        <dot-analytics-metric
+            [title]="'analytics.engagement.metrics.avg-session-time'"
+            [value]="kpis?.avgSessionTime?.value ?? ''"
+            [trend]="kpis?.avgSessionTime?.trend ?? 0"
+            icon="pi-clock"
+            [status]="kpisStatus" />
+        <dot-analytics-metric
+            [title]="'analytics.engagement.metrics.total-sessions'"
+            [value]="kpis?.totalSessions?.value ?? ''"
+            [trend]="kpis?.totalSessions?.trend ?? 0"
+            icon="pi-bullseye"
+            [status]="kpisStatus" />
     </div>
 
     @defer (on viewport) {
-        <div class="engagement-dashboard__bottom-row grid">
-            <div class="col-12 lg:col-5 flex flex-column">
+        <div class="engagement-dashboard__bottom-row flex flex-col lg:flex-row gap-6 items-stretch">
+            <div class="flex flex-col lg:w-5/12 shrink-0">
                 <dot-analytics-chart
                     [title]="'analytics.engagement.charts.breakdown.title'"
                     [type]="'doughnut'"
-                    [data]="$breakdown()!"
-                    [status]="status" />
+                    [data]="$breakdown() ?? { labels: [], datasets: [] }"
+                    [status]="$breakdownStatus()" />
             </div>
-            <div class="col-12 lg:col-7 flex flex-column">
+            <div class="flex flex-col flex-1 min-w-0">
                 <dot-analytics-platforms-table
                     class="flex-1"
-                    [platforms]="$platforms()"
-                    [status]="status"
+                    [platforms]="$platforms() ?? { device: [], browser: [] }"
+                    [status]="$platformsStatus()"
                     [totalSessions]="$totalSessions()" />
             </div>
         </div>
     } @placeholder {
-        <div data-testid="deferred-placeholder" style="min-height: 24rem"></div>
+        <div data-testid="deferred-placeholder" class="min-h-96"></div>
     }
 </div>
 
 <p-dialog
     [header]="'analytics.engagement.dialog.how-calculated.title' | dm"
-    [(visible)]="$showCalculationDialog"
+    [visible]="$showCalculationDialog()"
+    (visibleChange)="$showCalculationDialog.set($event)"
     [modal]="true"
     [dismissableMask]="true"
     [closable]="true"
@@ -81,12 +77,10 @@
     <p class="text-color-secondary mt-0">
         {{ 'analytics.engagement.dialog.how-calculated.intro' | dm }}
     </p>
-
     <p class="font-semibold mb-2">
         {{ 'analytics.engagement.dialog.how-calculated.criteria-title' | dm }}
     </p>
-
-    <ul class="engagement-criteria-list pl-4 m-0">
+    <ul class="pl-4 m-0">
         <li class="mb-2">{{ 'analytics.engagement.dialog.how-calculated.criteria-time' | dm }}</li>
         <li class="mb-2">
             {{ 'analytics.engagement.dialog.how-calculated.criteria-pageviews' | dm }}
@@ -95,8 +89,12 @@
             {{ 'analytics.engagement.dialog.how-calculated.criteria-conversion' | dm }}
         </li>
     </ul>
-
     <p class="text-color-secondary mt-3 mb-0">
         {{ 'analytics.engagement.dialog.how-calculated.conclusion' | dm }}
     </p>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'analytics.engagement.dialog.how-calculated.got-it' | dm"
+            (onClick)="$showCalculationDialog.set(false)" />
+    </ng-template>
 </p-dialog>

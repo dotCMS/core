@@ -35,7 +35,7 @@ public class SerializationHelperTest {
             Logger.debug(SerializationHelperTest.class,"Loaded src/main/webapp/WEB-INF/portlet.xml:"+portletList.toString());
             Logger.info(SerializationHelperTest.class, "Loaded portlet.xml: found: " + portletList.getPortlets().size() + " portlets");
             assertNotNull("Deserialized PortletList should not be null", portletList);
-            assertEquals("PortletList should contain exactly 48 portlets", 48, portletList.getPortlets().size());
+            assertEquals("PortletList should contain exactly 49 portlets", 49, portletList.getPortlets().size());
 
             // Check for specific portlets
             assertTrue("PortletList should contain 'categories' portlet",
@@ -44,6 +44,8 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("dotai")));
             assertTrue("PortletList should contain 'analytics-search' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("analytics-search")));
+            assertTrue("PortletList should contain 'tags' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("tags")));
 
             // Check a specific portlet's details
             Optional<DotPortlet> categoriesPortlet = portletList.getPortlets().stream()

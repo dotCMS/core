@@ -1,12 +1,12 @@
 <label for="language-field" class="mb-2 inline-block">
     {{ 'dot.file.relationship.dialog.search.language.label' | dm }}
 </label>
-<p-dropdown
+<p-select
     inputId="language-field"
     [options]="store.languages()"
     [formControl]="languageControl"
     [loading]="store.isLoading()"
-    styleClass="w-full h-2rem"
+    class="w-full"
     [placeholder]="'dot.file.relationship.dialog.search.language.placeholder' | dm"
     (onChange)="handleLanguageChange()">
     <ng-template let-item pTemplate="item">
@@ -15,7 +15,7 @@
     <ng-template pTemplate="selectedItem">
         {{ languageControl.value | language }}
     </ng-template>
-</p-dropdown>
+</p-select>
 
 @let error = store.error();
 @if (error) {

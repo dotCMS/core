@@ -1,7 +1,7 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
 import { map, mergeMap, pluck, takeUntil, withLatestFrom } from 'rxjs/operators';
@@ -36,7 +36,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
     canAccessPortlet: boolean;
     url: BehaviorSubject<string> = new BehaviorSubject('');
-    isLoading = false;
+    isLoading = signal(false);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -151,11 +151,11 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
      */
     private setUrl(nextUrl: string): void {
         this.dotLoadingIndicatorService.show();
-        this.isLoading = true;
+        this.isLoading.set(true);
         this.url.next(nextUrl);
         // Need's this time to update the iFrame src.
         setTimeout(() => {
-            this.isLoading = false;
+            this.isLoading.set(false);
         }, 0);
     }
 

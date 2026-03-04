@@ -27,7 +27,6 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     selector: 'dot-relationships-property',
     templateUrl: './dot-relationships-property.component.html',
-    styleUrls: ['./dot-relationships-property.component.scss'],
     imports: [
         RadioButtonModule,
         FormsModule,

@@ -60,7 +60,7 @@ describe('AddWidgetComponent', () => {
         it('should have label', () => {
             de.query(By.css('[data-testid="cancelBtn"]'));
             const label = de.query(By.css('[data-testid="addWidgetLabel"]'));
-            expect(label.nativeElement.textContent).toBe('Add Widget');
+            expect(label.nativeElement.textContent?.trim()).toBe('Add Widget');
         });
 
         it('should have a image element with the row icon', () => {

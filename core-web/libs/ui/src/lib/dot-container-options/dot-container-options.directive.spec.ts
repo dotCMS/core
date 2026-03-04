@@ -3,7 +3,7 @@ import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import { Component } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -17,9 +17,9 @@ import { DotContainerOptionsDirective } from './dot-container-options.directive'
 
 @Component({
     selector: `dot-containers-dropdown-mock`,
-    imports: [DropdownModule, DotContainerOptionsDirective],
+    imports: [SelectModule, DotContainerOptionsDirective],
     template: `
-        <p-dropdown dotContainerOptions />
+        <p-select dotContainerOptions />
     `
 })
 class MockContainersDropdownComponent {}
@@ -79,12 +79,12 @@ describe('ContainerOptionsDirective', () => {
 
     it('should set the group property of the dropdown to true', async () => {
         await spectator.fixture.whenStable();
-        const dropdown = spectator.query(Dropdown);
+        const dropdown = spectator.query(Select);
         expect(dropdown.group).toBeTruthy();
     });
 
     it('should group containers by host', () => {
-        const dropdown = spectator.query(Dropdown);
+        const dropdown = spectator.query(Select);
         expect(dropdown.options).toEqual(getGroupByHostContainersMock());
     });
 });

@@ -1,8 +1,8 @@
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -28,39 +28,34 @@ import {
 } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 
 describe('ContainerSelectorComponent', () => {
-    let fixture: ComponentFixture<DotContainerSelectorComponent>;
-    let comp: DotContainerSelectorComponent;
-    let de: DebugElement;
-    let searchableDropdownComponent;
+    let spectator: Spectator<DotContainerSelectorComponent>;
+    let searchableDropdownComponent: SearchableDropdownComponent | null;
     let containers: DotContainer[];
     let paginatorService: PaginatorService;
 
+    const messageServiceMock = new MockDotMessageService({
+        addcontainer: 'Add a Container'
+    });
+
+    const createComponent = createComponentFactory({
+        component: DotContainerSelectorComponent,
+        detectChanges: false,
+        imports: [BrowserAnimationsModule, HttpClientTestingModule],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            BrowserUtil,
+            IframeOverlayService,
+            PaginatorService,
+            DotTemplateContainersCacheService,
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            ApiRoot,
+            UserModel,
+            LoggerService,
+            StringUtils
+        ]
+    });
+
     beforeEach(() => {
-        const messageServiceMock = new MockDotMessageService({
-            addcontainer: 'Add a Container'
-        });
-
-        TestBed.configureTestingModule({
-            imports: [
-                DotContainerSelectorComponent,
-                BrowserAnimationsModule,
-                HttpClientTestingModule
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                BrowserUtil,
-                IframeOverlayService,
-                PaginatorService,
-                DotTemplateContainersCacheService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                ApiRoot,
-                UserModel,
-                LoggerService,
-                StringUtils,
-                PaginatorService
-            ]
-        }).compileComponents();
-
         containers = [
             {
                 categoryId: '427c47a4-c380-439f-a6d0-97d81deed57e',
@@ -85,25 +80,24 @@ describe('ContainerSelectorComponent', () => {
             }
         ];
 
-        fixture = TestBed.createComponent(DotContainerSelectorComponent);
-        de = fixture.debugElement;
-        comp = fixture.componentInstance;
-        paginatorService = de.injector.get(PaginatorService);
-        searchableDropdownComponent = de.query(By.css('dot-searchable-dropdown')).componentInstance;
+        spectator = createComponent();
+        paginatorService = spectator.component.paginationService;
+        searchableDropdownComponent = null;
     });
 
     it('should set onInit Pagination Service with right values', () => {
         jest.spyOn(paginatorService, 'setExtraParams');
-        comp.ngOnInit();
+        spectator.component.ngOnInit();
         expect(paginatorService.setExtraParams).toHaveBeenCalled();
     });
 
     it('should pass all the right attr', () => {
-        fixture.detectChanges();
-        const searchable = de.query(By.css('[data-testId="searchableDropdown"]'));
+        spectator.detectChanges();
+        const searchable = spectator.debugElement.query(
+            By.css('[data-testid="searchableDropdown"]')
+        );
         const searchableComponent = searchable.componentInstance as SearchableDropdownComponent;
 
-        // Verify component properties directly
         expect(searchableComponent.labelPropertyName).toEqual(['name', 'hostName']);
         expect(searchableComponent.multiple).toBe(true);
         expect(searchableComponent.pageLinkSize).toBe(5);
@@ -112,7 +106,6 @@ describe('ContainerSelectorComponent', () => {
         expect(searchableComponent.rows).toBe(5);
         expect(searchableComponent.width).toBe('fit-content');
 
-        // Verify attributes that are still present
         expect(searchable.attributes).toEqual(
             expect.objectContaining({
                 overlayWidth: '440px',
@@ -124,15 +117,14 @@ describe('ContainerSelectorComponent', () => {
 
     it('should change Page', fakeAsync(() => {
         const filter = 'filter';
-
         const page = 1;
-
-        fixture.detectChanges();
 
         paginatorService.totalRecords = 2;
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
-
-        fixture.detectChanges();
+        spectator.detectChanges();
+        searchableDropdownComponent = spectator.debugElement.query(
+            By.css('dot-searchable-dropdown')
+        ).componentInstance as SearchableDropdownComponent;
 
         searchableDropdownComponent.pageChange.emit({
             filter: filter,
@@ -143,6 +135,7 @@ describe('ContainerSelectorComponent', () => {
         });
 
         tick();
+        spectator.fixture.detectChanges(false);
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
         expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
     }));
@@ -150,30 +143,32 @@ describe('ContainerSelectorComponent', () => {
     it('should paginate when the filter change', fakeAsync(() => {
         const filter = 'filter';
 
-        fixture.detectChanges();
-
         paginatorService.totalRecords = 2;
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
-
-        fixture.detectChanges();
+        spectator.detectChanges();
+        searchableDropdownComponent = spectator.debugElement.query(
+            By.css('dot-searchable-dropdown')
+        ).componentInstance as SearchableDropdownComponent;
 
         searchableDropdownComponent.filterChange.emit(filter);
 
         tick();
+        spectator.fixture.detectChanges(false);
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
         expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
         expect(paginatorService.filter).toEqual(filter);
     }));
 
-    it('should set container list replacing the identifier for the path, if needed', () => {
-        fixture.detectChanges();
+    it('should set container list replacing the identifier for the path, if needed', fakeAsync(() => {
+        spectator.detectChanges();
         jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
-        const searchable: SearchableDropdownComponent = de.query(
-            By.css('[data-testId="searchableDropdown"]')
-        ).componentInstance;
+        const searchable = spectator.debugElement.query(
+            By.css('[data-testid="searchableDropdown"]')
+        ).componentInstance as SearchableDropdownComponent;
         searchable.pageChange.emit({ filter: '', first: 0 } as PaginationEvent);
-        fixture.detectChanges();
+        tick();
+        spectator.detectChanges();
         expect(searchable.data[0].identifier).toEqual('427c47a4-c380-439f');
         expect(searchable.data[1].identifier).toEqual('container/path');
-    });
+    }));
 });
