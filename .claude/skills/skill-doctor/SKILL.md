@@ -1,6 +1,6 @@
 ---
 name: skill-doctor
-description: Use when a repo skill fails, produces errors, gives wrong instructions, or references stale information. Also use to manage local skill overrides, check skill staleness, or optimize skill token usage and quality.
+description: Use when a repo skill fails, produces errors, gives wrong instructions, or references stale information. Also use when a command from a skill returns "not found" or "unknown flag", when a skill references a file path that doesn't exist, when a skill's behavior doesn't match the codebase, or to list available skills, manage local overrides, check staleness, or optimize token usage and quality.
 ---
 
 # Skill Doctor
