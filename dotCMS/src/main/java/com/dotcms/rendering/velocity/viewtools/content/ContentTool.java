@@ -20,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
-import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -33,7 +32,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -179,30 +177,18 @@ public class ContentTool implements ViewTool {
 		}
 		final String pageId = (String) context.get("HTMLPAGE_IDENTIFIER");
 		final String containerId = (String) context.get("CONTAINER_IDENTIFIER");
-		String containerInstance = (String) context.get("CONTAINER_UNIQUE_ID");
+		final String containerInstance = (String) context.get("CONTAINER_UNIQUE_ID");
 		if (!UtilMethods.isSet(pageId) || !UtilMethods.isSet(containerId) || !UtilMethods.isSet(containerInstance)) {
 			return;
 		}
-		containerInstance = ContainerUUID.UUID_LEGACY_VALUE.equals(containerInstance)
-				? ContainerUUID.UUID_START_VALUE : containerInstance;
 		final String pTag = Try.of(() -> WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(req))
 				.getOrElse(MultiTree.DOT_PERSONALIZATION_DEFAULT);
 		final String contentletId = contentlet.getIdentifier();
 		try {
-			final List<MultiTree> multiTrees = new ArrayList<>(APILocator.getMultiTreeAPI().getMultiTrees(pageId, containerId, containerInstance, pTag));
-			if (ContainerUUID.UUID_START_VALUE.equals(containerInstance)) {
-				multiTrees.addAll(APILocator.getMultiTreeAPI().getMultiTrees(pageId, containerId,
-						ContainerUUID.UUID_LEGACY_VALUE, pTag));
-			}
-			for (final MultiTree mt : multiTrees) {
-				if (contentletId.equals(mt.getContentlet())) {
-					final Map<String, Object> styleProperties = mt.getStyleProperties();
-					if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
-						contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
-					}
-					break;
-				}
-			}
+			APILocator.getMultiTreeAPI().getStylePropertiesForContentlet(
+							pageId, containerId, containerInstance, pTag, contentletId)
+					.ifPresent(styleProperties ->
+							contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties));
 		} catch (Exception e) {
 			Logger.debug(ContentTool.class, "Could not load style properties for contentlet " + contentletId, e);
 		}

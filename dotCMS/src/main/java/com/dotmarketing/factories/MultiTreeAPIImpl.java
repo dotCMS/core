@@ -1654,6 +1654,25 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
+    @Override
+    public Optional<Map<String, Object>> getStylePropertiesForContentlet(
+            final String pageId, final String containerId, String containerInstance,
+            final String personalization, final String contentletId) {
+        containerInstance = ContainerUUID.UUID_LEGACY_VALUE.equals(containerInstance)
+                ? ContainerUUID.UUID_START_VALUE : containerInstance;
+        final List<MultiTree> multiTrees = new ArrayList<>(
+                getMultiTrees(pageId, containerId, containerInstance, personalization));
+        if (ContainerUUID.UUID_START_VALUE.equals(containerInstance)) {
+            multiTrees.addAll(getMultiTrees(pageId, containerId,
+                    ContainerUUID.UUID_LEGACY_VALUE, personalization));
+        }
+        return multiTrees.stream()
+                .filter(mt -> contentletId.equals(mt.getContentlet()))
+                .map(MultiTree::getStyleProperties)
+                .filter(props -> UtilMethods.isSet(props) && !props.isEmpty())
+                .findFirst();
+    }
+
     @VisibleForTesting
     public static void setDeleteOrphanedContentsFromContainer(final boolean newValue){
         deleteOrphanedContentsFromContainer = Lazy.of(() -> newValue);
