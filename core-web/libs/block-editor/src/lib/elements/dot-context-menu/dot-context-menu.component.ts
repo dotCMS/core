@@ -3,8 +3,8 @@ import { DOMSerializer } from 'prosemirror-model';
 
 import { Component, computed, input, signal, viewChild } from '@angular/core';
 
-import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
-import { RippleModule } from 'primeng/ripple';
+import { ContextMenu } from 'primeng/contextmenu';
+import { Ripple } from 'primeng/ripple';
 
 import { Editor } from '@tiptap/core';
 
@@ -27,7 +27,7 @@ import { htmlToMarkdown } from './markdown.utils';
     selector: 'dot-editor-context-menu',
     templateUrl: './dot-context-menu.component.html',
     styleUrls: ['./dot-context-menu.component.scss'],
-    imports: [ContextMenuModule, RippleModule, DotMessagePipe]
+    imports: [ContextMenu, Ripple, DotMessagePipe]
 })
 export class DotContextMenuComponent {
     $editor = input.required<Editor>({ alias: 'editor' });

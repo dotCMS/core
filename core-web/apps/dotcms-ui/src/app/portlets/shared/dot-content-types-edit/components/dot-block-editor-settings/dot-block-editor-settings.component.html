@@ -1,5 +1,5 @@
 <!-- Block Editor Settings -->
-<form [formGroup]="form" class="wrapper">
+<form [formGroup]="form" class="form">
     @for (setting of settings; track setting) {
         <div class="field">
             <label [checkIsRequiredControl]="setting.key" [for]="setting.key" dotFieldRequired>

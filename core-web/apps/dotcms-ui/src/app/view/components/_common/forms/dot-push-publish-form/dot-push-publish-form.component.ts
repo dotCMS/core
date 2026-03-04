@@ -22,8 +22,8 @@ import {
 
 import { SelectItem } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
-import { CalendarModule } from 'primeng/calendar';
-import { DropdownModule } from 'primeng/dropdown';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
@@ -54,10 +54,10 @@ import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-sele
         CommonModule,
         AutoFocusModule,
         FormsModule,
-        CalendarModule,
+        DatePickerModule,
         PushPublishEnvSelectorComponent,
         ReactiveFormsModule,
-        DropdownModule,
+        SelectModule,
         DotFieldValidationMessageComponent,
         SelectButtonModule,
         DotFieldRequiredDirective,

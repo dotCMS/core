@@ -1,7 +1,7 @@
 @let collapsedBreadcrumbs = $collapsedBreadcrumbs();
 @let lastBreadcrumb = $lastBreadcrumb();
 
-<div class="flex flex-column mt-2 gap-2">
+<div class="flex flex-col gap-1">
     <div data-testid="breadcrumb-crumbs">
         <dot-collapse-breadcrumb [model]="collapsedBreadcrumbs" />
     </div>
@@ -9,7 +9,7 @@
     @if (lastBreadcrumb) {
         <div
             data-testid="breadcrumb-title"
-            class="text-black text-2xl font-extrabold tracking-tight leading-tight truncate-text">
+            class="text-black text-2xl font-semibold tracking-tight leading-tight truncate-text">
             {{ lastBreadcrumb }}
         </div>
     }

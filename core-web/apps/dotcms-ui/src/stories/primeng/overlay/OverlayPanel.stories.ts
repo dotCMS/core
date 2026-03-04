@@ -5,7 +5,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 
@@ -134,10 +134,10 @@ const products = [
     }
 ];
 
-const OverlayPanelTemplate = `
+const PopoverTemplate = `
   <p-button [label]="selectedProduct ? selectedProduct.name : 'Select a Product'" icon="pi pi-search" (click)="op.toggle($event)"></p-button>
 
-  <p-overlayPanel #op [showCloseIcon]="true" [style]="{width: '450px'}">
+  <p-popover #op [showCloseIcon]="true" [style]="{width: '450px'}">
       <ng-template pTemplate>
           <p-table [value]="products" selectionMode="single" [(selection)]="selectedProduct" [paginator]="true" [rows]="5">
               <ng-template pTemplate="header">
@@ -154,17 +154,17 @@ const OverlayPanelTemplate = `
               </ng-template>
           </p-table>
       </ng-template>
-  </p-overlayPanel>
+  </p-popover>
 `;
 
 const meta: Meta = {
-    title: 'PrimeNG/Overlay/OverlayPanel',
+    title: 'PrimeNG/Overlay/Popover',
     decorators: [
         moduleMetadata({
             imports: [
                 BrowserModule,
                 BrowserAnimationsModule,
-                OverlayPanelModule,
+                PopoverModule,
                 TableModule,
                 ButtonModule,
                 ToastModule,
@@ -177,10 +177,10 @@ const meta: Meta = {
         docs: {
             description: {
                 component:
-                    'OverlayPanel is a container component positioned as connected to its target.: https://primefaces.org/primeng/showcase/#/overlaypanel'
+                    'Popover is a container component positioned as connected to its target.: https://primefaces.org/primeng/showcase/#/popover'
             },
             source: {
-                code: OverlayPanelTemplate
+                code: PopoverTemplate
             },
             iframeHeight: 500
         }
@@ -193,7 +193,7 @@ const meta: Meta = {
     },
     render: (args) => ({
         props: args,
-        template: OverlayPanelTemplate
+        template: PopoverTemplate
     })
 };
 export default meta;

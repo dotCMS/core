@@ -3,31 +3,37 @@
     icon="pi pi-megaphone"
     [showBadge]="$showUnreadAnnouncement()"
     (onHide)="markAnnouncementsAsRead()"
-    overlayStyleClass="toolbar-announcements__container">
-    <div class="announcements__main-container">
-        <h5 class="announcements__title">{{ 'announcements' | dm }}</h5>
-        <ul class="announcements__list">
+    overlayStyleClass="max-h-[80vh] overflow-auto translate-x-2">
+    <div>
+        <h5 class="border-b border-gray-300 pb-2 text-base font-semibold">
+            {{ 'announcements' | dm }}
+        </h5>
+        <ul class="list-none py-4">
             @for (item of $announcements(); track item.identifier) {
                 <li
-                    [class.announcements__list-item--active]="!item.hasBeenRead"
-                    class="announcements__list-item">
+                    [class.bg-violet-50]="!item.hasBeenRead"
+                    class="relative mb-2 flex flex-row items-center gap-3 rounded-md p-2 hover:bg-gray-100">
                     @if (!item.hasBeenRead) {
-                        <span class="announcements__badge"></span>
+                        <span
+                            class="absolute left-10 top-3 h-2.5 w-2.5 rounded-full bg-fuchsia-600"></span>
                     }
                     <span
-                        [class]="typesIcons[item.type | lowercase] || typesIcons['important']"
-                        class="announcements__image pi"></span>
+                        class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-primary-600">
+                        <i
+                            [class]="typesIcons[item.type | lowercase] || typesIcons['important']"
+                            class="pi text-base leading-none"></i>
+                    </span>
                     <a
                         (click)="hideOverlayPanel()"
                         [href]="item.url"
-                        class="announcements__url"
+                        class="w-full text-black no-underline!"
                         target="_blank"
                         rel="noopener noreferrer"
                         data-testId="announcement_link"
                         aria-labelledby="announcement-label date-label">
-                        <div class="announcements__content">
-                            <span class="announcements__label">{{ item.title }}</span>
-                            <span class="announcements__date">
+                        <div class="flex flex-col">
+                            <span class="font-semibold">{{ item.title }}</span>
+                            <span class="text-xs text-gray-800">
                                 {{ item.announcementDateAsISO8601 | date }}
                             </span>
                         </div>
@@ -36,13 +42,13 @@
             }
         </ul>
 
-        <div class="announcements__container">
-            <div class="announcements__link-container">
-                <i class="pi pi-external-link"></i>
+        <div class="flex justify-end">
+            <div class="flex items-center gap-1 rounded-lg p-1 hover:bg-gray-100">
+                <i class="pi pi-external-link text-primary-600"></i>
                 <a
                     (click)="hideOverlayPanel()"
                     [href]="$linkToDotCms()"
-                    class="announcements__link"
+                    class="text-primary-600 no-underline"
                     target="_blank"
                     data-testId="announcement_link_all"
                     rel="noopener">
@@ -52,13 +58,15 @@
         </div>
 
         @for (item of $aboutLinks(); track item.title) {
-            <h5 class="announcements__title">{{ item.title | dm }}</h5>
-            <div class="announcements__about">
+            <h5 class="m-0 border-b border-gray-300 pb-1 text-base font-semibold">
+                {{ item.title | dm }}
+            </h5>
+            <div class="m-4 grid grid-cols-2 gap-1">
                 @for (link of item.items; track $index) {
                     <a
                         (click)="hideOverlayPanel()"
                         [href]="link.url"
-                        class="announcements__about-link"
+                        class="rounded p-1 hover:bg-gray-100 no-underline"
                         data-testId="announcements__about-link"
                         target="_blank"
                         rel="noopener">

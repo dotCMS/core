@@ -123,8 +123,7 @@ const ARCHIVE_ACTION: ContentDriveWorkflowAction = {
     showWhen: {
         noneArchived: true,
         noneFolder: true
-    },
-    confirmationMessage: 'content.drive.worflow.action.archive.confirm'
+    }
 };
 
 const UNARCHIVE_ACTION: ContentDriveWorkflowAction = {
@@ -133,8 +132,7 @@ const UNARCHIVE_ACTION: ContentDriveWorkflowAction = {
     showWhen: {
         allArchived: true,
         noneFolder: true
-    },
-    confirmationMessage: 'content.drive.worflow.action.unarchive.confirm'
+    }
 };
 
 const DELETE_ACTION: ContentDriveWorkflowAction = {

@@ -1,0 +1,49 @@
+<p-dialog
+    [visible]="$visibility()"
+    (visibleChange)="visibilityChange.emit($event)"
+    (onHide)="resetSearchControl()"
+    [modal]="true"
+    [draggable]="false"
+    [header]="'create.page' | dm"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: '34rem', maxWidth: '92vw' }"
+    [pt]="{ content: { class: 'p-0' } }">
+    <div class="flex flex-col gap-4 p-6">
+        <p-iconfield class="w-full">
+            <input
+                class="w-full"
+                [placeholder]="'Search' | dm"
+                type="text"
+                [formControl]="searchControl"
+                pInputText
+                dotAutofocus />
+            <p-inputicon class="pi pi-search text-surface-500" />
+        </p-iconfield>
+
+        <div class="max-h-72 overflow-auto pr-1">
+            @if ($filteredPageTypes().length === 0) {
+                <div class="py-6 text-center text-sm text-surface-600">
+                    {{ 'No results' }}
+                </div>
+            } @else {
+                <div class="flex flex-col gap-1">
+                    @for (item of $filteredPageTypes(); track item.variable) {
+                        <div
+                            (click)="goToCreatePage(item.variable)"
+                            data-testid="dot-pages-create-page-dialog__page-type-row"
+                            [attr.data-page-type]="item.variable"
+                            class="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-surface-900 hover:bg-surface-100">
+                            <span class="text-surface-600" style="font-size: 18px">
+                                <i class="material-icons">
+                                    {{ item.icon }}
+                                </i>
+                            </span>
+                            <span class="truncate">{{ item.name }}</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</p-dialog>

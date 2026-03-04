@@ -1,164 +1,147 @@
 @let isLoading = $isLoading();
+@let isAllEmpty = $isAllEmpty();
 @let deviceData = $deviceData();
 @let browserData = $browserData();
-@let languageData = $languageData();
-@let totalSessions = $totalSessions();
 
-<h3 class="platforms-title mb-2">
+<h3 class="text-lg font-bold mb-2">
     {{ 'analytics.engagement.platforms.title' | dm }}
 </h3>
 
 <p-card class="platforms-card h-full">
-    <p-tabView>
-        <!-- Device Tab -->
-        <p-tabPanel [header]="'analytics.engagement.platforms.device' | dm">
-            @if (isLoading) {
-                <ng-container [ngTemplateOutlet]="skeletonTable" />
-            } @else {
-                <p-table [value]="deviceData" styleClass="platforms-table">
-                    <ng-template pTemplate="header">
-                        <tr>
-                            <th>{{ 'analytics.engagement.table.headers.device' | dm }}</th>
-                            <th>{{ 'analytics.engagement.table.headers.views' | dm }}</th>
-                            <th class="text-right">
-                                {{ 'analytics.engagement.table.headers.time' | dm }}
-                            </th>
-                        </tr>
-                    </ng-template>
-                    <ng-template pTemplate="body" let-device>
-                        <tr>
-                            <td class="font-medium">{{ device.name }}</td>
-                            <td>
-                                <div class="views-cell">
-                                    <div class="views-bar-row">
-                                        <p-progressBar
-                                            [value]="device.percentage"
-                                            [showValue]="false"
-                                            styleClass="views-progress" />
-                                        <span class="views-percentage">
-                                            {{ device.percentage }}%
-                                        </span>
-                                    </div>
-                                    <span class="views-count text-color-secondary">
-                                        {{ device.views | number }}/{{ totalSessions | number }}
-                                        {{ 'analytics.engagement.table.sessions-suffix' | dm }}
-                                    </span>
-                                </div>
-                            </td>
-                            <td class="text-right">{{ device.time }}</td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            }
-        </p-tabPanel>
+    @if (isAllEmpty) {
+        <dot-analytics-empty-state class="h-full" data-testid="platforms-empty-all" />
+    } @else {
+        <p-tabs value="device">
+            <p-tablist>
+                <p-tab value="device">{{ 'analytics.engagement.platforms.device' | dm }}</p-tab>
+                <p-tab value="browser">{{ 'analytics.engagement.platforms.browser' | dm }}</p-tab>
+            </p-tablist>
 
-        <!-- Browser Tab -->
-        <p-tabPanel [header]="'analytics.engagement.platforms.browser' | dm">
-            @if (isLoading) {
-                <ng-container [ngTemplateOutlet]="skeletonTable" />
-            } @else {
-                <p-table [value]="browserData" styleClass="platforms-table">
-                    <ng-template pTemplate="header">
-                        <tr>
-                            <th>{{ 'analytics.engagement.table.headers.browser' | dm }}</th>
-                            <th>{{ 'analytics.engagement.table.headers.views' | dm }}</th>
-                            <th class="text-right">
-                                {{ 'analytics.engagement.table.headers.time' | dm }}
-                            </th>
-                        </tr>
-                    </ng-template>
-                    <ng-template pTemplate="body" let-browser>
-                        <tr>
-                            <td class="font-medium">{{ browser.name }}</td>
-                            <td>
-                                <div class="views-cell">
-                                    <div class="views-bar-row">
-                                        <p-progressBar
-                                            [value]="browser.percentage"
-                                            [showValue]="false"
-                                            styleClass="views-progress" />
-                                        <span class="views-percentage">
-                                            {{ browser.percentage }}%
-                                        </span>
-                                    </div>
-                                    <span class="views-count text-color-secondary">
-                                        {{ browser.views | number }}/{{ totalSessions | number }}
-                                        {{ 'analytics.engagement.table.sessions-suffix' | dm }}
-                                    </span>
+            <p-tabpanels>
+                <!-- Device Tab -->
+                <p-tabpanel value="device">
+                    @if (isLoading) {
+                        <div class="skeleton-table" data-testid="platforms-skeleton">
+                            <div class="skeleton-row skeleton-header">
+                                <p-skeleton width="5rem" height="1rem" />
+                                <p-skeleton width="6rem" height="1rem" />
+                                <div class="flex justify-end">
+                                    <p-skeleton width="4rem" height="1rem" />
                                 </div>
-                            </td>
-                            <td class="text-right">{{ browser.time }}</td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            }
-        </p-tabPanel>
+                            </div>
+                            @for (i of [1, 2, 3]; track i) {
+                                <div class="skeleton-row">
+                                    <p-skeleton width="5rem" height="1rem" />
+                                    <div class="flex flex-col gap-1">
+                                        <p-skeleton width="6rem" height="1rem" />
+                                        <p-skeleton width="100%" height="0.5rem" />
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <p-skeleton width="4rem" height="1rem" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    } @else if (deviceData.length === 0) {
+                        <dot-analytics-empty-state
+                            data-testid="platforms-empty-device"
+                            class="min-h-48" />
+                    } @else {
+                        <p-table [value]="deviceData" styleClass="platforms-table">
+                            <ng-template pTemplate="header">
+                                <tr>
+                                    <th>{{ 'analytics.engagement.table.headers.device' | dm }}</th>
+                                    <th>{{ 'analytics.engagement.table.headers.views' | dm }}</th>
+                                    <th class="text-right">
+                                        {{ 'analytics.engagement.table.headers.time' | dm }}
+                                    </th>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-device>
+                                <tr>
+                                    <td class="font-medium">{{ device.name }}</td>
+                                    <td>
+                                        <div class="views-cell">
+                                            <div class="views-bar-row">
+                                                <p-progressBar
+                                                    [value]="device.percentage"
+                                                    [showValue]="false"
+                                                    styleClass="views-progress" />
+                                                <span class="views-percentage">
+                                                    {{ device.percentage }}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-right">{{ device.time }}</td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    }
+                </p-tabpanel>
 
-        <!-- Language Tab -->
-        <p-tabPanel [header]="'analytics.engagement.platforms.language' | dm">
-            @if (isLoading) {
-                <ng-container [ngTemplateOutlet]="skeletonTable" />
-            } @else {
-                <p-table [value]="languageData" styleClass="platforms-table">
-                    <ng-template pTemplate="header">
-                        <tr>
-                            <th>{{ 'analytics.engagement.table.headers.language' | dm }}</th>
-                            <th>{{ 'analytics.engagement.table.headers.views' | dm }}</th>
-                            <th class="text-right">
-                                {{ 'analytics.engagement.table.headers.time' | dm }}
-                            </th>
-                        </tr>
-                    </ng-template>
-                    <ng-template pTemplate="body" let-lang>
-                        <tr>
-                            <td class="font-medium">{{ lang.name }}</td>
-                            <td>
-                                <div class="views-cell">
-                                    <div class="views-bar-row">
-                                        <p-progressBar
-                                            [value]="lang.percentage"
-                                            [showValue]="false"
-                                            styleClass="views-progress" />
-                                        <span class="views-percentage">{{ lang.percentage }}%</span>
-                                    </div>
-                                    <span class="views-count text-color-secondary">
-                                        {{ lang.views | number }}/{{ totalSessions | number }}
-                                        {{ 'analytics.engagement.table.sessions-suffix' | dm }}
-                                    </span>
+                <!-- Browser Tab -->
+                <p-tabpanel value="browser">
+                    @if (isLoading) {
+                        <div class="skeleton-table" data-testid="platforms-skeleton">
+                            <div class="skeleton-row skeleton-header">
+                                <p-skeleton width="5rem" height="1rem" />
+                                <p-skeleton width="6rem" height="1rem" />
+                                <div class="flex justify-end">
+                                    <p-skeleton width="4rem" height="1rem" />
                                 </div>
-                            </td>
-                            <td class="text-right">{{ lang.time }}</td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            }
-        </p-tabPanel>
-    </p-tabView>
+                            </div>
+                            @for (i of [1, 2, 3]; track i) {
+                                <div class="skeleton-row">
+                                    <p-skeleton width="5rem" height="1rem" />
+                                    <div class="flex flex-col gap-1">
+                                        <p-skeleton width="6rem" height="1rem" />
+                                        <p-skeleton width="100%" height="0.5rem" />
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <p-skeleton width="4rem" height="1rem" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    } @else if (browserData.length === 0) {
+                        <dot-analytics-empty-state
+                            data-testid="platforms-empty-browser"
+                            class="min-h-48" />
+                    } @else {
+                        <p-table [value]="browserData" styleClass="platforms-table">
+                            <ng-template pTemplate="header">
+                                <tr>
+                                    <th>{{ 'analytics.engagement.table.headers.browser' | dm }}</th>
+                                    <th>{{ 'analytics.engagement.table.headers.views' | dm }}</th>
+                                    <th class="text-right">
+                                        {{ 'analytics.engagement.table.headers.time' | dm }}
+                                    </th>
+                                </tr>
+                            </ng-template>
+                            <ng-template pTemplate="body" let-browser>
+                                <tr>
+                                    <td class="font-medium">{{ browser.name }}</td>
+                                    <td>
+                                        <div class="views-cell">
+                                            <div class="views-bar-row">
+                                                <p-progressBar
+                                                    [value]="browser.percentage"
+                                                    [showValue]="false"
+                                                    styleClass="views-progress" />
+                                                <span class="views-percentage">
+                                                    {{ browser.percentage }}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-right">{{ browser.time }}</td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    }
+                </p-tabpanel>
+            </p-tabpanels>
+        </p-tabs>
+    }
 </p-card>
-
-<!-- Skeleton Table Template -->
-<ng-template #skeletonTable>
-    <div class="skeleton-table">
-        <!-- Header skeleton -->
-        <div class="skeleton-row skeleton-header">
-            <p-skeleton width="5rem" height="1rem" />
-            <p-skeleton width="6rem" height="1rem" />
-            <div class="flex justify-content-end">
-                <p-skeleton width="4rem" height="1rem" />
-            </div>
-        </div>
-        <!-- Body rows skeleton -->
-        @for (i of [1, 2, 3]; track i) {
-            <div class="skeleton-row">
-                <p-skeleton width="5rem" height="1rem" />
-                <div class="flex flex-column gap-1">
-                    <p-skeleton width="6rem" height="1rem" />
-                    <p-skeleton width="100%" height="0.5rem" />
-                </div>
-                <div class="flex justify-content-end">
-                    <p-skeleton width="4rem" height="1rem" />
-                </div>
-            </div>
-        }
-    </div>
-</ng-template>

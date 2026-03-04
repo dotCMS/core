@@ -1,18 +1,22 @@
 @use "variables" as *;
-@import "common";
-@import "mixins";
+@use "common";
+@use "mixins";
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common2;
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
 
 p-dropdown.p-inputwrapper-filled {
     .p-dropdown {
         .p-element.p-dropdown-label,
         input.p-dropdown-label {
-            color: $black;
+            color: colors.$black;
         }
     }
 }
 
 p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-fluid .p-dropdown input.p-dropdown-label {
@@ -39,8 +43,8 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
 
     .p-element.p-dropdown-label,
     .p-dropdown-label {
-        padding-right: $spacing-1;
-        @include truncate-text;
+        padding-right: spacing.$spacing-1;
+        @include mixins.truncate-text;
 
         &:focus,
         &:enabled:focus {
@@ -51,7 +55,7 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
 
     &:has(.p-dropdown-clear-icon) {
         .p-dropdown-label {
-            padding-right: $spacing-5;
+            padding-right: spacing.$spacing-5;
         }
     }
 
@@ -69,15 +73,15 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
     }
 
     .p-dropdown-clear-icon {
-        color: $color-palette-primary;
-        right: calc($field-height-md + $spacing-1);
+        color: colors.$color-palette-primary;
+        right: calc(common2.$field-height-md + spacing.$spacing-1);
     }
 
     &.p-disabled {
         @extend #form-field-disabled;
 
         .p-dropdown-trigger {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
     }
 }
@@ -135,10 +139,10 @@ p-dropdown.p-dropdown-sm {
 
         .p-dropdown-item-group {
             margin: 0;
-            padding: $spacing-2;
-            color: $black;
-            background-color: $color-palette-gray-200;
-            font-weight: $font-weight-bold;
+            padding: spacing.$spacing-2;
+            color: colors.$black;
+            background-color: colors.$color-palette-gray-200;
+            font-weight: fonts.$font-weight-bold;
             -webkit-user-select: none;
             cursor: default;
             user-select: none;
@@ -147,6 +151,6 @@ p-dropdown.p-dropdown-sm {
 
     &.p-error,
     &.p-invalid {
-        border-color: $color-alert-red;
+        border-color: colors.$color-alert-red;
     }
 }

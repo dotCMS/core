@@ -1,10 +1,10 @@
 @use "variables" as *;
 
-@import "forms";
-@import "mixins";
-@import "typography";
-@import "dotcms-theme/utils/theme-variables"; /* temporary */
-@import "dotcms-theme/theme"; /* prime-ng */
+// @import "forms";
+@use "mixins";
+// @import "typography";
+@use "dotcms-theme/utils/theme-variables"; /* temporary */
+// @import "dotcms-theme/theme"; /* prime-ng */
 
 // INCLUDE FONT FACES
 @include assistant-font-face(400, "Regular");
@@ -59,38 +59,56 @@ body {
 }
 
 html {
-    color: $black;
-    font-family: $font-default;
+    font-size: 14px;
+    font-family:
+        Inter var,
+        -apple-system,
+        BlinkMacSystemFont,
+        Segoe UI,
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif,
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        Segoe UI Symbol;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    line-height: normal;
 }
 
-body {
-    background-position: top center;
-    background-repeat: no-repeat;
-    background-size: cover;
-}
+// html {
+//     color: $black;
+//     font-family: $font-default;
+// }
 
-a {
-    color: $color-palette-primary;
+// body {
+//     background-position: top center;
+//     background-repeat: no-repeat;
+//     background-size: cover;
+// }
 
-    &:hover {
-        text-decoration: none;
-    }
+// a {
+//     color: $color-palette-primary;
 
-    &.link-secondary {
-        color: $color-palette-secondary;
-    }
+//     &:hover {
+//         text-decoration: none;
+//     }
 
-    &[actionlink] {
-        color: $color-palette-secondary;
-        font-size: $button-tiny-text-size;
-        text-transform: uppercase;
-        cursor: pointer;
-    }
-}
+//     &.link-secondary {
+//         color: $color-palette-secondary;
+//     }
 
-button {
-    font-family: $font-default;
-}
+//     &[actionlink] {
+//         color: $color-palette-secondary;
+//         font-size: $button-tiny-text-size;
+//         text-transform: uppercase;
+//         cursor: pointer;
+//     }
+// }
+
+// button {
+//     font-family: $font-default;
+// }
 
 /*
 
@@ -114,7 +132,7 @@ However this is for the dragula we use in the angular components the one in the 
 }
 
 code {
-    color: $color-accessible-text-purple;
+    color: $color-accessible-text-purple !important;
     background-color: $color-accessible-text-purple-bg;
     padding: $spacing-0 $spacing-1;
     font-family: $font-code;

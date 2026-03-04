@@ -1,23 +1,26 @@
 @use "variables" as *;
 
-@import "dotcms-theme/utils/theme-variables";
-@import "dotcms-theme/components/form/common";
-@import "mixins";
+@use "dotcms-theme/utils/theme-variables";
+@use "dotcms-theme/components/form/common";
+@use "mixins";
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/common" as common2;
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     position: relative;
 
     ::ng-deep .p-element.p-button:enabled {
-        gap: $spacing-1;
+        gap: spacing.$spacing-1;
         text-align: left;
         padding: 0;
-        padding-left: $spacing-1;
-        border: $field-border-size solid $color-palette-gray-400;
+        padding-left: spacing.$spacing-1;
+        border: common2.$field-border-size solid colors.$color-palette-gray-400;
 
         .p-button-label {
-            @include truncate-text;
+            @include mixins.truncate-text;
             text-transform: none;
-            color: $black;
+            color: colors.$black;
         }
 
         .p-button-icon {
@@ -31,7 +34,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: $field-height-md;
+                width: common2.$field-height-md;
                 aspect-ratio: 1/1;
             }
         }
@@ -56,12 +59,12 @@
         }
 
         .p-paginator-bottom {
-            @include paginator-bottom-absolute;
+            @include mixins.paginator-bottom-absolute;
         }
     }
 
     .searchable-dropdown .p-overlaypanel-content {
-        padding: $spacing-3 0;
+        padding: spacing.$spacing-3 0;
     }
 }
 
@@ -69,16 +72,16 @@
     .site_selector__data-list {
         .p-dataview-content {
             .searchable-dropdown__data-list-item {
-                padding: $spacing-2 $spacing-6;
+                padding: spacing.$spacing-2 spacing.$spacing-6;
                 display: flex;
-                gap: $spacing-2;
+                gap: spacing.$spacing-2;
 
                 i {
-                    color: $color-palette-primary;
+                    color: colors.$color-palette-primary;
                 }
 
                 &.selected {
-                    padding-left: $spacing-1;
+                    padding-left: spacing.$spacing-1;
                 }
 
                 &.star::after {
@@ -103,9 +106,9 @@
             line-height: normal;
             transition: background-color $basic-speed ease-in;
             width: 100%;
-            padding: $spacing-1 $spacing-3;
-            gap: $spacing-0;
-            @include truncate-text;
+            padding: spacing.$spacing-1 spacing.$spacing-3;
+            gap: spacing.$spacing-0;
+            @include mixins.truncate-text;
 
             &:hover {
                 background-color: $bg-hover;
@@ -113,7 +116,7 @@
 
             &.star::after {
                 content: " \2605";
-                color: $color-alert-yellow;
+                color: colors.$color-alert-yellow;
             }
         }
     }
@@ -134,17 +137,17 @@
 
 .searchable-dropdown__search {
     display: flex;
-    margin: 0 $spacing-3;
+    margin: 0 spacing.$spacing-3;
     position: relative;
 }
 
 .searchable-dropdown__search-icon {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     position: absolute;
-    right: $spacing-1;
+    right: spacing.$spacing-1;
     top: 9px;
 }
 
 .searchable-dropdown__search-action {
-    margin-left: $spacing-3;
+    margin-left: spacing.$spacing-3;
 }

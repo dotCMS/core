@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { CardModule } from 'primeng/card';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
@@ -9,6 +9,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { ConversionsOverviewEntity } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAnalyticsEmptyStateComponent } from '../../../shared/components/dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../../../shared/components/dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
@@ -20,9 +21,10 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
     selector: 'dot-analytics-conversions-overview-table',
     imports: [
         CommonModule,
-        CardModule,
+        SkeletonModule,
         TableModule,
         TagModule,
+        DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent,
         DotMessagePipe
     ],

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { contentSaveHandler, contentActionHandler } from './handlers';
 
 import { ContentCreateParamsSchema, ContentActionParamsSchema } from '../../types/workflow';
+import { asMcpSchema } from '../../utils/schema-helpers';
 
 /**
  * Registers workflow tools with the MCP server
@@ -21,10 +22,12 @@ export function registerWorkflowTools(server: McpServer) {
                 idempotentHint: false,
                 openWorldHint: true
             },
-            inputSchema: z.object({
-                content: ContentCreateParamsSchema,
-                comments: z.string().optional()
-            }).shape
+            inputSchema: asMcpSchema(
+                z.object({
+                    content: ContentCreateParamsSchema,
+                    comments: z.string().optional()
+                })
+            )
         },
         contentSaveHandler
     );
@@ -41,7 +44,7 @@ export function registerWorkflowTools(server: McpServer) {
                 idempotentHint: false,
                 openWorldHint: true
             },
-            inputSchema: ContentActionParamsSchema.shape
+            inputSchema: asMcpSchema(ContentActionParamsSchema)
         },
         contentActionHandler
     );
