@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -173,7 +174,7 @@ public class ContentTool implements ViewTool {
 	 * This exposes $dotContentMap.dotStyleProperties in VTL for UVE style editor data.
 	 */
 	private void addStylePropertiesFromMultiTree(final Contentlet contentlet) {
-		if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true)) {
+		if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR, true)) {
 			return;
 		}
 		final String pageId = (String) context.get("HTMLPAGE_IDENTIFIER");
@@ -188,14 +189,13 @@ public class ContentTool implements ViewTool {
 				.getOrElse(MultiTree.DOT_PERSONALIZATION_DEFAULT);
 		final String contentletId = contentlet.getIdentifier();
 		try {
-			final List<MultiTree> multiTrees = new ArrayList<>();
-			multiTrees.addAll(APILocator.getMultiTreeAPI().getMultiTrees(pageId, containerId, containerInstance, pTag));
+			final List<MultiTree> multiTrees = new ArrayList<>(APILocator.getMultiTreeAPI().getMultiTrees(pageId, containerId, containerInstance, pTag));
 			if (ContainerUUID.UUID_START_VALUE.equals(containerInstance)) {
 				multiTrees.addAll(APILocator.getMultiTreeAPI().getMultiTrees(pageId, containerId,
 						ContainerUUID.UUID_LEGACY_VALUE, pTag));
 			}
 			for (final MultiTree mt : multiTrees) {
-				if (contentletId.equals(mt.getChild())) {
+				if (contentletId.equals(mt.getContentlet())) {
 					final Map<String, Object> styleProperties = mt.getStyleProperties();
 					if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
 						contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
