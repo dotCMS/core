@@ -212,3 +212,6 @@ __pycache__/
 *.egg-info/
 dist/
 *.egg
+
+# Playwright MCP output
+.playwright-mcp/
