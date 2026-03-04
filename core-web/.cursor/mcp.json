@@ -1,12 +1,13 @@
 {
     "mcpServers": {
-        "nx-mcp": {
-            "command": "npx",
-            "args": ["-y", "nx-mcp@latest"]
-        },
         "primeng": {
             "command": "npx",
             "args": ["-y", "@primeng/mcp"]
+        },
+        "nx-mcp": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["nx", "mcp"]
         }
     }
 }
