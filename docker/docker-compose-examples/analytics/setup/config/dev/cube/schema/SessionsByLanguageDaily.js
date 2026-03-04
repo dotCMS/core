@@ -7,7 +7,7 @@
  *   clickhouse_test_db.sessions_by_language_daily
  *
  * Grain:
- *   One row per (customer_id, cluster_id, context_site_id, day, language_iso).
+ *   One row per (customer_id, cluster_id, context_site_id, day, locale_id).
  *
  * Widget semantics:
  * - Engaged sessions count per language
@@ -15,7 +15,7 @@
  * - Avg engaged time per language = total_duration_engaged_seconds / engaged_sessions
  *
  * Note:
- * - language_iso is the ISO code.
+ * - locale_id is the dotCMS Locale ID.
  * - UI resolves the language name via REST Endpoint/API
  * */
  cube(`SessionsByLanguageDaily`, {
@@ -25,7 +25,7 @@
             customer_id,
             context_site_id,
             day,
-            language_iso,
+            locale_id,
             total_sessions,
             engaged_sessions,
             total_duration_engaged_seconds,
@@ -99,11 +99,11 @@
             description: `Day grain used for filtering and trends. Use granularity: day.`
         },
 
-        languageIso: {
-            sql: `language_iso`,
+        localeId: {
+            sql: `locale_id`,
             type: `string`,
             title: `Language ISO Code`,
-            description: `The language ISO code for the event.`,
+            description: `The dotCMS Locale ID for the event.`,
         },
 
         updatedAt: {

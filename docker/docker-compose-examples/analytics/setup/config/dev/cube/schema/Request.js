@@ -13,7 +13,7 @@
 cube('request', {
   sql: `SELECT 
             event_type, user_agent, referer, url, doc_encoding, page_title,
-            language_iso, persona, doc_path, doc_host, doc_protocol, doc_hash,
+            locale_id, persona, doc_path, doc_host, doc_protocol, doc_hash,
             doc_search, screen_resolution, user_language, viewport_height, viewport_width,
             utm_campaign, utm_medium, utm_source, utm_term, utm_content,
             context_site_auth, context_site_id, sessionid, context_user_id, request_id,
@@ -239,11 +239,11 @@ cube('request', {
       title: 'Site Auth',
       description: 'Authentication key generated for every Site in the Content Analytics App'
     },
-    languageIso: {
-      sql: `language_iso`,
+    localeId: {
+      sql: `locale_id`,
       type: `string`,
       title: 'Language ISO Code',
-      description: 'The language ISO code for the event.'
+      description: 'The dotCMS Locale ID for the event.'
     },
     persona: {
       sql: `persona`,

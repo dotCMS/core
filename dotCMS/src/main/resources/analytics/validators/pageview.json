@@ -11,7 +11,7 @@
         "type": "string",
         "required": false
       },
-      "language_iso": {
+      "locale_id": {
         "type": "string"
       },
       "persona": {

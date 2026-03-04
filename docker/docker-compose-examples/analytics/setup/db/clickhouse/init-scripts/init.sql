@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     custom_48 String,
     custom_49 String,
     custom_50 String,
-    language_iso LowCardinality(String) DEFAULT '',
+    locale_id LowCardinality(String) DEFAULT '',
 
 
     -- ######################################################
@@ -519,7 +519,7 @@ GROUP BY customer_id, cluster_id, context_user_id, context_site_id;
     │  - engaged (true/false)                       │
     │  - device_category                            │
     │  - browser_family                             │
-    │  - language_iso                               │
+    │  - locale_id                                  │
     │                                               │
     └────────────┬────────────────────────┬─────────┘
                  │                        │
@@ -671,7 +671,7 @@ CREATE TABLE clickhouse_test_db.session_states
     browser_family_state  AggregateFunction(argMax, String, DateTime64(3, 'UTC')),
 
     -- last-seen dotCMS language ISO code, defaulting to 'und' ('undefined') if unknown
-    language_iso_state    AggregateFunction(argMax, String, DateTime64(3, 'UTC'))
+    locale_id_state       AggregateFunction(argMax, String, DateTime64(3, 'UTC'))
 )
     /* Why this engine is mandatory:
         -> You are storing aggregate states
@@ -926,7 +926,7 @@ WITH
     /* Prefer browser mapping, else Other */
     coalesce(nullIf(b_map.browser_family, ''), 'Other') AS browser_family,
 
-    nullIf(language_iso, '') AS language_iso
+    nullIf(locale_id, '') AS locale_id
 SELECT
     e.customer_id,
     e.cluster_id,
@@ -950,7 +950,7 @@ SELECT
     /* "last seen" dimension states (tables-only values) */
     argMaxState(device_category, e.utc_time) AS device_category_state,
     argMaxState(browser_family, e.utc_time)  AS browser_family_state,
-    argMaxState(coalesce(language_iso, 'und'), e.utc_time) AS language_iso_state
+    argMaxState(coalesce(locale_id, 'und'), e.utc_time) AS locale_id_state
 FROM clickhouse_test_db.events AS e
      /* Device mapping via table */
      LEFT JOIN clickhouse_test_db.device_category_map AS d_dev
@@ -1025,7 +1025,7 @@ CREATE TABLE clickhouse_test_db.session_facts
     /* Finalized dimensions */
     device_category String,             -- Desktop/Mobile/Tablet/Other
     browser_family  String,             -- Chrome/Safari/Firefox/Edge/Other
-    language_iso LowCardinality(String),    -- dotCMS language ISO code ('und' means undefined)
+    locale_id LowCardinality(String),    -- dotCMS language Locale ID ('und' means undefined)
 
     /* Row version timestamp for ReplacingMergeTree */
     updated_at DateTime('UTC')
@@ -1161,7 +1161,7 @@ SELECT
         browser_family_base
     ) AS browser_family,
 
-    language_iso,
+    locale_id,
 
     now64(3, 'UTC') AS updated_at
 FROM
@@ -1199,7 +1199,7 @@ FROM
             /* UA for fallback matching */
             lowerUTF8(argMaxMerge(user_agent_state)) AS ua_l,
 
-            coalesce(nullIf(argMaxMerge(language_iso_state), ''), 'und') AS language_iso
+            coalesce(nullIf(argMaxMerge(locale_id_state), ''), 'und') AS locale_id
         FROM clickhouse_test_db.session_states
         GROUP BY (
                   customer_id,
@@ -1543,7 +1543,7 @@ CREATE TABLE clickhouse_test_db.sessions_by_language_daily
     context_site_id String,
     day Date,
 
-    language_iso LowCardinality(String),    -- dotCMS language ISO code ('und' means undefined)
+    locale_id LowCardinality(String),    -- dotCMS language Locale ID ('und' means undefined)
 
     total_sessions UInt64,
     engaged_sessions UInt64,
@@ -1558,7 +1558,7 @@ CREATE TABLE clickhouse_test_db.sessions_by_language_daily
              )*/
     ENGINE = ReplacingMergeTree
     PARTITION BY toYYYYMM(day)
-    ORDER BY (customer_id, cluster_id, context_site_id, day, language_iso);
+    ORDER BY (customer_id, cluster_id, context_site_id, day, locale_id);
 
 /*
    Object: RMV
@@ -1578,7 +1578,7 @@ SELECT
     cluster_id,
     context_site_id,
     toDate(session_start, 'UTC') AS day,
-    language_iso,
+    locale_id,
 
     count() AS total_sessions,
     countIf(engaged = 1) AS engaged_sessions,
@@ -1592,4 +1592,4 @@ GROUP BY (
           cluster_id,
           context_site_id,
           day,
-          language_iso);
+          locale_id);
