@@ -15,6 +15,7 @@ Parse `$ARGUMENTS`:
 
 | Pattern | Mode |
 |---------|------|
+| `feedback [skill] "<message>"` | **feedback** (quick note) |
 | (empty) or `<skill-name>` | **diagnose** |
 | `--optimize <skill>` | **optimize** |
 | `--manage [skill]` | **manage** (status) |
@@ -23,6 +24,10 @@ Parse `$ARGUMENTS`:
 | `resolve <skill>` | **resolve** |
 
 Unrecognized input: show this table and ask to rephrase. Then **read `./reference.md`** for detailed procedures.
+
+## Feedback
+
+Lightweight path for quick notes. No investigation or quality gate — just scrub, preview, confirm, post. If skill name is omitted, ask which skill (or use the most recently invoked skill if known from conversation context). See reference.md for details.
 
 ## Manage
 

@@ -4,6 +4,75 @@ Read the relevant section below based on the mode determined by SKILL.md routing
 
 ---
 
+## Feedback Mode
+
+Lightweight path for quick notes — no investigation, no quality gate.
+
+### Resolving the skill name
+
+1. If `feedback <skill> "<message>"` — use the provided skill name.
+2. If `feedback "<message>"` (no skill name) — check conversation context for the most recently invoked skill. If found, confirm with the developer: "This feedback is about `<skill>`, correct?" If no recent skill context, ask: "Which skill is this feedback about?" and list available skills from `.claude/skills/`.
+
+### Procedure
+
+1. **Validate** the skill exists (same check as Diagnose Step 1).
+2. **Scrub** the developer's message using the same PII patterns from Diagnose Step 6.
+3. **Auto-collect context** (no developer interaction needed):
+   - Skill version: `git log -1 --format="%H %ai" -- .claude/skills/<skill>/`
+   - Last failed command from conversation context (if any) — include exit code and first line of stderr
+   - Environment: `uname -s`, `$SHELL`, `gh --version`
+4. **Preview** the scrubbed note:
+   ```
+   Quick feedback for `<skill>`:
+
+   "<scrubbed message>"
+
+   Context: <last failed command + exit code, or "None">
+   Skill version: <sha> (<date>)
+   Environment: <os>, <shell>, gh <version>
+   ```
+5. **Confirm**: "Post this to the Discussion thread? [Send / Edit / Cancel]"
+6. **Deliver**: Post to Discussion thread using the same GitHub Discussion delivery as Diagnose (find or create thread, add comment). Use this template:
+
+```markdown
+## Quick Feedback
+
+**Skill:** `<name>` (<source-path>)
+**Date:** <YYYY-MM-DD>
+**Skill version:** `<sha>` (<date>)
+
+### Feedback
+<scrubbed developer message>
+
+### Context
+- Last command: `<command>` (exit code: <code>, stderr: <first line>)
+- Or: "No command context"
+
+### Environment
+- OS: <uname -s> (<uname -r>)
+- Shell: <$SHELL>
+- gh version: <version>
+```
+
+7. **Slack notification** (optional, same as Diagnose):
+   ```
+   Quick feedback: **<skill-name>** — <first 80 chars of message>
+   Full note: <discussion-comment-url>
+   ```
+
+### Key differences from Diagnose
+
+| | Feedback | Diagnose |
+|-|----------|----------|
+| Investigation | None | Required (reproduce, root cause, fix) |
+| Quality gate | None | Must have root cause + suggested fix |
+| Classification | None | invalid_command / wrong_assumption / stale_info / other |
+| Developer interaction | Message + confirm only | Multiple steps with review |
+| Report size | ~5 lines | Full structured report |
+| Use when | Quick note, minor annoyance, suggestion | Confirmed bug needing analysis |
+
+---
+
 ## Manage Mode
 
 ### Status (--manage with no skill name)
