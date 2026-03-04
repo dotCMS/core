@@ -26,7 +26,7 @@ import org.junit.Test;
 public class ESSiteSearchAPITest {
 
     private static SiteSearchAPI siteSearchAPI;
-    private static ESIndexAPI indexAPI;
+    private static IndexAPI indexAPI;
     private static IndiciesAPI indiciesAPI;
     private static ContentletIndexAPI contentletIndexAPI;
 

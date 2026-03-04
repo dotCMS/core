@@ -71,14 +71,14 @@ import org.quartz.SchedulerException;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
-    private final ESIndexAPI indexApi;
+    private final IndexAPI indexApi;
     private final ESMappingAPIImpl mappingAPI;
     private final IndiciesAPI indiciesAPI;
     private ArrayList<Object> list;
     private int indexPosition;
 
     @VisibleForTesting
-    public ESSiteSearchAPI(final ESIndexAPI indexApi,
+    public ESSiteSearchAPI(final IndexAPI indexApi,
             final ESMappingAPIImpl mappingAPI,
             final IndiciesAPI indiciesAPI) {
         this.indexApi = indexApi;

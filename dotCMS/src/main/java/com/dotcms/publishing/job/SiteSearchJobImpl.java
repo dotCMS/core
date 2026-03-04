@@ -1,6 +1,6 @@
 package com.dotcms.publishing.job;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.enterprise.LicenseUtil;
@@ -79,7 +79,7 @@ public class SiteSearchJobImpl {
     static final String INCLUDE = "include";
     static final String PATHS = "paths";
 
-    private final ESIndexAPI esIndexAPI;
+    private final IndexAPI esIndexAPI;
     private final IndiciesAPI indicesAPI;
     private final SiteSearchAPI siteSearchAPI;
     private final HostAPI hostAPI;
@@ -91,7 +91,7 @@ public class SiteSearchJobImpl {
 
     @VisibleForTesting
     SiteSearchJobImpl(
-            final ESIndexAPI esIndexAPI,
+            final IndexAPI esIndexAPI,
             final IndiciesAPI indicesAPI,
             final SiteSearchAPI siteSearchAPI,
             final HostAPI hostAPI,

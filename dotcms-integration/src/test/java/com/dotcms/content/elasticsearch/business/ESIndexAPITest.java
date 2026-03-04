@@ -40,7 +40,7 @@ import com.dotcms.content.index.domain.NodeStats;
 @RunWith(DataProviderRunner.class)
 public class ESIndexAPITest {
 
-    private static ESIndexAPI esIndexAPI;
+    private static IndexAPI esIndexAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {

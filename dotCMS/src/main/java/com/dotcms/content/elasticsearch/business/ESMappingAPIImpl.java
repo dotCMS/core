@@ -165,7 +165,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	private FileMetadataAPI fileMetadataAPI;
 	private HostAPI hostAPI;
 	private FieldAPI fieldAPI;
-	private ESIndexAPI esIndexAPI;
+	private IndexAPI esIndexAPI;
 	private RelationshipAPI relationshipAPI;
 	private TagAPI tagAPI;
 	private CategoryAPI categoryAPI;
@@ -186,7 +186,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			final FileMetadataAPI fileMetadataAPI,
 			final HostAPI hostAPI,
 			final FieldAPI fieldAPI,
-			final ESIndexAPI esIndexAPI,
+			final IndexAPI esIndexAPI,
 			final RelationshipAPI relationshipAPI,
 			final TagAPI tagAPI,
 			final CategoryAPI categoryAPI,

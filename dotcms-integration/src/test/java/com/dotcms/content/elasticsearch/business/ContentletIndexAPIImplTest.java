@@ -93,7 +93,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     private static ContentletAPI contentletAPI;
     private static ContentletIndexAPI indexAPI;
 
-    private static ESIndexAPI esIndexAPI;
+    private static IndexAPI esIndexAPI;
     private static ContentTypeAPI contentTypeAPI;
 
     private static FieldAPI fieldAPI;

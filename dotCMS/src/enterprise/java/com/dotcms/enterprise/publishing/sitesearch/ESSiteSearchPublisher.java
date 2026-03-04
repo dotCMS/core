@@ -9,7 +9,7 @@
 
 package com.dotcms.enterprise.publishing.sitesearch;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndexAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 
 public class ESSiteSearchPublisher extends Publisher {
 
-    private final ESIndexAPI esIndexAPI;
+    private final IndexAPI esIndexAPI;
     private final SiteSearchAPI siteSearchAPI;
     private final HostAPI hostAPI;
     private final FileAssetAPI fileAssetAPI;
@@ -71,7 +71,7 @@ public class ESSiteSearchPublisher extends Publisher {
 
     @VisibleForTesting
     public ESSiteSearchPublisher(
-            final ESIndexAPI esIndexAPI,
+            final IndexAPI esIndexAPI,
             final SiteSearchAPI siteSearchAPI,
             final HostAPI hostAPI,
             final FileAssetAPI fileAssetAPI,

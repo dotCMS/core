@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndexAPI;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotmarketing.business.APILocator;
@@ -21,7 +21,7 @@ public class IndexResourceHelper {
         private static IndexResourceHelper helper = new IndexResourceHelper();
     }
     ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-    ESIndexAPI esapi = APILocator.getESIndexAPI();
+    IndexAPI esapi = APILocator.getESIndexAPI();
     
     private IndexResourceHelper() {
         

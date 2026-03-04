@@ -32,9 +32,9 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndexAPI;
 import com.dotcms.content.index.domain.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -95,7 +95,7 @@ public class ESIndexResource {
     
     
     
-	private final ESIndexAPI indexAPI;
+	private final IndexAPI indexAPI;
 	private final ESIndexHelper indexHelper;
     private final ContentletIndexAPI idxApi;
 
@@ -109,7 +109,7 @@ public class ESIndexResource {
 	}
 
 	@VisibleForTesting
-	ESIndexResource(ESIndexAPI indexAPI, ESIndexHelper indexHelper,
+	ESIndexResource(IndexAPI indexAPI, ESIndexHelper indexHelper,
 			WebResource webResource, LayoutAPI layoutAPI, IndiciesAPI indiciesAPI) {
 		this.indexAPI = indexAPI;
 		this.indexHelper = indexHelper;
@@ -149,8 +149,7 @@ public class ESIndexResource {
         auth(request, response);
 
 
-        final ESIndexAPI esIndexAPI = new ESIndexAPI();
-        final ClusterStats clusterStats = esIndexAPI.getClusterStats();
+        final ClusterStats clusterStats = APILocator.getESIndexAPI().getClusterStats();
 
         Builder<String, Object> builder =
                         ImmutableMap.<String, Object>builder().put("clusterName", clusterStats.clusterName());

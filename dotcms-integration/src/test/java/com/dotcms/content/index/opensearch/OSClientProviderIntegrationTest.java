@@ -36,7 +36,7 @@ import org.opensearch.client.opensearch.indices.ExistsRequest;
  */
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
-public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase {
+public class OSClientProviderIntegrationTest extends IntegrationTestBase {
 
     private static final String TEST_INDEX = "test-dotcms-opensearch-" + System.currentTimeMillis();
 

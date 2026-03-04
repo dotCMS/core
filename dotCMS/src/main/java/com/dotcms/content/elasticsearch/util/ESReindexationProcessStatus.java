@@ -1,6 +1,6 @@
 package com.dotcms.content.elasticsearch.util;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndexAPI;
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class ESReindexationProcessStatus implements Serializable {
     @CloseDBIfOpened
     public static String currentIndexPath() throws DotDataException {
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        final ESIndexAPI esIndexAPI = APILocator.getESIndexAPI();
+        final IndexAPI esIndexAPI = APILocator.getESIndexAPI();
         return "[" + esIndexAPI.removeClusterIdFromName(info.getWorking()) + "," + esIndexAPI
                 .removeClusterIdFromName(info.getLive()) + "]";
     }
@@ -52,7 +52,7 @@ public class ESReindexationProcessStatus implements Serializable {
     @CloseDBIfOpened
     public static String getNewIndexPath() throws DotDataException {
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        final ESIndexAPI esIndexAPI = APILocator.getESIndexAPI();
+        final IndexAPI esIndexAPI = APILocator.getESIndexAPI();
         return "[" + esIndexAPI.removeClusterIdFromName(info.getReindexWorking()) + ","
                 + esIndexAPI.removeClusterIdFromName(info.getReindexLive()) + "]";
     }

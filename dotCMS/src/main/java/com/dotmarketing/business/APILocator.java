@@ -31,7 +31,6 @@ import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndexAPI;
@@ -747,12 +746,12 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
-	 * Creates a single instance of the {@link ESIndexAPI} class.
+	 * Returns the vendor-neutral {@link IndexAPI} instance backed by {@link IndexAPIImpl}.
 	 *
-	 * @return The {@link ESIndexAPI} class.
+	 * @return The {@link IndexAPI} instance.
 	 */
-	public static ESIndexAPI getESIndexAPI() {
-	    return (ESIndexAPI) getInstance(APIIndex.ES_INDEX_API);
+	public static IndexAPI getESIndexAPI() {
+	    return (IndexAPI) getInstance(APIIndex.ES_INDEX_API);
 	}
 
 	/**
@@ -1473,7 +1472,7 @@ enum APIIndex
     		case TAG_API: return new TagAPIImpl();
     		case INDICIES_API: return new IndiciesAPIImpl();
     		case CONTENLET_INDEX_API: return new ContentletIndexAPIImpl();
-    		case ES_INDEX_API: return new ESIndexAPI();
+    		case ES_INDEX_API: return new IndexAPIImpl();
     		case PUBLISHER_API: return new PublisherAPIImpl();
     		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
     		case LINKCHECKER_API: return new LinkCheckerAPIImpl();

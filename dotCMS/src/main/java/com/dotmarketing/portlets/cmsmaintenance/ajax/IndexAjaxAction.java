@@ -2,8 +2,8 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.elasticsearch.business.IndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 public class IndexAjaxAction extends AjaxAction {
 
 	private final ESIndexHelper indexHelper;
-	private final ESIndexAPI indexAPI;
+	private final IndexAPI indexAPI;
 
 	public IndexAjaxAction(){
 		this(ESIndexHelper.getInstance(), APILocator.getESIndexAPI(), new WebResource());
@@ -45,7 +45,7 @@ public class IndexAjaxAction extends AjaxAction {
 	}
 
 	@VisibleForTesting
-	protected IndexAjaxAction(ESIndexHelper indexHelper, ESIndexAPI indexAPI,
+	protected IndexAjaxAction(ESIndexHelper indexHelper, IndexAPI indexAPI,
 			final WebResource webResource) {
 		super(webResource);
 		this.indexHelper = indexHelper;
@@ -259,7 +259,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 		for (String index : indices) {
 			try {
-				if(APILocator.getESIndexAPI().getIndexStatus(index) == ESIndexAPI.Status.INACTIVE) {
+				if(APILocator.getESIndexAPI().getIndexStatus(index) == IndexAPI.Status.INACTIVE) {
 					inactives.add(index);
 				}
 			} catch (DotDataException e) {
