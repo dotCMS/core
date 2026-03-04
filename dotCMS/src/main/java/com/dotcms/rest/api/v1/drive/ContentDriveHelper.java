@@ -122,6 +122,9 @@ public class ContentDriveHelper {
         final String sortBy = sortBy(requestForm.sortBy());
         final boolean sortDesc = sortDesc(requestForm.sortBy());
         builder.withUser(user)
+            .respectFrontEndRoles(false)
+            .contentCursor(requestForm.contentCursor())
+            .folderCursor(requestForm.folderCursor())
             //These are not always present
             .withContentTypes(
                 contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
