@@ -13,7 +13,7 @@
       },
       "locale_id": {
         "type": "string",
-        "required": false
+        "required": true
       },
       "persona": {
         "type": "string"
