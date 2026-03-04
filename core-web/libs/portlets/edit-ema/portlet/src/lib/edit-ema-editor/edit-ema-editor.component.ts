@@ -1553,6 +1553,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected handleSelectContent(contentletActionPayload: ActionPayload): void {
         this.uveStore.setActiveContentlet(contentletActionPayload);
+        this.#openStyleEditor();
     }
 
     protected togglePalette(): void {
@@ -1615,6 +1616,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             el.scrollLeft = Math.min(Math.max(0, el.scrollLeft), maxLeft);
             el.scrollTop = Math.min(Math.max(0, el.scrollTop), maxTop);
         });
+    }
+
+    #openStyleEditor(): void {
+        this.uveStore.setEditPanelOpen(true);
+        patchState(this.#rightSidebarTabState, { currentTab: 1 });
     }
 
     protected handleAddContent(event: {
