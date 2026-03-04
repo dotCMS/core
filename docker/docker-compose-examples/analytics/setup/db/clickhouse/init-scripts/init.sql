@@ -670,7 +670,7 @@ CREATE TABLE clickhouse_test_db.session_states
     -- last-seen browser family bucket (Chrome/Safari/Firefox/Edge/Other)
     browser_family_state  AggregateFunction(argMax, String, DateTime64(3, 'UTC')),
 
-    -- last-seen dotCMS language ISO code, defaulting to 'und' ('undefined') if unknown
+    -- last-seen dotCMS language ISO code, defaulting to '' ('undefined') if unknown
     locale_id_state       AggregateFunction(argMax, String, DateTime64(3, 'UTC'))
 )
     /* Why this engine is mandatory:
@@ -950,7 +950,7 @@ SELECT
     /* "last seen" dimension states (tables-only values) */
     argMaxState(device_category, e.utc_time) AS device_category_state,
     argMaxState(browser_family, e.utc_time)  AS browser_family_state,
-    argMaxState(coalesce(locale_id, 'und'), e.utc_time) AS locale_id_state
+    argMaxState(coalesce(locale_id, ''), e.utc_time) AS locale_id_state
 FROM clickhouse_test_db.events AS e
      /* Device mapping via table */
      LEFT JOIN clickhouse_test_db.device_category_map AS d_dev
@@ -1025,7 +1025,7 @@ CREATE TABLE clickhouse_test_db.session_facts
     /* Finalized dimensions */
     device_category String,             -- Desktop/Mobile/Tablet/Other
     browser_family  String,             -- Chrome/Safari/Firefox/Edge/Other
-    locale_id LowCardinality(String),    -- dotCMS language Locale ID ('und' means undefined)
+    locale_id LowCardinality(String),    -- dotCMS language Locale ID ('' means undefined)
 
     /* Row version timestamp for ReplacingMergeTree */
     updated_at DateTime('UTC')
@@ -1199,7 +1199,7 @@ FROM
             /* UA for fallback matching */
             lowerUTF8(argMaxMerge(user_agent_state)) AS ua_l,
 
-            coalesce(nullIf(argMaxMerge(locale_id_state), ''), 'und') AS locale_id
+            coalesce(nullIf(argMaxMerge(locale_id_state), ''), '') AS locale_id
         FROM clickhouse_test_db.session_states
         GROUP BY (
                   customer_id,
@@ -1543,7 +1543,7 @@ CREATE TABLE clickhouse_test_db.sessions_by_language_daily
     context_site_id String,
     day Date,
 
-    locale_id LowCardinality(String),    -- dotCMS language Locale ID ('und' means undefined)
+    locale_id LowCardinality(String),    -- dotCMS language Locale ID ('' means undefined)
 
     total_sessions UInt64,
     engaged_sessions UInt64,

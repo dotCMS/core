@@ -12,7 +12,8 @@
         "required": false
       },
       "locale_id": {
-        "type": "string"
+        "type": "string",
+        "required": false
       },
       "persona": {
         "type": "string"
