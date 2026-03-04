@@ -63,7 +63,7 @@ public interface AbstractEndpointDetailView {
      * @return Port number
      */
     @Schema(
-            description = "Server port number",
+            description = "Server port number. Valid TCP port in the range 1–65535.",
             example = "443",
             requiredMode = Schema.RequiredMode.REQUIRED
     )

@@ -7,6 +7,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 
@@ -26,21 +29,26 @@ public class PushBundleForm extends Validated {
     private static final Set<String> VALID_OPERATIONS = Set.of("publish", "expire", "publishexpire");
 
     @Schema(
-            description = "Operation type: publish, expire, or publishexpire",
+            description = "Operation type. Case-insensitive.",
             example = "publish",
+            allowableValues = {"publish", "expire", "publishexpire"},
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String operation;
 
     @Schema(
-            description = "Scheduled publish date in ISO 8601 format with timezone offset",
-            example = "2025-03-15T14:30:00-05:00"
+            description = "Scheduled publish date in ISO 8601 format with timezone offset. " +
+                    "Timezone offset is required (e.g., -05:00 or Z); a date without offset will be rejected.",
+            example = "2025-03-15T14:30:00-05:00",
+            format = "date-time"
     )
     private String publishDate;
 
     @Schema(
-            description = "Scheduled expire date in ISO 8601 format with timezone offset",
-            example = "2025-04-15T14:30:00-05:00"
+            description = "Scheduled expire date in ISO 8601 format with timezone offset. " +
+                    "Timezone offset is required (e.g., -05:00 or Z); a date without offset will be rejected.",
+            example = "2025-04-15T14:30:00-05:00",
+            format = "date-time"
     )
     private String expireDate;
 
@@ -107,11 +115,17 @@ public class PushBundleForm extends Validated {
                 && !UtilMethods.isSet(publishDate)) {
             throw new BadRequestException("publishDate is required for " + normalizedOperation + " operation");
         }
+        if (UtilMethods.isSet(publishDate)) {
+            validateISO8601Date(publishDate, "publishDate");
+        }
 
         // Validate expireDate for expire and publishexpire
         if (("expire".equals(normalizedOperation) || "publishexpire".equals(normalizedOperation))
                 && !UtilMethods.isSet(expireDate)) {
             throw new BadRequestException("expireDate is required for " + normalizedOperation + " operation");
+        }
+        if (UtilMethods.isSet(expireDate)) {
+            validateISO8601Date(expireDate, "expireDate");
         }
 
         // Validate environments
@@ -163,6 +177,25 @@ public class PushBundleForm extends Validated {
 
     public void setFilterKey(final String filterKey) {
         this.filterKey = filterKey;
+    }
+
+    /**
+     * Validates that a date string is in ISO 8601 format with a timezone offset.
+     *
+     * @param dateStr   The date string to validate
+     * @param fieldName The field name for error messages
+     * @throws BadRequestException if the format is invalid
+     */
+    private void validateISO8601Date(final String dateStr, final String fieldName) {
+        try {
+            OffsetDateTime.parse(dateStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } catch (DateTimeParseException e) {
+            final String truncated = dateStr.length() > 50 ? dateStr.substring(0, 50) + "..." : dateStr;
+            throw new BadRequestException(String.format(
+                    "Invalid %s format: '%s'. Expected ISO 8601 with timezone offset " +
+                            "(e.g., 2025-03-15T14:30:00-05:00)",
+                    fieldName, truncated));
+        }
     }
 
 }

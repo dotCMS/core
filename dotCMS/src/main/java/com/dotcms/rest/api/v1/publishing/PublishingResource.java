@@ -207,7 +207,16 @@ public class PublishingResource {
                             "SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, " +
                             "FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, " +
                             "FAILED_INTEGRITY_CHECK, INVALID_TOKEN, LICENSE_REQUIRED",
-                    example = "SUCCESS,FAILED_TO_PUBLISH"
+                    example = "SUCCESS,FAILED_TO_PUBLISH",
+                    schema = @Schema(allowableValues = {
+                            "BUNDLE_REQUESTED", "BUNDLING", "SENDING_TO_ENDPOINTS",
+                            "FAILED_TO_SEND_TO_ALL_GROUPS", "FAILED_TO_SEND_TO_SOME_GROUPS",
+                            "FAILED_TO_BUNDLE", "FAILED_TO_SENT", "FAILED_TO_PUBLISH",
+                            "SUCCESS", "BUNDLE_SENT_SUCCESSFULLY", "RECEIVED_BUNDLE",
+                            "PUBLISHING_BUNDLE", "WAITING_FOR_PUBLISHING", "BUNDLE_SAVED_SUCCESSFULLY",
+                            "INVALID_TOKEN", "LICENSE_REQUIRED", "SUCCESS_WITH_WARNINGS",
+                            "FAILED_INTEGRITY_CHECK"
+                    })
             )
             @QueryParam("status") final String status) throws DotPublisherException {
 
@@ -324,7 +333,7 @@ public class PublishingResource {
             @Parameter(
                     description = "Bundle identifier",
                     required = true,
-                    example = "f3d9a4b7-staging-bundle-2026-01-15"
+                    example = "01KJWNJM2C67DM56GHBJ4S7B89"
             )
             @PathParam("bundleId") final String bundleId) throws DotPublisherException {
 
@@ -432,7 +441,7 @@ public class PublishingResource {
             @Parameter(
                     description = "Bundle identifier",
                     required = true,
-                    example = "550e8400-e29b-41d4-a716-446655440000"
+                    example = "01KJWNJM2C67DM56GHBJ4S7B89"
             )
             @PathParam("bundleId") final String bundleId) throws DotDataException, DotPublisherException {
 
@@ -700,7 +709,7 @@ public class PublishingResource {
             @Parameter(
                     description = "Bundle identifier",
                     required = true,
-                    example = "550e8400-e29b-41d4-a716-446655440000"
+                    example = "01KJWNJM2C67DM56GHBJ4S7B89"
             )
             @PathParam("bundleId") final String bundleId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -727,36 +736,37 @@ public class PublishingResource {
             throw new BadRequestException("Bundle ID is required");
         }
 
-        // 3. Validate form inputs
+        // 3. Validate form inputs (includes date format and field presence validation)
         if (form == null) {
             throw new BadRequestException("Request body is required");
         }
         form.checkValid();
 
-        // 4. Get and validate bundle exists
+        // 4. Get filter (falls back to default filter if filterKey not found) — before bundle lookup
+        //    so an invalid filterKey produces a predictable 400 regardless of bundle existence
+        final FilterDescriptor filter = publisherAPI.get().getFilterDescriptorByKey(form.getFilterKey());
+        final boolean forcePush = (boolean) filter.getFilters()
+                .getOrDefault(FilterDescriptor.FORCE_PUSH_KEY, false);
+
+        // 5. Get and validate bundle exists
         final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
         if (bundle == null) {
             throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
         }
 
-        // 5. Validate environments and permissions
+        // 6. Validate environments and permissions
         final List<Environment> validEnvs = publishingJobsHelper.validateEnvironmentPermissions(
                 form.getEnvironments(), user);
         if (validEnvs.isEmpty()) {
             throw new NotFoundException("No valid environments found or user lacks permission");
         }
 
-        // 6. Get filter and extract forcePush (falls back to default filter if not found)
-        final FilterDescriptor filter = publisherAPI.get().getFilterDescriptorByKey(form.getFilterKey());
-        final boolean forcePush = (boolean) filter.getFilters()
-                .getOrDefault(FilterDescriptor.FORCE_PUSH_KEY, false);
-
         // 7. Update bundle with settings
         bundle.setForcePush(forcePush);
         bundle.setFilterKey(form.getFilterKey());
         bundleAPI.get().saveBundleEnvironments(bundle, validEnvs);
 
-        // 8. Execute operation based on type — parse only the dates required per operation
+        // 8. Execute operation based on type — dates were already validated in form.checkValid()
         final String operation = form.getOperation().toLowerCase();
         switch (operation) {
             case "publish": {
@@ -845,7 +855,9 @@ public class PublishingResource {
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "Purge operation initiated (processes in background)",
+                    description = "Purge operation initiated. Processes in background. " +
+                            "The result is delivered as a system notification to the triggering user's browser session. " +
+                            "Non-browser API clients will not receive the completion event.",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ResponseEntityPurgeView.class)
@@ -879,7 +891,16 @@ public class PublishingResource {
                     description = "Comma-separated status values to purge. If omitted, uses safe defaults " +
                             "(all terminal + queued, excludes in-progress). " +
                             "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE",
-                    example = "SUCCESS,FAILED_TO_PUBLISH"
+                    example = "SUCCESS,FAILED_TO_PUBLISH",
+                    schema = @Schema(allowableValues = {
+                            "BUNDLE_REQUESTED", "BUNDLING", "SENDING_TO_ENDPOINTS",
+                            "FAILED_TO_SEND_TO_ALL_GROUPS", "FAILED_TO_SEND_TO_SOME_GROUPS",
+                            "FAILED_TO_BUNDLE", "FAILED_TO_SENT", "FAILED_TO_PUBLISH",
+                            "SUCCESS", "BUNDLE_SENT_SUCCESSFULLY", "RECEIVED_BUNDLE",
+                            "PUBLISHING_BUNDLE", "WAITING_FOR_PUBLISHING", "BUNDLE_SAVED_SUCCESSFULLY",
+                            "INVALID_TOKEN", "LICENSE_REQUIRED", "SUCCESS_WITH_WARNINGS",
+                            "FAILED_INTEGRITY_CHECK"
+                    })
             )
             @QueryParam("status") final String status) throws DotDataException {
 

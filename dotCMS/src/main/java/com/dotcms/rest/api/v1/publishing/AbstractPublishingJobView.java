@@ -32,7 +32,7 @@ public interface AbstractPublishingJobView {
      */
     @Schema(
             description = "Unique bundle identifier",
-            example = "f3d9a4b7-staging-bundle-2026-01-15",
+            example = "01KJWNJM2C67DM56GHBJ4S7B89",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     String bundleId();
