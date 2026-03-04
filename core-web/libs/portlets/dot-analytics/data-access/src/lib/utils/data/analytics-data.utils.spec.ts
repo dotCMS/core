@@ -7,7 +7,6 @@ import {
     createEmptyAnalyticsEntity,
     createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
-    determineGranularityForTimeRange,
     extractPageTitle,
     extractPageViews,
     extractSessions,
@@ -23,7 +22,6 @@ import {
 import { AnalyticsChartColors } from '../../constants';
 
 import type {
-    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
@@ -792,79 +790,6 @@ describe('Analytics Data Utils', () => {
         });
     });
 
-    describe('determineGranularityForTimeRange', () => {
-        it('should return hour granularity for today', () => {
-            const result = determineGranularityForTimeRange('today' as TimeRange);
-            expect(result).toBe('hour' as Granularity);
-        });
-
-        it('should return hour granularity for yesterday', () => {
-            const result = determineGranularityForTimeRange('yesterday' as TimeRange);
-            expect(result).toBe('hour' as Granularity);
-        });
-
-        it('should return day granularity for last 7 days', () => {
-            const result = determineGranularityForTimeRange('from 7 days ago to now' as TimeRange);
-            expect(result).toBe('day' as Granularity);
-        });
-
-        it('should return day granularity for last 30 days', () => {
-            const result = determineGranularityForTimeRange('from 30 days ago to now' as TimeRange);
-            expect(result).toBe('day' as Granularity);
-        });
-
-        it('should return day granularity for CUSTOM_TIME_RANGE (default for custom ranges)', () => {
-            const result = determineGranularityForTimeRange('CUSTOM_TIME_RANGE' as TimeRange);
-            expect(result).toBe('day' as Granularity);
-        });
-
-        describe('all valid TimeRange values', () => {
-            it('should handle all dropdown options correctly', () => {
-                const testCases = [
-                    { value: 'today', expected: 'hour' },
-                    { value: 'yesterday', expected: 'hour' },
-                    { value: 'from 7 days ago to now', expected: 'day' },
-                    { value: 'from 30 days ago to now', expected: 'day' },
-                    { value: 'CUSTOM_TIME_RANGE', expected: 'day' }
-                ];
-
-                testCases.forEach(({ value, expected }) => {
-                    const result = determineGranularityForTimeRange(value as TimeRange);
-                    expect(result).toBe(expected as Granularity);
-                });
-            });
-        });
-
-        describe('edge cases (fallback behavior)', () => {
-            it('should return day granularity for unknown patterns', () => {
-                // These would only occur in edge cases or custom implementations
-                const edgeCases = ['invalid format', 'from custom date to custom date', ''];
-
-                edgeCases.forEach((timeRange) => {
-                    const result = determineGranularityForTimeRange(timeRange as TimeRange);
-                    expect(result).toBe('day' as Granularity);
-                });
-            });
-        });
-
-        describe('custom date range', () => {
-            it('should return day granularity for custom date range on the same month', () => {
-                const result = determineGranularityForTimeRange(['2024-01-01', '2024-01-31']);
-                expect(result).toBe('day');
-            });
-
-            it('should return hour granularity for custom date range on the same day', () => {
-                const result = determineGranularityForTimeRange(['2024-01-01', '2024-01-01']);
-                expect(result).toBe('hour');
-            });
-
-            it('should return month granularity for custom date range', () => {
-                const result = determineGranularityForTimeRange(['2024-01-01', '2024-04-31']);
-                expect(result).toBe('month');
-            });
-        });
-    });
-
     describe('getDateRange', () => {
         beforeEach(() => {
             jest.useFakeTimers();
@@ -876,22 +801,6 @@ describe('Analytics Data Utils', () => {
         });
 
         describe('success cases', () => {
-            it('should return today range correctly', () => {
-                const result = getDateRange('today');
-                const [startDate, endDate] = result;
-
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
-            });
-
-            it('should return yesterday range correctly', () => {
-                const result = getDateRange('yesterday');
-                const [startDate, endDate] = result;
-
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
-            });
-
             it('should return last 7 days range correctly', () => {
                 const result = getDateRange('last7days');
                 const [startDate, endDate] = result;
@@ -924,35 +833,6 @@ describe('Analytics Data Utils', () => {
                 expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
             });
 
-            it('should handle leap year dates correctly', () => {
-                jest.setSystemTime(new Date('2024-02-15T12:00:00.000Z'));
-
-                const result = getDateRange('yesterday');
-                const [startDate, endDate] = result;
-
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-02-14 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-02-14 23:59:59');
-            });
-
-            it('should handle month boundary dates correctly', () => {
-                jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
-
-                const result = getDateRange('yesterday');
-                const [startDate, endDate] = result;
-
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 23:59:59');
-            });
-
-            it('should handle year boundary dates correctly', () => {
-                jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
-
-                const result = getDateRange('yesterday');
-                const [startDate, endDate] = result;
-
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 23:59:59');
-            });
         });
     });
 
