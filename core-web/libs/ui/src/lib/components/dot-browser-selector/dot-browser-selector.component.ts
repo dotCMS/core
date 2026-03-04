@@ -28,7 +28,6 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     selector: 'dot-select-existing-file',
     imports: [DotSideBarComponent, DotDataViewComponent, ButtonModule, DotMessagePipe],
     templateUrl: './dot-browser-selector.component.html',
-    styleUrls: ['./dot-browser-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotBrowserSelectorStore]
 })

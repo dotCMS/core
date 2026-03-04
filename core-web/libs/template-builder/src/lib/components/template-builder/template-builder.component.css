@@ -1,0 +1,66 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+/* Global styles that need ::ng-deep */
+::ng-deep body:has(.ui-draggable-dragging) {
+    @apply cursor-grabbing;
+}
+
+:host {
+    @apply relative;
+}
+
+.template-builder__container {
+    @apply flex gap-6;
+
+    .template-builder__sidebar--small {
+        width: 16.25rem; /* 260px */
+    }
+
+    .template-builder__sidebar--large {
+        width: 21.25rem; /* 340px */
+    }
+}
+
+.template-builder__container--right {
+    @apply flex-row-reverse;
+}
+
+/* Class added by the gridstack library when the widget is being dragged */
+dotcms-add-widget.ui-draggable-dragging {
+    @apply rotate-[-3.66deg] shadow-md;
+}
+
+dotcms-add-widget {
+    @apply cursor-grab z-[3];
+}
+
+.grid-stack-item {
+    @apply transition-all duration-300 ease-in-out;
+
+    &.template-builder-row--wont-fit {
+        @apply cursor-no-drop;
+
+        &:before {
+            content: attr(data-wont-fit);
+            @apply opacity-0 absolute block w-fit z-[1] bg-gray-200 text-gray-700 text-sm transition-opacity duration-300 ease-in-out rounded-sm py-1 px-4 text-center;
+            top: 43%;
+            left: 35%;
+        }
+
+        &:hover:before {
+            @apply opacity-100;
+        }
+
+        ::ng-deep .row {
+            @apply opacity-40;
+            filter: grayscale(100%);
+        }
+    }
+}
+
+::ng-deep dotcms-template-builder-row {
+    .row {
+        @apply transition-opacity duration-300 ease-in-out;
+    }
+}

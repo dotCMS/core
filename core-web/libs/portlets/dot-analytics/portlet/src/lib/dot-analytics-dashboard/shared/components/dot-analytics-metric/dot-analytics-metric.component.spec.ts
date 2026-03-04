@@ -24,14 +24,10 @@ describe('DotAnalyticsMetricComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                value: 100,
-                status: ComponentStatus.LOADED,
-                animated: false
-            } as unknown,
-            detectChanges: false
-        });
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('value', 100);
+        spectator.setInput('status', ComponentStatus.LOADED);
+        spectator.setInput('animated', false);
 
         // Setup the mock return value
         const messageService = spectator.inject(DotMessageService);
@@ -177,82 +173,65 @@ describe('DotAnalyticsMetricComponent', () => {
     });
 
     describe('Computed Properties', () => {
-        it('should detect loading state correctly for INIT and LOADING', () => {
-            // INIT
-
+        it('should show skeleton for INIT and LOADING, hide it for LOADED', () => {
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
-            expect(spectator.component['$isLoading']()).toBe(true);
+            expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
 
-            // LOADING
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
-            expect(spectator.component['$isLoading']()).toBe(true);
+            expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
 
-            // LOADED
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.component['$isLoading']()).toBe(false);
+            expect(spectator.queryAll('p-skeleton').length).toBe(0);
         });
 
-        it('should detect error state correctly', () => {
-            // ERROR
-
+        it('should show error icon for ERROR, hide it for LOADED', () => {
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
-            expect(spectator.component['$isError']()).toBe(true);
+            expect(spectator.query('.pi.pi-exclamation-triangle')).toBeTruthy();
 
-            // LOADED
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.component['$isError']()).toBe(false);
+            expect(spectator.query('.pi.pi-exclamation-triangle')).toBeFalsy();
         });
 
-        it('should detect empty state correctly', () => {
-            // Not empty when value is 0 (zero is a valid metric)
-
+        it('should apply empty class for null/undefined/empty-string values but not for 0', () => {
             spectator.setInput('value', 0);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.component['$isEmpty']()).toBe(false);
+            expect(spectator.query(byTestId('metric-value'))).not.toHaveClass(
+                'metric-value--empty'
+            );
 
-            // Empty when value is null
             spectator.setInput('value', null);
             spectator.detectChanges();
-            expect(spectator.component['$isEmpty']()).toBe(true);
+            expect(spectator.query(byTestId('metric-value'))).toHaveClass('metric-value--empty');
 
-            // Empty when value is undefined
-            spectator.setInput('value', undefined);
+            spectator.setInput('value', '');
             spectator.detectChanges();
-            expect(spectator.component['$isEmpty']()).toBe(true);
+            expect(spectator.query(byTestId('metric-value'))).toHaveClass('metric-value--empty');
 
-            // Not empty when value is valid
             spectator.setInput('value', 100);
             spectator.detectChanges();
-            expect(spectator.component['$isEmpty']()).toBe(false);
-
-            // Not empty when loading (even if value is 0)
-            spectator.setInput('value', 0);
-            spectator.setInput('status', ComponentStatus.LOADING);
-            spectator.detectChanges();
-            expect(spectator.component['$isEmpty']()).toBe(false);
-
-            // Not empty when error (even if value is 0)
-            spectator.setInput('status', ComponentStatus.ERROR);
-            spectator.detectChanges();
-            expect(spectator.component['$isEmpty']()).toBe(false);
+            expect(spectator.query(byTestId('metric-value'))).not.toHaveClass(
+                'metric-value--empty'
+            );
         });
 
-        it('should generate correct icon classes', () => {
+        it('should render icon element with correct classes when icon is provided', () => {
             spectator.setInput('value', 100);
             spectator.setInput('icon', 'pi-eye');
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const iconClasses = spectator.component['$iconClasses']();
-            expect(iconClasses).toBe('pi pi-eye');
+            const icon = spectator.query(byTestId('metric-icon'));
+            expect(icon).toBeTruthy();
+            expect(icon).toHaveClass('pi');
+            expect(icon).toHaveClass('pi-eye');
         });
     });
 
@@ -263,33 +242,50 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const emptyIcon = spectator.query('.pi.pi-info-circle');
             const value = spectator.query(byTestId('metric-value'));
 
-            expect(emptyIcon).not.toExist();
             expect(value).toExist();
-            expect(value).toHaveText('0'); // 0 should be displayed as a valid value
+            expect(value).toHaveText('0');
         });
 
-        it('should show empty state icon and message when value is null', () => {
+        it('should show dash and subtitle when value is null', () => {
             spectator.setInput('value', null);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const emptyIcon = spectator.query('.pi.pi-info-circle');
-            const emptyMessage = spectator.query('.state-message');
+            const value = spectator.query(byTestId('metric-value'));
+            const subtitle = spectator.query(byTestId('metric-subtitle'));
 
-            expect(emptyIcon).toExist();
-            expect(emptyMessage).toExist();
+            expect(value).toExist();
+            expect(value).toHaveText('—');
+            expect(value).toHaveClass('metric-value--empty');
+            expect(subtitle).toExist();
+        });
+
+        it('should show dash and subtitle when value is empty string', () => {
+            spectator.setInput('value', '');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            const value = spectator.query(byTestId('metric-value'));
+            const subtitle = spectator.query(byTestId('metric-subtitle'));
+
+            expect(value).toExist();
+            expect(value).toHaveText('—');
+            expect(value).toHaveClass('metric-value--empty');
+            expect(subtitle).toExist();
         });
 
         it('should not show empty state when value is valid', () => {
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const emptyIcon = spectator.query('.pi.pi-info-circle');
-            expect(emptyIcon).not.toExist();
+            const value = spectator.query(byTestId('metric-value'));
+
+            expect(value).toExist();
+            expect(value).not.toHaveClass('metric-value--empty');
         });
     });
 
@@ -446,11 +442,11 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
         expect(projectedContent).toExist();
     });
 
-    it('should not show projected content in error state', () => {
+    it('should hide projected content visually in error state', () => {
         spectator.hostComponent.status = ComponentStatus.ERROR;
         spectator.detectChanges();
 
-        const projectedContent = spectator.query(byTestId('projected-content'));
-        expect(projectedContent).not.toExist();
+        const container = spectator.query(byTestId('metric-projected-content'));
+        expect(container).toHaveClass('metric-projected-content--hidden');
     });
 });

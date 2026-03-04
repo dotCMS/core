@@ -3,98 +3,92 @@
 :host {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    flex: 1;
-}
-
-.platforms-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-bold;
-    color: $black;
-    line-height: $line-height-relative;
-    margin: 0;
+    height: 100%;
 }
 
 .platforms-card {
     flex: 1;
+    display: flex;
+    flex-direction: column;
 
-    ::ng-deep .p-card {
-        border: $field-border-size solid $color-palette-gray-400;
-        border-radius: $border-radius-xl;
-    }
+    ::ng-deep {
+        .p-card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
 
-    ::ng-deep .p-card-body {
-        padding: $spacing-3;
-    }
-
-    ::ng-deep .p-card-content {
-        padding: 0;
+        .p-card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
     }
 }
 
 // Table styles
-::ng-deep .platforms-table {
-    // Header styles - match other tables (use PrimeNG defaults)
-    .p-datatable-thead > tr > th {
-        color: $color-palette-gray-700;
-        font-weight: $font-weight-semi-bold;
-    }
-
-    // Body row styles
-    .p-datatable-tbody > tr > td {
-        padding: $spacing-3;
-        border-bottom: $field-border-size solid $color-palette-gray-200;
-        vertical-align: middle;
-    }
-
-    // Last row without bottom border
-    .p-datatable-tbody > tr:last-child > td {
-        border-bottom: none;
-    }
-
-    // Row background
-    .p-datatable-tbody > tr {
-        background: transparent;
-
-        &:hover {
-            background: $color-palette-gray-100;
+:host {
+    ::ng-deep .platforms-table {
+        // Header styles - match other tables (use PrimeNG defaults)
+        .p-datatable-thead > tr > th {
+            color: $color-palette-gray-700;
+            font-weight: $font-weight-semi-bold;
         }
-    }
 
-    // Views cell layout
-    .views-cell {
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-0;
-    }
+        // Body row styles
+        .p-datatable-tbody > tr > td {
+            padding: $spacing-3;
+            border-bottom: $field-border-size solid $color-palette-gray-200;
+            vertical-align: middle;
+        }
 
-    .views-bar-row {
-        display: flex;
-        align-items: center;
-        gap: $spacing-2;
-    }
+        // Last row without bottom border
+        .p-datatable-tbody > tr:last-child > td {
+            border-bottom: none;
+        }
 
-    .views-percentage {
-        font-size: $font-size-sm;
-        font-weight: $font-weight-regular-bold;
-        color: $color-palette-gray-700;
-        min-width: 2.5rem;
-    }
+        // Row background
+        .p-datatable-tbody > tr {
+            background: transparent;
 
-    .views-count {
-        font-size: $font-size-sm;
-    }
+            &:hover {
+                background: $color-palette-gray-100;
+            }
+        }
 
-    // Progress bar custom styles
-    .views-progress {
-        height: 0.5rem !important;
-        border-radius: $border-radius-md;
-        width: 10rem;
-        min-width: 6rem;
+        // Views cell layout
+        .views-cell {
+            display: flex;
+            flex-direction: column;
+            gap: $spacing-0;
+        }
 
-        .p-progressbar-value {
-            background: $color-palette-primary-500;
+        .views-bar-row {
+            display: flex;
+            align-items: center;
+            gap: $spacing-2;
+        }
+
+        .views-percentage {
+            font-size: $font-size-sm;
+            font-weight: $font-weight-regular-bold;
+            color: $color-palette-gray-700;
+            min-width: 2.5rem;
+        }
+
+        // Progress bar custom styles
+        .views-progress {
+            height: 0.5rem !important; // Override PrimeNG default progressbar height
             border-radius: $border-radius-md;
+            width: 10rem;
+            min-width: 6rem;
+
+            .p-progressbar-value {
+                background: $color-palette-primary-500;
+                border-radius: $border-radius-md;
+            }
         }
     }
 }

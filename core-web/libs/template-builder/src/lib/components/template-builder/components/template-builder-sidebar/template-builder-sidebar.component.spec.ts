@@ -3,7 +3,7 @@ import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotContainersService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -27,7 +27,7 @@ describe('TemplateBuilderSidebarComponent', () => {
     const createHost = createHostFactory({
         component: TemplateBuilderSidebarComponent,
         imports: [
-            DropdownModule,
+            SelectModule,
             FormsModule,
             HttpClientTestingModule,
             TemplateBuilderBoxComponent,

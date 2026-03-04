@@ -209,8 +209,11 @@ export class DotWizardComponent implements AfterViewInit {
 
     private setValid(valid: boolean, step: number): void {
         this.#stepsValidation[step] = valid;
-        if (this.#currentStep === step) {
-            this.$dialogActions().accept.disabled = !valid;
+        if (this.#currentStep === step && this.$dialogActions()) {
+            this.$dialogActions.set({
+                ...this.$dialogActions(),
+                accept: { ...this.$dialogActions().accept, disabled: !valid }
+            });
         }
     }
 

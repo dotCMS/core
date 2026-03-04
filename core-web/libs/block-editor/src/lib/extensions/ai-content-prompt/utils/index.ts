@@ -10,7 +10,7 @@ export const TIPPY_OPTIONS: Partial<Props> = {
     popperOptions: {
         modifiers: [
             {
-                name: 'flip',
+                name: 'animate-flip',
                 enabled: false
             },
             {

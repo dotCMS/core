@@ -3,9 +3,9 @@ import { tapResponse } from '@ngrx/operators';
 import { from, Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
-import { switchMap, tap, map, catchError, distinctUntilChanged } from 'rxjs/operators';
+import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotLicenseService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -212,7 +212,7 @@ export class DotBinaryFieldStore extends ComponentStore<BinaryFieldState> {
 
     private handleTempFile(tempFile: DotCMSTempFile): Observable<DotCMSTempFile> {
         const { referenceUrl, metadata } = tempFile;
-        const { editableAsText = false } = metadata;
+        const editableAsText = metadata?.editableAsText ?? false;
 
         const obs$ = editableAsText ? this.getFileContent(referenceUrl) : of('');
 

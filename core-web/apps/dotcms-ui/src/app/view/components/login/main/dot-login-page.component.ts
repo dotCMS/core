@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { CardModule } from 'primeng/card';
+
 import { pluck, take } from 'rxjs/operators';
 
 import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
@@ -11,7 +13,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
     selector: 'dot-login-page-component',
     styleUrls: ['./dot-login-page.component.scss'],
     templateUrl: 'dot-login-page.component.html',
-    imports: [RouterOutlet]
+    imports: [RouterOutlet, CardModule]
 })
 /**
  * The login component allows set the background image and background color.
@@ -30,6 +32,9 @@ export class DotLoginPageComponent implements OnInit {
                     dotLoginUserSystemInformation.backgroundPicture
                         ? `url('${dotLoginUserSystemInformation.backgroundPicture}')`
                         : '';
+                document.body.style.backgroundPosition = 'top center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundSize = 'cover';
             });
     }
 }

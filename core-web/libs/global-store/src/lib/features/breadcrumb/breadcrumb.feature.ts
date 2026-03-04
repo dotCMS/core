@@ -265,7 +265,6 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             return {
                 setBreadcrumbs,
                 appendCrumb,
-                truncateBreadcrumbs,
                 setLastBreadcrumb,
                 addNewBreadcrumb,
                 loadBreadcrumbs,

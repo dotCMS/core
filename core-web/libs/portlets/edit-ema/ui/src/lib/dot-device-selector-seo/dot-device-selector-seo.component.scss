@@ -1,7 +1,11 @@
 @use "variables" as *;
-@import "dotcms-theme/utils/theme-variables";
-@import "dotcms-theme/utils/extends";
-@import "mixins";
+@use "dotcms-theme/utils/theme-variables";
+@use "dotcms-theme/utils/extends";
+@use "mixins";
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/common";
+@use "../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../dotcms-scss/shared/spacing";
 
 $device-list-item-height: 3.625rem;
 $device-selector-grid-width: 31.49rem;
@@ -10,28 +14,28 @@ $device-selector-height: 2.625rem;
 $device-selector-name-margin: 0.375rem;
 
 .dot-device-selector__panel {
-    border-radius: $border-radius-md;
-    border: 1px solid $color-palette-gray-300;
+    border-radius: common.$border-radius-md;
+    border: 1px solid colors.$color-palette-gray-300;
 }
 
 .dot-device-selector__header {
     display: flex;
     height: $device-selector-height;
-    padding: $spacing-1 $spacing-3;
+    padding: spacing.$spacing-1 spacing.$spacing-3;
     justify-content: space-between;
     align-items: center;
-    background: $color-palette-gray-200;
+    background: colors.$color-palette-gray-200;
 }
 
 .dot-device-selector__header-title {
-    font-size: $font-size-lmd;
+    font-size: fonts.$font-size-lmd;
     font-style: normal;
     line-height: 140%;
-    color: $black;
+    color: colors.$black;
 }
 
 .dot-device-selector__column {
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
     display: flex;
     flex-direction: column;
 }
@@ -41,8 +45,8 @@ $device-selector-name-margin: 0.375rem;
     display: flex;
     flex-direction: row;
     align-items: flex-start;
-    gap: $spacing-1;
-    color: $color-palette-gray-600;
+    gap: spacing.$spacing-1;
+    color: colors.$color-palette-gray-600;
     width: 100%;
 }
 
@@ -56,9 +60,9 @@ $device-selector-name-margin: 0.375rem;
 
 .device-list {
     width: 100%;
-    padding: $spacing-1 0;
+    padding: spacing.$spacing-1 0;
     margin: 0;
-    color: $color-palette-gray-600;
+    color: colors.$color-palette-gray-600;
     overflow: auto;
 }
 
@@ -66,12 +70,12 @@ $device-selector-name-margin: 0.375rem;
     display: flex;
     list-style: none;
     height: $device-list-item-height;
-    padding: $spacing-1 $spacing-3 $spacing-1 $spacing-3;
-    gap: $spacing-1;
+    padding: spacing.$spacing-1 spacing.$spacing-3 spacing.$spacing-1 spacing.$spacing-3;
+    gap: spacing.$spacing-1;
     cursor: pointer;
 
     &:hover {
-        background-color: $color-palette-primary-100;
+        background-color: colors.$color-palette-primary-100;
     }
 }
 
@@ -81,14 +85,14 @@ $device-selector-name-margin: 0.375rem;
 }
 
 .device-list-item__dimensions {
-    color: $color-palette-gray-600;
-    font-size: $font-size-sm;
-    font-weight: $font-weight-regular-bold;
+    color: colors.$color-palette-gray-600;
+    font-size: fonts.$font-size-sm;
+    font-weight: fonts.$font-weight-regular-bold;
 }
 
 .device-list-item__name {
     margin-bottom: $device-selector-name-margin;
-    color: $black;
+    color: colors.$black;
 }
 
 .device-list-item.device-list-item-media {
@@ -101,7 +105,7 @@ $device-selector-name-margin: 0.375rem;
     flex-grow: 3;
     align-items: flex-end;
     justify-content: flex-end;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
     a {
         text-decoration: underline;
     }
@@ -111,27 +115,27 @@ $device-selector-name-margin: 0.375rem;
     .p-overlaypanel.dot-device-selector__overlayPanel {
         .p-overlaypanel-content {
             display: flex;
-            gap: $spacing-3;
+            gap: spacing.$spacing-3;
         }
 
-        border-radius: $border-radius-md;
-        margin-top: $spacing-3;
+        border-radius: common.$border-radius-md;
+        margin-top: spacing.$spacing-3;
     }
 
     .dot-device-selector__divider {
         margin: 0;
-        color: $color-palette-gray-300;
+        color: colors.$color-palette-gray-300;
     }
 
     .dot-device-selector__link--container {
         .pi.pi-external-link {
-            color: $color-palette-primary;
+            color: colors.$color-palette-primary;
         }
     }
 
     .p-divider {
         &.p-component {
-            color: $color-palette-gray-300;
+            color: colors.$color-palette-gray-300;
             margin: 0;
         }
     }

@@ -53,7 +53,7 @@ export class DotNavItemComponent {
     private windowHeight = window.innerHeight;
     labelImportantIcon = LABEL_IMPORTANT_ICON;
 
-    @HostListener('mouseleave', ['$event'])
+    @HostListener('mouseleave')
     menuUnhovered() {
         this.resetSubMenuPosition();
     }

@@ -50,6 +50,8 @@ export class DotCopyContentModalService {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
             header: this.dotMessageService.get('Edit-Content'),
             width: '37rem',
+            closable: true,
+            draggable: false,
             data: { options: this.CONTENT_EDIT_OPTIONS },
             contentStyle: { padding: '0px' }
         });

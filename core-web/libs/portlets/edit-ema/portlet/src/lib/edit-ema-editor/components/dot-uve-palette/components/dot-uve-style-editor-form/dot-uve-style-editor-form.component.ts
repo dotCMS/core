@@ -1,5 +1,8 @@
+import { of, timer } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import {
+    ChangeDetectionStrategy,
     Component,
     computed,
     DestroyRef,
@@ -16,7 +19,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { debounceTime, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
+import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -33,6 +36,7 @@ import {
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
+import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { filterFormValues } from '../../utils';
@@ -40,7 +44,6 @@ import { filterFormValues } from '../../utils';
 @Component({
     selector: 'dot-uve-style-editor-form',
     templateUrl: './dot-uve-style-editor-form.component.html',
-    styleUrls: ['./dot-uve-style-editor-form.component.scss'],
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -50,7 +53,11 @@ import { filterFormValues } from '../../utils';
         UveStyleEditorFieldDropdownComponent,
         UveStyleEditorFieldCheckboxGroupComponent,
         UveStyleEditorFieldRadioComponent
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block h-full w-full'
+    }
 })
 export class DotUveStyleEditorFormComponent {
     $schema = input.required<StyleEditorFormSchema>({ alias: 'schema' });
@@ -63,8 +70,8 @@ export class DotUveStyleEditorFormComponent {
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    $sections = computed(() => this.$schema().sections);
-    $form = computed(() => this.#form());
+    readonly $sections = computed(() => this.$schema().sections);
+    readonly $form = computed(() => this.#form());
 
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
@@ -77,11 +84,10 @@ export class DotUveStyleEditorFormComponent {
     });
 
     /**
-     * Effect that observes changes in the schema and rebuilds the form accordingly.
-     *
-     * This effect is triggered whenever the schema changes, ensuring that the most
-     * up-to-date schema is used to construct the form. It uses `untracked` to avoid
-     * causing unnecessary dependency tracking on this.$schema().
+     * Effect that (by design) only runs once, using `untracked()` to read the style editor form schema
+     * without subscribing to future changes. This allows the form to be (re)built a single time
+     * in reaction to schema input, ensuring no further re-execution even if the schema changes.
+     * Intended for one-time initialization rather than reactive synchronization.
      */
     $reloadSchemaEffect = effect(() => {
         const schema = untracked(() => this.$schema());
@@ -184,22 +190,31 @@ export class DotUveStyleEditorFormComponent {
                             (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
                         ),
                         // Capture activeContentlet at the time of form change (before debounce)
-                        // This ensures we use the correct contentlet even if the user switches
-                        // to a different contentlet during the debounce period
+                        // and identify the editor mode for this update.
                         map((formValues) => ({
                             formValues,
-                            activeContentlet: this.#uveStore.activeContentlet()
+                            activeContentlet: this.#uveStore.activeContentlet(),
+                            isTraditionalPage: this.#uveStore.isTraditionalPage()
                         })),
-                        tap(({ formValues, activeContentlet }) =>
-                            this.#updateIframeImmediately(formValues, activeContentlet)
-                        ),
-                        debounceTime(STYLE_EDITOR_DEBOUNCE_TIME)
+                        tap(({ formValues, activeContentlet, isTraditionalPage }) => {
+                            // Traditional pages do not support instant iframe updates.
+                            if (!isTraditionalPage) {
+                                this.#updateIframeOptimistically(formValues, activeContentlet);
+                            }
+                        }),
+                        // Traditional: emit immediately (of(0) completes right away).
+                        // Headless: debounce 2s - timer resets on each new form change.
+                        debounce((changeEvent) =>
+                            changeEvent.isTraditionalPage
+                                ? of(0)
+                                : timer(STYLE_EDITOR_DEBOUNCE_TIME)
+                        )
                     )
                 ),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe(({ formValues, activeContentlet }) => {
-                this.#saveStyleProperties(formValues, activeContentlet);
+            .subscribe(({ formValues, activeContentlet, isTraditionalPage }) => {
+                this.#saveStyleProperties(formValues, activeContentlet, isTraditionalPage);
             });
     }
 
@@ -207,7 +222,7 @@ export class DotUveStyleEditorFormComponent {
      * Immediately updates the iframe with new form values (no debounce)
      * Uses optimistic updates WITHOUT saving to history (history is saved only on API calls)
      */
-    #updateIframeImmediately(
+    #updateIframeOptimistically(
         formValues: Record<string, unknown>,
         activeContentlet: ActionPayload | null
     ): void {
@@ -255,7 +270,8 @@ export class DotUveStyleEditorFormComponent {
      */
     #saveStyleProperties(
         formValues: Record<string, unknown>,
-        activeContentlet: ActionPayload
+        activeContentlet: ActionPayload | null,
+        isTraditionalPage = false
     ): void {
         if (!activeContentlet) {
             return;
@@ -276,6 +292,10 @@ export class DotUveStyleEditorFormComponent {
             this.#uveStore.addHistory(currentGraphqlResponse);
         }
 
+        if (isTraditionalPage) {
+            this.#uveStore.setUveStatus(UVE_STATUS.LOADING);
+        }
+
         // Use the store's saveStyleEditor method which handles API call and rollback on failure
         // Subscribe to handle success/error and show toast notifications
         this.#uveStore
@@ -289,6 +309,11 @@ export class DotUveStyleEditorFormComponent {
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: () => {
+                    if (isTraditionalPage) {
+                        this.#iframeMessenger.reloadPage();
+                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                    }
+
                     // Success toast - style properties saved successfully
                     this.#messageService.add({
                         severity: 'success',
@@ -304,6 +329,10 @@ export class DotUveStyleEditorFormComponent {
                     // Rollback already happened synchronously in store's error handler,
                     // so we can restore the form immediately
                     this.#restoreFormFromRollback();
+
+                    if (isTraditionalPage) {
+                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                    }
 
                     // Error toast - rollback already handled in store
                     this.#messageService.add({

@@ -1,20 +1,35 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map, pluck } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotTheme } from '@dotcms/dotcms-models';
+import { DotTheme, DotPagination } from '@dotcms/dotcms-models';
+import { hasValidValue } from '@dotcms/utils';
+
+const THEMES_API_URL = '/api/v1/themes';
+const DEFAULT_PER_PAGE = 10;
+const DEFAULT_PAGE = 1;
+
+export interface DotThemeOptions {
+    hostId: string;
+    page?: number;
+    per_page?: number;
+    direction?: 'ASC' | 'DESC';
+    searchParam?: string;
+}
 
 /**
  * Provide util methods to get themes information.
  * @export
  * @class DotThemesService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotThemesService {
-    private coreWebService = inject(CoreWebService);
+    private readonly http = inject(HttpClient);
 
     /**
      * Get Theme information based on the inode.
@@ -24,10 +39,65 @@ export class DotThemesService {
      * @memberof DotThemesService
      */
     get(inode: string): Observable<DotTheme> {
-        return this.coreWebService
-            .requestView({
-                url: 'v1/themes/id/' + inode
-            })
+        return this.http
+            .get<{ entity: DotTheme }>(`${THEMES_API_URL}/id/${inode}`)
             .pipe(pluck('entity'));
+    }
+
+    /**
+     * Get themes from the endpoint with pagination
+     *
+     * @param options Required parameters for filtering and pagination (hostId is required)
+     * @return {Observable<{themes: DotTheme[]; pagination: DotPagination;}>}
+     * Observable containing themes and pagination info
+     * @memberof DotThemesService
+     */
+    getThemes(options: DotThemeOptions): Observable<{
+        themes: DotTheme[];
+        pagination: DotPagination;
+    }> {
+        return this.http
+            .get<{
+                entity: DotTheme[];
+                pagination: DotPagination;
+            }>(THEMES_API_URL, { params: this.getThemePaginationParams(options) })
+            .pipe(
+                map((data) => ({
+                    themes: data.entity,
+                    pagination: data.pagination
+                }))
+            );
+    }
+
+    /**
+     * Creates HttpParams for retrieving themes with optional parameters
+     * Only includes parameters that have meaningful values (not empty, null, or undefined)
+     * Validates that hostId is provided and not empty
+     */
+    private getThemePaginationParams(options: DotThemeOptions): HttpParams {
+        // Validate hostId is provided and not empty
+        if (!options.hostId || options.hostId.trim() === '') {
+            throw new Error('hostId is required and cannot be empty');
+        }
+
+        let params = new HttpParams();
+
+        // Required parameter
+        params = params.set('hostId', options.hostId);
+        params = params.set('per_page', (options.per_page ?? DEFAULT_PER_PAGE).toString());
+        params = params.set('page', (options.page ?? DEFAULT_PAGE).toString());
+
+        // Add optional parameters if they have meaningful values
+        if (hasValidValue(options.direction)) {
+            params = params.set('direction', options.direction);
+        } else {
+            params = params.set('direction', 'ASC');
+        }
+
+        if (hasValidValue(options.searchParam)) {
+            params = params.set('searchParam', options.searchParam);
+        }
+
+        return params;
     }
 }

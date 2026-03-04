@@ -1,7 +1,7 @@
 <div
     [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
     [tooltipPosition]="disabled ? 'bottom' : null"
-    class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3">
+    class="dot-persona-selector__container h-full flex-auto flex items-center gap-4">
     @if (persona) {
         <p-avatar
             [text]="persona?.name"

@@ -9,6 +9,18 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+// Monaco Editor is a global object loaded by the editor library at runtime.
+// In jsdom, it is never defined, so any timer callbacks that reach getLanguage()
+// (e.g. the debounced name.valueChanges subscription in DotBinaryFieldEditorComponent)
+// would throw a ReferenceError that leaks across tests. Define a minimal mock here.
+globalThis.monaco = {
+    languages: {
+        getLanguages: () => [],
+        register: jest.fn(),
+        setMonarchTokensProvider: jest.fn()
+    }
+} as unknown as typeof monaco;
+
 import { provideHttpClient } from '@angular/common/http';
 import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -141,7 +153,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                     ...BINARY_FIELD_MOCK
                 },
                 contentlet: null
-            }
+            } as unknown
         });
         store = spectator.inject(DotBinaryFieldStore, true);
         dotBinaryFieldEditImageService = spectator.inject(DotBinaryFieldEditImageService, true);
@@ -162,7 +174,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     it('should emit temp file', () => {
-        const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
+        const spyEmit = jest.spyOn(spectator.component.$valueUpdated, 'emit');
         spectator.detectChanges();
         store.setTempFile(TEMP_FILE_MOCK);
         expect(spyEmit).toHaveBeenCalledWith({
@@ -173,7 +185,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
     it('should not emit new value is is equal to current value', () => {
         spectator.setInput('contentlet', MOCK_DOTCMS_FILE);
-        const spyEmit = jest.spyOn(spectator.component.valueUpdated, 'emit');
+        const spyEmit = jest.spyOn(spectator.component.$valueUpdated, 'emit');
         spectator.component.writeValue(MOCK_DOTCMS_FILE.binaryField);
         store.setValue(MOCK_DOTCMS_FILE.binaryField);
         spectator.detectChanges();
@@ -278,7 +290,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 By.css('[data-testId="preview"]')
             );
 
-            dotBinaryPreviewFile.componentInstance.removeFile.emit();
+            dotBinaryPreviewFile.componentInstance.$removeFile.emit();
 
             store.vm$.subscribe((state) => {
                 expect(state).toEqual({
@@ -303,7 +315,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
             it('should open edit image dialog when click on edit image button', () => {
                 spectator.detectChanges();
                 const spy = jest.spyOn(dotBinaryFieldEditImageService, 'openImageEditor');
-                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, 'editImage', null);
+                spectator.triggerEventHandler(DotBinaryFieldPreviewComponent, '$editImage', null);
                 expect(spy).toHaveBeenCalled();
             });
 
@@ -316,7 +328,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                         const dotBinaryFieldPreviewComponent = spectator.fixture.debugElement.query(
                             By.css('dot-binary-field-preview')
                         );
-                        dotBinaryFieldPreviewComponent.triggerEventHandler('editImage');
+                        dotBinaryFieldPreviewComponent.triggerEventHandler('$editImage');
                         const customEvent = new CustomEvent(
                             `binaryField-tempfile-${BINARY_FIELD_MOCK.variable}`,
                             {
@@ -325,7 +337,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                         );
                         document.dispatchEvent(customEvent);
 
-                        tick(1000);
+                        tick(600);
 
                         expect(spy).toHaveBeenCalled();
                         expect(spyTempFile).toHaveBeenCalledWith(TEMP_FILE_MOCK);
@@ -393,7 +405,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 props: {
                     field: newField,
                     contentlet: null
-                }
+                } as unknown
             });
         });
 
@@ -448,7 +460,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 props: {
                     field: newField,
                     contentlet: null
-                }
+                } as unknown
             });
         });
 
@@ -647,7 +659,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
                 props: {
                     field: newField,
                     contentlet: null
-                }
+                } as unknown
             });
             store = spectator.inject(DotBinaryFieldStore, true);
 
@@ -746,15 +758,22 @@ describe('DotEditContentBinaryFieldComponent', () => {
         it('should add disabled CSS class to container when disabled', () => {
             spectator.detectChanges();
 
-            const container = spectator.query('.binary-field__container');
+            // Component uses opacity-50 and pointer-events-none when disabled
+            const container =
+                spectator.query(byTestId('dropzone'))?.closest('.flex') ??
+                spectator.query(byTestId('preview'))?.closest('.flex') ??
+                spectator.query('.flex');
+
+            expect(container).toBeTruthy();
 
             // Initially not disabled
-            expect(container).not.toHaveClass('binary-field__container--disabled');
+            expect(container).not.toHaveClass('opacity-50');
 
             // Set disabled
             spectator.component.setDisabledState(true);
             spectator.detectChanges();
-            expect(container).toHaveClass('binary-field__container--disabled');
+            expect(container).toHaveClass('opacity-50');
+            expect(container).toHaveClass('pointer-events-none');
         });
 
         it('should pass disabled state to preview component when file is uploaded', () => {
@@ -769,7 +788,7 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
             const previewComponent = spectator.query(DotBinaryFieldPreviewComponent);
             expect(previewComponent).toBeTruthy();
-            expect(previewComponent.disabled).toBe(true);
+            expect(previewComponent.$disabled()).toBe(true);
         });
     });
 

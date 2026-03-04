@@ -3,6 +3,10 @@ package com.dotcms.rest.api.v1.publishing;
 import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.EnvironmentDataGen;
+import com.dotcms.datagen.FilterDescriptorDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -15,9 +19,12 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -30,21 +37,32 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.PublisherTestUtil;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import com.dotcms.publisher.business.EndpointDetail;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.*;
@@ -65,6 +83,8 @@ public class PublishingResourceIntegrationTest {
     private static PublishAuditAPI publishAuditAPI;
     private static User adminUser;
     private static List<String> createdBundleIds;
+    private static List<String> createdEnvironmentIds;
+    private static List<String> createdFilterKeys;
     private static PublishingResource publishingResource;
     private static HttpServletResponse response;
 
@@ -79,23 +99,41 @@ public class PublishingResourceIntegrationTest {
         APILocator.getRoleAPI().addRoleToUser(backendRole, adminUser);
 
         createdBundleIds = new ArrayList<>();
+        createdEnvironmentIds = new ArrayList<>();
+        createdFilterKeys = new ArrayList<>();
         publishingResource = new PublishingResource();
         response = new MockHttpResponse();
     }
 
     @AfterClass
     public static void cleanup() {
-        if (createdBundleIds == null) {
-            return;
-        }
-        for (final String bundleId : createdBundleIds) {
-            try {
-                publishAuditAPI.deletePublishAuditStatus(bundleId);
-                APILocator.getBundleAPI().deleteBundleAndDependencies(bundleId, adminUser);
-            } catch (Exception e) {
-                // Ignore cleanup errors
+        // Cleanup bundles
+        if (createdBundleIds != null) {
+            for (final String bundleId : createdBundleIds) {
+                try {
+                    publishAuditAPI.deletePublishAuditStatus(bundleId);
+                    APILocator.getBundleAPI().deleteBundleAndDependencies(bundleId, adminUser);
+                } catch (Exception e) {
+                    // Ignore cleanup errors
+                }
             }
         }
+
+        // Cleanup environments
+        if (createdEnvironmentIds != null) {
+            for (final String envId : createdEnvironmentIds) {
+                try {
+                    final Environment env = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
+                    if (env != null) {
+                        APILocator.getEnvironmentAPI().deleteEnvironment(envId);
+                    }
+                } catch (Exception e) {
+                    // Ignore cleanup errors
+                }
+            }
+        }
+
+        // Note: Filters are stored in memory and will be cleared on restart
     }
 
     // =========================================================================
@@ -941,6 +979,99 @@ public class PublishingResourceIntegrationTest {
         return request;
     }
 
+    /**
+     * Creates a fully published bundle (with tar.gz + manifest on disk), sets its
+     * audit status to the given targetStatus, and retries it with forcePush=false.
+     * Follows the established pattern from PublisherAPITest.test_publish_fail_retry().
+     */
+    private RetryBundleResultView createPublishedBundleAndRetry(
+            final String bundleName,
+            final Status targetStatus) throws Exception {
+
+        Environment environment = null;
+        PublishingEndPoint endpoint = null;
+        Bundle bundle = null;
+
+        try {
+            // Setup environment and endpoint
+            environment = PublisherTestUtil.createEnvironment(adminUser);
+            endpoint = PublisherTestUtil.createEndpoint(environment);
+
+            // Create bundle linked to environment
+            bundle = PublisherTestUtil.createBundle(bundleName, adminUser, environment);
+            final String bundleId = bundle.getId();
+            createdBundleIds.add(bundleId);
+
+            // Create folder asset (folders are simpler to bundle than contentlets)
+            final var site = new SiteDataGen().nextPersisted();
+            final var folder = new FolderDataGen().site(site).nextPersisted();
+
+            // Setup audit history (required before publish)
+            final PublishAuditHistory historyPojo = new PublishAuditHistory();
+            final Map<String, String> assetsAsMap = new HashMap<>();
+            assetsAsMap.put(folder.getInode(), PusheableAsset.FOLDER.getType());
+            historyPojo.setAssets(assetsAsMap);
+            final PublishAuditStatus auditStatus = new PublishAuditStatus(bundleId);
+            auditStatus.setStatusPojo(historyPojo);
+            publishAuditAPI.insertPublishAuditStatus(auditStatus);
+
+            // Setup queue element and publisher config
+            final PublishQueueElement queueElement = new PublishQueueElement();
+            queueElement.setId(1);
+            queueElement.setOperation(1);
+            queueElement.setAsset(folder.getInode());
+            queueElement.setEnteredDate(new Date());
+            queueElement.setPublishDate(new Date());
+            queueElement.setBundleId(bundleId);
+            queueElement.setType(PusheableAsset.FOLDER.getType());
+
+            final PushPublisherConfig publisherConfig = new PushPublisherConfig();
+            publisherConfig.setId(bundleId);
+            publisherConfig.setOperation(Operation.PUBLISH);
+            publisherConfig.setLanguage(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            publisherConfig.setAssets(Lists.newArrayList(queueElement));
+            publisherConfig.setLuceneQueries(Lists.newArrayList());
+            publisherConfig.setUser(APILocator.getUserAPI().getSystemUser());
+            publisherConfig.setStartDate(new Date());
+            publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
+
+            // Ensure a default filter descriptor exists (required by DependencyBundler)
+            final String filterKey = bundleName + "-filter.yml";
+            APILocator.getPublisherAPI().addFilterDescriptor(
+                    new FilterDescriptor(filterKey, bundleName + " Filter",
+                            ImmutableMap.of("dependencies", true, "relationships", true),
+                            true, "DOTCMS_BACK_END_USER"));
+
+            // Publish - creates tar.gz with manifest on disk
+            APILocator.getPublisherAPI().publish(publisherConfig);
+
+            // Clear queue so retry doesn't reject as "already in queue"
+            PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundleId);
+
+            // Set audit status to target status
+            publishAuditAPI.updatePublishAuditStatus(
+                    bundleId, targetStatus, new PublishAuditHistory());
+
+            // Retry with forcePush=false
+            final RetryBundlesForm form = RetryBundlesForm.builder()
+                    .bundleIds(List.of(bundleId))
+                    .forcePush(false)
+                    .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                    .build();
+
+            final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                    mockAuthenticatedRequest(), response, form);
+
+            assertNotNull(result);
+            assertEquals(1, result.getEntity().size());
+
+            return result.getEntity().get(0);
+
+        } finally {
+            PublisherTestUtil.cleanBundleEndpointEnv(bundle, endpoint, environment);
+        }
+    }
+
     // =========================================================================
     // DELETE ENDPOINT TESTS
     // =========================================================================
@@ -1058,5 +1189,835 @@ public class PublishingResourceIntegrationTest {
     public void test_deleteBundle_emptyBundleId() throws Exception {
         publishingResource.deletePublishingJob(
                 mockAuthenticatedRequest(), response, "");
+    }
+
+    // =========================================================================
+    // RETRY ENDPOINT TESTS - POST /v1/publishing/retry
+    // =========================================================================
+
+    /**
+     * Given: Bundle with FAILED_TO_PUBLISH status exists
+     * When: Retry request with single bundleId
+     * Then: Returns result for that bundle (success or failure based on configuration)
+     */
+    @Test
+    public void test_retryBundles_singleBundleReturnsResult() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-single-test", Status.FAILED_TO_PUBLISH);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertNotNull(result.getEntity());
+        assertEquals("Should have one result", 1, result.getEntity().size());
+
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertEquals("BundleId should match", bundleId, bundleResult.bundleId());
+        assertNotNull("Message should not be null", bundleResult.message());
+        assertEquals("DeliveryStrategy should match", DeliveryStrategy.ALL_ENDPOINTS, bundleResult.deliveryStrategy());
+    }
+
+    /**
+     * Given: Multiple bundles with different statuses exist
+     * When: Retry request with multiple bundleIds
+     * Then: Returns per-bundle results
+     */
+    @Test
+    public void test_retryBundles_multipleBundlesReturnsPerBundleResults() throws Exception {
+        final String failedId = createBundleWithStatus("retry-multi-failed", Status.FAILED_TO_PUBLISH);
+        final String successId = createBundleWithStatus("retry-multi-success", Status.SUCCESS);
+        final String bundlingId = createBundleWithStatus("retry-multi-bundling", Status.BUNDLING);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(failedId, successId, bundlingId))
+                .forcePush(true)
+                .deliveryStrategy(DeliveryStrategy.FAILED_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertNotNull(result.getEntity());
+        assertEquals("Should have three results", 3, result.getEntity().size());
+
+        // Verify each bundle has a result
+        final boolean foundFailed = result.getEntity().stream()
+                .anyMatch(r -> failedId.equals(r.bundleId()));
+        final boolean foundSuccess = result.getEntity().stream()
+                .anyMatch(r -> successId.equals(r.bundleId()));
+        final boolean foundBundling = result.getEntity().stream()
+                .anyMatch(r -> bundlingId.equals(r.bundleId()));
+
+        assertTrue("Should have result for failed bundle", foundFailed);
+        assertTrue("Should have result for success bundle", foundSuccess);
+        assertTrue("Should have result for bundling bundle", foundBundling);
+
+        // Bundling bundle should fail (non-retryable status)
+        final RetryBundleResultView bundlingResult = result.getEntity().stream()
+                .filter(r -> bundlingId.equals(r.bundleId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertFalse("BUNDLING status should not be retryable", bundlingResult.success());
+        assertTrue("Message should indicate cannot retry",
+                bundlingResult.message().contains("Cannot retry"));
+    }
+
+    /**
+     * Given: Bundle with non-retryable status (BUNDLING)
+     * When: Retry request made
+     * Then: Returns failure result with appropriate message
+     */
+    @Test
+    public void test_retryBundles_nonRetryableStatus_returnsFailure() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-non-retryable", Status.BUNDLING);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertEquals(1, result.getEntity().size());
+
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertFalse("Should fail for non-retryable status", bundleResult.success());
+        assertTrue("Message should mention status restriction",
+                bundleResult.message().toLowerCase().contains("cannot retry") ||
+                bundleResult.message().toLowerCase().contains("status"));
+    }
+
+    /**
+     * Given: Bundle with SENDING_TO_ENDPOINTS status (in progress)
+     * When: Retry request made
+     * Then: Returns failure result
+     */
+    @Test
+    public void test_retryBundles_sendingStatus_returnsFailure() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-sending", Status.SENDING_TO_ENDPOINTS);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertFalse("Should fail for in-progress status", bundleResult.success());
+    }
+
+    /**
+     * Given: Empty bundleIds list
+     * When: Retry request made
+     * Then: BadRequestException thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_retryBundles_emptyBundleIds_throwsBadRequest() throws Exception {
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of())
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        publishingResource.retryBundles(mockAuthenticatedRequest(), response, form);
+    }
+
+    /**
+     * Given: Null form
+     * When: Retry request made
+     * Then: BadRequestException thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_retryBundles_nullForm_throwsBadRequest() throws Exception {
+        publishingResource.retryBundles(mockAuthenticatedRequest(), response, null);
+    }
+
+    /**
+     * Given: Non-existent bundleId
+     * When: Retry request made
+     * Then: Returns failure result (not exception)
+     */
+    @Test
+    public void test_retryBundles_nonExistentBundle_returnsFailure() throws Exception {
+        final String nonExistentId = "non-existent-bundle-id-xyz-123";
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(nonExistentId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertEquals(1, result.getEntity().size());
+
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertFalse("Should fail for non-existent bundle", bundleResult.success());
+        assertTrue("Message should indicate bundle not found",
+                bundleResult.message().toLowerCase().contains("not found"));
+    }
+
+    /**
+     * Given: Bundle with SUCCESS status and full bundle files on disk
+     * When: Retry request with forcePush=false
+     * Then: Result shows forcePush=true (auto-enabled for successful bundles)
+     */
+    @Test
+    public void test_retryBundles_successfulBundle_autoEnablesForcePush() throws Exception {
+        final RetryBundleResultView bundleResult =
+                createPublishedBundleAndRetry("retry-force-push", Status.SUCCESS);
+
+        assertTrue("Retry should succeed but got: " + bundleResult.message(),
+                bundleResult.success());
+        assertTrue("forcePush should be auto-enabled for SUCCESS bundles",
+                bundleResult.forcePush());
+    }
+
+    /**
+     * Given: Bundle with SUCCESS_WITH_WARNINGS status and full bundle files on disk
+     * When: Retry request with forcePush=false
+     * Then: Retry succeeds and forcePush is auto-enabled
+     */
+    @Test
+    public void test_retryBundles_successWithWarnings_isRetryableAndAutoEnablesForcePush() throws Exception {
+        final RetryBundleResultView bundleResult =
+                createPublishedBundleAndRetry("retry-warnings", Status.SUCCESS_WITH_WARNINGS);
+
+        assertTrue("Retry should succeed for SUCCESS_WITH_WARNINGS but got: " + bundleResult.message(),
+                bundleResult.success());
+        assertTrue("forcePush should be auto-enabled for SUCCESS_WITH_WARNINGS bundles",
+                bundleResult.forcePush());
+    }
+
+    /**
+     * Given: Bundle with FAILED_TO_SEND_TO_ALL_GROUPS status
+     * When: Retry request made
+     * Then: Status is retryable (returns result, not status error)
+     */
+    @Test
+    public void test_retryBundles_failedToSendToAllGroups_isRetryable() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-all-groups-failed", Status.FAILED_TO_SEND_TO_ALL_GROUPS);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.FAILED_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        // Should not fail due to non-retryable status
+        if (!bundleResult.success()) {
+            assertFalse("Should not fail due to status restriction",
+                    bundleResult.message().toLowerCase().contains("cannot retry bundles with status"));
+        }
+    }
+
+    /**
+     * Given: Request with FAILED_ENDPOINTS delivery strategy
+     * When: Retry request made
+     * Then: Result shows FAILED_ENDPOINTS strategy
+     */
+    @Test
+    public void test_retryBundles_failedEndpointsStrategy_reflected() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-strategy-test", Status.FAILED_TO_PUBLISH);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.FAILED_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertEquals("DeliveryStrategy should be FAILED_ENDPOINTS",
+                DeliveryStrategy.FAILED_ENDPOINTS, bundleResult.deliveryStrategy());
+    }
+
+    /**
+     * Given: Bundle ID with whitespace
+     * When: Retry request made
+     * Then: Bundle ID is trimmed and processed
+     */
+    @Test
+    public void test_retryBundles_bundleIdWithWhitespace_isTrimmed() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-whitespace-test", Status.FAILED_TO_PUBLISH);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of("  " + bundleId + "  "))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertEquals(1, result.getEntity().size());
+        // The trimmed bundleId should be in the result
+        // (bundleId in result is the trimmed version)
+        final RetryBundleResultView bundleResult = result.getEntity().get(0);
+        assertEquals("BundleId should be trimmed", bundleId, bundleResult.bundleId());
+    }
+
+    /**
+     * Given: Empty string bundleId in list
+     * When: Retry request made
+     * Then: Returns failure result for that bundle
+     */
+    @Test
+    public void test_retryBundles_emptyBundleIdInList_returnsFailure() throws Exception {
+        final String validBundleId = createBundleWithStatus("retry-with-empty", Status.FAILED_TO_PUBLISH);
+
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(validBundleId, "", "   "))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                mockAuthenticatedRequest(), response, form);
+
+        assertNotNull(result);
+        assertEquals("Should have three results", 3, result.getEntity().size());
+
+        // Find results for empty/whitespace IDs
+        final long failedEmptyCount = result.getEntity().stream()
+                .filter(r -> !r.success() && r.message().toLowerCase().contains("required"))
+                .count();
+
+        assertTrue("Should have failures for empty bundle IDs", failedEmptyCount >= 1);
+    }
+
+    // =========================================================================
+    // PUSH BUNDLE ENDPOINT TESTS - POST /v1/publishing/push/{bundleId}
+    // =========================================================================
+
+    /**
+     * Given: Valid bundle, environment, and filter exist
+     * When: pushBundle called with "publish" operation
+     * Then: Bundle is queued for publishing and result returned
+     */
+    @Test
+    public void test_pushBundle_publishOperation_success() throws Exception {
+        // Setup
+        final Environment env = createEnvironmentWithPermission("push-publish-env");
+        final FilterDescriptor filter = createFilter("push-publish-filter");
+        final String bundleId = createBundleForPush("push-publish-bundle");
+
+        final String publishDate = formatISO8601(Instant.now().plusSeconds(60));
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                publishDate,
+                null,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        // Execute
+        final ResponseEntityPushBundleResultView result = publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+
+        // Verify
+        assertNotNull(result);
+        final PushBundleResultView entity = result.getEntity();
+        assertEquals("bundleId should match", bundleId, entity.bundleId());
+        assertEquals("operation should be publish", "publish", entity.operation());
+        assertEquals("publishDate should match", publishDate, entity.publishDate());
+        assertNull("expireDate should be null", entity.expireDate());
+        assertEquals("filterKey should match", filter.getKey(), entity.filterKey());
+        assertTrue("environments should contain our env", entity.environments().contains(env.getId()));
+    }
+
+    /**
+     * Given: Valid bundle, environment, and filter exist
+     * When: pushBundle called with "expire" operation
+     * Then: Bundle is queued for unpublishing and result returned
+     */
+    @Test
+    public void test_pushBundle_expireOperation_success() throws Exception {
+        // Setup
+        final Environment env = createEnvironmentWithPermission("push-expire-env");
+        final FilterDescriptor filter = createFilter("push-expire-filter");
+        final String bundleId = createBundleForPush("push-expire-bundle");
+
+        final String expireDate = formatISO8601(Instant.now().plusSeconds(3600));
+
+        final PushBundleForm form = new PushBundleForm(
+                "expire",
+                null,
+                expireDate,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        // Execute
+        final ResponseEntityPushBundleResultView result = publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+
+        // Verify
+        assertNotNull(result);
+        final PushBundleResultView entity = result.getEntity();
+        assertEquals("bundleId should match", bundleId, entity.bundleId());
+        assertEquals("operation should be expire", "expire", entity.operation());
+        assertNull("publishDate should be null", entity.publishDate());
+        assertEquals("expireDate should match", expireDate, entity.expireDate());
+    }
+
+    /**
+     * Given: Valid bundle, environment, and filter exist
+     * When: pushBundle called with "publishexpire" operation
+     * Then: Bundle is queued for publish and expire
+     */
+    @Test
+    public void test_pushBundle_publishExpireOperation_success() throws Exception {
+        // Setup
+        final Environment env = createEnvironmentWithPermission("push-pubexp-env");
+        final FilterDescriptor filter = createFilter("push-pubexp-filter");
+        final String bundleId = createBundleForPush("push-pubexp-bundle");
+
+        final String publishDate = formatISO8601(Instant.now().plusSeconds(60));
+        final String expireDate = formatISO8601(Instant.now().plusSeconds(7200));
+
+        final PushBundleForm form = new PushBundleForm(
+                "publishexpire",
+                publishDate,
+                expireDate,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        // Execute
+        final ResponseEntityPushBundleResultView result = publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+
+        // Verify
+        assertNotNull(result);
+        final PushBundleResultView entity = result.getEntity();
+        assertEquals("operation should be publishexpire", "publishexpire", entity.operation());
+        assertEquals("publishDate should match", publishDate, entity.publishDate());
+        assertEquals("expireDate should match", expireDate, entity.expireDate());
+    }
+
+    /**
+     * Given: Multiple valid environments
+     * When: pushBundle called with multiple environment IDs
+     * Then: All environments are included in result
+     */
+    @Test
+    public void test_pushBundle_multipleEnvironments_success() throws Exception {
+        // Setup
+        final Environment env1 = createEnvironmentWithPermission("push-multi-env-1");
+        final Environment env2 = createEnvironmentWithPermission("push-multi-env-2");
+        final FilterDescriptor filter = createFilter("push-multi-filter");
+        final String bundleId = createBundleForPush("push-multi-bundle");
+
+        final String publishDate = formatISO8601(Instant.now().plusSeconds(60));
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                publishDate,
+                null,
+                List.of(env1.getId(), env2.getId()),
+                filter.getKey()
+        );
+
+        // Execute
+        final ResponseEntityPushBundleResultView result = publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+
+        // Verify
+        assertNotNull(result);
+        assertEquals("should have 2 environments", 2, result.getEntity().environments().size());
+        assertTrue("should contain env1", result.getEntity().environments().contains(env1.getId()));
+        assertTrue("should contain env2", result.getEntity().environments().contains(env2.getId()));
+    }
+
+    /**
+     * Given: Non-existent bundle ID
+     * When: pushBundle called
+     * Then: NotFoundException thrown (404)
+     */
+    @Test(expected = NotFoundException.class)
+    public void test_pushBundle_bundleNotFound_returns404() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-notfound-env");
+        final FilterDescriptor filter = createFilter("push-notfound-filter");
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                formatISO8601(Instant.now().plusSeconds(60)),
+                null,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, "nonexistent-bundle-id-12345", form);
+    }
+
+    /**
+     * Given: Empty bundle ID
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_emptyBundleId_returns400() throws Exception {
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                formatISO8601(Instant.now()),
+                null,
+                List.of("env-1"),
+                "filter.yml"
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, "", form);
+    }
+
+    /**
+     * Given: Missing operation in form
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_missingOperation_returns400() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-noop-env");
+        final FilterDescriptor filter = createFilter("push-noop-filter");
+        final String bundleId = createBundleForPush("push-noop-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                null, // Missing operation
+                formatISO8601(Instant.now()),
+                null,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: Invalid operation value
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_invalidOperation_returns400() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-badop-env");
+        final FilterDescriptor filter = createFilter("push-badop-filter");
+        final String bundleId = createBundleForPush("push-badop-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "INVALID_OPERATION",
+                formatISO8601(Instant.now()),
+                null,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: Publish operation without publishDate
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_publishWithoutDate_returns400() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-nodate-env");
+        final FilterDescriptor filter = createFilter("push-nodate-filter");
+        final String bundleId = createBundleForPush("push-nodate-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                null, // Missing publishDate
+                null,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: Expire operation without expireDate
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_expireWithoutDate_returns400() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-noexp-env");
+        final FilterDescriptor filter = createFilter("push-noexp-filter");
+        final String bundleId = createBundleForPush("push-noexp-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "expire",
+                null,
+                null, // Missing expireDate
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: PublishExpire operation without both dates
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_publishExpireWithoutDates_returns400() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-nodates-env");
+        final FilterDescriptor filter = createFilter("push-nodates-filter");
+        final String bundleId = createBundleForPush("push-nodates-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "publishexpire",
+                null, // Missing publishDate
+                null, // Missing expireDate
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: Empty environments list
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_emptyEnvironments_returns400() throws Exception {
+        final FilterDescriptor filter = createFilter("push-noenv-filter");
+        final String bundleId = createBundleForPush("push-noenv-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                formatISO8601(Instant.now()),
+                null,
+                List.of(), // Empty environments
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: Missing filterKey
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_missingFilterKey_returns400() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-nofilter-env");
+        final String bundleId = createBundleForPush("push-nofilter-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                formatISO8601(Instant.now()),
+                null,
+                List.of(env.getId()),
+                null // Missing filterKey
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: Invalid date format
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_invalidDateFormat_returns400() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-baddate-env");
+        final FilterDescriptor filter = createFilter("push-baddate-filter");
+        final String bundleId = createBundleForPush("push-baddate-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                "invalid-date-format", // Invalid date
+                null,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: Non-existent filter key
+     * When: pushBundle called
+     * Then: Operation succeeds with default filter (API falls back to default)
+     */
+    @Test
+    public void test_pushBundle_nonexistentFilter_usesDefault() throws Exception {
+        final Environment env = createEnvironmentWithPermission("push-badfilt-env");
+        final String bundleId = createBundleForPush("push-badfilt-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                formatISO8601(Instant.now().plusSeconds(60)),
+                null,
+                List.of(env.getId()),
+                "nonexistent-filter-key-12345.yml"
+        );
+
+        // API falls back to default filter when key not found
+        final ResponseEntityPushBundleResultView result = publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+
+        assertNotNull("Should succeed with default filter", result);
+        assertEquals("filterKey should be as requested", "nonexistent-filter-key-12345.yml", result.getEntity().filterKey());
+    }
+
+    /**
+     * Given: Non-existent environment ID
+     * When: pushBundle called
+     * Then: NotFoundException thrown (404) - no valid environments
+     */
+    @Test(expected = NotFoundException.class)
+    public void test_pushBundle_environmentNotFound_returns404() throws Exception {
+        final FilterDescriptor filter = createFilter("push-noenv2-filter");
+        final String bundleId = createBundleForPush("push-noenv2-bundle");
+
+        final PushBundleForm form = new PushBundleForm(
+                "publish",
+                formatISO8601(Instant.now()),
+                null,
+                List.of("nonexistent-env-id-12345"),
+                filter.getKey()
+        );
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+    }
+
+    /**
+     * Given: Null form (request body)
+     * When: pushBundle called
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_pushBundle_nullForm_returns400() throws Exception {
+        final String bundleId = createBundleForPush("push-nullform-bundle");
+
+        publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, null);
+    }
+
+    /**
+     * Given: Operation is case-insensitive
+     * When: pushBundle called with "PUBLISH" (uppercase)
+     * Then: Operation is normalized to lowercase in result
+     */
+    @Test
+    public void test_pushBundle_operationCaseInsensitive_success() throws Exception {
+        // Setup
+        final Environment env = createEnvironmentWithPermission("push-case-env");
+        final FilterDescriptor filter = createFilter("push-case-filter");
+        final String bundleId = createBundleForPush("push-case-bundle");
+
+        final String publishDate = formatISO8601(Instant.now().plusSeconds(60));
+
+        final PushBundleForm form = new PushBundleForm(
+                "PUBLISH", // Uppercase
+                publishDate,
+                null,
+                List.of(env.getId()),
+                filter.getKey()
+        );
+
+        // Execute
+        final ResponseEntityPushBundleResultView result = publishingResource.pushBundle(
+                mockAuthenticatedRequest(), response, bundleId, form);
+
+        // Verify - operation normalized to lowercase
+        assertEquals("operation should be lowercase", "publish", result.getEntity().operation());
+    }
+
+    // =========================================================================
+    // PUSH BUNDLE HELPER METHODS
+    // =========================================================================
+
+    /**
+     * Creates an environment. Admin user has implicit access.
+     */
+    private Environment createEnvironmentWithPermission(final String name) throws Exception {
+        final Environment env = new EnvironmentDataGen()
+                .name(name + "_" + System.currentTimeMillis())
+                .nextPersisted();
+
+        createdEnvironmentIds.add(env.getId());
+        return env;
+    }
+
+    /**
+     * Creates a filter descriptor for testing.
+     */
+    private FilterDescriptor createFilter(final String title) {
+        final FilterDescriptor filter = new FilterDescriptorDataGen()
+                .title(title + "_" + System.currentTimeMillis())
+                .key(title + "_" + System.currentTimeMillis() + ".yml")
+                .clearFilterList(false) // Don't clear existing filters
+                .nextPersisted();
+
+        createdFilterKeys.add(filter.getKey());
+        return filter;
+    }
+
+    /**
+     * Creates a bundle for push testing (without audit status).
+     */
+    private String createBundleForPush(final String bundleName) throws DotDataException {
+        final Bundle bundle = new BundleDataGen()
+                .name(bundleName + "_" + System.currentTimeMillis())
+                .owner(adminUser)
+                .nextPersisted();
+
+        createdBundleIds.add(bundle.getId());
+        return bundle.getId();
+    }
+
+    /**
+     * Formats an Instant as ISO 8601 with timezone offset.
+     */
+    private String formatISO8601(final Instant instant) {
+        return DateTimeFormatter.ISO_OFFSET_DATE_TIME
+                .format(instant.atOffset(ZoneOffset.UTC));
     }
 }

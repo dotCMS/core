@@ -1,5 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -54,14 +55,14 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
 @Component({
     selector: 'dot-file-field',
     imports: [
+        CommonModule,
         ButtonModule,
         DotMessagePipe,
         DotDropZoneComponent,
         DotSpinnerComponent,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        TooltipModule,
-        DotMessagePipe
+        TooltipModule
     ],
     providers: [
         DotFileFieldUploadService,
@@ -272,6 +273,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotFormImportUrlComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -317,6 +319,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -366,6 +369,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -418,7 +422,9 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
             header,
             appendTo: 'body',
-            closeOnEscape: false,
+            closeOnEscape: true,
+            closable: true,
+            dismissableMask: true,
             draggable: false,
             keepInViewport: false,
             maskStyleClass: 'p-dialog-mask-dynamic',
@@ -426,6 +432,7 @@ export class DotFileFieldComponent
             modal: true,
             width: '90%',
             style: { 'max-width': '1040px' },
+            contentStyle: { overflow: 'auto', 'min-height': '45rem' },
             data: {
                 mimeTypes,
                 showLinks: false,

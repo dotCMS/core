@@ -2,7 +2,6 @@ package com.dotcms.content.index.opensearch;
 
 import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
 
-import com.dotcms.content.index.opensearch.OpenSearchDefaultClientProvider;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.DotStateException;
@@ -42,9 +41,6 @@ public class OpenSearchIndexAPIImpl implements OpenSearchIndexAPI {
     OpenSearchDefaultClientProvider clientProvider;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
-
-    public static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
-            Config.getIntProperty("OPENSEARCH_INDEX_OPERATIONS_TIMEOUT", 15000);
 
     private final Lazy<String> clusterPrefix;
 
@@ -117,7 +113,7 @@ public class OpenSearchIndexAPIImpl implements OpenSearchIndexAPI {
                        return settingsBuilder;
                    }))
                    .timeout(Time.of(timeBuilder ->
-                       timeBuilder.time(String.format("%dms",INDEX_OPERATIONS_TIMEOUT_IN_MS))
+                       timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
                    ))
         );
 
@@ -187,7 +183,7 @@ public class OpenSearchIndexAPIImpl implements OpenSearchIndexAPI {
             final DeleteIndexRequest request = DeleteIndexRequest.of(builder ->
                 builder.index(getNameWithClusterIDPrefix(indexName))
                        .timeout(Time.of(timeBuilder ->
-                           timeBuilder.time(Duration.ofMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS).toString())
+                           timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
                        ))
             );
 
@@ -207,8 +203,8 @@ public class OpenSearchIndexAPIImpl implements OpenSearchIndexAPI {
     @Override
     public String removeClusterIdFromName(final String name) {
         if (name == null) return "";
-        return name.indexOf(".") > -1
-                ? name.substring(name.lastIndexOf(".") + 1, name.length())
+        return name.contains(".")
+                ? name.substring(name.lastIndexOf(".") + 1)
                 : name;
     }
 

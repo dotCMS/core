@@ -1,9 +1,12 @@
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+
 import { provideHttpClient } from '@angular/common/http';
-import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import {
+    DotCurrentUserService,
     DotEventsService,
     DotMessageService,
     DotRouterService,
@@ -22,7 +25,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import { LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock, LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
 
@@ -32,52 +35,55 @@ import { dotEventSocketURLFactory } from '../../../../../../test/dot-test-bed';
 import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
 describe('DotToolbarUserStore', () => {
+    let spectator: SpectatorService<DotToolbarUserStore>;
     let store: DotToolbarUserStore;
     let loginService: LoginService;
     let locationService: Location;
     let dotNavigationService: DotNavigationService;
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, RouterTestingModule],
-            providers: [
-                DotToolbarUserStore,
-                LoggerService,
-                DotMessageService,
-                DotNavigationService,
-                DotEventsService,
-                DotIframeService,
-                DotMenuService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                DotcmsConfigService,
-                StringUtils,
-                DotRouterService,
-                {
-                    provide: LOCATION_TOKEN,
-                    useValue: {
-                        reload() {
-                            return;
-                        }
+    const createService = createServiceFactory({
+        service: DotToolbarUserStore,
+        imports: [RouterTestingModule],
+        providers: [
+            LoggerService,
+            DotMessageService,
+            DotNavigationService,
+            DotEventsService,
+            DotIframeService,
+            DotMenuService,
+            DotcmsEventsService,
+            DotEventsSocket,
+            DotcmsConfigService,
+            StringUtils,
+            DotRouterService,
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+            {
+                provide: LOCATION_TOKEN,
+                useValue: {
+                    reload() {
+                        return;
                     }
-                },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                { provide: LoginService, useClass: LoginServiceMock },
-                {
-                    provide: DotSystemConfigService,
-                    useValue: { getSystemConfig: () => ({}) }
-                },
-                GlobalStore,
-                provideHttpClient(),
-                provideHttpClientTesting()
-            ]
-        });
+                }
+            },
+            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+            { provide: LoginService, useClass: LoginServiceMock },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => ({}) }
+            },
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
+    });
 
-        store = TestBed.inject(DotToolbarUserStore);
-        loginService = TestBed.inject(LoginService);
-        locationService = TestBed.inject(LOCATION_TOKEN);
-        dotNavigationService = TestBed.inject(DotNavigationService);
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        loginService = spectator.inject(LoginService);
+        locationService = spectator.inject(LOCATION_TOKEN);
+        dotNavigationService = spectator.inject(DotNavigationService);
     });
 
     it('should be created', () => {
@@ -87,17 +93,19 @@ describe('DotToolbarUserStore', () => {
     it('should set the initial state when init is called', () => {
         store.init();
 
-        store.state$.subscribe((state) => {
-            const { items, userData, showLoginAs, showMyAccount } = state;
+        store
+            .select((s) => s)
+            .subscribe((state) => {
+                const { items, userData, showLoginAs, showMyAccount } = state;
 
-            expect(items.length).toBeTruthy();
-            expect(userData).toEqual({
-                email: mockAuth.loginAsUser.emailAddress,
-                name: mockAuth.loginAsUser.name
+                expect(items.length).toBeTruthy();
+                expect(userData).toEqual({
+                    email: mockAuth.loginAsUser.emailAddress,
+                    name: mockAuth.loginAsUser.name
+                });
+                expect(showLoginAs).toBe(false);
+                expect(showMyAccount).toBe(false);
             });
-            expect(showLoginAs).toBe(false);
-            expect(showMyAccount).toBe(false);
-        });
     });
 
     it('should trigger loginService logoutAs, navigate to first portlet and reload the page when logoutAs is called', fakeAsync(() => {
@@ -122,32 +130,40 @@ describe('DotToolbarUserStore', () => {
     describe('showLoginAs method', () => {
         it('should change its state value to true', () => {
             store.showLoginAs(true);
-            store.state$.subscribe((state) => {
-                expect(state.showLoginAs).toBe(true);
-            });
+            store
+                .select((s) => s)
+                .subscribe((state) => {
+                    expect(state.showLoginAs).toBe(true);
+                });
         });
 
         it('should change its state value to false', () => {
             store.showLoginAs(false);
-            store.state$.subscribe((state) => {
-                expect(state.showLoginAs).toBe(false);
-            });
+            store
+                .select((s) => s)
+                .subscribe((state) => {
+                    expect(state.showLoginAs).toBe(false);
+                });
         });
     });
 
     describe('showMyAccount method', () => {
         it('should change its state value to true', () => {
             store.showMyAccount(true);
-            store.state$.subscribe((state) => {
-                expect(state.showMyAccount).toBe(true);
-            });
+            store
+                .select((s) => s)
+                .subscribe((state) => {
+                    expect(state.showMyAccount).toBe(true);
+                });
         });
 
         it('should change its state value to false', () => {
             store.showMyAccount(false);
-            store.state$.subscribe((state) => {
-                expect(state.showMyAccount).toBe(false);
-            });
+            store
+                .select((s) => s)
+                .subscribe((state) => {
+                    expect(state.showMyAccount).toBe(false);
+                });
         });
     });
 });

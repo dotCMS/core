@@ -2,12 +2,14 @@
 
 import { createPipeFactory, SpectatorPipe } from '@ngneat/spectator/jest';
 
+import { Injector, runInInjectionContext } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
 import { DotHighlightPipe } from './dot-highlight.pipe';
 
 describe('DotHighlightPipe', () => {
     let spectator: SpectatorPipe<DotHighlightPipe>;
+    let pipe: DotHighlightPipe;
     let sanitizer: DomSanitizer;
 
     const createPipe = createPipeFactory({
@@ -24,6 +26,8 @@ describe('DotHighlightPipe', () => {
         });
         sanitizer = spectator.inject(DomSanitizer);
         jest.spyOn(sanitizer, 'bypassSecurityTrustHtml');
+        const injector = spectator.inject(Injector);
+        pipe = runInInjectionContext(injector, () => new DotHighlightPipe());
     });
 
     afterEach(() => {
@@ -35,22 +39,12 @@ describe('DotHighlightPipe', () => {
     });
 
     it('should return empty string when text is empty', () => {
-        spectator.setHostInput({
-            text: '',
-            search: 'test'
-        });
-        spectator.detectChanges();
-        expect(spectator.element.textContent).toBe('');
+        expect(pipe.transform('', 'test')).toBe('');
     });
 
     it('should return original text when search is null', () => {
         const text = 'Hello World';
-        spectator.setHostInput({
-            text: text,
-            search: null
-        });
-        spectator.detectChanges();
-        expect(spectator.element.textContent).toBe(text);
+        expect(pipe.transform(text, null)).toBe(text);
     });
 
     it('should highlight single occurrence of search term', () => {
@@ -58,12 +52,7 @@ describe('DotHighlightPipe', () => {
         const search = 'World';
         const expected = 'Hello <span class="highlight">World</span>';
 
-        spectator.setHostInput({
-            text: text,
-            search: search
-        });
-
-        spectator.detectChanges();
+        pipe.transform(text, search);
         expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(expected);
     });
 
@@ -73,12 +62,7 @@ describe('DotHighlightPipe', () => {
         const expected =
             'Hello <span class="highlight">World</span>, <span class="highlight">World</span>';
 
-        spectator.setHostInput({
-            text: text,
-            search: search
-        });
-
-        spectator.detectChanges();
+        pipe.transform(text, search);
         expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(expected);
     });
 
@@ -87,12 +71,7 @@ describe('DotHighlightPipe', () => {
         const search = 'world';
         const expected = 'Hello <span class="highlight">WORLD</span>';
 
-        spectator.setHostInput({
-            text: text,
-            search: search
-        });
-
-        spectator.detectChanges();
+        pipe.transform(text, search);
         expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(expected);
     });
 
@@ -101,12 +80,7 @@ describe('DotHighlightPipe', () => {
         const search = '(World)';
         const expected = 'Hello <span class="highlight">(World)</span>';
 
-        spectator.setHostInput({
-            text: text,
-            search: search
-        });
-
-        spectator.detectChanges();
+        pipe.transform(text, search);
         expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(expected);
     });
 
@@ -115,12 +89,7 @@ describe('DotHighlightPipe', () => {
         const search = '23';
         const expected = '1<span class="highlight">23</span>';
 
-        spectator.setHostInput({
-            text: text as any,
-            search: search
-        });
-
-        spectator.detectChanges();
+        pipe.transform(text as any, search);
         expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(expected);
     });
 
@@ -128,12 +97,7 @@ describe('DotHighlightPipe', () => {
         const text = 'Hello World';
         const expected = 'Hello <span class="highlight">World</span>';
 
-        spectator.setHostInput({
-            text: text,
-            search: 'World'
-        });
-
-        spectator.detectChanges();
+        pipe.transform(text, 'World');
         expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(expected);
     });
 });

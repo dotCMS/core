@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+/* Host styles that can't be in HTML */
+:host {
+    @apply block;
+    width: 33.875rem;
+}

@@ -105,4 +105,43 @@ describe('DotEditContentBlockEditorComponent', () => {
             blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
         expect(blockEditorComponent.languageId).toBe(2);
     });
+
+    it('should pass the correct field to dot-block-editor', () => {
+        spectator.detectChanges();
+
+        const blockEditorDebugElement = spectator.debugElement.query(By.css('dot-block-editor'));
+        const blockEditorComponent =
+            blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
+        expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD_MOCK);
+    });
+
+    it('should pass the correct contentlet to dot-block-editor', () => {
+        spectator.detectChanges();
+
+        const blockEditorDebugElement = spectator.debugElement.query(By.css('dot-block-editor'));
+        const blockEditorComponent =
+            blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
+        expect(blockEditorComponent.contentlet).toBeTruthy();
+        expect(blockEditorComponent.contentlet[BLOCK_EDITOR_FIELD_MOCK.variable]).toBe('');
+    });
+
+    it('should pass hasFieldError to dot-block-editor', () => {
+        spectator.detectChanges();
+
+        const blockEditorDebugElement = spectator.debugElement.query(By.css('dot-block-editor'));
+        const blockEditorComponent =
+            blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
+        // Initially should be false (no errors)
+        expect(blockEditorComponent.hasFieldError).toBe(false);
+    });
+
+    it('should use formControlName from field variable', () => {
+        spectator.detectChanges();
+
+        const blockEditorElement = spectator.query('dot-block-editor');
+        expect(blockEditorElement).toBeTruthy();
+
+        const formGroup = spectator.hostComponent.formGroup;
+        expect(formGroup.get(BLOCK_EDITOR_FIELD_MOCK.variable)).toBeTruthy();
+    });
 });

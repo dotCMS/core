@@ -1,40 +1,49 @@
 @if (vm$ | async; as vm) {
-    <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
-        <dot-sidebar-header
-            [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}" />
-        <div class="experiment-traffic-allocation-add__form-wrapper flex flex-column">
-            <h5>{{ 'experiments.configure.traffic.allocation' | dm }}</h5>
-            <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
+    <p-drawer
+        dotSidebar
+        position="right"
+        closable="false"
+        (onHide)="closeSidebar()"
+        [(visible)]="vm.status.isOpen"
+        dotSize="{{ sidebarSizes.MD }}">
+        <ng-template #header>
+            <dot-sidebar-header
+                [actionButtonTpl]="actionHeaderBtnTpl"
+                dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}" />
+        </ng-template>
+        <div class="flex flex-col py-5">
+            <h5 class="font-bold text-lg m-0 mb-4">
+                {{ 'experiments.configure.traffic.allocation' | dm }}
+            </h5>
+            <p class="mb-6">
+                {{ 'experiments.configure.traffic.allocation.add.description' | dm }}
+            </p>
             <form [formGroup]="form" class="p-fluid" novalidate>
                 <div class="field">
                     <p-slider [max]="100" [min]="1" formControlName="trafficAllocation" />
-                    <div class="flex justify-content-end align-items-baseline gap-2">
+                    <div class="flex justify-end items-baseline gap-2 mt-3">
                         <input
-                            (keyup)="checkAllocationRange()"
                             [max]="100"
                             [min]="1"
-                            [value]="form.value.trafficAllocation"
+                            formControlName="trafficAllocationInput"
                             id="trafficAllocation"
                             data-testId="traffic-allocation-input"
-                            formControlName="trafficAllocation"
                             maxlength="3"
                             pInputText
                             type="number" />
-                        <label class="p-label-input" for="trafficAllocation">%</label>
+                        <label class="font-bold text-lg" for="trafficAllocation">%</label>
                     </div>
                 </div>
             </form>
         </div>
-    </p-sidebar>
+    </p-drawer>
     <ng-template #actionHeaderBtnTpl>
-        <button
-            (click)="save(vm.experimentId)"
+        <p-button
+            (onClick)="save(vm.experimentId)"
             [disabled]="!form.valid"
             [loading]="vm.status.status === stepStatus.SAVING"
             data-testId="add-trafficAllocation-button"
-            label="{{ 'Done' | dm }}"
-            pButton
-            type="submit"></button>
+            [label]="'Done' | dm"
+            type="button" />
     </ng-template>
 }

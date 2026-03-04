@@ -1,11 +1,14 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
-    background-color: $color-palette-primary-op-20;
-    padding: $spacing-1 $spacing-6;
-    color: $brand-background;
+    background-color: colors.$color-palette-primary-op-20;
+    padding: spacing.$spacing-1 spacing.$spacing-6;
+    color: colors.$brand-background;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 }
