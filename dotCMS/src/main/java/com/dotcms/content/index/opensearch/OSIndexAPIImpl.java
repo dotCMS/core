@@ -3,7 +3,6 @@ package com.dotcms.content.index.opensearch;
 import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
 import static com.dotcms.content.index.opensearch.ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT;
 
-import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexAPI;
 import javax.enterprise.context.ApplicationScoped;
@@ -12,7 +11,6 @@ import javax.inject.Inject;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
-import com.dotcms.content.index.domain.NodeStats;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.APILocator;
@@ -22,8 +20,6 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.vavr.Lazy;
@@ -67,7 +63,7 @@ import org.opensearch.client.opensearch.indices.IndexSettings;
 public class OSIndexAPIImpl implements IndexAPI {
 
     @Inject
-    private OpenSearchDefaultClientProvider clientProvider;
+    private OSClientProvider clientProvider;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
@@ -85,7 +81,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     /**
      * Package-private constructor for testing.
      */
-    OSIndexAPIImpl(OpenSearchDefaultClientProvider clientProvider, Lazy<String> clusterPrefix) {
+    OSIndexAPIImpl(OSClientProvider clientProvider, Lazy<String> clusterPrefix) {
         this.clientProvider = clientProvider;
         this.clusterPrefix = clusterPrefix;
     }

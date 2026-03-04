@@ -8,6 +8,7 @@ import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import java.util.Set;
  * @see ESIndexAPI
  * @see OSIndexAPIImpl
  */
+@IndexLibraryIndependent
 public class IndexAPIImpl implements IndexAPI {
 
     private final ESIndexAPI esImpl;
@@ -53,6 +55,7 @@ public class IndexAPIImpl implements IndexAPI {
      * Currently always returns the Elasticsearch implementation.
      * Routing to OpenSearch will be wired here once the OS implementation is complete.
      */
+    //TODO: For now this is the default impl.
     private IndexAPI getProvider() {
         return esImpl;
     }

@@ -60,14 +60,14 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     private static final String[] OS_FIELDS = {"inode", "identifier"};
 
     private final OSQueryCache queryCache;
-    private final OpenSearchDefaultClientProvider clientProvider;
+    private final OSClientProvider clientProvider;
 
     public ContentFactoryIndexOperationsOS() {
-        this.queryCache = new OSQueryCache();  // Use our OSQueryCache
-        this.clientProvider = CDIUtils.getBeanThrows(OpenSearchDefaultClientProvider.class);
+        this.queryCache = new OSQueryCache();
+        this.clientProvider = CDIUtils.getBeanThrows(OSClientProvider.class);
     }
 
-    public ContentFactoryIndexOperationsOS(OSQueryCache queryCache, OpenSearchDefaultClientProvider clientProvider) {
+    public ContentFactoryIndexOperationsOS(OSQueryCache queryCache, OSClientProvider clientProvider) {
         this.queryCache = queryCache;
         this.clientProvider = clientProvider;
     }

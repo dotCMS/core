@@ -41,7 +41,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
     private static final String TEST_INDEX = "test-dotcms-opensearch-" + System.currentTimeMillis();
 
     @Inject
-    OpenSearchDefaultClientProvider singleton;
+    OSDefaultClientProvider singleton;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -61,7 +61,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
         ConfigurableOpenSearchProvider provider = null;
         try {
             // Arrange - Create test configuration
-            OpenSearchClientConfig testConfig = OpenSearchClientConfig.builder()
+            OSClientConfig testConfig = OSClientConfig.builder()
                     .addEndpoints("http://localhost:9201")  // Local OpenSearch port
                     .tlsEnabled(false)
                     .maxConnections(200) // Different configuration for testing
@@ -100,7 +100,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
         ConfigurableOpenSearchProvider prodProvider = null;
         try {
             // Test 1: Local test configuration
-            OpenSearchClientConfig localConfig = OpenSearchDefaultClientProvider.createLocalTestConfig();
+            OSClientConfig localConfig = OSDefaultClientProvider.createLocalTestConfig();
             localProvider = new ConfigurableOpenSearchProvider(localConfig);
 
             assertEquals("Should use local port", "http://localhost:9201", localConfig.endpoints().get(0));
@@ -111,7 +111,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
             assertNotNull("Local test client should not be null", localClient);
 
             // Test 2: Production-like test configuration
-            OpenSearchClientConfig prodConfig = OpenSearchDefaultClientProvider.createProductionTestConfig();
+            OSClientConfig prodConfig = OSDefaultClientProvider.createProductionTestConfig();
             prodProvider = new ConfigurableOpenSearchProvider(prodConfig);
 
             assertEquals("Should use production endpoint", "https://opensearch.prod.com:9200", prodConfig.endpoints().get(0));
@@ -179,7 +179,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
         ConfigurableOpenSearchProvider provider = null;
         try {
             // Arrange - Configure for local OpenSearch container
-            OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+            OSClientConfig config = OSClientConfig.builder()
                     .addEndpoints("http://localhost:9201")  // Local OpenSearch port
                     .tlsEnabled(false)  // Security disabled
                     .trustSelfSigned(true)
@@ -242,7 +242,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
         ConfigurableOpenSearchProvider provider = null;
         try {
             // Arrange - Configure for local OpenSearch container
-            OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+            OSClientConfig config = OSClientConfig.builder()
                     .addEndpoints("http://localhost:9201")  // Local OpenSearch port
                     .tlsEnabled(false)  // Security disabled
                     .trustSelfSigned(true)
@@ -318,7 +318,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
         ConfigurableOpenSearchProvider provider = null;
         try {
             // Arrange - Configure specifically for the opensearch-upgrade container
-            OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+            OSClientConfig config = OSClientConfig.builder()
                     .addEndpoints("http://localhost:9201")  // Container mapped port
                     .tlsEnabled(false)  // DISABLE_SECURITY_PLUGIN=true
                     .connectionTimeout(Duration.ofSeconds(15))
@@ -436,7 +436,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
     @Test(expected = DotRuntimeException.class)
     public void test_createProvider_withInvalidEndpoint_shouldThrowException() {
         // Arrange
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
                 .addEndpoints("invalid-url-format")
                 .build();
 
