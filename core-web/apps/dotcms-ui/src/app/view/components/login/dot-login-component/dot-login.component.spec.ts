@@ -227,7 +227,7 @@ describe('DotLoginComponent', () => {
             component.logInUser();
             spectator.detectChanges();
             const message = spectator.query(byTestId('message'));
-            expect(message).toHaveClass('p-invalid');
+            expect(message).toHaveClass('text-red-400');
             expect(message?.textContent).toEqual('error message');
         });
     });

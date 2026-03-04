@@ -1,7 +1,6 @@
 {
     "mcpServers": {
         "primeng": {
-            "type": "stdio",
             "command": "npx",
             "args": ["-y", "@primeng/mcp"]
         },

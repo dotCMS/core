@@ -21,8 +21,13 @@ export class LoginPage {
         const passwordInputLocator = this.page.locator('input[id="password"]');
         await passwordInputLocator.fill(password);
 
+        const responsePromise = this.page.waitForResponse((response) => {
+            return response.url().includes('/api/v1/authentication');
+        });
+
         const loginBtnLocator = this.page.getByTestId('submitButton');
         await loginBtnLocator.click();
+        await responsePromise;
     }
 
     async loginAndOpenSideMenu(username: string, password: string) {
