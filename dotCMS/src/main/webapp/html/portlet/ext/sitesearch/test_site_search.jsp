@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
+<%@page import="com.dotcms.content.elasticsearch.business.IndexAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -14,7 +14,7 @@
 
 List<Structure> structs = StructureFactory.getStructures();
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
-ESIndexAPI esapi = APILocator.getESIndexAPI();
+IndexAPI esapi = APILocator.getESIndexAPI();
 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 

@@ -4,7 +4,7 @@
 <%@page import="com.dotcms.content.index.domain.ClusterIndexHealth"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
+<%@page import="com.dotcms.content.elasticsearch.business.IndexAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.Map"%>
@@ -19,7 +19,7 @@
 List<Structure> structs = StructureFactory.getStructures();
 ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 ContentletAPI capi = APILocator.getContentletAPI();
-ESIndexAPI esapi = APILocator.getESIndexAPI();
+IndexAPI esapi = APILocator.getESIndexAPI();
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
 	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){

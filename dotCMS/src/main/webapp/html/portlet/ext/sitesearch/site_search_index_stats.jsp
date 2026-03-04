@@ -1,5 +1,5 @@
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
+<%@page import="com.dotcms.content.elasticsearch.business.IndexAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -16,7 +16,7 @@
 <%
 
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
-ESIndexAPI esapi = APILocator.getESIndexAPI();
+IndexAPI esapi = APILocator.getESIndexAPI();
 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 try {
