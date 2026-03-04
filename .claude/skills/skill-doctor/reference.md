@@ -73,6 +73,81 @@ Lightweight path for quick notes — no investigation, no quality gate.
 
 ---
 
+## List Mode
+
+### List all skills (`list`)
+
+1. **Discover repo skills:**
+   ```bash
+   ls -d .claude/skills/*/
+   ```
+
+2. **For each skill directory**, read the YAML frontmatter from `SKILL.md`:
+   ```bash
+   head -20 .claude/skills/<name>/SKILL.md
+   ```
+   Extract the `name` and `description` fields from the `---` delimited frontmatter block.
+
+3. **Check override status** for each skill:
+   ```bash
+   test -f ~/.claude/skills/<name>/.skill-origin.json && echo "LOCAL OVERRIDE" || echo "repo"
+   ```
+
+4. **Display summary table:**
+   ```
+   Available Skills (.claude/skills/):
+
+     <name>              <description (first 80 chars)>
+                         Invoke: /skill-doctor info <name>
+                         Source: repo | LOCAL OVERRIDE
+
+     <name>              <description (first 80 chars)>
+                         Invoke: /skill-doctor info <name>
+                         Source: repo
+   ```
+
+5. If no skills found: "No skills found in `.claude/skills/`. This repo may not have any Claude Code skills configured."
+
+### Skill detail (`info <skill>`)
+
+1. **Validate** the skill exists:
+   ```bash
+   test -d .claude/skills/<skill>/ || test -d ~/.claude/skills/<skill>/
+   ```
+   If neither exists, list available skills and stop: "No skill named `<skill>` found."
+
+2. **Read the full SKILL.md** — use local override if it exists, otherwise repo version.
+
+3. **Extract and present** these sections dynamically from the file content (do NOT hardcode):
+   - **Name and description** from YAML frontmatter
+   - **Purpose**: Summarize the overview/first section in 1-2 sentences
+   - **Available modes/commands**: Extract from any routing table, command list, or usage section in the skill
+   - **Invocation examples**: Derive from the skill's documented usage patterns
+   - **Override status**: Check for local override as in list mode
+
+4. **Display:**
+   ```
+   Skill: <name>
+   Description: <full description from frontmatter>
+   Source: .claude/skills/<name>/ (repo) | ~/.claude/skills/<name>/ (local override)
+
+   ## Purpose
+   <1-2 sentence summary derived from skill content>
+
+   ## Commands / Modes
+   <extracted from skill's routing table or usage section>
+
+   ## Usage Examples
+   <derived from skill's documented patterns>
+
+   ## Files
+   <list files in the skill directory>
+   ```
+
+5. If the skill has a large reference file, mention it: "This skill has additional reference documentation in `<filename>`. Use `/skill-doctor info <skill>` with specific questions for more detail."
+
+---
+
 ## Manage Mode
 
 ### Status (--manage with no skill name)
@@ -492,6 +567,38 @@ Used after a fix PR is merged to clean up the Discussion thread.
    ```
 6. **Post Slack summary** to `#log-skill-feedback`.
 7. **Offer cleanup** -- if all reports resolved, offer to lock thread via `lockLockable` mutation.
+
+---
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Sending reports without investigating root cause | Quality gate: must have confirmed problem + root cause + suggested fix |
+| Sending duplicate reports | Always check Discussion thread for existing reports first |
+| Forgetting to check prerequisites before delivery | Run `gh auth status` and repo access check before any delivery action |
+| Using `--manage` on detached HEAD | Falls back to HEAD if main branch ref doesn't exist |
+| Cloning when manual directory already exists | Checks for `.skill-origin.json` to distinguish tracked vs manual overrides |
+| Running `revert` without reviewing changes | Always shows diff and requires explicit name confirmation before `rm -rf` |
+
+## Example: Diagnose Flow
+
+```
+Developer: /skill-doctor review
+
+1. Validate: .claude/skills/review/ exists (repo version, no local override)
+2. Classify: invalid_command (gh pr diff --name-only doesn't exist)
+3. Investigate:
+   - Reproduce: gh pr diff --name-only -> "unknown flag: --name-only"
+   - Root cause: SKILL.md line 42 uses --name-only, correct flag is --name-status
+   - Fix: Change "--name-only" to "--name-status" on line 42
+   - Related: line 58 also uses --name-only in a different context
+4. Duplicate check: No Discussion thread exists -> first report
+5. Route: Repo version -> offer clone-and-fix or report-only
+6. Scrub: Replace ~/Users/user/ with ~/
+7. Developer reviews scrubbed report -> Send
+8. Post to GitHub Discussion + Slack notification
+```
 
 ---
 

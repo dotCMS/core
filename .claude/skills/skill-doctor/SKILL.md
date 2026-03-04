@@ -15,6 +15,8 @@ Parse `$ARGUMENTS`:
 
 | Pattern | Mode |
 |---------|------|
+| `list` | **list** (all repo skills) |
+| `info <skill>` | **list** (detail for one skill) |
 | `feedback [skill] "<message>"` | **feedback** (quick note) |
 | (empty) or `<skill-name>` | **diagnose** |
 | `--optimize <skill>` | **optimize** |
@@ -24,6 +26,10 @@ Parse `$ARGUMENTS`:
 | `resolve <skill>` | **resolve** |
 
 Unrecognized input: show this table and ask to rephrase. Then **read `./reference.md`** for detailed procedures.
+
+## List
+
+Dynamically discovers repo skills by reading `.claude/skills/*/SKILL.md`. Shows name, description, invocation, and override status. `info <skill>` reads the full SKILL.md to provide detailed usage guidance. All information comes from the skill files themselves — nothing is hardcoded. See reference.md for details.
 
 ## Feedback
 
@@ -54,33 +60,11 @@ Checks frontmatter, token efficiency (<500 words), structure quality, and stalen
 
 ## Common Mistakes
 
-| Mistake | Fix |
-|---------|-----|
-| Sending reports without investigating root cause | Quality gate: must have confirmed problem + root cause + suggested fix |
-| Sending duplicate reports | Always check Discussion thread for existing reports first |
-| Forgetting to check prerequisites before delivery | Run `gh auth status` and repo access check before any delivery action |
-| Using `--manage` on detached HEAD | Falls back to HEAD if main branch ref doesn't exist |
-| Cloning when manual directory already exists | Checks for `.skill-origin.json` to distinguish tracked vs manual overrides |
-| Running `revert` without reviewing changes | Always shows diff and requires explicit name confirmation before `rm -rf` |
-
-## Example: Diagnose Flow
-
-```
-Developer: /skill-doctor review
-
-1. Validate: .claude/skills/review/ exists (repo version, no local override)
-2. Classify: invalid_command (gh pr diff --name-only doesn't exist)
-3. Investigate:
-   - Reproduce: gh pr diff --name-only -> "unknown flag: --name-only"
-   - Root cause: SKILL.md line 42 uses --name-only, correct flag is --name-status
-   - Fix: Change "--name-only" to "--name-status" on line 42
-   - Related: line 58 also uses --name-only in a different context
-4. Duplicate check: No Discussion thread exists -> first report
-5. Route: Repo version -> offer clone-and-fix or report-only
-6. Scrub: Replace /Users/stevebolton/ with ~/
-7. Developer reviews scrubbed report -> Send
-8. Post to GitHub Discussion + Slack notification
-```
+See reference.md for the full table. Key rules:
+- Never send reports without root cause + suggested fix
+- Always check Discussion thread for duplicates before reporting
+- Always run `gh auth status` before any delivery action
+- `revert` always shows diff and requires name confirmation
 
 ## Override Warning
 
