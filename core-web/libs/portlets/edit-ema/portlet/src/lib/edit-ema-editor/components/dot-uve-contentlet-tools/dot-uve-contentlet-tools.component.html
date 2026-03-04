@@ -63,22 +63,21 @@
                     [raised]="true"
                     styleClass="delete"
                     icon="pi pi-times" />
+                <p-button
+                    (click)="editContent.emit(selectedContext)"
+                    data-testId="edit-button"
+                    [rounded]="true"
+                    [raised]="true"
+                    icon="pi pi-pencil" />
+                @if (showStyleEditorOption()) {
+                    <p-button
+                        (click)="selectContent.emit(selectedContext)"
+                        data-testId="palette-button"
+                        [rounded]="true"
+                        [raised]="true"
+                        icon="pi pi-palette" />
+                }
             </div>
-        }
-
-        <p-button
-            (click)="editContent.emit(selectedContext)"
-            data-testId="edit-button"
-            styleClass="p-button-rounded p-button-raised"
-            icon="pi pi-pencil" />
-
-        @if (showStyleEditorOption()) {
-            <p-button
-                (click)="selectContent.emit(selectedContext)"
-                data-testId="palette-button"
-                [rounded]="true"
-                [raised]="true"
-                icon="pi pi-palette" />
         }
         <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
     </div>
