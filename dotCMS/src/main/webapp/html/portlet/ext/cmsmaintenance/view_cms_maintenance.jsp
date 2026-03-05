@@ -217,7 +217,7 @@ function doReindex(){
     var contentType = dijit.byId('structure').item != null ? dijit.byId('structure').item.id : "DOTALL";
     dijit.byId('structure').reset();
 
-    fetch('/api/v1/esindex/reindex?shards=0&contentType=' + contentType, {method: 'POST'})
+    fetch('/api/v1/esindex/reindex?contentType=' + contentType, {method: 'POST'})
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data))
     .then(()=>refreshIndexStats());

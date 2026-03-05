@@ -142,18 +142,13 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				{
 
 					int shards = Config.getIntProperty("es.index.number_of_shards", 1);
-						try{
-							shards = Integer.parseInt(req.getParameter("shards"));
-						}catch(Exception e){
+					System.setProperty("es.index.number_of_shards", String.valueOf(shards));
+					Logger.info(this, "Running Contentlet Reindex");
 
-						}
-						System.setProperty("es.index.number_of_shards", String.valueOf(shards));
-						Logger.info(this, "Running Contentlet Reindex");
+					conAPI.refreshAllContent();
 
-						conAPI.refreshAllContent();
-
-						message = "message.cmsmaintenance.cache.indexrebuilt";
-						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
+					message = "message.cmsmaintenance.cache.indexrebuilt";
+					AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
 
 				}
 				else
