@@ -23,6 +23,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.vavr.control.Try;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
@@ -57,7 +63,7 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
  * @see com.dotcms.rest.api.v2.tags.TagResource
  */
 @Path("/v1/tags")
-@io.swagger.v3.oas.annotations.tags.Tag(name = "Tags", description = "Content tagging and labeling")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Tag (v1)", description = "Legacy tag management endpoints (deprecated - use v2 TagResource instead)")
 @Deprecated(since = "23.12")
 public class TagResource {
 
@@ -99,8 +105,29 @@ public class TagResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "getTagsV1",
+            summary = "List or search tags (deprecated)",
+            description = "Lists all tags or searches by name with optional site filtering. " +
+                    "If a name is provided, a search-by-name (like) operation is performed. " +
+                    "If no matches are found for the site, global tags are searched. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tags retrieved successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(type = "object",
+                                    description = "Map of tag names to RestTag objects"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Map<String, RestTag> list(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
+            @Parameter(description = "Tag name to search for (supports partial matching)")
             @QueryParam("name") final String  tagName,
+            @Parameter(description = "Site identifier to restrict tag search")
             @QueryParam("siteId") final String siteId) {
 
 
@@ -131,6 +158,28 @@ public class TagResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "addTagV1",
+            summary = "Create tags (deprecated)",
+            description = "Creates new tags and optionally links them to an owner user. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tags created successfully (may contain partial errors)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityTagOperationView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Invalid tag data provided",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Response addTag(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final TagForm tagForm) {
@@ -187,6 +236,32 @@ public class TagResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "updateTagV1",
+            summary = "Update a tag (deprecated)",
+            description = "Updates an existing tag's name and site association. " +
+                    "Requires tagId, tagName, and siteId in the request body. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tag updated successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityTagsView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Invalid or incomplete tag data provided",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "404",
+                    description = "Tag not found for the given ID",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Response updateTag(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final UpdateTagForm tagForm) {
@@ -254,8 +329,32 @@ public class TagResource {
     @Path("/user/{userId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "getTagsByUserIdV1",
+            summary = "Get tags by user ID (deprecated)",
+            description = "Retrieves all tags owned by a given user. " +
+                    "Returns tags that were assigned an owner during creation. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tags retrieved successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityTagsView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "404",
+                    description = "No tags found for the given user ID",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Response getTagsByUserId(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "User identifier to retrieve owned tags for", required = true)
             @PathParam("userId") final String userId) {
 
         final InitDataObject initDataObject =
@@ -294,7 +393,32 @@ public class TagResource {
     @Path("/{nameOrId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "getTagsByNameOrIdV1",
+            summary = "Get tags by name or ID (deprecated)",
+            description = "Looks up tags by tag name or tag ID. " +
+                    "If the value is a UUID, lookup is performed by tag ID. " +
+                    "Otherwise, lookup is performed by tag name. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tags found successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityTagsView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "404",
+                    description = "No tags found matching the given name or ID",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Response getTagsByNameOrId(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
+            @Parameter(description = "Tag name or tag UUID to look up", required = true)
             @PathParam("nameOrId") final String nameOrId) {
 
         final InitDataObject initDataObject =
@@ -340,8 +464,33 @@ public class TagResource {
     @Path("/{tagId}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "deleteTagV1",
+            summary = "Delete a tag by ID (deprecated)",
+            description = "Deletes a tag by its ID. The user must have EDIT permission on all " +
+                    "contentlets associated with the tag. If the tag has no contentlet associations " +
+                    "(orphan tag), deletion is allowed. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tag deleted successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user lacks permission to delete the tag",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "404",
+                    description = "Tag not found for the given ID",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Response delete(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Tag identifier to delete", required = true)
             @PathParam("tagId") final String tagId) throws DotDataException {
 
         final InitDataObject initDataObject =
@@ -388,9 +537,38 @@ public class TagResource {
     @Path("/tag/{nameOrId}/inode/{inode}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "linkTagsAndInodeV1",
+            summary = "Link tags to an inode (deprecated)",
+            description = "Binds a tag with a given inode. The lookup can be done via tag name or tag ID. " +
+                    "If the tag name matches more than one tag, all matching tags will be bound. " +
+                    "Use a tag ID instead of a name for more specific binding. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tags linked to inode successfully (may contain partial errors)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityTagInodeOperationView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Error linking tag to inode",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "404",
+                    description = "No tags found matching the given name or ID",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Response linkTagsAndInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Tag name or tag UUID to link", required = true)
             @PathParam("nameOrId") final String nameOrId,
+            @Parameter(description = "Inode identifier to link the tag(s) to", required = true)
             @PathParam("inode") final String inode) {
 
         final InitDataObject initDataObject =
@@ -445,8 +623,31 @@ public class TagResource {
     @Path("/inode/{inode}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "findTagsByInodeV1",
+            summary = "Get tags by inode (deprecated)",
+            description = "Retrieves all tag-inode associations for a given inode. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tag-inode associations retrieved successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityTagInodesView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "404",
+                    description = "No tags found for the given inode",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Response findTagsByInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Inode identifier to retrieve associated tags for", required = true)
             @PathParam("inode") final String inode) {
 
         final InitDataObject initDataObject =
@@ -480,8 +681,34 @@ public class TagResource {
     @Path("/inode/{inode}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "deleteTagInodesByInodeV1",
+            summary = "Remove all tag-inode links for an inode (deprecated)",
+            description = "Breaks the link between an inode and all its associated tags. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tag-inode associations removed successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Error removing tag-inode associations",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "404",
+                    description = "No tags found for the given inode",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public Response deleteTagInodesByInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Inode identifier to remove all tag associations from", required = true)
             @PathParam("inode") final String inode) {
 
         final InitDataObject initDataObject =
@@ -521,6 +748,28 @@ public class TagResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Operation(
+            operationId = "importTagsV1",
+            summary = "Import tags from file (deprecated)",
+            description = "Imports tags from an uploaded file using multipart form data. " +
+                    "This endpoint is deprecated - use v2 TagResource instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Tags imported successfully",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Failure importing tags file",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON))
+    })
     public final Response importTags(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
