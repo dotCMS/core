@@ -976,7 +976,7 @@ public class ContentToolTest extends IntegrationTestBase {
      */
     @Test
     public void testFind_WhenPageContainerContext_AddsDotStylePropertiesFromMultiTree()
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
@@ -1005,8 +1005,7 @@ public class ContentToolTest extends IntegrationTestBase {
                 defaultLanguage.getId(),
                 host,
                 page.getIdentifier(),
-                container.getIdentifier(),
-                "1"
+                container.getIdentifier()
         );
 
         final ContentMap contentMap = contentTool.find(contentlet.getIdentifier());
@@ -1021,7 +1020,7 @@ public class ContentToolTest extends IntegrationTestBase {
     /**
      * Method to Test: {@link ContentTool#load(String)} (LazyLoaderContentMap)
      * When: Same as testFind_WhenPageContainerContext - content with style props in MultiTree
-     * Should: LazyLoaderContentMap.getDotStyleProperties() returns the style properties
+     * Should: LazyLoaderContentMap.get("dotStyleProperties") returns the style properties
      */
     @Test
     public void testLoad_WhenPageContainerContext_ReturnsDotStylePropertiesInLazyLoaderContentMap()
@@ -1053,20 +1052,19 @@ public class ContentToolTest extends IntegrationTestBase {
                 defaultLanguage.getId(),
                 host,
                 page.getIdentifier(),
-                container.getIdentifier(),
-                "1"
+                container.getIdentifier()
         );
 
         final LazyLoaderContentMap lazyMap = contentTool.load(contentlet.getIdentifier());
         assertNotNull(lazyMap);
 
-        final Map<String, Object> result = lazyMap.getDotStyleProperties();
+        final Map<String, Object> result = (Map<String, Object>) lazyMap.get(Contentlet.STYLE_PROPERTIES_KEY);
         assertNotNull(result);
         assertEquals("16px", result.get("fontSize"));
     }
 
     private ContentTool getContentToolWithPageContext(final long languageId, final Host host,
-            final String pageId, final String containerId, final String containerInstance) {
+            final String pageId, final String containerId) {
         final ViewContext viewContext = mock(ViewContext.class);
         final Context velocityContext = mock(Context.class);
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -1085,7 +1083,7 @@ public class ContentToolTest extends IntegrationTestBase {
 
         when(velocityContext.get("HTMLPAGE_IDENTIFIER")).thenReturn(pageId);
         when(velocityContext.get("CONTAINER_IDENTIFIER")).thenReturn(containerId);
-        when(velocityContext.get("CONTAINER_UNIQUE_ID")).thenReturn(containerInstance);
+        when(velocityContext.get("CONTAINER_UNIQUE_ID")).thenReturn("1");
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
