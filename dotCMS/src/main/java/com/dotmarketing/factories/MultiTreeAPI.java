@@ -522,17 +522,14 @@ public interface MultiTreeAPI {
     List<MultiTree> getMultiTrees(final Variant variant) throws DotDataException;
 
     /**
-     * Returns the style properties stored in the {@link MultiTree} record that links the given
-     * contentlet to the specified page/container/instance, or an empty {@link Optional} if no
-     * style properties are found or the contentlet is not present in that location.
-     *
-     * <p>Handles the UUID_LEGACY → UUID_START normalization and the dual-query fallback
-     * automatically, so callers do not need to replicate that logic.</p>
+     * Queries the database to return the style properties stored in the {@link MultiTree} record that links the given
+     * contentlet to the specified page/container/instance, or an empty {@link Optional} if no style
+     * properties are found or the contentlet is not present in that location.
      *
      * @param pageId            the HTML page identifier
      * @param containerId       the container identifier
      * @param containerInstance the container UUID / instance (UUID_LEGACY is normalized internally)
-     * @param personalization   the personalization tag (e.g. {@link MultiTree#DOT_PERSONALIZATION_DEFAULT})
+     * @param personalization   the personalization tag (e.g.{@link MultiTree#DOT_PERSONALIZATION_DEFAULT})
      * @param contentletId      the contentlet identifier to look up
      * @return an {@link Optional} with the style properties map, or empty if none exist
      */
