@@ -1,30 +1,36 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/common";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 // Custom styling for context menu
 ::ng-deep {
     .p-contextmenu {
         min-width: 15rem;
-        border: 1px solid $color-palette-black-op-10;
-        border-radius: $border-radius-lg;
-        box-shadow: $shadow-l;
-        padding: $spacing-0;
-        background: $white;
+        border: 1px solid colors.$color-palette-black-op-10;
+        border-radius: common.$border-radius-lg;
+        box-shadow: shadows.$shadow-l;
+        padding: spacing.$spacing-0;
+        background: colors.$white;
 
         .p-menuitem-content {
             margin: 0;
         }
 
         .p-separator {
-            margin: $spacing-0 0;
-            border-top: 1px solid $color-palette-black-op-10;
+            margin: spacing.$spacing-0 0;
+            border-top: 1px solid colors.$color-palette-black-op-10;
         }
     }
 
     .p-contextmenu .p-menuitem-link {
-        padding: $spacing-2 $spacing-2;
-        color: $black;
+        padding: spacing.$spacing-2 spacing.$spacing-2;
+        color: colors.$black;
         transition: background-color $basic-speed ease;
-        border-radius: $border-radius-md;
+        border-radius: common.$border-radius-md;
 
         &:hover {
             background-color: $bg-hover;
@@ -47,21 +53,21 @@
 
     .p-contextmenu .p-disabled {
         .p-menuitem-link {
-            background-color: $color-palette-gray-200;
-            color: $color-palette-gray-600;
+            background-color: colors.$color-palette-gray-200;
+            color: colors.$color-palette-gray-600;
             border-radius: unset;
         }
     }
 
     .menu-item-label {
-        font-size: $font-size-md;
+        font-size: fonts.$font-size-md;
         line-height: 1.2;
     }
 
     .menu-item-shortcut {
-        font-size: $font-size-sm;
-        color: $color-palette-black-op-20;
-        font-weight: $font-weight-regular-bold;
+        font-size: fonts.$font-size-sm;
+        color: colors.$color-palette-black-op-20;
+        font-weight: fonts.$font-weight-regular-bold;
         letter-spacing: 0.5px;
     }
 }

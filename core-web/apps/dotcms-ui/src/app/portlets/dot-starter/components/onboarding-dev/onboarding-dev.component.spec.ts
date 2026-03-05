@@ -25,8 +25,8 @@ describe('DotOnboardingDevComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should render 6 framework blocks', () => {
-        expect(spectator.queryAll('.framework-container').length).toBe(6);
+    it('should render 7 framework blocks', () => {
+        expect(spectator.queryAll('[data-testid="framework-block"]').length).toBe(7);
     });
 
     it('should render Next.js and Angular in the DOM', () => {
@@ -36,9 +36,10 @@ describe('DotOnboardingDevComponent', () => {
     });
 
     it('should render framework with label, image alt and CLI command', () => {
-        expect(spectator.query('.framework-container h3')?.textContent?.trim()).toBe('Next.js');
-        expect(spectator.query('.framework-container img')?.getAttribute('alt')).toBe('Next.js');
-        expect(spectator.query('.framework-container p.command-text')?.textContent?.trim()).toBe(
+        const firstBlock = spectator.query('[data-testid="framework-block"]');
+        expect(firstBlock?.querySelector('h3')?.textContent?.trim()).toBe('Next.js');
+        expect(firstBlock?.querySelector('img')?.getAttribute('alt')).toBe('Next.js');
+        expect(firstBlock?.querySelector('p.font-mono')?.textContent?.trim()).toBe(
             'npx @dotcms/create-app --framework=nextjs'
         );
     });

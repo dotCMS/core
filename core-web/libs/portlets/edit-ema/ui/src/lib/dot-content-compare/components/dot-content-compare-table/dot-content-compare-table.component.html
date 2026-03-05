@@ -9,7 +9,7 @@
                     </span>
                 </th>
                 <th>
-                    <div class="flex flex-column gap-2">
+                    <div class="flex flex-col gap-2">
                         <div class="flex">
                             <span
                                 class="dot-content-compare-table__title"
@@ -19,7 +19,7 @@
                         </div>
                         @if ($showActions()) {
                             <div class="dot-content-compare-table__controls">
-                                <p-dropdown
+                                <p-select
                                     (onChange)="changeVersion.emit($event.value)"
                                     [options]="data.versions"
                                     data-testid="versions-dropdown"
@@ -40,19 +40,18 @@
                                                 item.modUserName
                                         }}
                                     </ng-template>
-                                </p-dropdown>
+                                </p-select>
                                 <p-selectButton
                                     (onChange)="changeDiff.emit($event.value)"
                                     [(ngModel)]="showDiff"
                                     [options]="displayOptions"
-                                    class="p-button-compact"
+                                    styleClass="p-button-compact"
                                     data-testid="show-diff" />
-                                <button
+                                <p-button
                                     (click)="bringBack.emit(data.compare.inode)"
                                     [label]="'Bring-Back' | dm"
-                                    class="p-button-sm p-button"
-                                    data-testId="table-bring-back"
-                                    pButton></button>
+                                    size="small"
+                                    data-testId="table-bring-back" />
                             </div>
                         }
                     </div>

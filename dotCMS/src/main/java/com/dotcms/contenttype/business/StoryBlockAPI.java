@@ -58,24 +58,26 @@ public interface StoryBlockAPI {
 
     /**
      * Traverses every {@link com.dotcms.contenttype.model.field.StoryBlockField} in the specified Contentlet, and
-     * returns the list with the Identifiers that are being referenced in such a field.
+     * returns the list with the dependency information (identifier and languageId) for contentlets being referenced
+     * in such fields.
      *
      * @param contentlet The {@link Contentlet} whose Story Block references must be retrieved.
      *
-     * @return The {@link List} with the Identifiers of the Contentlets that are being referenced in every Story
-     * Block fields.
+     * @return The {@link List} of {@link StoryBlockDependency} objects containing the identifier and languageId
+     * of the Contentlets that are being referenced in every Story Block field.
      */
-    List<String> getDependencies (final Contentlet contentlet);
+    List<StoryBlockDependency> getDependencies (final Contentlet contentlet);
 
     /**
-     * Returns the list with the Identifiers that are being referenced in the specified Story Block value.
+     * Returns the list with the dependency information (identifier and languageId) for contentlets being referenced
+     * in the specified Story Block value.
      *
      * @param storyBlockValue The value of the Story Block -- usually in the form of a JSON String.
      *
-     * @return The {@link List} with the Identifiers of the Contentlets that are being referenced in the Story Block
-     * field.
+     * @return The {@link List} of {@link StoryBlockDependency} objects containing the identifier and languageId
+     * of the Contentlets that are being referenced in the Story Block field.
      */
-    List<String> getDependencies (final Object storyBlockValue);
+    List<StoryBlockDependency> getDependencies (final Object storyBlockValue);
 
     /**
      * Adds a Contentlet to the specified Story Block field.

@@ -15,8 +15,7 @@ import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uv
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    templateUrl: './uve-style-editor-field-radio.component.html',
-    styleUrl: './uve-style-editor-field-radio.component.scss'
+    templateUrl: './uve-style-editor-field-radio.component.html'
 })
 export class UveStyleEditorFieldRadioComponent {
     $field = input.required<StyleEditorFieldSchema>({ alias: 'field' });

@@ -1,12 +1,22 @@
 import { Location } from '@angular/common';
-import { Component, DestroyRef, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    effect,
+    inject,
+    OnInit,
+    signal,
+    untracked,
+    ViewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -75,6 +85,7 @@ import {
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
     imports: [
+        ButtonModule,
         ConfirmDialogModule,
         ToastModule,
         EditEmaNavigationBarComponent,
@@ -83,7 +94,7 @@ import {
         DotEmaDialogComponent,
         DotInfoPageComponent,
         DotNotLicenseComponent,
-        MessagesModule,
+        MessageModule,
         DotMessagePipe
     ]
 })
@@ -124,10 +135,23 @@ export class DotEmaShellComponent implements OnInit {
     readonly $updateBreadcrumbEffect = effect(() => {
         const pageAPIResponse = this.uveStore.pageAPIResponse();
 
+        const params = untracked(() => this.uveStore.$friendlyParams());
+
+        const { data } = this.#activatedRoute.snapshot;
+
+        const baseClientHost = data?.uveConfig?.url;
+
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+
+        const paramsString = new URLSearchParams(cleanedParams).toString();
+
+        const newURL = `#/edit-page/content?${paramsString}`;
+
         if (pageAPIResponse) {
             this.#globalStore.addNewBreadcrumb({
-                label: pageAPIResponse?.page.title,
-                url: this.uveStore.pageParams().url
+                label: pageAPIResponse.page?.title,
+                url: newURL,
+                id: `${pageAPIResponse.page?.identifier}`
             });
         }
     });

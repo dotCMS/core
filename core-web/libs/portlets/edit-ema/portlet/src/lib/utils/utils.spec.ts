@@ -1180,7 +1180,7 @@ describe('utils functions', () => {
 
     describe('createFullURL', () => {
         const expectedURL =
-            'http://localhost:4200/page?language_id=1&com.dotmarketing.persona.id=persona&variantName=new&experimentId=1&depth=1';
+            'http://localhost:4200/page?language_id=1&com.dotmarketing.persona.id=persona&variantName=new&experimentId=1&mode=EDIT_MODE&depth=1';
         const params = {
             url: 'page',
             language_id: '1',

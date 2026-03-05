@@ -1,6 +1,7 @@
 import {
     addDays,
     addHours,
+    differenceInDays,
     endOfDay,
     format,
     isSameDay,
@@ -141,20 +142,32 @@ export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
 /**
  * Extracts page views count from TotalPageViewsEntity
  */
-export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data['EventSummary.totalEvents'] ?? 0) : 0;
+export const extractPageViews = (data: TotalPageViewsEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.totalEvents'] ?? 0);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
  */
-export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data['EventSummary.uniqueVisitors']) : 0;
+export const extractSessions = (data: UniqueVisitorsEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.uniqueVisitors']);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity
  */
-export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number =>
-    data ? Number(data['EventSummary.totalEvents']) : 0;
+export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.totalEvents']);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts page title from TopPagePerformanceEntity
@@ -600,7 +613,9 @@ type EmptyEntityFactory<T> = (date: Date, dateKey: string) => T;
  * Generic factory for TimelineEntity types.
  * Used for PageViewTimeLineEntity and ConversionTrendEntity which share the same structure.
  */
-export const createEmptyAnalyticsEntity = <T extends TimelineEntity>(
+export const createEmptyAnalyticsEntity = <
+    T extends TimelineEntity & { 'EventSummary.totalEvents': string }
+>(
     date: Date,
     dateKey: string
 ): T =>
@@ -608,7 +623,7 @@ export const createEmptyAnalyticsEntity = <T extends TimelineEntity>(
         'EventSummary.day': dateKey,
         'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
         'EventSummary.totalEvents': '0'
-    }) as unknown as T;
+    }) as T;
 
 /**
  * Factory for TrafficVsConversionsEntity
@@ -708,4 +723,20 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
         default:
             return [startOfDay(today), endOfDay(today)];
     }
+};
+
+/**
+ * Get the previous period of the same length as the given time range, ending the day before the current range starts.
+ * Used for engagement trend comparison (current vs previous period).
+ *
+ * @param timeRange - The current time range (predefined or custom [from, to])
+ * @returns The previous period as [from, to] date strings (yyyy-MM-dd) for Cube queries
+ */
+export const getPreviousPeriod = (timeRange: TimeRangeInput): [string, string] => {
+    const [startDate, endDate] = getDateRange(timeRange);
+    const days = differenceInDays(endDate, startDate) + 1;
+    const previousEnd = subDays(startDate, 1);
+    const previousStart = subDays(previousEnd, days - 1);
+
+    return [format(previousStart, 'yyyy-MM-dd'), format(previousEnd, 'yyyy-MM-dd')];
 };

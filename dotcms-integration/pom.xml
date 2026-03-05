@@ -607,7 +607,7 @@
             </activation>
             <properties>
                 <!-- Override Docker filter to run opensearch-test-upgrade container -->
-                <docker.filter>database,opensearch-upgrade</docker.filter>
+                <docker.filter>database,opensearch,opensearch-upgrade</docker.filter>
                 <!-- Override ES endpoints to use opensearch-upgrade port -->
                 <test.es.endpoints>${test.os.upgrade.endpoints}</test.es.endpoints>
             </properties>

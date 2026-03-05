@@ -1,0 +1,62 @@
+{
+  "teams": {
+    "Team : Falcon": {
+      "members": ["oidacra", "erickgonzalez", "nicobytes", "jcastro-dotcms", "freddyDOTCMS", "adrianjm-dotCMS"],
+      "areas": [
+        "core-web/apps/dotcms-ui",
+        "core-web/apps/mcp-server",
+        "core-web/libs/portlets",
+        "core-web/libs/ui",
+        "core-web/libs/data-access",
+        "core-web/libs/utils",
+        "core-web/libs/dot-rules",
+        "core-web/libs/edit-content",
+        "core-web/libs/edit-content-bridge",
+        "core-web/libs/global-store",
+        "core-web/libs/portlets/dot-analytics",
+        "core-web/libs/portlets/dot-experiments",
+        "core-web/libs/portlets/dot-locales",
+        "core-web/apps/dotcms-ui/src/app/portlets/dot-edit-page",
+        "core-web/apps/dotcms-ui/src/app/portlets/dot-content-types",
+        "core-web/apps/dotcms-ui/src/app/portlets/dot-form-builder"
+      ]
+    },
+    "Team : Scout": {
+      "members": ["nollymar", "fabrizzio-dotCMS", "msfreeman982", "zJaaal", "rjvelazco", "KevinDavilaDotCMS", "dario-daza"],
+      "areas": [
+        "core-web/apps/dotcms-block-editor",
+        "core-web/libs/block-editor",
+        "core-web/libs/dot-layout-grid",
+        "core-web/libs/template-builder",
+        "core-web/libs/portlets/edit-ema",
+        "core-web/libs/portlets/dot-content-drive",
+        "core-web/libs/sdk/client",
+        "core-web/libs/sdk/react",
+        "core-web/libs/sdk/angular",
+        "core-web/libs/sdk/vue",
+        "examples",
+        "core-web/apps/dotcms-ui/src/app/portlets/dot-edit-page/content",
+        "dotCMS/src/main/java/com/dotcms/ema",
+        "dotCMS/src/main/java/com/dotcms/rest/api/v1/ema",
+        "dotCMS/src/main/java/com/dotcms/rest/api/v1/drive",
+        "dotCMS/src/main/java/com/dotcms/browser",
+        "dotCMS/src/main/java/com/dotcms/rest",
+        "dotCMS/src/main/java/com/dotmarketing",
+        "dotCMS/src/main/java/com/dotcms"
+      ]
+    },
+    "Team : Maintenance": {
+      "members": ["dsilvam", "dsolistorres", "gortiz-dotcms"],
+      "areas": []
+    },
+    "Team : Modernization": {
+      "members": ["hmoreras", "hassandotcms"],
+      "areas": []
+    }
+  },
+  "routing_rules": {
+    "code_age_threshold_months": 12,
+    "old_code_team": "Team : Maintenance",
+    "default_team": "Team : Maintenance"
+  }
+}

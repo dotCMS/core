@@ -1,13 +1,11 @@
-<div class="dot-loop-editor__pre-post-loop">
+<div class="m-6">
     @if (!isEditorVisible) {
-        <div class="dot-loop-editor__pre-post-loop-inplace">
-            <button
-                (click)="handleClick()"
+        <div class="flex h-[167px] items-center justify-center bg-[#e9ebfc]">
+            <p-button
+                [attr.data-testId]="'showEditorBtn'"
                 [label]="'message.containers.create.add_pre_post' | dm"
-                class="p-button-outlined p-button-secondary"
-                data-testId="showEditorBtn"
-                pButton
-                type="button"></button>
+                variant="outlined"
+                (onClick)="handleClick()" />
         </div>
     }
     @if (isEditorVisible) {

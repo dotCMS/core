@@ -109,7 +109,9 @@ export function withUVEToolbar() {
                 };
             }),
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
-                return store.pageAPIResponse()?.urlContentMap;
+                const urlContentMap = store.pageAPIResponse()?.urlContentMap;
+                // Due to GQL it can be an empty object or undefined, so we need to check if it has any keys
+                return Object.keys(urlContentMap ?? {}).length ? urlContentMap : undefined;
             }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;

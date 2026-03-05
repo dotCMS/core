@@ -1,0 +1,94 @@
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+
+import { SkeletonModule } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
+
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import {
+    RequestState,
+    TopPerformanceTableEntity,
+    transformTopPagesTableData
+} from '@dotcms/portlets/dot-analytics/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotAnalyticsEmptyStateComponent } from '../../../shared/components/dot-analytics-empty-state/dot-analytics-empty-state.component';
+import { DotAnalyticsStateMessageComponent } from '../../../shared/components/dot-analytics-state-message/dot-analytics-state-message.component';
+import { TABLE_CONFIG, TOP_PAGES_TABLE_COLUMNS } from '../../../shared/constants';
+import { TableColumn } from '../../../shared/types';
+
+/**
+ * Skeleton width mapping for different column types
+ */
+const SKELETON_WIDTH_MAP = {
+    number: '60%',
+    link: '70%',
+    text: '85%'
+} as const;
+
+/**
+ * Top pages analytics table component.
+ * Displays top performing pages with pageviews, sorting and pagination.
+ */
+@Component({
+    selector: 'dot-analytics-top-pages-table',
+    imports: [
+        CommonModule,
+        SkeletonModule,
+        TableModule,
+        DotMessagePipe,
+        DotAnalyticsEmptyStateComponent,
+        DotAnalyticsStateMessageComponent
+    ],
+    templateUrl: './dot-analytics-top-pages-table.component.html',
+    styleUrls: ['./dot-analytics-top-pages-table.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotAnalyticsTopPagesTableComponent {
+    /** Complete table state from analytics store */
+    readonly $tableState = input.required<RequestState<TopPerformanceTableEntity[]>>({
+        alias: 'tableState'
+    });
+
+    /** Transformed table data ready for display */
+    protected readonly $data = computed(() => transformTopPagesTableData(this.$tableState().data));
+
+    /** Static column configuration for top pages table */
+    protected readonly columns: TableColumn[] = [...TOP_PAGES_TABLE_COLUMNS];
+
+    /** Table configuration constants */
+    protected readonly tableConfig = TABLE_CONFIG;
+
+    /** Check if component is in loading state */
+    protected readonly $isLoading = computed(() => {
+        const status = this.$tableState().status;
+
+        return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Check if component is in error state */
+    protected readonly $isError = computed(
+        () => this.$tableState().status === ComponentStatus.ERROR
+    );
+
+    /** Check if table data is empty */
+    protected readonly $isEmpty = computed(() => {
+        const data = this.$data();
+
+        return !data || data.length === 0;
+    });
+
+    /** Skeleton rows for loading state */
+    protected readonly skeletonRows = Array.from({ length: 3 }, (_, i) => i);
+
+    /** Pre-computed column configurations with CSS classes and skeleton widths */
+    protected readonly $columnConfigs = computed(() => {
+        return this.columns.map((column) => ({
+            ...column,
+            cssClass: `text-${column.alignment || 'left'}`,
+            skeletonWidth:
+                SKELETON_WIDTH_MAP[column.type as keyof typeof SKELETON_WIDTH_MAP] ||
+                SKELETON_WIDTH_MAP.text
+        }));
+    });
+}

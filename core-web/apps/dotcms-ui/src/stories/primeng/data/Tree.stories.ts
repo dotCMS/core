@@ -20,8 +20,7 @@ const meta: Meta<Tree> = {
             imports: [TreeModule, FormsModule]
         }),
         componentWrapperDecorator(
-            (story) =>
-                `<div class="card flex justify-content-center w-25rem h-25rem">${story}</div>`
+            (story) => `<div class="card flex justify-center w-[25rem] h-25rem">${story}</div>`
         )
     ],
     parameters: {

@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
 import { withUVEToolbar } from './withUVEToolbar';
@@ -15,7 +15,11 @@ import { withUVEToolbar } from './withUVEToolbar';
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
-import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
+import {
+    MOCK_RESPONSE_HEADLESS,
+    mockCurrentUser,
+    URL_CONTENT_MAP_MOCK
+} from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
 
 const pageParams = {
@@ -402,6 +406,36 @@ describe('withEditor', () => {
                     inode: store.pageAPIResponse().page.inode,
                     loading: false
                 });
+            });
+
+            it('should return undefined if the urlContentMap is an empty object', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        urlContentMap: {} as DotCMSURLContentMap
+                    }
+                });
+                expect(store.$urlContentMap()).toBe(undefined);
+            });
+
+            it('should return the urlContentMap if it is not an empty object', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        urlContentMap: { ...URL_CONTENT_MAP_MOCK }
+                    }
+                });
+                expect(store.$urlContentMap()).toEqual({ ...URL_CONTENT_MAP_MOCK });
+            });
+
+            it('should return undefined if the urlContentMap is undefined', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        urlContentMap: undefined
+                    }
+                });
+                expect(store.$urlContentMap()).toBe(undefined);
             });
         });
     });

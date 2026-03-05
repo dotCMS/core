@@ -296,21 +296,21 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<String> getDependencies(final Contentlet contentlet) {
-        final ImmutableList.Builder<String> contentletIdList = new ImmutableList.Builder<>();
-        contentlet.getContentType().fields(StoryBlockField.class).forEach(field -> 
+    public List<StoryBlockDependency> getDependencies(final Contentlet contentlet) {
+        final ImmutableList.Builder<StoryBlockDependency> dependencyList = new ImmutableList.Builder<>();
+        contentlet.getContentType().fields(StoryBlockField.class).forEach(field ->
 
-            contentletIdList.addAll(this.getDependencies(contentlet.get(field.variable())))
+            dependencyList.addAll(this.getDependencies(contentlet.get(field.variable())))
 
         );
-        return contentletIdList.build();
+        return dependencyList.build();
     }
 
     @SuppressWarnings("unchecked")
     @CloseDBIfOpened
     @Override
-    public List<String> getDependencies(final Object storyBlockValue) {
-        final ImmutableList.Builder<String> contentletIdList = new ImmutableList.Builder<>();
+    public List<StoryBlockDependency> getDependencies(final Object storyBlockValue) {
+        final ImmutableList.Builder<StoryBlockDependency> dependencyList = new ImmutableList.Builder<>();
 
         try {
 
@@ -322,15 +322,15 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 }
 
                 // Recursively process all blocks, including nested ones
-                processBlocksRecursively(contentletIdList, (List<Map<String, Object>>) contentsMap);
+                processBlocksRecursively(dependencyList, (List<Map<String, Object>>) contentsMap);
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when retrieving Contentlet references from Story Block field: " +
                     "%s", ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(StoryBlockAPIImpl.class, errorMsg,e);
-            
+
         }
-        return contentletIdList.build();
+        return dependencyList.build();
     }
 
     /**
@@ -339,10 +339,10 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * This method traverses the entire block tree structure, ensuring that dependencies
      * (dotImage, dotContent, dotVideo) are found regardless of their nesting level.
      *
-     * @param contentletIdList The builder to collect contentlet identifiers
-     * @param blocks           The list of blocks to process
+     * @param dependencyList The builder to collect contentlet dependencies
+     * @param blocks         The list of blocks to process
      */
-    private void processBlocksRecursively(final ImmutableList.Builder<String> contentletIdList,
+    private void processBlocksRecursively(final ImmutableList.Builder<StoryBlockDependency> dependencyList,
                                           final List<Map<String, Object>> blocks) {
         if (!UtilMethods.isSet(blocks)) {
             return;
@@ -356,14 +356,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final String type = (String) block.get(TYPE_KEY);
 
             if (type != null && allowedTypes.contains(type)) {
-                addDependencies(contentletIdList, block);
+                addDependencies(dependencyList, block);
                 continue;
             }
 
             // If this block has nested content, recurse into it, commonly listItem, bulletList, orderedList
             final Object nestedContent = block.get(CONTENT_KEY);
             if (nestedContent instanceof List) {
-                processBlocksRecursively(contentletIdList, (List<Map<String, Object>>) nestedContent);
+                processBlocksRecursively(dependencyList, (List<Map<String, Object>>) nestedContent);
             }
         }
     }
@@ -455,20 +455,26 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
-     * Finds Identifiers in the specified data map in order to list the referenced Contentlets in a Story Block field.
+     * Extracts dependency information (identifier and languageId) from the specified data map in order to list the
+     * referenced Contentlets in a Story Block field.
      *
-     * @param contentletIdList The list of Contentlet Identifiers referenced by the Story Block field.
-     * @param contentMap       The Story Block data map.
+     * @param dependencyList The list of Contentlet dependencies referenced by the Story Block field.
+     * @param contentMap     The Story Block data map.
      */
     @SuppressWarnings("unchecked")
-    private static void addDependencies(final ImmutableList.Builder<String> contentletIdList,
+    private static void addDependencies(final ImmutableList.Builder<StoryBlockDependency> dependencyList,
                                         final Map contentMap) {
         final Map<String, Map<String, Object>> attrsMap = (Map) contentMap.get(ATTRS_KEY);
         if (UtilMethods.isSet(attrsMap)) {
             final Map<String, Object> dataMap = attrsMap.get(DATA_KEY);
             if (UtilMethods.isSet(dataMap)) {
                 final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
-                contentletIdList.add(identifier);
+                // Extract languageId from the stored data, falling back to default language if not present
+                final long languageId = ConversionUtils.toLong(
+                        dataMap.get(LANGUAGE_ID_KEY),
+                        () -> APILocator.getLanguageAPI().getDefaultLanguage().getId()
+                );
+                dependencyList.add(StoryBlockDependency.of(identifier, languageId));
             }
         }
     }

@@ -46,16 +46,6 @@
                             <arguments>config set network-timeout 6000000</arguments>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>config yarn registry</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <phase>validate</phase>
-                        <configuration>
-                            <arguments>config set registry https://dotcms-npm.b-cdn.net</arguments>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
 

@@ -1,5 +1,6 @@
 package com.dotcms.architecture;
 
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -65,6 +66,22 @@ public class CodingStandardsArchTest {
                         + "Use public Jersey APIs (org.glassfish.jersey.*) or standard Java APIs instead. "
                         + "For example, replace org.glassfish.jersey.internal.util.Base64 with java.util.Base64.");
 
+        rule.check(getProductionClasses());
+    }
+
+    @Test
+    public void indexLibraryIndependent(){
+        ArchRule rule = noClasses()
+                .that().areAnnotatedWith(IndexLibraryIndependent.class)
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(
+                        "org.elasticsearch..",
+                        "org.opensearch..",
+                        "co.elastic.clients.."
+                )
+                .because("Classes annotated with @IndexLibraryIndependent must not depend on specific " +
+                        "search engine libraries (Elasticsearch, OpenSearch) to maintain abstraction and portability");
         rule.check(getProductionClasses());
     }
 }

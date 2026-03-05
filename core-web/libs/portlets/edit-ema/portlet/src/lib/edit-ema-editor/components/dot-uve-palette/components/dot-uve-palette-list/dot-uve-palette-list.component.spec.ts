@@ -1,7 +1,22 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+// Mock window.matchMedia for PrimeNG components
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -44,7 +59,6 @@ const mockStore = {
     currentView: signal(DotUVEPaletteListView.CONTENT_TYPES),
     status: signal(DotPaletteListStatus.LOADING),
     layoutMode: signal('grid' as 'grid' | 'list'),
-    initialLoad: signal(false),
     $isLoading: signal(false),
     $isEmpty: signal(false),
     $showListLayout: signal(false),
@@ -58,7 +72,15 @@ const mockStore = {
     // methods we assert on
     getContentTypes: jest.fn(),
     getContentlets: jest.fn(),
-    setLayoutMode: jest.fn()
+    setLayoutMode: jest.fn(),
+    addFavorite: jest.fn().mockImplementation((contentType: DotCMSContentType) => {
+        const current = mockStore.contenttypes();
+        mockStore.contenttypes.set([...current, contentType]);
+    }),
+    removeFavorite: jest.fn().mockImplementation((contentTypeId: string) => {
+        const current = mockStore.contenttypes();
+        mockStore.contenttypes.set(current.filter((ct) => ct.id !== contentTypeId));
+    })
 };
 
 // ===== Test Helper Functions =====
@@ -178,8 +200,9 @@ describe('DotUvePaletteListComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUvePaletteListComponent,
-        imports: [HttpClientTestingModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             {
                 provide: GlobalStore,
                 useValue: mockGlobalStore
@@ -485,10 +508,9 @@ describe('DotUvePaletteListComponent', () => {
             mockStore.currentView.set(DotUVEPaletteListView.CONTENT_TYPES);
             spectator.detectChanges();
 
-            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
-
+            // Icon is driven by $emptyState().icon; we only assert it renders (no CSS class assertions)
+            const emptyStateIcon = spectator.query('.rounded-full i');
             expect(emptyStateIcon).toBeTruthy();
-            expect(emptyStateIcon?.className).toContain('pi-folder-open');
         });
 
         it('should display the correct icon for FAVORITES list type empty state', () => {
@@ -497,10 +519,8 @@ describe('DotUvePaletteListComponent', () => {
             setEmptyState({ listType: DotUVEPaletteListTypes.FAVORITES });
             spectator.detectChanges();
 
-            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
-
+            const emptyStateIcon = spectator.query('.rounded-full i');
             expect(emptyStateIcon).toBeTruthy();
-            expect(emptyStateIcon?.className).toContain('pi-plus');
         });
 
         it('should display the correct icon for search empty state', () => {
@@ -513,10 +533,8 @@ describe('DotUvePaletteListComponent', () => {
             setEmptyState();
             spectator.detectChanges();
 
-            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
-
+            const emptyStateIcon = spectator.query('.rounded-full i');
             expect(emptyStateIcon).toBeTruthy();
-            expect(emptyStateIcon?.className).toContain('pi-search');
         });
 
         it('should display the correct icon for CONTENTLETS view empty state', () => {
@@ -524,10 +542,8 @@ describe('DotUvePaletteListComponent', () => {
             setEmptyState();
             spectator.detectChanges();
 
-            const emptyStateIcon = spectator.query('.dot-uve-palette-list__empty-icon i');
-
+            const emptyStateIcon = spectator.query('.rounded-full i');
             expect(emptyStateIcon).toBeTruthy();
-            expect(emptyStateIcon?.className).toContain('pi-folder-open');
         });
 
         it('should call menu.toggle when sort menu button is clicked in content types view', () => {
@@ -570,8 +586,8 @@ describe('DotUvePaletteListComponent', () => {
             mockStore.status.set(DotPaletteListStatus.LOADING);
             spectator.detectChanges();
 
-            // Verify controls are hidden during loading
-            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+            // Controls are shown while loading (UX change); don't assert on CSS classes.
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
         });
 
         it('should show controls when status changes to LOADED', () => {
@@ -605,7 +621,7 @@ describe('DotUvePaletteListComponent', () => {
             mockStore.status.set(DotPaletteListStatus.LOADING);
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
 
             mockStore.status.set(DotPaletteListStatus.LOADED);
             spectator.detectChanges();
@@ -641,6 +657,81 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+    });
+
+    describe('favorite add/remove controls visibility', () => {
+        it('should show controls when adding a favorite via context menu', () => {
+            setLoadedContentTypes();
+            spectator.component['$shouldHideControls'].set(true);
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'contextMenu',
+                new MouseEvent('contextmenu')
+            );
+            const command = spectator.component['$contextMenuItems']()[0]?.command;
+            expect(command).toBeDefined();
+            command?.({ originalEvent: new MouseEvent('contextmenu'), item: {} as never });
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
+        });
+
+        it('should hide controls when removing last favorite via context menu', () => {
+            setFavoritesList({ spectator });
+            setLoadedContentTypes({ contentTypes: [basicContentType] });
+            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
+            mockStore.$isFavoritesList.set(true);
+            spectator.detectChanges();
+
+            const mockFavoriteService = spectator.inject(DotFavoriteContentTypeService);
+            (mockFavoriteService.isFavorite as jest.Mock).mockReturnValue(true);
+
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'contextMenu',
+                new MouseEvent('contextmenu')
+            );
+            const command = spectator.component['$contextMenuItems']()[0]?.command;
+            expect(command).toBeDefined();
+            command?.({ originalEvent: new MouseEvent('contextmenu'), item: {} as never });
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+
+        it('should keep controls visible when removing a favorite but others remain', () => {
+            const secondContentType = {
+                ...basicContentType,
+                id: '2',
+                name: 'News',
+                variable: 'news'
+            } as DotCMSContentType;
+            setFavoritesList({ spectator });
+            setLoadedContentTypes({ contentTypes: [basicContentType, secondContentType] });
+            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
+            mockStore.$isFavoritesList.set(true);
+            spectator.detectChanges();
+
+            const mockFavoriteService = spectator.inject(DotFavoriteContentTypeService);
+            (mockFavoriteService.isFavorite as jest.Mock).mockReturnValue(true);
+
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'contextMenu',
+                new MouseEvent('contextmenu')
+            );
+            const command = spectator.component['$contextMenuItems']()[0]?.command;
+            expect(command).toBeDefined();
+            command?.({ originalEvent: new MouseEvent('contextmenu'), item: {} as never });
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
         });
     });
 

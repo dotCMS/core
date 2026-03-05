@@ -1,0 +1,128 @@
+@let loading = $loading();
+@let showRules = $showRules();
+@let rules = $rules();
+@let pageId = $pageId();
+@let isContentletHost = $isContentletHost();
+
+@if (loading) {
+    <div class="bg-(--color-palette-black-op-30) w-full h-full"></div>
+}
+@if (!loading && globalError()?.message) {
+    <div class="ui negative message first:my-8 first:mx-8 first:mb-4">
+        <div class="header">{{ globalError().message }}</div>
+        <p>{{ getI18nLabel('contact.admin.error') | async }}</p>
+        @if (showCloseButton()) {
+            <i
+                (click)="clearGlobalError()"
+                class="pi pi-times text-sm absolute right-2 top-2 cursor-pointer not-italic"></i>
+        }
+    </div>
+}
+@if (!loading && showRules) {
+    <div>
+        <div class="pb-8">
+            <div class="flex flex-row flex-1 items-center">
+                <input
+                    (keyup)="filterText.set($event.target.value)"
+                    [value]="filterText()"
+                    pInputText
+                    placeholder="{{ getI18nLabel('inputs.filter.placeholder') | async }}" />
+                <div class="flex-1"></div>
+                <button
+                    (click)="addRule()"
+                    pButton
+                    [rounded]="true"
+                    [raised]="true"
+                    severity="primary"
+                    icon="pi pi-plus"
+                    ariaLabel="Add Rule"></button>
+            </div>
+            <div class="p-2 text-xs text-gray-500">
+                <span class="pr-1">
+                    {{ getI18nLabel('inputs.filter.status.show.label') | async }}:
+                </span>
+                <a
+                    (click)="setFieldFilter('enabled', null)"
+                    [class.active]="!isFilteringField('enabled')"
+                    [class.font-bold]="!isFilteringField('enabled')"
+                    class="text-gray-500 hover:text-gray-600 p-1 active:text-gray-600"
+                    href="javascript:void(0)">
+                    {{ getI18nLabel('inputs.filter.status.all.label') | async }}
+                </a>
+                <span class="p-1">&#124;</span>
+                <a
+                    (click)="setFieldFilter('enabled', true)"
+                    [class.active]="isFilteringField('enabled', true)"
+                    [class.font-bold]="isFilteringField('enabled', true)"
+                    class="text-gray-500 hover:text-gray-600 p-1 active:text-gray-600"
+                    href="javascript:void(0)">
+                    {{ getI18nLabel('inputs.filter.status.active.label') | async }}
+                </a>
+                <span class="p-1">&#124;</span>
+                <a
+                    (click)="setFieldFilter('enabled', false)"
+                    [class.active]="isFilteringField('enabled', false)"
+                    [class.font-bold]="isFilteringField('enabled', false)"
+                    class="text-gray-500 hover:text-gray-600 p-1 active:text-gray-600"
+                    href="javascript:void(0)">
+                    {{ getI18nLabel('inputs.filter.status.inactive.label') | async }}
+                </a>
+            </div>
+        </div>
+        @if (!rules.length) {
+            <div class="mt-28 flex flex-col items-center justify-center text-center">
+                <i
+                    class="pi pi-sliders-h text-9xl text-gray-500 mb-6 block"
+                    style="font-size: 8rem; width: auto; height: auto"></i>
+                <h2 class="text-2xl m-0 text-gray-700">
+                    {{ getI18nLabel('inputs.no.rules') | async }}
+                    {{
+                        getI18nLabel(
+                            pageId && !isContentletHost ? 'inputs.on.page' : 'inputs.on.site'
+                        ) | async
+                    }}{{ getI18nLabel('inputs.add.one.now') | async }}
+                </h2>
+                @if (pageId && !isContentletHost) {
+                    <span class="block">
+                        {{ getI18nLabel('inputs.page.rules.fired.every.time') | async }}
+                    </span>
+                }
+                <button
+                    (click)="addRule()"
+                    pButton
+                    label="{{ getI18nLabel('inputs.addRule.label') | async }}"
+                    icon="pi pi-plus"
+                    class="mt-4"></button>
+            </div>
+        }
+        @for (rule of rules; track rule) {
+            <dot-rule
+                (updateName)="updateName.emit($event)"
+                (updateFireOn)="updateFireOn.emit($event)"
+                (updateEnabledState)="updateEnabledState.emit($event)"
+                (updateExpandedState)="updateExpandedState.emit($event)"
+                (createRuleAction)="createRuleAction.emit($event)"
+                (updateRuleActionType)="updateRuleActionType.emit($event)"
+                (updateRuleActionParameter)="updateRuleActionParameter.emit($event)"
+                (deleteRuleAction)="deleteRuleAction.emit($event)"
+                (openPushPublishDialog)="showPushPublishDialog($event)"
+                (createCondition)="createCondition.emit($event)"
+                (createConditionGroup)="createConditionGroup.emit($event)"
+                (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
+                (updateConditionType)="updateConditionType.emit($event)"
+                (updateConditionParameter)="updateConditionParameter.emit($event)"
+                (updateConditionOperator)="updateConditionOperator.emit($event)"
+                (deleteCondition)="deleteCondition.emit($event)"
+                (deleteRule)="deleteRule.emit($event)"
+                [rule]="rule"
+                [hidden]="isFiltered(rule) === true"
+                [environmentStores]="$environmentStores()"
+                [ruleActions]="rule._ruleActions"
+                [ruleActionTypes]="$ruleActionTypes()"
+                [conditionTypes]="$conditionTypes()"
+                [saved]="rule._saved"
+                [saving]="rule._saving"
+                [errors]="rule._errors" />
+        }
+    </div>
+}

@@ -1,35 +1,53 @@
-<dot-dialog
-    (hide)="close()"
+<p-dialog
     [(visible)]="showDialog"
     [header]="'download.bundle.header' | dm"
-    [actions]="dialogActions">
+    [modal]="true"
+    [style]="{ width: '30rem' }"
+    (visibleChange)="close()">
     @if (showDialog) {
         <form
             (ngSubmit)="handleSubmit()"
             (keyup.enter)="handleSubmit()"
             [formGroup]="form"
-            class="p-fluid">
+            class="form">
             <div class="field">
                 <label dotFieldRequired for="download-btn">
                     {{ 'download.bundle.i.want' | dm }}
                 </label>
                 <p-selectButton
                     [options]="downloadOptions"
-                    class="p-button-tabbed"
+                    class="w-full"
                     id="download-btn"
                     formControlName="downloadOptionSelected" />
             </div>
             <div class="field">
                 <label for="filterKey">{{ 'download.bundle.filter' | dm }}</label>
-                <p-dropdown
+                <p-select
                     [options]="filterOptions"
                     id="filterKey"
                     formControlName="filterKey"
-                    appendTo="body" />
+                    appendTo="body"></p-select>
             </div>
         </form>
     }
     @if (errorMessage) {
         <span class="download-bundle__error">{{ errorMessage }}</span>
     }
-</dot-dialog>
+    <ng-template pTemplate="footer">
+        @if (dialogActions?.cancel) {
+            <p-button
+                [label]="dialogActions.cancel.label"
+                [disabled]="dialogActions.cancel.disabled"
+                severity="secondary"
+                (click)="dialogActions.cancel.action()"
+                data-testId="dotDialogCancelAction"></p-button>
+        }
+        @if (dialogActions?.accept) {
+            <p-button
+                [label]="dialogActions.accept.label"
+                [disabled]="dialogActions.accept.disabled"
+                (click)="dialogActions.accept.action()"
+                data-testId="dotDialogAcceptAction"></p-button>
+        }
+    </ng-template>
+</p-dialog>

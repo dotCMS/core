@@ -477,19 +477,23 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return ImmutableList.of();
   }
 
-  private final static Map<BaseContentType, Boolean> languageFallbackMap =
-          CollectionsUtils.imap(
-                  BaseContentType.CONTENT,   Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false),
-                  BaseContentType.WIDGET,    Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false),
-                  BaseContentType.FILEASSET, Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",false),
-                  BaseContentType.PERSONA,   Config.getBooleanProperty("DEFAULT_PERSONA_TO_DEFAULT_LANGUAGE",false)
-                  );
-
   @JsonIgnore
   @Value.Lazy
   public boolean languageFallback() {
+      // Read Config properties at runtime to ensure the fallback behavior reflects the current Config values
+      final BaseContentType type = baseType();
 
-      return languageFallbackMap.getOrDefault(baseType(), false);
+      if (type == BaseContentType.CONTENT) {
+          return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+      } else if (type == BaseContentType.WIDGET) {
+          return Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false);
+      } else if (type == BaseContentType.FILEASSET) {
+          return Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false);
+      } else if (type == BaseContentType.PERSONA) {
+          return Config.getBooleanProperty("DEFAULT_PERSONA_TO_DEFAULT_LANGUAGE", false);
+      }
+
+      return false;
   }
 
   @JsonIgnore

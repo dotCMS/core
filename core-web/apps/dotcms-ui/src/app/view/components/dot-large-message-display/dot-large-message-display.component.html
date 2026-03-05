@@ -1,10 +1,11 @@
 @for (message of messages; track message) {
-    <dot-dialog
-        (hide)="close(message)"
-        [visible]="!!message.title"
+    <p-dialog
+        [visible]="getMessageVisibility(message)"
         [header]="message.title"
-        [width]="message.width || '500px'"
-        [height]="message.height || '400px'">
+        [modal]="true"
+        [style]="{ width: message.width || '500px', height: message.height || '400px' }"
+        (visibleChange)="onVisibilityChange(message, $event)"
+        #dialog>
         @if (message.body) {
             <div class="dialog-message__body"></div>
         }
@@ -16,5 +17,5 @@
                 >
             </div>
         }
-    </dot-dialog>
+    </p-dialog>
 }

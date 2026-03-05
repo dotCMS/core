@@ -1,5 +1,5 @@
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
@@ -10,129 +10,108 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFormDialogComponent } from './dot-form-dialog.component';
 
-const dispatchKeydownEvent = (comp: HTMLBaseElement, key: string, meta = false, alt = false) => {
+function dispatchKeydown(element: HTMLElement, key: string, meta = false, alt = false): void {
     const event = new KeyboardEvent('keydown', {
-        key: key,
+        key,
         code: key,
         metaKey: meta,
         altKey: alt
     });
-    comp.dispatchEvent(event);
-};
-
-@Component({
-    template: `
-        <dot-form-dialog><form>Hello World</form></dot-form-dialog>
-    `,
-    standalone: false
-})
-class TestHostComponent {}
+    element.dispatchEvent(event);
+}
 
 describe('DotFormDialogComponent', () => {
-    let fixture: ComponentFixture<DotFormDialogComponent>;
-    let de: DebugElement;
-    let component: DotFormDialogComponent;
+    let spectator: SpectatorHost<DotFormDialogComponent>;
     let dynamicDialogRef: DynamicDialogRef;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
-            providers: [
-                {
-                    provide: DynamicDialogRef,
-                    useValue: {
-                        close: jest.fn()
-                    }
-                },
-                {
-                    provide: DotMessageService,
-                    useValue: new MockDotMessageService({
-                        save: 'Save',
-                        cancel: 'Cancel'
-                    })
-                }
-            ],
-            imports: [ButtonModule, DotFormDialogComponent]
-        }).compileComponents();
+    const createHost = createHostFactory({
+        component: DotFormDialogComponent,
+        template:
+            '<dot-form-dialog [saveButtonDisabled]="false" [saveButtonLoading]="false"><form>Hello World</form></dot-form-dialog>',
+        imports: [ButtonModule, DotFormDialogComponent],
+        providers: [
+            {
+                provide: DynamicDialogRef,
+                useValue: { close: jest.fn() }
+            },
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({ save: 'Save', cancel: 'Cancel' })
+            }
+        ]
     });
+
+    function getDialogElement(): HTMLElement {
+        const el = spectator.fixture.debugElement.query(By.directive(DotFormDialogComponent));
+        return el?.nativeElement ?? spectator.element;
+    }
 
     beforeEach(() => {
         jest.spyOn(document, 'querySelector').mockReturnValue(document.createElement('div'));
-        fixture = TestBed.createComponent(DotFormDialogComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
-
-        dynamicDialogRef = TestBed.inject(DynamicDialogRef);
-
-        fixture.detectChanges();
+        spectator = createHost();
+        dynamicDialogRef = spectator.inject(DynamicDialogRef);
+        spectator.detectChanges();
     });
 
     it('should bind event to dialog content', () => {
         expect(document.querySelector).toHaveBeenCalledWith('p-dynamicdialog .p-dialog-content');
     });
 
-    it('should have ng-content', () => {
-        const testFixture = TestBed.createComponent(TestHostComponent);
-
-        const deb: DebugElement = testFixture.debugElement.query(By.css('div'));
-        const el: Element = deb.nativeElement;
-
-        expect(el.textContent).toEqual('Hello World');
+    it('should project ng-content', () => {
+        const content = spectator.query('form');
+        expect(content?.textContent?.trim()).toBe('Hello World');
     });
 
     describe('buttons', () => {
         beforeEach(() => {
-            jest.spyOn(component.save, 'emit');
-            jest.spyOn(component.cancel, 'emit');
+            jest.spyOn(spectator.component.save, 'emit');
+            jest.spyOn(spectator.component.cancel, 'emit');
         });
 
         it('should have save button', () => {
-            const saveButton = de.query(By.css('[data-testId="dotFormDialogSave"]'));
-
-            expect(saveButton.nativeNode.innerText).toBe('Save');
-            expect(saveButton.attributes.pButton).toBeDefined();
+            const saveButton = spectator.query(byTestId('dotFormDialogSave'));
+            expect(saveButton).toBeTruthy();
+            expect(saveButton?.textContent?.trim()).toBe('Save');
         });
 
-        it('should have emit save event', () => {
-            const saveButton = de.query(By.css('[data-testId="dotFormDialogSave"]'));
-
+        it('should emit save event when save button is clicked', () => {
+            const saveButton = spectator.query(byTestId('dotFormDialogSave'));
             const event = new MouseEvent('click');
-            saveButton.triggerEventHandler('click', event);
-            expect(component.save.emit).toHaveBeenCalledWith(event);
+            saveButton?.dispatchEvent(event);
+            spectator.detectChanges();
+
+            expect(spectator.component.save.emit).toHaveBeenCalledWith(event);
         });
 
-        it('should have emit save event on CMD + ENTER keys', () => {
-            component.saveButtonDisabled = false;
-            dispatchKeydownEvent(de.nativeElement, 'Enter', true);
-            fixture.detectChanges();
-            expect(component.save.emit).toHaveBeenCalledTimes(1);
+        it('should emit save event on CMD + ENTER keys', () => {
+            dispatchKeydown(getDialogElement(), 'Enter', true);
+
+            expect(spectator.component.save.emit).toHaveBeenCalledTimes(1);
         });
 
-        it('should have not emit save event when status Loading', () => {
-            component.saveButtonLoading = true;
-            dispatchKeydownEvent(de.nativeElement, 'Enter', true);
-            fixture.detectChanges();
-            expect(component.save.emit).toHaveBeenCalledTimes(0);
+        it('should not emit save event when status Loading', () => {
+            spectator.component.saveButtonLoading = true;
+            dispatchKeydown(getDialogElement(), 'Enter', true);
+            expect(spectator.component.save.emit).not.toHaveBeenCalled();
 
-            const saveButton = de.query(By.css('[data-testId="dotFormDialogSave"]'));
-            const event = new MouseEvent('click');
-            saveButton.triggerEventHandler('click', event);
-            expect(component.save.emit).not.toHaveBeenCalledWith(event);
+            const saveButton = spectator.query(byTestId('dotFormDialogSave'));
+            saveButton?.dispatchEvent(new MouseEvent('click'));
+            expect(spectator.component.save.emit).not.toHaveBeenCalled();
         });
 
         it('should have cancel button', () => {
-            const cancelButton = de.query(By.css('[data-testId="dotFormDialogCancel"]'));
-
-            expect(cancelButton.nativeNode.innerText).toBe('Cancel');
-            expect(cancelButton.attributes.pButton).toBeDefined();
+            const cancelButton = spectator.query(byTestId('dotFormDialogCancel'));
+            expect(cancelButton).toBeTruthy();
+            expect(cancelButton?.textContent?.trim()).toBe('Cancel');
         });
 
-        it('should have emit cancel event', () => {
-            const cancelButton = de.query(By.css('[data-testId="dotFormDialogCancel"]'));
-
+        it('should emit cancel event and close dialog when cancel button is clicked', () => {
+            const cancelButton = spectator.query(byTestId('dotFormDialogCancel'));
             const event = new MouseEvent('click');
-            cancelButton.triggerEventHandler('click', event);
-            expect(component.cancel.emit).toHaveBeenCalledWith(event);
+            cancelButton?.dispatchEvent(event);
+            spectator.detectChanges();
+
+            expect(spectator.component.cancel.emit).toHaveBeenCalledWith(event);
             expect(dynamicDialogRef.close).toHaveBeenCalledTimes(1);
         });
     });

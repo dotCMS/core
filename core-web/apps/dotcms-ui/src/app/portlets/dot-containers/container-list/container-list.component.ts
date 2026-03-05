@@ -27,18 +27,19 @@ import {
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
+    CONTAINER_SOURCE,
     DotActionBulkResult,
+    DotActionMenuItem,
     DotBulkFailItem,
     DotContainer,
     DotContentState,
-    CONTAINER_SOURCE,
     DotMessageSeverity,
-    DotMessageType,
-    DotActionMenuItem
+    DotMessageType
 } from '@dotcms/dotcms-models';
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
+    DotContentletStatusChipComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -55,7 +56,6 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
 @Component({
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
-    styleUrls: ['./container-list.component.scss'],
     imports: [
         CommonModule,
         DotPortletBaseComponent,
@@ -69,7 +69,8 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotActionMenuButtonComponent,
         DotRelativeDatePipe,
         ActionHeaderComponent,
-        InputTextModule
+        InputTextModule,
+        DotContentletStatusChipComponent
     ],
     providers: [
         DotContainerListStore,
@@ -197,6 +198,10 @@ export class ContainerListComponent implements OnDestroy {
         this.actionsMenu.toggle(event);
     }
 
+    handleSelectionChange(): void {
+        this.updateSelectedContainers();
+    }
+
     /**
      * Focus first row if key arrow down on input
      *
@@ -254,6 +259,7 @@ export class ContainerListComponent implements OnDestroy {
 
     private showErrorDialog(result: DotActionBulkResult): void {
         this.dialogService.open(DotBulkInformationComponent, {
+            closable: true,
             header: this.dotMessageService.get('Results'),
             width: '40rem',
             contentStyle: { 'max-height': '500px', overflow: 'auto' },
