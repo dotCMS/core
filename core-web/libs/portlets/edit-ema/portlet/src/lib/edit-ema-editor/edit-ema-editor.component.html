@@ -57,12 +57,12 @@
         </ng-template>
         <ng-template #center>
             <div class="browser-url-bar-container">
-                <div class="flex">
+                <div class="browser-url-pill">
                     <p-button
                         (click)="copyUrlOverlay.toggle($event)"
                         [pTooltip]="'editpage.header.copy' | dm"
                         tooltipPosition="bottom"
-                        icon="pi pi-copy"
+                        icon="pi pi-link"
                         [text]="true"
                         size="small"
                         data-testId="uve-toolbar-copy-url">

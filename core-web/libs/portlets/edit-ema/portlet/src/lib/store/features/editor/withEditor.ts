@@ -422,6 +422,13 @@ export function withEditor() {
                     patchState(store, {
                         editorEditPanelOpen: open
                     });
+                },
+                cancelContentletEdit() {
+                    patchState(store, {
+                        editorActiveContentlet: null,
+                        editorEditPanelOpen: false,
+                        editorContentArea: null
+                    });
                 }
             };
         })

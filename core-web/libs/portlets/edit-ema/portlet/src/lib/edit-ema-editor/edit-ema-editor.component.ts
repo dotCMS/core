@@ -580,7 +580,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     protected onCancel(): void {
-        this.uveStore.resetActiveContentlet();
+        this.uveStore.cancelContentletEdit();
     }
 
     ngOnInit(): void {

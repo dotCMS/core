@@ -179,21 +179,34 @@ a:active {
         top: 0;
         left: 0;
         z-index: 1000;
-        justify-content: center;
+
+        .p-toolbar-center {
+            flex: 1;
+        }
     }
 }
 
 .browser-url-bar-container {
+    display: flex;
+    align-items: center;
+    gap: $spacing-1;
+    flex: 1;
+}
+
+.browser-url-pill {
+    flex: 1;
     background-color: $color-palette-gray-200;
     display: flex;
-    gap: $spacing-3;
-    border-radius: $border-radius-md;
-    padding: 0;
+    align-items: center;
+    gap: $spacing-1;
+    border-radius: 1000px;
+    padding: 0 $spacing-1;
 }
 
 .browser-url-bar {
-    padding: $spacing-1;
-    color: $color-palette-gray-700;
+    color: $black;
+    font-size: 0.875rem;
+    white-space: nowrap;
 }
 
 .flip-horizontal {
