@@ -418,9 +418,9 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
      * Builds a CSV string with "Tag Name,Host ID" header and one row per tag name.
      */
     private String buildCsv(final List<String> tagNames, final String hostId) {
-        final StringBuilder sb = new StringBuilder("Tag Name,Host ID\n");
+        final StringBuilder sb = new StringBuilder(String.format("Tag Name,Host ID%n"));
         for (final String name : tagNames) {
-            sb.append(String.format("\"%s\",\"%s\"\n", name, hostId));
+            sb.append(String.format("\"%s\",\"%s\"%n", name, hostId));
         }
         return sb.toString();
     }
