@@ -242,7 +242,6 @@ describe('DotAnalyticsFiltersComponent', () => {
 
             expect(changeFiltersSpy).not.toHaveBeenCalled();
         });
-
     });
 
     describe('clearDateRange', () => {
