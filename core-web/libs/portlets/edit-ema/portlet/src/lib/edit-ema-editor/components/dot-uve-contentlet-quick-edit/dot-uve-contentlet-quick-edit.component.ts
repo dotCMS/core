@@ -87,27 +87,18 @@ export class DotUveContentletQuickEditComponent {
 
     protected readonly DotCMSClazzes = DotCMSClazzes;
 
-    // Track last contentlet identifier to avoid unnecessary form rebuilds
-    private lastContentletIdentifier: string | null = null;
-
     constructor() {
         // Build form when data changes
         effect(() => {
+            // For now, we assume that when the fields change, the contentlet changes too.
+            // There is a small issue with inodes and cache, we can't rely for now.
             const { fields, contentlet } = this.data();
 
             if (!fields || fields.length === 0) {
                 this.contentletForm.set(null);
-                this.lastContentletIdentifier = null;
                 return;
             }
 
-            // Only rebuild form if contentlet identifier changed
-            const currentIdentifier = contentlet?.identifier || null;
-            if (currentIdentifier === this.lastContentletIdentifier) {
-                return;
-            }
-
-            this.lastContentletIdentifier = currentIdentifier;
             this.buildForm(fields, contentlet);
         });
     }

@@ -227,7 +227,7 @@
                     @if ($rightSidebarActiveTab() === 0) {
                         <dot-uve-contentlet-quick-edit
                             [data]="$contentletEditData()"
-                            [loading]="$isSubmitting()"
+                            [loading]="$isSubmitting() || $isIframeLoading()"
                             (submit)="onFormSubmit($event)"
                             (cancel)="onCancel()" />
                     }

@@ -4,6 +4,7 @@
         (ngSubmit)="handleSubmit()"
         class="p-fluid w-full"
         (keydown.escape)="handleCancel()"
+        [attr.inert]="loading() ? '' : null"
         tabindex="0">
         @if (data().contentlet?.inode) {
             <input type="hidden" formControlName="inode" />
