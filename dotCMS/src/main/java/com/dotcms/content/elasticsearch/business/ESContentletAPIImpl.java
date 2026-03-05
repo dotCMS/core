@@ -8831,7 +8831,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private List<Contentlet> groupContentletsByLanguage(List<Contentlet> contentsInRelationship) {
 
-    return new ArrayList<>(contentsInRelationship.stream()
+    // Cast to List<?> to avoid automatic casting and properly filter non-Contentlet elements
+    List<?> untypedContents = contentsInRelationship;
+    return new ArrayList<>(untypedContents.stream()
+            .filter(Contentlet.class::isInstance)  // Safe type check on untyped stream
+            .map(Contentlet.class::cast)          // Safe cast after type check
             .collect(Collectors.toMap(
                     Contentlet::getIdentifier,
                     Function.identity(),
