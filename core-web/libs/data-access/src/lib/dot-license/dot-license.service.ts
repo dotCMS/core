@@ -52,7 +52,7 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
     },
     {
         icon: 'list',
-        titleKey: 'com.dotcms.repackage.javax.app.title.edit-ema',
+        titleKey: 'com.dotcms.repackage.javax.app.title.dot-uve',
         url: '/forms'
     },
     {
@@ -67,8 +67,8 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
     },
     {
         icon: 'file-edit',
-        titleKey: 'com.dotcms.repackage.javax.portlet.title.edit-ema',
-        url: '/edit-ema'
+        titleKey: 'com.dotcms.repackage.javax.portlet.title.dot-uve',
+        url: '/dot-uve'
     },
     {
         icon: 'bolt',

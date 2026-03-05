@@ -126,7 +126,7 @@ const PORTLETS_ANGULAR: Route[] = [
                 return inject(EmaAppConfigurationService).get(route.queryParams.url);
             }
         },
-        loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.dotEmaRoutes)
+        loadChildren: () => import('@dotcms/portlets/dot-uve').then((m) => m.dotUveRoutes)
     },
     {
         canActivate: [editContentGuard],

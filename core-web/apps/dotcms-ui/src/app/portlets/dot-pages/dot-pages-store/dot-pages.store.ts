@@ -49,7 +49,7 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
-import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-uve/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';

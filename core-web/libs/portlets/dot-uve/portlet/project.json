@@ -1,0 +1,22 @@
+{
+    "name": "portlets-dot-uve-portlet",
+    "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "sourceRoot": "libs/portlets/dot-uve/portlet/src",
+    "prefix": "dot",
+    "tags": [],
+    "targets": {
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/portlets/dot-uve/portlet/jest.config.ts",
+                "tsConfig": "libs/portlets/dot-uve/portlet/tsconfig.spec.json"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
+        }
+    }
+}

@@ -621,7 +621,7 @@ export class RuleService {
             query = hash.substr(hash.indexOf('?') + 1);
 
             return ApiRoot.parseQueryParam(query, 'realmId');
-        } else if (hash.includes('edit-page') || hash.includes('edit-ema')) {
+        } else if (hash.includes('edit-page') || hash.includes('dot-uve')) {
             return hash.split('/').pop().split('?')[0];
         }
 

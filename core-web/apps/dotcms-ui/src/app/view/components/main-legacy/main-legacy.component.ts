@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
-import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-uve/ui';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotAlertConfirmComponent } from '../_common/dot-alert-confirm/dot-alert-confirm';

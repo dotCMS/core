@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotContentCompareComponent } from '@dotcms/portlets/dot-uve/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentStore } from '../../store/edit-content.store';

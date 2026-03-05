@@ -1,0 +1,1301 @@
+import { describe, expect } from '@jest/globals';
+import {
+    SpyObject,
+    createComponentFactory,
+    Spectator,
+    byTestId,
+    mockProvider
+} from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
+import { of } from 'rxjs';
+
+import { Location } from '@angular/common';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogService } from 'primeng/dynamicdialog';
+import { ToastModule } from 'primeng/toast';
+
+import {
+    DotAnalyticsTrackerService,
+    DotContentletLockerService,
+    DotCurrentUserService,
+    DotExperimentsService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPageLayoutService,
+    DotPropertiesService,
+    DotSiteService,
+    DotSystemConfigService,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    PushPublishService
+} from '@dotcms/data-access';
+import {
+    DotcmsConfigService,
+    DotcmsEventsService,
+    LoginService,
+    SiteService
+} from '@dotcms/dotcms-js';
+import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-uve/ui';
+import { GlobalStore } from '@dotcms/store';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
+import {
+    DotExperimentsServiceMock,
+    DotCurrentUserServiceMock,
+    DotLanguagesServiceMock,
+    DotcmsConfigServiceMock,
+    DotcmsEventsServiceMock,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
+
+import { DotUveNavigationBarComponent } from './components/dot-uve-navigation-bar/dot-uve-navigation-bar.component';
+import { DotUveShellComponent } from './dot-uve-shell.component';
+
+import { DotUveDialogComponent } from '../components/dot-uve-dialog/dot-uve-dialog.component';
+import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
+import { DotPageApiService } from '../services/dot-page-api.service';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
+import {
+    dotPropertiesServiceMock,
+    MOCK_RESPONSE_HEADLESS,
+    PAGE_RESPONSE_BY_LANGUAGE_ID,
+    PAGE_RESPONSE_URL_CONTENT_MAP,
+    PAYLOAD_MOCK
+} from '../shared/mocks';
+import { UVEStore } from '../store/dot-uve.store';
+
+// Mock structuredClone for Jest environment (not available in jsdom)
+if (typeof globalThis.structuredClone === 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    globalThis.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj));
+}
+
+/** Creates a dialog action event payload for testing. */
+const createDialogActionEvent = (detail: object) => ({
+    event: new CustomEvent('ng-event', { detail }),
+    actionPayload: PAYLOAD_MOCK,
+    form: {
+        status: FormStatus.SAVED,
+        isTranslation: false
+    },
+    clientAction: DotCMSUVEAction.NOOP
+});
+
+const NAV_ITEMS = [
+    {
+        icon: 'pi-file',
+        label: 'editema.editor.navbar.content',
+        href: 'content',
+        id: 'content'
+    },
+    {
+        icon: 'pi-table',
+        label: 'editema.editor.navbar.layout',
+        href: 'layout',
+        isDisabled: false,
+        tooltip: null,
+        id: 'layout'
+    },
+    {
+        icon: 'pi-sliders-h',
+        label: 'editema.editor.navbar.rules',
+        href: `rules/123`,
+        isDisabled: false,
+        id: 'rules'
+    },
+    {
+        iconURL: 'experiments',
+        label: 'editema.editor.navbar.experiments',
+        href: 'experiments/123',
+        isDisabled: false,
+        id: 'experiments'
+    },
+    {
+        icon: 'pi-th-large',
+        label: 'editema.editor.navbar.page-tools',
+        id: 'page-tools'
+    },
+    {
+        icon: 'pi-ellipsis-v',
+        label: 'editema.editor.navbar.properties',
+        id: 'properties',
+        isDisabled: false
+    }
+];
+
+const INITIAL_PAGE_PARAMS = {
+    language_id: 1,
+    url: 'index',
+    variantName: 'DEFAULT',
+    [PERSONA_KEY]: 'modes.persona.no.persona',
+    mode: UVE_MODE.EDIT
+};
+
+const BASIC_OPTIONS = {
+    allowedDevURLs: ['http://localhost:3000']
+};
+
+/** Builds route data with UVE config options for testing. */
+const createUveConfigData = (options: object) => ({
+    uveConfig: { options }
+});
+
+/** Builds an activated route snapshot shape for testing. */
+const createRouteSnapshot = ({ queryParams, data }: { queryParams: object; data: object }) => ({
+    queryParams,
+    data
+});
+
+const mockGlobalStore = {
+    addNewBreadcrumb: jest.fn()
+};
+
+/**
+ * Overrides the activated route snapshot to simulate queryParams/data changes.
+ * Call this before the first `spectator.detectChanges()` in your test.
+ */
+const overrideRouteSnapshot = (activatedRoute: ActivatedRoute, mock: object) => {
+    // If a test fails during component creation, `activatedRoute` may be unset.
+    // Avoid masking the real error with a secondary defineProperty crash.
+    if (!activatedRoute || typeof activatedRoute !== 'object') {
+        return;
+    }
+    Object.defineProperty(activatedRoute, 'snapshot', {
+        value: mock,
+        writable: true // Allows mocking changes
+    });
+};
+
+describe('DotUveShellComponent', () => {
+    let spectator: Spectator<DotUveShellComponent>;
+    let store: SpyObject<InstanceType<typeof UVEStore>>;
+
+    let router: Router;
+    let location: Location;
+    let siteService: SiteServiceMock;
+    let activatedRoute: ActivatedRoute;
+    let dotPageApiService: DotPageApiService;
+
+    const createComponent = createComponentFactory({
+        component: DotUveShellComponent,
+        imports: [ConfirmDialogModule],
+        detectChanges: false,
+        providers: [
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: createRouteSnapshot({
+                        queryParams: INITIAL_PAGE_PARAMS,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
+                }
+            },
+            { provide: SiteService, useClass: SiteServiceMock },
+            {
+                provide: DotContentletLockerService,
+                useValue: {
+                    unlock: (_inode: string) => of({})
+                }
+            },
+            {
+                provide: LoginService,
+                useValue: {
+                    getCurrentUser: () => of({})
+                }
+            },
+            mockProvider(Router, {
+                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of(),
+                createUrlTree: jest.fn((commands, extras) => {
+                    const queryParams = extras?.queryParams ?? {};
+                    const queryString = new URLSearchParams(
+                        Object.fromEntries(
+                            Object.entries(queryParams).map(([k, v]) => [k, String(v ?? '')])
+                        )
+                    ).toString();
+                    return { toString: () => (queryString ? `/?${queryString}` : '/') };
+                })
+            }),
+            mockProvider(DotSiteService, {
+                getCurrentSite: () => of(null)
+            }),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: () => of({})
+            }),
+            {
+                provide: DotCurrentUserService,
+                useValue: new DotCurrentUserServiceMock()
+            },
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
+        declarations: [
+            MockComponent(DotUveDialogComponent),
+            MockComponent(DotPageToolsSeoComponent)
+        ],
+        componentProviders: [
+            MessageService,
+            UVEStore,
+            ConfirmationService,
+            DotActionUrlService,
+            DotMessageService,
+            DialogService,
+            DotWorkflowActionsFireService,
+            Router,
+            Location,
+            {
+                provide: DotWorkflowsActionsService,
+                useValue: {
+                    getByInode: () => of([])
+                }
+            },
+            {
+                provide: DotPropertiesService,
+                useValue: dotPropertiesServiceMock
+            },
+            {
+                provide: DotcmsConfigService,
+                useValue: new DotcmsConfigServiceMock()
+            },
+            {
+                provide: DotcmsEventsService,
+                useValue: new DotcmsEventsServiceMock()
+            },
+            {
+                provide: PushPublishService,
+                useValue: {
+                    getEnvironments() {
+                        return of([
+                            {
+                                id: '123',
+                                name: 'Environment 1'
+                            },
+                            {
+                                id: '456',
+                                name: 'Environment 2'
+                            }
+                        ]);
+                    }
+                }
+            },
+            {
+                provide: DotExperimentsService,
+                useValue: DotExperimentsServiceMock
+            },
+            {
+                provide: DotLanguagesService,
+                useValue: new DotLanguagesServiceMock()
+            },
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get({ language_id = 1 }) {
+                        return PAGE_RESPONSE_BY_LANGUAGE_ID[language_id] || of({});
+                    },
+                    getGraphQLPage() {
+                        return of({});
+                    },
+                    save() {
+                        return of({});
+                    },
+                    getPersonas() {
+                        return of({
+                            entity: [DEFAULT_PERSONA],
+                            pagination: {
+                                totalEntries: 1,
+                                perPage: 10,
+                                page: 1
+                            }
+                        });
+                    }
+                }
+            },
+            {
+                provide: DotAnalyticsTrackerService,
+                useValue: {
+                    track: jest.fn()
+                }
+            },
+            {
+                provide: DotPageLayoutService,
+                useValue: {
+                    save: jest.fn().mockReturnValue(of({}))
+                }
+            },
+            {
+                provide: WINDOW,
+                useValue: window
+            },
+            {
+                provide: DotMessageService,
+                useValue: {
+                    get: jest.fn().mockReturnValue('Mock Message'),
+                    init: jest.fn()
+                }
+            },
+            {
+                provide: GlobalStore,
+                useValue: mockGlobalStore
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+        siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
+        store = spectator.inject(UVEStore, true);
+        router = spectator.inject(Router, true);
+        location = spectator.inject(Location, true);
+        activatedRoute = spectator.inject(ActivatedRoute, true);
+        dotPageApiService = spectator.inject(DotPageApiService, true);
+    });
+
+    describe('with queryParams', () => {
+        it('should trigger an store load with default values', () => {
+            const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+            spectator.detectChanges();
+            expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+        });
+
+        describe('Sanitize url when called pageLoad', () => {
+            it('should sanitize when url is index', () => {
+                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/index'
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(pageLoadSpy).toHaveBeenCalledWith({ ...params, url: '/index' });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=%2Findex&variantName=DEFAULT&mode=EDIT_MODE'
+                );
+            });
+
+            it('should sanitize when url is nested', () => {
+                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/some-url/some-nested-url'
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(pageLoadSpy).toHaveBeenCalledWith({
+                    ...params,
+                    url: '/some-url/some-nested-url'
+                });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=%2Fsome-url%2Fsome-nested-url&variantName=DEFAULT&mode=EDIT_MODE'
+                );
+            });
+
+            it('should sanitize when url is nested and ends in index', () => {
+                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/some-url/index'
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(pageLoadSpy).toHaveBeenCalledWith({
+                    ...params,
+                    url: '/some-url/index'
+                });
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=%2Fsome-url%2Findex&variantName=DEFAULT&mode=EDIT_MODE'
+                );
+            });
+
+            it('should receive `personaId` query param', () => {
+                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                const queryParams = {
+                    url: '/some-url/index',
+                    language_id: 1,
+                    personaId: 'someCoolDude'
+                };
+
+                const expectedParams = {
+                    url: '/some-url/index',
+                    [PERSONA_KEY]: 'someCoolDude',
+                    mode: UVE_MODE.EDIT,
+                    language_id: 1
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({ queryParams, data: createUveConfigData(BASIC_OPTIONS) })
+                );
+
+                spectator.detectChanges();
+                expect(pageLoadSpy).toHaveBeenCalledWith(expectedParams);
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?url=%2Fsome-url%2Findex&language_id=1&mode=EDIT_MODE&personaId=someCoolDude'
+                );
+            });
+        });
+
+        it('should patch viewParams with empty object when the mode is edit', () => {
+            const params = {
+                ...INITIAL_PAGE_PARAMS,
+                mode: UVE_MODE.EDIT
+            };
+
+            overrideRouteSnapshot(
+                activatedRoute,
+                createRouteSnapshot({
+                    queryParams: params,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(store.viewParams()).toEqual({});
+        });
+
+        it('should patch viewParams with empty params on init', () => {
+            const params = {
+                ...INITIAL_PAGE_PARAMS,
+                mode: UVE_MODE.PREVIEW
+            };
+
+            overrideRouteSnapshot(
+                activatedRoute,
+                createRouteSnapshot({
+                    queryParams: params,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(store.viewParams()).toEqual({
+                orientation: undefined,
+                seo: undefined,
+                device: undefined
+            });
+        });
+
+        it('should patch viewParams with the correct params on init', () => {
+            const withViewParams = {
+                device: 'mobile',
+                orientation: 'landscape',
+                seo: undefined,
+                mode: UVE_MODE.PREVIEW
+            };
+
+            overrideRouteSnapshot(
+                activatedRoute,
+                createRouteSnapshot({
+                    queryParams: withViewParams,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(store.viewParams()).toEqual({
+                orientation: 'landscape',
+                seo: undefined,
+                device: 'mobile'
+            });
+        });
+
+        it('should patch viewParams with the correct params on init with live mode', () => {
+            const withViewParams = {
+                device: 'mobile',
+                orientation: 'landscape',
+                seo: undefined,
+                mode: UVE_MODE.LIVE
+            };
+
+            overrideRouteSnapshot(
+                activatedRoute,
+                createRouteSnapshot({
+                    queryParams: withViewParams,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
+            );
+
+            spectator.detectChanges();
+
+            expect(store.viewParams()).toEqual({
+                orientation: 'landscape',
+                seo: undefined,
+                device: 'mobile'
+            });
+        });
+
+        it('should call store.pageLoad and update location when page loads', () => {
+            const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+            const locationSpy = jest.spyOn(location, 'go');
+
+            spectator.detectChanges();
+
+            expect(pageLoadSpy).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+            expect(locationSpy).toHaveBeenCalledWith(
+                '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
+            );
+        });
+
+        describe('DOM', () => {
+            beforeEach(async () => {
+                spectator.detectChanges();
+                // Wait until the effect triggers init and the DOM is ready
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+            });
+
+            it('should have a navigation bar', () => {
+                expect(spectator.query(byTestId('ema-nav-bar'))).not.toBeNull();
+            });
+
+            it('should have nav bar with items', () => {
+                const navBarComponent = spectator.query(DotUveNavigationBarComponent);
+
+                expect(navBarComponent.items).toEqual(NAV_ITEMS);
+            });
+
+            it('should trigger action when the page-tool item is clicked', () => {
+                const pageToolsSpy = jest.spyOn(spectator.component.pageTools, 'toggleDialog');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+                spectator.triggerEventHandler(navBar, 'action', 'page-tools');
+
+                expect(pageToolsSpy).toHaveBeenCalled();
+            });
+
+            it('should trigger action when the properties item is clicked', () => {
+                const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+                spectator.triggerEventHandler(navBar, 'action', 'properties');
+
+                expect(dialogSpy).toHaveBeenCalledWith({
+                    contentType: undefined,
+                    identifier: '123',
+                    inode: '123',
+                    title: 'hello world',
+                    angularCurrentPortlet: 'edit-page'
+                });
+            });
+        });
+
+        describe('Page Params', () => {
+            beforeEach(() => spectator.detectChanges());
+
+            it('should update params when loadPage is triggered', () => {
+                const baseParams = {
+                    language_id: '2',
+                    url: 'my-awesome-page',
+                    variantName: 'DEFAULT',
+                    mode: UVE_MODE.EDIT
+                };
+                const pageParams = {
+                    ...baseParams,
+                    [PERSONA_KEY]: 'SomeCoolDude'
+                };
+
+                const userParams = {
+                    ...baseParams,
+                    personaId: 'SomeCoolDude'
+                };
+
+                const expectURL = router.createUrlTree([], { queryParams: userParams });
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const spyUrlTree = jest.spyOn(router, 'createUrlTree');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                store.pageLoad(pageParams);
+                spectator.detectChanges();
+
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(pageParams);
+                expect(spyUrlTree).toHaveBeenCalledWith([], { queryParams: userParams });
+                expect(spyLocation).toHaveBeenCalledWith(expectURL.toString());
+            });
+
+            it('should not include clientHost in location when it matches base client host', () => {
+                const spyLocation = jest.spyOn(location, 'go');
+                const baseClientHost = 'http://localhost:3000';
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: baseClientHost
+                };
+
+                // Set up route with matching uveConfig.url
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: {
+                            uveConfig: {
+                                url: baseClientHost,
+                                options: BASIC_OPTIONS
+                            }
+                        }
+                    })
+                );
+
+                store.pageLoad(params);
+                spectator.detectChanges();
+
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
+                );
+            });
+
+            it('should include clientHost in location when it differs from base client host', () => {
+                const spyLocation = jest.spyOn(location, 'go');
+                const baseClientHost = 'http://localhost:3000';
+                const differentClientHost = 'http://localhost:4000';
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: differentClientHost
+                };
+
+                // Set up route with different uveConfig.url
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: {
+                            uveConfig: {
+                                url: baseClientHost,
+                                options: {
+                                    allowedDevURLs: [differentClientHost]
+                                }
+                            }
+                        }
+                    })
+                );
+
+                store.pageLoad(params);
+                spectator.detectChanges();
+
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE&clientHost=http:%2F%2Flocalhost:4000'
+                );
+            });
+
+            it('should handle sanitized URLs in clientHost comparison', () => {
+                const spyLocation = jest.spyOn(location, 'go');
+                const baseClientHost = 'http://localhost:3000/';
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:3000/' // No trailing slash
+                };
+
+                // Set up route with uveConfig.url that has trailing slash
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: {
+                            uveConfig: {
+                                url: baseClientHost,
+                                options: BASIC_OPTIONS
+                            }
+                        }
+                    })
+                );
+
+                store.pageLoad(params);
+                spectator.detectChanges();
+
+                // Should treat these as the same URL and not include clientHost
+                expect(spyLocation).toHaveBeenCalledWith(
+                    '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
+                );
+            });
+        });
+
+        describe('ClientHost', () => {
+            it('should trigger init the store without the clientHost queryParam when it is not allowed', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:4200'
+                };
+
+                const data = createUveConfigData({
+                    allowedDevURLs: ['http://localhost:3000']
+                });
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({ queryParams: paramWithNotAllowedHost, data })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+                expect(spyStoreLoadPage).not.toHaveBeenCalledWith(paramWithNotAllowedHost);
+            });
+
+            it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const paramsWithAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:3000'
+                };
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: paramsWithAllowedHost,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(paramsWithAllowedHost);
+            });
+
+            it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:3000'
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: paramWithNotAllowedHost,
+                        data: createUveConfigData({ allowedDevURLs: [] })
+                    })
+                );
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+            });
+
+            it('should omit clientHost when allowedDevURLs has wrong data type', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:1111'
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: paramWithNotAllowedHost,
+                        data: createUveConfigData({ allowedDevURLs: 'http://localhost:3000' })
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+            });
+
+            it('should omit clientHost when allowedDevURLs is not present', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:1111'
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: paramWithNotAllowedHost,
+                        data: createUveConfigData({})
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+            });
+
+            it('should omit clientHost when uveConfig options are not present', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:1111'
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: paramWithNotAllowedHost,
+                        data: {
+                            uveConfig: {}
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+            });
+
+            it('should omit clientHost when uveConfig is not present', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const paramWithNotAllowedHost = {
+                    ...INITIAL_PAGE_PARAMS,
+                    clientHost: 'http://localhost:1111'
+                };
+
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: paramWithNotAllowedHost,
+                        data: {}
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenLastCalledWith(INITIAL_PAGE_PARAMS);
+            });
+        });
+
+        describe('Editor Mode', () => {
+            it('should set mode to EDIT when wrong mode is passed', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    mode: 'WRONG'
+                };
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
+                );
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    ...INITIAL_PAGE_PARAMS,
+                    mode: UVE_MODE.EDIT
+                });
+            });
+
+            it('should set mode to EDIT when mode is undefined', () => {
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
+                const params = {
+                    ...INITIAL_PAGE_PARAMS,
+                    mode: undefined
+                };
+                overrideRouteSnapshot(
+                    activatedRoute,
+                    createRouteSnapshot({
+                        queryParams: params,
+                        data: createUveConfigData(BASIC_OPTIONS)
+                    })
+                );
+                spectator.detectChanges();
+                expect(spyStoreLoadPage).toHaveBeenCalledWith({
+                    ...INITIAL_PAGE_PARAMS,
+                    mode: UVE_MODE.EDIT
+                });
+            });
+        });
+
+        describe('Site Changes', () => {
+            it('should trigger a navigate to /pages when site changes', async () => {
+                const navigate = jest.spyOn(router, 'navigate');
+
+                spectator.detectChanges();
+                siteService.setFakeCurrentSite(); // We have to trigger the first set as dotcms on init
+                siteService.setFakeCurrentSite();
+                spectator.detectChanges();
+
+                expect(navigate).toHaveBeenCalledWith(['/pages']);
+            });
+        });
+
+        describe('page properties', () => {
+            beforeEach(() => spectator.detectChanges());
+
+            it('should update page params when saving and the url changed', () => {
+                const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(
+                    DotUveDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {
+                            htmlPageReferer: '/my-awesome-page'
+                        }
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/my-awesome-page' });
+            });
+
+            it('should get the workflow action when an `UPDATE_WORKFLOW_ACTION` event is received', () => {
+                const spyGetWorkflowActions = jest.spyOn(store, 'workflowFetch');
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(
+                    DotUveDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(spyGetWorkflowActions).toHaveBeenCalled();
+            });
+
+            it('should trigger a store reload if the url is the same', () => {
+                spectator.detectChanges();
+                const spyReload = jest.spyOn(store, 'pageReload');
+                const spyLocation = jest.spyOn(location, 'go');
+
+                spectator.triggerEventHandler(
+                    DotUveDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {
+                            htmlPageReferer: 'index'
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+
+                expect(spyReload).toHaveBeenCalled();
+                expect(spyLocation).not.toHaveBeenCalled();
+            });
+
+            it('should reload content from dialog', () => {
+                const reloadSpy = jest.spyOn(store, 'pageReload');
+
+                spectator.triggerEventHandler(DotUveDialogComponent, 'reloadFromDialog', null);
+
+                expect(reloadSpy).toHaveBeenCalled();
+            });
+
+            it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', async () => {
+                const reloadSpy = jest.spyOn(store, 'pageReload');
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...PAGE_RESPONSE_URL_CONTENT_MAP,
+                        clientResponse: PAGE_RESPONSE_URL_CONTENT_MAP
+                    })
+                );
+
+                store.pageLoad({
+                    url: '/test-url',
+                    language_id: '1',
+                    [PERSONA_KEY]: '1'
+                });
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(
+                    DotUveDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        payload: {
+                            htmlPageReferer: '/test-url'
+                        }
+                    })
+                );
+
+                spectator.detectChanges();
+                expect(reloadSpy).toHaveBeenCalled();
+            });
+        });
+
+        describe('Breadcrumb', () => {
+            it('should call GlobalStore.addNewBreadcrumb when page loads with page title, edit-page URL and identifier', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: expect.any(String),
+                        id: '123',
+                        url: 'index'
+                    })
+                );
+            });
+
+            it('should call addNewBreadcrumb again when page response changes', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: expect.any(String),
+                        id: '123'
+                    })
+                );
+
+                const differentPageResponse = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        title: 'Other Page',
+                        identifier: '456'
+                    }
+                };
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(differentPageResponse));
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+
+                store.pageLoad({
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/other-page'
+                });
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Other Page',
+                        id: '456',
+                        url: '/other-page'
+                    })
+                );
+            });
+
+            it('should build breadcrumb URL from current friendly params', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        url: INITIAL_PAGE_PARAMS.url
+                    })
+                );
+            });
+        });
+    });
+
+    describe('without read permission', () => {
+        beforeEach(() => {
+            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false,
+                        canRead: false
+                    }
+                })
+            );
+            spectator.detectChanges();
+        });
+
+        it('should not render components', () => {
+            expect(spectator.query(DotUveNavigationBarComponent)).toBeNull();
+            expect(spectator.query(ToastModule)).toBeNull();
+            expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
+        });
+    });
+
+    describe('Local View Models', () => {
+        describe('$menuItems computed property', () => {
+            it('should build menu items with correct structure', () => {
+                const menuItems = spectator.component['$menuItems']();
+
+                expect(menuItems).toHaveLength(6);
+                expect(menuItems[0]).toEqual({
+                    icon: 'pi-file',
+                    label: 'editema.editor.navbar.content',
+                    href: 'content',
+                    id: 'content'
+                });
+            });
+
+            it('should disable layout when page cannot be edited', () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false
+                        }
+                    })
+                );
+                spectator.detectChanges();
+
+                const menuItems = spectator.component['$menuItems']();
+                const layoutItem = menuItems.find((item) => item.id === 'layout');
+
+                expect(layoutItem.isDisabled).toBe(true);
+            });
+
+            it('should show tooltip for advanced templates', () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        template: {
+                            ...MOCK_RESPONSE_HEADLESS.template,
+                            drawed: false
+                        }
+                    })
+                );
+                spectator.detectChanges();
+
+                const menuItems = spectator.component['$menuItems']();
+                const layoutItem = menuItems.find((item) => item.id === 'layout');
+
+                expect(layoutItem.tooltip).toBe(
+                    'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+                );
+            });
+        });
+
+        describe('$seoParams computed property', () => {
+            beforeEach(() => {
+                spectator.detectChanges();
+            });
+
+            it('should build SEO params with correct structure', () => {
+                const seoParams = spectator.component['$seoParams']();
+
+                expect(seoParams).toEqual({
+                    siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
+                    languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
+                    currentUrl: expect.stringContaining('/'),
+                    requestHostName: expect.any(String)
+                });
+            });
+
+            it('should sanitize and format page URI correctly', () => {
+                const seoParams = spectator.component['$seoParams']();
+                const currentUrl = seoParams.currentUrl;
+
+                expect(currentUrl).toMatch(/^\//);
+            });
+        });
+
+        describe('$errorDisplay computed property', () => {
+            it('should return null when no error code', () => {
+                const errorDisplay = spectator.component['$errorDisplay']();
+
+                expect(errorDisplay).toBeNull();
+            });
+
+            it('should return error payload when error code exists', () => {
+                spectator.component['uveStore'].setUveStatus = jest.fn();
+                const uveStore = spectator.component['uveStore'] as InstanceType<
+                    typeof UVEStore
+                > & {
+                    pageErrorCode: () => number;
+                };
+                jest.spyOn(uveStore, 'pageErrorCode').mockReturnValue(401);
+
+                spectator.detectChanges();
+
+                const errorDisplay = spectator.component['$errorDisplay']();
+
+                expect(errorDisplay).not.toBeNull();
+                expect(errorDisplay?.code).toBe(401);
+            });
+        });
+
+        describe('$canRead computed property', () => {
+            it('should return true when page can be read', () => {
+                spectator.detectChanges();
+                const canRead = spectator.component['$canRead']();
+
+                expect(canRead).toBe(true);
+            });
+
+            it('should return false when page cannot be read', () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canRead: false
+                        }
+                    })
+                );
+                spectator.detectChanges();
+
+                const canRead = spectator.component['$canRead']();
+
+                expect(canRead).toBe(false);
+            });
+
+            it('should return false when page is undefined', () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: undefined
+                    })
+                );
+                spectator.detectChanges();
+
+                const canRead = spectator.component['$canRead']();
+
+                expect(canRead).toBe(false);
+            });
+        });
+    });
+
+    afterEach(() => {
+        // Restoring the snapshot to the default
+        if (activatedRoute && typeof activatedRoute === 'object') {
+            overrideRouteSnapshot(
+                activatedRoute,
+                createRouteSnapshot({
+                    queryParams: INITIAL_PAGE_PARAMS,
+                    data: createUveConfigData(BASIC_OPTIONS)
+                })
+            );
+        }
+        jest.clearAllMocks();
+    });
+});

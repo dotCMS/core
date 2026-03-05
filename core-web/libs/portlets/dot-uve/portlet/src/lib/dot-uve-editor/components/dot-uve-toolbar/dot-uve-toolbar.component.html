@@ -1,0 +1,113 @@
+@let mode = $mode();
+@let preview = mode === UVE_MODE.PREVIEW;
+@let live = mode === UVE_MODE.LIVE;
+@let runningExperiment = $runningExperiment();
+
+<p-toolbar>
+    <ng-template #start>
+        <div class="flex items-center gap-1" [ngClass]="{ 'p-0': preview || live }">
+            <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
+            <dot-uve-bookmarks [url]="$bookmarksUrl()" />
+            <a
+                size="small"
+                [text]="true"
+                [pTooltip]="'uve.toolbar.page.api.url' | dm"
+                tooltipPosition="bottom"
+                pButton
+                class="text-[var(--color-palette-primary)]! visited:text-[var(--color-palette-primary)]! !no-underline"
+                target="_blank"
+                data-testId="uve-toolbar-api-link"
+                [href]="$apiURL()">
+                API
+            </a>
+            @if (preview || live) {
+                @if ($devices()?.length) {
+                    <dot-uve-device-selector
+                        [state]="$deviceSelectorState()"
+                        [devices]="$devices()"
+                        [isTraditionalPage]="isTraditionalPage()"
+                        (stateChange)="handleDeviceSelectorChange($event)"
+                        data-testId="uve-toolbar-device-selector" />
+                }
+            } @else if ($urlContentMap(); as urlContentMap) {
+                <p-button
+                    (click)="editUrlContentMap.emit(urlContentMap)"
+                    [pTooltip]="
+                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
+                    "
+                    tooltipPosition="bottom"
+                    icon="pi pi-pencil"
+                    [text]="true"
+                    size="small"
+                    [rounded]="true"
+                    data-testId="edit-url-content-map" />
+            }
+        </div>
+    </ng-template>
+
+    <ng-template #center>
+        @if (live && !$socialMedia()) {
+            <div class="flex items-center gap-1">
+                <p-datepicker
+                    size="small"
+                    dataType="date"
+                    [ngModel]="$previewDate()"
+                    (ngModelChange)="fetchPageOnDate($event)"
+                    [minDate]="$MIN_DATE()"
+                    [showTime]="true"
+                    [hourFormat]="'12'"
+                    [readonlyInput]="true"
+                    data-testId="uve-toolbar-calendar" />
+                <p-button
+                    size="small"
+                    [outlined]="true"
+                    [label]="'Today' | dm"
+                    alt="Page Day"
+                    (click)="fetchPageOnDate()"
+                    data-testId="uve-toolbar-calendar-today-button" />
+            </div>
+        }
+    </ng-template>
+
+    <ng-template #end>
+        <div class="flex items-center gap-1 uve-toolbar-end-actions">
+            @if ($lockOptions(); as lockOptions) {
+                <dot-toggle-lock-button
+                    [toggleLockOptions]="lockOptions"
+                    (toggleLockClick)="handleToggleLock($event)"
+                    data-testId="uve-toolbar-toggle-lock" />
+            }
+
+            @if (runningExperiment) {
+                <dot-uve-running-experiment
+                    [runningExperiment]="runningExperiment"
+                    data-testId="uve-toolbar-running-experiment" />
+            }
+
+            <dot-language-selector
+                #languageSelector
+                [value]="$currentLanguage() ?? null"
+                (onChange)="onLanguageSelected($event)"
+                data-testId="uve-toolbar-language-selector" />
+
+            <dot-uve-persona-selector
+                (selected)="onPersonaSelected($event)"
+                (despersonalize)="onDespersonalize($event)"
+                [pageId]="$personaSelectorProps().pageId"
+                [value]="$personaSelectorProps().value"
+                #personaSelector
+                data-testId="uve-toolbar-persona-selector" />
+
+            @if ($showWorkflowActions()) {
+                <dot-uve-workflow-actions />
+            }
+        </div>
+    </ng-template>
+</p-toolbar>
+
+@if ($infoDisplayProps(); as options) {
+    <dot-uve-info-display
+        data-testId="info-display"
+        [options]="options"
+        (actionClicked)="handleInfoDisplayAction($event)" />
+}

@@ -1,0 +1,65 @@
+<nav class="dot-uve-nav-bar">
+    @for (item of items; track $index) {
+        <ng-container
+            [ngTemplateOutlet]="!item.href?.length ? button : anchor"
+            [ngTemplateOutletContext]="{ item: item, index: $index }" />
+    }
+</nav>
+
+<ng-template #anchor let-item="item" let-index="index">
+    <div class="dot-uve-nav-bar__item-container">
+        <a
+            [routerLink]="item.isDisabled ? null : item.href"
+            [queryParams]="$params()"
+            [ngClass]="{ 'dot-uve-nav-bar__item--disabled': item.isDisabled }"
+            [pTooltip]="item.tooltip | dm"
+            class="dot-uve-nav-bar__item"
+            data-testId="nav-bar-item"
+            routerLinkActive="dot-uve-nav-bar__item--active"
+            [routerLinkActiveOptions]="{
+                queryParams: 'ignored',
+                matrixParams: 'ignored',
+                paths: 'exact',
+                fragment: 'ignored'
+            }"
+            queryParamsHandling="merge"
+            tooltipPosition="left"
+            rel="noopener">
+            <ng-container
+                [ngTemplateOutlet]="item.icon ? icon : iconURL"
+                [ngTemplateOutletContext]="{ item: item }" />
+            <span class="item__label" data-testId="nav-bar-item-label">
+                {{ item.label | dm }}
+            </span>
+        </a>
+    </div>
+</ng-template>
+
+<ng-template #button let-item="item">
+    <button
+        (click)="item.isDisabled ? null : itemAction(item)"
+        [ngClass]="{ 'dot-uve-nav-bar__item--disabled': item.isDisabled }"
+        [disabled]="item.isDisabled"
+        class="dot-uve-nav-bar__item dot-uve-nav-bar__item--button"
+        data-testId="nav-bar-item">
+        <ng-container
+            [ngTemplateOutlet]="item.icon ? icon : iconURL"
+            [ngTemplateOutletContext]="{ item: item }" />
+        <span class="item__label" data-testId="nav-bar-item-label">
+            {{ item.label | dm }}
+        </span>
+    </button>
+</ng-template>
+
+<ng-template #icon let-item="item">
+    <i [class]="'pi ' + item.icon" data-testId="nav-bar-item-icon"></i>
+</ng-template>
+<ng-template #iconURL let-item="item">
+    <svg class="item__image" fill="currentColor" viewBox="0 0 24 24" width="24px" height="24px">
+        <use
+            data-testId="nav-bar-item-image"
+            attr.href="./assets/dot-uve/{{ item.iconURL }}.svg#{{ item.iconURL }}"
+            width="24px"
+            height="24px"></use>
+    </svg>
+</ng-template>
