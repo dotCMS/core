@@ -26,6 +26,26 @@ Skip to Step 3.
 
 ## Step 2 — Create branch
 
+First detect whether we're inside a git worktree:
+
+```bash
+git rev-parse --git-dir
+# Returns a path ending in /worktrees/<name> if inside a worktree
+```
+
+**If inside a worktree** (`git rev-parse --git-dir` contains `/worktrees/`):
+
+```bash
+BRANCH=$(bash .claude/skills/solve-issue/scripts/slugify.sh <number> "<title>")
+# Create a new worktree for the branch — do NOT use git checkout
+git fetch origin main
+git worktree add ../<BRANCH> -b "$BRANCH" origin/main
+```
+
+Then inform the user: `"Worktree created at ../<BRANCH> — cd into it to start work."`
+
+**If in the main working tree** (standard checkout):
+
 ```bash
 git checkout main && git pull origin main
 BRANCH=$(bash .claude/skills/solve-issue/scripts/slugify.sh <number> "<title>")
