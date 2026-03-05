@@ -243,24 +243,6 @@ describe('DotAnalyticsFiltersComponent', () => {
             expect(changeFiltersSpy).not.toHaveBeenCalled();
         });
 
-        it('should not emit when range is incomplete (only start date)', () => {
-            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
-            spectator.component.$customDateRange.set([new Date('2024-01-01T00:00:00')]);
-            spectator.component.onChangeCustomDateRange();
-
-            expect(changeFiltersSpy).not.toHaveBeenCalled();
-        });
-
-        it('should not emit when date order is reversed', () => {
-            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
-            spectator.component.$customDateRange.set([
-                new Date('2024-01-01T00:00:00'),
-                new Date('1993-01-01T00:00:00')
-            ]);
-            spectator.component.onChangeCustomDateRange();
-
-            expect(changeFiltersSpy).not.toHaveBeenCalled();
-        });
     });
 
     describe('clearDateRange', () => {

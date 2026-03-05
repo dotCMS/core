@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, isBefore, isDate, isSameDay, parse } from 'date-fns';
+import { differenceInCalendarDays, isBefore, isDate, parse } from 'date-fns';
 
 import { TIME_RANGE_OPTIONS, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
 
@@ -21,8 +21,8 @@ export const isValidCustomDateRange = (fromDate: string, toDate: string): boolea
         return false;
     }
 
-    // Check order: from must be before or equal to to
-    if (!isBefore(fromDateObj, toDateObj) && !isSameDay(fromDateObj, toDateObj)) {
+    // Check order: from must be strictly before to
+    if (!isBefore(fromDateObj, toDateObj)) {
         return false;
     }
 

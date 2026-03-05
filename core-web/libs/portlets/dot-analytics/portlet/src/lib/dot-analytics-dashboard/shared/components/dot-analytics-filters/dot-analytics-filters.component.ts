@@ -142,31 +142,6 @@ export class DotAnalyticsFiltersComponent {
         }
     }
 
-    /** Handle change custom date range */
-    onChangeCustomDateRange(): void {
-        const customDateRange = this.$customDateRange();
-
-        if (!customDateRange?.length || customDateRange.length === 1) {
-            return;
-        }
-
-        const from = customDateRange[0];
-        const to = customDateRange[1];
-
-        if (!(from instanceof Date) || !(to instanceof Date)) {
-            return;
-        }
-
-        const fromDate = format(from, 'yyyy-MM-dd');
-        const toDate = format(to, 'yyyy-MM-dd');
-
-        if (!isValidCustomDateRange(fromDate, toDate)) {
-            return;
-        }
-
-        this.changeFilters.emit([fromDate, toDate]);
-    }
-
     /** Clears the custom date range selection and resets the range-start tracker */
     clearDateRange(): void {
         this.$rangeStart.set(null);
