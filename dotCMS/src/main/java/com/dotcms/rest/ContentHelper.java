@@ -359,7 +359,7 @@ public class ContentHelper {
                 //we need to add relationships fields
                 if (depth != -1){
                     addRelationshipsToJSON(request, response, render, user, depth,
-                            respectFrontendRoles, contentlet, contentAsJson, null, language, live, allCategoriesInfo);
+                            respectFrontendRoles, contentlet, contentAsJson, null, contentlet.getLanguageId(), live, allCategoriesInfo);
                 }
             } catch (final Exception e) {
                 final String errorMsg = String.format("An error occurred when converting Contentlet '%s' into JSON: " +
@@ -768,5 +768,6 @@ public class ContentHelper {
 
         return jsonArray;
     }
+
 
 }

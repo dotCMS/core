@@ -1,0 +1,98 @@
+<script type="application/javascript">
+	function _camelizeMe(str) {
+		return str.replace(/[^a-z0-9 ]/ig, '')
+			.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function(match, index) {
+				return +match === 0 ? "" : match[index === 0 ? 'toUpperCase' : 'toUpperCase']();
+			});
+	}
+
+	DotCustomFieldApi.ready(() => {
+		const nameField = DotCustomFieldApi.getField("name");
+		const keyTagField = DotCustomFieldApi.getField("keyTag");
+		const showKeyTagInput = document.getElementById("showKeyTag");
+		const keyTagWrapper = document.getElementById("keyTagWrapper");
+		const editButton = document.getElementById("keyTagEditButton");
+
+		if (!showKeyTagInput || !keyTagWrapper || !editButton) {
+			return;
+		}
+
+		function keyTagUpdate() {
+			const nameValue = nameField.getValue() || "";
+			const keyTagStr = _camelizeMe(nameValue);
+			showKeyTagInput.value = keyTagStr;
+			keyTagField.setValue(keyTagStr);
+		}
+
+		const labelEdit = editButton.dataset.labelEdit || editButton.textContent.trim();
+		const labelSave = editButton.dataset.labelSave || "Save";
+
+		function makeKeyTagEditable() {
+			keyTagWrapper.classList.remove("bg-gray-200");
+			keyTagWrapper.classList.add("bg-white");
+			showKeyTagInput.classList.remove("bg-gray-200");
+			showKeyTagInput.classList.add("bg-white");
+			showKeyTagInput.removeAttribute("readonly");
+			editButton.textContent = labelSave;
+			showKeyTagInput.focus();
+		}
+
+		function finalizeEdit() {
+			const myKeyTag = showKeyTagInput.value || "";
+			const keyTagStr = _camelizeMe(myKeyTag);
+			keyTagWrapper.classList.remove("bg-white");
+			keyTagWrapper.classList.add("bg-gray-200");
+			showKeyTagInput.classList.remove("bg-white");
+			showKeyTagInput.classList.add("bg-gray-200");
+			showKeyTagInput.setAttribute("readonly", "true");
+			showKeyTagInput.value = keyTagStr;
+			keyTagField.setValue(keyTagStr);
+			editButton.textContent = labelEdit;
+		}
+
+		// When name field loses focus: if keyTag is empty, derive from name (same as title_custom_field_new / old onblur)
+		let parentNameInput = null;
+		try {
+			if (window.parent && window.parent !== window && window.parent.document) {
+				parentNameInput = window.parent.document.getElementById("name");
+			}
+		} catch (e) {
+			parentNameInput = null;
+		}
+		const nameInput = document.getElementById("name") || parentNameInput || null;
+		if (nameInput) {
+			nameInput.addEventListener("blur", () => {
+				const currentKeyTag = keyTagField.getValue() || "";
+				if (currentKeyTag.trim().length > 0) {
+					return;
+				}
+				keyTagUpdate();
+			});
+		}
+
+		// Initialize visible input with current field value
+		const initialValue = keyTagField.getValue() || "";
+		showKeyTagInput.value = initialValue;
+
+		showKeyTagInput.addEventListener("blur", finalizeEdit);
+		editButton.addEventListener("mousedown", (e) => {
+			e.preventDefault();
+		});
+		editButton.addEventListener("click", () => {
+			if (showKeyTagInput.hasAttribute("readonly")) {
+				makeKeyTagEditable();
+			} else {
+				finalizeEdit();
+			}
+		});
+	});
+</script>
+
+<div class="flex gap-2 align-items-center w-full">
+	<div id="keyTagWrapper" class="flex-1 min-w-0 border-1 border-round border-gray-400 bg-gray-200 font-bold white-space-nowrap">
+		<input type="text" id="showKeyTag" readonly="true" class="w-full border-none bg-gray-200 outline-none" placeholder="">
+	</div>
+	<button id="keyTagEditButton" type="button" data-label-edit="$text.get('Edit')" data-label-save="$text.get('Save')">
+		$text.get("Edit")
+	</button>
+</div>

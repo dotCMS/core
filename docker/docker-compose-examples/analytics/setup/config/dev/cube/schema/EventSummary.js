@@ -6,10 +6,10 @@ cube(`EventSummary`, {
   sql: `
     SELECT day, cluster_id, customer_id, context_site_id, event_type, context_user_id, identifier, title, daily_total
     FROM content_events_counter
-    WHERE ${FILTER_PARAMS.ContentAttribution.customerId.filter('customer_id')} AND (
-      ${FILTER_PARAMS.ContentAttribution.clusterId ? FILTER_PARAMS.ContentAttribution.clusterId.filter('cluster_id') : '1=1'}
-        OR (${FILTER_PARAMS.ContentAttribution.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
-      ${FILTER_PARAMS.ContentAttribution.day.filter('day')}
+    WHERE ${FILTER_PARAMS.EventSummary.customerId.filter('customer_id')} AND (
+      ${FILTER_PARAMS.EventSummary.clusterId ? FILTER_PARAMS.EventSummary.clusterId.filter('cluster_id') : '1=1'}
+        OR (${FILTER_PARAMS.EventSummary.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
+      ${FILTER_PARAMS.EventSummary.day.filter('day')}
   `,
 
   // 2) Measures

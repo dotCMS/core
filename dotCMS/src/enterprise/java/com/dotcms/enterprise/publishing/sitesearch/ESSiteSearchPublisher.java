@@ -332,7 +332,7 @@ public class ESSiteSearchPublisher extends Publisher {
                     res.setUri(asset.getPath() + asset.getFileName());
                     res.setUrl(host.getHostname() + res.getUri());
                     res.setFileName(asset.getFileName());
-
+                    res.setTitle(asset.getTitle());
                     res.setMimeType(fileAssetAPI
                             .getMimeType(asset.getUnderlyingFileName()));
                     res.setModified(asset.getModDate());

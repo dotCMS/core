@@ -1,17 +1,18 @@
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    effect,
     inject,
     input,
     model,
-    effect,
     output
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
-import { MessagesModule } from 'primeng/messages';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
 import {
@@ -80,10 +81,12 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
 @Component({
     selector: 'dot-edit-content-form-layout',
     imports: [
+        CommonModule,
         DotMessagePipe,
         ButtonModule,
         ToastModule,
-        MessagesModule,
+        MessageModule,
+        DynamicDialogModule,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
         ConfirmDialogModule,

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 jest.mock('consola');
 
-import * as consola from 'consola';
+import { consola } from 'consola';
 
 import {
     DotCMSClientConfig,

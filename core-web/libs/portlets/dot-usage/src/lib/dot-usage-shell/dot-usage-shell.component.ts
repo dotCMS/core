@@ -13,7 +13,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -26,13 +26,12 @@ import { DotMessagePipe } from '@dotcms/ui';
         CommonModule,
         ButtonModule,
         CardModule,
-        MessagesModule,
+        MessageModule,
         SkeletonModule,
         DotMessagePipe,
         ToolbarModule
     ],
     templateUrl: './dot-usage-shell.component.html',
-    styleUrl: './dot-usage-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUsageShellComponent implements OnInit, OnDestroy {
@@ -47,7 +46,6 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
 
     // Computed values for display
     readonly hasData = computed(() => this.summary() !== null);
-    readonly lastUpdated = signal<Date | null>(null);
 
     ngOnInit(): void {
         this.loadData();
@@ -73,7 +71,6 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
             next: (summary) => {
                 this.summary.set(summary);
                 this.loading.set(false);
-                this.lastUpdated.set(new Date());
             },
             error: (error) => {
                 const errorMessage = this.usageService.getErrorMessage(error);
@@ -83,10 +80,6 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
                 console.error('Failed to load usage data:', error);
             }
         });
-    }
-
-    onRefresh(): void {
-        this.loadData();
     }
 
     onRetry(): void {

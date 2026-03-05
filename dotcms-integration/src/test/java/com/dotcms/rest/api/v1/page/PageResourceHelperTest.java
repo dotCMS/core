@@ -9,6 +9,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -22,8 +23,6 @@ import com.liferay.portal.model.User;
 import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -105,6 +104,125 @@ public class PageResourceHelperTest {
 
         assertNotEquals(contentlet.getIdentifier(), contentletCopy.getIdentifier());
         assertNotEquals(contentlet.getInode(), contentletCopy.getInode());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#copyContentlet(CopyContentletForm, User, PageMode, Language)}
+     * when: Try to copy a Content from a Page where the Template that is not advanced and the Multi_tree has a
+     * relation_type legacy value and the variantId is empty
+     * should: copy the Contentlet anyway
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void copyContentletWithEmptyVariantId() throws DotDataException, DotSecurityException {
+
+        final RandomString randomString = new RandomString();
+
+        final Field field_1 = new FieldDataGen()
+                .name("field1")
+                .velocityVarName("field1")
+                .type(TextField.class)
+                .next();
+
+        final Field field_2 = new FieldDataGen()
+                .name("field2")
+                .velocityVarName("field2")
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(field_1)
+                .field(field_2)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("field1", randomString.nextString())
+                .setProperty("field2", randomString.nextString())
+                .nextPersisted();
+
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen().setContentlet(contentlet)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final CopyContentletForm copyContentletForm = new CopyContentletForm.Builder()
+                .pageId(page.getIdentifier())
+                .containerId(container.getIdentifier())
+                .relationType("1")
+                .contentId(contentlet.getIdentifier())
+                .variantId("")
+                .build();
+
+        final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+
+        final Contentlet contentletCopy = PageResourceHelper.getInstance().copyContentlet(copyContentletForm,
+                APILocator.systemUser(), PageMode.PREVIEW_MODE, language);
+
+        assertEquals(contentlet.getStringProperty("field1"), contentletCopy.getStringProperty("field1"));
+        assertEquals(contentlet.getStringProperty("field2"), contentletCopy.getStringProperty("field2"));
+
+        assertNotEquals(contentlet.getIdentifier(), contentletCopy.getIdentifier());
+        assertNotEquals(contentlet.getInode(), contentletCopy.getInode());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#copyContentlet(CopyContentletForm, User, PageMode, Language)}
+     * when: Try to copy a Content from a Page where the Multi_tree does not exist
+     * should: throw DoesNotExistException
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void copyContentletThrowsDoesNotExistException() throws DotDataException, DotSecurityException {
+
+        final RandomString randomString = new RandomString();
+
+        final Field field_1 = new FieldDataGen()
+                .name("field1")
+                .velocityVarName("field1")
+                .type(TextField.class)
+                .next();
+
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(field_1)
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("field1", randomString.nextString())
+                .nextPersisted();
+
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final CopyContentletForm copyContentletForm = new CopyContentletForm.Builder()
+                .pageId(page.getIdentifier())
+                .containerId(container.getIdentifier())
+                .relationType("1")
+                .contentId(contentlet.getIdentifier())
+                .build();
+
+        final Language language = APILocator.getLanguageAPI().getLanguage(contentlet.getLanguageId());
+
+        PageResourceHelper.getInstance().copyContentlet(copyContentletForm,
+                APILocator.systemUser(), PageMode.PREVIEW_MODE, language);
     }
 
     /**

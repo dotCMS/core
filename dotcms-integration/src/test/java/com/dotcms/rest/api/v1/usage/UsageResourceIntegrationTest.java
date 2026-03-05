@@ -389,4 +389,72 @@ public class UsageResourceIntegrationTest {
             }
         }
     }
+
+    /**
+     * Method to test: {@link UsageResource#getSummary(HttpServletRequest, HttpServletResponse, String)}
+     * When: Requesting usage summary with MINIMAL profile
+     * Should: Include both content items and content types metrics
+     */
+    @Test
+    public void testGetSummary_shouldIncludeContentMetrics() {
+        // Given: An authenticated request with MINIMAL profile
+        final HttpServletRequest request = mockAuthenticatedRequest();
+
+        // When: Getting usage summary
+        final Response apiResponse = resource.getSummary(request, response, "MINIMAL");
+
+        // Then: Should return success
+        assertEquals("Response should be 200 OK",
+                Response.Status.OK.getStatusCode(),
+                apiResponse.getStatus());
+
+        // Then: Should include content category with both metrics
+        final ResponseEntityUsageSummaryView responseView = (ResponseEntityUsageSummaryView) apiResponse.getEntity();
+        final UsageSummary summary = responseView.getEntity();
+        final Map<String, Map<String, Object>> metricsByCategory = summary.getMetrics();
+
+        assertTrue("Should have 'content' category", metricsByCategory.containsKey("content"));
+
+        final Map<String, Object> contentMetrics = metricsByCategory.get("content");
+
+        // Then: Should have content items metric
+        assertTrue(
+                "Content category should include COUNT_CONTENT metric",
+                contentMetrics.containsKey("COUNT_CONTENT")
+        );
+
+        // Then: Should have content types metric
+        assertTrue(
+                "Content category should include COUNT_OF_CONTENT_TYPES metric",
+                contentMetrics.containsKey("COUNT_OF_CONTENT_TYPES")
+        );
+
+        // Then: Verify metric structure for content types
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> contentTypesMetric =
+                (Map<String, Object>) contentMetrics.get("COUNT_OF_CONTENT_TYPES");
+
+        assertEquals("Metric name should match",
+                "COUNT_OF_CONTENT_TYPES",
+                contentTypesMetric.get("name"));
+        assertNotNull("Metric should have a value",
+                contentTypesMetric.get("value"));
+        assertEquals("Metric should have correct i18n key",
+                "usage.metric.COUNT_OF_CONTENT_TYPES.label",
+                contentTypesMetric.get("displayLabel"));
+
+        // Then: Verify metric structure for content items
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> contentItemsMetric =
+                (Map<String, Object>) contentMetrics.get("COUNT_CONTENT");
+
+        assertEquals("Metric name should match",
+                "COUNT_CONTENT",
+                contentItemsMetric.get("name"));
+        assertNotNull("Metric should have a value",
+                contentItemsMetric.get("value"));
+        assertEquals("Metric should have correct i18n key",
+                "usage.metric.COUNT_CONTENT.label",
+                contentItemsMetric.get("displayLabel"));
+    }
 }

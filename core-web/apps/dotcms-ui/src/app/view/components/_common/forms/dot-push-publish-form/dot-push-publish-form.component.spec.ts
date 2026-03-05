@@ -10,8 +10,8 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
-import { CalendarModule } from 'primeng/calendar';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { DatePickerModule } from 'primeng/datepicker';
+import { Select, SelectModule } from 'primeng/select';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
 import {
@@ -142,11 +142,11 @@ xdescribe('DotPushPublishFormComponent', () => {
                 DotPushPublishFormComponent,
                 AutoFocusModule,
                 FormsModule,
-                CalendarModule,
+                DatePickerModule,
                 DotDialogModule,
                 PushPublishEnvSelectorComponent,
                 ReactiveFormsModule,
-                DropdownModule,
+                SelectModule,
                 DotFieldValidationMessageComponent,
                 SelectButtonModule,
                 DotSafeHtmlPipe,
@@ -181,7 +181,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     it('should load filters on load', () => {
-        const filterDropDown = fixture.debugElement.query(By.css('p-dropdown'));
+        const filterDropDown = fixture.debugElement.query(By.css('p-select'));
 
         expect(filterDropDown.attributes['ng-reflect-autofocus']).toBe('true');
         expect(filterDropDown.componentInstance.options).toEqual(optionsLabels);
@@ -200,7 +200,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         const timezoneDropDownContainer = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelectContainer"]')
         );
-        const timezoneDropDown: Dropdown = fixture.debugElement.query(
+        const timezoneDropDown: Select = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelect"]')
         ).componentInstance;
         const timeZoneLabel = fixture.debugElement.query(
@@ -219,7 +219,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         ).nativeElement;
         changeTZLink.click();
         fixture.detectChanges();
-        const timezoneDropDown: Dropdown = fixture.debugElement.query(
+        const timezoneDropDown: Select = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelect"]')
         ).componentInstance;
         const timezoneDropDownContainer = fixture.debugElement.query(

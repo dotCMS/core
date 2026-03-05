@@ -1,0 +1,57 @@
+<script type="application/javascript">
+  DotCustomFieldApi.ready(() => {
+    const field = DotCustomFieldApi.getField("forwardTo");
+    const vlUriInput = document.getElementById("vlUri");
+    const browseButton = document.getElementById("browseButton");
+    if (!vlUriInput || !browseButton) {
+      return;
+    }
+
+    // Initialize input with current field value
+    const currentValue = field.getValue() || "";
+    vlUriInput.value = currentValue;
+
+    // Sync input changes to field
+    vlUriInput.addEventListener("change", () => {
+      field.setValue(vlUriInput.value);
+    });
+
+    // Handle browse button click
+    browseButton.addEventListener("click", () => {
+      DotCustomFieldApi.openBrowserModal({
+        header: "$text.get('Select-a-file')",
+        params: {
+          showFiles: true,
+          showPages: true,
+          showFolders: true,
+          showDotAssets: false,
+          showWorking: false,
+          showArchived: false,
+          sortByDesc: true,
+        },
+        onClose: (result) => {
+          if (result && result.url) {
+            vlUriInput.value = result.url;
+            field.setValue(result.url);
+          }
+        },
+      });
+    });
+  });
+</script>
+
+<div class="flex gap-2 align-items-center flex-wrap">
+  <input
+    type="text"
+    id="vlUri"
+    name="uri"
+    class="flex-1 min-w-0"
+    placeholder="$text.get('enter-file-path')"
+  />
+  <button
+    id="browseButton"
+    type="button"
+  >
+    $text.get('click-here-to-browse')
+  </button>
+</div>

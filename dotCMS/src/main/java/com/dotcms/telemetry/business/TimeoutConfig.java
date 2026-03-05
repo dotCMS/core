@@ -13,7 +13,7 @@ import javax.enterprise.context.ApplicationScoped;
  *
  * <p>Configuration properties:</p>
  * <ul>
- *     <li>{@code telemetry.metric.timeout.seconds} - Global timeout for any metric (default: 2)</li>
+ *     <li>{@code telemetry.metric.timeout.seconds} - Global timeout for any metric (default: 10)</li>
  *     <li>{@code telemetry.collection.timeout.seconds} - Total collection timeout (default: 30)</li>
  *     <li>{@code telemetry.metric.slow.threshold.ms} - Slow metric warning threshold (default: 500)</li>
  * </ul>
@@ -35,7 +35,7 @@ public class TimeoutConfig {
     private static final String COLLECTION_TIMEOUT_PROP = "telemetry.collection.timeout.seconds";
     private static final String SLOW_THRESHOLD_PROP = "telemetry.metric.slow.threshold.ms";
 
-    private static final int DEFAULT_METRIC_TIMEOUT_SECONDS = 2;
+    private static final int DEFAULT_METRIC_TIMEOUT_SECONDS = 10;
     private static final int DEFAULT_COLLECTION_TIMEOUT_SECONDS = 30;
     private static final int DEFAULT_SLOW_THRESHOLD_MS = 500;
 
@@ -45,7 +45,7 @@ public class TimeoutConfig {
      * <p>This is a hard limit - no metric should ever exceed this timeout.
      * Metrics that timeout are skipped with an error logged.</p>
      *
-     * @return the metric timeout in seconds (default: 2)
+     * @return the metric timeout in seconds (default: 10)
      */
     public int getMetricTimeoutSeconds() {
         return getPositiveInt(METRIC_TIMEOUT_PROP, DEFAULT_METRIC_TIMEOUT_SECONDS);
@@ -54,7 +54,7 @@ public class TimeoutConfig {
     /**
      * Gets the global timeout for any single metric collection in milliseconds.
      *
-     * @return the metric timeout in milliseconds (default: 2000)
+     * @return the metric timeout in milliseconds (default: 10000)
      */
     public long getMetricTimeoutMillis() {
         return getMetricTimeoutSeconds() * 1000L;

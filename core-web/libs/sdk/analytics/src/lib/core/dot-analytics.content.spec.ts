@@ -2,15 +2,19 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Analytics } from 'analytics';
 
+import { getUVEState } from '@dotcms/uve';
+
 import { initializeContentAnalytics } from './dot-analytics.content';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
 import { dotAnalytics } from './plugin/main/dot-analytics.plugin';
+import { ANALYTICS_WINDOWS_ACTIVE_KEY } from './shared/constants/dot-analytics.constants';
 import { DotCMSAnalyticsConfig } from './shared/models';
 
 // Mock dependencies
 jest.mock('analytics');
+jest.mock('@dotcms/uve');
 jest.mock('./plugin/main/dot-analytics.plugin');
 jest.mock('./plugin/enricher/dot-analytics.enricher.plugin');
 jest.mock('./plugin/identity/dot-analytics.identity.plugin');
@@ -60,6 +64,9 @@ describe('initializeContentAnalytics', () => {
 
         // Save original window
         originalWindow = global.window;
+
+        // Mock getUVEState (not in editor by default)
+        (getUVEState as jest.Mock).mockReturnValue(undefined);
 
         // Setup mocks
         mockAnalytics.mockReturnValue(mockAnalyticsInstance as any);
@@ -153,6 +160,29 @@ describe('initializeContentAnalytics', () => {
         expect(consoleSpy).toHaveBeenCalledWith(
             'DotCMS Analytics [Core]: Missing "server" in configuration'
         );
+
+        consoleSpy.mockRestore();
+    });
+
+    it('should return null and not initialize plugins when inside UVE editor', () => {
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+        (getUVEState as jest.Mock).mockReturnValue({ mode: 'edit' });
+
+        const analytics = initializeContentAnalytics(mockConfig);
+
+        expect(analytics).toBeNull();
+        expect(consoleSpy).toHaveBeenCalledWith(
+            'DotCMS Analytics [Core]: Analytics disabled inside UVE editor'
+        );
+
+        // No plugins should be initialized
+        expect(mockAnalytics).not.toHaveBeenCalled();
+        expect(mockDotAnalyticsIdentityPlugin).not.toHaveBeenCalled();
+        expect(mockDotAnalyticsEnricherPlugin).not.toHaveBeenCalled();
+        expect(mockDotAnalytics).not.toHaveBeenCalled();
+
+        // Window active flag should be false
+        expect((window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY]).toBe(false);
 
         consoleSpy.mockRestore();
     });

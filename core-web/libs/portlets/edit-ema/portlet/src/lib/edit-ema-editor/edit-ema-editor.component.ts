@@ -4,21 +4,21 @@ import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    DestroyRef,
     ElementRef,
     OnDestroy,
     OnInit,
-    AfterViewInit,
     ViewChild,
     WritableSignal,
+    computed,
     effect,
     inject,
     signal,
-    untracked,
-    computed,
-    DestroyRef
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -92,6 +92,7 @@ import {
     DeletePayload,
     DialogAction,
     InsertPayloadFromDelete,
+    PageContainer,
     PositionPayload,
     PostMessage,
     ReorderMenuPayload,
@@ -103,6 +104,7 @@ import { UVE_PALETTE_TABS } from '../store/features/editor/models';
 import {
     SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
+    areContainersEquals,
     compareUrlPaths,
     convertClientParamsToPageParams,
     createReorderMenuURL,
@@ -245,6 +247,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         this.iframeMessenger.requestBounds();
+    });
+
+    /**
+     * Reset activeContentlet when page is unlocked
+     *
+     * Business Rule: When a page is unlocked (isLocked === false), any active contentlet
+     * selection should be cleared to prevent editing conflicts.
+     */
+    readonly $resetActiveContentletOnUnlockEffect = effect(() => {
+        const toggleLockOptions = this.$toggleLockOptions();
+        const activeContentlet = this.uveStore.activeContentlet();
+
+        // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
+        if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
+            this.uveStore.resetActiveContentlet();
+        }
     });
 
     ngOnInit(): void {
@@ -607,6 +625,35 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
+     * Check if the active contentlet still exists in the page containers
+     * and reset it if it was removed
+     *
+     * @private
+     * @param {PageContainer[]} pageContainers
+     * @memberof EditEmaEditorComponent
+     */
+    #checkAndResetActiveContentlet(pageContainers: PageContainer[]): void {
+        const activeContentlet = this.uveStore.activeContentlet();
+
+        if (!activeContentlet?.contentlet?.identifier) {
+            return;
+        }
+
+        const activeContentletId = activeContentlet.contentlet.identifier;
+        const stillExists = pageContainers.some((container) => {
+            // For now, if is not the same container, we deactivate the active contentlet
+            // This can be improved in the future to check if the contentlet was moved, but we need to implement optimistic updates in UVE first
+            // Because moving contentlets change the container structure, and we need to have a rollback mechanism in case the update fails
+            const isSameContainer = areContainersEquals(container, activeContentlet.container);
+            return container.contentletsId?.includes(activeContentletId) && isSameContainer;
+        });
+
+        if (!stillExists) {
+            this.uveStore.resetActiveContentlet();
+        }
+    }
+
+    /**
      * When the user drop a palette item in the dropzone
      *
      * @param {PositionPayload} positionPayload
@@ -661,6 +708,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 return;
             }
 
+            // Check if active contentlet was removed during move operation
+            this.#checkAndResetActiveContentlet(pageContainers);
+
             this.uveStore.savePage(pageContainers);
 
             return;
@@ -688,6 +738,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 return;
             }
 
+            // Check if active contentlet was removed during temp insert operation
+            this.#checkAndResetActiveContentlet(pageContainers);
+
             this.uveStore.savePage(pageContainers);
         }
     }
@@ -710,6 +763,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             acceptLabel: this.dotMessageService.get('dot.common.dialog.accept'),
             rejectLabel: this.dotMessageService.get('dot.common.dialog.reject'),
             accept: () => {
+                // Check if active contentlet was removed during delete operation
+                this.#checkAndResetActiveContentlet(pageContainers);
+
                 this.uveStore.savePage(pageContainers);
             }
         });

@@ -151,7 +151,8 @@ describe('DotContentletService', () => {
                     request.url === '/api/v1/contenttype' &&
                     request.params.get('orderby') === 'name' &&
                     request.params.get('direction') === 'ASC' &&
-                    request.params.get('per_page') === options.page?.toString() &&
+                    request.params.get('per_page') === (options.per_page ?? 40).toString() &&
+                    request.params.get('page') === options.page?.toString() &&
                     request.params.get('filter') === (options.filter ?? null) &&
                     validateTypeParam(request, options.type) &&
                     request.params.get('ensure') === (options.ensure ?? null)

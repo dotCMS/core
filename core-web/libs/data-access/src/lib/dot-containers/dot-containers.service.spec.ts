@@ -25,10 +25,7 @@ describe('DotContainersService', () => {
         title: 'Test Container Title',
         path: '/test-container',
         archived: false,
-        categoryId: 'test-category',
-        parentPermissionable: {
-            hostname: 'test-host'
-        }
+        categoryId: 'test-category'
     };
 
     const mockSystemContainer: DotContainer = {

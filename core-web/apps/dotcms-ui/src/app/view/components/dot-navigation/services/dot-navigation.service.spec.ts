@@ -10,6 +10,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import {
+    DotCurrentUserService,
     DotEventsService,
     DotIframeService,
     DotRouterService,
@@ -18,11 +19,12 @@ import {
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotNavigationService } from './dot-navigation.service';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
 class RouterMock {
     _events: Subject<any> = new Subject();
@@ -254,6 +256,14 @@ describe('DotNavigationService', () => {
                     provide: DotSystemConfigService,
                     useValue: { getSystemConfig: () => of({}) }
                 },
+                {
+                    provide: DynamicRouteService,
+                    useValue: {
+                        registerRoutesFromMenuItems: jest.fn().mockReturnValue(0),
+                        getRegisteredRoutes: jest.fn().mockReturnValue([])
+                    }
+                },
+                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 GlobalStore,
                 provideHttpClient(),
                 provideHttpClientTesting()

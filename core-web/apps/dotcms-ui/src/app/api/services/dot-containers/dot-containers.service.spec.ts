@@ -30,9 +30,7 @@ const mockContainer: DotContainerEntity = {
         identifier: '1234',
         live: true,
         name: 'movie',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'movie',

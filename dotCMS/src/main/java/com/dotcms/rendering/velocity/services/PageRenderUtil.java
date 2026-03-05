@@ -541,7 +541,7 @@ public class PageRenderUtil implements Serializable {
         // created by hydrate(), not the cached original instance.
         // See: DotContentletTransformerImpl.hydrate() and copy()
 
-        if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false)) {
+        if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true)) {
             return;
         }
 
@@ -741,12 +741,28 @@ public class PageRenderUtil implements Serializable {
             // No need to apply the Time Machine date, just return the contentlet based on the mode.showLive
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback(
                     contentletIdentifier, mode.showLive, languageId,
-                    user, true);
+                    user, true, variantName);
 
-            return contentletOpt.isPresent()
-                    ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(
-                    contentletIdentifier,
-                    variantName);
+            if (contentletOpt.isPresent()) {
+                return contentletOpt.get();
+            }
+
+            // If not found with language fallback, try to find in any language with the specified variant
+            // This allows pages to show content from other languages when the content type allows fallback
+            // but the content doesn't exist in the page's language or default language
+            try {
+                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                        contentletIdentifier, variantName);
+
+                // Check if this content type allows language fallback
+                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
+                    return anyLanguageContentlet;
+                }
+            } catch (Exception e) {
+                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
+            }
+
+            return null;
 
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control

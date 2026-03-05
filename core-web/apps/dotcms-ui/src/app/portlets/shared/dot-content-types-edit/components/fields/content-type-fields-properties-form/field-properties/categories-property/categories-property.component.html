@@ -1,18 +1,36 @@
 <div [formGroup]="group" class="field">
     <label dotFieldRequired for="categories">{{ 'categories' | dm }}</label>
-    <dot-searchable-dropdown
-        (filterChange)="handleFilterChange($event)"
-        (pageChange)="handlePageChange($event)"
-        [data]="categoriesCurrentPage"
-        [formControlName]="property.name"
-        [pageLinkSize]="paginationService.maxLinksPage"
-        [rows]="paginationService.paginationPerPage"
-        [totalRecords]="paginationService.totalRecords"
+    <p-select
         id="categories"
-        #searchableDropdown
-        labelPropertyName="categoryName"
+        (onLazyLoad)="handleLazyLoad($event)"
+        [appendTo]="'body'"
+        [filter]="true"
+        [formControlName]="property.name"
+        [lazy]="true"
+        [loading]="loading"
+        [options]="categoriesCurrentPage"
         [placeholder]="placeholder"
-        width="100%" />
+        [style]="{ width: '100%' }"
+        [virtualScroll]="true"
+        [virtualScrollOptions]="{
+            itemSize: 34,
+            step: paginationService.paginationPerPage
+        }"
+        dataKey="inode"
+        optionLabel="categoryName">
+        <ng-template pTemplate="filter">
+            <input
+                pInputText
+                class="w-full"
+                type="text"
+                role="searchbox"
+                autocomplete="off"
+                [value]="filterValue"
+                [placeholder]="'search' | dm"
+                (input)="handleFilterChange($any($event.target).value)"
+                (click)="$event.stopPropagation()" />
+        </ng-template>
+    </p-select>
 
     <dot-field-validation-message
         [field]="group.controls[property.name]"

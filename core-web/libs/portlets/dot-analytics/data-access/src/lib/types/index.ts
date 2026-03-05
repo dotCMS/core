@@ -11,4 +11,5 @@ export * from './common.types';
 export * from './cubequery.types';
 
 // API entity types
+export * from './engagement.types';
 export * from './entities.types';

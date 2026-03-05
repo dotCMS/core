@@ -198,7 +198,7 @@ describe('DotTemplateAdvancedComponent', () => {
 
             container.triggerEventHandler('swap', {
                 identifier: '123',
-                parentPermissionable: { hostname: 'demo.com' }
+                hostName: 'demo.com'
             });
 
             expect(component.editor.executeEdits).toHaveBeenCalledWith('source', [

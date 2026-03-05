@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -84,15 +85,21 @@ public interface ContentletAPI {
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
 	/**
-	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
-	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
-	 * of content.  Doesn't respect permissions.
+	 * Retrieves contentlets from the database. Doesn't respect permissions.
+	 *
+	 * <p><strong>DO NOT USE THIS METHOD.</strong></p>
+	 *
+	 * <p>This method is deprecated and should not be used in production code as it may cause
+	 * severe performance issues. For test code, use {@code ContentletDataGen.findAllContent(offset, limit)}
+	 * from the test module instead, which provides the same functionality in a test-appropriate context.</p>
 	 *
 	 * @param offset can be 0 if no offset
-	 * @param limit can be 0 of no limit
-	 * @return List<Contentlet> list of contentlets
-	 * @throws DotDataException
+	 * @param limit can be 0 if no limit
+	 * @return List of contentlets
+	 * @throws DotDataException if a database error occurs
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
 	 */
+	@Deprecated
 	public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException;
 	
 	/**
@@ -430,7 +437,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException If user is null and not respecting frontend roles
 	 * @throws DotDataException If there's an error creating the scroll query
 	 */
-	public com.dotcms.content.elasticsearch.business.ESContentletScroll createScrollQuery(
+	public IndexContentletScroll createScrollQuery(
 			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy)
 			throws DotSecurityException, DotDataException;
 

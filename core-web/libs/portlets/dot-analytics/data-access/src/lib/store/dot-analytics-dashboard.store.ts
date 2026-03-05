@@ -1,11 +1,13 @@
 import { patchState, signalStore, withHooks, withMethods } from '@ngrx/signals';
 
+import { Location } from '@angular/common';
 import { effect, inject } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { GlobalStore } from '@dotcms/store';
 
 import { withConversions } from './features/with-conversions.feature';
+import { withEngagement } from './features/with-engagement.feature';
 import { withFilters } from './features/with-filters.feature';
 import { withPageview } from './features/with-pageview.feature';
 
@@ -32,66 +34,78 @@ export const DotAnalyticsDashboardStore = signalStore(
     withFilters(),
     withPageview(),
     withConversions(),
+    withEngagement(),
     // Coordinator methods that work across features
-    withMethods((store, route = inject(ActivatedRoute), router = inject(Router)) => ({
-        /**
-         * Sets current tab and syncs URL.
-         */
-        setCurrentTabAndNavigate(tab: DashboardTab): void {
-            store.setCurrentTab(tab);
+    withMethods(
+        (
+            store,
+            route = inject(ActivatedRoute),
+            router = inject(Router),
+            location = inject(Location)
+        ) => ({
+            /**
+             * Sets current tab and syncs URL without triggering Angular router navigation.
+             */
+            setCurrentTabAndNavigate(tab: DashboardTab): void {
+                store.setCurrentTab(tab);
 
-            // Update URL with tab query param
-            // TODO: Find a better way to update the URL with the tab query param.
-            router.navigate([], {
-                relativeTo: route,
-                queryParams: { tab: tab },
-                queryParamsHandling: 'merge',
-                replaceUrl: true
-            });
-        },
+                const urlTree = router.createUrlTree([], {
+                    relativeTo: route,
+                    queryParams: { tab },
+                    queryParamsHandling: 'merge'
+                });
+                location.replaceState(router.serializeUrl(urlTree));
+            },
 
-        /**
-         * Refreshes all currently loaded data based on the current tab.
-         */
-        refreshAllData(): void {
-            const currentTab = store.currentTab();
+            /**
+             * Refreshes all currently loaded data based on the current tab.
+             */
+            refreshAllData(): void {
+                const currentTab = store.currentTab();
 
-            if (currentTab === DASHBOARD_TABS.pageview) {
-                store.loadAllPageviewData();
-            } else {
-                store.loadConversionsData();
+                switch (currentTab) {
+                    case DASHBOARD_TABS.pageview:
+                        store.loadAllPageviewData();
+                        break;
+                    case DASHBOARD_TABS.engagement:
+                        store.loadEngagementData();
+                        break;
+                    case DASHBOARD_TABS.conversions:
+                        store.loadConversionsData();
+                        break;
+                }
+            },
+
+            /**
+             * Updates time range and syncs URL with query params.
+             */
+            updateTimeRange(timeRange: TimeRangeInput): void {
+                store.setTimeRange(timeRange);
+
+                // Build query params from time range
+                const queryParams: Params = {};
+
+                if (Array.isArray(timeRange)) {
+                    // Custom date range
+                    queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
+                    queryParams['from'] = timeRange[0];
+                    queryParams['to'] = timeRange[1];
+                } else {
+                    // Predefined range
+                    queryParams['time_range'] = timeRange;
+                }
+
+                // Update URL
+                // TODO: Find a better way to update the URL with the time range query params.
+                router.navigate([], {
+                    relativeTo: route,
+                    queryParams: queryParams,
+                    queryParamsHandling: 'merge',
+                    replaceUrl: true
+                });
             }
-        },
-
-        /**
-         * Updates time range and syncs URL with query params.
-         */
-        updateTimeRange(timeRange: TimeRangeInput): void {
-            store.setTimeRange(timeRange);
-
-            // Build query params from time range
-            const queryParams: Params = {};
-
-            if (Array.isArray(timeRange)) {
-                // Custom date range
-                queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
-                queryParams['from'] = timeRange[0];
-                queryParams['to'] = timeRange[1];
-            } else {
-                // Predefined range
-                queryParams['time_range'] = timeRange;
-            }
-
-            // Update URL
-            // TODO: Find a better way to update the URL with the time range query params.
-            router.navigate([], {
-                relativeTo: route,
-                queryParams: queryParams,
-                queryParamsHandling: 'merge',
-                replaceUrl: true
-            });
-        }
-    })),
+        })
+    ),
     withHooks({
         onInit(store) {
             const route = inject(ActivatedRoute);
@@ -113,10 +127,16 @@ export const DotAnalyticsDashboardStore = signalStore(
                 }
 
                 // Load data based on active tab
-                if (currentTab === DASHBOARD_TABS.pageview) {
-                    store.loadAllPageviewData();
-                } else if (currentTab === DASHBOARD_TABS.conversions) {
-                    store.loadConversionsData();
+                switch (currentTab) {
+                    case DASHBOARD_TABS.pageview:
+                        store.loadAllPageviewData();
+                        break;
+                    case DASHBOARD_TABS.conversions:
+                        store.loadConversionsData();
+                        break;
+                    case DASHBOARD_TABS.engagement:
+                        store.loadEngagementData();
+                        break;
                 }
             });
         }

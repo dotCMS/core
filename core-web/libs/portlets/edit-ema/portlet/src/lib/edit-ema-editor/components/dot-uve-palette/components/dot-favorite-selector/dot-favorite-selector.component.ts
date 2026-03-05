@@ -1,11 +1,11 @@
 import { Subject } from 'rxjs';
 
-import { Component, DestroyRef, inject, OnInit, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, output, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { Listbox, ListboxModule } from 'primeng/listbox';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
 
 import { debounceTime, finalize, switchMap } from 'rxjs/operators';
 
@@ -36,9 +36,8 @@ const CONTENT_TYPE_CATEGORIES = [
 
 @Component({
     selector: 'dot-favorite-selector',
-    imports: [FormsModule, ListboxModule, DotMessagePipe, OverlayPanelModule],
-    templateUrl: './dot-favorite-selector.component.html',
-    styleUrls: ['./dot-favorite-selector.component.scss']
+    imports: [FormsModule, ListboxModule, DotMessagePipe, PopoverModule],
+    templateUrl: './dot-favorite-selector.component.html'
 })
 /**
  * Favorite selector overlay used in the UVE palette.
@@ -48,14 +47,16 @@ const CONTENT_TYPE_CATEGORIES = [
  * debouncing, and persists selections using the favorites service.
  */
 export class DotFavoriteSelectorComponent implements OnInit {
-    /** Reference to the overlay panel instance controlling visibility. */
-    $overlayPanel = viewChild.required(OverlayPanel);
+    /** Reference to the popover instance controlling visibility. */
+    $overlayPanel = viewChild.required(Popover);
     /** Reference to the PrimeNG Listbox to manage its built-in filter. */
     $listbox = viewChild.required(Listbox);
     readonly #store = inject(DotPaletteListStore);
     readonly #destroyRef = inject(DestroyRef);
     readonly #pageContentTypeService = inject(DotPageContentTypeService);
     readonly #favoriteContentTypeService = inject(DotFavoriteContentTypeService);
+
+    readonly hideControls = output<boolean>();
 
     /** Full list of content types matching the current filter. */
     readonly $contenttypes = signal<DotCMSContentType[]>([]);
@@ -120,6 +121,7 @@ export class DotFavoriteSelectorComponent implements OnInit {
      */
     protected onSelectionChange({ value }: { value: DotCMSContentType[] }): void {
         const contenttypes = this.#favoriteContentTypeService.set(value);
+        this.hideControls.emit(contenttypes.length === 0);
         this.#store.setContentTypesFromFavorite(contenttypes);
     }
 

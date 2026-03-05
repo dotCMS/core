@@ -1,596 +1,294 @@
-# State Management with Signals
+# State Management
 
-## Signal-Based State Pattern (Required)
+State management in the dotCMS frontend uses **NgRx Signal Store**. Do not manage state manually with raw `signal()` / `computed()` / `effect()` in components or services for feature-level state. Follow [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) (e.g. `$` prefix for local signals in components) and [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md) (strict types, `#` for private, `as const`).
 
-### Component State Management
+## Required: NgRx Signal Store
+
+Use **@ngrx/signals** `signalStore` with `withState`, `withComputed`, and `withMethods`. Use `rxMethod` for async flows (HTTP, debounce) and `tapResponse` for success/error/finalize.
+
+### Example: Feature store
+
 ```typescript
+import { computed, inject } from '@angular/core';
+import { debounceTime, distinctUntilChanged, pipe, switchMap, tap } from 'rxjs';
+import {
+  patchState,
+  signalStore,
+  withComputed,
+  withMethods,
+  withState,
+} from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { tapResponse } from '@ngrx/operators';
+import { BooksService } from './books-service';
+import { Book } from './book';
+
+type BookSearchState = {
+  books: Book[];
+  isLoading: boolean;
+  filter: { query: string; order: 'asc' | 'desc' };
+};
+
+const initialState: BookSearchState = {
+  books: [],
+  isLoading: false,
+  filter: { query: '', order: 'asc' },
+};
+
+export const BookSearchStore = signalStore(
+  withState(initialState),
+  withComputed(({ books, filter }) => ({
+    booksCount: computed(() => books().length),
+    sortedBooks: computed(() => {
+      const direction = filter().order === 'asc' ? 1 : -1;
+      return books().toSorted((a, b) =>
+        direction * a.title.localeCompare(b.title)
+      );
+    }),
+  })),
+  withMethods((store, booksService = inject(BooksService)) => ({
+    updateQuery(query: string): void {
+      patchState(store, (state) => ({ filter: { ...state.filter, query } }));
+    },
+    updateOrder(order: 'asc' | 'desc'): void {
+      patchState(store, (state) => ({ filter: { ...state.filter, order } }));
+    },
+    loadByQuery: rxMethod<string>(
+      pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        tap(() => patchState(store, { isLoading: true })),
+        switchMap((query) =>
+          booksService.getByQuery(query).pipe(
+            tapResponse({
+              next: (books) => patchState(store, { books }),
+              error: console.error,
+              finalize: () => patchState(store, { isLoading: false }),
+            })
+          )
+        )
+      )
+    ),
+  }))
+);
+```
+
+### Component using the store
+
+Components inject the store and use its signals and methods. Keep component-local signals (if any) with the `$` prefix per [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md).
+
+```typescript
+import { Component, inject } from '@angular/core';
+import { BookSearchStore } from './book-search.store';
+
 @Component({
-    selector: 'dot-state-example',
-    standalone: true,
-    template: `
-        <div class="dot-state-example">
-            @if (loading()) {
-                <dot-loading />
-            }
-            
-            @if (error()) {
-                <dot-error [message]="error()!" />
-            }
-            
-            @if (data().length > 0) {
-                <div class="items">
-                    @for (item of filteredItems(); track item.id) {
-                        <div [class.selected]="selectedId() === item.id">
-                            {{ item.name }}
-                        </div>
-                    }
-                </div>
-            }
-            
-            <div class="summary">
-                Total: {{ itemCount() }} | Selected: {{ selectedItem()?.name || 'None' }}
-            </div>
-        </div>
-    `
+  selector: 'dot-book-search',
+  imports: [CommonModule],
+  templateUrl: './book-search.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [BookSearchStore],
 })
+export class BookSearchComponent {
+  readonly store = inject(BookSearchStore);
+
+  onQueryChange(query: string): void {
+    this.store.updateQuery(query);
+    this.store.loadByQuery(query);
+  }
+
+  onOrderChange(order: 'asc' | 'desc'): void {
+    this.store.updateOrder(order);
+  }
+}
+```
+
+Template: call store signals (they are already signals).
+
+```html
+<div class="dot-book-search">
+  @if (store.isLoading()) {
+    <dot-loading data-testid="loading" />
+  }
+  @if (store.books().length > 0) {
+    <ul>
+      @for (book of store.sortedBooks(); track book.id) {
+        <li [data-testid]="'book-' + book.id">{{ book.title }}</li>
+      }
+    </ul>
+    <p>Total: {{ store.booksCount() }}</p>
+  }
+</div>
+```
+
+## Avoid: Manual state in components or services
+
+Do not build feature state with multiple `signal()` / `computed()` / `effect()` and manual `set()` / `update()` in components or injectable services.
+
+**Avoid (manual component state):**
+```typescript
+// ❌ Too much manual state in one place
 export class DotStateExampleComponent {
-    // Input signals
-    readonly filter = input<string>('');
-    readonly sortBy = input<'name' | 'date'>('name');
-    
-    // Output signals
-    readonly itemSelected = output<Item>();
-    readonly stateChanged = output<ComponentState>();
-    
-    // State signals
-    readonly loading = signal(false);
-    readonly error = signal<string | null>(null);
-    readonly data = signal<Item[]>([]);
-    readonly selectedId = signal<string | null>(null);
-    
-    // Computed signals
-    readonly filteredItems = computed(() => {
-        const filterValue = this.filter().toLowerCase();
-        const sortBy = this.sortBy();
-        
-        return this.data()
-            .filter(item => item.name.toLowerCase().includes(filterValue))
-            .sort((a, b) => {
-                if (sortBy === 'name') {
-                    return a.name.localeCompare(b.name);
-                } else {
-                    return a.date.getTime() - b.date.getTime();
-                }
-            });
-    });
-    
-    readonly itemCount = computed(() => this.filteredItems().length);
-    
-    readonly selectedItem = computed(() => {
-        const id = this.selectedId();
-        return id ? this.data().find(item => item.id === id) || null : null;
-    });
-    
-    readonly componentState = computed(() => ({
-        loading: this.loading(),
-        error: this.error(),
-        itemCount: this.itemCount(),
-        hasSelection: this.selectedId() !== null
-    }));
-    
-    // Effects
-    readonly stateChangeEffect = effect(() => {
-        // Emit state changes
-        this.stateChanged.emit(this.componentState());
-    });
-    
-    readonly dataLoadEffect = effect(() => {
-        // React to filter changes
-        const filter = this.filter();
-        if (filter !== this.previousFilter) {
-            this.loadData();
-            this.previousFilter = filter;
-        }
-    });
-    
-    private previousFilter = '';
-    
-    selectItem(id: string): void {
-        this.selectedId.set(id);
-        const item = this.selectedItem();
-        if (item) {
-            this.itemSelected.emit(item);
-        }
-    }
-    
-    private loadData(): void {
-        this.loading.set(true);
-        this.error.set(null);
-        
-        // Simulate API call
-        setTimeout(() => {
-            this.data.set(mockData);
-            this.loading.set(false);
-        }, 1000);
-    }
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly data = signal<Item[]>([]);
+  readonly selectedId = signal<string | null>(null);
+  readonly filteredItems = computed(() => /* ... */);
+  // ... effects that call set()/update(), subscribe() in loadData(), etc.
 }
 ```
 
-### Service State Management
+**Prefer:** a Signal Store (as above) and a thin component that injects the store and calls its methods.
+
+**Avoid (manual service state with asReadonly):**
 ```typescript
-@Injectable({
-    providedIn: 'root'
-})
+// ❌ Manual service state
+@Injectable({ providedIn: 'root' })
 export class ItemStateService {
-    // Private state signals
-    private readonly _items = signal<Item[]>([]);
-    private readonly _loading = signal(false);
-    private readonly _error = signal<string | null>(null);
-    private readonly _selectedId = signal<string | null>(null);
-    private readonly _filters = signal<ItemFilters>({
-        search: '',
-        status: 'all',
-        category: null
-    });
-    
-    // Public readonly signals
-    readonly items = this._items.asReadonly();
-    readonly loading = this._loading.asReadonly();
-    readonly error = this._error.asReadonly();
-    readonly selectedId = this._selectedId.asReadonly();
-    readonly filters = this._filters.asReadonly();
-    
-    // Computed signals
-    readonly filteredItems = computed(() => {
-        const items = this._items();
-        const filters = this._filters();
-        
-        return items.filter(item => {
-            // Search filter
-            if (filters.search && !item.name.toLowerCase().includes(filters.search.toLowerCase())) {
-                return false;
-            }
-            
-            // Status filter
-            if (filters.status !== 'all' && item.status !== filters.status) {
-                return false;
-            }
-            
-            // Category filter
-            if (filters.category && item.category !== filters.category) {
-                return false;
-            }
-            
-            return true;
-        });
-    });
-    
-    readonly selectedItem = computed(() => {
-        const id = this._selectedId();
-        return id ? this._items().find(item => item.id === id) || null : null;
-    });
-    
-    readonly itemCount = computed(() => this.filteredItems().length);
-    
-    readonly hasItems = computed(() => this._items().length > 0);
-    
-    // Actions
-    loadItems(): void {
-        this._loading.set(true);
-        this._error.set(null);
-        
-        this.http.get<Item[]>('/api/v1/items')
-            .pipe(
-                catchError(error => {
-                    this._error.set('Failed to load items');
-                    this._loading.set(false);
-                    return throwError(() => error);
-                })
-            )
-            .subscribe(items => {
-                this._items.set(items);
-                this._loading.set(false);
-            });
-    }
-    
-    addItem(item: CreateItemRequest): void {
-        this.http.post<Item>('/api/v1/items', item)
-            .subscribe(newItem => {
-                this._items.update(items => [...items, newItem]);
-            });
-    }
-    
-    updateItem(id: string, updates: Partial<Item>): void {
-        this.http.put<Item>(`/api/v1/items/${id}`, updates)
-            .subscribe(updatedItem => {
-                this._items.update(items => 
-                    items.map(item => item.id === id ? updatedItem : item)
-                );
-            });
-    }
-    
-    deleteItem(id: string): void {
-        this.http.delete(`/api/v1/items/${id}`)
-            .subscribe(() => {
-                this._items.update(items => items.filter(item => item.id !== id));
-                
-                // Clear selection if deleted item was selected
-                if (this._selectedId() === id) {
-                    this._selectedId.set(null);
-                }
-            });
-    }
-    
-    selectItem(id: string): void {
-        this._selectedId.set(id);
-    }
-    
-    clearSelection(): void {
-        this._selectedId.set(null);
-    }
-    
-    updateFilters(filters: Partial<ItemFilters>): void {
-        this._filters.update(current => ({ ...current, ...filters }));
-    }
-    
-    resetFilters(): void {
-        this._filters.set({
-            search: '',
-            status: 'all',
-            category: null
-        });
-    }
+  private readonly _items = signal<Item[]>([]);
+  readonly items = this._items.asReadonly();
+  loadItems(): void {
+    this._items.set(/* ... */);
+  }
 }
 ```
 
-## Advanced State Patterns
+**Prefer:** `signalStore` + `withState` + `withMethods` (and `rxMethod` for HTTP).
 
-### State Normalization
+## Store patterns
+
+### Immutable updates with `patchState`
+
+Always update state immutably. Use `patchState(store, ...)`; do not mutate the state object.
+
 ```typescript
-@Injectable({
-    providedIn: 'root'
-})
-export class NormalizedStateService {
-    // Normalized state structure
-    private readonly _entities = signal<Record<string, Item>>({});
-    private readonly _entityIds = signal<string[]>([]);
-    private readonly _loading = signal(false);
-    private readonly _error = signal<string | null>(null);
-    
-    // Computed selectors
-    readonly entities = computed(() => this._entities());
-    readonly entityIds = computed(() => this._entityIds());
-    readonly items = computed(() => 
-        this._entityIds().map(id => this._entities()[id]).filter(Boolean)
-    );
-    
-    // Entity selectors
-    getEntity = (id: string) => computed(() => this._entities()[id] || null);
-    
-    // Actions
-    loadItems(): void {
-        this._loading.set(true);
-        
-        this.http.get<Item[]>('/api/v1/items')
-            .subscribe(items => {
-                // Normalize data
-                const entities: Record<string, Item> = {};
-                const ids: string[] = [];
-                
-                items.forEach(item => {
-                    entities[item.id] = item;
-                    ids.push(item.id);
-                });
-                
-                this._entities.set(entities);
-                this._entityIds.set(ids);
-                this._loading.set(false);
-            });
-    }
-    
-    addItem(item: Item): void {
-        this._entities.update(entities => ({
-            ...entities,
-            [item.id]: item
-        }));
-        
-        this._entityIds.update(ids => [...ids, item.id]);
-    }
-    
-    updateItem(id: string, updates: Partial<Item>): void {
-        this._entities.update(entities => ({
-            ...entities,
-            [id]: { ...entities[id], ...updates }
-        }));
-    }
-    
-    removeItem(id: string): void {
-        this._entities.update(entities => {
-            const { [id]: removed, ...rest } = entities;
-            return rest;
-        });
-        
-        this._entityIds.update(ids => ids.filter(entityId => entityId !== id));
-    }
+patchState(store, (state) => ({ filter: { ...state.filter, query } }));
+patchState(store, { books: newBooks, isLoading: false });
+```
+
+### Async and HTTP with `rxMethod` and `tapResponse`
+
+Use `rxMethod` for reactive flows (e.g. query → debounce → HTTP). Use `tapResponse` for `next` / `error` / `finalize` so loading and error state stay in sync.
+
+```typescript
+loadByQuery: rxMethod<string>(
+  pipe(
+    debounceTime(300),
+    distinctUntilChanged(),
+    tap(() => patchState(store, { isLoading: true })),
+    switchMap((query) =>
+      booksService.getByQuery(query).pipe(
+        tapResponse({
+          next: (books) => patchState(store, { books }),
+          error: (err) => patchState(store, { error: err.message }),
+          finalize: () => patchState(store, { isLoading: false }),
+        })
+      )
+    )
+  )
+),
+```
+
+### Typed state with `as const` (TypeScript)
+
+Use [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md): strict types, `as const` for constant shapes (e.g. filter order).
+
+```typescript
+const FilterOrder = { asc: 'asc', desc: 'desc' } as const;
+type FilterOrder = (typeof FilterOrder)[keyof typeof FilterOrder];
+```
+
+### Private store references
+
+Stores are usually provided at component or route level. If a service holds a store reference, use `#` for private fields per TypeScript standards.
+
+```typescript
+export class SomeFacade {
+  #store = inject(BookSearchStore);
 }
 ```
 
-### State Composition
+## Persistence (e.g. localStorage)
+
+Use `withHooks` and an `effect` to sync store state to storage; on init, read from storage and `patchState`. Keep persistence logic inside the store or a small wrapper.
+
 ```typescript
-@Injectable({
-    providedIn: 'root'
-})
-export class ComposedStateService {
-    private readonly itemService = inject(ItemStateService);
-    private readonly userService = inject(UserStateService);
-    private readonly settingsService = inject(SettingsStateService);
-    
-    // Composed state
-    readonly appState = computed(() => ({
-        items: {
-            items: this.itemService.items(),
-            loading: this.itemService.loading(),
-            error: this.itemService.error(),
-            selectedId: this.itemService.selectedId()
-        },
-        user: {
-            currentUser: this.userService.currentUser(),
-            permissions: this.userService.permissions(),
-            authenticated: this.userService.isAuthenticated()
-        },
-        settings: {
-            theme: this.settingsService.theme(),
-            language: this.settingsService.language(),
-            notifications: this.settingsService.notifications()
-        }
-    }));
-    
-    // Derived state
-    readonly canCreateItem = computed(() => {
-        const user = this.userService.currentUser();
-        const permissions = this.userService.permissions();
-        return user && permissions.includes('create_items');
-    });
-    
-    readonly isReady = computed(() => {
-        return !this.itemService.loading() && 
-               this.userService.isAuthenticated() &&
-               this.settingsService.loaded();
-    });
-}
+export const PersistentBookSearchStore = signalStore(
+  withState(initialState),
+  withComputed(/* ... */),
+  withMethods(/* ... */),
+  withHooks({
+    onInit(store) {
+      const saved = loadFromStorage();
+      if (saved) patchState(store, saved);
+      effect(() => {
+        saveToStorage(store.filter());
+      });
+    },
+  })
+);
 ```
 
-## State Persistence
+## Testing
 
-### Local Storage State
+### Testing the store
+
+Use Spectator or TestBed; provide the store and any dependencies (e.g. `BooksService`). Assert state after calling store methods and advancing async work.
+
 ```typescript
-@Injectable({
-    providedIn: 'root'
-})
-export class PersistentStateService {
-    private readonly storageKey = 'app-state';
-    
-    // State signals
-    private readonly _preferences = signal<UserPreferences>(this.loadFromStorage());
-    readonly preferences = this._preferences.asReadonly();
-    
-    // Auto-save effect
-    private readonly saveEffect = effect(() => {
-        const preferences = this._preferences();
-        this.saveToStorage(preferences);
-    });
-    
-    updatePreferences(updates: Partial<UserPreferences>): void {
-        this._preferences.update(current => ({ ...current, ...updates }));
-    }
-    
-    private loadFromStorage(): UserPreferences {
-        try {
-            const stored = localStorage.getItem(this.storageKey);
-            return stored ? JSON.parse(stored) : this.getDefaultPreferences();
-        } catch {
-            return this.getDefaultPreferences();
-        }
-    }
-    
-    private saveToStorage(preferences: UserPreferences): void {
-        try {
-            localStorage.setItem(this.storageKey, JSON.stringify(preferences));
-        } catch (error) {
-            console.error('Failed to save preferences:', error);
-        }
-    }
-    
-    private getDefaultPreferences(): UserPreferences {
-        return {
-            theme: 'light',
-            language: 'en',
-            pageSize: 20,
-            autoSave: true
-        };
-    }
-}
-```
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { BookSearchStore } from './book-search.store';
+import { BookSearchComponent } from './book-search.component';
 
-### Session State
-```typescript
-@Injectable({
-    providedIn: 'root'
-})
-export class SessionStateService {
-    // Session-specific state
-    private readonly _sessionData = signal<SessionData>({
-        startTime: new Date(),
-        activeRoute: '',
-        lastAction: null,
-        breadcrumbs: []
-    });
-    
-    readonly sessionData = this._sessionData.asReadonly();
-    
-    // Session duration
-    readonly sessionDuration = computed(() => {
-        const start = this._sessionData().startTime;
-        return Date.now() - start.getTime();
-    });
-    
-    // Navigation tracking
-    updateRoute(route: string): void {
-        this._sessionData.update(session => ({
-            ...session,
-            activeRoute: route,
-            lastAction: {
-                type: 'navigation',
-                timestamp: new Date(),
-                data: { route }
-            }
-        }));
-    }
-    
-    // Breadcrumb management
-    addBreadcrumb(breadcrumb: Breadcrumb): void {
-        this._sessionData.update(session => ({
-            ...session,
-            breadcrumbs: [...session.breadcrumbs, breadcrumb].slice(-5) // Keep last 5
-        }));
-    }
-    
-    // Action tracking
-    recordAction(action: UserAction): void {
-        this._sessionData.update(session => ({
-            ...session,
-            lastAction: action
-        }));
-    }
-}
-```
-
-## Testing State Management
-
-### Signal Testing
-```typescript
-describe('ItemStateService', () => {
-    let service: ItemStateService;
-    let httpMock: jasmine.SpyObj<HttpClient>;
-    
-    beforeEach(() => {
-        const spy = jasmine.createSpyObj('HttpClient', ['get', 'post', 'put', 'delete']);
-        
-        TestBed.configureTestingModule({
-            providers: [
-                ItemStateService,
-                { provide: HttpClient, useValue: spy }
-            ]
-        });
-        
-        service = TestBed.inject(ItemStateService);
-        httpMock = TestBed.inject(HttpClient) as jasmine.SpyObj<HttpClient>;
-    });
-    
-    it('should initialize with empty state', () => {
-        expect(service.items()).toEqual([]);
-        expect(service.loading()).toBe(false);
-        expect(service.error()).toBe(null);
-    });
-    
-    it('should load items successfully', () => {
-        const mockItems = [{ id: '1', name: 'Item 1' }];
-        httpMock.get.and.returnValue(of(mockItems));
-        
-        service.loadItems();
-        
-        expect(service.loading()).toBe(false);
-        expect(service.items()).toEqual(mockItems);
-        expect(service.error()).toBe(null);
-    });
-    
-    it('should handle load errors', () => {
-        httpMock.get.and.returnValue(throwError(() => new Error('API Error')));
-        
-        service.loadItems();
-        
-        expect(service.loading()).toBe(false);
-        expect(service.error()).toBe('Failed to load items');
-    });
-    
-    it('should filter items correctly', () => {
-        const items = [
-            { id: '1', name: 'Apple', status: 'active' },
-            { id: '2', name: 'Banana', status: 'inactive' }
-        ];
-        
-        service._items.set(items);
-        service.updateFilters({ search: 'app' });
-        
-        expect(service.filteredItems()).toEqual([items[0]]);
-    });
+describe('BookSearchStore', () => {
+  it('updates filter and sortedBooks when updateOrder is called', () => {
+    const fixture = TestBed.createComponent(BookSearchComponent);
+    const store = fixture.debugElement.injector.get(BookSearchStore);
+    patchState(store, { books: [/* ... */] });
+    store.updateOrder('desc');
+    fixture.detectChanges();
+    expect(store.filter().order).toBe('desc');
+    expect(store.sortedBooks()[0].title).toBe(/* expected first */);
+  });
 });
 ```
 
-### Component State Testing
+### Testing the component (Spectator)
+
+Follow [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) and [TESTING_FRONTEND.md](./TESTING_FRONTEND.md): use `byTestId`, `spectator.setInput()`, and test user-visible behavior.
+
 ```typescript
-describe('DotStateExampleComponent', () => {
-    let component: DotStateExampleComponent;
-    let fixture: ComponentFixture<DotStateExampleComponent>;
-    
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [DotStateExampleComponent]
-        });
-        
-        fixture = TestBed.createComponent(DotStateExampleComponent);
-        component = fixture.componentInstance;
-    });
-    
-    it('should compute filtered items correctly', () => {
-        const items = [
-            { id: '1', name: 'Apple', date: new Date('2023-01-01') },
-            { id: '2', name: 'Banana', date: new Date('2023-01-02') }
-        ];
-        
-        component.data.set(items);
-        fixture.componentRef.setInput('filter', 'app');
-        
-        expect(component.filteredItems()).toEqual([items[0]]);
-    });
-    
-    it('should handle item selection', () => {
-        const items = [{ id: '1', name: 'Apple', date: new Date() }];
-        component.data.set(items);
-        
-        spyOn(component.itemSelected, 'emit');
-        
-        component.selectItem('1');
-        
-        expect(component.selectedId()).toBe('1');
-        expect(component.itemSelected.emit).toHaveBeenCalledWith(items[0]);
-    });
+const createComponent = createComponentFactory({
+  component: BookSearchComponent,
+  imports: [CommonModule],
+  providers: [BookSearchStore],
+  mocks: [BooksService],
+});
+
+it('shows loading then books when query is entered', () => {
+  spectator = createComponent();
+  spectator.typeInElement('angular', byTestId('search-input'));
+  // ... assert loading then list with store.books()
 });
 ```
 
-## State Management Best Practices
+## Best practices
 
-### Signal Patterns
-- **Use computed signals** for derived state
-- **Use effects** for side effects and reactions
-- **Keep state normalized** for complex data structures
-- **Use readonly signals** for public API
-- **Batch updates** when possible
+- **Use NgRx Signal Store** for feature/domain state; avoid large manual signal/computed/effect blocks in components or services.
+- **Use `patchState`** for all store updates; keep updates immutable.
+- **Use `rxMethod` + `tapResponse`** for async/HTTP so loading and error state stay consistent.
+- **Keep components thin**: inject the store, call methods, bind to store signals in the template.
+- **Apply ANGULAR_STANDARDS**: `$` prefix for signals declared in the component; OnPush; `inject()`; separate template/style files when not trivial.
+- **Apply TYPESCRIPT_STANDARDS**: strict types, no `any`, `#` for private fields, `as const` instead of enums.
 
-### Performance Optimization
-- **Minimize signal dependencies** in computed signals
-- **Use trackBy** functions in templates
-- **Implement OnPush** change detection strategy
-- **Debounce frequent updates** where appropriate
+## Resources
 
-### Testing Strategy
-- **Test state transitions** not implementation details
-- **Use signal utilities** for testing
-- **Mock external dependencies** (HTTP, services)
-- **Test computed signal results** directly
+- [NgRx Signal Store](https://ngrx.io/guide/signals)
+- [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md)
+- [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md)
+- [TESTING_FRONTEND.md](./TESTING_FRONTEND.md)
+- [README.md](./README.md) — Index of all frontend docs
 
-## Location Information
-- **State services**: Located in `libs/data-access/src/lib/state/`
-- **Component state**: Found in component files with `.component.ts` suffix
-- **State models**: Located in `libs/dotcms-models/src/lib/state/`
-- **State utilities**: Found in `libs/utils/src/lib/state/`
+## Location information
+
+- **Stores**: `libs/data-access/src/lib/` (e.g. `stores/`, `feature-name.store.ts`)
+- **State models/types**: `libs/dotcms-models/src/lib/`

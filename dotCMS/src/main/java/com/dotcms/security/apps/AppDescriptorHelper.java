@@ -170,39 +170,50 @@ public class AppDescriptorHelper {
                     DESCRIPTOR_NAME_MAX_LENGTH));
         }
 
-        if (null == descriptor.getValue()) {
+        if (null == descriptor.getType()) {
+            errors.add(String.format(
+                    "Param `%s`: is missing required field `type` (STRING|BOOL|SELECT|BUTTON|GENERATED_STRING|HEADING|INFO) .",
+                    name));
+            return errors;
+        }
+
+        final boolean isStructural = Type.HEADING.equals(descriptor.getType()) || Type.INFO.equals(descriptor.getType());
+
+        if (!isStructural && null == descriptor.getValue()) {
             errors.add(String.format(
                     "`%s`: is missing required field `value` or a value hasn't been set. Value is mandatory. ",
                     name));
         }
 
-        if (isNotSet(descriptor.getHint())) {
+        if (!isStructural && isNotSet(descriptor.getHint())) {
             errors.add(String.format("Param `%s`: is missing required field `hint` .", name));
         }
 
-        if (isNotSet(descriptor.getLabel())) {
-            errors.add(String.format("Param `%s`: is missing required field `hint` .", name));
+        if (Type.INFO.equals(descriptor.getType()) && isNotSet(descriptor.getHint())) {
+            errors.add(String.format("Param `%s`: is missing required field `hint` (content for INFO type).", name));
         }
 
-        if (null == descriptor.getType()) {
-            errors.add(String.format(
-                    "Param `%s`: is missing required field `type` (STRING|BOOL|SELECT|BUTTON) .",
-                    name));
+        if (Type.HEADING.equals(descriptor.getType()) && isNotSet(descriptor.getLabel())) {
+            errors.add(String.format("Param `%s`: is missing required field `label` (title for HEADING type).", name));
         }
 
-        if (!isSet(descriptor.getRequired())) {
+        if (!isStructural && isNotSet(descriptor.getLabel())) {
+            errors.add(String.format("Param `%s`: is missing required field `label` .", name));
+        }
+
+        if (!isStructural && !isSet(descriptor.getRequired())) {
             errors.add(
                     String.format("Param `%s`: is missing required field `required` (true|false) .",
                             name));
         }
 
-        if (!isSet(descriptor.getHidden())) {
+        if (!isStructural && !isSet(descriptor.getHidden())) {
             errors.add(
                     String.format("Param `%s`: is missing required field `hidden` (true|false) .",
                             name));
         }
 
-        if (isSet(descriptor.getValue()) && StringPool.NULL
+        if (!isStructural && isSet(descriptor.getValue()) && StringPool.NULL
                 .equalsIgnoreCase(descriptor.getValue().toString()) && descriptor.isRequired()) {
             errors.add(String.format(
                     "Null isn't allowed as the default value on required params see `%s`. ",

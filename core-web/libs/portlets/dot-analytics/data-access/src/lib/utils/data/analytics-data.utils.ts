@@ -1,6 +1,7 @@
 import {
     addDays,
     addHours,
+    differenceInDays,
     endOfDay,
     format,
     isSameDay,
@@ -12,9 +13,15 @@ import {
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { TIME_RANGE_CUBEJS_MAPPING, TIME_RANGE_OPTIONS } from '../../constants';
+import {
+    AnalyticsChartColors,
+    BAR_CHART_STYLE,
+    TIME_RANGE_CUBEJS_MAPPING,
+    TIME_RANGE_OPTIONS
+} from '../../constants';
 import {
     ChartData,
+    ChartDataset,
     ContentAttributionEntity,
     Granularity,
     PageViewDeviceBrowsersEntity,
@@ -135,20 +142,32 @@ export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
 /**
  * Extracts page views count from TotalPageViewsEntity
  */
-export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data['EventSummary.totalEvents'] ?? 0) : 0;
+export const extractPageViews = (data: TotalPageViewsEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.totalEvents'] ?? 0);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
  */
-export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data['EventSummary.uniqueVisitors']) : 0;
+export const extractSessions = (data: UniqueVisitorsEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.uniqueVisitors']);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity
  */
-export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number =>
-    data ? Number(data['EventSummary.totalEvents']) : 0;
+export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.totalEvents']);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts page title from TopPagePerformanceEntity
@@ -209,8 +228,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
                 {
                     label: 'analytics.charts.pageviews-timeline.dataset-label',
                     data: [],
-                    borderColor: '#3B82F6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: AnalyticsChartColors.primary.line,
+                    backgroundColor: AnalyticsChartColors.primary.fill,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4
@@ -247,8 +266,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
             {
                 label: 'analytics.charts.pageviews-timeline.dataset-label',
                 data: chartData,
-                borderColor: '#3B82F6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: AnalyticsChartColors.primary.line,
+                backgroundColor: AnalyticsChartColors.primary.fill,
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -268,6 +287,18 @@ export interface ConversionTrendEntity {
 }
 
 /**
+ * Extended ChartDataset type for Conversion Trend chart with Chart.js specific properties
+ * to make zero values visible in the chart.
+ */
+export interface ConversionTrendChartDataset extends ChartDataset {
+    spanGaps?: boolean;
+    pointRadius?: number | number[];
+    pointHoverRadius?: number | number[];
+    pointBackgroundColor?: string | string[];
+    pointBorderColor?: string | string[];
+}
+
+/**
  * Transforms ConversionTrendEntity array to Chart.js compatible format
  */
 export const transformConversionTrendData = (data: ConversionTrendEntity[] | null): ChartData => {
@@ -278,8 +309,8 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
                 {
                     label: 'analytics.charts.conversion-trend.dataset-label',
                     data: [],
-                    borderColor: '#10B981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderColor: AnalyticsChartColors.secondary.line,
+                    backgroundColor: AnalyticsChartColors.secondary.fill,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4
@@ -314,13 +345,23 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
             {
                 label: 'analytics.charts.conversion-trend.dataset-label',
                 data: chartData,
-                borderColor: '#10B981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderColor: AnalyticsChartColors.secondary.line,
+                backgroundColor: AnalyticsChartColors.secondary.fill,
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
-                cubicInterpolationMode: 'monotone'
-            }
+                cubicInterpolationMode: 'monotone',
+                // Use type assertion to allow Chart.js specific properties
+                spanGaps: false,
+                pointRadius: chartData.map((value) => (value === 0 ? 4 : 0)),
+                pointHoverRadius: chartData.map((value) => (value === 0 ? 6 : 4)),
+                pointBackgroundColor: chartData.map((value) =>
+                    value === 0
+                        ? AnalyticsChartColors.secondary.line
+                        : AnalyticsChartColors.secondary.fill
+                ),
+                pointBorderColor: AnalyticsChartColors.secondary.line
+            } as ConversionTrendChartDataset
         ]
     };
 };
@@ -337,7 +378,7 @@ export interface TrafficVsConversionsEntity {
 
 /**
  * Transforms TrafficVsConversionsEntity array to Chart.js compatible format.
- * Creates a combo chart with bars (uniqueVisitors) and line (conversion rate %).
+ * Creates a combo chart with bars (uniqueVisitors) and line (conversions).
  */
 export const transformTrafficVsConversionsData = (
     data: TrafficVsConversionsEntity[] | null
@@ -350,16 +391,15 @@ export const transformTrafficVsConversionsData = (
                     type: 'bar',
                     label: 'analytics.charts.unique-visitors',
                     data: [],
-                    borderWidth: 0,
-                    borderRadius: 6,
-                    backgroundColor: '#3B82F6',
+                    ...BAR_CHART_STYLE,
+                    backgroundColor: AnalyticsChartColors.primary.line,
                     order: 2
                 },
                 {
                     type: 'line',
-                    label: 'analytics.charts.conversion-rate',
+                    label: 'analytics.charts.conversions',
                     data: [],
-                    borderColor: '#10B981',
+                    borderColor: AnalyticsChartColors.secondary.line,
                     borderWidth: 2,
                     fill: false,
                     tension: 0.4,
@@ -393,12 +433,7 @@ export const transformTrafficVsConversionsData = (
 
     const visitorsData = transformedData.map((item) => item.uniqueVisitors);
 
-    // Conversion rate = (uniqueConvertingVisitors / uniqueVisitors) * 100
-    const conversionRateData = transformedData.map((item) =>
-        item.uniqueVisitors > 0
-            ? Math.round((item.uniqueConvertingVisitors / item.uniqueVisitors) * 10000) / 100
-            : 0
-    );
+    const conversionsData = transformedData.map((item) => item.uniqueConvertingVisitors);
 
     return {
         labels,
@@ -407,16 +442,15 @@ export const transformTrafficVsConversionsData = (
                 type: 'bar',
                 label: 'analytics.charts.unique-visitors',
                 data: visitorsData,
-                borderWidth: 0,
-                borderRadius: 6,
-                backgroundColor: '#3B82F6',
+                ...BAR_CHART_STYLE,
+                backgroundColor: AnalyticsChartColors.primary.line,
                 order: 2
             },
             {
                 type: 'line',
-                label: 'analytics.charts.conversion-rate',
-                data: conversionRateData,
-                borderColor: '#10B981',
+                label: 'analytics.charts.conversions',
+                data: conversionsData,
+                borderColor: AnalyticsChartColors.secondary.line,
                 borderWidth: 2,
                 fill: false,
                 tension: 0.4,
@@ -519,7 +553,7 @@ export const transformDeviceBrowsersData = (
                 {
                     label: 'analytics.charts.device-breakdown.dataset-label',
                     data: [1],
-                    backgroundColor: ['#E5E7EB']
+                    backgroundColor: [AnalyticsChartColors.neutral.line]
                 }
             ]
         };
@@ -530,13 +564,13 @@ export const transformDeviceBrowsersData = (
 
     // Enhanced color palette for browser + device combinations
     const colorPalette = [
-        '#3B82F6', // Chrome Desktop - Blue
+        AnalyticsChartColors.primary.line, // Chrome Desktop - Blue
         '#1E40AF', // Chrome Mobile - Dark Blue
         '#60A5FA', // Chrome Tablet - Light Blue
         '#8B5CF6', // Safari Desktop - Purple
         '#6D28D9', // Safari Mobile - Dark Purple
         '#A78BFA', // Safari Tablet - Light Purple
-        '#10B981', // Firefox Desktop - Green
+        AnalyticsChartColors.secondary.line, // Firefox Desktop - Green
         '#047857', // Firefox Mobile - Dark Green
         '#34D399', // Firefox Tablet - Light Green
         '#F59E0B', // Edge Desktop - Orange
@@ -560,41 +594,89 @@ export const transformDeviceBrowsersData = (
 };
 
 /**
- * Fills missing dates in the data array based on the granularity
- * @param data - The data array to fill missing dates
- * @param granularity - The granularity of the data
- * @returns The data array with missing dates filled
+ * Type for entities that have EventSummary.day and EventSummary.totalEvents fields
  */
-export const fillMissingDates = (
-    data: PageViewTimeLineEntity[],
+/**
+ * Base type for timeline entities that have a day dimension
+ */
+type TimelineEntity = {
+    'EventSummary.day': string;
+    'EventSummary.day.day'?: string;
+};
+
+/**
+ * Factory function type for creating empty entities
+ */
+type EmptyEntityFactory<T> = (date: Date, dateKey: string) => T;
+
+/**
+ * Generic factory for TimelineEntity types.
+ * Used for PageViewTimeLineEntity and ConversionTrendEntity which share the same structure.
+ */
+export const createEmptyAnalyticsEntity = <
+    T extends TimelineEntity & { 'EventSummary.totalEvents': string }
+>(
+    date: Date,
+    dateKey: string
+): T =>
+    ({
+        'EventSummary.day': dateKey,
+        'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+        'EventSummary.totalEvents': '0'
+    }) as T;
+
+/**
+ * Factory for TrafficVsConversionsEntity
+ */
+export const createEmptyTrafficVsConversionsEntity = (
+    date: Date,
+    dateKey: string
+): TrafficVsConversionsEntity => ({
+    'EventSummary.day': dateKey,
+    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+    'EventSummary.uniqueVisitors': '0',
+    'EventSummary.uniqueConvertingVisitors': '0'
+});
+
+/**
+ * Fills missing dates in the data array based on the granularity
+ * Works with any timeline entity type by using a factory function
+ * @param data - The data array to fill missing dates
+ * @param timeRange - The time range for the query
+ * @param granularity - The granularity of the data
+ * @param createEmptyEntity - Factory function to create empty entities for missing dates
+ * @returns The data array with missing dates filled with zero values
+ */
+export const fillMissingDates = <T extends TimelineEntity>(
+    data: T[],
     timeRange: TimeRangeInput,
-    granularity: Granularity
-): PageViewTimeLineEntity[] => {
+    granularity: Granularity,
+    createEmptyEntity: EmptyEntityFactory<T>
+): T[] => {
     if (!data || !Array.isArray(data)) {
         return [];
     }
 
     const [startDate, endDate] = getDateRange(timeRange);
 
-    const dataMap = new Map();
+    const dataMap = new Map<string, T>();
     data.forEach((item) => {
         const dateKey = new Date(item['EventSummary.day']).toISOString();
         dataMap.set(dateKey, item);
     });
 
-    const filledData = [];
+    const filledData: T[] = [];
     let currentDate = startDate;
     while (currentDate <= endDate) {
         const currentDateKey = currentDate.toISOString();
 
         if (dataMap.has(currentDateKey)) {
-            filledData.push(dataMap.get(currentDateKey));
+            const existingItem = dataMap.get(currentDateKey);
+            if (existingItem) {
+                filledData.push(existingItem);
+            }
         } else {
-            filledData.push({
-                'EventSummary.day': currentDateKey,
-                'EventSummary.day.day': format(currentDate, 'yyyy-MM-dd'),
-                'EventSummary.totalEvents': '0'
-            });
+            filledData.push(createEmptyEntity(currentDate, currentDateKey));
         }
         currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
     }
@@ -641,4 +723,20 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
         default:
             return [startOfDay(today), endOfDay(today)];
     }
+};
+
+/**
+ * Get the previous period of the same length as the given time range, ending the day before the current range starts.
+ * Used for engagement trend comparison (current vs previous period).
+ *
+ * @param timeRange - The current time range (predefined or custom [from, to])
+ * @returns The previous period as [from, to] date strings (yyyy-MM-dd) for Cube queries
+ */
+export const getPreviousPeriod = (timeRange: TimeRangeInput): [string, string] => {
+    const [startDate, endDate] = getDateRange(timeRange);
+    const days = differenceInDays(endDate, startDate) + 1;
+    const previousEnd = subDays(startDate, 1);
+    const previousStart = subDays(previousEnd, days - 1);
+
+    return [format(previousStart, 'yyyy-MM-dd'), format(previousEnd, 'yyyy-MM-dd')];
 };

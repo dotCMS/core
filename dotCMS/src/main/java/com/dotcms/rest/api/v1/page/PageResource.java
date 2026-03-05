@@ -2,6 +2,42 @@ package com.dotcms.rest.api.v1.page;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.keyvalue.MultiKey;
+import org.glassfish.jersey.server.JSONP;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -14,6 +50,9 @@ import com.dotcms.ema.resolver.EMAConfigStrategy;
 import com.dotcms.ema.resolver.EMAConfigStrategyResolver;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -62,13 +101,19 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -79,38 +124,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.apache.commons.collections.keyvalue.MultiKey;
-import org.glassfish.jersey.server.JSONP;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -124,9 +137,9 @@ import org.glassfish.jersey.server.JSONP;
 
 
 @Path("/v1/page")
-@Tag(name = "Page", 
-        description = "Endpoints that operate on pages",
-        externalDocs = @ExternalDocumentation(description = "Additional Page API information", 
+@Tag(name = "Page",
+        description = "Page rendering, layout management, and content operations",
+        externalDocs = @ExternalDocumentation(description = "Additional Page API information",
                                                 url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"))
 
 public class PageResource {
@@ -210,17 +223,40 @@ public class PageResource {
      * @throws DotSecurityException The currently logged-in user does not have the necessary
      *                              permissions to call this action.
      */
+    @Operation(
+            operationId = "getPageJsonByUri",
+            summary = "Get page metadata as JSON by URI",
+            description = "Returns the metadata (the objects that make up an HTML Page) in JSON format based on the "
+                    + "specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual page metadata, "
+                    + "while a 301/302 redirect returns an empty page JSON with the Vanity URL properties. "
+                    + "Supports Time Machine via the publishDate parameter (ISO 8601 format)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page metadata retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityEmptyPageView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/json/{uri: .*}")
     public Response loadJson(@Context final HttpServletRequest originalRequest,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index')", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Page mode for rendering (e.g., EDIT_MODE, PREVIEW_MODE, LIVE)")
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
+            @Parameter(description = "Persona identifier to render the page with personalization")
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
+            @Parameter(description = "Language ID for the page content")
             @QueryParam("language_id") final String languageId,
+            @Parameter(description = "Device inode for responsive rendering dimensions")
             @QueryParam("device_inode") final String deviceInode,
+            @Parameter(description = "Time Machine date in ISO 8601 format to view page as it was at a specific point in time")
             @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
             ) throws DotDataException, DotSecurityException {
         Logger.debug(this, () -> String.format(
@@ -288,17 +324,42 @@ public class PageResource {
      * @throws DotSecurityException The currently logged-in user does not have the necessary
      *                              permissions to call this action.
      */
+    @Operation(
+            operationId = "getPageRenderByUri",
+            summary = "Get rendered page metadata by URI",
+            description = "Returns the metadata of an HTML Page including its rendered HTML code and container content "
+                    + "in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns "
+                    + "the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. "
+                    + "Supports Time Machine via the publishDate parameter (ISO 8601 format). "
+                    + "For EMA (Enterprise Marketing Automation) requests, this may delegate to the JSON endpoint when "
+                    + "the rendered attribute is not required."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rendered page retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPageView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
     public Response render(@Context final HttpServletRequest originalRequest,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index')", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Page mode for rendering (e.g., EDIT_MODE, PREVIEW_MODE, LIVE)")
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
+            @Parameter(description = "Persona identifier to render the page with personalization")
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
+            @Parameter(description = "Language ID for the page content")
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
+            @Parameter(description = "Device inode for responsive rendering dimensions")
             @QueryParam("device_inode") final String deviceInode,
+            @Parameter(description = "Time Machine date in ISO 8601 format to view page as it was at a specific point in time")
             @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
     ) throws DotSecurityException, DotDataException {
         if (Boolean.TRUE.equals(HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false))
@@ -558,8 +619,8 @@ public class PageResource {
         tags = {"Page"},
         responses = {
                 @ApiResponse(responseCode = "200", description = "Page template linked to HTML and saved successfully",
-                        content = @Content(mediaType = "application/json", 
-                                schema = @Schema(implementation = ResponseEntityView.class)
+                        content = @Content(mediaType = "application/json",
+                                schema = @Schema(implementation = ResponseEntityPageView.class)
                                 )
                         ),
                 @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
@@ -641,16 +702,16 @@ public class PageResource {
                 responses = {
                         @ApiResponse(responseCode = "200", description = "Page template saved successfully",
                                 content = @Content(mediaType = "application/json", 
-                                        schema = @Schema(implementation = ResponseEntityView.class)
+                                        schema = @Schema(implementation = ResponseEntityTemplateView.class)
                                         )
                                 ),
                         @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
                         @ApiResponse(responseCode = "404", description = "Page not found")
                 })
     public Response saveLayout(
-                @Context final HttpServletRequest request, 
-                @Context final HttpServletResponse response, 
-                @RequestBody(description = "POST body consists of a JSON object containing " + 
+                @Context final HttpServletRequest request,
+                @Context final HttpServletResponse response,
+                @RequestBody(description = "POST body consists of a JSON object containing " +
                                         "one property called 'PageForm', which contains a " +
                                         "template layout for the page",
                                 required = true,
@@ -688,8 +749,7 @@ public class PageResource {
 
     /**
      * Updates all the contents in an HTML Page. This method is used to update changes when both adding or removing
-     * Contentlets from Containers. Also, it allows to update the style properties of the Contentlets.
-     * It takes a JSON object -- serialized as a {@link PageContainerForm} object -- in
+     * Contentlets from Containers. Also, It takes a JSON object -- serialized as a {@link PageContainerForm} object -- in
      * the following format:
      * <pre>
      *     {@code
@@ -703,16 +763,7 @@ public class PageResource {
      *                  "CONTENTLET-IDENTIFIER-2",
      *                  "CONTENTLET-IDENTIFIER-3",
      *                  "..."
-     *              ],
-     *              "styleProperties": {
-     *                  "CONTENTLET-IDENTIFIER-1": {
-     *                      "width": "100px",
-     *                      "color": "red",
-     *                  },
-     *                  "CONTENTLET-IDENTIFIER-3": {
-     *                      "fontSize": "16px"
-     *                  }
-     *              }
+     *              ]
      *          },
      *          {
      *              "identifier": "{CONTAINER-2-ID}",
@@ -723,13 +774,7 @@ public class PageResource {
      *                  "CONTENTLET-IDENTIFIER-5",
      *                  "CONTENTLET-IDENTIFIER-6",
      *                  "..."
-     *              ],
-     *              "styleProperties": {
-     *                  "CONTENTLET-IDENTIFIER-4": {
-     *                      "backgroundColor": "blue"
-     *                  },
-     *                  "..."
-     *              }
+     *              ]
      *          }
      *      ]
      *     }
@@ -741,6 +786,14 @@ public class PageResource {
      *                          their respective Contentlets.
      * @return The {@link Response} entity.
      */
+    @Operation(
+            operationId = "addContentToPage",
+            summary = "Add or update content in page containers",
+            description = "Updates all the contents in an HTML Page. Used to add or remove Contentlets from Containers. "
+                    + "Takes a JSON array of container entries, each specifying a container ID, a unique UUID, and the "
+                    + "list of contentlet identifiers. Duplicate container entries are merged automatically. "
+                    + "Note: 'sortOrder' is required for each container entry but may not be present in the auto-generated schema."
+    )
     @POST
     @JSONP
     @NoCache
@@ -758,17 +811,11 @@ public class PageResource {
                                     + "        {\n"
                                     + "            \"containerId\": \"some-container-id\",\n"
                                     + "            \"contentletId\": \"some-contentlet-id\",\n"
-                                    + "            \"styleProperties\": {\n"
-                                    + "                \"color\": \"#FF0000\",\n"
-                                    + "                \"margin\": \"10px\",\n"
-                                    + "                \"width\": \"100px\"\n"
-                                    + "            },\n"
                                     + "            \"uuid\": \"some-uuid\"\n"
                                     + "        },\n"
                                     + "        {\n"
                                     + "            \"containerId\": \"other-container-id\",\n"
                                     + "            \"contentletId\": \"other-contentlet-id\",\n"
-                                    + "            \"styleProperties\": null,\n"
                                     + "            \"uuid\": \"other-uuid\"\n"
                                     + "        }\n"
                                     + "    ],\n"
@@ -785,8 +832,13 @@ public class PageResource {
     })
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Identifier of the HTML Page to update", required = true)
             @PathParam("pageId") final String pageId,
+            @Parameter(description = "Variant name for A/B testing (defaults to DEFAULT)")
             @QueryParam("variantName") final String variantNameParam,
+            @RequestBody(description = "Container entries with contentlet identifiers",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = PageContainerForm.class)))
             final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
@@ -813,10 +865,10 @@ public class PageResource {
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
             // Save content and Get the saved contentlets
-            final List<ContentletStylingView> savedContent = pageResourceHelper.saveContent(
-                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
+            final List<ContentView> savedContent = pageResourceHelper.saveContent(
+                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
 
-            return Response.ok(new ResponseEntityContentletStylingView(savedContent)).build();
+            return Response.ok(new ResponseEntityContentView(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.addContent, pageId: %s: ",
                     pageId);
@@ -825,10 +877,9 @@ public class PageResource {
         }
     }
 
-    protected void validateContainerEntries(final List<PageContainerForm.ContainerEntry> containerEntries) {
-
+    protected void validateContainerEntries(final List<ContainerEntry> containerEntries) {
         final Map<String, Set<String>> containerContentTypesMap = new HashMap<>();
-        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+        for (final ContainerEntry containerEntry : containerEntries) {
 
             final String containerId = containerEntry.getContainerId();
             final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
@@ -872,38 +923,24 @@ public class PageResource {
      * @param containerEntries List
      * @return List
      */
-    private List<PageContainerForm.ContainerEntry> reduce(final List<PageContainerForm.ContainerEntry> containerEntries) {
-        // Helper class to hold both contentIds and styleProperties during reduction
-        class ContainerData {
-            final Set<String> contentIds = new LinkedHashSet<>();
-            final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
-        }
+    private List<ContainerEntry> reduce(final List<ContainerEntry> containerEntries) {
+        final Map<MultiKey, Set<String>> containerEntryMap = new HashMap<>();
 
-        final Map<MultiKey, ContainerData> containerEntryMap = new HashMap<>();
+        for (final ContainerEntry containerEntry : containerEntries) {
+            final Set<String> contentletIdList = containerEntryMap.computeIfAbsent(
+                    new MultiKey(containerEntry.getPersonaTag(),
+                            containerEntry.getContainerId(), containerEntry.getContainerUUID()),
+                    k -> new LinkedHashSet<>());
 
-        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
-            // containerEntryMap key: personaTag + containerId + containerUUID
-            final MultiKey key = new MultiKey(containerEntry.getPersonaTag(),
-                    containerEntry.getContainerId(), containerEntry.getContainerUUID());
-
-            final ContainerData data = containerEntryMap.computeIfAbsent(key, k -> new ContainerData());
-
-            data.contentIds.addAll(containerEntry.getContentIds());
-
-            // Merge styles. Duplicated keys overwrite previous ones (last one wins)
-            final Map<String, Map<String, Object>> incomingStyles = Optional.ofNullable(
-                    containerEntry.getStylePropertiesMap()).orElse(Collections.emptyMap());
-
-            data.stylePropertiesMap.putAll(incomingStyles);
+            contentletIdList.addAll(containerEntry.getContentIds());
         }
 
         return containerEntryMap.entrySet().stream()
-                .map(entry -> new PageContainerForm.ContainerEntry(
+                .map(entry -> new ContainerEntry(
                         (String) entry.getKey().getKeys()[0],
                         (String) entry.getKey().getKeys()[1],
                         (String) entry.getKey().getKeys()[2],
-                        new ArrayList<>(entry.getValue().contentIds),
-                        entry.getValue().stylePropertiesMap))
+                        new ArrayList<>(entry.getValue())))
                 .collect(Collectors.toList());
     }
     /**
@@ -914,13 +951,28 @@ public class PageResource {
      * @param modeStr
      * @return
      */
+    @Operation(
+            operationId = "renderPageHtmlOnly",
+            summary = "Render page as raw HTML",
+            description = "Returns the rendered HTML content of a page without the JSON metadata wrapper. "
+                    + "Useful for retrieving the raw HTML output of a page for embedding or server-side rendering."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page HTML rendered successfully",
+                    content = @Content(mediaType = "application/html",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @NoCache
     @GET
     @Produces({"application/html", "application/javascript"})
     @Path("/renderHTML/{uri: .*}")
     public Response renderHTMLOnly(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Path to the HTML Page to render", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Page mode for rendering (default: LIVE_ADMIN)")
             @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr)
             throws DotDataException, DotSecurityException {
 
@@ -969,6 +1021,20 @@ public class PageResource {
      * @throws DotDataException throw if a DotDataException occur
      * @throws DotSecurityException throw if the user don't have the right permissions
      */
+    @Operation(
+            operationId = "searchPages",
+            summary = "Search pages by path",
+            description = "Returns all pages whose path matches the given filter. If the path starts with '//', "
+                    + "the segment after the double-slash is treated as the site name for filtering. "
+                    + "Results can be filtered to live versions only and/or pages from live sites only."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pages matching the search criteria",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityContentletMapsView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions")
+    })
     @NoCache
     @GET
     @Produces({"application/html", "application/javascript"})
@@ -976,8 +1042,11 @@ public class PageResource {
     public Response searchPage(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Path to filter pages by; prefix with '//' to include site name (e.g., '//demo.dotcms.com/about')", required = true)
             @QueryParam("path") final String path,
+            @Parameter(description = "If true, return only live versions; if false, return both live and working versions")
             @QueryParam("live") final Boolean liveQueryParam,
+            @Parameter(description = "If true, filter results to only include pages from live sites")
             @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
             throws DotDataException, DotSecurityException {
 
@@ -1016,6 +1085,20 @@ public class PageResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "getPageRenderVersions",
+            summary = "Get live and preview render versions of a page",
+            description = "Returns the page render for both the live and preview (working) versions. "
+                    + "Includes a boolean 'diff' flag indicating whether the live and preview versions differ."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page render versions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPageLivePreviewVersionView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @GET
     @Path("/{pageId}/render/versions")
     @JSONP
@@ -1023,7 +1106,9 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getHtmlVersionsPage (@Context final HttpServletRequest  request,
                                    @Context final HttpServletResponse response,
+                                   @Parameter(description = "Identifier of the HTML Page", required = true)
                                    @PathParam("pageId")  final String  pageId,
+                                   @Parameter(description = "Language ID (defaults to the system default language)")
                                    @QueryParam("langId") final String languageId) throws DotSecurityException, DotDataException, ExecutionException, InterruptedException {
 
         final User user = this.webResource.init(request, response, true).getUser();
@@ -1044,6 +1129,21 @@ public class PageResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "getPageContentTree",
+            summary = "Get the multi-tree content structure of a page",
+            description = "Returns the multi-tree data associated with a page, which represents the mapping "
+                    + "between containers, contentlets, and their positions on the page. Each entry includes "
+                    + "the page ID, container ID, contentlet ID, relation type, tree order, personalization, and variant ID."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Content tree retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMulitreeView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @GET
     @Path("/{pageId}/content/tree")
     @JSONP
@@ -1051,6 +1151,7 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityView<List<MulitreeView>> getContentTree (@Context final HttpServletRequest  request,
                                                    @Context final HttpServletResponse response,
+                                                   @Parameter(description = "Identifier of the HTML Page", required = true)
                                                    @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
@@ -1078,6 +1179,21 @@ public class PageResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "getPersonalizedPersonasOnPage",
+            summary = "Get personalized personas for a page",
+            description = "Returns a paginated list of personas with a flag indicating whether each persona has been "
+                    + "customized (personalized) on the specified page. Useful for identifying which personas have "
+                    + "page-specific content variations."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Personas with personalization flags retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityListPersonalizationPersonaPageView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @GET
     @Path("/{pageId}/personas")
     @JSONP
@@ -1085,13 +1201,21 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getPersonalizedPersonasOnPage (@Context final HttpServletRequest  request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Filter text to narrow persona results")
             @QueryParam(PaginationUtil.FILTER)   final String filter,
+            @Parameter(description = "Page number for pagination (zero-based)")
             @QueryParam(PaginationUtil.PAGE)     final int page,
+            @Parameter(description = "Number of results per page")
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "Field to order results by (default: title)")
             @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
+            @Parameter(description = "Sort direction: ASC or DESC (default: ASC)")
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
+            @Parameter(description = "Host identifier to scope persona lookup")
             @QueryParam("hostId") final String  hostId,
+            @Parameter(description = "Identifier of the HTML Page", required = true)
             @PathParam("pageId")  final String  pageId,
+            @Parameter(description = "Whether to respect front-end roles for permission checks")
             @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
@@ -1226,6 +1350,21 @@ public class PageResource {
      * @param copyContentletForm {@link CopyContentletForm}
      * @return Contentlet Map
      */
+    @Operation(
+            operationId = "copyPageContent",
+            summary = "Copy a contentlet on a page",
+            description = "Creates a copy of a contentlet that is part of the multi-tree on a page. "
+                    + "The contentlet must exist and be associated with the page specified in the form. "
+                    + "Returns the copied contentlet as a map of properties."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contentlet copied successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request - form is required or contentlet not found"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions")
+    })
     @PUT
     @JSONP
     @NoCache
@@ -1235,6 +1374,9 @@ public class PageResource {
     public final  ResponseEntityView<Map<String, Object>> copyContent(
                                       @Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
+                                      @RequestBody(description = "Form containing the contentlet and page information for the copy operation",
+                                              required = true,
+                                              content = @Content(schema = @Schema(implementation = CopyContentletForm.class)))
                                       final CopyContentletForm copyContentletForm)
             throws DotSecurityException, DotDataException {
 
@@ -1264,6 +1406,21 @@ public class PageResource {
      * @param copyContentletForm {@link CopyContentletForm}
      * @return Contentlet Map
      */
+    @Operation(
+            operationId = "deepCopyPage",
+            summary = "Deep copy a page and all its content",
+            description = "Creates a deep copy of a page: (1) creates a copy of the page itself, and "
+                    + "(2) for each contentlet in the multi-tree related to the page, creates a copy. "
+                    + "Returns the copied page as a map of properties."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page deep copied successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @PUT
     @JSONP
     @NoCache
@@ -1273,6 +1430,7 @@ public class PageResource {
     public final  ResponseEntityView<Map<String, Object>> deepCopyPage(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Identifier of the HTML Page to deep copy", required = true)
             @PathParam("pageId") final String pageId)
             throws DotSecurityException, DotDataException {
 
@@ -1306,16 +1464,34 @@ public class PageResource {
      * @param direction {@link String} ASC
      * @return All the content types that match
      */
+    @Operation(
+            operationId = "getPageContentTypes",
+            summary = "Get content types associated with pages",
+            description = "Returns all content types associated with pages, including both the base HTMLPAGE type and "
+                    + "all content types with URL map patterns. Results are paginated and can be filtered and sorted."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page content types retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions")
+    })
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/types")
     public Response getPageTypes(@Context final HttpServletRequest originalRequest,
                              @Context final HttpServletResponse response,
+                             @Parameter(description = "Filter text for content type names")
                              @DefaultValue("") @QueryParam(PaginationUtil.FILTER)   final String filter,
+                             @Parameter(description = "Page number for pagination (zero-based)")
                              @QueryParam(PaginationUtil.PAGE)     final int page,
+                             @Parameter(description = "Number of results per page")
                              @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                             @Parameter(description = "Field to order results by (default: UPPER(name))")
                              @DefaultValue("UPPER(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
+                             @Parameter(description = "Sort direction: ASC or DESC (default: ASC)")
                              @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction) throws DotSecurityException, DotDataException {
 
         final InitDataObject auth = webResource.init(originalRequest, response, true);
@@ -1350,12 +1526,28 @@ public class PageResource {
      * @param path {@link String} page path
      * @return All the content types that match
      */
+    @Operation(
+            operationId = "checkPagePermission",
+            summary = "Check user permission on a page",
+            description = "Returns true if the page exists and the current user has the specified permission type over it. "
+                    + "Supports both regular HTML pages and URL-mapped content. The permission type defaults to READ if not specified."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Permission check result",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBooleanView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Page not found at the specified path")
+    })
     @NoCache
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/_check-permission")
     public ResponseEntityBooleanView checkPagePermission(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
+                                                         @RequestBody(description = "Form with page path, host ID, language ID, and permission type to check",
+                                                                 required = true,
+                                                                 content = @Content(schema = @Schema(implementation = PageCheckPermissionForm.class)))
                                                          final PageCheckPermissionForm pageCheckPermissionForm) throws DotSecurityException, DotDataException {
 
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
@@ -1408,12 +1600,29 @@ public class PageResource {
      * @param path {@link String} page path
      * @return All the content types that match
      */
+    @Operation(
+            operationId = "findAvailablePageActions",
+            summary = "Find available workflow actions for a page",
+            description = "Returns the page data along with the list of available workflow actions for the specified page path. "
+                    + "Supports both regular HTML pages and URL-mapped content. The response includes the page contentlet "
+                    + "properties and the workflow actions that the current user can perform."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Available workflow actions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPageWorkflowActionsView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Page not found at the specified path and language")
+    })
     @NoCache
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/actions")
     public ResponseEntityPageWorkflowActionsView findAvailableActions(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
+                                                         @RequestBody(description = "Form with page path, host ID, language ID, and render mode for action lookup",
+                                                                 required = true,
+                                                                 content = @Content(schema = @Schema(implementation = FindAvailableActionsForm.class)))
                                                          final FindAvailableActionsForm findAvailableActionsForm) throws DotSecurityException, DotDataException {
 
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
@@ -1481,6 +1690,21 @@ public class PageResource {
      * more generic REST Endpoint
      * {@link com.dotcms.rest.api.v1.content.ContentResource#getExistingLanguagesForContent(String, User)} instead.
      */
+    @Operation(
+            operationId = "checkPageLanguageVersions",
+            summary = "Check page availability by language (deprecated)",
+            description = "Returns all available languages in dotCMS, each with a flag indicating whether the page "
+                    + "is available in that language. This endpoint is deprecated -- use the more generic "
+                    + "ContentResource.getExistingLanguagesForContent endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Language availability list retrieved successfully (deprecated endpoint)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityLanguagesForPageView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @GET
     @Path("/{pageId}/languages")
     @JSONP
@@ -1489,6 +1713,7 @@ public class PageResource {
     @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
+                                              @Parameter(description = "Identifier of the HTML Page to check language versions for", required = true)
                                               @PathParam("pageId") final String pageId) throws DotDataException {
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -1498,6 +1723,191 @@ public class PageResource {
         final List<ExistingLanguagesForPageView> languagesForPage =
                 this.pageResourceHelper.getExistingLanguagesForPage(pageId, user);
         return Response.ok(new ResponseEntityView<>(languagesForPage)).build();
+    }
+
+    /**
+     * Updates style properties for contentlets within containers on a specific page.
+     * This endpoint allows updating CSS/styling properties for contentlets without modifying
+     * the page structure (containers, contentlets order, or content).
+     *
+     * @param request The current HTTP servlet request
+     * @param response The current HTTP servlet response
+     * @param pageId The identifier of the HTML Page whose contentlet styles are being updated
+     * @param contentWithStylesForms List of container entries with contentlet style updates
+     * @return Response containing the list of updated contentlets with their new style properties
+     */
+    @PUT
+    @Path("/{pageId}/styles")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Operation(
+        summary = "Update contentlet styles in a page",
+        description = "Updates style properties for contentlets within containers on a specific page. " +
+                     "Only updates the styleProperties field without modifying page structure."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Contentlet styles updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityContentView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Invalid request - empty container entries or invalid contentlet references",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user does not have EDIT permission on the page",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Page not found",
+                    content = @Content(mediaType = "application/json"))
+    })
+    public Response updateStyles(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(description = "Page identifier", required = true)
+            @PathParam("pageId") final String pageId,
+            @RequestBody(description = "List of containers with contentlet style updates. " +
+                                      "Each container includes its ID, UUID, and dynamic properties where " +
+                                      "contentlet IDs are keys with their style properties as values.",
+                        required = true,
+                        content = @Content(schema = @Schema(implementation = ContentWithStylesForm.class)))
+            final List<ContentWithStylesForm> contentWithStylesForms)
+            throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, () -> String.format("Updating contentlet styles for page: %s", pageId));
+
+        validateContentWithStylesForms(contentWithStylesForms);
+
+        // Initialize request context with authentication
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        try {
+            final IHTMLPage page = pageResourceHelper.getPage(user, pageId, request);
+
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
+
+            // Reduce duplicate containers and convert to internal format (ContainerEntry)
+            final List<ContainerEntry> reducedContainerEntries = reduceStyleForms(contentWithStylesForms);
+
+            // Validate container entries (contentlets exist and are valid for their containers)
+            validateContainerEntries(reducedContainerEntries);
+
+            // Update style properties in database
+            final List<ContentView> updatedStyles =
+                pageResourceHelper.saveContentletStyles(pageId, reducedContainerEntries, user);
+
+            return Response.ok(new ResponseEntityContentView(updatedStyles)).build();
+
+        } catch (final HTMLPageAssetNotFoundException e) {
+            final String errorMsg = String.format("Page not found with ID: %s", pageId);
+            Logger.error(this, errorMsg, e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        }
+    }
+
+    /**
+     * Validates the content with styles forms, having valid container entries and style properties.
+     *
+     * @param contentWithStylesForms The list of content with styles forms to validate.
+     */
+    private static void validateContentWithStylesForms(List<ContentWithStylesForm> contentWithStylesForms) {
+
+        // Include style properties in the response ONLY if Style Editor FF is enabled
+        final String styleEditorFlag = "FEATURE_FLAG_UVE_STYLE_EDITOR";
+        final boolean isStyleEditorEnabled = Config.getBooleanProperty(styleEditorFlag, true);
+
+        if (!isStyleEditorEnabled) {
+            ContentletStylingErrorEntity.throwSingleError(
+                    "FEATURE_FLAG_OFF",
+                    "Feature Flag Style Editor is not enabled",
+                    styleEditorFlag
+            );
+        }
+
+        if (CollectionUtils.isEmpty(contentWithStylesForms)) {
+            ContentletStylingErrorEntity.throwSingleError(
+                    "EMPTY_FORM",
+                    "Container entries list cannot be empty",
+                    null
+            );
+        } else {
+            // Validate all forms and collect errors for better user experience
+            final List<ContentletStylingErrorEntity> allErrors = new ArrayList<>();
+
+            for (final ContentWithStylesForm form : contentWithStylesForms) {
+                allErrors.addAll(form.validate());
+            }
+
+            // Throw all validation errors at once if any exist
+            if (!allErrors.isEmpty()) {
+                ContentletStylingErrorEntity.throwStylingBadRequest(new ArrayList<>(allErrors));
+            }
+        }
+    }
+
+    /**
+     * Reduces duplicate containers by combining their contentlet style mappings.
+     * Converts ContentWithStylesForm (REST input) to ContainerEntry (internal format).
+     * If the same container (containerId + uuid) appears multiple times, their styles are merged.
+     * When the same contentlet appears in multiple entries, the last one wins (overwrites).
+     *
+     * @param stylesForms List of style forms that may contain duplicates
+     * @return List of deduplicated ContainerEntry objects ready for processing
+     */
+    private List<ContainerEntry> reduceStyleForms(final List<ContentWithStylesForm> stylesForms) {
+        // Helper class to accumulate contentlet IDs and their styles during reduction
+        class ContainerStylesData {
+
+            final Set<String> contentletIds = new LinkedHashSet<>();
+            final Map<String, Map<String, Object>> contentletStylesMap = new HashMap<>();
+        }
+
+        // Map key: containerId|uuid → accumulated contentlet styles
+        final Map<MultiKey, ContainerStylesData> containerMap = new HashMap<>();
+
+        // Merge duplicate containers
+        for (final ContentWithStylesForm styleForm : stylesForms) {
+            // Create unique key for this container (containerId + uuid)
+            final MultiKey containerKey = new MultiKey(styleForm.getContainerId(), styleForm.getUuid());
+
+            // Get or create accumulator for this container
+            final ContainerStylesData accumulatedData = containerMap.computeIfAbsent(
+                    containerKey,
+                    k -> new ContainerStylesData()
+            );
+
+            // Collect all contentlet IDs
+            accumulatedData.contentletIds.addAll(styleForm.getContentletStyles().keySet());
+
+            // Merge styles - if same contentlet appears multiple times, last one wins
+            accumulatedData.contentletStylesMap.putAll(styleForm.getContentletStyles());
+        }
+
+        // Convert to ContainerEntry list
+        return containerMap.entrySet().stream()
+                .map(entry -> {
+                    final String containerId = (String) entry.getKey().getKeys()[0];
+                    final String containerUuid = (String) entry.getKey().getKeys()[1];
+                    final ContainerStylesData data = entry.getValue();
+
+                    return new ContainerEntry(
+                            null, // No persona tag for style updates (uses default personalization)
+                            containerId,
+                            containerUuid,
+                            new ArrayList<>(data.contentletIds),
+                            data.contentletStylesMap
+                    );
+                })
+                .collect(Collectors.toList());
     }
 
 } // E:O:F:PageResource

@@ -2,6 +2,8 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableStoryBlockField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -30,6 +32,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     private static User systemUser;
     private static ContentType testContentType;
     private static Field storyBlockField;
+
+    private static ContentType charLimitContentType;
+    private static Field charLimitStoryBlockField;
 
     /**
      * Functional interface for operations that can throw checked exceptions
@@ -109,6 +114,29 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Helper method to handle DotContentletValidationException for CHAR_LIMIT (character limit exceeded) errors
+     */
+    private void expectCharLimitValidationException(CheckedOperation operation, String expectedErrorMessage) {
+        try {
+            operation.run();
+            fail(expectedErrorMessage);
+        } catch (DotContentletValidationException e) {
+            assertTrue("Should contain char limit error", e.hasCharLimitErrors());
+        } catch (DotRuntimeException e) {
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should contain char limit error", ve.hasCharLimitErrors());
+            } else {
+                final String message = e.getMessage();
+                assertTrue("Exception message should indicate char limit error: " + message,
+                        message != null && (message.contains("charLimitExceeded") || message.contains("character limit") || message.contains("has invalid/missing field")));
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -129,10 +157,35 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .build();
 
         storyBlockField = APILocator.getContentTypeFieldAPI().save(storyBlockField, systemUser);
+
+        // Create a content type with a story block field that has a charLimit field variable
+        charLimitContentType = new ContentTypeDataGen()
+                .name("StoryBlockCharLimitTest")
+                .velocityVarName("storyBlockCharLimitTest")
+                .nextPersisted();
+
+        charLimitStoryBlockField = ImmutableStoryBlockField.builder()
+                .name("Story Block With Limit")
+                .variable("storyBlockWithLimit")
+                .contentTypeId(charLimitContentType.id())
+                .required(false)
+                .build();
+
+        charLimitStoryBlockField = APILocator.getContentTypeFieldAPI().save(charLimitStoryBlockField, systemUser);
+
+        // Add charLimit field variable with a limit of 25 characters
+        final FieldVariable charLimitVar = ImmutableFieldVariable.builder()
+                .key("charLimit")
+                .value("25")
+                .fieldId(charLimitStoryBlockField.id())
+                .build();
+        APILocator.getContentTypeFieldAPI().save(charLimitVar, systemUser);
     }
 
     /**
-     * Test that an empty story block (only empty paragraph) fails validation when required
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains an empty story block (only an empty paragraph node with no text content)
+     * Expected Result: Validation should fail with a REQUIRED field error since the story block has no meaningful content
      */
     @Test
     public void test_empty_story_block_required_validation_fails() {
@@ -160,7 +213,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block with text content passes validation
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a paragraph with text content ("Hello World!")
+     * Expected Result: Validation should pass and the contentlet should be saved successfully with the story block content preserved
      */
     @Test
     public void test_story_block_with_text_passes_validation() throws DotDataException, DotSecurityException {
@@ -202,7 +257,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block with image passes validation (structure = content)
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a dotImage node (structural content with an image identifier)
+     * Expected Result: Validation should pass since a dotImage node represents meaningful content even without text
      */
     @Test
     public void test_story_block_with_image_passes_validation() throws DotDataException, DotSecurityException {
@@ -235,7 +292,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block with video passes validation (structure = content)
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a dotVideo node (structural content with a video identifier)
+     * Expected Result: Validation should pass since a dotVideo node represents meaningful content even without text
      */
     @Test
     public void test_story_block_with_video_passes_validation() throws DotDataException, DotSecurityException {
@@ -268,7 +327,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block with list passes validation (structure = content)
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a bulletList node with a listItem (structural content)
+     * Expected Result: Validation should pass since a bulletList node represents structural content even if the list items are empty
      */
     @Test
     public void test_story_block_with_list_passes_validation() throws DotDataException, DotSecurityException {
@@ -308,7 +369,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block with table passes validation (structure = content)
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a table node with rows and cells (structural content)
+     * Expected Result: Validation should pass since a table node represents structural content even if cells are empty
      */
     @Test
     public void test_story_block_with_table_passes_validation() throws DotDataException, DotSecurityException {
@@ -358,7 +421,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block with blockquote passes validation (structure = content)
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a blockquote node (structural content wrapping an empty paragraph)
+     * Expected Result: Validation should pass since a blockquote node represents structural content
      */
     @Test
     public void test_story_block_with_blockquote_passes_validation() throws DotDataException, DotSecurityException {
@@ -393,7 +458,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block with code block containing text passes validation
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a codeBlock node with text content ("console.log('Hello World');")
+     * Expected Result: Validation should pass and the contentlet should be saved successfully with the code block content preserved
      */
     @Test
     public void test_story_block_with_code_text_passes_validation() throws DotDataException, DotSecurityException {
@@ -428,7 +495,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that an empty code block fails validation when required
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a codeBlock node with an empty text string
+     * Expected Result: Validation should fail with a REQUIRED field error since the code block has no meaningful content
      */
     @Test
     public void test_empty_code_block_required_validation_fails() {
@@ -461,7 +530,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block with horizontal rule passes validation (structure = content)
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains a horizontalRule node (structural content)
+     * Expected Result: Validation should pass since a horizontalRule node represents meaningful structural content
      */
     @Test
     public void test_story_block_with_horizontal_rule_passes_validation() throws DotDataException, DotSecurityException {
@@ -487,10 +558,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Tested method {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, List, boolean)}
-     *
-     * Given scenario: Story Block field contains malformed JSON that looks like a JSON attempt
-     *
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains malformed JSON ("{ invalid json }") that looks like a JSON attempt
      * Expected Result: Validation should pass treating malformed JSON as legacy WYSIWYG content during migration
      */
     @Test
@@ -511,7 +580,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block field with wrong type (Integer) fails validation
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field is set with an Integer value (12345) instead of a String
+     * Expected Result: Validation should fail with a BADTYPE field error since Story Block fields must be String values
      */
     @Test
     public void test_story_block_integer_type_validation_fails() {
@@ -526,7 +597,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block field with wrong type (Boolean) fails validation
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field is set with a Boolean value (true) instead of a String
+     * Expected Result: Validation should fail with a BADTYPE field error since Story Block fields must be String values
      */
     @Test
     public void test_story_block_boolean_type_validation_fails() {
@@ -541,7 +614,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a story block field with wrong type (Object) fails validation
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field is set with a plain Object value instead of a String
+     * Expected Result: Validation should fail with a BADTYPE field error since Story Block fields must be String values
      */
     @Test
     public void test_story_block_object_type_validation_fails() {
@@ -556,7 +631,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that type validation provides helpful error information
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field is set with an Integer value (42) to trigger type validation
+     * Expected Result: The BADTYPE validation error should contain field information in the notValidFields map
      */
     @Test
     public void test_story_block_type_validation_error_details() {
@@ -601,7 +678,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Test that a null story block field (not set at all) fails validation when required
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field is not set at all (null value) on the contentlet
+     * Expected Result: Validation should fail with a REQUIRED field error since the field is mandatory
      */
     @Test
     public void test_null_story_block_required_validation_fails() {
@@ -617,10 +696,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Tested method {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, List, boolean)}
-     *
-     * Given scenario: Story Block field contains legacy WYSIWYG content (plain text) with actual content
-     *
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains legacy WYSIWYG content (plain text) with actual content
      * Expected Result: Validation should pass to support backward compatibility during WYSIWYG to Story Block migration
      */
     @Test
@@ -641,10 +718,8 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Tested method {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, List, boolean)}
-     *
-     * Given scenario: Story Block field contains legacy WYSIWYG content with HTML tags
-     *
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains legacy WYSIWYG content with HTML tags (<p>, <strong>, <em>)
      * Expected Result: Validation should pass to support HTML content from legacy WYSIWYG fields
      */
     @Test
@@ -665,11 +740,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Tested method {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, List, boolean)}
-     *
-     * Given scenario: Required Story Block field contains empty legacy WYSIWYG content (empty string)
-     *
-     * Expected Result: Validation should fail since empty content doesn't satisfy required field constraint
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains empty legacy WYSIWYG content (empty string)
+     * Expected Result: Validation should fail since empty content doesn't satisfy the required field constraint
      */
     @Test
     public void test_empty_legacy_wysiwyg_content_fails_validation() {
@@ -686,11 +759,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Tested method {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, List, boolean)}
-     *
-     * Given scenario: Required Story Block field contains whitespace-only legacy WYSIWYG content
-     *
-     * Expected Result: Validation should fail since whitespace-only content doesn't satisfy required field constraint
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains whitespace-only legacy WYSIWYG content (spaces, newlines, tabs)
+     * Expected Result: Validation should fail since whitespace-only content doesn't satisfy the required field constraint
      */
     @Test
     public void test_whitespace_legacy_wysiwyg_content_fails_validation() {
@@ -707,11 +778,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Tested method {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, List, boolean)}
-     *
-     * Given scenario: Story Block field contains both valid Story Block JSON and passes validation
-     *
-     * Expected Result: Validation should continue to work correctly for proper Story Block JSON content
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains valid Story Block JSON with a paragraph and text content
+     * Expected Result: Validation should pass and the contentlet should be saved with the Story Block JSON content preserved
      */
     @Test
     public void test_story_block_json_still_validates_correctly() throws DotDataException, DotSecurityException {
@@ -744,11 +813,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     }
 
     /**
-     * Tested method {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, List, boolean)}
-     *
-     * Given scenario: Story Block field contains empty Story Block JSON (should still fail validation)
-     *
-     * Expected Result: Validation should still fail for empty Story Block JSON to maintain data quality
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains empty Story Block JSON (a doc with only an empty paragraph node)
+     * Expected Result: Validation should fail with a REQUIRED field error to maintain data quality
      */
     @Test
     public void test_empty_story_block_json_still_fails_validation() {
@@ -771,8 +838,218 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
         );
     }
 
+    // =========================================================================
+    // charLimit validation tests
+    // =========================================================================
+
     /**
-     * Test that multiple empty paragraphs still fail validation
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field with a charLimit field variable set to 25 contains content with charCount of 32
+     * Expected Result: Validation should fail with a CHAR_LIMIT error since the content exceeds the configured character limit
+     */
+    @Test
+    public void test_story_block_exceeding_char_limit_fails_validation() {
+        final String storyBlockExceedingLimit = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 32,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 1\n" +
+                "  },\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"adasdasdasdasdasdasdasdasdasdads\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(charLimitContentType)
+                .setProperty("storyBlockWithLimit", storyBlockExceedingLimit)
+                .next();
+
+        expectCharLimitValidationException(
+                () -> APILocator.getContentletAPI().checkin(contentlet, systemUser, false),
+                "Expected DotContentletValidationException for story block exceeding charLimit"
+        );
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field with a charLimit field variable set to 25 contains content with charCount of 12
+     * Expected Result: Validation should pass since the content is within the configured character limit
+     */
+    @Test
+    public void test_story_block_within_char_limit_passes_validation() throws DotDataException, DotSecurityException {
+        final String storyBlockWithinLimit = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 12,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 2\n" +
+                "  },\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"Hello World!\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(charLimitContentType)
+                .setProperty("storyBlockWithLimit", storyBlockWithinLimit)
+                .next();
+
+        // Should not throw validation exception - within the limit
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field with a charLimit field variable set to 25 contains content with charCount of exactly 25
+     * Expected Result: Validation should pass since the content is at exactly the configured character limit (boundary case)
+     */
+    @Test
+    public void test_story_block_at_exact_char_limit_passes_validation() throws DotDataException, DotSecurityException {
+        final String storyBlockAtLimit = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 25,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 1\n" +
+                "  },\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"abcdefghijklmnopqrstuvwxy\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(charLimitContentType)
+                .setProperty("storyBlockWithLimit", storyBlockAtLimit)
+                .next();
+
+        // Should not throw validation exception - exactly at the limit
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field with a charLimit field variable set to 25 contains JSON without a charCount attribute in attrs (legacy content)
+     * Expected Result: Validation should pass gracefully, skipping char limit check when charCount is absent from the JSON attrs
+     */
+    @Test
+    public void test_story_block_without_char_count_attr_passes_validation() throws DotDataException, DotSecurityException {
+        final String storyBlockNoCharCount = "{\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"Some content without charCount in attrs\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(charLimitContentType)
+                .setProperty("storyBlockWithLimit", storyBlockNoCharCount)
+                .next();
+
+        // Should not throw - gracefully skips validation when charCount is not in JSON attrs
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A Story Block field without a charLimit field variable contains content with a very high charCount (9999)
+     * Expected Result: Validation should pass since no charLimit field variable is configured on this field
+     */
+    @Test
+    public void test_story_block_without_char_limit_variable_passes_validation() throws DotDataException, DotSecurityException {
+        final String storyBlockHighCharCount = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 9999,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 1\n" +
+                "  },\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"Some text content\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(testContentType)
+                .setProperty("storyBlockField", storyBlockHighCharCount)
+                .next();
+
+        // Should not throw - no charLimit field variable on this content type's field
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#validateContentlet(Contentlet, java.util.List, boolean)}
+     * Given Scenario: A required Story Block field contains multiple empty paragraph nodes (no text content in any of them)
+     * Expected Result: Validation should fail with a REQUIRED field error since multiple empty paragraphs still represent no meaningful content
      */
     @Test
     public void test_multiple_empty_paragraphs_fail_validation() {

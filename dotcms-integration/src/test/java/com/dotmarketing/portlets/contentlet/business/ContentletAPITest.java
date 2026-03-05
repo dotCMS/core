@@ -635,11 +635,11 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#findAllContent(int, int)}
+     * Testing {@link ContentletDataGen#findAllContent(int, int)}
      *
      * @throws com.dotmarketing.exception.DotDataException
      * @throws com.dotmarketing.exception.DotSecurityException
-     * @see ContentletAPI
+     * @see ContentletDataGen
      * @see Contentlet
      */
     @Ignore("Not Ready to Run.")
@@ -647,7 +647,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void findAllContent() throws DotDataException, DotSecurityException {
 
         //Getting all contentlets live/working contentlets
-        List<Contentlet> contentlets = contentletAPI.findAllContent(0, 5);
+        List<Contentlet> contentlets = ContentletDataGen.findAllContent(0, 5);
 
         //Validations
         assertTrue(contentlets != null && !contentlets.isEmpty());

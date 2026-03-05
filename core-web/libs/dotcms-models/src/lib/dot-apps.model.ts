@@ -1,4 +1,4 @@
-import { SelectItem } from 'primeng/api';
+import type { SelectItem } from 'primeng/api';
 
 export enum dialogAction {
     IMPORT = 'Import',
@@ -46,11 +46,6 @@ export interface DotAppsSaveData {
         hidden: boolean;
         value: string;
     };
-}
-
-export interface DotAppsListResolverData {
-    apps: DotApp[];
-    isEnterpriseLicense: boolean;
 }
 
 export interface DotAppsExportConfiguration {

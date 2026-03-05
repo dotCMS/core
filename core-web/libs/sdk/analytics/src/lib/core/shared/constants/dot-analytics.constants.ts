@@ -216,3 +216,26 @@ export const ANALYTICS_WINDOWS_CLEANUP_KEY = '__dotAnalyticsCleanup__';
  * @see core-web/libs/sdk/react/src/lib/next/components/Contentlet/Contentlet.tsx
  */
 export const CONTENTLET_CLASS = 'dotcms-contentlet';
+
+/**
+ * Queue persistence configuration constants
+ * Used for storing events in sessionStorage for traditional page navigations
+ */
+
+/**
+ * Session storage key for persistent tab ID
+ * This ID remains constant across page navigations within the same browser tab
+ */
+export const TAB_ID_STORAGE_KEY = 'dot_analytics_tab_id';
+
+/**
+ * Prefix for queue storage key in sessionStorage
+ * Full key format: dot_analytics_queue_{tabId}
+ */
+export const QUEUE_STORAGE_KEY_PREFIX = 'dot_analytics_queue';
+
+/**
+ * Maximum age in milliseconds for persisted events
+ * Events older than this will be discarded (24 hours)
+ */
+export const MAX_EVENT_AGE_MS = 24 * 60 * 60 * 1000;

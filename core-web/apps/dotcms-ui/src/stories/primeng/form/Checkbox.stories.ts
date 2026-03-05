@@ -35,7 +35,7 @@ const meta: Meta = {
         moduleMetadata({
             imports: [CheckboxModule, BrowserAnimationsModule, FormsModule, NgFor]
         }),
-        componentWrapperDecorator((story) => `<div class="flex flex-column gap-2">${story}</div>`)
+        componentWrapperDecorator((story) => `<div class="flex flex-col gap-2">${story}</div>`)
     ],
     args: {
         cities: [...cities],
