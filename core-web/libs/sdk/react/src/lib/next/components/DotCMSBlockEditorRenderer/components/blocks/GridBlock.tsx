@@ -26,8 +26,6 @@ export const GridBlock = ({ node, blockEditorBlock, customRenderers }: GridBlock
         rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v))
             ? rawCols
             : [6, 6];
-    const pct1 = (cols[0] / 12) * 100;
-    const pct2 = (cols[1] / 12) * 100;
 
     return (
         <div
@@ -36,7 +34,7 @@ export const GridBlock = ({ node, blockEditorBlock, customRenderers }: GridBlock
             style={
                 {
                     display: 'grid',
-                    gridTemplateColumns: `${pct1}% ${pct2}%`,
+                    gridTemplateColumns: 'repeat(12, 1fr)',
                     gap: '1rem'
                 } as React.CSSProperties
             }>
@@ -44,7 +42,8 @@ export const GridBlock = ({ node, blockEditorBlock, customRenderers }: GridBlock
                 <div
                     key={`gridColumn-${index}`}
                     data-type="gridColumn"
-                    className="grid-block__column">
+                    className="grid-block__column"
+                    style={{ gridColumn: `span ${cols[index] ?? 6}` }}>
                     <BlockEditorBlockComponent
                         content={column.content}
                         customRenderers={customRenderers}

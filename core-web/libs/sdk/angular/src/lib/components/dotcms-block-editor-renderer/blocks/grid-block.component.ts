@@ -14,10 +14,13 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
             data-type="gridBlock"
             class="grid-block"
             [style.display]="'grid'"
-            [style.grid-template-columns]="gridTemplateColumns"
+            [style.grid-template-columns]="'repeat(12, 1fr)'"
             [style.gap]="'1rem'">
             @for (column of node?.content; track $index) {
-                <div data-type="gridColumn" class="grid-block__column">
+                <div
+                    data-type="gridColumn"
+                    class="grid-block__column"
+                    [style.grid-column]="'span ' + (columnSpans[$index] ?? 6)">
                     <ng-container
                         *ngComponentOutlet="
                             blockEditorItem;
@@ -34,18 +37,14 @@ export class DotGridBlock {
 
     blockEditorItem = DotCMSBlockEditorItemComponent;
 
-    get gridTemplateColumns(): string {
+    get columnSpans(): number[] {
         const rawCols = Array.isArray(this.node?.attrs?.['columns'])
             ? this.node.attrs['columns']
             : [6, 6];
-        const cols =
-            rawCols.length === 2 &&
-            rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v))
-                ? rawCols
-                : [6, 6];
-        const pct1 = (cols[0] / 12) * 100;
-        const pct2 = (cols[1] / 12) * 100;
 
-        return `${pct1}% ${pct2}%`;
+        return rawCols.length === 2 &&
+            rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v))
+            ? rawCols
+            : [6, 6];
     }
 }
