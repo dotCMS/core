@@ -17,7 +17,7 @@ import { FiltersState } from './with-filters.feature';
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
     DEFAULT_COUNT_LIMIT,
-    Granularity,
+    DEFAULT_GRANULARITY,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     RequestState,
@@ -98,7 +98,7 @@ export function withPageview() {
                                 .pageviews()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange))
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<TotalPageViewsEntity>(query).pipe(
@@ -151,7 +151,7 @@ export function withPageview() {
                                 .pageviews()
                                 .measures(['uniqueVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange))
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<UniqueVisitorsEntity>(query).pipe(
@@ -209,7 +209,7 @@ export function withPageview() {
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
                                 .orderBy('totalEvents', 'desc')
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange))
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
                                 .limit(1)
                                 .build();
 
@@ -266,7 +266,7 @@ export function withPageview() {
                                 .pageviews()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange), Granularity.DAY)
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
@@ -274,7 +274,7 @@ export function withPageview() {
                                     fillMissingDates<PageViewTimeLineEntity>(
                                         entities,
                                         timeRange,
-                                        Granularity.DAY,
+                                        DEFAULT_GRANULARITY,
                                         createEmptyAnalyticsEntity
                                     )
                                 ),
@@ -387,7 +387,7 @@ export function withPageview() {
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
                                 .orderBy('totalEvents', 'desc')
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange))
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
                                 .limit(DEFAULT_COUNT_LIMIT)
                                 .build();
 

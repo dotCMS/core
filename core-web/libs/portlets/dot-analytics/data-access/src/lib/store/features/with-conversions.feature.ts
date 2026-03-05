@@ -19,7 +19,7 @@ import {
     ContentAttributionEntity,
     ConversionsOverviewEntity,
     ConvertingVisitorsEntity,
-    Granularity,
+    DEFAULT_GRANULARITY,
     RequestState,
     TimeRangeInput,
     TotalConversionsEntity
@@ -117,7 +117,7 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange), Granularity.DAY)
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
@@ -177,7 +177,7 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange), Granularity.DAY)
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
@@ -185,7 +185,7 @@ export function withConversions() {
                                     fillMissingDates<ConversionTrendEntity>(
                                         entities,
                                         timeRange,
-                                        Granularity.DAY,
+                                        DEFAULT_GRANULARITY,
                                         createEmptyAnalyticsEntity
                                     )
                                 ),
@@ -241,7 +241,7 @@ export function withConversions() {
                                 .fromCube('EventSummary')
                                 .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange))
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<ConvertingVisitorsEntity>(query).pipe(
@@ -298,7 +298,7 @@ export function withConversions() {
                                 .fromCube('EventSummary')
                                 .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange), Granularity.DAY)
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService
@@ -308,7 +308,7 @@ export function withConversions() {
                                         fillMissingDates(
                                             entities,
                                             timeRange,
-                                            Granularity.DAY,
+                                            DEFAULT_GRANULARITY,
                                             createEmptyTrafficVsConversionsEntity
                                         )
                                     ),
@@ -366,7 +366,7 @@ export function withConversions() {
                                 .dimensions(['eventType', 'identifier', 'title'])
                                 .measures(['sumConversions', 'sumEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange))
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<ContentAttributionEntity>(query).pipe(
@@ -428,7 +428,7 @@ export function withConversions() {
                                     'topAttributedContent'
                                 ])
                                 .siteId(currentSiteId)
-                                .timeRange(Granularity.DAY, toTimeRangeCubeJS(timeRange))
+                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService

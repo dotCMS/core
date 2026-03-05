@@ -44,6 +44,8 @@ export const Granularity = {
 
 export type Granularity = (typeof Granularity)[keyof typeof Granularity];
 
+export const DEFAULT_GRANULARITY = Granularity.DAY;
+
 /**
  * CubeJS time dimension configuration
  */
