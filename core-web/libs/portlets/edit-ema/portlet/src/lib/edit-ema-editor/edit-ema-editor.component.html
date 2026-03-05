@@ -201,15 +201,21 @@
             styleClass="flex flex-column w-full h-full"
             [value]="$rightSidebarActiveTab()"
             (valueChange)="handleRightSidebarTabChange($event)">
-            <p-tablist>
-                <p-tab [value]="0">
-                    <div class="tab-header" pTooltip="Content Editor" tooltipPosition="bottom">
+            <p-tablist class="shrink-0 p-0 w-full">
+                <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="0">
+                    <div
+                        class="flex flex-1 h-full items-center justify-center"
+                        pTooltip="Content Editor"
+                        tooltipPosition="bottom">
                         <i class="pi pi-pencil"></i>
                     </div>
                 </p-tab>
                 @if ($showStyleEditorTab()) {
-                    <p-tab [value]="1">
-                        <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
+                    <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="1">
+                        <div
+                            class="flex flex-1 h-full items-center justify-center"
+                            pTooltip="Style Editor"
+                            tooltipPosition="bottom">
                             <i class="pi pi-palette"></i>
                         </div>
                     </p-tab>
