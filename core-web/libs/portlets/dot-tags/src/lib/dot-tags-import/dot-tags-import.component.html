@@ -1,35 +1,61 @@
-<!-- Instructions -->
-<div class="mb-4">
-    <p class="mb-2">{{ 'tags.import.instructions' | dm }}</p>
-    <ul class="list-disc pl-5 mb-2 text-sm text-color-secondary">
-        <li>
-            <strong>{{ 'tags.import.column.tag-name' | dm }}</strong>
-            — {{ 'tags.import.column.tag-name.description' | dm }}
-        </li>
-        <li>
-            <strong>{{ 'tags.import.column.host-id' | dm }}</strong>
-            — {{ 'tags.import.column.host-id.description' | dm }}
-            <code>SYSTEM_HOST</code>
-            {{ 'tags.import.column.host-id.global' | dm }}
-        </li>
-    </ul>
-    <p class="text-sm text-color-secondary">{{ 'tags.import.example' | dm }}</p>
-    <pre class="bg-surface-100 p-2 rounded text-sm mt-1">
-"Tag Name","Host ID"
-"Marketing","SYSTEM_HOST"
-"News","48190c8c-42c4-..."</pre
-    >
-</div>
+<div class="flex flex-col gap-4">
+    <p class="text-lg">{{ 'tags.import.instructions' | dm }}</p>
 
-<!-- File Upload -->
-<p-fileupload
-    mode="basic"
-    [chooseLabel]="'tags.import.choose-file' | dm"
-    chooseIcon="pi pi-upload"
-    accept=".csv"
-    (onSelect)="onFileSelect($event)"
-    (onClear)="onFileClear()"
-    data-testid="tag-import-file" />
+    <p-fileupload
+        #fileUpload
+        mode="advanced"
+        chooseIcon="pi pi-upload"
+        [showUploadButton]="false"
+        [showCancelButton]="false"
+        [multiple]="false"
+        [auto]="false"
+        [customUpload]="true"
+        accept=".csv,text/csv"
+        styleClass="w-full"
+        (onSelect)="onFileSelect($event)"
+        (onClear)="onFileClear()"
+        [pt]="{
+            header: {
+                style: {
+                    padding: '0',
+                    border: '0'
+                }
+            }
+        }"
+        data-testid="tag-import-file">
+        <ng-template #header></ng-template>
+        <ng-template #content>
+            <div
+                class="group w-full rounded-xl bg-surface-100 border border-surface-200 p-8 flex flex-col items-center justify-center text-center gap-4 min-h-[250px] cursor-pointer"
+                (click)="fileUpload.choose()">
+                <div
+                    class="w-24 h-24 rounded-full bg-primary-100 text-primary flex items-center justify-center transition-colors group-hover:bg-primary-200">
+                    <i class="pi pi-upload text-4xl"></i>
+                </div>
+
+                <p class="text-2xl font-semibold text-color">
+                    {{ 'tags.import.dropzone.prefix' | dm }}
+                    <span class="text-primary hover:underline">
+                        {{ 'tags.import.choose-file' | dm }}
+                    </span>
+                    {{ 'tags.import.dropzone.suffix' | dm }}
+                </p>
+
+                <div class="flex items-center gap-2 text-base text-color-secondary">
+                    <span>{{ 'tags.import.csv-support' | dm }}</span>
+                    <i
+                        class="pi pi-info-circle"
+                        [pTooltip]="tooltipMessage()"
+                        tooltipPosition="right"></i>
+                </div>
+
+                @if (selectedFile(); as file) {
+                    <span class="text-sm font-medium text-color">{{ file.name }}</span>
+                }
+            </div>
+        </ng-template>
+    </p-fileupload>
+</div>
 
 <!-- Import Result -->
 @if (result(); as res) {
@@ -40,7 +66,6 @@
     </div>
 }
 
-<!-- Actions -->
 <div class="flex justify-end gap-2 mt-4">
     @if (result()) {
         <p-button
@@ -48,14 +73,15 @@
             (onClick)="close(true)"
             data-testid="tag-import-done-btn" />
     } @else {
+        <p-button [label]="'tags.cancel' | dm" text (onClick)="close(false)" />
         <p-button
-            [label]="'tags.cancel' | dm"
+            [label]="'tags.import.download-template' | dm"
             severity="secondary"
             [outlined]="true"
-            (onClick)="close(false)" />
+            (onClick)="downloadTemplate()"
+            data-testid="tag-import-download-btn" />
         <p-button
             [label]="'tags.import' | dm"
-            icon="pi pi-upload"
             [disabled]="!selectedFile()"
             [loading]="importing()"
             (onClick)="importFile()"
