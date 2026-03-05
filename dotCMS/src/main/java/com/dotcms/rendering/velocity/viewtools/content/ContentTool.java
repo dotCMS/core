@@ -197,10 +197,11 @@ public class ContentTool implements ViewTool {
                 contentlet.getMap().remove(Contentlet.STYLE_PROPERTIES_KEY);
             }
         } catch (DotDataException e) {
-            throw new DoesNotExistException(
-                    String.format(
-                            "Contentlet: %s not found for page=%s, container=%s, uuid=%s, personalization=%s.",
-                            contentletId, pageId, containerId, containerInstance, personalization));
+            String message = String.format(
+                    "Contentlet: %s not found for page=%s, container=%s, uuid=%s, personalization=%s.",
+                    contentletId, pageId, containerId, containerInstance, personalization);
+            Logger.debug(ContentTool.class, message, e);
+            throw new DoesNotExistException(message, e);
         }
 	}
 	
