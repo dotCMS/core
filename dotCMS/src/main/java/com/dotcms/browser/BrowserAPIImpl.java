@@ -1,5 +1,6 @@
 package com.dotcms.browser;
 
+import com.dotcms.browser.BrowserQuery.Builder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -33,7 +34,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.RenderMode;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
@@ -55,13 +56,13 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
@@ -119,52 +120,42 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     @Override
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
-        return getContentUnderParentFromDB(browserQuery, -1, -1).contentlets;
+        return getContentUnderParentFromDB(browserQuery, -1).contentlets;
     }
 
     /**
      * Returns a collection of contentlets based on specific filtering criteria specified via the
      * {@link BrowserQuery} class, such as: Parent folder, Site, archived/non-archived status, base Content Types,
      * language, among many others. After that, the resulting list is filtered based on {@code READ} permissions.
-     * This version of the method applies database pagination through a startRow and maxRow param
+     *
+     * <p>Pagination is applied <strong>after</strong> permission filtering. Applying DB-level
+     * pagination before filtering produces empty or sparse pages for restricted users, because
+     * their accessible items may not fall within the fetched DB chunk.</p>
+     *
      * @param browserQuery The {@link BrowserQuery} object specifying the filtering criteria.
-     * @param startRow
-     * @param maxRows
-     * @return The list of filtered contentlets.
+     * @param maxRows      Maximum number of items to return.
+     * @return The permission-filtered, paginated list of contentlets with the exact filtered count.
      */
     @CloseDBIfOpened
-    ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int startRow, final int maxRows) {
-
-        final SelectAndCountQueries sqlQuery = this.selectAndCountQueries(browserQuery);
-        final DotConnect dcCount = new DotConnect().setSQL(sqlQuery.countQuery);
-        sqlQuery.params.forEach(dcCount::addParam);
-        final AtomicInteger count = new AtomicInteger(dcCount.getInt("count"));
+    ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int maxRows) {
+        final SelectQuery sqlQuery = this.selectQuery(browserQuery);
         final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
-        try {
-            final Set<String> collectedInodes = new LinkedHashSet<>();
-            if(useElasticSearchForTextFiltering){
-               //If set to "ON" we use ES to filter when text is passed
-                collectedInodes.addAll(doElasticSearchTextFiltering(browserQuery, count, startRow, maxRows, sqlQuery));
-            } else {
-                final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-                sqlQuery.params.forEach(dcSelect::addParam);
+        final DotConnect dcSelect = getDotConnect(sqlQuery);
 
-                //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
-                if(startRow >= 0 && maxRows > 0) {
-                    dcSelect.setStartRow(startRow)
-                            .setMaxRows(maxRows);
-                }
-                @SuppressWarnings("unchecked")
-                final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-                inodesMapList.forEach(inode -> collectedInodes.add(inode.get("inode")));
+        try {
+            if (useElasticSearchForTextFiltering) {
+                // Permission filtering and page slicing happen inside — return directly.
+                return doElasticSearchTextFiltering(browserQuery, maxRows, dcSelect);
             }
 
-            //Now this should load the good contentlets using parallel processing
-            final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
+            // When pagination is not requested (public overload passes -1), fetch everything at once.
+            if (maxRows <= 0) {
+                final List<String> allInodesOrdered = collectInodesFromDB(dcSelect);
+                final List<Contentlet> filtered = getContentFilteredByRole(browserQuery, allInodesOrdered);
+                return new ContentUnderParent(filtered, false, 0);
+            }
 
-            final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
-                    PERMISSION_READ, true, browserQuery.user);
-            return new ContentUnderParent(filtered, count.get());
+            return getContentByChunks(browserQuery, maxRows, dcSelect);
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
             final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
@@ -173,6 +164,185 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.warnAndDebug(this.getClass(), errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
+    }
+
+    /**
+     * Scans DB rows in configurable chunks, applying permission filtering after each chunk, and
+     * stops as soon as {@code maxRows} visible items have been accumulated. This avoids loading
+     * the entire table for large datasets.
+     * <p>
+     * Pagination resumes from {@link BrowserQuery#contentCursor}, which is the DB row offset
+     * returned by the previous page. On the first page it is 0.
+     * </p>
+     *
+     * @param browserQuery query containing search criteria, user context, and the current cursor
+     * @param maxRows      maximum number of permission-visible items to return
+     * @param dcSelect     pre-built {@link DotConnect} with the select query and its bound params
+     * @return permission-filtered page together with {@code hasMore} and the next cursor value
+     * @throws DotDataException     if a DB or permission lookup fails at the data layer
+     * @throws DotSecurityException if a security boundary is violated during permission filtering
+     */
+    private ContentUnderParent getContentByChunks(final BrowserQuery browserQuery,
+            final int maxRows, final DotConnect dcSelect) throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> accumulatedContent = new ArrayList<>();
+        final int chunkSize = Math.max(maxRows * BROWSER_DB_CHUNK_FACTOR.get(), BROWSER_DB_CHUNK_MIN_SIZE.get());
+        int chunkCount = 0;
+        int dbOffset = browserQuery.contentCursor;
+        int nextContentCursor;
+        boolean hasMore = false;
+
+        Logger.debug(this, String.format(
+                "[Starting content search by chunks]: content required %d, chunk size: %d, user: %s",
+                maxRows, chunkSize, browserQuery.user.getFullName()));
+
+        while (true) {
+            chunkCount++;
+            Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
+
+            dcSelect.setStartRow(dbOffset).setMaxRows(chunkSize);
+            final List<String> chunkInodesOrdered = collectInodesFromDB(dcSelect);
+
+            if (chunkInodesOrdered.isEmpty()) {
+                Logger.debug(this, String.format("DB exhausted at offset %d after %d chunks.",
+                        dbOffset, chunkCount));
+                nextContentCursor = dbOffset;
+                break;
+            }
+
+            final List<Contentlet> chunkFiltered = getContentFilteredByRole(browserQuery, chunkInodesOrdered);
+
+            accumulatedContent.addAll(chunkFiltered);
+            dbOffset += chunkInodesOrdered.size();
+
+            if (accumulatedContent.size() >= maxRows) {
+                hasMore = (chunkInodesOrdered.size() == chunkSize);
+                nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
+                        chunkInodesOrdered, dbOffset);
+                break;
+            }
+
+            if (chunkInodesOrdered.size() < chunkSize) {
+                Logger.debug(this, String.format(
+                        "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
+                        accumulatedContent.size()));
+                nextContentCursor = dbOffset;
+                break;
+            }
+
+            Logger.debug(this, String.format(
+                    "Current chunk: %d, Not enough content, continuing search in the next chunk. Total accumulated: %d",
+                    chunkCount, accumulatedContent.size()));
+        }
+
+        final int accumulatedSize = accumulatedContent.size();
+        final int to = Math.min(maxRows, accumulatedSize);
+        final List<Contentlet> contentInPage = new ArrayList<>(accumulatedContent.subList(0, to));
+
+        // A partial last chunk sets hasMore=false, but if we still have more accumulated items
+        // than the page size there are definitely more visible items available.
+        if (!hasMore && to < accumulatedSize) {
+            hasMore = true;
+        }
+
+        return new ContentUnderParent(contentInPage, hasMore, nextContentCursor);
+    }
+
+    /**
+     * Creates a {@link DotConnect} preloaded with the select query and its bound parameters from a
+     * {@link SelectQuery} may further configure pagination
+     * ({@code setStartRow}/{@code setMaxRows}) before executing.
+     *
+     * @param sqlQuery the pre-built SQL select query containing: string query and parameters
+     * @return a {@link DotConnect} ready to execute
+     */
+    private static DotConnect getDotConnect(final SelectQuery sqlQuery) {
+        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+        sqlQuery.params.forEach(dcSelect::addParam);
+        return dcSelect;
+    }
+
+    /**
+     * Executes the given {@link DotConnect} query and extracts the {@code inode} column from every
+     * result row, returning them as an ordered list.
+     *
+     * @param dcSelect a fully configured {@link DotConnect} query with params ready to execute
+     * @return ordered list of inode strings; empty list when the query returns no rows
+     * @throws DotDataException if the underlying JDBC call fails
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> collectInodesFromDB(final DotConnect dcSelect) throws DotDataException {
+        final List<Map<String, String>> results = dcSelect.loadResults();
+        if (results.isEmpty()) {
+            return List.of();
+        }
+        return results.stream()
+                .map(m -> m.get("inode"))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Filters a list of contentlets down to those the current user can {@code READ}. Delegates to
+     * {@link PermissionAPI#filterCollection} respecting the query's front-end role flag.
+     *
+     * @param browserQuery query whose {@code user} and {@code respectFrontEndRoles} are used
+     * @param collectedInodes  collected inodes from the database
+     * @return sub-list of contentlets the user is allowed to read
+     * @throws DotDataException     if a permission lookup fails at the data layer
+     * @throws DotSecurityException if a security boundary is violated during filtering
+     */
+    private List<Contentlet> getContentFilteredByRole(final BrowserQuery browserQuery,
+            final List<String> collectedInodes) throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
+        final List<Contentlet> filtered = permissionAPI.filterCollection(
+                contentlets, PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
+
+        Logger.debug(this, String.format("Content fetched %d → %d passed permission filter.",
+                collectedInodes.size(), filtered.size()));
+        return filtered;
+    }
+
+    /**
+     * Computes the DB-row cursor that the next page should start from, given the accumulated
+     * permission-filtered results and the last DB chunk that was read.
+     * <p>
+     * When the accumulator holds more items than the page needs, the last item on the page is
+     * located inside the current chunk by searching its inode in {@code chunkInodesOrdered}.
+     * The cursor is then set to the row immediately after that item in the DB sequence.
+     * When the accumulator has exactly the right number of items the cursor simply advances to
+     * the end of the current chunk ({@code dbOffset}).
+     * </p>
+     *
+     * @param accumulated       permission-filtered items collected so far (may exceed {@code needed})
+     * @param needed            total items needed to satisfy the page ({@code startRow + maxRows})
+     * @param chunkInodesOrdered DB-ordered inode list for the last fetched chunk
+     * @param dbOffset          DB row offset after reading the current chunk
+     *                          ({@code previousDbOffset + chunkInodesOrdered.size()})
+     * @return the DB row index the next page scan should start from
+     */
+    private int generateNextContentCursor(final List<Contentlet> accumulated, final int needed,
+            final List<String> chunkInodesOrdered, final int dbOffset) {
+        int nextContentCursor;
+        final int startOfCurrentChunk = dbOffset - chunkInodesOrdered.size();
+
+        if (accumulated.size() > needed) {
+            final Contentlet lastOnPage = accumulated.get(needed - 1);
+            final String targetInode = lastOnPage.getInode();
+
+            // O(n) search by inode string — only in last chunk.
+            final int indexInChunk = chunkInodesOrdered.indexOf(targetInode);
+
+            // Position the cursor right after the last item on this page.
+            nextContentCursor = indexInChunk >= 0
+                    ? startOfCurrentChunk + indexInChunk + 1
+                    : dbOffset;
+            Logger.debug(this, "Page limit reached. Setting next cursor to " + nextContentCursor);
+        } else {
+            // Exactly the right number — no leftovers, advance past this chunk.
+            nextContentCursor = dbOffset;
+        }
+        return nextContentCursor;
     }
 
     /**
@@ -191,29 +361,33 @@ public class BrowserAPIImpl implements BrowserAPI {
      * heuristic strategy for fetching results from Elasticsearch.
      *
      * @param browserQuery the query object containing the search criteria
-     * @param startRow     the starting row index for the search result set
      * @param maxRows      the maximum number of rows to be retrieved
-     * @param count        the total number of rows matching the query criteria used for pagination (before applying any startRow, maxRow, limits)
-     * @param sqlQuery     the SQL query object for selecting and counting rows
-     * @return a set of strings representing the filtered results from the Elasticsearch query
-     * @throws DotDataException if an error occurs during the query execution
+     * @param dcSelect a fully configured {@link DotConnect} query with params ready to execute
+     * @return permission-filtered, paginated {@link ContentUnderParent} with {@code hasMore} and
+     *         the next cursor value set by the chosen heuristic
+     * @throws DotDataException if an error occurs during query execution
      */
-    private Set<String> doElasticSearchTextFiltering(final BrowserQuery browserQuery, final AtomicInteger count, final int startRow, final int maxRows,
-                                                     final SelectAndCountQueries sqlQuery) throws DotDataException {
+    private ContentUnderParent doElasticSearchTextFiltering(final BrowserQuery browserQuery,
+            final int maxRows, final DotConnect dcSelect) throws DotDataException {
 
         // Get the heuristic strategy from a lazy configuration
         final SearchHeuristicType heuristicType = HEURISTIC_TYPE.get();
 
         // Track execution time for heuristic performance analysis using modern time APIs
         final long startTimeNanos = System.nanoTime();
+        // Starting row index for the search result set
+        final int startRow = browserQuery.contentCursor;
+
         try {
             switch (heuristicType) {
                 case HYBRID_SINGLE_CHUNKED_QUERY_ES:
-                    return doHybridSingleChunkedQueryES(browserQuery, count, startRow, maxRows, sqlQuery);
+                    return doHybridSingleChunkedQueryES(browserQuery, startRow, maxRows, dcSelect);
                 case PURE_ES:
                 default:
-                    return doPureESQuery(browserQuery, count, startRow, maxRows);
+                    return doPureESQuery(browserQuery, startRow, maxRows);
             }
+        } catch (DotSecurityException e) {
+            throw new DotRuntimeException(e.getMessage(), e);
         } finally {
             final boolean debugEnabled = Logger.isDebugEnabled(BrowserAPIImpl.class);
             if(debugEnabled) {
@@ -244,25 +418,17 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Single Query Chunked: Fetches all inodes in a single database query without pagination,
      * then processes them in optimally-sized ES chunks based on total count percentage.
      */
-    Set<String> doHybridSingleChunkedQueryES(final BrowserQuery browserQuery, final AtomicInteger count, final int startRow, final int maxRows,
-                                             final SelectAndCountQueries sqlQuery) throws DotDataException {
-        final Set<String> collectedInodes = new LinkedHashSet<>();
+    ContentUnderParent doHybridSingleChunkedQueryES(final BrowserQuery browserQuery, final int startRow,
+            final int maxRows, final DotConnect dcSelect) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, "::::: Using Single Query Chunked for text filtering ::::");
 
         // Execute single DB query to get ALL candidate inodes without pagination
-        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-        sqlQuery.params.forEach(dcSelect::addParam);
-
-        @SuppressWarnings("unchecked")
-        final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-        final List<String> allCandidateInodes = inodesMapList.stream()
-                .map(data -> data.get("inode"))
-                .collect(Collectors.toList());
+        final List<String> allCandidateInodes = collectInodesFromDB(dcSelect);
 
         if (allCandidateInodes.isEmpty()) {
             Logger.debug(this, "Single Query Chunked: No candidate inodes found");
-            return collectedInodes;
+            return new ContentUnderParent(List.of(), false, 0);
         }
 
         final int totalCandidates = allCandidateInodes.size();
@@ -274,14 +440,18 @@ public class BrowserAPIImpl implements BrowserAPI {
         final LinkedList<String> list = new LinkedList<>(
                 parallelChunksInES(browserQuery, allCandidateInodes, totalCandidates, esChunkSize));
 
-        // Apply safe slicing with startRow and maxRows
-        final int listSize = list.size();
-        final int safeStartRow = Math.max(0, Math.min(startRow, listSize));
-        final int safeEndRow = Math.min(listSize, safeStartRow + Math.max(0, maxRows));
-        //Update the count (before slicing) so it can be accurately read from the upper calling layers this function
-        count.set(listSize);
-        // Create a LinkedHashSet from the sliced sublist to preserve order
-        return new LinkedHashSet<>(list.subList(safeStartRow, safeEndRow));
+        // Permission filtering before slicing: guarantees the caller always receives a full page
+        // when enough visible items exist, regardless of per-item permission variance.
+        final List<Contentlet> allFiltered = getContentFilteredByRole(browserQuery, list);
+        final int totalFiltered = allFiltered.size();
+
+        final int safeStartRow = Math.max(0, Math.min(startRow, totalFiltered));
+        final int safeEndRow   = Math.min(totalFiltered, safeStartRow + Math.max(0, maxRows));
+        final List<Contentlet> page = new ArrayList<>(allFiltered.subList(safeStartRow, safeEndRow));
+
+        // hasMore: there are items in the filtered set beyond the current page end.
+        final boolean hasMore = safeEndRow < totalFiltered;
+        return new ContentUnderParent(page, hasMore, safeEndRow);
     }
 
     /**
@@ -364,9 +534,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Constructs a comprehensive ES query from browserQuery and uses the appropriate search API
      * to return contentlets directly, bypassing all database operations.
      */
-    private Set<String> doPureESQuery(BrowserQuery browserQuery, AtomicInteger count ,int startRow, int maxRows) throws DotDataException {
-        final Set<String> collectedInodes = new LinkedHashSet<>();
-
+    private ContentUnderParent doPureESQuery(BrowserQuery browserQuery, int startRow, int maxRows) throws DotDataException {
         Logger.debug(this, "::::: Using Pure ES for text filtering (no database queries) ::::");
 
         try {
@@ -376,33 +544,31 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.debug(this, String.format("::: Pure ES query: %s", esQuery));
 
             // Use ContentletAPI to search directly in ES
-            final com.dotmarketing.portlets.contentlet.business.ContentletAPI contentletAPI = APILocator.getContentletAPI();
+            final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
             // Execute the search using ContentletAPI with proper parameters
             final List<Contentlet> contentlets = contentletAPI.search(
                 esQuery,
                 browserQuery.maxResults > 0 ? browserQuery.maxResults : maxRows,
-                browserQuery.offset >= 0 ? browserQuery.offset : startRow,
+                browserQuery.contentCursor >= 0 ? browserQuery.contentCursor : startRow,
                 browserQuery.sortBy,
                 browserQuery.user,
-                false // respectFrontendRoles - use false for backend searches
+                browserQuery.respectFrontEndRoles // false for backend searches
             );
 
-            //Update the count
-            count.set((int)contentletAPI.indexCount(esQuery, browserQuery.user, false));
+            final long totalMatches = contentletAPI.indexCount(esQuery, browserQuery.user, false);
+            final boolean hasMore = startRow + contentlets.size() < totalMatches;
+            final int nextCursor = startRow + contentlets.size();
 
-            // Extract inodes from the results
-            contentlets.forEach(contentlet -> collectedInodes.add(contentlet.getInode()));
+            Logger.debug(this, String.format("Pure ES completed: %d contentlets found (total: %d, hasMore: %b)",
+                contentlets.size(), totalMatches, hasMore));
 
-            Logger.debug(this, String.format("Pure ES completed: found %d contentlets, collected %d inodes",
-                contentlets.size(), collectedInodes.size()));
+            return new ContentUnderParent(contentlets, hasMore, nextCursor);
 
         } catch (final Exception e) {
             Logger.error(this, "Error in Pure ES search: " + e.getMessage(), e);
             throw new DotDataException("Pure ES search failed: " + e.getMessage(), e);
         }
-
-        return collectedInodes;
     }
 
     /**
@@ -534,6 +700,15 @@ public class BrowserAPIImpl implements BrowserAPI {
     final Lazy<Integer> SINGLE_QUERY_ES_CHUNK_MIN_SIZE = Lazy.of(
             () -> Config.getIntProperty("BROWSE_API_SINGLE_QUERY_ES_CHUNK_MIN_SIZE", 100));
 
+    // Multiplier applied to (startRow + maxRows) to determine the DB chunk size for permission-aware pagination.
+    // A factor of 3 means: fetch 3x the needed rows per chunk, expecting ~1/3 may be filtered by permissions.
+    final Lazy<Integer> BROWSER_DB_CHUNK_FACTOR = Lazy.of(
+            () -> Config.getIntProperty("BROWSER_DB_CHUNK_FACTOR", 3));
+
+    // Absolute minimum DB chunk size to avoid excessive round-trips on small page sizes.
+    final Lazy<Integer> BROWSER_DB_CHUNK_MIN_SIZE = Lazy.of(
+            () -> Config.getIntProperty("BROWSER_DB_CHUNK_MIN_SIZE", 50));
+
     /**
      * Calculates optimal ES chunk size based on percentage of total count for processing inodes.
      * The chunk size is calculated as a percentage of the total count, with minimum and maximum limits
@@ -566,11 +741,19 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     static class ContentUnderParent {
         final List<Contentlet> contentlets;
-        final int totalResults;
+        /** True when there are more DB rows to scan beyond this page. */
+        final boolean hasMore;
+        /**
+         * DB row offset to pass as {@link Builder#contentCursor(int)} on the next request.
+         * Equals (last item's DB row + 1) so the next page uses it as setStartRow and
+         * starts right after the last item, avoiding duplicates across pages.
+         */
+        final int nextDbCursor;
 
-        ContentUnderParent(List<Contentlet> contentlets, int totalResults) {
+        ContentUnderParent(List<Contentlet> contentlets, boolean hasMore, int nextDbCursor) {
             this.contentlets = contentlets;
-            this.totalResults = totalResults;
+            this.hasMore = hasMore;
+            this.nextDbCursor = nextDbCursor;
         }
     }
 
@@ -785,19 +968,19 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Loads contentlets in parallel using the same 30% heuristic for chunking.
-     * This reduces database load by processing multiple smaller requests concurrently
-     * instead of one large request that could cause timeouts or memory issues.
+     * Loads contentlets and returns them in the same order as the given inode list.
+     * This preserves DB order when the list is built from the DB query result, so
+     * pagination returns the "first N" visible items in DB order.
      *
-     * @param inodes Set of inode strings to load contentlets for
-     * @return List of loaded contentlets
+     * @param inodesOrdered List of inode strings in the desired result order (e.g. DB order)
+     * @return List of loaded contentlets in the same order as inodesOrdered; missing inodes are skipped
      */
-    private List<Contentlet> findContentletsInParallel(Set<String> inodes) {
-        if (inodes == null || inodes.isEmpty()) {
+    private List<Contentlet> findContentletsInParallel(List<String> inodesOrdered) {
+        if (inodesOrdered == null || inodesOrdered.isEmpty()) {
             return new ArrayList<>();
         }
 
-        final int totalInodes = inodes.size();
+        final int totalInodes = inodesOrdered.size();
         final long startTime = System.currentTimeMillis();
 
         // Use the same 30% heuristic for contentlet loading chunks
@@ -806,12 +989,20 @@ public class BrowserAPIImpl implements BrowserAPI {
         Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes, chunk size: %d",
             totalInodes, chunkSize));
 
-        // If small enough, process directly
+        final List<Contentlet> raw;
         if (totalInodes <= chunkSize) {
-            return loadContentletsSingle(new ArrayList<>(inodes), startTime);
+            raw = loadContentletsSingle(inodesOrdered, startTime);
         } else {
-            return loadContentletsParallel(inodes, chunkSize, startTime);
+            raw = loadContentletsParallel(new LinkedHashSet<>(inodesOrdered), chunkSize, startTime);
         }
+
+        // Reorder to match inodesOrdered; does not depend on API return order
+        final Map<String, Contentlet> byInode = raw.stream()
+                .collect(Collectors.toMap(Contentlet::getInode, c -> c, (a, b) -> a));
+        return inodesOrdered.stream()
+                .map(byInode::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -1166,64 +1357,101 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final List<Map<String, Object>> list = new LinkedList<>();
 
-        int offset = browserQuery.offset;
         int maxResults = browserQuery.maxResults;
 
         int folderCount = 0;
-        int contentTotalCount = 0;
         int contentCount = 0;
+        boolean hasMoreContent = false;
+        boolean hasMoreFolders = false;
+        int nextContentCursor = browserQuery.contentCursor;
+        int nextFolderCursor = browserQuery.folderCursor;
 
-        // 1. Folders
+        // Folders — cursor-based: slice starting from folderCursor.
+        // When hasMoreFolders=false is returned, the caller should set showFolders=false
+        // on the next request to skip this query entirely.
         if (browserQuery.showFolders) {
-            final List<Map<String, Object>> folders = foldersDefaultView(browserQuery, roles);
-            folderCount = folders.size();
+            final List<Map<String, Object>> allFolders = foldersDefaultView(browserQuery, roles);
+            final int totalFolders = allFolders.size();
+            final int folderStart = Math.min(browserQuery.folderCursor, totalFolders);
 
-            // Calculate if the offset still falls within folders
-            if (offset < folderCount) {
-                int toIndex = Math.min(folderCount, offset + maxResults);
-                list.addAll(folders.subList(offset, toIndex));
-                maxResults -= (toIndex - offset);
-                offset = 0;
+            if (folderStart < totalFolders) {
+                final int folderEnd = Math.min(folderStart + maxResults, totalFolders);
+                list.addAll(allFolders.subList(folderStart, folderEnd));
+                folderCount = folderEnd - folderStart;
+                maxResults -= folderCount;
+                nextFolderCursor = folderEnd;
+                hasMoreFolders = folderEnd < totalFolders;
+            }
+            // else: folderCursor is past the end — all folders already shown, add nothing
+        }
+
+        // Contentlets — cursor-based: slice starting from contentCursor.
+        if (browserQuery.showContent) {
+            if (maxResults > 0) {
+                final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, maxResults);
+                hasMoreContent = fromDB.hasMore;
+                nextContentCursor = fromDB.nextDbCursor;
+
+                final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
+                contentCount = contentlets.size();
+                list.addAll(contentlets);
             } else {
-                offset -= folderCount;
+                // maxResults was exhausted by folders — probe with limit=1 to detect
+                // whether content exists without adding items to this page.
+                final ContentUnderParent probe = getContentUnderParentFromDB(browserQuery, 1);
+                hasMoreContent = !probe.contentlets.isEmpty();
             }
         }
 
-        // 2. Contentlets
-        if (browserQuery.showContent && maxResults > 0) {
-            // Now the offset is adjusted (subtracting folders already seen)
-            final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, offset, maxResults);
-            contentTotalCount = fromDB.totalResults;
-
-            // Parallelize hydration with chunks
-            final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
-            // Extract the size of the contentlets loaded and filtered
-            contentCount = contentlets.size();
-            // And finally add them all into the result list
-            list.addAll(contentlets);
-        }
-
-        // Final sorting (optional: maybe you only need to sort within each block before slicing)
         list.sort(new GenericMapFieldComparator(browserQuery.sortBy, browserQuery.sortByDesc));
 
-        return new PaginatedContents(list, folderCount, contentTotalCount, contentCount);
+        return new PaginatedContents(list, folderCount, contentCount, hasMoreContent,
+                nextContentCursor, hasMoreFolders, nextFolderCursor);
     }
 
     /**
-     * Paginated result
+     * Paginated result for the Drive API.
+     *
+     * <p>Pagination usage:</p>
+     * <ul>
+     *   <li>Pass {@code nextContentCursor} as {@code contentCursor} on the next request to
+     *       continue content scanning from where this page left off.</li>
+     *   <li>Pass {@code nextFolderCursor} as {@code folderCursor} on the next request.</li>
+     *   <li>When {@code hasMoreFolders} is {@code false} set {@code showFolders=false} on
+     *       subsequent requests to skip the folder query entirely.</li>
+     *   <li>Keep {@code offset} at 0 on every request — only the cursors change between pages.</li>
+     * </ul>
      */
     public static class PaginatedContents {
         public final List<Map<String, Object>> list;
         public final int folderCount;
-        public final int contentTotalCount;
         public final int contentCount;
+        /** True when there are more content DB rows to scan beyond this page. */
+        public final boolean hasMoreContent;
+        /**
+         * DB row offset to pass as {@code contentCursor} on the next page request.
+         * Equals (last returned item's DB row + 1) so the next scan starts right after
+         * the last item, avoiding duplicates.
+         */
+        public final int nextContentCursor;
+        /** True when there are more folders to show beyond this page. */
+        public final boolean hasMoreFolders;
+        /**
+         * Folder list index to pass as {@code folderCursor} on the next page request.
+         * Equals the index of the first folder not yet returned.
+         */
+        public final int nextFolderCursor;
 
         public PaginatedContents(final List<Map<String, Object>> list, final int folderCount,
-                final int contentTotalCount, final int contentCount) {
+                final int contentCount, final boolean hasMoreContent, final int nextContentCursor,
+                final boolean hasMoreFolders, final int nextFolderCursor) {
             this.list = list;
             this.folderCount = folderCount;
-            this.contentTotalCount = contentTotalCount;
             this.contentCount = contentCount;
+            this.hasMoreContent = hasMoreContent;
+            this.nextContentCursor = nextContentCursor;
+            this.hasMoreFolders = hasMoreFolders;
+            this.nextFolderCursor = nextFolderCursor;
         }
     }
 
@@ -1372,27 +1600,23 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Generates both the select and count SQL queries with all filtering criteria applied.
-     * This method ensures that both queries use identical filtering logic for consistency.
+     * Builds the SQL select query with all filtering criteria applied from the given
+     * {@link BrowserQuery}. The resulting query is used by the cursor-based scanner
+     * and does not include a count query — total counts are derived from the chunk loop itself.
      *
      * @param browserQuery The filtering criteria set via the {@link BrowserQuery}.
-     * @return The {@link SelectAndCountQueries} object containing both select and count queries with parameters.
+     * @return The {@link SelectQuery} object containing the select query string and its bound parameters.
      */
-    private SelectAndCountQueries selectAndCountQueries(final BrowserQuery browserQuery) {
+    private SelectQuery selectQuery(final BrowserQuery browserQuery) {
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
 
-        final BaseQuery baseQueries = buildBaseQuery(browserQuery, workingLiveInode);
-        final StringBuilder selectQuery = new StringBuilder(baseQueries.selectQuery);
-        final StringBuilder countQuery = new StringBuilder(baseQueries.countQuery);
+        final StringBuilder selectQuery = new StringBuilder(buildSelectBaseQuery(browserQuery, workingLiveInode));
 
         final List<Object> parameters = new ArrayList<>();
-        final List<Object> dump = new ArrayList<>();
 
         if (!browserQuery.languageIds.isEmpty()) {
             appendLanguageQuery(selectQuery, browserQuery.languageIds,
-                    browserQuery.showDefaultLangItems);
-            appendLanguageQuery(countQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
         }
         // Handle site filtering based on ignoreSiteForFolders flag
@@ -1402,128 +1626,95 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (browserQuery.site != null) {
                 appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
                         browserQuery.forceSystemHost, parameters);
-                appendSiteQuery(countQuery, browserQuery.site.getIdentifier(),
-                        browserQuery.forceSystemHost, dump);
             } else {
                 if (browserQuery.forceSystemHost) {
                     appendSystemHostQuery(selectQuery);
-                    appendSystemHostQuery(countQuery);
                 }
             }
         }
         //This property allows the exclusion of the folder in the base query
         if (browserQuery.folder != null && !browserQuery.skipFolder) {
             appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
-            appendFolderQuery(countQuery, browserQuery.folder.getPath(), dump);
         }
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
                 appendFilterQuery(selectQuery, browserQuery.filter, parameters);
-                appendFilterQuery(countQuery, browserQuery.filter, dump);
             }
             if (UtilMethods.isSet(browserQuery.fileName)) {
                 appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
-                appendFileNameQuery(countQuery, browserQuery.fileName, dump);
             }
         }
         if (browserQuery.showMenuItemsOnly) {
             appendShowOnMenuQuery(selectQuery);
-            appendShowOnMenuQuery(countQuery);
         }
         if (!browserQuery.showArchived) {
             appendExcludeArchivedQuery(selectQuery);
-            appendExcludeArchivedQuery(countQuery);
         }
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
             appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes);
-            appendMIMETypeQuery(countQuery, browserQuery.mimeTypes);
         }
         if (null != browserQuery.sortBy) {
             appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
         }
 
         Logger.debug(this, "Select Query: " + selectQuery);
-        Logger.debug(this, "Count Query: " + countQuery);
 
-        return new SelectAndCountQueries(selectQuery.toString(), countQuery.toString(), parameters);
+        return new SelectQuery(selectQuery.toString(), parameters);
     }
 
     /**
      * Simple inner class to pass around data and make things a bit easier to understand
      */
-    static class SelectAndCountQueries {
+    static class SelectQuery {
         final String selectQuery;
-        final String countQuery;
         final List<Object> params;
-        SelectAndCountQueries(String selectQuery, String countQuery, List<Object> params) {
+        SelectQuery(String selectQuery, List<Object> params) {
             this.selectQuery = selectQuery;
-            this.countQuery = countQuery;
             this.params = params;
         }
     }
 
     /**
-     * Builds the base SQL queries (both regular and count) for content retrieval based on specific filtering criteria.
+     * Builds the base SQL select query for content retrieval based on specific filtering criteria.
      *
      * @param browserQuery     The {@link BrowserQuery} object specifying the filtering criteria.
      * @param workingLiveInode The identifier of the working live inode.
-     * @return The {@link BaseQuery} object containing both regular and count SQL queries.
+     * @return The base SQL SELECT query string.
      */
-    private BaseQuery buildBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
+    private String buildSelectBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
 
-        // Common base clause shared between select and count queries
         final String baseClause = " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
                 + DEFAULT_VARIANT.name() + "' ";
 
-        // Build the main query
         final StringBuilder baseQuery = new StringBuilder(
                 "select cvi." + workingLiveInode + " as inode " + baseClause);
-
-        // Build the count query
-        final StringBuilder countQuery = new StringBuilder(
-                "select count(cvi." + workingLiveInode + ") as count " + baseClause);
 
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         if (!showAllBaseTypes) {
             final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType()))
                             .collect(Collectors.toList());
-            String baseTypeFilter = " and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ";
-            baseQuery.append(baseTypeFilter);
-            countQuery.append(baseTypeFilter);
+            baseQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes))
+                    .append(") ");
         }
 
-        if(!browserQuery.contentTypeIds.isEmpty()){
-            String contentTypeFilter = " and struc.inode in (" +
-                    browserQuery.contentTypeIds.stream()
-                            .map(id -> "'" + id + "'")
-                            .collect(Collectors.joining(" , ")) + ") ";
-            baseQuery.append(contentTypeFilter);
-            countQuery.append(contentTypeFilter);
+        if (!browserQuery.contentTypeIds.isEmpty()) {
+            baseQuery.append(" and struc.inode in (").append(browserQuery.contentTypeIds.stream()
+                    .map(id -> "'" + id + "'")
+                    .collect(Collectors.joining(" , "))).append(") ");
         }
 
         if (!browserQuery.excludedContentTypeIds.isEmpty()) {
-            String excludeTypesFilter = " and struc.inode not in (" +
-                    browserQuery.excludedContentTypeIds.stream()
+            baseQuery.append(" and struc.inode not in (")
+                    .append(browserQuery.excludedContentTypeIds.stream()
                             .map(id -> "'" + id + "'")
-                            .collect(Collectors.joining(" , ")) + ") ";
-            baseQuery.append(excludeTypesFilter);
-            countQuery.append(excludeTypesFilter);
+                            .collect(Collectors.joining(" , "))).append(") ");
         }
 
-        return new BaseQuery(baseQuery.toString(), countQuery.toString());
-    }
-
-    static class BaseQuery {
-        final String selectQuery;
-        final String countQuery;
-        BaseQuery(String selectQuery, String countQuery) {
-            this.selectQuery = selectQuery;
-            this.countQuery = countQuery;
-        }
+        return baseQuery.toString();
     }
 
     /**
@@ -1888,7 +2079,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 return;
             }
 
-            wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user, WorkflowAPI.RenderMode.LISTING);
+            wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user, RenderMode.LISTING);
 
             if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && contentlet.isLocked()) {
 
