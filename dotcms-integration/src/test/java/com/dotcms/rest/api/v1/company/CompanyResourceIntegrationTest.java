@@ -76,7 +76,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         assertEquals(company.getPortalURL(), config.portalURL());
         assertEquals(company.getEmailAddress(), config.emailAddress());
         assertEquals(company.getMx(), config.mx());
-        assertEquals(company.getAuthType(), config.authType());
+        assertEquals(AuthType.fromString(company.getAuthType()), config.authType());
         assertEquals(company.getType(), config.primaryColor());
         assertEquals(company.getStreet(), config.secondaryColor());
     }
@@ -213,13 +213,13 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         final String originalAuthType = original.getAuthType();
 
         try {
-            final CompanyAuthTypeForm form = new CompanyAuthTypeForm("emailAddress");
+            final CompanyAuthTypeForm form = new CompanyAuthTypeForm(AuthType.EMAIL_ADDRESS);
 
             final ResponseEntityCompanyConfigView result =
                     resource.saveAuthType(request, mockResponse, form);
 
             assertNotNull(result);
-            assertEquals("emailAddress", result.getEntity().authType());
+            assertEquals(AuthType.EMAIL_ADDRESS, result.getEntity().authType());
 
             // Verify persistence
             final Company persisted = companyAPI.getDefaultCompany();
@@ -235,11 +235,11 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    @Test(expected = BadRequestException.class)
-    public void test_saveAuthType_invalidType_throwsBadRequest() {
-        final HttpServletRequest request = createAdminRequest();
-        final CompanyAuthTypeForm form = new CompanyAuthTypeForm("invalidType");
-        resource.saveAuthType(request, mockResponse, form);
+    @Test(expected = IllegalArgumentException.class)
+    public void test_saveAuthType_invalidType_throwsIllegalArgument() {
+        // Jackson would reject invalid values at deserialization;
+        // calling AuthType.fromString directly simulates that
+        AuthType.fromString("invalidType");
     }
 
     @Test(expected = ValidationException.class)
@@ -252,7 +252,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
     @Test(expected = SecurityException.class)
     public void test_saveAuthType_asNonAdmin_throwsSecurity() {
         final HttpServletRequest request = createRequestForUser(nonAdminUser);
-        final CompanyAuthTypeForm form = new CompanyAuthTypeForm("emailAddress");
+        final CompanyAuthTypeForm form = new CompanyAuthTypeForm(AuthType.EMAIL_ADDRESS);
         resource.saveAuthType(request, mockResponse, form);
     }
 

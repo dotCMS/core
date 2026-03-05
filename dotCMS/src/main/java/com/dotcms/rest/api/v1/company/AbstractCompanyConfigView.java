@@ -101,7 +101,7 @@ public interface AbstractCompanyConfigView {
             example = "emailAddress",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
-    String authType();
+    AuthType authType();
 
     @Schema(
             description = "SHA-256 digest of the company security key (read-only, admin only)"

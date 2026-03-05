@@ -130,7 +130,7 @@ public class CompanyConfigHelper {
             PrincipalThreadLocal.setName(user.getUserId());
 
             final Company company = companyAPI.getDefaultCompany();
-            company.setAuthType(form.getAuthType());
+            company.setAuthType(form.getAuthType().getValue());
             CompanyManagerUtil.updateCompany(company);
 
             return toView(company);
@@ -187,6 +187,9 @@ public class CompanyConfigHelper {
      */
     private CompanyConfigView toView(final Company company) {
 
+        // Liferay Company repurposes address fields for branding:
+        // city = loginScreenLogo, state = navBarLogo, type = primaryColor,
+        // street = secondaryColor, size = backgroundColor, homeURL = backgroundImage
         final String loginLogo = company.getCity();
         final String navLogo = company.getState();
 
@@ -208,7 +211,7 @@ public class CompanyConfigHelper {
                         LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level
                                 && UtilMethods.isSet(navLogo) && navLogo.startsWith("/dA")
                                 ? navLogo : null)
-                .authType(company.getAuthType())
+                .authType(AuthType.fromString(company.getAuthType()))
                 .keyDigest(company.getKeyDigest())
                 .build();
     }
@@ -218,8 +221,12 @@ public class CompanyConfigHelper {
      */
     private String extractDomain(final String email) {
 
-        if (UtilMethods.isSet(email) && email.contains("@")) {
-            return email.substring(email.indexOf('@') + 1);
+        try {
+            if (UtilMethods.isSet(email) && email.contains("@")) {
+                return email.substring(email.indexOf('@') + 1);
+            }
+        } catch (Exception e) {
+            Logger.debug(this, "Could not extract domain from email: " + e.getMessage());
         }
         return StringPool.BLANK;
     }
