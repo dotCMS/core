@@ -62,6 +62,7 @@ public interface AbstractRetryBundlesForm {
             example = "FAILED_ENDPOINTS",
             allowableValues = {"ALL_ENDPOINTS", "FAILED_ENDPOINTS"}
     )
+    @JsonDeserialize(using = DeliveryStrategyDeserializer.class)
     @Value.Default
     default DeliveryStrategy deliveryStrategy() {
         return DeliveryStrategy.ALL_ENDPOINTS;

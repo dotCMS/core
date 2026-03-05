@@ -471,14 +471,13 @@ public class PublishingResource {
             throw new BadRequestException("Invalid bundle ID format. Only alphanumeric characters, hyphens, and underscores are allowed.");
         }
 
-        // Check if bundle exists - bundle existence is primary requirement
+        // Check if bundle exists (either in bundle table or audit table)
         final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
-        if (bundle == null) {
+        final PublishAuditStatus auditStatus = publishAuditAPI.get().getPublishAuditStatus(bundleId);
+
+        if (bundle == null && auditStatus == null) {
             throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
         }
-
-        // Get audit status for in-progress check
-        final PublishAuditStatus auditStatus = publishAuditAPI.get().getPublishAuditStatus(bundleId);
 
         // Check if bundle is in-progress (cannot delete)
         if (auditStatus != null && publishingJobsHelper.isInProgressStatus(auditStatus.getStatus())) {
@@ -759,18 +758,20 @@ public class PublishingResource {
         }
         form.checkValid();
 
-        // 4. Pre-validate date formats (before database operations)
+        // 4. Pre-validate and parse date formats (before database operations)
         final String operation = form.getOperation().toLowerCase();
+        Date publishDate = null;
+        Date expireDate = null;
         switch (operation) {
             case "publish":
-                publishingJobsHelper.parseISO8601Date(form.getPublishDate()); // Validates format
+                publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
                 break;
             case "expire":
-                publishingJobsHelper.parseISO8601Date(form.getExpireDate()); // Validates format
+                expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
                 break;
             case "publishexpire":
-                publishingJobsHelper.parseISO8601Date(form.getPublishDate()); // Validates format
-                publishingJobsHelper.parseISO8601Date(form.getExpireDate()); // Validates format
+                publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
+                expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
                 break;
         }
 
@@ -797,32 +798,24 @@ public class PublishingResource {
         bundle.setFilterKey(form.getFilterKey());
         bundleAPI.get().saveBundleEnvironments(bundle, validEnvs);
 
-        // 9. Execute operation based on type — parse dates again for actual use
-        // (dates were already pre-validated above)
+        // 9. Execute operation based on type (dates already parsed in step 4)
         switch (operation) {
-            case "publish": {
-                final Date publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
+            case "publish":
                 bundle.setPublishDate(publishDate);
                 bundleAPI.get().updateBundle(bundle);
                 publisherQueueAPI.get().publishBundleAssets(bundleId, publishDate);
                 break;
-            }
-            case "expire": {
-                final Date expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+            case "expire":
                 bundle.setExpireDate(expireDate);
                 bundleAPI.get().updateBundle(bundle);
                 publisherQueueAPI.get().unpublishBundleAssets(bundleId, expireDate);
                 break;
-            }
-            case "publishexpire": {
-                final Date publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
-                final Date expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+            case "publishexpire":
                 bundle.setPublishDate(publishDate);
                 bundle.setExpireDate(expireDate);
                 bundleAPI.get().updateBundle(bundle);
                 publisherQueueAPI.get().publishAndExpireBundleAssets(bundleId, publishDate, expireDate, user);
                 break;
-            }
             default:
                 throw new BadRequestException(String.format(
                         "Invalid operation: '%s'. Valid values: publish, expire, publishexpire",
