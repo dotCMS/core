@@ -1,4 +1,4 @@
-import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotContentCompareComponent } from '@dotcms/portlets/dot-uve/ui';
 import { DotIconComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';

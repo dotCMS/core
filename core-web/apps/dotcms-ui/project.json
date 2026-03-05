@@ -51,8 +51,8 @@
                     },
                     {
                         "glob": "**/*",
-                        "input": "./libs/portlets/edit-ema/portlet/src/lib/assets",
-                        "output": "./assets/edit-ema"
+                        "input": "./libs/portlets/dot-uve/portlet/src/lib/assets",
+                        "output": "./assets/dot-uve"
                     },
                     {
                         "glob": "**/*",
@@ -61,8 +61,8 @@
                     },
                     {
                         "glob": "**/*",
-                        "input": "./libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-toolbar/assets",
-                        "output": "./assets/edit-uve-toolbar"
+                        "input": "./libs/portlets/dot-uve/portlet/src/lib/dot-uve-editor/components/dot-uve-toolbar/assets",
+                        "output": "./assets/dot-uve-toolbar"
                     }
                 ],
                 "styles": [

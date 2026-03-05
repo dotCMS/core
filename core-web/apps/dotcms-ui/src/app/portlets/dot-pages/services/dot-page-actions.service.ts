@@ -29,7 +29,7 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
-import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotFavoritePageComponent } from '@dotcms/portlets/dot-uve/ui';
 import { GlobalStore } from '@dotcms/store';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 

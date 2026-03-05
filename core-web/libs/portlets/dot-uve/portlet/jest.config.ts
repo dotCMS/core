@@ -1,0 +1,26 @@
+/* eslint-disable */
+export default {
+    displayName: 'portlets-dot-uve-portlet',
+    preset: '../../../../jest.preset.js',
+    setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+    globals: {},
+    coverageDirectory: '../../../../coverage/libs/portlets/dot-uve/portlet',
+    transform: {
+        '^.+\\.(ts|mjs|js|html)$': [
+            'jest-preset-angular',
+            {
+                isolatedModules: true, // Prevent type checking in tests and deps
+                tsconfig: '<rootDir>/tsconfig.spec.json',
+                stringifyContentPathRegex: '\\.(html|svg)$'
+            }
+        ]
+    },
+    transformIgnorePatterns: [
+        'node_modules/(?!.*\\.mjs$|.*(y-protocols|lib0|y-prosemirror|@tiptap|marked))'
+    ],
+    snapshotSerializers: [
+        'jest-preset-angular/build/serializers/no-ng-attributes',
+        'jest-preset-angular/build/serializers/ng-snapshot',
+        'jest-preset-angular/build/serializers/html-comment'
+    ]
+};
