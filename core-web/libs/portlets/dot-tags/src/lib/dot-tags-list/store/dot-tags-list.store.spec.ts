@@ -76,9 +76,10 @@ describe('DotTagsListStore', () => {
     });
 
     describe('loadTags', () => {
-        it('should call getTagsPaginated with correct params', () => {
+        it('should call getTagsPaginated with correct params including site', () => {
             expect(tagsService.getTagsPaginated).toHaveBeenCalledWith({
                 filter: undefined,
+                site: 'site-1',
                 page: 1,
                 per_page: 25,
                 orderBy: 'tagname',
@@ -354,6 +355,16 @@ describe('DotTagsListStore', () => {
             expect(store.selectedTags()).toEqual([]);
             // Status is set to loading by the site-change effect; loadTags() then runs and sets loaded when the mock completes
             expect(store.status()).toBe('loaded');
+        });
+
+        it('should pass the updated site to getTagsPaginated when currentSiteId changes', () => {
+            tagsService.getTagsPaginated.mockClear();
+            currentSiteIdSignal.set('site-2');
+            spectator.flushEffects();
+
+            expect(tagsService.getTagsPaginated).toHaveBeenCalledWith(
+                expect.objectContaining({ site: 'site-2' })
+            );
         });
     });
 
