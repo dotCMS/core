@@ -12,7 +12,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -200,8 +199,10 @@ public class ContentTool implements ViewTool {
             String message = String.format(
                     "Contentlet: %s not found for page=%s, container=%s, uuid=%s, personalization=%s.",
                     contentletId, pageId, containerId, containerInstance, personalization);
-            Logger.debug(ContentTool.class, message, e);
-            throw new DoesNotExistException(message, e);
+            if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this, message);
+            }
+            throw new RuntimeException(message, e);
         }
 	}
 	
