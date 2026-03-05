@@ -1,0 +1,41 @@
+{
+    "$schema": "https://unpkg.com/knip@latest/schema.json",
+    "entry": [
+        "apps/dotcms-ui/src/main.ts",
+        "apps/dotcms-ui/src/app/app.config.ts",
+        "apps/dotcms-ui/src/app/app.routes.ts",
+        "apps/dotcdn/src/main.ts",
+        "apps/dotcms-binary-field-builder/src/main.ts",
+        "apps/dotcms-block-editor/src/main.ts",
+        "apps/mcp-server/src/main.ts",
+        "{apps,libs}/**/src/index.{ts,tsx}",
+        "{apps,libs}/**/src/public-api.ts"
+    ],
+    "project": ["{apps,libs}/**/src/**/*.{ts,tsx}"],
+    "ignore": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/target/**",
+        "**/*.spec.ts",
+        "**/*.stories.ts",
+        "**/*.stories.tsx",
+        "**/test-setup.ts",
+        "**/jest.config.ts",
+        "**/jest.config.js",
+        "**/*.mock.ts",
+        "**/mocks/**"
+    ],
+    "ignoreDependencies": ["@dotcms/*", "@nx/*", "@nrwl/*", "@angular/*"],
+    "nx": {
+        "config": ["nx.json", "project.json", "{apps,libs}/**/project.json"]
+    },
+    "eslint": {
+        "config": [".eslintrc.base.json", "{apps,libs}/**/.eslintrc.json"]
+    },
+    "jest": false,
+    "storybook": false,
+    "playwright": {
+        "config": ["apps/dotcms-ui-e2e/playwright.config.ts"],
+        "entry": ["apps/dotcms-ui-e2e/src/**/*.spec.ts"]
+    }
+}

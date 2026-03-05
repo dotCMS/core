@@ -87,7 +87,7 @@ describe('AddStyleClassesDialogComponent', () => {
             // appendTo is an InputSignal, so we need to call it to get the value
             expect(autocomplete.appendTo()).toBe('body');
             expect(autocomplete.dropdown).toBe(true);
-            expect(autocomplete.el.nativeElement.className).toContain('p-fluid');
+            expect(autocomplete.el.nativeElement.className).toContain('w-full');
             expect(autocomplete.suggestions).toEqual(['class1', 'class2']);
         });
 
