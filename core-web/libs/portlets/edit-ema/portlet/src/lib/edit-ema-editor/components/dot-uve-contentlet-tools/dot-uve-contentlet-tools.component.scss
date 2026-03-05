@@ -72,6 +72,7 @@
         pointer-events: all;
         background-color: $color-palette-primary-op-20;
         outline: none;
+        cursor: pointer;
     }
 
     // Selected state: Border, transparent background, pointer-events: none on bounds, tools visible
