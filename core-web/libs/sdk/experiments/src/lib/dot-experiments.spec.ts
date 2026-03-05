@@ -222,7 +222,7 @@ describe('DotExperiments', () => {
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDB);
 
-                expect(spyTrackPageView).toBeCalledTimes(1);
+                expect(spyTrackPageView).toHaveBeenCalledTimes(1);
             });
 
             // Second time the user enter to the page
@@ -250,7 +250,7 @@ describe('DotExperiments', () => {
 
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew);
-                expect(spyTrackPageView).toBeCalledTimes(2);
+                expect(spyTrackPageView).toHaveBeenCalledTimes(2);
             });
 
             fetchMock.post(
@@ -278,7 +278,7 @@ describe('DotExperiments', () => {
 
                 expect(experiments.length).toBe(1);
                 expect(experiments).toEqual(MockDataStoredIndexDBWithNew15DaysLater);
-                expect(spyTrackPageView).toBeCalledTimes(3);
+                expect(spyTrackPageView).toHaveBeenCalledTimes(3);
             });
         });
     });
