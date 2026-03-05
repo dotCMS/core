@@ -655,16 +655,4 @@ public class ContentMap implements Serializable {
 	public Contentlet getContentObject() {
 		return this.content;
 	}
-
-	/**
-	 * Returns the style properties for this contentlet when rendered in a page container.
-	 * These are managed by the UVE style editor and stored in the MultiTree, not as a Content Type field.
-	 * Available in VTL as {@code $dotContentMap.dotStyleProperties}.
-	 *
-	 * @return The style properties map, or null if none are set.
-	 */
-	public Map<String, Object> getDotStyleProperties() {
-		final Object value = content.getMap().get(Contentlet.STYLE_PROPERTIES_KEY);
-		return value instanceof Map ? (Map<String, Object>) value : null;
-	}
 }

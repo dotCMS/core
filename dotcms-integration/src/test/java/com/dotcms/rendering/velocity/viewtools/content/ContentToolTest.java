@@ -972,7 +972,7 @@ public class ContentToolTest extends IntegrationTestBase {
      * When: Content is loaded via find() in a page/container context (HTMLPAGE_IDENTIFIER,
      * CONTAINER_IDENTIFIER, CONTAINER_UNIQUE_ID set in velocity context) and the contentlet
      * has style properties stored in the MultiTree (from UVE style editor)
-     * Should: Add dotStyleProperties to the contentlet so getDotStyleProperties() returns them
+     * Should: Add dotStyleProperties to the contentlet map, accessible via get("dotStyleProperties")
      */
     @Test
     public void testFind_WhenPageContainerContext_AddsDotStylePropertiesFromMultiTree()
@@ -1011,7 +1011,7 @@ public class ContentToolTest extends IntegrationTestBase {
         final ContentMap contentMap = contentTool.find(contentlet.getIdentifier());
         assertNotNull(contentMap);
 
-        final Map<String, Object> result = contentMap.getDotStyleProperties();
+        final Map<String, Object> result = (Map<String, Object>) contentMap.get(Contentlet.STYLE_PROPERTIES_KEY);
         assertNotNull(result);
         assertEquals("20px", result.get("fontSize"));
         assertEquals("#ff0000", result.get("color"));

@@ -495,9 +495,9 @@ public class ContentMapTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ContentMap#getDotStyleProperties()}
+     * Method to test: {@link ContentMap#get(String)} with "dotStyleProperties"
      * Given Scenario: Contentlet has dotStyleProperties in its map (from UVE style editor / MultiTree)
-     * ExpectedResult: getDotStyleProperties returns the style properties map
+     * ExpectedResult: get("dotStyleProperties") returns the style properties map
      */
     @Test
     public void testGetDotStyleProperties_WhenPresent() throws DotDataException, DotSecurityException {
@@ -516,16 +516,16 @@ public class ContentMapTest extends IntegrationTestBase {
         final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
                 PageMode.LIVE, defaultHost, velocityContext);
 
-        final Map<String, Object> result = contentMap.getDotStyleProperties();
+        final Map<String, Object> result = (Map<String, Object>) contentMap.get(Contentlet.STYLE_PROPERTIES_KEY);
         assertNotNull(result);
         assertEquals("18px", result.get("fontSize"));
         assertEquals("#333", result.get("color"));
     }
 
     /**
-     * Method to test: {@link ContentMap#getDotStyleProperties()}
+     * Method to test: {@link ContentMap#get(String)} with "dotStyleProperties"
      * Given Scenario: Contentlet has no dotStyleProperties (not on a page container or no styles set)
-     * ExpectedResult: getDotStyleProperties returns null
+     * ExpectedResult: get("dotStyleProperties") returns null
      */
     @Test
     public void testGetDotStyleProperties_WhenAbsent() throws DotDataException, DotSecurityException {
@@ -539,7 +539,7 @@ public class ContentMapTest extends IntegrationTestBase {
         final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
                 PageMode.LIVE, defaultHost, velocityContext);
 
-        Assert.assertNull(contentMap.getDotStyleProperties());
+        Assert.assertNull(contentMap.get(Contentlet.STYLE_PROPERTIES_KEY));
     }
 
 }

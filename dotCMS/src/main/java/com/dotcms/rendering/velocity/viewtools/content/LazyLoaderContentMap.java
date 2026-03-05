@@ -105,5 +105,4 @@ public class LazyLoaderContentMap implements Serializable {
 
         return load().getFieldVariablesJson(fieldVariableName);
     }
-
 }
