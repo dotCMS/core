@@ -237,11 +237,13 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             (e) => !events.some((sent) => sent === e)
         );
 
-        // Always update storage after sending — even for keepalive flushes.
+        // Always update storage after dispatching the send — even for keepalive flushes.
+        // Note: sendAnalyticsEvent is fire-and-forget (the returned promise is not awaited),
+        // so this runs regardless of whether the HTTP request succeeds.
         // sessionStorage writes are synchronous and complete before page unload,
         // so the persistence state stays consistent. Previously, keepalive flushes
-        // skipped the storage update as a "safety net", but that caused the next
-        // page load to re-send the same events from persistence, producing duplicates.
+        // skipped the storage update, which caused the next page load to re-send
+        // the same events from persistence, producing duplicates.
         if (eventsForPersistence.length === 0) {
             clearStorage();
         } else {

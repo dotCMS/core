@@ -800,11 +800,14 @@ describe('createAnalyticsQueue', () => {
 
             queue.enqueue(mockEvent, mockContext);
 
+            // Clear previous calls from initialize/enqueue
+            sessionStorageRemoveItem.mockClear();
+
             // Simulate normal flush (keepalive=false)
             sendBatchCallback([mockEvent], []);
 
-            // Should clear storage after successful send
-            expect(sessionStorageRemoveItem).toHaveBeenCalled();
+            // Should clear storage after dispatching send
+            expect(sessionStorageRemoveItem).toHaveBeenCalledTimes(1);
         });
 
         it('should clear storage on keepalive flush to prevent duplicate sends', () => {
@@ -832,7 +835,7 @@ describe('createAnalyticsQueue', () => {
             // Storage should be cleared even for keepalive flushes.
             // sessionStorage writes are synchronous and complete before unload,
             // so leaving stale events causes the next page to re-send them.
-            expect(sessionStorageRemoveItem).toHaveBeenCalled();
+            expect(sessionStorageRemoveItem).toHaveBeenCalledTimes(1);
         });
 
         it('should handle corrupted storage gracefully', () => {
