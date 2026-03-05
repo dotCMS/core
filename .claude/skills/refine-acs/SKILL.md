@@ -28,6 +28,8 @@ Ask it to: research from a product perspective, produce pseudocode, identify edg
 
 Wait for both before continuing.
 
+**Agent failure fallback:** If the product analyst returns no usable output (hit `maxTurns`, error, or empty result) — note the failure with `⚠️ Product analyst unavailable`, skip Steps 3 and 4, and write ACs directly from the issue body using the inline process in `.claude/skills/solve-issue/references/issue-refinement.md`.
+
 ---
 
 ## Step 2 — Validation gate
