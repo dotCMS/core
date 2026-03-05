@@ -12,37 +12,6 @@ function snapToGrid(ratio: number): number[] {
 }
 
 /**
- * Finds the ProseMirror document position for a `.grid-block` DOM element.
- */
-function findGridBlockPos(view: EditorView, gridEl: HTMLElement): number | null {
-    const firstCol = gridEl.querySelector(':scope > .grid-block__column');
-
-    if (!firstCol) {
-        return null;
-    }
-
-    try {
-        const pos = view.posAtDOM(firstCol, 0);
-
-        if (pos < 0 || pos > view.state.doc.content.size) {
-            return null;
-        }
-
-        const $pos = view.state.doc.resolve(pos);
-
-        for (let depth = $pos.depth; depth >= 0; depth--) {
-            if ($pos.node(depth).type.name === 'gridBlock') {
-                return $pos.before(depth);
-            }
-        }
-    } catch {
-        return null;
-    }
-
-    return null;
-}
-
-/**
  * Creates a preview overlay that sits on top of the grid block during drag.
  * This overlay has two colored regions showing the proposed column split,
  * completely bypassing ProseMirror's DOM management.
@@ -104,7 +73,9 @@ export function GridResizePlugin(editor: Editor): Plugin {
         gridEl: HTMLElement,
         container: HTMLDivElement
     ) {
-        const firstCol = gridEl.querySelector(':scope > .grid-block__column') as HTMLElement;
+        const cols = gridEl.querySelectorAll<HTMLElement>(':scope > .grid-block__column');
+        const firstCol = cols[0];
+        const secondCol = cols[1];
 
         if (!firstCol) {
             return;
@@ -114,19 +85,36 @@ export function GridResizePlugin(editor: Editor): Plugin {
         const gridRect = gridEl.getBoundingClientRect();
         const colRect = firstCol.getBoundingClientRect();
 
-        const secondCol = gridEl.querySelectorAll(':scope > .grid-block__column')[1] as HTMLElement;
-        let centerX: number;
-
-        if (secondCol) {
-            const secondColRect = secondCol.getBoundingClientRect();
-            centerX = (colRect.right + secondColRect.left) / 2;
-        } else {
-            centerX = colRect.right;
-        }
+        const centerX = secondCol
+            ? (colRect.right + secondCol.getBoundingClientRect().left) / 2
+            : colRect.right;
 
         handle.style.left = `${centerX - containerRect.left - 6}px`;
         handle.style.top = `${gridRect.top - containerRect.top}px`;
         handle.style.height = `${gridRect.height}px`;
+    }
+
+    function findGridBlockPos(view: EditorView, gridEl: HTMLElement): number | null {
+        const firstCol = gridEl.querySelector(':scope > .grid-block__column');
+
+        if (!firstCol) {
+            return null;
+        }
+
+        try {
+            const pos = view.posAtDOM(firstCol, 0);
+            const $pos = view.state.doc.resolve(pos);
+
+            for (let d = $pos.depth; d >= 1; d--) {
+                if ($pos.node(d).type.name === 'gridColumn') {
+                    return $pos.before(d - 1);
+                }
+            }
+        } catch {
+            return null;
+        }
+
+        return null;
     }
 
     function syncHandles(view: EditorView) {
@@ -164,28 +152,28 @@ export function GridResizePlugin(editor: Editor): Plugin {
             e.preventDefault();
             e.stopPropagation();
 
+            if (dragging) {
+                return;
+            }
+
             const gridBlockPos = findGridBlockPos(view, gridEl);
 
             if (gridBlockPos == null) {
                 return;
             }
 
-            const firstCol = gridEl.querySelector(':scope > .grid-block__column') as HTMLElement;
-
-            if (!firstCol) {
-                return;
-            }
+            const gridNode = view.state.doc.nodeAt(gridBlockPos);
+            const storedColumns: number[] = gridNode?.attrs?.columns ?? [6, 6];
+            const startRatio = storedColumns[0] / 12;
 
             const startX = e.clientX;
             const gridRect = gridEl.getBoundingClientRect();
             const gap = parseFloat(getComputedStyle(gridEl).gap) || 0;
             const usableWidth = gridRect.width - gap;
-            const startRatio = firstCol.getBoundingClientRect().width / usableWidth;
 
             dragging = true;
             handle.classList.add('grid-block__resize-handle--active');
 
-            // Create preview overlay positioned exactly over the grid block
             const preview = createPreviewOverlay();
             const containerRect = container.getBoundingClientRect();
             preview.style.left = `${gridRect.left - containerRect.left}px`;
@@ -201,7 +189,6 @@ export function GridResizePlugin(editor: Editor): Plugin {
             const previewLeft = previewCols[0];
             const previewRight = previewCols[1];
 
-            // Set initial preview sizes
             const setPreviewRatio = (ratio: number) => {
                 const pct1 = ratio * 100;
                 const pct2 = (1 - ratio) * 100;

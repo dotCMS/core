@@ -69,7 +69,16 @@ export const GridBlock = Node.create({
         return {
             insertGridBlock:
                 () =>
-                ({ tr, dispatch, editor }) => {
+                ({ tr, dispatch, editor, state }) => {
+                    // Prevent inserting a grid block inside a grid column.
+                    const { $from } = state.selection;
+
+                    for (let d = $from.depth; d > 0; d--) {
+                        if ($from.node(d).type.name === 'gridColumn') {
+                            return false;
+                        }
+                    }
+
                     const { schema } = editor;
                     const gridColumn = schema.nodes.gridColumn;
                     const paragraph = schema.nodes.paragraph;
