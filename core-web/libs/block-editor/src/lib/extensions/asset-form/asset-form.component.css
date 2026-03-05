@@ -1,23 +1,12 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
 :host {
-    border: 1px solid var(--gray-500);
-    display: block;
-}
-
-.tabview-container {
-    width: 720px;
-    background: #fff;
-}
-
-.wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
+    @apply block w-[720px] border border-gray-500 bg-white;
 }
 
 :host::ng-deep .p-tabview-nav {
-    padding: 0 2rem;
+    @apply px-8;
 }
 
 :host::ng-deep .p-tabview-panel {

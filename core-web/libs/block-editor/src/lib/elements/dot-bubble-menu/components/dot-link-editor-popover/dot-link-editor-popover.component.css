@@ -1,165 +1,105 @@
-.bubble-link-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    width: 18rem;
-    padding: 0.75rem;
-    background: #fff;
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    @apply flex flex-col gap-6 w-72 p-3 bg-white rounded-lg shadow-md;
 }
 
-.bubble-link-form ::ng-deep p-listbox {
-    width: 100%;
+:host ::ng-deep p-listbox {
+    @apply w-full;
 }
 
-.bubble-link-form ::ng-deep .p-listbox-items {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+:host ::ng-deep .p-listbox-items {
+    @apply flex flex-col gap-2;
 }
 
-.bubble-link-form ::ng-deep .p-listbox-item {
-    width: 100%;
-    height: 100%;
-    padding: 0.5rem;
+:host ::ng-deep .p-listbox-item {
+    @apply w-full h-full p-2;
 }
 
-.bubble-link-form ::ng-deep .p-listbox-item.p-highlight,
-.bubble-link-form ::ng-deep .p-listbox-item.p-focus,
-.bubble-link-form ::ng-deep .p-listbox-item:hover {
-    background-color: var(--gray-300);
+:host ::ng-deep .p-listbox-item.p-highlight,
+:host ::ng-deep .p-listbox-item.p-focus,
+:host ::ng-deep .p-listbox-item:hover {
+    @apply bg-gray-300;
 }
 
-.bubble-link-form ::ng-deep .p-listbox-empty-message {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 15.625rem;
-    padding: 2.5rem 0;
+:host ::ng-deep .p-listbox-empty-message {
+    @apply flex items-center justify-center min-h-[15.625rem] py-10;
 }
 
-.bubble-link-form .search-input {
-    height: 2rem;
+.search-input {
+    @apply h-8;
 }
 
-.bubble-link-form .loading-skeleton-container {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    overflow-y: auto;
+.loading-skeleton-container {
+    @apply flex flex-col gap-2 overflow-y-auto;
 }
 
 .current-link-view__header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    @apply flex items-center gap-2 mb-4;
 }
 
 .current-link-view__icon {
-    font-size: 1.5em;
+    @apply text-2xl;
 }
 
 .current-link-view__link {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 18.75rem;
-    display: inline-block;
+    @apply overflow-hidden text-ellipsis whitespace-nowrap max-w-[18.75rem] inline-block;
 }
 
 .current-link-view__checkbox-container {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
+    @apply flex items-center gap-3 mb-6;
 }
 
 .current-link-view__checkbox {
-    margin-right: 0.25rem;
+    @apply mr-1;
 }
 
 .current-link-view__actions {
-    display: flex;
-    gap: 0.75rem;
+    @apply flex gap-3;
 }
 
 .current-link-view__action-button {
-    width: 50%;
+    @apply w-1/2;
 }
 
 .listbox-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.25rem 0;
-    height: 100%;
-    width: 100%;
+    @apply flex items-center gap-3 py-1 h-full w-full;
 }
 
 .listbox-item__img {
-    width: 3rem;
-    height: 3rem;
-    object-fit: cover;
-    border-radius: 0.25rem;
-    background: var(--gray-200);
+    @apply w-12 h-12 object-cover rounded bg-gray-200;
 }
 
 .listbox-item__icon {
-    font-size: 2rem;
-    color: var(--gray-500);
-    width: 3rem;
-    text-align: center;
-    border-radius: 0.25rem;
-    border: 1px solid var(--gray-300);
+    @apply text-3xl text-gray-500 w-12 text-center rounded border border-gray-300;
 }
 
 .listbox-item__content {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
+    @apply flex flex-1 flex-col;
 }
 
 .listbox-item__title {
-    font-weight: 600;
-    color: #000;
+    @apply font-semibold text-black;
 }
 
 .listbox-item__url {
-    font-size: 0.75rem;
-    color: var(--gray-600);
-    word-break: break-all;
+    @apply text-xs text-gray-600 break-all;
 }
 
 .skeleton-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    @apply flex items-center gap-4;
 }
 
 .skeleton-lines {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    @apply flex-1 flex flex-col gap-2;
 }
 
 .empty-message {
-    text-align: center;
-    padding: 2.5rem 0;
-    font-size: 1rem;
-    word-break: break-word;
+    @apply text-center py-10 text-base break-words;
 }
 
 .empty-message kbd {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    font-family: monospace;
-    background-color: var(--gray-200);
-    border: 1px solid var(--gray-300);
-    border-radius: 0.25rem;
+    @apply inline-block px-2 py-1 text-xs font-mono bg-gray-200 border border-gray-300 rounded text-gray-700;
     box-shadow: 0 1px 0 var(--gray-400);
-    color: var(--gray-700);
 }

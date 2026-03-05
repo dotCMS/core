@@ -11,7 +11,7 @@
         <form
             (ngSubmit)="store.generateContent(form.value.textPrompt)"
             [formGroup]="form"
-            class="ai-content__form">
+            class="flex flex-col gap-4">
             @if (vm.status === ComponentStatus.LOADING) {
                 <p-skeleton width="100%" height="22rem" />
                 <p-skeleton class="flex justify-center" width="7rem" height="2rem" />
@@ -44,7 +44,7 @@
                 </div>
 
                 <div
-                    class="ai-content__pagination"
+                    class="flex justify-center gap-2 items-center"
                     [style]="{
                         display: generatedText.value ? 'flex' : 'none'
                     }">
@@ -82,7 +82,7 @@
                 formControlName="textPrompt"
                 pInputTextarea></textarea>
 
-            <div class="ai-content__buttons">
+            <div class="flex gap-2">
                 <p-button
                     (onClick)="closeDialog()"
                     [label]="'Cancel' | dm"

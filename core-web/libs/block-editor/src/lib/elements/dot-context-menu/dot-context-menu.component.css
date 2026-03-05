@@ -1,61 +1,53 @@
-::ng-deep .p-contextmenu {
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host ::ng-deep .p-contextmenu {
     min-width: 16rem;
     border: 1px solid var(--color-palette-black-op-10);
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    padding: 0.25rem;
-    background: #fff;
+    @apply rounded-lg shadow-md p-1 bg-white;
 }
 
-::ng-deep .p-contextmenu .p-menuitem-content {
+:host ::ng-deep .p-contextmenu .p-menuitem-content {
     margin: 0;
 }
 
-::ng-deep .p-contextmenu .p-separator {
-    margin: 0.25rem 0;
-    border-top: 1px solid var(--color-palette-black-op-10);
+:host ::ng-deep .p-contextmenu .p-separator {
+    @apply my-1 border-t border-[var(--color-palette-black-op-10)];
 }
 
-::ng-deep .p-contextmenu .p-menuitem-link {
-    padding: 0.75rem 0.75rem;
-    color: #000;
+:host ::ng-deep .p-contextmenu .p-menuitem-link {
+    @apply px-3 py-3 text-black rounded-md gap-4;
     transition: background-color 150ms ease;
-    border-radius: 0.375rem;
-    gap: 1rem;
 }
 
-::ng-deep .p-contextmenu .p-menuitem-link:hover {
+:host ::ng-deep .p-contextmenu .p-menuitem-link:hover {
     background-color: var(--color-palette-primary-100);
 }
 
-::ng-deep .p-contextmenu .p-menuitem-link:hover .menu-item-shortcut {
-    color: #000;
+:host ::ng-deep .p-contextmenu .p-menuitem-link:hover .menu-item-shortcut {
+    @apply text-black;
 }
 
-::ng-deep .p-contextmenu .p-menuitem-link:focus {
+:host ::ng-deep .p-contextmenu .p-menuitem-link:focus {
     outline: none;
     box-shadow: none;
 }
 
-::ng-deep .p-contextmenu ul {
+:host ::ng-deep .p-contextmenu ul {
     outline: none;
     margin: 0;
 }
 
-::ng-deep .p-contextmenu .p-disabled .p-menuitem-link {
-    background-color: var(--gray-200);
-    color: var(--gray-600);
+:host ::ng-deep .p-contextmenu .p-disabled .p-menuitem-link {
+    @apply bg-gray-200 text-gray-600;
     border-radius: unset;
 }
 
-::ng-deep .menu-item-label {
-    font-size: 0.875rem;
-    line-height: 1.2;
+:host ::ng-deep .menu-item-label {
+    @apply text-sm leading-tight;
 }
 
-::ng-deep .menu-item-shortcut {
-    font-size: 0.75rem;
+:host ::ng-deep .menu-item-shortcut {
+    @apply text-xs font-medium tracking-wide;
     color: var(--color-palette-black-op-20);
-    font-weight: 500;
-    letter-spacing: 0.5px;
 }

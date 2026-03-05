@@ -1,54 +1,30 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
 :host {
-    height: 100%;
-    width: 100%;
-    padding: 1rem;
-    gap: 1rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+    @apply flex justify-center items-center flex-col h-full w-full p-4 gap-4;
 }
 
 :host .error {
-    color: #d82b2e;
-    font-size: 1rem;
-    max-width: 100%;
-    white-space: pre-wrap;
+    @apply text-red-600 text-base max-w-full whitespace-pre-wrap;
 }
 
 :host .preview-container {
-    align-items: center;
-    display: flex;
-    flex-grow: 1;
-    justify-content: center;
-    overflow: hidden;
-    width: 100%;
-    flex-direction: column;
+    @apply flex flex-grow flex-col items-center justify-center overflow-hidden w-full;
 }
 
 :host .preview-container img {
-    height: 100%;
-    width: 100%;
-    object-fit: contain;
+    @apply h-full w-full object-contain;
 }
 
 :host .action-container {
-    display: flex;
-    height: fit-content;
-    justify-content: space-between;
-    width: 100%;
+    @apply flex h-fit justify-between w-full;
 }
 
 :host .loading-message {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
+    @apply flex justify-center items-center gap-4;
 }
 
 :host .warning {
-    display: block;
-    font-style: normal;
-    text-align: center;
-    color: #000;
+    @apply block not-italic text-center text-black;
 }

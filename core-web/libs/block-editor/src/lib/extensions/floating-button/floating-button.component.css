@@ -1,39 +1,37 @@
-::ng-deep .p-button-label {
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    @apply contents;
+}
+
+:host ::ng-deep .p-button-label {
     text-transform: unset;
 }
 
-::ng-deep .p-button {
-    display: inline-block;
+:host ::ng-deep .p-button {
+    @apply inline-block;
 }
 
-::ng-deep .p-button:enabled:hover,
-::ng-deep .p-button:enabled:active,
-::ng-deep .p-button:enabled:focus {
-    background: var(--color-palette-primary-500);
+:host ::ng-deep .p-button:enabled:hover,
+:host ::ng-deep .p-button:enabled:active,
+:host ::ng-deep .p-button:enabled:focus {
+    @apply bg-primary-500;
 }
 
-::ng-deep .p-button:disabled {
+:host ::ng-deep .p-button:disabled {
     background-color: rgb(0, 0, 0) !important;
-    color: #fff !important;
-    opacity: 1;
+    @apply text-white! opacity-100;
 }
 
-::ng-deep .p-button.completed {
-    background: var(--color-palette-primary-500) !important;
+:host ::ng-deep .p-button.completed {
+    @apply bg-primary-500!;
 }
 
 .alert {
-    background: #fff;
-    color: #d82b2e;
-    border: 1px solid #d82b2e;
-    border-radius: 0.125rem;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
+    @apply flex bg-white text-red-600 border border-red-600 rounded-sm p-2.5 items-center justify-center gap-1.5;
 }
 
 .alert a {
-    color: #d82b2e;
+    @apply text-red-600;
 }
