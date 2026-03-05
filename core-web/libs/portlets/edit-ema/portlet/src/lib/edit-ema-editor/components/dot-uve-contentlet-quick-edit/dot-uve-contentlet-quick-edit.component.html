@@ -103,7 +103,16 @@
         </div>
     </form>
 } @else {
-    <div class="flex align-items-center justify-content-center h-full w-full">
-        <p class="text-base m-0 text-color-secondary">Select a contentlet</p>
+    <div
+        class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div class="rounded-full p-6">
+            <i class="pi pi-file-edit text-[5rem]! text-gray-500"></i>
+        </div>
+        <div class="space-y-2">
+            <div class="font-bold text-gray-900">Select a contentlet</div>
+            <p class="m-0 text-sm text-gray-800">
+                Click on a content block in the editor to view and edit its properties.
+            </p>
+        </div>
     </div>
 }
