@@ -1,3 +1,11 @@
+/* =============================================================================
+   NOTE: This is a plain CSS partial imported at the global level, not an Angular
+   component stylesheet. Tailwind's @apply directive only works inside Angular
+   component CSS files (processed by the Angular build pipeline with @reference).
+   Plain CSS partials are not processed by Tailwind, so we use PrimeNG CSS custom
+   properties (--p-surface-*, --p-primary-*) directly instead.
+   ============================================================================= */
+
 tiptap-editor {
     display: block;
     height: 100%;
@@ -19,20 +27,20 @@ tiptap-editor ::ng-deep .ProseMirror {
 
 tiptap-editor ::ng-deep .ProseMirror .ProseMirror-selectednode.dot-image,
 tiptap-editor ::ng-deep .ProseMirror .ProseMirror-selectednode .dot-image {
-    outline: 2px solid var(--color-palette-primary-500);
+    outline: 2px solid var(--p-primary-500);
 }
 
 tiptap-editor ::ng-deep .ProseMirror .ProseMirror-selectednode.dot-image:hover,
 tiptap-editor ::ng-deep .ProseMirror .ProseMirror-selectednode .dot-image:hover {
-    outline: 2px solid var(--color-palette-primary-500);
+    outline: 2px solid var(--p-primary-500);
 }
 
 tiptap-editor ::ng-deep .ProseMirror .dot-image:hover {
-    outline: 2px solid var(--color-palette-primary-400);
+    outline: 2px solid var(--p-primary-400);
 }
 
 tiptap-editor ::ng-deep .ProseMirror .is-empty::before {
-    color: var(--gray-500);
+    color: var(--p-surface-500);
     content: attr(data-placeholder);
     float: left;
     position: absolute;
@@ -54,8 +62,8 @@ tiptap-editor ::ng-deep .ProseMirror .ai-loading {
     min-width: 100%;
     padding: 0.5rem;
     border-radius: 0.5rem;
-    border: 1px solid var(--gray-400);
-    color: var(--color-palette-primary-500);
+    border: 1px solid var(--p-surface-400);
+    color: var(--p-primary-500);
 }
 
 /* INLINED TABLE STYLES */
@@ -66,7 +74,7 @@ tiptap-editor ::ng-deep .ProseMirror table {
     margin: 1.5rem 0;
     table-layout: fixed;
     width: 100%;
-    border: 1px solid var(--gray-400);
+    border: 1px solid var(--p-surface-400);
     border-radius: 0.5rem;
     overflow: hidden;
     background: #fff;
@@ -75,8 +83,8 @@ tiptap-editor ::ng-deep .ProseMirror table {
 tiptap-editor ::ng-deep .ProseMirror table td,
 tiptap-editor ::ng-deep .ProseMirror table th {
     border: none;
-    border-right: 1px solid var(--gray-400);
-    border-bottom: 1px solid var(--gray-400);
+    border-right: 1px solid var(--p-surface-400);
+    border-bottom: 1px solid var(--p-surface-400);
     box-sizing: border-box;
     padding: 0.75rem 1.5rem;
     position: relative;
@@ -103,12 +111,12 @@ tiptap-editor ::ng-deep .ProseMirror table th p {
 }
 
 tiptap-editor ::ng-deep .ProseMirror table th {
-    background: var(--gray-200);
+    background: var(--p-surface-200);
     font-weight: 600;
     font-size: 0.75rem;
-    color: var(--gray-700);
+    color: var(--p-surface-700);
     text-align: left;
-    border-bottom: 1px solid var(--gray-400);
+    border-bottom: 1px solid var(--p-surface-400);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -119,22 +127,22 @@ tiptap-editor ::ng-deep .ProseMirror table tr:last-child td {
 }
 
 tiptap-editor ::ng-deep .ProseMirror table tr:hover td {
-    background: var(--gray-100);
+    background: var(--p-surface-100);
 }
 
 tiptap-editor ::ng-deep .ProseMirror table tr:hover th {
-    background: var(--gray-300);
+    background: var(--p-surface-300);
 }
 
 tiptap-editor ::ng-deep .ProseMirror table td:focus,
 tiptap-editor ::ng-deep .ProseMirror table th:focus {
     outline: none;
-    background: var(--color-palette-primary-op-10);
-    box-shadow: inset 0 0 0 2px var(--color-palette-primary-300);
+    background: color-mix(in srgb, var(--p-primary-500) 10%, transparent);
+    box-shadow: inset 0 0 0 2px var(--p-primary-300);
 }
 
 tiptap-editor ::ng-deep .ProseMirror table .selectedCell {
-    background: var(--color-palette-primary-op-20) !important;
+    background: color-mix(in srgb, var(--p-primary-500) 20%, transparent) !important;
     position: relative;
 }
 
@@ -145,7 +153,7 @@ tiptap-editor ::ng-deep .ProseMirror table .selectedCell::after {
     left: 0;
     right: 0;
     bottom: 0;
-    border: 1px solid var(--color-palette-primary-500);
+    border: 1px solid var(--p-primary-500);
     pointer-events: none;
     z-index: 1;
 }
@@ -162,7 +170,7 @@ tiptap-editor ::ng-deep .ProseMirror table .column-resize-handle {
 }
 
 tiptap-editor ::ng-deep .ProseMirror table .column-resize-handle:hover {
-    background: var(--color-palette-primary-300);
+    background: var(--p-primary-300);
 }
 
 tiptap-editor ::ng-deep .ProseMirror table .resize-cursor {
@@ -176,8 +184,8 @@ tiptap-editor ::ng-deep .ProseMirror table .dot-cell-arrow {
     right: 0.125rem;
     width: 1.5rem;
     height: 1.5rem;
-    background: var(--gray-100);
-    border: 1px solid var(--gray-500);
+    background: var(--p-surface-100);
+    border: 1px solid var(--p-surface-500);
     border-radius: 0.25rem;
     cursor: pointer;
     z-index: 15;
@@ -191,13 +199,13 @@ tiptap-editor ::ng-deep .ProseMirror table .dot-cell-arrow::before {
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 1.125rem;
-    color: var(--gray-600);
+    color: var(--p-surface-600);
     line-height: 1;
 }
 
 tiptap-editor ::ng-deep .ProseMirror table .dot-cell-arrow:hover {
-    background: var(--gray-200);
-    border-color: var(--gray-400);
+    background: var(--p-surface-200);
+    border-color: var(--p-surface-400);
 }
 
 tiptap-editor ::ng-deep .ProseMirror table .selectedCell .dot-cell-arrow,
@@ -217,7 +225,7 @@ tiptap-editor ::ng-deep .ProseMirror .grid-block {
 
 tiptap-editor ::ng-deep .ProseMirror .grid-block__column {
     padding: 1rem;
-    border: 1px dashed var(--gray-400);
+    border: 1px dashed var(--p-surface-400);
     border-radius: 0.5rem;
     min-height: 3rem;
 }
@@ -231,27 +239,27 @@ tiptap-editor ::ng-deep .ProseMirror .grid-block__column > *:last-child {
 }
 
 tiptap-editor ::ng-deep .ProseMirror .grid-block__column:focus-within {
-    border-color: var(--color-palette-primary-300);
-    background: var(--color-palette-primary-op-10);
+    border-color: var(--p-primary-300);
+    background: color-mix(in srgb, var(--p-primary-500) 10%, transparent);
 }
 
 tiptap-editor ::ng-deep .ProseMirror .ProseMirror-selectednode.grid-block {
-    outline: 2px solid var(--color-palette-primary-500);
+    outline: 2px solid var(--p-primary-500);
     border-radius: 0.5rem;
 }
 
 /* Disabled editor state */
 
 tiptap-editor.editor-disabled ::ng-deep .ProseMirror {
-    color: var(--gray-600);
-    background-color: var(--gray-100);
+    color: var(--p-surface-600);
+    background-color: var(--p-surface-100);
     cursor: not-allowed;
     user-select: none;
     pointer-events: none;
 }
 
 tiptap-editor.editor-disabled ::ng-deep .ProseMirror .is-empty::before {
-    color: var(--gray-400);
+    color: var(--p-surface-400);
 }
 
 tiptap-editor.editor-disabled ::ng-deep .ProseMirror .add-button {
