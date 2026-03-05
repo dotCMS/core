@@ -537,7 +537,8 @@ public interface MultiTreeAPI {
      * @return an {@link Optional} with the style properties map, or empty if none exist
      */
     Optional<Map<String, Object>> getStylePropertiesForContentlet(String pageId, String containerId,
-            String containerInstance, String personalization, String contentletId);
+            String containerInstance, String personalization, String contentletId)
+            throws DotDataException;
 
     /**
      * After layout changes, this method updates the UUID (relation_type field) of a set of pages in a

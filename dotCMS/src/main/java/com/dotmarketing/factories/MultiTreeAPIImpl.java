@@ -1654,23 +1654,31 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
+    /**
+     * Returns the style properties for a given Contentlet.
+     *
+     * @param pageId            The ID of the page to fetch the style properties from.
+     * @param containerId       The ID of the container to fetch the style properties from.
+     * @param containerInstance The instance of the container to fetch the style properties from.
+     * @param personalization   The personalization of the container to fetch the style properties
+     *                          from.
+     * @param contentletId      The ID of the contentlet to fetch the style properties from.
+     * @return The style properties for the given Contentlet.
+     * @throws DotDataException If there is an issue retrieving data from the DB.
+     */
+    @CloseDBIfOpened
     @Override
     public Optional<Map<String, Object>> getStylePropertiesForContentlet(
             final String pageId, final String containerId, String containerInstance,
-            final String personalization, final String contentletId) {
-        containerInstance = ContainerUUID.UUID_LEGACY_VALUE.equals(containerInstance)
-                ? ContainerUUID.UUID_START_VALUE : containerInstance;
-        final List<MultiTree> multiTrees = new ArrayList<>(
-                getMultiTrees(pageId, containerId, containerInstance, personalization));
-        if (ContainerUUID.UUID_START_VALUE.equals(containerInstance)) {
-            multiTrees.addAll(getMultiTrees(pageId, containerId,
-                    ContainerUUID.UUID_LEGACY_VALUE, personalization));
-        }
-        return multiTrees.stream()
-                .filter(mt -> contentletId.equals(mt.getContentlet()))
-                .map(MultiTree::getStyleProperties)
-                .filter(props -> UtilMethods.isSet(props) && !props.isEmpty())
-                .findFirst();
+            final String personalization, final String contentletId) throws DotDataException {
+
+        final DotConnect db = new DotConnect()
+                .setSQL(SELECT_SQL).addParam(pageId).addParam(containerId)
+                .addParam(contentletId).addParam(containerInstance)
+                .addParam(personalization).addParam(VariantAPI.DEFAULT_VARIANT.name());
+
+        final MultiTree multiTree = TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).findFirst();
+        return multiTree == null ? Optional.empty() : Optional.ofNullable(multiTree.getStyleProperties());
     }
 
     @VisibleForTesting

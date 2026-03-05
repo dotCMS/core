@@ -171,27 +171,34 @@ public class ContentTool implements ViewTool {
 	 * method fetches dotStyleProperties from the MultiTree and adds them to the contentlet's map.
 	 * This exposes $dotContentMap.dotStyleProperties in VTL for UVE style editor data.
 	 */
-	private void addStylePropertiesFromMultiTree(final Contentlet contentlet) {
-		if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR, true)) {
-			return;
-		}
-		final String pageId = (String) context.get("HTMLPAGE_IDENTIFIER");
-		final String containerId = (String) context.get("CONTAINER_IDENTIFIER");
-		final String containerInstance = (String) context.get("CONTAINER_UNIQUE_ID");
-		if (!UtilMethods.isSet(pageId) || !UtilMethods.isSet(containerId) || !UtilMethods.isSet(containerInstance)) {
-			return;
-		}
-		final String pTag = Try.of(() -> WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(req))
-				.getOrElse(MultiTree.DOT_PERSONALIZATION_DEFAULT);
-		final String contentletId = contentlet.getIdentifier();
-		try {
-			APILocator.getMultiTreeAPI().getStylePropertiesForContentlet(
-							pageId, containerId, containerInstance, pTag, contentletId)
-					.ifPresent(styleProperties ->
-							contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties));
-		} catch (Exception e) {
-			Logger.debug(ContentTool.class, "Could not load style properties for contentlet " + contentletId, e);
-		}
+    private void addStylePropertiesFromMultiTree(final Contentlet contentlet) {
+        if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR, true)) {
+            return;
+        }
+        final String pageId = (String) context.get("HTMLPAGE_IDENTIFIER");
+        final String containerId = (String) context.get("CONTAINER_IDENTIFIER");
+        final String containerInstance = (String) context.get("CONTAINER_UNIQUE_ID");
+
+        if (!UtilMethods.isSet(pageId) || !UtilMethods.isSet(containerId) || !UtilMethods.isSet(containerInstance)) {
+            return;
+        }
+
+        final String contentletId = contentlet.getIdentifier();
+        final String personalization = Try.of(() -> WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(req))
+                .getOrElse(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+
+        try {
+            final Optional<Map<String, Object>> stylePropertiesOpt = APILocator.getMultiTreeAPI()
+                    .getStylePropertiesForContentlet(pageId, containerId, containerInstance, personalization, contentletId);
+            if (stylePropertiesOpt.isPresent()) {
+                contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, stylePropertiesOpt.get());
+            } else {
+                contentlet.getMap().remove(Contentlet.STYLE_PROPERTIES_KEY);
+            }
+        } catch (Exception e) {
+            Logger.debug(ContentTool.class,
+                    "Could not load style properties for contentlet " + contentletId, e);
+        }
 	}
 	
 	/**
