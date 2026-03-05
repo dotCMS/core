@@ -1,0 +1,48 @@
+---
+name: branch
+description: Create a feature branch for a dotCMS issue and assign it to @me. Pass issue number and title, or omit to use values already in context. Skips creation if already on the correct branch.
+allowed-tools: Bash(git checkout:*), Bash(git pull:*), Bash(git branch:*), Bash(gh issue edit:*), Bash(bash .claude/skills/solve-issue/scripts/slugify.sh:*)
+---
+
+# Branch
+
+Input: `number`, `title` (from `/fetch-issue`), optional `existing_branch`.
+
+## Step 1 — Check current branch
+
+```bash
+git branch --show-current
+```
+
+If already on an `issue-<number>-*` branch → skip to Step 3.
+
+If `existing_branch` was set by `/fetch-issue` and user chose `reuse` → check it out:
+
+```bash
+git checkout <existing_branch>
+```
+
+Skip to Step 3.
+
+## Step 2 — Create branch
+
+```bash
+git checkout main && git pull origin main
+BRANCH=$(bash .claude/skills/solve-issue/scripts/slugify.sh <number> "<title>")
+git checkout -b "$BRANCH"
+git branch --show-current
+```
+
+## Step 3 — Assign issue
+
+```bash
+gh issue edit <number> --repo dotCMS/core --add-assignee @me
+```
+
+## Output
+
+```
+✅ Branch: <branch-name>
+```
+
+Return `branch_name` for use by downstream steps.

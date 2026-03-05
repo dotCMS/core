@@ -1,255 +1,115 @@
 ---
 name: solve-issue
-description: Automates the full development cycle from a GitHub Issue number for the dotCMS/core repository. Orchestrates AC refinement, implementation, review, QA, and PR creation. Use when the user asks to solve, fix, implement, or work on a GitHub issue by number (e.g. "solve issue 34353", "work on #34353", "implement issue 34353"). Do NOT use for non-GitHub tasks, general coding questions, or issues from repositories other than dotCMS/core.
-allowed-tools: Bash(gh:*), Bash(git:*), Bash(yarn:*), Bash(bash .claude/skills/solve-issue/scripts/slugify.sh:*), Bash(cd:*), Bash(node:*), Bash(npm pack:*), Read, Glob, Grep, Edit, Write, Agent
+description: Automates the full development cycle from a GitHub Issue number for the dotCMS/core repository. Orchestrates preflight → fetch-issue → refine-acs → branch → implement → build-verify → review → qa → create-pr. Use when the user asks to solve, fix, implement, or work on a GitHub issue by number (e.g. "solve issue 34353", "work on #34353", "implement issue 34353"). Do NOT use for non-GitHub tasks, general coding questions, or issues from repositories other than dotCMS/core.
+allowed-tools: Read, Bash(gh:*), Bash(git:*), Bash(yarn:*), Bash(bash .claude/skills/solve-issue/scripts/slugify.sh:*), Bash(cd:*), Bash(node:*), Bash(npm pack:*), Glob, Grep, Edit, Write, Agent
 ---
 
 # Solve Issue
 
-You are the solve-issue orchestrator. Execute these steps in order.
+Orchestrator for the full issue-to-PR pipeline. Each step is a focused skill — read and execute it in order.
 
-Arguments: `$ARGUMENTS` — extract the issue number and optional flags.
+Arguments: `$ARGUMENTS` — extract issue number and flags.
+
+**Flags:**
+- `--review` → skip to Step 7 (review existing implementation)
+- `--qa` → skip to Step 8 (run QA on existing implementation)
+
+---
+
+## Pipeline
 
 ```
-Issue → pre-flight → resolve → fetch → existing work → AC refinement → branch → implement → tests → review → PR
+preflight → fetch-issue → refine-acs → branch → implement → build-verify → review → qa → create-pr
 ```
 
 ---
 
-## Step 1 — Pre-flight
+## Step 1 — Preflight
 
-```bash
-gh --version && gh auth status
-gh repo view --json nameWithOwner --jq '.nameWithOwner'
-git status --porcelain
-```
+Read and execute `.claude/skills/preflight/SKILL.md`.
 
-Stop if: repo is not `dotCMS/core` · working tree is dirty.
+Stop if any check fails.
 
 ---
 
-## Step 2 — Resolve issue number
+## Step 2 — Fetch issue
 
-Parse `$ARGUMENTS` for a number. If `--review` flag is present, jump to Step 9.
+Read and execute `.claude/skills/fetch-issue/SKILL.md`.
 
-If no number found, check current branch:
+Pass `$ARGUMENTS` as the issue number source.
 
-```bash
-git branch --show-current
-```
-
-Extract issue number using these patterns in order (stop at first match):
-
-| Priority | Pattern | Example |
-|---|---|---|
-| 1 | `issue-(\d+)` | `issue-34823-feature` → `34823` |
-| 2 | Branch starts with digits | `34823-feature` → `34823` |
-| 3 | Digits after `/` or `-` | `feat/34823-something` → `34823` |
-
-If still no number: ask the user — "Which issue are you working on?"
+Carry forward: `number`, `title`, `body`, `labels`, `url`, `existing_branch`.
 
 ---
 
-## Step 3 — Fetch the issue
+## Step 3 — Refine ACs
 
-```bash
-gh issue view <number> --repo dotCMS/core --json number,title,body,labels,assignees,url
-```
+Read and execute `.claude/skills/refine-acs/SKILL.md`.
 
-Save `title`, `body`, `labels` — carried through all steps.
+Pass: `number`, `title`, `body`, `labels`.
 
----
-
-## Step 4 — Check for existing work
-
-```bash
-gh pr list --repo dotCMS/core --search "issue-<number>" --state open --json number,title,url
-git branch -a | grep "issue-<number>"
-```
-
-- **Open PR found** → show URL, ask: `resume / create new branch / cancel`
-- **Local branch found** → ask: `reuse / create new branch`
+Carry forward: `confirmed_acs`, `coder_brief`.
 
 ---
 
-## Step 5 — AC Refinement
+## Step 4 — Branch
 
-**Do not proceed to Step 6 until `confirmed_acs` is approved.**
+Read and execute `.claude/skills/branch/SKILL.md`.
 
-Execute the process from `references/issue-refinement.md` directly (do NOT delegate to a sub-agent — the flow uses `AskUserQuestion` which requires the orchestrator).
+Pass: `number`, `title`, `existing_branch`.
 
-Input: issue `title`, `body`, `labels` from Step 3.
-
-### Fast path (well-defined issue)
-
-Run the Decompose and Ambiguity Scan phases. If **no CRITICAL or MAJOR ambiguities** are found, write ACs directly, score them, show to user and ask: `"Proceed with these ACs? (yes / edit)"`. No clarification loop needed.
-
-### Slow path (vague issue)
-
-If CRITICAL or MAJOR ambiguities are found, enter the full clarification loop: ask questions via `AskUserQuestion` with concrete options → re-analyze → loop until resolved or max 3 rounds. Then write ACs with clarity score.
-
-**Loop control:** max 3 rounds · minimum clarity score 80/100. If score < 80 on loop 3, flag gaps as `⚠ UNRESOLVED` and proceed.
-
-- `yes` → save as `confirmed_acs`
-- `edit` → accept inline edits, save as `confirmed_acs`
+Carry forward: `branch_name`.
 
 ---
 
-## Step 6 — Branch + assign
+## Step 5 — Implement
 
-```bash
-gh issue edit <number> --repo dotCMS/core --add-assignee @me
-git checkout main && git pull origin main
-BRANCH=$(bash .claude/skills/solve-issue/scripts/slugify.sh <number> "<title>")
-git checkout -b "$BRANCH"
-git branch --show-current
-```
+Read and execute `.claude/skills/implement/SKILL.md`.
 
-If already on an `issue-<number>-*` branch (from Step 4 reuse), skip branch creation.
+Pass: `confirmed_acs`, `coder_brief`, `number`.
+
+Carry forward: changed file list.
 
 ---
 
-## Step 7 — Implement
+## Step 6 — Build & Verify
 
-### 7a. Present implementation plan
+Read and execute `.claude/skills/build-verify/SKILL.md`.
 
-Show a plan derived from `confirmed_acs` — which files to create or modify and why, mapped per AC.
+Pass: changed file list, `confirmed_acs`.
 
-Ask: `"Approve plan? (yes / no / edit)"`
-
-### 7b. Load relevant docs
-
-Read `core-web/CLAUDE.md` first (always), then the specific docs for this change. See `references/docs-map.md`.
-
-### 7c. Baseline test check
-
-```bash
-cd core-web && yarn nx test <project>
-```
-
-If baseline fails, warn: `"⚠️ Pre-existing failure — not caused by your changes."` and continue.
-
-### 7d. Implement
-
-Write code guided by `confirmed_acs`. Verify each AC is addressed.
-
-- Standalone components, `@if`/`@for`, signals, `inject()`, OnPush
-- No hardcoded secrets · no `console.log` left in production code
+Stop on unfixable lint errors.
 
 ---
 
-## Step 8 — Tests + Quality
+## Step 7 — Review  ← entry point for `--review`
 
-### 8a. Write tests
+Run `/review` on the changed files.
 
-Derive test cases directly from `confirmed_acs` — one test per AC at minimum. Use `references/test-plan-prompt.md` as a format guide for Given/When/Then structure.
+If any 🔴 Critical or 🟡 Important findings:
+1. Apply fixes
+2. Re-run Step 6
+3. Reply and resolve review comments (see review skill for format)
 
-```bash
-cd core-web && yarn nx test <project>
-```
-
-### 8b. Format and lint
-
-```bash
-cd core-web && yarn nx lint <project> --fix && yarn nx format:write
-```
-
-Stop on unfixable errors and show them to the user.
+Proceed only when all critical/important findings are resolved.
 
 ---
 
-## Step 9 — Review
+## Step 8 — QA  ← entry point for `--qa`
 
-Run `/review` on the changed files. The review skill uses the same specialized agents (`dotcms-file-classifier` → `dotcms-typescript-reviewer`, `dotcms-angular-reviewer`, `dotcms-test-reviewer`, `dotcms-scss-html-style-reviewer`).
+Read and execute `.claude/skills/qa/SKILL.md`.
 
-If the review found any 🔴 Critical or 🟡 Important issues:
+Pass: `confirmed_acs`, `coder_brief`, changed file list.
 
-1. **Apply the fixes** — implement the changes required to address the findings.
-2. **Re-run tests** — `yarn nx test <project>` to confirm nothing is broken.
-3. **Reply and resolve review comments** — for each finding that was addressed:
-   - Post a reply explaining what was done (or why a change was declined). Keep it concise.
-   - Always end the reply with the signature `— 🤖 Claude` so the human reviewer knows who responded.
-   - After replying, resolve the thread via the GitHub API.
-
-Only proceed once all critical/important findings are resolved.
-
-> If this is a `--review` entry point (Step 2 jump), start here with the current branch's changes and proceed to PR.
+Carry forward: `qa_summary`.
 
 ---
 
-## Step 10 — PR + Quality loop
+## Step 9 — Create PR
 
-### 10a. Commit
+Read and execute `.claude/skills/create-pr/SKILL.md`.
 
-```bash
-git add <changed-files>
-git commit --no-verify -m "<type>(<scope>): <description>
-
-Closes #<number>"
-```
-
-Types: `feat` · `fix` · `chore` · `test` · `refactor` · `docs` · `style`
-
-### 10b. Push
-
-```bash
-git push -u origin "$BRANCH"
-```
-
-### 10c. Create draft PR
-
-```bash
-gh pr create --draft \
-  --title "<type>(<scope>): <description>" \
-  --body "$(cat <<'EOF'
-## Proposed Changes
-- <bullet list>
-
-## Acceptance Criteria
-- [ ] AC1: <description>
-- [ ] AC2: <description>
-
-## Test Coverage
-<N> test cases covering <N> ACs.
-
-## Review Summary
-<summary from Step 9>
-
-## Checklist
-- [x] Tests added/updated per ACs
-- [ ] Translations required
-- [ ] Security implications considered
-
-## Assumptions Made
-<from AC refinement — or "None">
-
-Closes #<number>
-EOF
-)"
-```
-
-### 10d. Quality loop
-
-```
-REPEAT:
-  1. Run /review <pr-number>
-  2. Fix Critical 🔴 or Important 🟡 issues → commit → push → repeat
-  3. Exit when only Quality 🔵 or none remain
-```
-
-### 10e. Mark ready
-
-```bash
-gh pr ready <pr-number>
-```
-
-### 10f. Move issue to "In Review"
-
-After PR is marked ready, move the linked issue on the project board to **"In Review"** using the GraphQL commands in `references/commands.md` (section "Project Board").
-
-If the issue is not on any project board, skip this step and note it to the user.
-
-Report: `"✅ PR #<pr-number> ready: <url> · Branch: $BRANCH · Closes #<number>"`
+Pass: `number`, `branch_name`, `confirmed_acs`, `coder_brief`, review summary, `qa_summary`.
 
 ---
 
@@ -257,22 +117,12 @@ Report: `"✅ PR #<pr-number> ready: <url> · Branch: $BRANCH · Closes #<number
 
 | Situation | Action |
 |---|---|
-| `gh auth status` fails | Stop: `"Run gh auth login first."` |
-| Dirty working tree | Stop: `"Commit or stash changes before starting."` |
-| Issue not found | `"Issue #<number> not found in dotCMS/core. Verify the number and try again."` |
-| AC refinement loop ≥ 3 rounds | Write ACs with best info, flag gaps as `⚠ UNRESOLVED`, proceed |
-| Baseline tests fail | Warn, continue (pre-existing failure) |
-| No frontend files changed | `"No frontend changes detected."` |
+| Preflight fails | Stop with message from preflight skill |
+| Issue not found | Stop: `"Issue #<number> not found in dotCMS/core."` |
+| AC refinement loop ≥ 3 rounds | Flag gaps as `⚠ UNRESOLVED`, proceed |
+| Baseline tests fail | Warn (pre-existing), continue |
 | Lint errors not auto-fixable | Stop, show errors |
+| QA fails | Fix implementation, re-run QA before proceeding |
 | PR creation fails | Show error, suggest manual `gh pr create` |
-| Issue not on a project board | Skip "In Review" move, note it to the user |
-| `read:project` scope missing | Prompt user: `gh auth refresh -s project` then retry |
-
----
-
-## Skill Metadata
-
-- **Scope**: Frontend (`core-web/` — Angular, TypeScript, SCSS)
-- **Steps**: 10 — Pre-flight → Resolve → Fetch → Existing work → AC Refinement → Branch → Implement → Tests → Review → PR
-- **Agents used**: `/review` skill
-- **Related skills**: `/review` (PR-only review)
+| Issue not on project board | Skip board move, note to user |
+| `read:project` scope missing | `gh auth refresh -s project` then retry |
