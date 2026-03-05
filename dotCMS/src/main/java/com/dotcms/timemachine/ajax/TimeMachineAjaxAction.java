@@ -1,7 +1,7 @@
 package com.dotcms.timemachine.ajax;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;

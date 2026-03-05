@@ -4,7 +4,7 @@ import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
 import static com.dotcms.content.index.opensearch.ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;

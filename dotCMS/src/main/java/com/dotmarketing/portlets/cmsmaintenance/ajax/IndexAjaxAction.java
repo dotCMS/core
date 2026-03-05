@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
-import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;

@@ -1,6 +1,7 @@
 package com.dotcms.content.index.domain;
 
 import com.dotcms.annotations.Nullable;
+import com.dotcms.content.index.IndexAPI;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -9,7 +10,7 @@ import org.immutables.value.Value;
  * Vendor-neutral immutable representation of statistics for a single cluster node.
  *
  * <p>Replaces {@code com.dotcms.content.elasticsearch.business.NodeStats} in the
- * public {@link com.dotcms.content.elasticsearch.business.IndexAPI} contract.</p>
+ * public {@link IndexAPI} contract.</p>
  *
  * @author Fabrizio Araya
  */

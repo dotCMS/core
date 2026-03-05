@@ -6,6 +6,7 @@ import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;

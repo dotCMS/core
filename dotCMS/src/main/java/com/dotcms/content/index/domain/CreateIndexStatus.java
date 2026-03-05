@@ -1,5 +1,6 @@
 package com.dotcms.content.index.domain;
 
+import com.dotcms.content.index.IndexAPI;
 import org.immutables.value.Value;
 
 /**
@@ -7,7 +8,7 @@ import org.immutables.value.Value;
  *
  * <p>Replaces {@code org.elasticsearch.client.indices.CreateIndexResponse} and
  * {@code org.opensearch.client.opensearch.indices.CreateIndexResponse} in the
- * public {@link com.dotcms.content.elasticsearch.business.IndexAPI} contract.</p>
+ * public {@link IndexAPI} contract.</p>
  *
  * <p>Usage:</p>
  * <pre>

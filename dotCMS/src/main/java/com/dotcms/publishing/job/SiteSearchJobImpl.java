@@ -1,6 +1,6 @@
 package com.dotcms.publishing.job;
 
-import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.enterprise.LicenseUtil;
@@ -14,7 +14,6 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.PublisherAPI;
-import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;

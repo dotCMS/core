@@ -1,6 +1,6 @@
 package com.dotcms.content.elasticsearch.util;
 
-import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map;
@@ -11,7 +11,6 @@ import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import io.vavr.control.Try;
 
 public class ESReindexationProcessStatus implements Serializable {
     private static final ContentletIndexAPIImpl indexAPI = new ContentletIndexAPIImpl();

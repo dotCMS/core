@@ -9,7 +9,7 @@
 
 package com.dotcms.enterprise.publishing.sitesearch;
 
-import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;

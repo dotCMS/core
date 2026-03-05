@@ -4,7 +4,7 @@
 <%@page import="com.dotcms.content.index.domain.ClusterIndexHealth"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.IndexAPI"%>
+<%@page import="com.dotcms.content.index.IndexAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.Map"%>

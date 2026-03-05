@@ -1,5 +1,6 @@
 package com.dotcms.content.index.domain;
 
+import com.dotcms.content.index.IndexAPI;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -8,7 +9,7 @@ import org.immutables.value.Value;
  * Vendor-neutral immutable representation of the health state of a single index within a cluster.
  *
  * <p>Replaces {@code org.elasticsearch.cluster.health.ClusterIndexHealth} in the
- * public {@link com.dotcms.content.elasticsearch.business.IndexAPI} contract.</p>
+ * public {@link IndexAPI} contract.</p>
  *
  * @author Fabrizio Araya
  */

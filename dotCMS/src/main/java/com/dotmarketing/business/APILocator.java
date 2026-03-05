@@ -33,7 +33,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;

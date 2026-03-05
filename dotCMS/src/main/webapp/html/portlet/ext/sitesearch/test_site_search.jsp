@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.content.elasticsearch.business.IndexAPI"%>
+<%@page import="com.dotcms.content.index.IndexAPI"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotmarketing.business.APILocator"%>

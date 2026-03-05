@@ -1,6 +1,6 @@
 package com.dotmarketing.common.reindex;
 
-import com.dotcms.content.elasticsearch.business.IndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map;
