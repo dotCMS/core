@@ -4,7 +4,7 @@
       {
         "label": "🛠️ - Build Core",
         "type": "shell",
-        "command": "just build-core-only",
+        "command": "just build",
         "group": {
           "kind": "build",
           "isDefault": true
@@ -62,7 +62,7 @@
       {
         "label": "🚀 - Build + Run",
         "type": "shell",
-        "command": "just build-core-only && ./mvnw package -pl :dotcms-core -DskipTests docker:build && ${workspaceFolder}/.vscode/toggle-docker.sh ${input:runMode} ${input:dockerPort}",
+        "command": "just build && ./mvnw package -pl :dotcms-core -DskipTests docker:build && ${workspaceFolder}/.vscode/toggle-docker.sh ${input:runMode} ${input:dockerPort}",
         "problemMatcher": [],
         "isBackground": true,
         "presentation": {
