@@ -12,6 +12,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -195,9 +196,11 @@ public class ContentTool implements ViewTool {
             } else {
                 contentlet.getMap().remove(Contentlet.STYLE_PROPERTIES_KEY);
             }
-        } catch (Exception e) {
-            Logger.debug(ContentTool.class,
-                    "Could not load style properties for contentlet " + contentletId, e);
+        } catch (DotDataException e) {
+            throw new DoesNotExistException(
+                    String.format(
+                            "Contentlet: %s not found for page=%s, container=%s, uuid=%s, personalization=%s.",
+                            contentletId, pageId, containerId, containerInstance, personalization));
         }
 	}
 	
