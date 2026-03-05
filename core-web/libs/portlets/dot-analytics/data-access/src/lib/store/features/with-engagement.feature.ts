@@ -15,6 +15,7 @@ import { GlobalStore } from '@dotcms/store';
 import { FiltersState } from './with-filters.feature';
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
+import { Granularity } from '../../types';
 import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
     createInitialRequestState,
@@ -121,14 +122,14 @@ export function withEngagement() {
                                     .fromCube('EngagementDaily')
                                     .siteId(currentSiteId)
                                     .measures(ENGAGEMENT_DAILY_MEASURES)
-                                    .timeRange('day', dateRange)
+                                    .timeRange(Granularity.DAY, dateRange)
                                     .build();
 
                                 const previousQuery = createCubeQuery()
                                     .fromCube('EngagementDaily')
                                     .siteId(currentSiteId)
                                     .measures(ENGAGEMENT_DAILY_MEASURES)
-                                    .timeRange('day', previousRange)
+                                    .timeRange(Granularity.DAY, previousRange)
                                     .build();
 
                                 return forkJoin({
@@ -199,7 +200,7 @@ export function withEngagement() {
                                     .fromCube('EngagementDaily')
                                     .siteId(currentSiteId)
                                     .measures(['totalSessions', 'engagedSessions'])
-                                    .timeRange('day', dateRange)
+                                    .timeRange(Granularity.DAY, dateRange)
                                     .build();
 
                                 return analyticsService
@@ -278,7 +279,7 @@ export function withEngagement() {
                                         ...ENGAGEMENT_TREND_MEASURES,
                                         ...ENGAGEMENT_SPARKLINE_MEASURES
                                     ])
-                                    .timeRange('day', dateRange, 'day')
+                                    .timeRange(Granularity.DAY, dateRange, Granularity.DAY)
                                     .build();
 
                                 const previousQuery = createCubeQuery()
@@ -288,7 +289,7 @@ export function withEngagement() {
                                         ...ENGAGEMENT_TREND_MEASURES,
                                         ...ENGAGEMENT_SPARKLINE_MEASURES
                                     ])
-                                    .timeRange('day', previousRange, 'day')
+                                    .timeRange(Granularity.DAY, previousRange, Granularity.DAY)
                                     .build();
 
                                 return forkJoin({
@@ -365,7 +366,7 @@ export function withEngagement() {
                                     .siteId(currentSiteId)
                                     .measures(SESSIONS_BY_MEASURES)
                                     .dimensions(SESSIONS_BY_DEVICE_DIMENSIONS)
-                                    .timeRange('day', dateRange)
+                                    .timeRange(Granularity.DAY, dateRange)
                                     .build();
 
                                 const browserQuery = createCubeQuery()
@@ -373,7 +374,7 @@ export function withEngagement() {
                                     .siteId(currentSiteId)
                                     .measures(SESSIONS_BY_MEASURES)
                                     .dimensions(SESSIONS_BY_BROWSER_DIMENSIONS)
-                                    .timeRange('day', dateRange)
+                                    .timeRange(Granularity.DAY, dateRange)
                                     .build();
 
                                 return forkJoin({

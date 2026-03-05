@@ -35,7 +35,7 @@ export type SortDirection = (typeof SortDirection)[keyof typeof SortDirection];
  * Granularity options for time-based queries.
  * Using const assertion for granularity management.
  */
-const Granularity = {
+export const Granularity = {
     HOUR: 'hour',
     DAY: 'day',
     WEEK: 'week',

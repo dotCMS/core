@@ -615,7 +615,8 @@ export const fillMissingDates = <T extends TimelineEntity>(
         } else {
             filledData.push(createEmptyEntity(currentDate, currentDateKey));
         }
-        currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
+        currentDate =
+            granularity === Granularity.HOUR ? addHours(currentDate, 1) : addDays(currentDate, 1);
     }
 
     return filledData;

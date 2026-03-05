@@ -20,6 +20,7 @@ import {
 } from './analytics-data.utils';
 
 import { AnalyticsChartColors } from '../../constants';
+import { Granularity } from '../../types';
 
 import type {
     PageViewDeviceBrowsersEntity,
@@ -864,7 +865,7 @@ describe('Analytics Data Utils', () => {
                 const result = fillMissingDates(
                     null as unknown as PageViewTimeLineEntity[],
                     ['2024-01-01', '2024-01-03'],
-                    'day',
+                    Granularity.DAY,
                     createEmptyAnalyticsEntity
                 );
 
@@ -875,7 +876,7 @@ describe('Analytics Data Utils', () => {
                 const result = fillMissingDates(
                     {} as unknown as PageViewTimeLineEntity[],
                     ['2024-01-01', '2024-01-03'],
-                    'day',
+                    Granularity.DAY,
                     createEmptyAnalyticsEntity
                 );
 
@@ -886,7 +887,7 @@ describe('Analytics Data Utils', () => {
                 const result = fillMissingDates<PageViewTimeLineEntity>(
                     [],
                     ['2024-01-01', '2024-01-03'],
-                    'day',
+                    Granularity.DAY,
                     createEmptyAnalyticsEntity
                 );
 
@@ -901,7 +902,7 @@ describe('Analytics Data Utils', () => {
                 const result = fillMissingDates<PageViewTimeLineEntity>(
                     [],
                     ['2024-01-01', '2024-01-05'],
-                    'day',
+                    Granularity.DAY,
                     createEmptyAnalyticsEntity
                 );
 
@@ -925,7 +926,7 @@ describe('Analytics Data Utils', () => {
                 const result = fillMissingDates(
                     [],
                     ['2024-01-01', '2024-01-02'],
-                    'day',
+                    Granularity.DAY,
                     customFactory
                 );
 
@@ -939,7 +940,7 @@ describe('Analytics Data Utils', () => {
                 const result = fillMissingDates(
                     [],
                     ['2024-01-01', '2024-01-02'],
-                    'day',
+                    Granularity.DAY,
                     createEmptyTrafficVsConversionsEntity
                 );
 
