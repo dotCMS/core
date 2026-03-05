@@ -15,7 +15,7 @@ function snapToGrid(ratio: number): number[] {
  * Finds the ProseMirror document position for a `.grid-block` DOM element.
  */
 function findGridBlockPos(view: EditorView, gridEl: HTMLElement): number | null {
-    const firstCol = gridEl.querySelector('.grid-block__column');
+    const firstCol = gridEl.querySelector(':scope > .grid-block__column');
 
     if (!firstCol) {
         return null;
@@ -104,7 +104,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
         gridEl: HTMLElement,
         container: HTMLDivElement
     ) {
-        const firstCol = gridEl.querySelector('.grid-block__column') as HTMLElement;
+        const firstCol = gridEl.querySelector(':scope > .grid-block__column') as HTMLElement;
 
         if (!firstCol) {
             return;
@@ -114,7 +114,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
         const gridRect = gridEl.getBoundingClientRect();
         const colRect = firstCol.getBoundingClientRect();
 
-        const secondCol = gridEl.querySelectorAll('.grid-block__column')[1] as HTMLElement;
+        const secondCol = gridEl.querySelectorAll(':scope > .grid-block__column')[1] as HTMLElement;
         let centerX: number;
 
         if (secondCol) {
@@ -170,7 +170,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
                 return;
             }
 
-            const firstCol = gridEl.querySelector('.grid-block__column') as HTMLElement;
+            const firstCol = gridEl.querySelector(':scope > .grid-block__column') as HTMLElement;
 
             if (!firstCol) {
                 return;
