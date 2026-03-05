@@ -108,14 +108,14 @@ public class ESIndexAPI implements IndexAPI {
 	public static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
 			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
-	final private ContentletIndexAPI iapi;
+	final private Lazy<ContentletIndexAPI> iapi;
 	final private ESIndexHelper esIndexHelper;
 
 	final private Lazy<String> clusterPrefix;
 
     @VisibleForTesting
     ESIndexAPI(Lazy<String> clusterPrefix) {
-        this.iapi = new ContentletIndexAPIImpl();
+        this.iapi = Lazy.of(ContentletIndexAPIImpl::new);
         this.esIndexHelper = ESIndexHelper.getInstance();
         this.clusterPrefix = clusterPrefix;
     }
@@ -798,8 +798,8 @@ public class ESIndexAPI implements IndexAPI {
     }
 
     public Status getIndexStatus(String indexName) throws DotDataException {
-    	List<String> currentIdx = iapi.getCurrentIndex();
-		List<String> newIdx =iapi.getNewIndex();
+    	List<String> currentIdx = iapi.get().getCurrentIndex();
+		List<String> newIdx =iapi.get().getNewIndex();
 
 		boolean active =currentIdx.contains(getNameWithClusterIDPrefix(indexName));
 		boolean building =newIdx.contains(getNameWithClusterIDPrefix(indexName));
