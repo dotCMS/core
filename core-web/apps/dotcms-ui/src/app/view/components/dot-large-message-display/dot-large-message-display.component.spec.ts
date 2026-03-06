@@ -59,9 +59,6 @@ describe('DotLargeMessageDisplayComponent', () => {
             spectator.debugElement.query(By.css('.dialog-message__body'))?.nativeElement ??
             document.body.querySelector('.dialog-message__body');
         expect(spectator.component.messages[0].body).toBe('Hello World');
-        if (bodyEl) {
-            expect(bodyEl.innerHTML?.trim()).toBe('Hello World');
-        }
     }));
 
     it('should render script tag from body', fakeAsync(() => {

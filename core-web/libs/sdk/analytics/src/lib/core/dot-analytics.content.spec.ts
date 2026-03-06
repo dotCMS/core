@@ -57,26 +57,13 @@ describe('initializeContentAnalytics', () => {
         track: jest.fn()
     };
 
-    const mockWindow = {
-        addEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-        __dotAnalyticsCleanup: null as unknown,
-        document: {
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn()
-        }
-    };
-
-    let originalWindow: typeof global.window;
-    let savedWindowProps: {
-        addEventListener: typeof global.window.addEventListener;
-        dispatchEvent: typeof global.window.dispatchEvent;
-        document: typeof global.window.document;
-        __dotAnalyticsCleanup: unknown;
-    } | null = null;
+    let originalWindow: any;
 
     beforeEach(() => {
         jest.clearAllMocks();
+
+        // Save original window
+        originalWindow = global.window;
 
         // Mock getUVEState (not in editor by default)
         (getUVEState as jest.Mock).mockReturnValue(undefined);
@@ -88,48 +75,30 @@ describe('initializeContentAnalytics', () => {
         mockDotAnalyticsIdentityPlugin.mockReturnValue({} as any);
         mockDotAnalyticsImpressionPlugin.mockReturnValue({} as any);
 
-        const g = global as any;
-        const descriptor = Object.getOwnPropertyDescriptor(global, 'window');
-        if (descriptor?.configurable) {
-            originalWindow = g.window;
-            Object.defineProperty(global, 'window', {
-                value: { ...mockWindow },
-                writable: true,
-                configurable: true
-            });
-            savedWindowProps = null;
-        } else {
-            // window is non-configurable (e.g. jsdom): mutate in place
-            originalWindow = g.window;
-            if (originalWindow) {
-                savedWindowProps = {
-                    addEventListener: originalWindow.addEventListener,
-                    dispatchEvent: originalWindow.dispatchEvent,
-                    document: originalWindow.document,
-                    __dotAnalyticsCleanup: originalWindow.__dotAnalyticsCleanup
-                };
-                originalWindow.addEventListener = mockWindow.addEventListener;
-                originalWindow.dispatchEvent = mockWindow.dispatchEvent;
-                originalWindow.__dotAnalyticsCleanup = mockWindow.__dotAnalyticsCleanup;
-                originalWindow.document = mockWindow.document;
-            }
-        }
+        // Mock global window
+        Object.defineProperty(global, 'window', {
+            value: {
+                addEventListener: jest.fn(),
+                dispatchEvent: jest.fn(),
+                __dotAnalyticsCleanup: null,
+                document: {
+                    addEventListener: jest.fn(),
+                    removeEventListener: jest.fn()
+                }
+            },
+            writable: true,
+            configurable: true
+        });
     });
 
     afterEach(() => {
-        const g = global as any;
-        const descriptor = Object.getOwnPropertyDescriptor(global, 'window');
-        if (descriptor?.configurable && originalWindow !== undefined) {
+        // Restore original window
+        if (originalWindow) {
             Object.defineProperty(global, 'window', {
                 value: originalWindow,
                 writable: true,
                 configurable: true
             });
-        } else if (savedWindowProps && g.window) {
-            g.window.addEventListener = savedWindowProps.addEventListener;
-            g.window.dispatchEvent = savedWindowProps.dispatchEvent;
-            g.window.document = savedWindowProps.document;
-            g.window.__dotAnalyticsCleanup = savedWindowProps.__dotAnalyticsCleanup;
         }
     });
 
@@ -153,20 +122,13 @@ describe('initializeContentAnalytics', () => {
     it('should setup window event listeners for cleanup', () => {
         const mockAddEventListener = jest.fn();
         const mockDispatchEvent = jest.fn();
-        const descriptor = Object.getOwnPropertyDescriptor(global, 'window');
-        if (descriptor?.configurable) {
-            Object.defineProperty(global, 'window', {
-                value: {
-                    addEventListener: mockAddEventListener,
-                    dispatchEvent: mockDispatchEvent
-                },
-                writable: true,
-                configurable: true
-            });
-        } else {
-            (global.window as any).addEventListener = mockAddEventListener;
-            (global.window as any).dispatchEvent = mockDispatchEvent;
-        }
+        Object.defineProperty(global, 'window', {
+            value: {
+                addEventListener: mockAddEventListener,
+                dispatchEvent: mockDispatchEvent
+            },
+            writable: true
+        });
 
         initializeContentAnalytics(mockConfig);
 
@@ -393,11 +355,6 @@ describe('initializeContentAnalytics', () => {
 
     describe('when window is not available (SSR)', () => {
         it('should work without window object', () => {
-            const descriptor = Object.getOwnPropertyDescriptor(global, 'window');
-            if (!descriptor?.configurable) {
-                // Cannot delete window when non-configurable (e.g. jsdom); skip assertion
-                return;
-            }
             delete (global as any).window;
 
             const analytics = initializeContentAnalytics(mockConfig);
