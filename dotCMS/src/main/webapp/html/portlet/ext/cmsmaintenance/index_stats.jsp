@@ -1,10 +1,10 @@
 <%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
+<%@page import="com.dotcms.content.index.domain.ClusterIndexHealth"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
+<%@page import="com.dotcms.content.index.IndexAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.Map"%>
@@ -13,13 +13,13 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="org.apache.commons.lang.StringUtils"%>
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
-<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
+<%@ page import="com.dotcms.content.index.domain.IndexStats" %>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
 ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
 ContentletAPI capi = APILocator.getContentletAPI();
-ESIndexAPI esapi = APILocator.getESIndexAPI();
+IndexAPI esapi = APILocator.getESIndexAPI();
 try {
 	user = com.liferay.portal.util.PortalUtil.getUser(request);
 	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
@@ -131,13 +131,13 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<td><%=UtilMethods.webifyString(myDate) %></td>
 
 					<td align="center">
-						<%=status !=null ? status.getDocumentCount() : "n/a"%>
+						<%=status !=null ? status.documentCount() : "n/a"%>
 					</td>
-					<td align="center"><%=(health !=null) ? health.getNumberOfShards() : "n/a"%></td>
-					<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
-					<td align="center"><%=status !=null ? status.getSize(): "n/a"%></td>
+					<td align="center"><%=(health !=null) ? health.numberOfShards() : "n/a"%></td>
+					<td align="center"><%=(health !=null) ? health.numberOfReplicas(): "n/a"%></td>
+					<td align="center"><%=status !=null ? status.size(): "n/a"%></td>
 					<td align="center">
-					          <div onclick="showIndexClusterStatus('<%=x%>')"  style='cursor:pointer;background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'>
+					          <div onclick="showIndexClusterStatus('<%=x%>')"  style='cursor:pointer;background:<%=(health !=null) ? health.status().toString(): "n/a"%>; width:20px;height:20px;'>
 					          </div>
 					</td>
 				</tr>

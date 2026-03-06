@@ -21,6 +21,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.KeyValueField;
@@ -165,7 +166,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	private FileMetadataAPI fileMetadataAPI;
 	private HostAPI hostAPI;
 	private FieldAPI fieldAPI;
-	private ESIndexAPI esIndexAPI;
+	private IndexAPI esIndexAPI;
 	private RelationshipAPI relationshipAPI;
 	private TagAPI tagAPI;
 	private CategoryAPI categoryAPI;
@@ -186,7 +187,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			final FileMetadataAPI fileMetadataAPI,
 			final HostAPI hostAPI,
 			final FieldAPI fieldAPI,
-			final ESIndexAPI esIndexAPI,
+			final IndexAPI esIndexAPI,
 			final RelationshipAPI relationshipAPI,
 			final TagAPI tagAPI,
 			final CategoryAPI categoryAPI,

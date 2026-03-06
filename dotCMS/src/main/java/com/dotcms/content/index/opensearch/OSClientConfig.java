@@ -1,7 +1,6 @@
 package com.dotcms.content.index.opensearch;
 
-import com.dotcms.content.index.opensearch.ImmutableOpenSearchClientConfig;
-import com.dotcms.content.index.opensearch.ImmutableOpenSearchClientConfig.Builder;
+import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import com.dotmarketing.util.UtilMethods;
 import org.immutables.value.Value;
 
@@ -14,7 +13,7 @@ import java.util.Optional;
  * Provides a simple and flexible way to configure OpenSearch client settings.
  */
 @Value.Immutable
-public abstract class OpenSearchClientConfig {
+public abstract class OSClientConfig {
 
     /**
      * List of OpenSearch endpoints (e.g., "https://localhost:9200")
@@ -103,7 +102,7 @@ public abstract class OpenSearchClientConfig {
      * Create a new builder instance
      */
     public static Builder builder() {
-        return ImmutableOpenSearchClientConfig.builder();
+        return ImmutableOSClientConfig.builder();
     }
 
     /**
