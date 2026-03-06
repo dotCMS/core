@@ -80,11 +80,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render exactly 3 metric cards', () => {
-            // p-tabs renders all panels in DOM, so we need to check only active panel
-            const activePanels = spectator.queryAll('p-tabpanel');
-            const firstPanel = activePanels[0];
-            const metricCards = firstPanel?.querySelectorAll(
+        it('should render exactly 3 metric cards in pageview report', () => {
+            const pageviewReport = spectator.query('dot-analytics-pageview-report');
+            const metricCards = pageviewReport?.querySelectorAll(
                 '[data-testid="analytics-metric-card"]'
             );
             expect(metricCards?.length).toBe(3);
