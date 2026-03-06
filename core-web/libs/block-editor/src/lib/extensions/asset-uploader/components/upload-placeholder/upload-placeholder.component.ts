@@ -7,7 +7,7 @@ import { DotSpinnerComponent } from '@dotcms/ui';
 @Component({
     selector: 'dot-upload-placeholder',
     templateUrl: './upload-placeholder.component.html',
-    styleUrls: ['./upload-placeholder.component.scss'],
+    styleUrls: ['./upload-placeholder.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [Button, DotSpinnerComponent]
 })

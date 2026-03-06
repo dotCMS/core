@@ -1,10 +1,8 @@
-@use "variables" as *;
-
 :host {
     align-items: center;
     flex-direction: column;
     display: flex;
     justify-content: center;
-    padding: 1 * $dot-editor-size;
-    height: 15 * $dot-editor-size;
+    padding: 16px;
+    height: 240px;
 }

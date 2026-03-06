@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tailwindcss-primeui';
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
 
 /* Global styles that need ::ng-deep */
 ::ng-deep body:has(.ui-draggable-dragging) {
