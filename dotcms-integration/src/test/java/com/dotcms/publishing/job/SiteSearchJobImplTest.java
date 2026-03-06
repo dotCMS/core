@@ -2,7 +2,7 @@ package com.dotcms.publishing.job;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -72,7 +72,7 @@ import static org.awaitility.Awaitility.await;
 @RunWith(DataProviderRunner.class)
 public class SiteSearchJobImplTest extends IntegrationTestBase {
 
-    static ESIndexAPI esIndexAPI;
+    static IndexAPI esIndexAPI;
     static long defaultLang;
     static SiteSearchAPI siteSearchAPI;
     static SiteSearchAuditAPI siteSearchAuditAPI;

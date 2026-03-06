@@ -231,7 +231,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
 
     private getLanguage(fileExtension: string) {
         // Global Object Defined by Monaco Editor
-        return monaco.languages
+        return window.monaco.languages
             .getLanguages()
             .find((language) => language.extensions?.includes(`.${fileExtension}`));
     }

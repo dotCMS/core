@@ -21,7 +21,7 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule, Button } from 'primeng/button';
+import { Button, ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -493,9 +493,9 @@ describe('DotEditContentBinaryFieldComponent', () => {
             expect(spySetMode).toHaveBeenCalledWith(BinaryFieldMode.EDITOR);
         });
 
-        it('should open dialog with url component component when click on url button', async () => {
+        it('should open dialog with url component when click on url button', async () => {
             const spySetMode = jest.spyOn(store, 'setMode');
-            const urlBtn = spectator.query(byTestId('action-url-btn')) as HTMLButtonElement;
+            const urlBtn = spectator.query<HTMLButtonElement>(byTestId('action-url-btn'));
             urlBtn.click();
 
             spectator.detectChanges();
