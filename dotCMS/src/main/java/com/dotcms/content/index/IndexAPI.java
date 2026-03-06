@@ -5,6 +5,7 @@ import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import com.dotcms.content.index.domain.IndexStats;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import java.io.IOException;
@@ -34,6 +35,7 @@ import java.util.Set;
  * @see com.dotcms.content.index.domain.ClusterStats
  * @see com.dotcms.content.index.domain.IndexStats
  */
+@IndexLibraryIndependent
 public interface IndexAPI {
 
     /**
