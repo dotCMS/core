@@ -43,6 +43,15 @@ export const CustomLaraPreset = definePreset(Lara, {
                 borderRadius: '0',
                 padding: '0.5rem 1rem'
             }
+        },
+        confirmpopup: {
+            // Hide the arrow (pseudo-elements) on p-confirmpopup; no token for visibility in the preset.
+            css: `
+                .p-confirmpopup:before,
+                .p-confirmpopup:after {
+                    display: none !important;
+                }
+            `
         }
     }
 });

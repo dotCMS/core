@@ -18,7 +18,8 @@
 
         <p
             class="text-sm text-gray-500"
-            [ngClass]="{ 'p-invalid': isError, success: !isError }"
+            [class.text-red-400]="isError"
+            [class.text-green-400]="!isError"
             [innerHTML]="message"
             data-testId="message"></p>
 

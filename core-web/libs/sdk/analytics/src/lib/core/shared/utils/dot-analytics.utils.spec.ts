@@ -1044,7 +1044,7 @@ describe('Analytics Utils', () => {
                     }
                 },
                 properties: {
-                    language_id: 'en-US',
+                    locale_id: 'en-US',
                     persona: 'default',
                     url: 'https://example.com/page',
                     title: 'Test Page',
@@ -1071,8 +1071,7 @@ describe('Analytics Utils', () => {
                     doc_host: 'example.com',
                     doc_path: '/page',
                     title: 'Test Page',
-                    language_id: undefined,
-                    persona: undefined
+                    locale_id: 'es-es'
                 },
                 local_time: expect.stringMatching(
                     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/
@@ -1081,7 +1080,7 @@ describe('Analytics Utils', () => {
                     source: 'google'
                 },
                 custom: {
-                    language_id: 'en-US',
+                    locale_id: 'en-US',
                     persona: 'default',
                     utm: {
                         source: 'google'
@@ -1117,7 +1116,7 @@ describe('Analytics Utils', () => {
                     }
                 },
                 properties: {
-                    language_id: 'en-US',
+                    locale_id: 'en-US',
                     persona: 'default',
                     title: 'Test Page',
                     width: 1024,
@@ -1129,6 +1128,7 @@ describe('Analytics Utils', () => {
 
             expect(result).not.toHaveProperty('utm');
             expect(result.context.device).toBeDefined();
+            expect(result.page.locale_id).toBe('es-es');
         });
     });
 });

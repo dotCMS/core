@@ -75,6 +75,8 @@ describe('DotTemplateNewComponent', () => {
             {
                 header: 'Create a template',
                 width: '37rem',
+                closable: true,
+                draggable: false,
                 contentStyle: { padding: '0px' },
                 data: {
                     options: {
