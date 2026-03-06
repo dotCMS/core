@@ -1,6 +1,6 @@
 import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
 
-import { DotContentDrivePagination, DotContentDriveSortOrder } from './models';
+import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
 export const HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY = 'content-drive-hide-message-banner';
 
@@ -18,6 +18,7 @@ export const BASE_QUERY = '+systemType:false -contentType:forms -contentType:Hos
 // Default pagination
 export const DEFAULT_PAGINATION: DotContentDrivePagination = {
     limit: 20,
+    page: 1,
     offset: 0
 };
 
@@ -37,6 +38,14 @@ export const DEFAULT_TREE_EXPANDED = true;
 
 // Default path, it needs to be undefined to show the root folder
 export const DEFAULT_PATH = undefined;
+
+export const DEFAULT_PAGE: DotContentDrivePage = {
+    hasMoreContent: true,
+    hasMoreFolders: true,
+    folderCursor: 0,
+    contentCursor: 0,
+    offset: 0
+};
 
 // Map numbers to base types, ticket: https://github.com/dotCMS/core/issues/32991
 export const MAP_NUMBERS_TO_BASE_TYPES = {
