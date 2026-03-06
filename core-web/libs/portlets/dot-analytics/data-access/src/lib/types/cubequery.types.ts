@@ -86,7 +86,7 @@ const DimensionField = {
     TOP_ATTRIBUTED_CONTENT: 'topAttributedContent',
     DEVICE_CATEGORY: 'deviceCategory',
     BROWSER_FAMILY: 'browserFamily',
-    LANGUAGE_ID: 'languageId'
+    LOCALE_ID: 'localeId'
 } as const;
 
 export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField];

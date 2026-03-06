@@ -93,9 +93,13 @@ describe('Filters Utils', () => {
         it('should handle null params', () => {
             const params: Params = null as unknown as Params;
 
-            const result = paramsToTimeRange(params);
+            expect(paramsToTimeRange(params)).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
 
-            expect(result).toBe(TIME_RANGE_OPTIONS.last7days);
+        it('should fall back to last7days when time_range is yesterday', () => {
+            const params: Params = { time_range: TIME_RANGE_OPTIONS.yesterday };
+
+            expect(paramsToTimeRange(params)).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
     });

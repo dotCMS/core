@@ -149,6 +149,7 @@ export class DotAnalyticsFiltersComponent {
         if (!customDateRange?.length || customDateRange.length === 1) {
             return;
         }
+    }
 
         const from = customDateRange[0];
         const to = customDateRange[1];
@@ -164,7 +165,9 @@ export class DotAnalyticsFiltersComponent {
             return;
         }
 
-        this.changeFilters.emit([fromDate, toDate]);
+        if (!range || range.length !== 2) {
+            this.$rangeStart.set(null);
+        }
     }
 
     /** Clears the custom date range selection and resets the range-start tracker */

@@ -15,6 +15,12 @@ export function isValidTab(tab: string): tab is DashboardTab {
     return Object.values(DASHBOARD_TABS).includes(tab as DashboardTab);
 }
 
+/** Time range values that are no longer supported as URL params */
+const EXCLUDED_TIME_RANGE_PARAMS: string[] = [
+    TIME_RANGE_OPTIONS.today,
+    TIME_RANGE_OPTIONS.yesterday
+];
+
 /**
  * Converts URL query params to TimeRangeInput.
  *

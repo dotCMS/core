@@ -239,7 +239,11 @@ describe('DotAnalyticsFiltersComponent', () => {
             spectator.component.$customDateRange.set([new Date('2024-01-01T00:00:00')]);
             spectator.component.onChangeCustomDateRange();
 
-            expect(changeFiltersSpy).not.toHaveBeenCalled();
+            spectator.component.onDateSelect(startDate);
+            spectator.component.$customDateRange.set([startDate, endDate]);
+            spectator.component.onDateSelect(endDate);
+
+            expect(changeFiltersSpy).toHaveBeenCalledWith(['2024-01-01', '2024-01-07']);
         });
 
         it('should not emit when date order is reversed', () => {
