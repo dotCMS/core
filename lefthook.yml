@@ -17,7 +17,8 @@ pre-commit:
       run: |
         cd core-web
         files=$(printf '%s\n' {staged_files} | sed 's|^core-web/||' | paste -sd, -)
-        [ -n "$files" ] && mise exec -- yarn nx affected -t lint --exclude='tag:skip:lint' --fix --files="$files"
+        # NX_DAEMON=false avoids daemon race condition when commands run in parallel
+        [ -n "$files" ] && NX_DAEMON=false mise exec -- yarn nx affected -t lint --exclude='tag:skip:lint' --fix --files="$files"
 
     frontend-format:
       glob: "core-web/**/*.{ts,js,tsx,jsx,json,html,css,scss}"
@@ -25,7 +26,8 @@ pre-commit:
       run: |
         cd core-web
         files=$(printf '%s\n' {staged_files} | sed 's|^core-web/||' | paste -sd, -)
-        [ -n "$files" ] && mise exec -- yarn nx format:write --files="$files"
+        # NX_DAEMON=false avoids daemon race condition when commands run in parallel
+        [ -n "$files" ] && NX_DAEMON=false mise exec -- yarn nx format:write --files="$files"
 
     yarn-lock-sync:
       glob: "core-web/{package.json,.nvmrc}"
