@@ -291,6 +291,7 @@ export class DotEditContentBinaryFieldComponent
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
