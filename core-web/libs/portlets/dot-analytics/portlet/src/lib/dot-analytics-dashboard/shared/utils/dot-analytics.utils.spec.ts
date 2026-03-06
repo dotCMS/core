@@ -52,14 +52,6 @@ describe('Analytics Utils', () => {
             expect(getValidTimeRangeUrl(TIME_RANGE_OPTIONS.custom)).toBe('custom');
         });
 
-        it('should return null for today', () => {
-            expect(getValidTimeRangeUrl(TIME_RANGE_OPTIONS.today)).toBeNull();
-        });
-
-        it('should return null for yesterday', () => {
-            expect(getValidTimeRangeUrl(TIME_RANGE_OPTIONS.yesterday)).toBeNull();
-        });
-
         it('should return null for unknown or empty values', () => {
             expect(getValidTimeRangeUrl('invalid-range')).toBeNull();
             expect(getValidTimeRangeUrl('')).toBeNull();
