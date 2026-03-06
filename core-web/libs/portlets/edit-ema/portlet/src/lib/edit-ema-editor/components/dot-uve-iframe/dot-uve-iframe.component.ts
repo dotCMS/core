@@ -17,14 +17,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { filter } from 'rxjs/operators';
 
-import {
-    DotMessageService,
-    DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
-} from '@dotcms/data-access';
+import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SafeUrlPipe } from '@dotcms/ui';
-
-import { IFRAME_HEIGHT_REPORTER_SCRIPT } from './iframe-height-reporter.script';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
@@ -101,7 +95,6 @@ export class DotUveIframeComponent {
     @Output() iframeDocHeightChange = new EventEmitter<number>();
 
     protected readonly uveStore = inject(UVEStore);
-    private readonly dotMessageService = inject(DotMessageService);
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly inlineEditingService = inject(InlineEditService);
@@ -185,7 +178,7 @@ export class DotUveIframeComponent {
         }
 
         const doc = iframeElement.contentDocument;
-        const newDoc = this.injectCodeToVTL(pageRender);
+        const newDoc = this.addEditorPageScript(pageRender);
 
         if (!doc) {
             return;
@@ -199,22 +192,12 @@ export class DotUveIframeComponent {
     }
 
     /**
-     * Injects the editor script and custom styles into the rendered HTML.
-     * @param {string} rendered - Raw rendered HTML.
-     * @returns {string} HTML with script and styles injected.
-     */
-    private injectCodeToVTL(rendered: string): string {
-        const fileWithScript = this.addEditorPageScript(rendered);
-        return this.addCustomStyles(fileWithScript);
-    }
-
-    /**
      * Appends the UVE editor SDK script before the closing body tag.
      * @param {string} [rendered=''] - HTML string to modify.
      * @returns {string} HTML with the editor script injected.
      */
     private addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>${IFRAME_HEIGHT_REPORTER_SCRIPT}`;
+        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
         const bodyExists = rendered.includes('</body>');
 
         if (!bodyExists) {
@@ -222,43 +205,6 @@ export class DotUveIframeComponent {
         }
 
         return rendered.replace('</body>', scriptString + '</body>');
-    }
-
-    /**
-     * Injects custom styles for empty containers and contentlets before the closing head tag.
-     * @param {string} [rendered=''] - HTML string to modify.
-     * @returns {string} HTML with custom styles injected.
-     */
-    private addCustomStyles(rendered = ''): string {
-        const styles = `<style>
-        [data-dot-object="container"]:empty {
-            width: 100%;
-            background-color: #ECF0FD;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #030E32;
-            height: 10rem;
-        }
-
-        [data-dot-object="contentlet"].empty-contentlet {
-            min-height: 4rem;
-            width: 100%;
-        }
-
-        [data-dot-object="container"]:empty::after {
-            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
-        }
-        </style>
-        `;
-
-        const headExists = rendered.includes('</head>');
-
-        if (!headExists) {
-            return rendered + styles;
-        }
-
-        return rendered.replace('</head>', styles + '</head>');
     }
 
     /**

@@ -5,11 +5,7 @@ import { of } from 'rxjs';
 
 import { signal } from '@angular/core';
 
-import {
-    DotMessageService,
-    DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService
-} from '@dotcms/data-access';
+import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SeoMetaTagsResult, SeoMetaTags } from '@dotcms/dotcms-models';
 
 import { DotUveIframeComponent } from './dot-uve-iframe.component';
@@ -48,14 +44,6 @@ describe('DotUveIframeComponent', () => {
     const createComponent = createComponentFactory({
         component: DotUveIframeComponent,
         providers: [
-            MockProvider(DotMessageService, {
-                get: (key: string) => {
-                    const messages: Record<string, string> = {
-                        'editpage.container.is.empty': 'Container is empty'
-                    };
-                    return messages[key] || key;
-                }
-            }),
             MockProvider(DotSeoMetaTagsService, {
                 getMetaTagsResults: jest.fn().mockReturnValue(of(mockSeoResults))
             }),
@@ -311,30 +299,6 @@ describe('DotUveIframeComponent', () => {
             // So script should appear after </head>
             expect(writtenContent.indexOf(SDK_EDITOR_SCRIPT_SOURCE)).toBeGreaterThan(
                 writtenContent.indexOf('</head>')
-            );
-        });
-
-        it('should inject custom styles before closing head tag', () => {
-            const htmlWithHead = '<html><head></head><body>Content</body></html>';
-            (component as any).insertPageContent(htmlWithHead, false);
-
-            const writtenContent = writeSpy.mock.calls[0][0];
-            expect(writtenContent).toContain('<style>');
-            expect(writtenContent).toContain('Container is empty');
-            expect(writtenContent).toContain('</head>');
-        });
-
-        it('should inject custom styles at end if no head tag exists', () => {
-            const htmlWithoutHead = '<html><body>Content</body></html>';
-            writeSpy.mockClear();
-            (component as any).insertPageContent(htmlWithoutHead, false);
-
-            const writtenContent = writeSpy.mock.calls[0][0];
-            expect(writtenContent).toContain('<style>');
-            // Script is added before </body>, styles are added at the end after </html>
-            // So styles should appear after </html>
-            expect(writtenContent.indexOf('<style>')).toBeGreaterThan(
-                writtenContent.indexOf('</html>')
             );
         });
     });

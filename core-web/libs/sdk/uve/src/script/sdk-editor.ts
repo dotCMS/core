@@ -2,8 +2,10 @@ import { UVE_MODE } from '@dotcms/types';
 
 import {
     addClassToEmptyContentlets,
+    injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
+    reportIframeHeight,
     scrollHandler,
     setClientIsReady
 } from './utils';
@@ -36,4 +38,6 @@ if (uveState?.mode === UVE_MODE.EDIT) {
     addClassToEmptyContentlets();
     setClientIsReady();
     listenBlockEditorInlineEvent();
+    reportIframeHeight();
+    injectEmptyStateStyles();
 }

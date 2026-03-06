@@ -1,4 +1,13 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    output,
+    signal,
+    untracked
+} from '@angular/core';
 import {
     AbstractControl,
     FormBuilder,
@@ -100,6 +109,17 @@ export class DotUveContentletQuickEditComponent {
             }
 
             this.buildForm(fields, contentlet);
+        });
+
+        effect(() => {
+            const isLoading = this.loading();
+            const form = untracked(() => this.$contentletForm());
+
+            if (isLoading) {
+                form?.disable({ emitEvent: false });
+            } else {
+                form?.enable({ emitEvent: false });
+            }
         });
     }
 
