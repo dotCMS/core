@@ -479,17 +479,18 @@ public class TagResource {
         }
         targetSiteId = targetHost.getIdentifier();
 
-        // 5. Check for duplicate if name or site is changing
+        // 5. Check for duplicate against the resolved physical host — same host the update will use
+        final String effectiveSiteId = tagAPI.resolveTagStorage(targetSiteId, existingTag.getHostId());
         if (!existingTag.getTagName().equals(tagForm.getName()) ||
-                !existingTag.getHostId().equals(targetSiteId)) {
+                !existingTag.getHostId().equals(effectiveSiteId)) {
 
             final Tag duplicateCheck = Try.of(() ->
-                    tagAPI.getTagByNameAndHost(tagForm.getName(), targetSiteId)).getOrNull();
+                    tagAPI.getTagByNameAndHost(tagForm.getName(), effectiveSiteId)).getOrNull();
 
             if (duplicateCheck != null && !duplicateCheck.getTagId().equals(existingTag.getTagId())) {
                 throw new BadRequestException(
                     String.format("Tag '%s' already exists for site '%s'",
-                        tagForm.getName(), targetSiteId)
+                        tagForm.getName(), effectiveSiteId)
                 );
             }
         }

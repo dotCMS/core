@@ -357,22 +357,24 @@ public class TagAPIImpl implements TagAPI {
         updateTag(tagId, tagName, false, Host.SYSTEM_HOST);
     }
 
+    @Override
+    public String resolveTagStorage(final String siteId, final String currentHostId)
+            throws DotDataException, DotSecurityException {
+        // Skip resolution when siteId is already the physical host (no-op PUT from UI).
+        if (siteId.equals(currentHostId) || Host.SYSTEM_HOST.equals(siteId)) {
+            return siteId;
+        }
+        final Host host = APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
+        final Object tagStorage = (host != null) ? host.getMap().get("tagStorage") : null;
+        return UtilMethods.isSet(tagStorage) ? tagStorage.toString() : siteId;
+    }
+
     @WrapInTransaction
     @Override
     public void updateTag(final String tagId, final String tagName, final String siteId)
             throws DotDataException, DotSecurityException {
         final Tag existing = getTagByTagId(tagId);
-        // Resolve conceptual site to physical storage host, mirroring saveTag.
-        // Skip resolution when siteId is already the physical host (no-op PUT from UI).
-        final String resolvedHostId;
-        if (siteId.equals(existing.getHostId()) || Host.SYSTEM_HOST.equals(siteId)) {
-            resolvedHostId = siteId;
-        } else {
-            final Host host = APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
-            final Object tagStorage = (host != null) ? host.getMap().get("tagStorage") : null;
-            resolvedHostId = UtilMethods.isSet(tagStorage) ? tagStorage.toString() : siteId;
-        }
-        updateTag(tagId, tagName, true, resolvedHostId);
+        updateTag(tagId, tagName, true, resolveTagStorage(siteId, existing.getHostId()));
     }
 
     @WrapInTransaction
