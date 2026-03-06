@@ -11,12 +11,13 @@ import {
     ChangeDetectorRef,
     Component,
     computed,
-    effect,
+    EventEmitter,
     HostListener,
     inject,
-    input,
+    Input,
+    OnChanges,
     OnInit,
-    output,
+    Output,
     signal,
     ViewChild
 } from '@angular/core';
@@ -55,17 +56,16 @@ const DEFAULT_FILE_TYPE = 'text';
         DotFieldValidationMessageComponent
     ],
     templateUrl: './dot-binary-field-editor.component.html',
+    styleUrls: ['./dot-binary-field-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldEditorComponent implements OnInit {
-    $fileName = input<string>('', { alias: 'fileName' });
-    $fileContent = input<string>('', { alias: 'fileContent' });
-    $allowFileNameEdit = input<boolean>(true, { alias: 'allowFileNameEdit' });
-    $userMonacoOptions = input<MonacoEditorConstructionOptions>({}, { alias: 'userMonacoOptions' });
+export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
+    @Input() fileName = '';
+    @Input() fileContent = '';
+    @Input() allowFileNameEdit = true;
 
-    $tempFileUploaded = output<DotCMSTempFile>();
-    $cancel = output<void>();
-
+    @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
+    @Output() readonly cancel = new EventEmitter<void>();
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
     readonly form = new FormGroup({
         name: new FormControl('', [Validators.required]),
@@ -93,6 +93,11 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         };
     });
 
+    @Input()
+    set userMonacoOptions(customMonacoOptions: MonacoEditorConstructionOptions) {
+        this._userMonacoOptions.set(customMonacoOptions);
+    }
+
     get name(): FormControl {
         return this.form.get('name') as FormControl;
     }
@@ -110,30 +115,13 @@ export class DotBinaryFieldEditorComponent implements OnInit {
      */
     @HostListener('document:keydown.escape', ['$event']) onEscape(event) {
         // TODO: The 'emit' function requires a mandatory void argument
-        this.$cancel.emit();
+        this.cancel.emit();
         event.preventDefault();
         event.stopPropagation();
     }
 
-    constructor() {
-        // Effects must be called in constructor (injection context)
-        effect(() => {
-            this._userMonacoOptions.set(this.$userMonacoOptions() ?? {});
-        });
-
-        effect(() => {
-            this.setFormValues();
-            const fileName = this.$fileName();
-            if (window.monaco) {
-                this.setEditorLanguage(fileName);
-            }
-        });
-    }
-
     ngOnInit(): void {
-        // Initialize form values with initial input values
         this.setFormValues();
-
         this.name.valueChanges
             .pipe(debounceTime(350))
             .subscribe((name) => this.setEditorLanguage(name));
@@ -143,11 +131,17 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         );
     }
 
+    ngOnChanges(): void {
+        this.setFormValues();
+        if (window.monaco) {
+            this.setEditorLanguage(this.fileName);
+        }
+    }
+
     onEditorInit() {
         this.editor = this.editorRef.editor;
-        const fileName = this.$fileName();
-        if (fileName) {
-            this.setEditorLanguage(fileName);
+        if (this.fileName) {
+            this.setEditorLanguage(this.fileName);
         }
 
         window.monaco.languages.register({
@@ -173,8 +167,8 @@ export class DotBinaryFieldEditorComponent implements OnInit {
     }
 
     private setFormValues(): void {
-        this.name.setValue(this.$fileName());
-        this.content.setValue(this.$fileContent());
+        this.name.setValue(this.fileName);
+        this.content.setValue(this.fileContent);
     }
 
     private markControlInvalid(control: FormControl): void {
@@ -188,7 +182,7 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         this.disableEditor();
         obs$.subscribe((tempFile) => {
             this.enableEditor();
-            this.$tempFileUploaded.emit({
+            this.tempFileUploaded.emit({
                 ...tempFile,
                 content: this.content.value
             });
