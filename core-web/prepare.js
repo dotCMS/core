@@ -26,7 +26,8 @@ if (!isCi) {
     // These detect whether the current worktree uses lefthook (new) or husky (old).
     // LEFTHOOK_NO_AUTO_INSTALL=1 prevents lefthook from overwriting these hooks
     // with its own generated versions when `lefthook run` is called.
-    const gitCmd = (name) => ({ 'pre-commit': 'commit', 'pre-push': 'push', 'post-merge': 'merge' }[name] || name);
+    const gitCmd = (name) =>
+        ({ 'pre-commit': 'commit', 'pre-push': 'push', 'post-merge': 'merge' })[name] || name;
     const hookScript = (hookName) => `#!/bin/sh
 # Smart hook dispatcher — works across old (husky) and new (lefthook) branches.
 # Written by core-web/prepare.js on yarn install.
