@@ -39,6 +39,26 @@ pre-commit:
         mise exec -- yarn install
 
 
+# --- Post-merge: catch formatting issues from merges/cherry-picks that skip pre-commit ---
+post-merge:
+  commands:
+    frontend-format-check:
+      glob: "core-web/**/*.{ts,js,tsx,jsx,json,html,css,scss}"
+      run: |
+        cd core-web
+        # Find frontend files changed by the merge (comparing HEAD to pre-merge)
+        files=$(git diff --name-only HEAD@{1} HEAD -- '*.ts' '*.js' '*.tsx' '*.jsx' '*.json' '*.html' '*.css' '*.scss' 2>/dev/null \
+          | grep '^core-web/' | sed 's|^core-web/||' | paste -sd, -)
+        [ -z "$files" ] && exit 0
+        echo "Checking formatting on merged files..."
+        NX_DAEMON=false mise exec -- yarn nx format:write --files="$files"
+        # If format:write changed anything, tell the user
+        if ! git diff --quiet -- . 2>/dev/null; then
+          echo ""
+          echo "Formatting fixes applied to merged files."
+          echo "Review and commit: git add -u core-web && git commit -m 'style: format merged files'"
+        fi
+
 # --- Pre-push: heavier checks that would slow down commits ---
 pre-push:
   commands:
@@ -208,6 +228,23 @@ pre-push:
         fi
 
         echo "OpenAPI spec is up to date"
+
+    frontend-format-verify:
+      run: |
+        cd core-web
+        # Safety net: verify formatting on all pushed frontend files.
+        # Catches anything that bypassed pre-commit (merges, cherry-picks, --no-verify).
+        files=$(git diff --name-only "$(git merge-base HEAD origin/main)" HEAD -- 'core-web/**/*.ts' 'core-web/**/*.js' 'core-web/**/*.tsx' 'core-web/**/*.jsx' 'core-web/**/*.json' 'core-web/**/*.html' 'core-web/**/*.css' 'core-web/**/*.scss' 2>/dev/null \
+          | sed 's|^core-web/||' | paste -sd, -)
+        [ -z "$files" ] && exit 0
+        # Dry-run format check — list files that would change
+        NX_DAEMON=false mise exec -- yarn nx format:check --files="$files" 2>&1 || {
+          echo ""
+          echo "ERROR: Unformatted files detected. Run:"
+          echo "  cd core-web && yarn nx format:write"
+          echo "  git add -u && git commit -m 'style: format files'"
+          exit 1
+        }
 
     sdk-uve-check:
       glob: "core-web/**/sdk-uve/**"

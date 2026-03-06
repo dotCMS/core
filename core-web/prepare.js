@@ -26,6 +26,7 @@ if (!isCi) {
     // These detect whether the current worktree uses lefthook (new) or husky (old).
     // LEFTHOOK_NO_AUTO_INSTALL=1 prevents lefthook from overwriting these hooks
     // with its own generated versions when `lefthook run` is called.
+    const gitCmd = (name) => ({ 'pre-commit': 'commit', 'pre-push': 'push', 'post-merge': 'merge' }[name] || name);
     const hookScript = (hookName) => `#!/bin/sh
 # Smart hook dispatcher — works across old (husky) and new (lefthook) branches.
 # Written by core-web/prepare.js on yarn install.
@@ -56,7 +57,7 @@ if [ -f "$root/lefthook.yml" ]; then
         echo "3. Install project tools:"
         echo "   mise trust && mise install"
         echo ""
-        echo "Skip this hook with: LEFTHOOK=0 git ${hookName === 'pre-commit' ? 'commit' : 'push'}"
+        echo "Skip this hook with: LEFTHOOK=0 git ${gitCmd(hookName)}"
         exit 1
     fi
 
@@ -67,7 +68,7 @@ if [ -f "$root/lefthook.yml" ]; then
         if ! mise install; then
             echo ""
             echo "ERROR: 'mise install' failed. Fix the issue above, then retry your command."
-            echo "Skip this hook with: LEFTHOOK=0 git ${hookName === 'pre-commit' ? 'commit' : 'push'}"
+            echo "Skip this hook with: LEFTHOOK=0 git ${gitCmd(hookName)}"
             exit 1
         fi
         # Verify lefthook is now available
@@ -93,7 +94,7 @@ fi
 
     try {
         fs.mkdirSync(hooksDir, { recursive: true });
-        for (const hook of ['pre-commit', 'pre-push']) {
+        for (const hook of ['pre-commit', 'pre-push', 'post-merge']) {
             const hookPath = path.join(hooksDir, hook);
             fs.writeFileSync(hookPath, hookScript(hook));
             fs.chmodSync(hookPath, 0o755);
