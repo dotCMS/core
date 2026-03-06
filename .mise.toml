@@ -13,6 +13,12 @@
 # Verify installation: mise doctor
 
 [tools]
+# Git hooks manager — replaces husky + lint-staged
+lefthook = "latest"
+
+# Command runner for build/dev tasks
+just = "latest"
+
 # GitHub CLI for issue/PR management
 gh = "latest"
 

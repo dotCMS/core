@@ -29,7 +29,7 @@ if [ -f "$root/lefthook.yml" ]; then
         echo "3. Install project tools:"
         echo "   mise trust && mise install"
         echo ""
-        echo "Skip this hook with: LEFTHOOK=0 git commit"
+        echo "Skip this hook with: LEFTHOOK=0 git push"
         exit 1
     fi
 
@@ -39,7 +39,7 @@ if [ -f "$root/lefthook.yml" ]; then
         if ! mise install; then
             echo ""
             echo "ERROR: 'mise install' failed. Fix the issue above, then retry your command."
-            echo "Skip this hook with: LEFTHOOK=0 git commit"
+            echo "Skip this hook with: LEFTHOOK=0 git push"
             exit 1
         fi
         if ! command -v lefthook >/dev/null 2>&1 && ! mise which lefthook >/dev/null 2>&1; then
@@ -52,8 +52,8 @@ if [ -f "$root/lefthook.yml" ]; then
     fi
 
     if command -v lefthook >/dev/null 2>&1; then
-        exec lefthook run pre-commit --no-auto-install "$@"
+        exec lefthook run pre-push --no-auto-install "$@"
     else
-        exec mise exec -- lefthook run pre-commit --no-auto-install "$@"
+        exec mise exec -- lefthook run pre-push --no-auto-install "$@"
     fi
 fi
