@@ -117,7 +117,11 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
+                                .timeRange(
+                                    DEFAULT_GRANULARITY,
+                                    toTimeRangeCubeJS(timeRange),
+                                    DEFAULT_GRANULARITY
+                                )
                                 .build();
 
                             return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
@@ -177,7 +181,11 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
+                                .timeRange(
+                                    DEFAULT_GRANULARITY,
+                                    toTimeRangeCubeJS(timeRange),
+                                    DEFAULT_GRANULARITY
+                                )
                                 .build();
 
                             return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
@@ -298,7 +306,11 @@ export function withConversions() {
                                 .fromCube('EventSummary')
                                 .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
+                                .timeRange(
+                                    DEFAULT_GRANULARITY,
+                                    toTimeRangeCubeJS(timeRange),
+                                    DEFAULT_GRANULARITY
+                                )
                                 .build();
 
                             return analyticsService

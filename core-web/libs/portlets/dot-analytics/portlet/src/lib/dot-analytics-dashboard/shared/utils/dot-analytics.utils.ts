@@ -40,7 +40,9 @@ export const getValidTimeRangeUrl = (urlValue: string): TimeRange | null => {
         return null;
     }
 
-    return Object.values(TIME_RANGE_OPTIONS).includes(urlValue as TimeRange) ? (urlValue as TimeRange) : null;
+    return Object.values(TIME_RANGE_OPTIONS).includes(urlValue as TimeRange)
+        ? (urlValue as TimeRange)
+        : null;
 };
 
 /**

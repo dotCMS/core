@@ -266,7 +266,11 @@ export function withPageview() {
                                 .pageviews()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
+                                .timeRange(
+                                    DEFAULT_GRANULARITY,
+                                    toTimeRangeCubeJS(timeRange),
+                                    DEFAULT_GRANULARITY
+                                )
                                 .build();
 
                             return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
