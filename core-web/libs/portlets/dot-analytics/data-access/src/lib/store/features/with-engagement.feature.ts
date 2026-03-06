@@ -29,6 +29,7 @@ import {
     toEngagementSparklineData
 } from '../../utils/data/engagement-data.utils';
 
+// eslint-disable-next-line no-duplicate-imports
 import type {
     ChartData,
     DimensionField,
@@ -289,7 +290,11 @@ export function withEngagement() {
                                         ...ENGAGEMENT_TREND_MEASURES,
                                         ...ENGAGEMENT_SPARKLINE_MEASURES
                                     ])
-                                    .timeRange(DEFAULT_GRANULARITY, previousRange, DEFAULT_GRANULARITY)
+                                    .timeRange(
+                                        DEFAULT_GRANULARITY,
+                                        previousRange,
+                                        DEFAULT_GRANULARITY
+                                    )
                                     .build();
 
                                 return forkJoin({
