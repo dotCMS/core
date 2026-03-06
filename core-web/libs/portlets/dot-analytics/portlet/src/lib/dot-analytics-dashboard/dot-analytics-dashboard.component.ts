@@ -54,7 +54,7 @@ export default class DotAnalyticsDashboardComponent {
     );
 
     /** All dashboard tabs — always visible */
-    readonly $tabs = DASHBOARD_TAB_LIST;
+    readonly tabs = DASHBOARD_TAB_LIST;
 
     /**
      * Closes the message banner and stores the preference in localStorage
