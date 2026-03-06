@@ -175,16 +175,16 @@ export const DotContentDriveStore = signalStore(
                                 ...pagination
                             }
                         };
-                    } else {
-                        return {
-                            pagination: {
-                                ...pagination,
-                                page: 1,
-                                offset: 0
-                            },
-                            pages: [DEFAULT_PAGE]
-                        };
                     }
+
+                    return {
+                        pagination: {
+                            ...pagination,
+                            page: 1,
+                            offset: 0
+                        },
+                        pages: [DEFAULT_PAGE]
+                    };
                 });
             },
             setSort(sort: DotContentDriveSort) {
