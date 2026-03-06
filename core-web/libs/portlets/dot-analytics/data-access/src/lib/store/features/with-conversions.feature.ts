@@ -117,11 +117,7 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(
-                                    DEFAULT_GRANULARITY,
-                                    toTimeRangeCubeJS(timeRange),
-                                    DEFAULT_GRANULARITY
-                                )
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
@@ -181,11 +177,7 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(
-                                    DEFAULT_GRANULARITY,
-                                    toTimeRangeCubeJS(timeRange),
-                                    DEFAULT_GRANULARITY
-                                )
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
@@ -249,7 +241,7 @@ export function withConversions() {
                                 .fromCube('EventSummary')
                                 .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<ConvertingVisitorsEntity>(query).pipe(
@@ -306,11 +298,7 @@ export function withConversions() {
                                 .fromCube('EventSummary')
                                 .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange(
-                                    DEFAULT_GRANULARITY,
-                                    toTimeRangeCubeJS(timeRange),
-                                    DEFAULT_GRANULARITY
-                                )
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService
@@ -378,7 +366,7 @@ export function withConversions() {
                                 .dimensions(['eventType', 'identifier', 'title'])
                                 .measures(['sumConversions', 'sumEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<ContentAttributionEntity>(query).pipe(
@@ -440,7 +428,7 @@ export function withConversions() {
                                     'topAttributedContent'
                                 ])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService

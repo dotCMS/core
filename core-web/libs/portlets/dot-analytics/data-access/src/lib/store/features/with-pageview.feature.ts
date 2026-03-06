@@ -98,7 +98,7 @@ export function withPageview() {
                                 .pageviews()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<TotalPageViewsEntity>(query).pipe(
@@ -151,7 +151,7 @@ export function withPageview() {
                                 .pageviews()
                                 .measures(['uniqueVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService.cubeQuery<UniqueVisitorsEntity>(query).pipe(
@@ -209,7 +209,7 @@ export function withPageview() {
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
                                 .orderBy('totalEvents', 'desc')
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .limit(1)
                                 .build();
 
@@ -266,11 +266,7 @@ export function withPageview() {
                                 .pageviews()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange(
-                                    DEFAULT_GRANULARITY,
-                                    toTimeRangeCubeJS(timeRange),
-                                    DEFAULT_GRANULARITY
-                                )
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
@@ -391,7 +387,7 @@ export function withPageview() {
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
                                 .orderBy('totalEvents', 'desc')
-                                .timeRange(DEFAULT_GRANULARITY, toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .limit(DEFAULT_COUNT_LIMIT)
                                 .build();
 
