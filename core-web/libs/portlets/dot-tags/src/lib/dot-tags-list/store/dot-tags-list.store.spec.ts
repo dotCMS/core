@@ -20,7 +20,15 @@ const MOCK_TAGS: DotTag[] = [
     { id: '2', label: 'tag2', siteId: 'site2', siteName: 'Site 2', persona: false }
 ];
 
+const MOCK_API_RESPONSE_BASE = {
+    errors: [],
+    messages: [],
+    permissions: [],
+    i18nMessagesMap: {}
+};
+
 const MOCK_PAGINATED_RESPONSE = {
+    ...MOCK_API_RESPONSE_BASE,
     entity: MOCK_TAGS,
     pagination: { currentPage: 1, perPage: 25, totalEntries: 100 }
 };
@@ -35,11 +43,18 @@ describe('DotTagsListStore', () => {
         providers: [
             mockProvider(DotTagsService, {
                 getTagsPaginated: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
-                createTag: jest.fn().mockReturnValue(of({ entity: MOCK_TAGS })),
-                updateTag: jest.fn().mockReturnValue(of({ entity: MOCK_TAGS[0] })),
-                deleteTags: jest
+                createTag: jest
                     .fn()
-                    .mockReturnValue(of({ entity: { successCount: 2, fails: [] } }))
+                    .mockReturnValue(of({ ...MOCK_API_RESPONSE_BASE, entity: MOCK_TAGS })),
+                updateTag: jest
+                    .fn()
+                    .mockReturnValue(of({ ...MOCK_API_RESPONSE_BASE, entity: MOCK_TAGS[0] })),
+                deleteTags: jest.fn().mockReturnValue(
+                    of({
+                        ...MOCK_API_RESPONSE_BASE,
+                        entity: { successCount: 2, fails: [] }
+                    })
+                )
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(GlobalStore, {
