@@ -215,3 +215,6 @@ __pycache__/
 *.egg-info/
 dist/
 *.egg
+
+# Python virtual environment (created by mise)
+.venv/
