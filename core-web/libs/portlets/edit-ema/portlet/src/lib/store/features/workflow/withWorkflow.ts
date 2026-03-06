@@ -22,7 +22,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
-import { DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
@@ -121,8 +121,9 @@ export function withWorkflow() {
             const $lockOptions = computed<WorkflowLockOptions | null>(() => {
                 const page = store.pageAsset()?.page;
                 const user = store.uveCurrentUser();
+                const pageMode = store.pageParams()?.mode;
 
-                if (!page) {
+                if (!page || pageMode !== UVE_MODE.EDIT) {
                     return null;
                 }
 
