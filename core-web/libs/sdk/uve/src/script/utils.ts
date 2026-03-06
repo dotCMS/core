@@ -167,16 +167,42 @@ export function listenBlockEditorInlineEvent() {
 
 /**
  * Reports the iframe document height to the parent UVE shell via postMessage.
- * Uses a short delay to allow the page to fully render before measuring.
+ *
+ * Uses ResizeObserver + resize/load events so the parent is notified whenever
+ * the page height changes — not just on initial load. Works for both traditional
+ * (VTL) and headless pages.
+ *
+ * @returns {{ destroyHeightReporter: () => void }} Cleanup function that removes
+ * all listeners and disconnects the ResizeObserver.
  */
-export function reportIframeHeight(): void {
-    document.addEventListener('DOMContentLoaded', () => {
+export function reportIframeHeight(): { destroyHeightReporter: () => void } {
+    const send = () => {
         const height = Math.max(
             document.body?.scrollHeight ?? 0,
             document.documentElement?.scrollHeight ?? 0
         );
         window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
-    });
+    };
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        send();
+    } else {
+        window.addEventListener('load', send);
+    }
+
+    window.addEventListener('resize', send);
+
+    const ro = new ResizeObserver(send);
+    ro.observe(document.documentElement);
+    if (document.body) ro.observe(document.body);
+
+    return {
+        destroyHeightReporter: () => {
+            ro.disconnect();
+            window.removeEventListener('load', send);
+            window.removeEventListener('resize', send);
+        }
+    };
 }
 
 /**
