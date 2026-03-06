@@ -155,8 +155,11 @@ export function withEditor() {
             });
 
             const editorCanEditStyles = computed(() => {
-                return true;
-                // return styleEditorFeatureEnabled() && hasPermissionToEditStyles() && store.viewMode() === UVE_MODE.EDIT;
+                if (store.pageType() === PageType.TRADITIONAL) {
+                    return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+                }
+
+                return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR;
             });
 
             const editorEnableInlineEdit = computed(() => {
