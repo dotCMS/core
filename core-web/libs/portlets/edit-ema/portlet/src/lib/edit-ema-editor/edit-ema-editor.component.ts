@@ -9,7 +9,6 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    DestroyRef,
     ElementRef,
     OnDestroy,
     OnInit,
@@ -38,7 +37,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
-    DotAlertConfirmService,
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
@@ -210,7 +208,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         currentTab: 0
     });
 
-    readonly $rightSidebarActiveTab = this.#rightSidebarTabState.currentTab;
+    readonly $editorPanelActiveTab = this.#rightSidebarTabState.currentTab;
     readonly $showStyleEditorTab = computed(() => this.uveStore.editorCanEditStyles());
     readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
         return this.uveStore.$styleSchema();
@@ -272,8 +270,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
-    readonly #destroyRef = inject(DestroyRef);
-    readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     #iframeResizeObserver: ResizeObserver | null = null;
 
     readonly #isSubmitting = signal<boolean>(false);

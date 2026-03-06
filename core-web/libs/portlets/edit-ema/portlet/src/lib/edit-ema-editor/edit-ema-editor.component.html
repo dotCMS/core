@@ -197,10 +197,10 @@
 </div>
 
 @if (uveStore.viewMode() === UVE_MODE.EDIT) {
-    <div class="right-sidebar-wrapper" [class.open]="$editPanelOpen">
+    <div class="edit-panel-wrapper" [class.open]="$editPanelOpen">
         <p-tabs
             styleClass="flex flex-column w-full h-full"
-            [value]="$rightSidebarActiveTab()"
+            [value]="$editorPanelActiveTab()"
             (valueChange)="handleRightSidebarTabChange($event)">
             <p-tablist class="shrink-0 p-0 w-full">
                 <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="0">
@@ -224,7 +224,7 @@
             </p-tablist>
             <p-tabpanels>
                 <p-tabpanel [value]="0">
-                    @if ($rightSidebarActiveTab() === 0) {
+                    @if ($editorPanelActiveTab() === 0) {
                         <dot-uve-contentlet-quick-edit
                             [data]="$contentletEditData()"
                             [loading]="$isSubmitting() || $isIframeLoading()"
@@ -234,7 +234,7 @@
                 </p-tabpanel>
                 @if ($showStyleEditorTab()) {
                     <p-tabpanel [value]="1">
-                        @if ($rightSidebarActiveTab() === 1) {
+                        @if ($editorPanelActiveTab() === 1) {
                             <div
                                 class="w-full h-full flex flex-column justify-content-center align-items-center gap-2">
                                 @if ($styleSchema()) {
