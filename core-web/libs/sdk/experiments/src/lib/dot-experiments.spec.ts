@@ -45,15 +45,6 @@ if (!globalThis.structuredClone) {
     };
 }
 
-// Windows Mock
-global.window = Object.create(window);
-Object.defineProperty(window, 'location', {
-    value: {
-        href: 'http://localhost:8080/',
-        origin: 'http://localhost:8080'
-    }
-});
-
 describe('DotExperiments', () => {
     const configMock: DotExperimentConfig = {
         apiKey: 'yourApiKey',
