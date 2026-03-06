@@ -5,7 +5,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -28,6 +30,7 @@ import com.dotmarketing.util.PaginatedContentList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
@@ -151,6 +154,8 @@ public class ContentTool implements ViewTool {
 				c = myTransformer.hydrate().get(0);
 			}
 
+			addStylePropertiesFromMultiTree(c);
+
     		return new ContentMap(c, user, EDIT_OR_PREVIEW_MODE,currentHost,context);
 	    }
 	    catch(Throwable ex) {
@@ -158,6 +163,46 @@ public class ContentTool implements ViewTool {
                 Logger.error(this,"error in ContentTool.find. URL: "+req.getRequestURL().toString(),ex);
             }
             throw new RuntimeException(ex);
+        }
+	}
+
+	/**
+	 * When loading content in a page/container context (e.g. via $dotcontent.load in VTL), this
+	 * method fetches dotStyleProperties from the MultiTree and adds them to the contentlet's map.
+	 * This exposes $dotContentMap.dotStyleProperties in VTL for UVE style editor data.
+	 */
+    private void addStylePropertiesFromMultiTree(final Contentlet contentlet) {
+        if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR, true)) {
+            return;
+        }
+        final String pageId = (String) context.get("HTMLPAGE_IDENTIFIER");
+        final String containerId = (String) context.get("CONTAINER_IDENTIFIER");
+        final String containerInstance = (String) context.get("CONTAINER_UNIQUE_ID");
+
+        if (!UtilMethods.isSet(pageId) || !UtilMethods.isSet(containerId) || !UtilMethods.isSet(containerInstance)) {
+            return;
+        }
+
+        final String contentletId = contentlet.getIdentifier();
+        final String personalization = Try.of(() -> WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(req))
+                .getOrElse(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+
+        try {
+            final Optional<Map<String, Object>> stylePropertiesOpt = APILocator.getMultiTreeAPI()
+                    .getStylePropertiesForContentlet(pageId, containerId, containerInstance, personalization, contentletId);
+            if (stylePropertiesOpt.isPresent()) {
+                contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, stylePropertiesOpt.get());
+            } else {
+                contentlet.getMap().remove(Contentlet.STYLE_PROPERTIES_KEY);
+            }
+        } catch (DotDataException e) {
+            String message = String.format(
+                    "Contentlet: %s not found for page=%s, container=%s, uuid=%s, personalization=%s.",
+                    contentletId, pageId, containerId, containerInstance, personalization);
+            if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this, message);
+            }
+            throw new RuntimeException(message, e);
         }
 	}
 	

@@ -5,8 +5,8 @@ import { BlockEditorNode } from '@dotcms/types';
 import * as blockValidator from '@dotcms/uve/internal';
 
 import {
-    DotCMSBlockEditorRenderer,
-    CustomRendererProps
+    CustomRendererProps,
+    DotCMSBlockEditorRenderer
 } from '../../components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
 import * as isDevModeHook from '../../hooks/useIsDevMode';
 
@@ -69,7 +69,7 @@ describe('DotCMSBlockEditorRenderer', () => {
         );
 
         expect(container.firstChild).toHaveClass('test-class');
-        expect(container.firstChild).toHaveStyle('color: red');
+        expect(container.firstChild).toHaveStyle('color: rgb(255, 0, 0)');
     });
 
     describe('Error Handling', () => {
