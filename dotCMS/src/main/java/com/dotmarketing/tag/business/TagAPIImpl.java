@@ -359,6 +359,24 @@ public class TagAPIImpl implements TagAPI {
 
     @WrapInTransaction
     @Override
+    public void updateTag(final String tagId, final String tagName, final String siteId)
+            throws DotDataException, DotSecurityException {
+        final Tag existing = getTagByTagId(tagId);
+        // Resolve conceptual site to physical storage host, mirroring saveTag.
+        // Skip resolution when siteId is already the physical host (no-op PUT from UI).
+        final String resolvedHostId;
+        if (siteId.equals(existing.getHostId()) || Host.SYSTEM_HOST.equals(siteId)) {
+            resolvedHostId = siteId;
+        } else {
+            final Host host = APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
+            final Object tagStorage = (host != null) ? host.getMap().get("tagStorage") : null;
+            resolvedHostId = UtilMethods.isSet(tagStorage) ? tagStorage.toString() : siteId;
+        }
+        updateTag(tagId, tagName, true, resolvedHostId);
+    }
+
+    @WrapInTransaction
+    @Override
     public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException {
 
         Tag tag = getTagByTagId(tagId);

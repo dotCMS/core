@@ -479,41 +479,23 @@ public class TagResource {
         }
         targetSiteId = targetHost.getIdentifier();
 
-        // 4b. Resolve through tagStorage only when actually moving to a different host.
-        // GET returns the already-resolved physical storage host; unconditionally re-resolving
-        // tagStorage on every PUT would cause a double-hop (e.g. site-A → site-B → SYSTEM_HOST)
-        // and silently relocate the tag on every no-op edit.
-        final String effectiveSiteId;
-        if (targetSiteId.equals(existingTag.getHostId())) {
-            // No site change — keep the tag where it already lives.
-            effectiveSiteId = existingTag.getHostId();
-        } else if (!targetSiteId.equals(Host.SYSTEM_HOST)) {
-            // Moving to a different site — resolve through tagStorage as TagAPIImpl does on create.
-            final Object tagStorage = targetHost.getMap().get("tagStorage");
-            effectiveSiteId = UtilMethods.isSet(tagStorage) ? tagStorage.toString() : targetSiteId;
-        } else {
-            effectiveSiteId = Host.SYSTEM_HOST;
-        }
-
         // 5. Check for duplicate if name or site is changing
-        //    Use effectiveSiteId (resolved tag storage) so the check matches where tags are stored
         if (!existingTag.getTagName().equals(tagForm.getName()) ||
-                !existingTag.getHostId().equals(effectiveSiteId)) {
+                !existingTag.getHostId().equals(targetSiteId)) {
 
             final Tag duplicateCheck = Try.of(() ->
-                    tagAPI.getTagByNameAndHost(tagForm.getName(), effectiveSiteId)).getOrNull();
-
+                    tagAPI.getTagByNameAndHost(tagForm.getName(), targetSiteId)).getOrNull();
 
             if (duplicateCheck != null && !duplicateCheck.getTagId().equals(existingTag.getTagId())) {
                 throw new BadRequestException(
                     String.format("Tag '%s' already exists for site '%s'",
-                        tagForm.getName(), effectiveSiteId)
+                        tagForm.getName(), targetSiteId)
                 );
             }
         }
 
-        // 6. Update the tag
-        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), true, effectiveSiteId);
+        // 6. Update the tag — tagStorage resolution handled inside TagAPI
+        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), targetSiteId);
 
         // 7. Get updated tag and return
         final Tag updatedTag = tagAPI.getTagByTagId(existingTag.getTagId());
