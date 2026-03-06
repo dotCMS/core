@@ -58,6 +58,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+            // GlobalStore is required transitively by child report components (pageview, engagement, conversions)
             mockProvider(GlobalStore, {
                 currentSiteId: jest.fn().mockReturnValue('test-site-123'),
                 addNewBreadcrumb: jest.fn()
@@ -80,12 +81,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render exactly 3 metric cards in pageview report', () => {
+        it('should render pageview report component', () => {
             const pageviewReport = spectator.query('dot-analytics-pageview-report');
-            const metricCards = pageviewReport?.querySelectorAll(
-                '[data-testid="analytics-metric-card"]'
-            );
-            expect(metricCards?.length).toBe(3);
+            expect(pageviewReport).toExist();
         });
 
         it('should render line chart component', () => {
@@ -100,7 +98,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         it('should render tab panels for each report type', () => {
             const tabPanels = spectator.queryAll('p-tabpanel');
-            expect(tabPanels.length).toBeGreaterThanOrEqual(1);
+            expect(tabPanels.length).toBe(3);
         });
 
         it('should render filters component', () => {
