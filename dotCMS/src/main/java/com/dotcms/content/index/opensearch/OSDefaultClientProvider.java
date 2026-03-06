@@ -1,6 +1,6 @@
 package com.dotcms.content.index.opensearch;
 
-import com.dotcms.content.index.opensearch.ImmutableOpenSearchClientConfig.Builder;
+import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import com.dotmarketing.util.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
@@ -23,7 +23,7 @@ import java.io.IOException;
  */
 @ApplicationScoped
 @Default
-public class OpenSearchDefaultClientProvider {
+public class OSDefaultClientProvider implements OSClientProvider {
 
     /**
      * Immutable internal provider - configured once at startup
@@ -31,12 +31,19 @@ public class OpenSearchDefaultClientProvider {
     private final ConfigurableOpenSearchProvider provider;
 
     /**
-     * Private constructor to prevent direct instantiation
-     * Creates immutable provider with default configuration from properties
+     * CDI constructor — reads configuration from dotCMS properties.
      */
-    public OpenSearchDefaultClientProvider() {
+    public OSDefaultClientProvider() {
         this.provider = new ConfigurableOpenSearchProvider();
         Logger.info(this.getClass(), "OpenSearchClients initialized with default configuration");
+    }
+
+    /**
+     * Constructor for direct (non-CDI) test use with an explicit {@link OSClientConfig}.
+     */
+    public OSDefaultClientProvider(OSClientConfig config) {
+        this.provider = new ConfigurableOpenSearchProvider(config);
+        Logger.info(this.getClass(), "OpenSearchClients initialized with custom configuration: " + config.endpoints());
     }
 
     /**
@@ -63,8 +70,8 @@ public class OpenSearchDefaultClientProvider {
      * Create a default test configuration for local OpenSearch
      * This is a convenience method for tests
      */
-    public static OpenSearchClientConfig createLocalTestConfig() {
-        return OpenSearchClientConfig.builder()
+    public static OSClientConfig createLocalTestConfig() {
+        return OSClientConfig.builder()
             .addEndpoints("http://localhost:9201")  // Local OpenSearch port
             .tlsEnabled(false)                      // Security disabled
             .trustSelfSigned(true)
@@ -79,8 +86,8 @@ public class OpenSearchDefaultClientProvider {
      * Create a default production-like configuration
      * This is a convenience method for different test scenarios
      */
-    public static OpenSearchClientConfig createProductionTestConfig() {
-        return OpenSearchClientConfig.builder()
+    public static OSClientConfig createProductionTestConfig() {
+        return OSClientConfig.builder()
             .addEndpoints("https://opensearch.prod.com:9200")
             .username("admin")
             .password("secure_password")
@@ -97,8 +104,8 @@ public class OpenSearchDefaultClientProvider {
      * Create a cluster configuration for testing
      * This is a convenience method for cluster test scenarios
      */
-    public static OpenSearchClientConfig createClusterTestConfig(String... endpoints) {
-        Builder builder = OpenSearchClientConfig.builder()
+    public static OSClientConfig createClusterTestConfig(String... endpoints) {
+        Builder builder = OSClientConfig.builder()
             .tlsEnabled(false)
             .trustSelfSigned(true)
             .connectionTimeout(java.time.Duration.ofSeconds(15))

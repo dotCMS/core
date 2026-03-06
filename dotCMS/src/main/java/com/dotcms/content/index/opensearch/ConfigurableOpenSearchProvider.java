@@ -1,10 +1,11 @@
 package com.dotcms.content.index.opensearch;
 
-import com.dotcms.content.index.opensearch.ImmutableOpenSearchClientConfig.Builder;
+import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.Lazy;
 import java.net.URI;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
@@ -63,6 +64,10 @@ class ConfigurableOpenSearchProvider {
     private static final String HTTPS_PROTOCOL = "https";
     private static final String HTTP_PROTOCOL = "http";
 
+    //TODO: Find a better place for this property to live!!!
+    public static final String INDEX_OPERATIONS_TIMEOUT = Lazy.of(
+            () -> Config.getStringProperty("OPENSEARCH_INDEX_OPERATIONS_TIMEOUT", "15s")).get();
+
     private OpenSearchClient client;
     private OpenSearchTransport transport;
 
@@ -76,7 +81,7 @@ class ConfigurableOpenSearchProvider {
     /**
      * Create provider using custom configuration
      */
-    public ConfigurableOpenSearchProvider(OpenSearchClientConfig config) {
+    public ConfigurableOpenSearchProvider(OSClientConfig config) {
         buildClient(config);
     }
 
@@ -85,7 +90,7 @@ class ConfigurableOpenSearchProvider {
      */
     private void buildClient() {
         try {
-            OpenSearchClientConfig config = loadConfigurationFromProperties();
+            OSClientConfig config = loadConfigurationFromProperties();
             buildClient(config);
         } catch (Exception e) {
             Logger.error(this.getClass(), "Error building OpenSearch client from properties", e);
@@ -96,7 +101,7 @@ class ConfigurableOpenSearchProvider {
     /**
      * Build client using provided configuration
      */
-    private void buildClient(OpenSearchClientConfig config) {
+    private void buildClient(OSClientConfig config) {
         try {
             transport = createTransport(config);
             client = new OpenSearchClient(transport);
@@ -111,8 +116,8 @@ class ConfigurableOpenSearchProvider {
     /**
      * Load configuration from dotCMS properties
      */
-    private OpenSearchClientConfig loadConfigurationFromProperties() {
-        Builder builder = OpenSearchClientConfig.builder();
+    private OSClientConfig loadConfigurationFromProperties() {
+        Builder builder = OSClientConfig.builder();
 
         // Load endpoints
         String[] endpoints = Config.getStringArrayProperty(OS_ENDPOINTS, getDefaultEndpoints());
@@ -180,7 +185,7 @@ class ConfigurableOpenSearchProvider {
     /**
      * Create OpenSearch transport based on configuration
      */
-    private OpenSearchTransport createTransport(OpenSearchClientConfig config) {
+    private OpenSearchTransport createTransport(OSClientConfig config) {
         HttpHost[] hosts = createHttpHosts(config.endpoints());
 
         ApacheHttpClient5TransportBuilder builder = ApacheHttpClient5TransportBuilder.builder(hosts);
@@ -223,7 +228,7 @@ class ConfigurableOpenSearchProvider {
      * Configure authentication for HTTP client
      */
     private void configureAuthentication(org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
-                                       OpenSearchClientConfig config) {
+                                       OSClientConfig config) {
         // Basic authentication
         if (config.username().isPresent() && config.password().isPresent()) {
             BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -246,7 +251,7 @@ class ConfigurableOpenSearchProvider {
      * Configure TLS for HTTP client
      */
     private void configureTLS(org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
-                            OpenSearchClientConfig config) throws GeneralSecurityException {
+                            OSClientConfig config) throws GeneralSecurityException {
         if (!config.tlsEnabled()) {
             return;
         }
@@ -286,7 +291,7 @@ class ConfigurableOpenSearchProvider {
      * Configure timeouts for HTTP client
      */
     private void configureTimeouts(org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
-                                 OpenSearchClientConfig config) {
+                                 OSClientConfig config) {
         org.apache.hc.client5.http.config.RequestConfig requestConfig =
             org.apache.hc.client5.http.config.RequestConfig.custom()
                 .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(config.connectionTimeout().toMillis()))
@@ -336,7 +341,7 @@ class ConfigurableOpenSearchProvider {
     /**
      * Rebuild the client with new configuration
      */
-    public void rebuildClient(OpenSearchClientConfig config) {
+    public void rebuildClient(OSClientConfig config) {
         Logger.info(this.getClass(), "Rebuilding OpenSearch client with new configuration");
         try {
             close();

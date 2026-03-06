@@ -1,6 +1,5 @@
 package com.dotcms.content.index.opensearch;
 
-import com.dotcms.content.index.opensearch.OpenSearchDefaultClientProvider;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
@@ -44,14 +43,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @ApplicationScoped
 @Default
-public class OpenSearchBulkHelper {
+public class OSBulkHelper {
 
     private static final int DEFAULT_BULK_TIMEOUT_MS = Config.getIntProperty("OPENSEARCH_BULK_TIMEOUT", 30000);
     private static final int DEFAULT_BATCH_SIZE = Config.getIntProperty("OPENSEARCH_BULK_BATCH_SIZE", 100);
     private static final String DEFAULT_INDEX_SUFFIX = Config.getStringProperty("ES_INDEX_NAME", "content");
 
     @Inject
-    private OpenSearchDefaultClientProvider clientProvider;
+    private OSClientProvider clientProvider;
 
     // Thread-safe collections for bulk operations
     private final List<BulkOperation> operations = new ArrayList<>();

@@ -1,6 +1,6 @@
 package com.dotcms.content.index.opensearch;
 
-import com.dotcms.content.index.opensearch.ImmutableOpenSearchClientConfig.Builder;
+import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
  *
  * @author fabrizio
  */
-public class OpenSearchClientConfigTest {
+public class OSClientConfigTest {
 
     /**
      * Given Scenario: Creating config with minimal settings (just endpoint)
@@ -24,7 +24,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_createConfig_withMinimalSettings_shouldSucceed() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("http://localhost:9200")
             .build();
 
@@ -47,7 +47,7 @@ public class OpenSearchClientConfigTest {
     public void test_createConfig_withAllAuthMethods_shouldThrowException() {
         // Act & Assert - Should throw IllegalArgumentException because multiple auth methods are configured
         try {
-            OpenSearchClientConfig.builder()
+            OSClientConfig.builder()
                 .endpoints(Arrays.asList("https://node1:9200", "https://node2:9200"))
                 .jwtToken("fake.token.here")
                 .username("admin")
@@ -78,7 +78,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_createConfig_withBasicAuth_shouldSucceed() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("https://localhost:9200")
             .username("user")
             .password("pass")
@@ -101,7 +101,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_createConfig_withJWTAuth_shouldSucceed() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("https://localhost:9200")
             .jwtToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token")
             .tlsEnabled(true)
@@ -122,7 +122,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_createConfig_withCertAuth_shouldSucceed() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("https://localhost:9200")
             .clientCertPath("/path/to/client.pem")
             .clientKeyPath("/path/to/client.key")
@@ -148,7 +148,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_createConfig_withDefaults_shouldHaveCorrectDefaults() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("http://localhost:9200")
             .build();
 
@@ -170,7 +170,7 @@ public class OpenSearchClientConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_createConfig_withEmptyEndpoints_shouldThrowException() {
         // Act & Assert
-        OpenSearchClientConfig.builder()
+        OSClientConfig.builder()
             .endpoints(Collections.emptyList())
             .build();
     }
@@ -182,7 +182,7 @@ public class OpenSearchClientConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_createConfig_withEmptyEndpoint_shouldThrowException() {
         // Act & Assert
-        OpenSearchClientConfig.builder()
+        OSClientConfig.builder()
             .endpoints(Arrays.asList("http://localhost:9200", ""))
             .build();
     }
@@ -194,7 +194,7 @@ public class OpenSearchClientConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_createConfig_withBasicAndJWTAuth_shouldThrowException() {
         // Act & Assert
-        OpenSearchClientConfig.builder()
+        OSClientConfig.builder()
             .addEndpoints("https://localhost:9200")
             .username("user")
             .password("pass")
@@ -209,7 +209,7 @@ public class OpenSearchClientConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_createConfig_withBasicAndCertAuth_shouldThrowException() {
         // Act & Assert
-        OpenSearchClientConfig.builder()
+        OSClientConfig.builder()
             .addEndpoints("https://localhost:9200")
             .username("user")
             .password("pass")
@@ -224,7 +224,7 @@ public class OpenSearchClientConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_createConfig_withJWTAndCertAuth_shouldThrowException() {
         // Act & Assert
-        OpenSearchClientConfig.builder()
+        OSClientConfig.builder()
             .addEndpoints("https://localhost:9200")
             .jwtToken("token")
             .clientCertPath("/path/to/cert.pem")
@@ -239,7 +239,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_createConfig_withOnlyUsername_shouldSucceed() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("https://localhost:9200")
             .username("user")
             .build();
@@ -256,7 +256,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_createConfig_withOnlyClientCert_shouldSucceed() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("https://localhost:9200")
             .clientCertPath("/path/to/cert.pem")
             .build();
@@ -273,7 +273,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_config_shouldBeImmutable() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("http://localhost:9200")
             .build();
 
@@ -293,11 +293,11 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_builderReuse_shouldCreateDifferentConfigs() {
         // Act
-        Builder builder = OpenSearchClientConfig.builder()
+        Builder builder = OSClientConfig.builder()
             .addEndpoints("http://localhost:9200");
 
-        OpenSearchClientConfig config1 = builder.username("user1").build();
-        OpenSearchClientConfig config2 = builder.username("user2").build();
+        OSClientConfig config1 = builder.username("user1").build();
+        OSClientConfig config2 = builder.username("user2").build();
 
         // Assert
         assertEquals("First config should have user1", "user1", config1.username().get());
@@ -311,7 +311,7 @@ public class OpenSearchClientConfigTest {
     @Test
     public void test_addMultipleEndpoints_shouldAcceptAllEndpoints() {
         // Act
-        OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+        OSClientConfig config = OSClientConfig.builder()
             .addEndpoints("http://node1:9200")
             .addEndpoints("http://node2:9200", "http://node3:9200")
             .addEndpoints("http://node4:9200")

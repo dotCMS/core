@@ -12,6 +12,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
@@ -33,11 +34,14 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import com.dotcms.content.index.domain.ClusterStats;
+import com.dotcms.content.index.domain.IndexStats;
+import com.dotcms.content.index.domain.NodeStats;
 
 @RunWith(DataProviderRunner.class)
 public class ESIndexAPITest {
 
-    private static ESIndexAPI esIndexAPI;
+    private static IndexAPI esIndexAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -116,8 +120,8 @@ public class ESIndexAPITest {
 
         final IndexStats stats = result.get("myDummyIndex");
         assertNotNull(stats);
-        assertEquals(5, stats.getDocumentCount());
-        assertEquals(2000, stats.getSizeRaw());
+        assertEquals(5, stats.documentCount());
+        assertEquals(2000, stats.sizeRaw());
     }
 
     @Test
@@ -149,10 +153,10 @@ public class ESIndexAPITest {
 
         assertEquals(1, result.size());
 
-        final IndexStats stats = result.get("myDummyIndex");
+        final com.dotcms.content.index.domain.IndexStats stats = result.get("myDummyIndex");
         assertNotNull(stats);
-        assertEquals(5, stats.getDocumentCount());
-        assertEquals(2000, stats.getSizeRaw());
+        assertEquals(5, stats.documentCount());
+        assertEquals(2000, stats.sizeRaw());
     }
 
     @Test
@@ -179,11 +183,11 @@ public class ESIndexAPITest {
         final ClusterStats result = indexAPI.getClusterStats();
 
         assertNotNull(result);
-        assertTrue(UtilMethods.isSet(result.getNodeStats()));
+        assertTrue(UtilMethods.isSet(result.nodeStats()));
 
-        final NodeStats nodeStats = result.getNodeStats().get(0);
-        assertEquals(5, nodeStats.getDocCount());
-        assertEquals(2000, nodeStats.getSizeRaw());
+        final NodeStats nodeStats = result.nodeStats().get(0);
+        assertEquals(5, nodeStats.docCount());
+        assertEquals(2000, nodeStats.sizeRaw());
     }
 
     @Test
@@ -211,11 +215,11 @@ public class ESIndexAPITest {
         final ClusterStats result = indexAPI.getClusterStats();
 
         assertNotNull(result);
-        assertTrue(UtilMethods.isSet(result.getNodeStats()));
+        assertTrue(UtilMethods.isSet(result.nodeStats()));
 
-        final NodeStats nodeStats = result.getNodeStats().get(0);
-        assertEquals(5, nodeStats.getDocCount());
-        assertEquals(2000, nodeStats.getSizeRaw());
+        final NodeStats nodeStats = result.nodeStats().get(0);
+        assertEquals(5, nodeStats.docCount());
+        assertEquals(2000, nodeStats.sizeRaw());
     }
 
 
