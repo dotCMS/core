@@ -4,8 +4,6 @@ import { FilterOption } from '../types';
 
 /** Available time period options for analytics data filtering */
 export const TIME_PERIOD_OPTIONS: FilterOption[] = [
-    { label: 'analytics.filters.time-period.today', value: TIME_RANGE_OPTIONS.today },
-    { label: 'analytics.filters.time-period.yesterday', value: TIME_RANGE_OPTIONS.yesterday },
     { label: 'analytics.filters.time-period.last-7-days', value: TIME_RANGE_OPTIONS.last7days },
     { label: 'analytics.filters.time-period.last-30-days', value: TIME_RANGE_OPTIONS.last30days },
     { label: 'analytics.filters.time-period.custom', value: TIME_RANGE_OPTIONS.custom }
