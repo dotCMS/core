@@ -30,8 +30,7 @@
                 },
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
-                    "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css"
+                    "node_modules/primeicons/primeicons.css"
                 ]
             },
             "configurations": {
