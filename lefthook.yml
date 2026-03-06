@@ -51,8 +51,13 @@ pre-push:
         if [ ! -f "$ref_class" ]; then
           echo "WARNING: No compiled classes found — compilation not verified"
           echo "Run 'just build' or './mvnw install -DskipTests' before pushing"
-          read -r -p "Continue anyway? [y/N] " answer
-          case "$answer" in [yY]*) exit 0 ;; *) exit 1 ;; esac
+          if [ -t 0 ]; then
+            read -r -p "Continue anyway? [y/N] " answer
+            case "$answer" in [yY]*) exit 0 ;; *) exit 1 ;; esac
+          else
+            echo "(non-interactive — skipping compile check)"
+            exit 0
+          fi
         fi
 
         # Check if any Java source files are newer than the last build
@@ -69,6 +74,12 @@ pre-push:
         echo "$stale_files" | sed 's|^|  |'
         [ "$stale_count" -ge 10 ] && echo "  ... (showing first 10)"
         echo ""
+
+        if ! [ -t 0 ]; then
+          echo "(non-interactive — skipping compile check)"
+          exit 0
+        fi
+
         read -r -p "Run compile check before push? [Y/n] " answer
 
         case "$answer" in
@@ -165,7 +176,13 @@ pre-push:
         if [ -f "$openapi" ] && ! git diff --quiet "$openapi" 2>/dev/null; then
           echo ""
           echo "OpenAPI spec is out of date — regenerated file differs from committed version."
-          read -r -p "Auto-commit the updated spec? [Y/n] " answer
+
+          if [ -t 0 ]; then
+            read -r -p "Auto-commit the updated spec? [Y/n] " answer
+          else
+            echo "(non-interactive — auto-committing updated spec)"
+            answer="y"
+          fi
 
           case "$answer" in
             [nN]*)
