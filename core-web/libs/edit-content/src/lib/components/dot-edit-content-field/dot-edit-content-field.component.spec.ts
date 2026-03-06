@@ -310,7 +310,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
 
     beforeEach(async () => {
         const extraProps = fieldTestBed?.props;
-        const propsObject = Array.isArray(extraProps) ? extraProps[0] ?? {} : extraProps ?? {};
+        const propsObject = Array.isArray(extraProps) ? (extraProps[0] ?? {}) : (extraProps ?? {});
         spectator = createComponent({
             props: {
                 field: fieldMock,
