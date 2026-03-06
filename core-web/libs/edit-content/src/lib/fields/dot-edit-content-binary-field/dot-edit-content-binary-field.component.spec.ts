@@ -9,6 +9,18 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+// Monaco Editor is a global object loaded by the editor library at runtime.
+// In jsdom, it is never defined, so any timer callbacks that reach getLanguage()
+// (e.g. the debounced name.valueChanges subscription in DotBinaryFieldEditorComponent)
+// would throw a ReferenceError that leaks across tests. Define a minimal mock here.
+globalThis.monaco = {
+    languages: {
+        getLanguages: () => [],
+        register: jest.fn(),
+        setMonarchTokensProvider: jest.fn()
+    }
+} as unknown as typeof monaco;
+
 import { provideHttpClient } from '@angular/common/http';
 import { Component, NgZone } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -21,7 +33,7 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule, Button } from 'primeng/button';
+import { Button, ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -493,9 +505,9 @@ describe('DotEditContentBinaryFieldComponent', () => {
             expect(spySetMode).toHaveBeenCalledWith(BinaryFieldMode.EDITOR);
         });
 
-        it('should open dialog with url component component when click on url button', async () => {
+        it('should open dialog with url component when click on url button', async () => {
             const spySetMode = jest.spyOn(store, 'setMode');
-            const urlBtn = spectator.query(byTestId('action-url-btn')) as HTMLButtonElement;
+            const urlBtn = spectator.query<HTMLButtonElement>(byTestId('action-url-btn'));
             urlBtn.click();
 
             spectator.detectChanges();

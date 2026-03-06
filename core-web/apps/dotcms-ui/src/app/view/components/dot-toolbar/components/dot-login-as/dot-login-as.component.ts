@@ -50,7 +50,6 @@ import { DotNavigationService } from '../../../dot-navigation/services/dot-navig
 })
 export class DotLoginAsComponent implements OnInit, OnDestroy {
     visible = input<boolean>(false);
-    visibleChange = output<boolean>();
     cancel = output<boolean>();
 
     passwordElem = viewChild<ElementRef>('password');
@@ -87,9 +86,16 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Emit cancel
+     * Resets dialog state and notifies parent to close.
+     * Guard prevents double-emit: (onHide) fires after [visible]=false is
+     * already propagated from the parent, so visible() is false by then.
      */
     close(): void {
+        if (!this.visible()) return;
+
+        this.form?.reset();
+        this.errorMessage.set('');
+        this.needPassword.set(false);
         this.cancel.emit(true);
     }
 

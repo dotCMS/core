@@ -5,18 +5,6 @@ export default {
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
     coverageDirectory: '../../coverage/libs/data-access',
-    coverageReporters: ['html', ['lcovonly', { file: 'TEST-template-builder.lcov' }]],
-    reporters: [
-        'default',
-        ['github-actions', { silent: false }],
-        [
-            'jest-junit',
-            {
-                outputDirectory: '../target/core-web-reports',
-                outputName: 'TEST-template-builder.xml'
-            }
-        ]
-    ],
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
