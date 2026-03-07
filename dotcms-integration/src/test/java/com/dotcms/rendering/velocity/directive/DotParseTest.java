@@ -3,8 +3,11 @@ package com.dotcms.rendering.velocity.directive;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.DotAssetDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -137,13 +140,25 @@ public class DotParseTest extends IntegrationTestBase {
     public void Test_DotParse_DotAsset_DefaultFieldVar_success() throws Exception {
         Host host = null;
         File file = null;
+        ContentType testDotAssetType = null;
         try {
             host = new SiteDataGen().nextPersisted();
             final User user = TestUserUtils.getAdminUser();
             final String vtlData = "<h1>dotAsset default</h1>";
-            file = File.createTempFile("testing-dot-asset-default", ".html");
+            file = File.createTempFile("testing-dot-asset-default", ".vtl");
             FileUtil.write(file, vtlData);
-            final Contentlet dotAsset = new DotAssetDataGen(host, file).nextPersisted();
+
+            // Create a test-specific DotAsset content type with no accept restriction
+            // so the test is not affected by the file type configuration of the seeded "DotAsset" type
+            testDotAssetType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.DOTASSET)
+                    .host(host)
+                    .nextPersisted();
+
+            final Contentlet dotAsset = new ContentletDataGen(testDotAssetType.id())
+                    .setProperty(DotAssetContentType.ASSET_FIELD_VAR, file)
+                    .host(host)
+                    .nextPersisted();
             ContentletDataGen.publish(dotAsset);
             final String shortyId = APILocator.getShortyAPI().shortify(dotAsset.getIdentifier());
 
@@ -164,6 +179,13 @@ public class DotParseTest extends IntegrationTestBase {
                     Files.deleteIfExists(file.toPath());
                 } catch (Exception e) {
                     Logger.error(DotParseTest.class, "Error cleaning up temp test file: " + file.getAbsolutePath(), e);
+                }
+            }
+            if (testDotAssetType != null) {
+                try {
+                    ContentTypeDataGen.remove(testDotAssetType);
+                } catch (Exception e) {
+                    Logger.error(DotParseTest.class, "Error cleaning up test content type: " + testDotAssetType.name(), e);
                 }
             }
             if (host != null) {
