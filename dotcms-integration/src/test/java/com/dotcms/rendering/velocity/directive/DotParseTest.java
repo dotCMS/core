@@ -141,7 +141,7 @@ public class DotParseTest extends IntegrationTestBase {
             host = new SiteDataGen().nextPersisted();
             final User user = TestUserUtils.getAdminUser();
             final String vtlData = "<h1>dotAsset default</h1>";
-            file = File.createTempFile("testing-dot-asset-default", ".vtl");
+            file = File.createTempFile("testing-dot-asset-default", ".html");
             FileUtil.write(file, vtlData);
             final Contentlet dotAsset = new DotAssetDataGen(host, file).nextPersisted();
             ContentletDataGen.publish(dotAsset);
