@@ -366,7 +366,6 @@ const indexTableRowTmpl = (data) => `<tr class="${data.rowClass} showPointer" id
     <td  class="showPointer" >${data.indexName}</td>
     <td>${data.created}</td>
     <td align="center">${data.documentCount}</td>
-    <td align="center">${data.numberOfShards}</td>
     <td align="center">${data.numberOfReplicas}</td>
     <td align="center">${data.size}</td>
     <td align="center">
@@ -392,7 +391,7 @@ function paintStatusTable(data){
         data.created = item.created;
         data.indexColor=item.health.status;
         data.numberOfReplicas=item.health.numberOfReplicas;
-        data.numberOfShards=item.health.numberOfShards;
+        //data.numberOfShards=item.health.numberOfShards;
         data.documentCount=(item.status === undefined) ? "n/a"  : item.status.documentCount;
         data.size=(item.status === undefined) ? "n/a"  : item.status.size;
 
