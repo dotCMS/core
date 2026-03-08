@@ -35,8 +35,6 @@ export interface Adapter {
  */
 export interface SandboxConfig {
     timeout?: number;
-    memoryLimit?: number;
-    allowAsync?: boolean;
     globals?: Record<string, unknown>;
 }
 

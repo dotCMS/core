@@ -5,8 +5,6 @@ import type { ISandbox } from './interface';
 
 const DEFAULT_CONFIG: Required<SandboxConfig> = {
     timeout: 5000,
-    memoryLimit: 128,
-    allowAsync: true,
     globals: {}
 };
 
@@ -36,7 +34,7 @@ export class NodeWorkerSandbox implements ISandbox {
 
             const workerCode = this.buildWorkerCode();
 
-            const worker = new Worker(workerCode, { eval: true });
+            const worker = new Worker(workerCode, { eval: true, env: {} });
 
             let resolved = false;
             const cleanup = () => {
@@ -122,6 +120,16 @@ export class NodeWorkerSandbox implements ISandbox {
     private buildWorkerCode(): string {
         return `
       const { parentPort } = require('worker_threads');
+
+      // Block direct network access — all calls must go through adapters
+      globalThis.fetch = undefined;
+      globalThis.XMLHttpRequest = undefined;
+      globalThis.WebSocket = undefined;
+      globalThis.EventSource = undefined;
+
+      // Block require and clean process environment
+      globalThis.require = undefined;
+      if (typeof process !== 'undefined') { process.env = {}; }
 
       const logs = [];
       const pendingCalls = new Map();

@@ -85,10 +85,10 @@ export function createApiAdapter(): Adapter {
 
             // Build headers — auth token injected here, never in sandbox
             const headers: Record<string, string> = {
-                Authorization: `Bearer ${apiToken}`,
                 Accept: 'application/json, */*;q=0.1',
                 Origin: new URL(baseUrl).origin,
-                ...options.headers
+                ...options.headers,
+                Authorization: `Bearer ${apiToken}` // always last — cannot be overridden
             };
 
             // Build fetch options

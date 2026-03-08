@@ -3,8 +3,6 @@ import type { ISandbox } from './interface';
 
 const DEFAULT_CONFIG: Required<SandboxConfig> = {
     timeout: 5000,
-    memoryLimit: 128,
-    allowAsync: true,
     globals: {}
 };
 
@@ -122,6 +120,12 @@ export class BunWorkerSandbox implements ISandbox {
 
     private buildWorkerCode(): string {
         return `
+      // Block direct network access — all calls must go through adapters
+      globalThis.fetch = undefined;
+      globalThis.XMLHttpRequest = undefined;
+      globalThis.WebSocket = undefined;
+      globalThis.EventSource = undefined;
+
       const logs = [];
       const pendingCalls = new Map();
       let callId = 0;

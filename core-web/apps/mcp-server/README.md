@@ -365,7 +365,7 @@ mcp-server/
 yarn nx build mcp-server
 
 # Development mode (with hot reload)
-yarn nx dev mcp-server
+yarn nx serve mcp-server
 
 # Lint the code
 yarn nx lint mcp-server

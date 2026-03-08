@@ -7,6 +7,7 @@ import { getSpec } from '../lib/spec';
 export const schema = {
     code: z
         .string()
+        .max(100_000)
         .describe(
             'JavaScript async function body to explore the OpenAPI spec. The `spec` global contains the dereferenced OpenAPI spec with `paths` object. Return the data you need.'
         )

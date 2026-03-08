@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 yarn nx build mcp-server
 
 # Development mode with hot reload
-yarn nx dev mcp-server
+yarn nx serve mcp-server
 
 # Regenerate spec (requires a URL or local file path)
 yarn nx generate-spec mcp-server -- https://demo.dotcms.com/api/openapi.json

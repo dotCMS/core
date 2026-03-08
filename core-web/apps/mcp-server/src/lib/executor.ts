@@ -18,8 +18,6 @@ export class Executor {
     constructor(options: ExecutorOptions = {}) {
         this.sandboxConfig = options.config?.sandbox ?? {
             timeout: 5000,
-            memoryLimit: 128,
-            allowAsync: true,
             globals: {}
         };
         this.sandboxFactory = options.sandboxFactory ?? createSandbox;

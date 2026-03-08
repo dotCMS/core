@@ -7,6 +7,7 @@ import { createApiAdapter } from '../lib/http-client';
 export const schema = {
     code: z
         .string()
+        .max(100_000)
         .describe(
             'JavaScript async function body to execute against the dotCMS API. Use `api.request({ method, path, query, body, formData })` to make authenticated API calls. Use `formData` instead of `body` for multipart/form-data uploads. Return the result.'
         )
