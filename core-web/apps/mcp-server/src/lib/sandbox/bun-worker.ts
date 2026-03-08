@@ -121,10 +121,21 @@ export class BunWorkerSandbox implements ISandbox {
     private buildWorkerCode(): string {
         return `
       // Block direct network access — all calls must go through adapters
-      globalThis.fetch = undefined;
-      globalThis.XMLHttpRequest = undefined;
-      globalThis.WebSocket = undefined;
-      globalThis.EventSource = undefined;
+      const __networkError = () => { throw new Error('Network access is disabled in sandbox'); };
+      const __disableGlobalApi = (name) => {
+        try {
+          Object.defineProperty(globalThis, name, { value: __networkError, writable: false, configurable: false });
+        } catch { /* ignore if already frozen */ }
+      };
+      __disableGlobalApi('fetch');
+      __disableGlobalApi('XMLHttpRequest');
+      __disableGlobalApi('WebSocket');
+      __disableGlobalApi('EventSource');
+      if (globalThis.navigator && typeof globalThis.navigator === 'object') {
+        try {
+          Object.defineProperty(globalThis.navigator, 'sendBeacon', { value: __networkError, writable: false, configurable: false });
+        } catch { /* ignore */ }
+      }
 
       const logs = [];
       const pendingCalls = new Map();
