@@ -12,8 +12,8 @@ yarn nx build mcp-server
 # Development mode with hot reload
 yarn nx dev mcp-server
 
-# Regenerate spec from openapi.json
-yarn nx generate-spec mcp-server
+# Regenerate spec (requires a URL or local file path)
+yarn nx generate-spec mcp-server -- https://demo.dotcms.com/api/openapi.json
 
 # Run tests
 yarn nx test mcp-server
@@ -64,7 +64,7 @@ This is a **Model Context Protocol (MCP) server** for dotCMS, built with [xmcp](
 **Entry Point**: xmcp generates the entry point at build time (`dist/stdio.js`).
 
 **Build Pipeline**:
-1. `generate-spec` — processes `openapi.json` into `src/generated/spec.json` (dereferences $refs, filters to relevant endpoints)
+1. `generate-spec` — fetches the OpenAPI spec from a dotCMS instance, processes it into `src/generated/spec.json` (dereferences $refs, filters to relevant endpoints)
 2. `xmcp build` — bundles everything with rspack into `dist/`
 
 **Tool Layer** (`src/tools/`):
@@ -90,7 +90,7 @@ This is a **Model Context Protocol (MCP) server** for dotCMS, built with [xmcp](
 - Main thread executes the actual HTTP call with injected auth
 - Result is posted back to the sandbox
 
-**Build-time Spec Processing**: `scripts/generate-spec.ts` dereferences the full OpenAPI spec, filters to allowed endpoint prefixes, strips response schemas, and handles circular references.
+**Build-time Spec Processing**: `scripts/generate-spec.ts` fetches the OpenAPI spec from a URL (or reads a local file), dereferences it, filters to allowed endpoint prefixes, strips response schemas, and handles circular references. The developer must provide the spec URL or file path when running `generate-spec`.
 
 ### Type System
 
