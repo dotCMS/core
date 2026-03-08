@@ -193,7 +193,7 @@ describe('DotFolderListViewComponent', () => {
 
             spectator.triggerEventHandler(table, 'onPage', { first: 10, rows: 10 });
 
-            expect(paginateSpy).toHaveBeenCalledWith({ first: 10, rows: 10 });
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 10, rows: 10, page: 2 });
         });
 
         it('should emit sort event when sort changes', () => {
@@ -259,14 +259,13 @@ describe('DotFolderListViewComponent', () => {
             expect(tableElement).toBeTruthy();
         });
 
-        it('should not show pagination when there are 20 or fewer total items', () => {
+        it('should always show pagination regardless of totalItems', () => {
             spectator.setInput('totalItems', 20);
             spectator.detectChanges();
 
-            // Verify pagination is not shown by checking that paginator element doesn't exist
-            // or by verifying the styleClass doesn't indicate pagination
+            // Paginator is always rendered ([paginator]="true")
             const paginator = spectator.query('.p-paginator');
-            expect(paginator).toBeFalsy();
+            expect(paginator).toBeTruthy();
         });
 
         it('should emit paginate event when calling onPage', () => {
@@ -278,7 +277,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.component.onPage(mockEvent);
             spectator.detectChanges();
 
-            expect(paginateSpy).toHaveBeenCalledWith(mockEvent);
+            expect(paginateSpy).toHaveBeenCalledWith({ ...mockEvent, page: 2 });
         });
 
         it('should sync table first value when firstChange event is emitted', () => {
@@ -382,6 +381,39 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$loadingRows().length).toBe(40);
+        });
+    });
+
+    describe('onPage page number calculation', () => {
+        it('should resolve page 1 when first=0 (falsy)', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 0, rows: 20 });
+
+            // first=0 is falsy → page defaults to 1
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 0, rows: 20, page: 1 });
+        });
+
+        it('should resolve page 2 when first=20, rows=20', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
+        });
+
+        it('should resolve page 3 when first=40, rows=20', () => {
+            spectator.setInput('totalItems', 80);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 40, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 40, rows: 20, page: 3 });
         });
     });
 

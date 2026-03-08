@@ -2,10 +2,10 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
-import { FileUpload } from 'primeng/fileupload';
 import { Button } from 'primeng/button';
+import { FileUpload } from 'primeng/fileupload';
 import { InputText } from 'primeng/inputtext';
+import { Tabs, TabList, Tab, TabPanels, TabPanel } from 'primeng/tabs';
 
 import { DotAssetSearchComponent, DotSpinnerComponent } from '@dotcms/ui';
 
