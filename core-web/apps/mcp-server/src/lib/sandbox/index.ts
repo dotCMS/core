@@ -4,7 +4,7 @@ import type { ISandbox } from './interface';
 export { type ISandbox } from './interface';
 
 export function createSandbox(config?: SandboxConfig): ISandbox {
-    if (typeof globalThis.Bun !== 'undefined') {
+    if (typeof (globalThis as Record<string, unknown>).Bun !== 'undefined') {
         const { BunWorkerSandbox } = require('./bun-worker');
         return new BunWorkerSandbox(config);
     }
