@@ -94,7 +94,9 @@ Before setting up the MCP server, you need these environment variables to connec
 
 ## Quickstart
 
-Get up and running with the dotCMS MCP Server in minutes:
+Get up and running with the dotCMS MCP Server in minutes.
+
+The server runs on both **Node.js** (≥20) and **Bun** — the correct sandbox implementation is selected automatically at runtime.
 
 ### Claude Desktop Setup
 
@@ -102,6 +104,8 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
 
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+**Using npx (Node.js):**
 
 ```json
 {
@@ -118,9 +122,28 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
 }
 ```
 
+**Using bunx (Bun):**
+
+```json
+{
+    "mcpServers": {
+        "dotcms": {
+            "command": "bunx",
+            "args": ["@dotcms/mcp-server"],
+            "env": {
+                "DOTCMS_BASE_URL": "https://your-dotcms-instance.com",
+                "DOTCMS_API_TOKEN": "your-api-token"
+            }
+        }
+    }
+}
+```
+
 ### Cursor IDE Setup
 
 Add the MCP server to your Cursor configuration. Open Cursor Settings and navigate to "Features" > "Model Context Protocol" or create/edit the configuration file:
+
+**Using npx (Node.js):**
 
 ```json
 {
@@ -128,6 +151,23 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
         "dotcms": {
             "command": "npx",
             "args": ["-y", "@dotcms/mcp-server"],
+            "env": {
+                "DOTCMS_BASE_URL": "https://your-dotcms-instance.com",
+                "DOTCMS_API_TOKEN": "your-api-token"
+            }
+        }
+    }
+}
+```
+
+**Using bunx (Bun):**
+
+```json
+{
+    "mcpServers": {
+        "dotcms": {
+            "command": "bunx",
+            "args": ["@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_BASE_URL": "https://your-dotcms-instance.com",
                 "DOTCMS_API_TOKEN": "your-api-token"
@@ -232,12 +272,30 @@ npx @modelcontextprotocol/inspector -e DOTCMS_BASE_URL=https://demo.dotcms.com -
 
 #### 3. Use Local Build in AI Assistants
 
-**Claude Desktop Configuration:**
+The built server works with both `node` and `bun` — the correct sandbox is selected automatically.
+
+**Using Node.js:**
 ```json
 {
     "mcpServers": {
         "dotcms": {
             "command": "node",
+            "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/stdio.js"],
+            "env": {
+                "DOTCMS_BASE_URL": "your-dotcms-url",
+                "DOTCMS_API_TOKEN": "your-api-token"
+            }
+        }
+    }
+}
+```
+
+**Using Bun:**
+```json
+{
+    "mcpServers": {
+        "dotcms": {
+            "command": "bun",
             "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/stdio.js"],
             "env": {
                 "DOTCMS_BASE_URL": "your-dotcms-url",
@@ -261,9 +319,11 @@ mcp-server/
 │   │   ├── http-client.ts  # Authenticated HTTP adapter
 │   │   ├── spec.ts         # OpenAPI spec loader
 │   │   ├── types.ts        # TypeScript type definitions
-│   │   └── sandbox/        # Sandbox isolation
+│   │   └── sandbox/        # Sandbox isolation (dual-runtime)
+│   │       ├── index.ts        # Runtime detection factory
 │   │       ├── interface.ts    # Sandbox interface
-│   │       └── bun-worker.ts   # Worker-based sandbox
+│   │       ├── bun-worker.ts   # Bun Web Worker sandbox
+│   │       └── node-worker.ts  # Node.js worker_threads sandbox
 │   ├── prompts/            # Prompt templates (xmcp convention)
 │   └── generated/          # Build-time generated files
 │       └── spec.json       # Processed OpenAPI spec
@@ -282,8 +342,10 @@ mcp-server/
 -   Each tool exports `schema`, `metadata`, and a default handler function
 -   Built with rspack for optimized bundling
 
-**Sandbox Isolation**: Code execution is sandboxed using Web Workers:
--   User-provided JavaScript runs in an isolated worker
+**Sandbox Isolation**: Code execution is sandboxed using Workers with dual-runtime support:
+-   **Bun**: Uses native Web Workers (`Blob` + `URL.createObjectURL`)
+-   **Node.js**: Uses `worker_threads` (`new Worker(code, { eval: true })`)
+-   Runtime is detected automatically via `typeof globalThis.Bun`
 -   API tokens are never exposed to sandbox code
 -   Configurable timeout prevents runaway execution
 -   Adapter pattern bridges sandbox ↔ main thread for API calls

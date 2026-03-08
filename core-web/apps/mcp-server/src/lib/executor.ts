@@ -1,6 +1,5 @@
-import { createSandbox } from './sandbox/bun-worker';
+import { type ISandbox, createSandbox } from './sandbox';
 
-import type { ISandbox } from './sandbox/interface';
 import type { Adapter, ExecutionContext, SandboxConfig, SandboxResult } from './types';
 
 export interface ExecutorOptions {

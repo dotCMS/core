@@ -76,12 +76,14 @@ This is a **Model Context Protocol (MCP) server** for dotCMS, built with [xmcp](
 - `http-client.ts` — Authenticated HTTP adapter (tokens injected by main thread, never in sandbox)
 - `spec.ts` — Loads the pre-processed OpenAPI spec
 - `types.ts` — TypeScript interfaces for adapters, sandbox config, execution context
-- `sandbox/bun-worker.ts` — Worker-based sandbox with timeout, console capture, and adapter bridge
+- `sandbox/index.ts` — Runtime detection factory (`createSandbox`)
 - `sandbox/interface.ts` — Sandbox interface definition
+- `sandbox/bun-worker.ts` — Bun Web Worker sandbox
+- `sandbox/node-worker.ts` — Node.js `worker_threads` sandbox
 
 ### Key Patterns
 
-**Sandbox Isolation**: User code runs in Web Workers. API tokens are never exposed to the sandbox — the main thread handles authentication via the adapter pattern.
+**Dual-Runtime Sandbox**: User code runs in Workers with automatic runtime detection. On Bun, uses native Web Workers (`Blob` + `URL.createObjectURL`). On Node.js, uses `worker_threads` (`new Worker(code, { eval: true })`). Runtime is detected via `typeof globalThis.Bun`. API tokens are never exposed to the sandbox — the main thread handles authentication via the adapter pattern.
 
 **Adapter Pattern**: The executor bridges sandbox code to the main thread:
 - Sandbox calls `api.request(...)` which posts a message to the main thread
