@@ -49,14 +49,14 @@ async function resolveFileDescriptor(desc: FileFieldDescriptor): Promise<Blob> {
  * Auth tokens are injected by the main thread — never exposed to the sandbox.
  */
 export function createApiAdapter(): Adapter {
-    const baseUrl = process.env.DOTCMS_BASE_URL;
-    const apiToken = process.env.DOTCMS_API_TOKEN;
+    const baseUrl = process.env.DOTCMS_URL;
+    const apiToken = process.env.AUTH_TOKEN;
 
     if (!baseUrl) {
-        throw new Error('DOTCMS_BASE_URL environment variable is required');
+        throw new Error('DOTCMS_URL environment variable is required');
     }
     if (!apiToken) {
-        throw new Error('DOTCMS_API_TOKEN environment variable is required');
+        throw new Error('AUTH_TOKEN environment variable is required');
     }
 
     const requestMethod: AdapterMethod = {

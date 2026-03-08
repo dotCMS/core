@@ -25,8 +25,8 @@ yarn nx lint mcp-server
 ### Environment Setup
 The MCP server requires two environment variables:
 ```bash
-export DOTCMS_BASE_URL="https://your-dotcms-instance.com"
-export DOTCMS_API_TOKEN="your-api-token"
+export DOTCMS_URL="https://your-dotcms-instance.com"
+export AUTH_TOKEN="your-api-token"
 ```
 
 Optional:
@@ -45,8 +45,8 @@ export SANDBOX_TIMEOUT=15000  # Sandbox execution timeout in ms (default: 15000)
         "/Users/fmontes/Developer/dotcms/core/core-web/dist/apps/mcp-server/stdio.js"
       ],
       "env": {
-        "DOTCMS_BASE_URL": "http://localhost:8080",
-        "DOTCMS_API_TOKEN": "YOUR_DOTCMS_API_TOKEN"
+        "DOTCMS_URL": "http://localhost:8080",
+        "AUTH_TOKEN": "YOUR_AUTH_TOKEN"
       }
     }
   }

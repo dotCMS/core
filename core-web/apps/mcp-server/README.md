@@ -87,8 +87,8 @@ Before setting up the MCP server, you need these environment variables to connec
 
 | Variable           | Required | Description                        | Example |
 | ------------------ | -------- | ---------------------------------- | ------- |
-| `DOTCMS_BASE_URL`  | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
-| `DOTCMS_API_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
+| `DOTCMS_URL`  | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
+| `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
 | `SANDBOX_TIMEOUT`  | ❌       | Sandbox execution timeout in ms (default: 15000) | `15000` |
 
 
@@ -117,8 +117,8 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
             "command": "npx",
             "args": ["-y", "@dotcms/mcp-server@beta"],
             "env": {
-                "DOTCMS_BASE_URL": "https://your-dotcms-instance.com",
-                "DOTCMS_API_TOKEN": "your-api-token"
+                "DOTCMS_URL": "https://your-dotcms-instance.com",
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
@@ -134,8 +134,8 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
             "command": "bunx",
             "args": ["@dotcms/mcp-server@beta"],
             "env": {
-                "DOTCMS_BASE_URL": "https://your-dotcms-instance.com",
-                "DOTCMS_API_TOKEN": "your-api-token"
+                "DOTCMS_URL": "https://your-dotcms-instance.com",
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
@@ -155,8 +155,8 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
             "command": "npx",
             "args": ["-y", "@dotcms/mcp-server@beta"],
             "env": {
-                "DOTCMS_BASE_URL": "https://your-dotcms-instance.com",
-                "DOTCMS_API_TOKEN": "your-api-token"
+                "DOTCMS_URL": "https://your-dotcms-instance.com",
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
@@ -172,8 +172,8 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
             "command": "bunx",
             "args": ["@dotcms/mcp-server@beta"],
             "env": {
-                "DOTCMS_BASE_URL": "https://your-dotcms-instance.com",
-                "DOTCMS_API_TOKEN": "your-api-token"
+                "DOTCMS_URL": "https://your-dotcms-instance.com",
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
@@ -270,7 +270,7 @@ yarn nx build mcp-server
 After a successful build:
 
 ```bash
-npx @modelcontextprotocol/inspector -e DOTCMS_BASE_URL=https://demo.dotcms.com -e DOTCMS_API_TOKEN=the-api-token node dist/apps/mcp-server/stdio.js
+npx @modelcontextprotocol/inspector -e DOTCMS_URL=https://demo.dotcms.com -e AUTH_TOKEN=the-api-token node dist/apps/mcp-server/stdio.js
 ```
 
 #### 3. Use Local Build in AI Assistants
@@ -285,8 +285,8 @@ The built server works with both `node` and `bun` — the correct sandbox is sel
             "command": "node",
             "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/stdio.js"],
             "env": {
-                "DOTCMS_BASE_URL": "your-dotcms-url",
-                "DOTCMS_API_TOKEN": "your-api-token"
+                "DOTCMS_URL": "your-dotcms-url",
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
@@ -301,8 +301,8 @@ The built server works with both `node` and `bun` — the correct sandbox is sel
             "command": "bun",
             "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/stdio.js"],
             "env": {
-                "DOTCMS_BASE_URL": "your-dotcms-url",
-                "DOTCMS_API_TOKEN": "your-api-token"
+                "DOTCMS_URL": "your-dotcms-url",
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
