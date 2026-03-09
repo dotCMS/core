@@ -493,7 +493,11 @@ describe('withBreadcrumbs Feature', () => {
         it('should replace last breadcrumb when both items are analytics tabs', () => {
             store.setBreadcrumbs([
                 { label: 'Marketing', disabled: true },
-                { label: 'Analytics Dashboard', url: '/dotAdmin/#/analytics/dashboard', target: '_self' }
+                {
+                    label: 'Analytics Dashboard',
+                    url: '/dotAdmin/#/analytics/dashboard',
+                    target: '_self'
+                }
             ]);
             store.appendCrumb({ label: 'Engagement', id: 'analytics-engagement' });
             const before = store.breadcrumbs().length;
@@ -508,7 +512,11 @@ describe('withBreadcrumbs Feature', () => {
         it('should append analytics tab crumb when last breadcrumb is not an analytics tab', () => {
             store.setBreadcrumbs([
                 { label: 'Marketing', disabled: true },
-                { label: 'Analytics Dashboard', url: '/dotAdmin/#/analytics/dashboard', target: '_self' }
+                {
+                    label: 'Analytics Dashboard',
+                    url: '/dotAdmin/#/analytics/dashboard',
+                    target: '_self'
+                }
             ]);
             const before = store.breadcrumbs().length;
 
@@ -521,7 +529,11 @@ describe('withBreadcrumbs Feature', () => {
         it('should replace last breadcrumb when both items are analytics tabs', () => {
             store.setBreadcrumbs([
                 { label: 'Marketing', disabled: true },
-                { label: 'Analytics Dashboard', url: '/dotAdmin/#/analytics/dashboard', target: '_self' }
+                {
+                    label: 'Analytics Dashboard',
+                    url: '/dotAdmin/#/analytics/dashboard',
+                    target: '_self'
+                }
             ]);
             store.appendCrumb({ label: 'Engagement', id: 'analytics-engagement' });
             const before = store.breadcrumbs().length;
@@ -536,7 +548,11 @@ describe('withBreadcrumbs Feature', () => {
         it('should append analytics tab crumb when last breadcrumb is not an analytics tab', () => {
             store.setBreadcrumbs([
                 { label: 'Marketing', disabled: true },
-                { label: 'Analytics Dashboard', url: '/dotAdmin/#/analytics/dashboard', target: '_self' }
+                {
+                    label: 'Analytics Dashboard',
+                    url: '/dotAdmin/#/analytics/dashboard',
+                    target: '_self'
+                }
             ]);
             const before = store.breadcrumbs().length;
 

@@ -153,14 +153,10 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 // Before checking if the id is the same, we need to check if the id exists in the breadcrumbs
                 const isSameId = item?.id && lastBreadcrumb?.id && item.id === lastBreadcrumb.id;
 
-                 
-
                 if (isSameUrl || isSameId) {
-            
                     return;
                 }
 
-      
                 if (lastBreadcrumb && shouldReplaceLastCrumb(item, lastBreadcrumb)) {
                     setLastBreadcrumb(item);
                 } else {

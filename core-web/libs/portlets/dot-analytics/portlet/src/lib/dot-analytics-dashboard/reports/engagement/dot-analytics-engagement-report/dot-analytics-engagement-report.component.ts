@@ -64,7 +64,7 @@ export default class DotAnalyticsEngagementReportComponent implements OnInit {
     ngOnInit(): void {
         this.#globalStore.addNewBreadcrumb({
             id: 'analytics-engagement',
-            label: this.#messageService.get('analytics.dashboard.tabs.engagement'),
+            label: this.#messageService.get('analytics.dashboard.tabs.engagement')
         });
     }
 

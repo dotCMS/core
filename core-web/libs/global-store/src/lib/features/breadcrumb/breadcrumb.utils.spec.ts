@@ -329,9 +329,7 @@ describe('shouldReplaceLastCrumb', () => {
         });
 
         it('should return false when items have no url and no id', () => {
-            expect(
-                shouldReplaceLastCrumb({ label: 'A' }, { label: 'B' })
-            ).toBe(false);
+            expect(shouldReplaceLastCrumb({ label: 'A' }, { label: 'B' })).toBe(false);
         });
     });
 });

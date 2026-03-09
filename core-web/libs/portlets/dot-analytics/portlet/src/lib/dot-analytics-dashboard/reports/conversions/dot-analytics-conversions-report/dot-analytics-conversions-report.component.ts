@@ -57,7 +57,7 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
     ngOnInit(): void {
         this.#globalStore.addNewBreadcrumb({
             id: 'analytics-conversions',
-            label: this.#messageService.get('analytics.section.conversions'),
+            label: this.#messageService.get('analytics.section.conversions')
         });
     }
 
