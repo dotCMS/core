@@ -7,7 +7,7 @@
     "tags": [],
     "targets": {
         "build": {
-            "executor": "@nx/angular:browser-esbuild",
+            "executor": "@angular/build:browser-esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/apps/dotcms-binary-field-builder",
@@ -73,7 +73,7 @@
             "defaultConfiguration": "production"
         },
         "serve": {
-            "executor": "@angular-devkit/build-angular:dev-server",
+            "executor": "@angular/build:dev-server",
             "configurations": {
                 "production": {
                     "buildTarget": "dotcms-binary-field-builder:build:production"
@@ -86,7 +86,7 @@
             "continuous": true
         },
         "extract-i18n": {
-            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcms-binary-field-builder:build"
             }

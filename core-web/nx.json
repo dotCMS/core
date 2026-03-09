@@ -160,7 +160,7 @@
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
         },
-        "@angular-devkit/build-angular:application": {
+        "@angular/build:application": {
             "cache": true,
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
