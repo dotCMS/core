@@ -230,7 +230,7 @@ public class ContainerResource implements Serializable {
      * request's site context.
      */
     private Host resolveHost(final String hostId, final User user,
-                             final HttpServletRequest request) {
+                             final HttpServletRequest request) throws DotSecurityException {
 
         if (UtilMethods.isSet(hostId)) {
             try {
@@ -238,8 +238,10 @@ public class ContainerResource implements Serializable {
                 if (host != null && !host.isArchived()) {
                     return host;
                 }
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.debug(this, () -> "Unable to resolve host with id: " + hostId
+            } catch (DotSecurityException e) {
+                throw e;
+            } catch (DotDataException e) {
+                Logger.warn(this, () -> "Unable to resolve host with id: " + hostId
                         + ", falling back to current request host. Error: " + e.getMessage());
             }
         }

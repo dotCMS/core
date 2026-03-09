@@ -19,7 +19,7 @@ public class ContainerForm  extends Validated {
     @Schema(description = "Identifier of the container. Required for updates, ignored on creation.")
     private final String identifier;
 
-    @Schema(description = "Title of the container", required = true)
+    @Schema(description = "Title of the container", requiredMode = Schema.RequiredMode.REQUIRED)
     private final String title;
 
     @Schema(description = "Description of the container (displayed as 'Description' in the UI). "
@@ -55,8 +55,8 @@ public class ContainerForm  extends Validated {
     private final String structureInode;
 
     @Schema(description = "List of content type associations for this container. Each entry maps a content type "
-            + "to rendering code. Note: the 'id' field in each entry must be left empty or omitted — "
-            + "providing an id will cause a Hibernate persistence error. Only 'structureId' and 'code' are required.")
+            + "to rendering code. The 'id' field is ignored on input and auto-generated server-side. "
+            + "Only 'structureId' and 'code' are required.")
     private final List<ContainerStructure> containerStructures;
 
     @Schema(description = "Owner user ID of the container")
@@ -219,9 +219,11 @@ public class ContainerForm  extends Validated {
         @JsonProperty
         private String hostId;
 
-        // todo: what is that?
+        @JsonProperty
         private boolean staticify;
+        @JsonProperty
         private boolean useDiv;
+        @JsonProperty
         private boolean dynamic;
 
         public ContainerForm.Builder identifier (final String identifier) {
@@ -258,7 +260,7 @@ public class ContainerForm  extends Validated {
             return this;
         }
 
-        public ContainerForm.Builder sortContentletsBy (final String showOnMenu) {
+        public ContainerForm.Builder sortContentletsBy (final String sortContentletsBy) {
             this.sortContentletsBy = sortContentletsBy;
             return this;
         }

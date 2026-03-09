@@ -22298,10 +22298,10 @@ components:
             when maxContentlets is 0.
         containerStructures:
           type: array
-          description: "List of content type associations for this container. Each\
-            \ entry maps a content type to rendering code. Note: the 'id' field in\
-            \ each entry must be left empty or omitted — providing an id will cause\
-            \ a Hibernate persistence error. Only 'structureId' and 'code' are required."
+          description: List of content type associations for this container. Each
+            entry maps a content type to rendering code. The 'id' field is ignored
+            on input and auto-generated server-side. Only 'structureId' and 'code'
+            are required.
           items:
             $ref: "#/components/schemas/ContainerStructure"
         dynamic:
