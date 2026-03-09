@@ -1,6 +1,7 @@
 package com.dotcms.content.index.opensearch;
 
 import static com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOS.addBuilderSort;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.TranslatedQuery;
 import com.dotcms.content.index.domain.SearchHit;
@@ -80,7 +81,7 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
      */
     public OSContentletScrollImpl(final String luceneQuery, final User user, final boolean respectFrontendRoles,
             final int batchSize, final String sortBy) {
-        this.osClient = new OpenSearchDefaultClientProvider().getClient();
+        this.osClient = CDIUtils.getBeanThrows(OSClientProvider.class).getClient();
         this.indexOperations = new ContentFactoryIndexOperationsOS();
 
         // Initialize scroll- and fetch-first batch

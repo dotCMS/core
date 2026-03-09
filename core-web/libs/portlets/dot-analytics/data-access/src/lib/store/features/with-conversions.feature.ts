@@ -19,6 +19,7 @@ import {
     ContentAttributionEntity,
     ConversionsOverviewEntity,
     ConvertingVisitorsEntity,
+    DEFAULT_GRANULARITY,
     RequestState,
     TimeRangeInput,
     TotalConversionsEntity
@@ -30,7 +31,6 @@ import {
     createEmptyAnalyticsEntity,
     createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
-    determineGranularityForTimeRange,
     fillMissingDates,
     toTimeRangeCubeJS,
     TrafficVsConversionsEntity
@@ -117,7 +117,7 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
@@ -177,17 +177,15 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
-
-                            const granularity = determineGranularityForTimeRange(timeRange);
 
                             return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
                                 map((entities) =>
                                     fillMissingDates<ConversionTrendEntity>(
                                         entities,
                                         timeRange,
-                                        granularity,
+                                        DEFAULT_GRANULARITY,
                                         createEmptyAnalyticsEntity
                                     )
                                 ),
@@ -300,10 +298,8 @@ export function withConversions() {
                                 .fromCube('EventSummary')
                                 .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
-
-                            const granularity = determineGranularityForTimeRange(timeRange);
 
                             return analyticsService
                                 .cubeQuery<TrafficVsConversionsEntity>(query)
@@ -312,7 +308,7 @@ export function withConversions() {
                                         fillMissingDates(
                                             entities,
                                             timeRange,
-                                            granularity,
+                                            DEFAULT_GRANULARITY,
                                             createEmptyTrafficVsConversionsEntity
                                         )
                                     ),

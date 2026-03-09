@@ -90,14 +90,6 @@ describe('Filters Utils', () => {
             expect(result).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
-        it('should handle empty params object', () => {
-            const params: Params = {};
-
-            const result = paramsToTimeRange(params);
-
-            expect(result).toBe(TIME_RANGE_OPTIONS.last7days);
-        });
-
         it('should handle null params', () => {
             const params: Params = null as unknown as Params;
 

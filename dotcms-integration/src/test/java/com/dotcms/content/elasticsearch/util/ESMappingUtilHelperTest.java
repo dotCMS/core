@@ -7,7 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -324,7 +324,7 @@ public class ESMappingUtilHelperTest {
                 }
             }
 
-            workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(
+            workingIndex = APILocator.getESIndexAPI().getNameWithClusterIDPrefix(
                     IndexType.WORKING.getPrefix() + "_" + timestamp);
 
             Config.setProperty("CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS", true);
@@ -543,7 +543,7 @@ public class ESMappingUtilHelperTest {
 
             //Build the index name
             String timestamp = String.valueOf(new Date().getTime());
-            workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
+            workingIndex = APILocator.getESIndexAPI().getNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
 
             //Create a working index
             boolean result = contentletIndexAPI.createContentIndex(workingIndex);
