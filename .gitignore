@@ -206,6 +206,9 @@ local/
 # Claude Code diagnostic outputs
 .claude/diagnostics/
 
+# Python virtual environments
+.venv/
+
 # Python cache files
 __pycache__/
 *.py[cod]
