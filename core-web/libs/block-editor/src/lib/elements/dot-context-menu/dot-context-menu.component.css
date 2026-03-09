@@ -1,0 +1,53 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host ::ng-deep .p-contextmenu {
+    min-width: 16rem;
+    border: 1px solid var(--color-palette-black-op-10);
+    @apply rounded-lg shadow-md p-1 bg-white;
+}
+
+:host ::ng-deep .p-contextmenu .p-menuitem-content {
+    margin: 0;
+}
+
+:host ::ng-deep .p-contextmenu .p-separator {
+    @apply my-1 border-t border-[var(--color-palette-black-op-10)];
+}
+
+:host ::ng-deep .p-contextmenu .p-menuitem-link {
+    @apply px-3 py-3 text-black rounded-md gap-4;
+    transition: background-color 150ms ease;
+}
+
+:host ::ng-deep .p-contextmenu .p-menuitem-link:hover {
+    background-color: var(--color-palette-primary-100);
+}
+
+:host ::ng-deep .p-contextmenu .p-menuitem-link:hover .menu-item-shortcut {
+    @apply text-black;
+}
+
+:host ::ng-deep .p-contextmenu .p-menuitem-link:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+:host ::ng-deep .p-contextmenu ul {
+    outline: none;
+    margin: 0;
+}
+
+:host ::ng-deep .p-contextmenu .p-disabled .p-menuitem-link {
+    @apply bg-gray-200 text-gray-600;
+    border-radius: unset;
+}
+
+:host ::ng-deep .menu-item-label {
+    @apply text-sm leading-tight;
+}
+
+:host ::ng-deep .menu-item-shortcut {
+    @apply text-xs font-medium tracking-wide;
+    color: var(--color-palette-black-op-20);
+}

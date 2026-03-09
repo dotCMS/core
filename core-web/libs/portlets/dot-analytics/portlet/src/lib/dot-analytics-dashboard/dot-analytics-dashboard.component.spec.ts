@@ -58,6 +58,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+            // GlobalStore is required transitively by child report components (pageview, engagement, conversions)
             mockProvider(GlobalStore, {
                 currentSiteId: jest.fn().mockReturnValue('test-site-123'),
                 addNewBreadcrumb: jest.fn()
@@ -80,14 +81,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render exactly 3 metric cards', () => {
-            // p-tabs renders all panels in DOM, so we need to check only active panel
-            const activePanels = spectator.queryAll('p-tabpanel');
-            const firstPanel = activePanels[0];
-            const metricCards = firstPanel?.querySelectorAll(
-                '[data-testid="analytics-metric-card"]'
-            );
-            expect(metricCards?.length).toBe(3);
+        it('should render pageview report component', () => {
+            const pageviewReport = spectator.query('dot-analytics-pageview-report');
+            expect(pageviewReport).toExist();
         });
 
         it('should render line chart component', () => {
@@ -102,7 +98,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         it('should render tab panels for each report type', () => {
             const tabPanels = spectator.queryAll('p-tabpanel');
-            expect(tabPanels.length).toBeGreaterThanOrEqual(1);
+            expect(tabPanels.length).toBe(3);
         });
 
         it('should render filters component', () => {
@@ -161,7 +157,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(store.timeRange()).toEqual(['2024-01-01', '2024-01-31']);
         });
 
-        it('should set timeRange to invalid value when query param is invalid', () => {
+        it('should fall back to last7days when query param is invalid', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'invalid-range'
@@ -169,8 +165,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             });
             store = spectator.inject(DotAnalyticsDashboardStore);
 
-            // Without validation, invalid values are accepted as-is
-            expect(store.timeRange()).toBe('invalid-range');
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
         it('should set timeRange to last7days when custom range has incomplete dates', () => {
@@ -186,7 +181,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(store.timeRange()).toBe('last7days');
         });
 
-        it('should set timeRange to custom range even when dates are inverted', () => {
+        it('should set timeRange to custom range when dates are inverted in query params', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'custom',
@@ -196,8 +191,31 @@ describe('DotAnalyticsDashboardComponent', () => {
             });
             store = spectator.inject(DotAnalyticsDashboardStore);
 
-            // Without validation, inverted date ranges are accepted
+            // paramsToTimeRange passes through raw date values without order validation;
+            // date validation is enforced in the UI layer via isValidCustomDateRange
             expect(store.timeRange()).toEqual(['2024-01-01', '1993-01-31']);
+        });
+
+        it('should set timeRange to last7days when today is in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'today'
+                }
+            });
+            store = spectator.inject(DotAnalyticsDashboardStore);
+
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+
+        it('should set timeRange to last7days when yesterday is in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'yesterday'
+                }
+            });
+            store = spectator.inject(DotAnalyticsDashboardStore);
+
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
     });
 

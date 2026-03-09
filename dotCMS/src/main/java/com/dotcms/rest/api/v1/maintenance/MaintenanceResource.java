@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.maintenance;
 
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
+import com.dotcms.cluster.bean.Server;
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -53,9 +57,13 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * This REST Endpoint exposes all the different features displayed in the <b>Maintenance</b> portlet
@@ -198,9 +206,113 @@ public class MaintenanceResource implements Serializable {
         if(!logFile.exists()){
             throw new DoesNotExistException("Requested LogFile: " + logFile.getCanonicalPath() + " does not exist.");
         }
+        SecurityLogger.logInfo(this.getClass(), "Requested logFile: " + logFile.getCanonicalPath());
 
-        Logger.info(this.getClass(), "Requested logFile: " + logFile.getCanonicalPath());
         return this.buildFileResponse(response, logFile, fileName);
+    }
+
+    /**
+     * Downloads the requested log file from <b>all</b> servers in the cluster and
+     * returns them as a single ZIP archive. Each entry in the ZIP is prefixed
+     * with the originating server's identifier so that logs from different nodes
+     * can be easily distinguished.
+     * <p>
+     * The local server's log is always included. For every other alive server in
+     * the cluster, this method creates a short-lived API token and calls the
+     * peer's {@code _downloadLog} endpoint over HTTP using the Java native
+     * {@link java.net.http.HttpClient}.
+     * <p>
+     * If a peer server is unreachable or returns an error, the ZIP will still
+     * contain all successfully retrieved logs plus an {@code _errors.txt} entry
+     * describing any failures.
+     *
+     * @param request  http request
+     * @param response http response
+     * @param fileName name of the log file to download
+     * @return ZIP octet stream containing log files from all cluster nodes
+     */
+    @Path("/_downloadClusterLog/{fileName:.+}")
+    @GET
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    public final Response downloadClusterLogFile(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("fileName") final String fileName) throws IOException {
+
+        final InitDataObject initData = assertBackendUser(request, response);
+        final User user = initData.getUser();
+
+        // Validate the file name
+        if (!FileUtil.isValidFilePath(fileName)) {
+            throw new BadRequestException("Requested LogFile: " + fileName + " is not valid.");
+        }
+
+        // Resolve local log file
+        String tailLogFolder = Config
+                .getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
+        if (!tailLogFolder.endsWith(File.separator)) {
+            tailLogFolder = tailLogFolder + File.separator;
+        }
+        final File localLogFile = new File(FileUtil.getAbsolutlePath(tailLogFolder + fileName));
+        if (!localLogFile.exists()) {
+            throw new DoesNotExistException(
+                    "Requested LogFile: " + localLogFile.getCanonicalPath() + " does not exist.");
+        }
+
+        // Discover peer servers
+        final ServerAPI serverAPI = APILocator.getServerAPI();
+        final String myServerId = serverAPI.readServerId();
+        final Server myServer = Try.of(serverAPI::getCurrentServer).getOrNull();
+        final List<Server> peerServers = Try.of(() ->
+                serverAPI.getAliveServers(List.of(myServerId))
+        ).getOrElse(List::of);
+
+        SecurityLogger.logInfo(this.getClass(), "Cluster log download requested by user " + user.getUserId()
+                + " for file '" + fileName + "'. Found " + peerServers.size() + " peer server(s).");
+
+        // Create a short-lived API token for authenticating against peer servers
+        final ApiTokenAPI tokenApi = APILocator.getApiTokenAPI();
+        ApiToken token = null;
+        String jwt = null;
+        try {
+            if (!peerServers.isEmpty()) {
+                try {
+                    final int tokenTtlSeconds = Config.getIntProperty(
+                            "CLUSTER_LOG_DOWNLOAD_TOKEN_TTL_SECONDS", 600);
+                    token = ApiToken.builder()
+                            .withUser(user)
+                            .withExpires(Date.from(
+                                    Instant.now().plus(tokenTtlSeconds, ChronoUnit.SECONDS)))
+                            .withIssueDate(new Date())
+                            .withRequestingUserId(user.getUserId())
+                            .withRequestingIp(request.getRemoteAddr())
+                            .withClaims(Map.of("label", "cluster-log-download"))
+                            .build();
+                    token = tokenApi.persistApiToken(token, user);
+                    jwt = tokenApi.getJWT(token, user);
+                } catch (Exception e) {
+                    Logger.error(this, "Failed to create API token for cluster log download: "
+                            + e.getMessage(), e);
+                    throw new DotRuntimeException(
+                            "Unable to create authentication token for cluster communication", e);
+                }
+            }
+
+
+            final int localPort = request.getLocalPort();
+            final ClusterLogCollector collector = new ClusterLogCollector(
+                    peerServers, fileName, jwt, localPort, localLogFile, myServer);
+
+            final String zipFileName = fileName + "_cluster.zip";
+            return this.buildFileResponse(response, collector.collect(), zipFileName);
+        } finally {
+            // Revoke the short-lived token
+            if (token != null) {
+                final ApiToken tokenToRevoke = token;
+                Try.run(() -> tokenApi.revokeToken(tokenToRevoke, user));
+            }
+        }
     }
 
     /**

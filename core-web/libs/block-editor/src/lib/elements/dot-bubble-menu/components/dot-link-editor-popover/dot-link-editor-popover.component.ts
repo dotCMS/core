@@ -47,7 +47,7 @@ interface SearchResultItem {
 @Component({
     selector: 'dot-link-editor-popover',
     templateUrl: './dot-link-editor-popover.component.html',
-    styleUrls: ['./dot-link-editor-popover.component.scss'],
+    styleUrls: ['./dot-link-editor-popover.component.css'],
     imports: [FormsModule, Listbox, InputText, Skeleton, Button, Checkbox, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -15,7 +15,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     imports: [CommonModule, ButtonModule, DotMessagePipe]
 })
 export class DotConvertToBlockInfoComponent {
-    @Input() currentFieldType: { clazz?: string };
-    @Input() currentField: { id?: string };
+    readonly $currentFieldType = input({ alias: 'currentFieldType' });
     readonly $action = output<MouseEvent>();
+    readonly $currentField = input({ alias: 'currentField' });
 }

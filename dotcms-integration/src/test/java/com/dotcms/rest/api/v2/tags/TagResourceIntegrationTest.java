@@ -38,7 +38,6 @@ import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -54,26 +53,12 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
     private static TagAPI tagAPI;
     private static User systemUser;
 
-    private TagResource resource;
-    private HttpServletRequest request;
-    private HttpServletResponse response;
-
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         tagAPI = APILocator.getTagAPI();
         systemUser = APILocator.systemUser();
     }
-
-    @Before
-    public void setUp() {
-        resource = createTagResource();
-        request = mock(HttpServletRequest.class);
-        when(request.getRequestURI()).thenReturn("/api/v2/tags");
-        response = new MockHttpResponse();
-    }
-
-    // --- Tag Storage Tests ---
 
     /**
      * When a site has tagStorage=SYSTEM_HOST, POST should store the tag under SYSTEM_HOST.
@@ -84,11 +69,25 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String tagName = "create-syshost-" + UUIDGenerator.shorty();
 
         try {
-            final List<RestTag> tags = createTagsAndGetCreated(List.of(
-                    new TagForm(tagName, site.getIdentifier(), null, null)));
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
 
-            assertFalse(tags.isEmpty());
-            assertEquals(Host.SYSTEM_HOST, tags.get(0).siteId);
+            final List<TagForm> forms = List.of(
+                    new TagForm(tagName, site.getIdentifier(), null, null));
+            final Response result = resource.createTags(request, response, forms);
+
+            assertEquals(200, result.getStatus());
+            @SuppressWarnings("unchecked")
+            final ResponseEntityView<Map<String, Object>> entity =
+                    (ResponseEntityView<Map<String, Object>>) result.getEntity();
+            @SuppressWarnings("unchecked")
+            final List<RestTag> tags = (List<RestTag>) entity.getEntity().get("created");
+            assertFalse("Should return created tag", tags.isEmpty());
+            assertEquals("Tag should be stored under SYSTEM_HOST per tagStorage",
+                    Host.SYSTEM_HOST, tags.get(0).siteId);
+
         } finally {
             cleanup(tagName, Host.SYSTEM_HOST);
         }
@@ -106,12 +105,25 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String tagName = "create-self-" + UUIDGenerator.shorty();
 
         try {
-            final List<RestTag> tags = createTagsAndGetCreated(List.of(
-                    new TagForm(tagName, site.getIdentifier(), null, null)));
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
 
+            final List<TagForm> forms = List.of(
+                    new TagForm(tagName, site.getIdentifier(), null, null));
+            final Response result = resource.createTags(request, response, forms);
+
+            assertEquals(200, result.getStatus());
+            @SuppressWarnings("unchecked")
+            final ResponseEntityView<Map<String, Object>> entity =
+                    (ResponseEntityView<Map<String, Object>>) result.getEntity();
+            @SuppressWarnings("unchecked")
+            final List<RestTag> tags = (List<RestTag>) entity.getEntity().get("created");
             assertFalse(tags.isEmpty());
             assertEquals("Tag should be stored under site's own ID",
                     site.getIdentifier(), tags.get(0).siteId);
+
         } finally {
             cleanup(tagName, site.getIdentifier());
         }
@@ -127,17 +139,38 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String tagName = "update-visible-" + UUIDGenerator.shorty();
 
         try {
+            // Create tag under SYSTEM_HOST
             final Tag createdTag = tagAPI.getTagAndCreate(tagName, "", Host.SYSTEM_HOST, false, false);
+            assertNotNull(createdTag);
+            assertEquals(Host.SYSTEM_HOST, createdTag.getHostId());
 
-            final ResponseEntityRestTagView updateResult = resource.updateTag(
-                    request, response, createdTag.getTagId(), null,
-                    buildUpdateForm(tagName, site.getIdentifier()));
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
 
+            // PUT: update tag siteId to the site (whose tagStorage=SYSTEM_HOST)
+            final UpdateTagForm updateForm = new UpdateTagForm.Builder()
+                    .tagName(tagName)
+                    .siteId(site.getIdentifier())
+                    .build();
+
+            final ResponseEntityRestTagView updateResult =
+                    resource.updateTag(request, response, createdTag.getTagId(), null, updateForm);
+
+            assertNotNull(updateResult);
             assertEquals("Updated tag should resolve to SYSTEM_HOST via tagStorage",
                     Host.SYSTEM_HOST, updateResult.getEntity().siteId);
 
-            final List<?> items = listTags(tagName, Host.SYSTEM_HOST);
+            // Verify tag is still visible in list
+            final ResponseEntityPaginatedDataView listResult = resource.list(
+                    request, response, tagName, false, Host.SYSTEM_HOST,
+                    1, 25, "tagname", "ASC");
+
+            assertNotNull(listResult);
+            final List<?> items = (List<?>) listResult.getEntity();
             assertFalse("Tag should be visible in GET after PUT", items.isEmpty());
+
         } finally {
             cleanup(tagName, Host.SYSTEM_HOST);
         }
@@ -156,17 +189,37 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String tagName = "move-sites-" + UUIDGenerator.shorty();
 
         try {
+            // Create tag under SYSTEM_HOST
             final Tag createdTag = tagAPI.getTagAndCreate(tagName, "", Host.SYSTEM_HOST, false, false);
+            assertEquals(Host.SYSTEM_HOST, createdTag.getHostId());
 
-            final ResponseEntityRestTagView updateResult = resource.updateTag(
-                    request, response, createdTag.getTagId(), null,
-                    buildUpdateForm(tagName, siteB.getIdentifier()));
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
 
+            // PUT: move tag to site B (tagStorage=own ID)
+            final UpdateTagForm updateForm = new UpdateTagForm.Builder()
+                    .tagName(tagName)
+                    .siteId(siteB.getIdentifier())
+                    .build();
+
+            final ResponseEntityRestTagView updateResult =
+                    resource.updateTag(request, response, createdTag.getTagId(), null, updateForm);
+
+            assertNotNull(updateResult);
             assertEquals("Tag should move to site B's own storage",
                     siteB.getIdentifier(), updateResult.getEntity().siteId);
 
-            final List<?> items = listTags(tagName, siteB.getIdentifier());
+            // Verify visible when listing site B
+            final ResponseEntityPaginatedDataView listResult = resource.list(
+                    request, response, tagName, false, siteB.getIdentifier(),
+                    1, 25, "tagname", "ASC");
+
+            assertNotNull(listResult);
+            final List<?> items = (List<?>) listResult.getEntity();
             assertFalse("Tag should be visible under site B", items.isEmpty());
+
         } finally {
             cleanup(tagName, siteB.getIdentifier());
             cleanup(tagName, Host.SYSTEM_HOST);
@@ -182,19 +235,31 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String tagName = "filter-site-" + UUIDGenerator.shorty();
 
         try {
+            // Create tag under SYSTEM_HOST
             tagAPI.getTagAndCreate(tagName, "", Host.SYSTEM_HOST, false, false);
 
-            final List<?> items = listTags(tagName, true, site.getIdentifier());
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
+            // GET with siteId (whose tagStorage=SYSTEM_HOST) and global=true
+            final ResponseEntityPaginatedDataView listResult = resource.list(
+                    request, response, tagName, true, site.getIdentifier(),
+                    1, 25, "tagname", "ASC");
+
+            assertNotNull(listResult);
+            final List<?> items = (List<?>) listResult.getEntity();
             assertFalse("GET with siteId should find tags in effective tag storage",
                     items.isEmpty());
+
         } finally {
             cleanup(tagName, Host.SYSTEM_HOST);
         }
     }
 
     /**
-     * Regression: SYSTEM_HOST tags should continue to work normally
-     * through create, rename, and list.
+     * Regression: SYSTEM_HOST tags should continue to work normally.
      */
     @Test
     public void test_createAndUpdateTag_onSystemHost_shouldWorkNormally() throws Exception {
@@ -202,22 +267,101 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String renamedName = "syshost-ren-" + UUIDGenerator.shorty();
 
         try {
-            final List<RestTag> created = createTagsAndGetCreated(List.of(
-                    new TagForm(tagName, Host.SYSTEM_HOST, null, null)));
-            final String tagId = created.get(0).id;
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
 
-            final ResponseEntityRestTagView updateResult = resource.updateTag(
-                    request, response, tagId, null,
-                    buildUpdateForm(renamedName, Host.SYSTEM_HOST));
+            // Create on SYSTEM_HOST
+            final List<TagForm> forms = List.of(
+                    new TagForm(tagName, Host.SYSTEM_HOST, null, null));
+            final Response createResult = resource.createTags(request, response, forms);
+            assertEquals(200, createResult.getStatus());
+
+            @SuppressWarnings("unchecked")
+            final ResponseEntityView<Map<String, Object>> createEntity =
+                    (ResponseEntityView<Map<String, Object>>) createResult.getEntity();
+            @SuppressWarnings("unchecked")
+            final String tagId = ((List<RestTag>) createEntity.getEntity().get("created")).get(0).id;
+
+            // Rename, keep on SYSTEM_HOST
+            final UpdateTagForm updateForm = new UpdateTagForm.Builder()
+                    .tagName(renamedName)
+                    .siteId(Host.SYSTEM_HOST)
+                    .build();
+
+            final ResponseEntityRestTagView updateResult =
+                    resource.updateTag(request, response, tagId, null, updateForm);
 
             assertEquals(Host.SYSTEM_HOST, updateResult.getEntity().siteId);
             assertEquals(renamedName, updateResult.getEntity().label);
 
-            final List<?> items = listTags(renamedName, Host.SYSTEM_HOST);
+            // Verify visible in list
+            final ResponseEntityPaginatedDataView listResult = resource.list(
+                    request, response, renamedName, false, Host.SYSTEM_HOST,
+                    1, 25, "tagname", "ASC");
+
+            final List<?> items = (List<?>) listResult.getEntity();
             assertFalse("Renamed tag should be visible", items.isEmpty());
+
         } finally {
             cleanup(tagName, Host.SYSTEM_HOST);
             cleanup(renamedName, Host.SYSTEM_HOST);
+        }
+    }
+
+    /**
+     * Regression for issue #34880: a chained tagStorage must not cause a double-hop on PUT.
+     *
+     * Chain: siteA.tagStorage = siteB, siteB.tagStorage = SYSTEM_HOST
+     *
+     * A tag created for siteA is stored at siteB (one hop, done by TagAPIImpl on create).
+     * GET returns siteId = siteB (the physical storage host).
+     * A subsequent PUT that sends back siteId = siteB must keep the tag at siteB.
+     * Before the fix, PUT would re-resolve siteB.tagStorage = SYSTEM_HOST and silently
+     * move the tag to SYSTEM_HOST on every no-op edit.
+     */
+    @Test
+    public void test_updateTag_noSiteChange_withTagStorageChain_shouldNotDoubleHop()
+            throws Exception {
+
+        final Host siteB = new SiteDataGen().nextPersisted();
+        siteB.setTagStorage(Host.SYSTEM_HOST);
+        APILocator.getHostAPI().save(siteB, systemUser, false);
+
+        final Host siteA = new SiteDataGen().nextPersisted();
+        siteA.setTagStorage(siteB.getIdentifier());
+        APILocator.getHostAPI().save(siteA, systemUser, false);
+
+        final String tagName = "double-hop-" + UUIDGenerator.shorty();
+
+        try {
+            // Create tag for siteA. saveTag resolves siteA.tagStorage = siteB → tag stored at siteB.
+            // This is the exact create-side behaviour the issue describes as working correctly.
+            final Tag createdTag = tagAPI.getTagAndCreate(tagName, "", siteA.getIdentifier(), false, false);
+            assertEquals("Tag must be stored at siteB after tagStorage chain resolution from siteA",
+                    siteB.getIdentifier(), createdTag.getHostId());
+
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
+            // PUT with the already-resolved siteId (siteB) — simulates a no-op UI edit
+            final UpdateTagForm updateForm = new UpdateTagForm.Builder()
+                    .tagName(tagName)
+                    .siteId(siteB.getIdentifier())
+                    .build();
+
+            final ResponseEntityRestTagView result =
+                    resource.updateTag(request, response, createdTag.getTagId(), null, updateForm);
+
+            assertEquals("Tag must stay at siteB — must not double-hop to SYSTEM_HOST",
+                    siteB.getIdentifier(), result.getEntity().siteId);
+
+        } finally {
+            cleanup(tagName, siteB.getIdentifier());
+            cleanup(tagName, Host.SYSTEM_HOST);
         }
     }
 
@@ -238,6 +382,11 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final List<String> allNames = List.of(chinese, japanese, arabic, korean, cyrillic, mixed);
 
         try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
             final List<TagForm> forms = List.of(
                     new TagForm(chinese, Host.SYSTEM_HOST, null, null),
                     new TagForm(japanese, Host.SYSTEM_HOST, null, null),
@@ -246,12 +395,20 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                     new TagForm(cyrillic, Host.SYSTEM_HOST, null, null),
                     new TagForm(mixed, Host.SYSTEM_HOST, null, null));
 
-            final List<RestTag> created = createTagsAndGetCreated(forms);
+            final Response createResult = resource.createTags(request, response, forms);
+            assertEquals(200, createResult.getStatus());
+            @SuppressWarnings("unchecked")
+            final ResponseEntityView<Map<String, Object>> entity =
+                    (ResponseEntityView<Map<String, Object>>) createResult.getEntity();
+            @SuppressWarnings("unchecked")
+            final List<RestTag> created = (List<RestTag>) entity.getEntity().get("created");
             assertEquals("All 6 Unicode tags should be created", 6, created.size());
 
             // Verify Chinese tag is searchable
-            final List<?> found = listTags("百度", Host.SYSTEM_HOST);
-            assertFalse("Chinese tag should be findable via search", found.isEmpty());
+            final ResponseEntityPaginatedDataView listResult = resource.list(
+                    request, response, "百度", false, Host.SYSTEM_HOST, 1, 25, "tagname", "ASC");
+            assertFalse("Chinese tag should be findable via search",
+                    ((List<?>) listResult.getEntity()).isEmpty());
         } finally {
             allNames.forEach(name -> cleanup(name.toLowerCase(), Host.SYSTEM_HOST));
         }
@@ -266,17 +423,28 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String renamedName = "谷歌搜索-" + UUIDGenerator.shorty();
 
         try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
             final Tag created = tagAPI.getTagAndCreate(
                     originalName, "", Host.SYSTEM_HOST, false, false);
 
+            final UpdateTagForm updateForm = new UpdateTagForm.Builder()
+                    .tagName(renamedName)
+                    .siteId(Host.SYSTEM_HOST)
+                    .build();
+
             final ResponseEntityRestTagView result = resource.updateTag(
-                    request, response, created.getTagId(), null,
-                    buildUpdateForm(renamedName, Host.SYSTEM_HOST));
+                    request, response, created.getTagId(), null, updateForm);
 
             assertEquals(renamedName.toLowerCase(), result.getEntity().label);
 
-            final List<?> found = listTags("谷歌", Host.SYSTEM_HOST);
-            assertFalse("Renamed UTF-8 tag should be findable", found.isEmpty());
+            final ResponseEntityPaginatedDataView listResult = resource.list(
+                    request, response, "谷歌", false, Host.SYSTEM_HOST, 1, 25, "tagname", "ASC");
+            assertFalse("Renamed UTF-8 tag should be findable",
+                    ((List<?>) listResult.getEntity()).isEmpty());
         } finally {
             cleanup(originalName.toLowerCase(), Host.SYSTEM_HOST);
             cleanup(renamedName.toLowerCase(), Host.SYSTEM_HOST);
@@ -295,8 +463,18 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final List<String> allNames = List.of(japanese, korean, cyrillic);
 
         try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
             final String csv = buildCsv(allNames, Host.SYSTEM_HOST);
-            final Map<String, Object> stats = importCsvAndGetStats(csv);
+            final FormDataMultiPart multipart = createMultipartWithCsv(csv);
+            final ResponseEntityTagOperationView importResult =
+                    resource.importTags(request, response, multipart);
+            assertNotNull(importResult);
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> stats = (Map<String, Object>) importResult.getEntity();
             assertEquals("All 3 tags should import", 3, stats.get("successCount"));
 
             for (final String name : allNames) {
@@ -316,6 +494,11 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String tag = "json导出-" + UUIDGenerator.shorty();
 
         try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
             tagAPI.getTagAndCreate(tag, "", Host.SYSTEM_HOST, false, false);
 
             final Response result = resource.exportTags(
@@ -340,6 +523,11 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         final String tag2 = "ラウンドトリップ-" + UUIDGenerator.shorty();
 
         try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
             tagAPI.getTagAndCreate(tag1, "", Host.SYSTEM_HOST, false, false);
             tagAPI.getTagAndCreate(tag2, "", Host.SYSTEM_HOST, false, false);
 
@@ -353,11 +541,15 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
             assertTrue("CSV should contain tag2", csv.contains(tag2.toLowerCase()));
 
             // Re-import — all should be duplicates
-            final Map<String, Object> stats = importCsvAndGetStats(csv);
+            final FormDataMultiPart multipart = createMultipartWithCsv(csv);
+            final ResponseEntityTagOperationView importResult =
+                    resource.importTags(request, response, multipart);
+            assertNotNull(importResult);
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> stats = (Map<String, Object>) importResult.getEntity();
             assertTrue("Should detect duplicates",
                     (int) stats.get("duplicateCount") >= 2);
-            assertEquals("No new tags on re-import",
-                    0, stats.get("successCount"));
+            assertEquals("No new tags on re-import", 0, stats.get("successCount"));
         } finally {
             cleanup(tag1.toLowerCase(), Host.SYSTEM_HOST);
             cleanup(tag2.toLowerCase(), Host.SYSTEM_HOST);
@@ -366,42 +558,25 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
 
     // --- Helpers ---
 
-    /**
-     * Creates tags via the resource and extracts the "created" list from the response.
-     */
-    @SuppressWarnings("unchecked")
-    private List<RestTag> createTagsAndGetCreated(final List<TagForm> forms) throws Exception {
-        final Response result = resource.createTags(request, response, forms);
-        assertEquals(200, result.getStatus());
-        final ResponseEntityView<Map<String, Object>> entity =
-                (ResponseEntityView<Map<String, Object>>) result.getEntity();
-        return (List<RestTag>) entity.getEntity().get("created");
+    private TagResource createTagResource() {
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        when(initDataObject.getUser()).thenReturn(systemUser);
+        when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
+
+        return new TagResource(
+                tagAPI,
+                APILocator.getHostAPI(),
+                APILocator.getFolderAPI(),
+                webResource
+        );
     }
 
-    /**
-     * Lists tags by filter and siteId, returns the entity list.
-     */
-    private List<?> listTags(final String filter, final String siteId) throws Exception {
-        return listTags(filter, false, siteId);
-    }
-
-    private List<?> listTags(final String filter, final boolean global, final String siteId) throws Exception {
-        final ResponseEntityPaginatedDataView result = resource.list(
-                request, response, filter, global, siteId,
-                1, 25, "tagname", "ASC");
-        return (List<?>) result.getEntity();
-    }
-
-    /**
-     * Imports a CSV string and returns the operation stats map.
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> importCsvAndGetStats(final String csvContent) throws Exception {
-        final FormDataMultiPart multipart = createMultipartWithCsv(csvContent);
-        final ResponseEntityTagOperationView result =
-                resource.importTags(request, response, multipart);
-        assertNotNull(result);
-        return (Map<String, Object>) result.getEntity();
+    private Host createSiteWithTagStorage(final String tagStorageId) throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        site.setTagStorage(tagStorageId);
+        APILocator.getHostAPI().save(site, systemUser, false);
+        return site;
     }
 
     /**
@@ -425,15 +600,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         return sb.toString();
     }
 
-    private UpdateTagForm buildUpdateForm(final String tagName, final String siteId) {
-        return new UpdateTagForm.Builder()
-                .tagName(tagName)
-                .siteId(siteId)
-                .build();
-    }
-
     private FormDataMultiPart createMultipartWithCsv(final String csvContent) throws Exception {
-
         final File tempDir = Files.createTempDirectory("tmp_upload_test").toFile();
         tempDir.deleteOnExit();
         final File csvFile = new File(tempDir, "tags-import.csv");
@@ -455,27 +622,6 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         when(multipart.getBodyParts()).thenReturn(List.of(bodyPart));
 
         return multipart;
-    }
-
-    private TagResource createTagResource() {
-        final WebResource webResource = mock(WebResource.class);
-        final InitDataObject initDataObject = mock(InitDataObject.class);
-        when(initDataObject.getUser()).thenReturn(systemUser);
-        when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
-
-        return new TagResource(
-                tagAPI,
-                APILocator.getHostAPI(),
-                APILocator.getFolderAPI(),
-                webResource
-        );
-    }
-
-    private Host createSiteWithTagStorage(final String tagStorageId) throws Exception {
-        final Host site = new SiteDataGen().nextPersisted();
-        site.setTagStorage(tagStorageId);
-        APILocator.getHostAPI().save(site, systemUser, false);
-        return site;
     }
 
     private void cleanup(final String tagName, final String hostId) {

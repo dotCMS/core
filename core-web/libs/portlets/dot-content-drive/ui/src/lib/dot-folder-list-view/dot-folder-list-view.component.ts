@@ -25,7 +25,12 @@ import { Table, TableModule } from 'primeng/table';
 import { take } from 'rxjs/operators';
 
 import { DotLanguagesService } from '@dotcms/data-access';
-import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    ContextMenuData,
+    DotContentDriveItem,
+    DotContentDrivePaginateEvent,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 import {
     DotContentletStatusChipComponent,
     DotLocaleTagPipe,
@@ -106,7 +111,7 @@ export class DotFolderListViewComponent implements OnInit {
      * @type {Output<LazyLoadEvent>}
      * @alias paginate
      */
-    paginate = output<LazyLoadEvent>();
+    paginate = output<DotContentDrivePaginateEvent>();
 
     /**
      * An output that emits the sort event.
@@ -284,7 +289,8 @@ export class DotFolderListViewComponent implements OnInit {
      * @param event The lazy load event containing pagination info
      */
     onPage(event: LazyLoadEvent) {
-        this.paginate.emit(event);
+        const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
+        this.paginate.emit({ ...event, page });
         this.$loadingRows.set([...Array(event.rows)]);
     }
 

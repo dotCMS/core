@@ -1,4 +1,6 @@
-import { hexToRgba, isValidCustomDateRange } from './dot-analytics.utils';
+import { TIME_RANGE_OPTIONS } from '@dotcms/portlets/dot-analytics/data-access';
+
+import { getValidTimeRangeUrl, hexToRgba, isValidCustomDateRange } from './dot-analytics.utils';
 
 describe('Analytics Utils', () => {
     // ============================================================================
@@ -6,9 +8,23 @@ describe('Analytics Utils', () => {
     // ============================================================================
 
     describe('isValidCustomDateRange', () => {
-        it('should return true for valid date range', () => {
+        it('should return true for valid date range spanning at least 7 days', () => {
             expect(isValidCustomDateRange('2024-01-01', '2024-01-31')).toBe(true);
             expect(isValidCustomDateRange('2023-12-01', '2024-01-01')).toBe(true);
+        });
+
+        it('should return true for exactly 7-day range', () => {
+            // day 1 (Jan 1) to day 7 (Jan 7) = 6 calendar days difference = exactly 7 days inclusive
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-07')).toBe(true);
+        });
+
+        it('should return false for range shorter than 7 days', () => {
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-06')).toBe(false);
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-02')).toBe(false);
+        });
+
+        it('should return false for same-day range', () => {
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-01')).toBe(false);
         });
 
         it('should return false for invalid dates', () => {
@@ -22,14 +38,23 @@ describe('Analytics Utils', () => {
             expect(isValidCustomDateRange('2024-12-31', '2024-01-01')).toBe(false);
         });
 
-        it('should return true for same dates', () => {
-            expect(isValidCustomDateRange('2024-01-01', '2024-01-01')).toBe(true);
-        });
-
         it('should return false for empty or null dates', () => {
             expect(isValidCustomDateRange('', '2024-01-31')).toBe(false);
             expect(isValidCustomDateRange('2024-01-01', '')).toBe(false);
             expect(isValidCustomDateRange('', '')).toBe(false);
+        });
+    });
+
+    describe('getValidTimeRangeUrl', () => {
+        it('should return a valid time range for accepted values', () => {
+            expect(getValidTimeRangeUrl(TIME_RANGE_OPTIONS.last7days)).toBe('last7days');
+            expect(getValidTimeRangeUrl(TIME_RANGE_OPTIONS.last30days)).toBe('last30days');
+            expect(getValidTimeRangeUrl(TIME_RANGE_OPTIONS.custom)).toBe('custom');
+        });
+
+        it('should return null for unknown or empty values', () => {
+            expect(getValidTimeRangeUrl('invalid-range')).toBeNull();
+            expect(getValidTimeRangeUrl('')).toBeNull();
         });
     });
 

@@ -479,23 +479,13 @@ public class TagResource {
         }
         targetSiteId = targetHost.getIdentifier();
 
-        // 4b. Resolve through tagStorage (consistent with TagAPIImpl.saveTag behavior)
-        final String effectiveSiteId;
-        if (!targetSiteId.equals(Host.SYSTEM_HOST)) {
-            final Object tagStorage = targetHost.getMap().get("tagStorage");
-            effectiveSiteId = UtilMethods.isSet(tagStorage) ? tagStorage.toString() : targetSiteId;
-        } else {
-            effectiveSiteId = Host.SYSTEM_HOST;
-        }
-
-        // 5. Check for duplicate if name or site is changing
-        //    Use effectiveSiteId (resolved tag storage) so the check matches where tags are stored
+        // 5. Check for duplicate against the resolved physical host — same host the update will use
+        final String effectiveSiteId = tagAPI.resolveTagStorage(targetSiteId, existingTag.getHostId());
         if (!existingTag.getTagName().equals(tagForm.getName()) ||
                 !existingTag.getHostId().equals(effectiveSiteId)) {
 
             final Tag duplicateCheck = Try.of(() ->
                     tagAPI.getTagByNameAndHost(tagForm.getName(), effectiveSiteId)).getOrNull();
-
 
             if (duplicateCheck != null && !duplicateCheck.getTagId().equals(existingTag.getTagId())) {
                 throw new BadRequestException(
@@ -505,8 +495,8 @@ public class TagResource {
             }
         }
 
-        // 6. Update the tag
-        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), true, effectiveSiteId);
+        // 6. Update the tag — tagStorage resolution handled inside TagAPI
+        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), targetSiteId);
 
         // 7. Get updated tag and return
         final Tag updatedTag = tagAPI.getTagByTagId(existingTag.getTagId());
