@@ -27,7 +27,7 @@ import java.util.Optional;
 @ApplicationScoped
 public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
 
-    private static final SimpleDateFormat TIMESTAMP_FORMATTER = new SimpleDateFormat("yyyyMMddHHmmss");
+    final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
 
     private final IndicesFactory indicesFactory;
     private static final Cache cache = new Cache();
@@ -96,7 +96,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     public void saveIndices(VersionedIndices indicesInfo) throws DotDataException {
         Logger.debug(this, "Saving indices with embedded version: " + indicesInfo.version());
 
-        // Save to database
+        // Save to the database
         indicesFactory.saveIndices(indicesInfo);
 
         // Update cache
@@ -152,14 +152,14 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         }
 
         try {
-            // Extract timestamp from pattern: cluster_<CLUSTER_ID>.<INDEX_TYPE_PREFIX>_<TIMESTAMP>
+            // Extract the timestamp from the pattern: cluster_<CLUSTER_ID>.<INDEX_TYPE_PREFIX>_<TIMESTAMP>
             final int lastUnderscoreIndex = indexName.lastIndexOf("_");
             if (lastUnderscoreIndex == -1 || lastUnderscoreIndex == indexName.length() - 1) {
                 throw new DotDataException("Index name does not follow expected pattern: " + indexName);
             }
 
             final String timestampStr = indexName.substring(lastUnderscoreIndex + 1);
-            final Date parsedDate = TIMESTAMP_FORMATTER.parse(timestampStr);
+            final Date parsedDate = timestampFormatter.parse(timestampStr);
             return parsedDate.toInstant();
         } catch (ParseException e) {
             throw new DotDataException("Failed to extract timestamp from index name: " + indexName, e);

@@ -65,6 +65,22 @@ public class IndexAPIImpl implements IndexAPI {
         this.osImpl = osImpl;
     }
 
+    /**
+     * delegate accessor
+     * @return ESIndexAPI
+     */
+    public ESIndexAPI esImpl() {
+        return esImpl;
+    }
+
+    /**
+     * delegate accessor
+     * @return OSIndexAPIImpl
+     */
+    public OSIndexAPIImpl osImpl() {
+        return osImpl;
+    }
+
     // -------------------------------------------------------------------------
     // Read operations
     // -------------------------------------------------------------------------
@@ -185,14 +201,6 @@ public class IndexAPIImpl implements IndexAPI {
             return osImpl.getLiveWorkingIndicesSortedByCreationDateDesc();
         }
         return esImpl.getLiveWorkingIndicesSortedByCreationDateDesc();
-    }
-
-    @Override
-    public String removeClusterIdFromName(String name) {
-        if (isMigrationComplete()) {
-            return osImpl.removeClusterIdFromName(name);
-        }
-        return esImpl.removeClusterIdFromName(name);
     }
 
     @Override

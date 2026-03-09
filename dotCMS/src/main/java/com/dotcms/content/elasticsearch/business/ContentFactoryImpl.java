@@ -263,6 +263,10 @@ public class ContentFactoryImpl implements ContentletFactory {
         this.indexOperationsES = new ContentFactoryIndexOperationsES(CacheLocator.getESQueryCache());
 	}
 
+    /**
+     * Migration-phase-aware Operations delegate
+     * @return {@link ContentFactoryIndexOperations}
+     */
     ContentFactoryIndexOperations indexOperationsDelegate(){
         return isMigrationComplete() || isReadEnabled() ? indexOperationsOS : indexOperationsES ;
     }
