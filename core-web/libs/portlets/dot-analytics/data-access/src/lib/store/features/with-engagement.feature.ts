@@ -40,6 +40,7 @@ import type {
     RequestState,
     SessionsByBrowserDailyEntity,
     SessionsByDeviceDailyEntity,
+    SessionsByLanguageDailyEntity,
     TimeRangeInput
 } from '../../types';
 
@@ -60,6 +61,7 @@ const ENGAGEMENT_SPARKLINE_MEASURES = ['conversionRate'];
 const SESSIONS_BY_MEASURES = ['engagedSessions', 'totalSessions', 'avgEngagedSessionTimeSeconds'];
 const SESSIONS_BY_DEVICE_DIMENSIONS: DimensionField[] = ['deviceCategory'];
 const SESSIONS_BY_BROWSER_DIMENSIONS: DimensionField[] = ['browserFamily'];
+const SESSIONS_BY_LANGUAGE_DIMENSIONS: DimensionField[] = ['localeId'];
 
 /**
  * State interface for the Engagement feature.
@@ -378,17 +380,27 @@ export function withEngagement() {
                                     .timeRange('day', dateRange)
                                     .build();
 
+                                const languageQuery = createCubeQuery()
+                                    .fromCube('SessionsByLanguageDaily')
+                                    .siteId(currentSiteId)
+                                    .measures(SESSIONS_BY_MEASURES)
+                                    .dimensions(SESSIONS_BY_LANGUAGE_DIMENSIONS)
+                                    .timeRange('day', dateRange)
+                                    .build();
+
                                 return forkJoin({
-                                    device: analyticsService.cubeQuery<SessionsByDeviceDailyEntity>(
-                                        deviceQuery
-                                    ),
-                                    browser:
-                                        analyticsService.cubeQuery<SessionsByBrowserDailyEntity>(
-                                            browserQuery
-                                        )
+                                    device: analyticsService
+                                        .cubeQuery<SessionsByDeviceDailyEntity>(deviceQuery)
+                                        .pipe(catchError(() => of([]))),
+                                    browser: analyticsService
+                                        .cubeQuery<SessionsByBrowserDailyEntity>(browserQuery)
+                                        .pipe(catchError(() => of([]))),
+                                    language: analyticsService
+                                        .cubeQuery<SessionsByLanguageDailyEntity>(languageQuery)
+                                        .pipe(catchError(() => of([])))
                                 }).pipe(
-                                    map(({ device, browser }) =>
-                                        toEngagementPlatforms(device, browser)
+                                    map(({ device, browser, language }) =>
+                                        toEngagementPlatforms(device, browser, language)
                                     ),
                                     tapResponse(
                                         (platforms) =>
