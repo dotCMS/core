@@ -323,7 +323,7 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
 
     /**
      * Given scenario: A new index is created via {@link OSIndexAPIImpl#createIndex(String, int)}
-     * Expected: The OpenSearch cluster stores {@code auto_expand_replicas=0-all} on that index,
+     * Expected: The OpenSearch cluster stores {@code auto_expand_replicas=0-1} on that index,
      *           consistent with the behaviour verified in {@code ESIndexAPITest}.
      */
     @Test
@@ -336,7 +336,7 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
 
         assertNotNull("Index state must be present in GET response", response.result().get(fullName));
         final String autoExpand = response.result().get(fullName).settings().index().autoExpandReplicas();
-        assertEquals("auto_expand_replicas must be 0-all on a freshly created index", "0-all", autoExpand);
+        assertEquals("auto_expand_replicas must be 0-1 on a freshly created index", "0-1", autoExpand);
         Logger.info(this, "✅ test_createIndex_shouldHaveAutoExpandReplicasSetting passed");
     }
 

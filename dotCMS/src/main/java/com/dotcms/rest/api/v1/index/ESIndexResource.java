@@ -324,10 +324,9 @@ public class ESIndexResource {
     @NoCache
     @Path("/reindex")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @QueryParam("shards") int shards, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
+    public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
         final InitDataObject init = auth(request, response);
-        shards = (shards <= 0) ? Config.getIntProperty("es.index.number_of_shards", 2) : shards;
+        int shards = Config.getIntProperty("es.index.number_of_shards", 1) ;
 
         System.setProperty("es.index.number_of_shards", String.valueOf(shards));
         Logger.info(this, "Running Contentlet Reindex");
@@ -343,7 +342,6 @@ public class ESIndexResource {
         }
 
         return getReindexationProgress(request, response);
-
 
     }
     

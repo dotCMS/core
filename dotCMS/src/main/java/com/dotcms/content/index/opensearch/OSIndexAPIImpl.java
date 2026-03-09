@@ -125,12 +125,17 @@ public class OSIndexAPIImpl implements IndexAPI {
             "Trying to create index: " + indexName + " with shards: " + shards);
 
         shards = shards > 0 ? shards : Config.getIntProperty("opensearch.index.number_of_shards", 1);
-
+        if(shards>1){
+            Logger.warn(this.getClass(),"Number of OS shards : " + shards + ". Important to note that the more shards you enable, the slower the index reads.  dotCMS recommends using only 1 shard per replica. ");
+        }
         Map<String, Object> settingsMap = (settings == null) ? new HashMap<>() :
             objectMapper.readValue(settings, LinkedHashMap.class);
 
+        String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
+
+
         settingsMap.put("index.number_of_shards", shards);
-        settingsMap.put("index.auto_expand_replicas", "0-all");
+        settingsMap.put("index.auto_expand_replicas", autoExpandReplicas);
         settingsMap.putIfAbsent("index.mapping.total_fields.limit", 10000);
         settingsMap.putIfAbsent("index.mapping.nested_fields.limit", 10000);
         settingsMap.putIfAbsent("index.query.default_field",
@@ -141,7 +146,7 @@ public class OSIndexAPIImpl implements IndexAPI {
             builder.index(getNameWithClusterIDPrefix(indexName))
                    .settings(IndexSettings.of(settingsBuilder -> {
                        settingsBuilder.numberOfShards(finalShards);
-                       settingsBuilder.autoExpandReplicas("0-all");
+                       settingsBuilder.autoExpandReplicas(autoExpandReplicas);
                        return settingsBuilder;
                    }))
                    .timeout(Time.of(timeBuilder ->
@@ -442,7 +447,7 @@ public class OSIndexAPIImpl implements IndexAPI {
             settings = "{\n" +
                 "  \"number_of_shards\": 1,\n" +
                 "  \"number_of_replicas\": 0,\n" +
-                "  \"auto_expand_replicas\": \"0-all\",\n" +
+                "  \"auto_expand_replicas\": \"0-1\",\n" +
                 "  \"mapping\": {\n" +
                 "    \"total_fields\": { \"limit\": 10000 },\n" +
                 "    \"nested_fields\": { \"limit\": 10000 }\n" +
