@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tailwindcss-primeui';
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
 
 /* Host styles that can't be in HTML - pseudo-selectors and dynamic classes */
 :host > div {

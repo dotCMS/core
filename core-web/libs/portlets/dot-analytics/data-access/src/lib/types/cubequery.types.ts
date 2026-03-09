@@ -35,7 +35,7 @@ export type SortDirection = (typeof SortDirection)[keyof typeof SortDirection];
  * Granularity options for time-based queries.
  * Using const assertion for granularity management.
  */
-const Granularity = {
+export const Granularity = {
     HOUR: 'hour',
     DAY: 'day',
     WEEK: 'week',
@@ -43,6 +43,8 @@ const Granularity = {
 } as const;
 
 export type Granularity = (typeof Granularity)[keyof typeof Granularity];
+
+export const DEFAULT_GRANULARITY = Granularity.DAY;
 
 /**
  * CubeJS time dimension configuration
@@ -84,7 +86,7 @@ const DimensionField = {
     TOP_ATTRIBUTED_CONTENT: 'topAttributedContent',
     DEVICE_CATEGORY: 'deviceCategory',
     BROWSER_FAMILY: 'browserFamily',
-    LANGUAGE_ID: 'languageId'
+    LOCALE_ID: 'localeId'
 } as const;
 
 export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField];

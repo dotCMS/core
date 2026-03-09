@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
+import { MessageService, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { MessageModule } from 'primeng/message';
@@ -30,7 +30,11 @@ import {
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
+import {
+    ContextMenuData,
+    DotContentDriveItem,
+    DotContentDrivePaginateEvent
+} from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
     DotContentDriveUploadFiles,
@@ -97,7 +101,6 @@ export class DotContentDriveShellComponent {
     readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
-    readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
 
@@ -115,6 +118,22 @@ export class DotContentDriveShellComponent {
     readonly $showMessage = signal(false);
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
+
+    readonly $totalItems = computed(() => {
+        const pagination = untracked(() => this.#store.pagination());
+        const currentPage = pagination.page; // 1-indexed
+        const limit = pagination.limit;
+        const page = this.#store.pages().at(-1);
+
+        const items = untracked(() => this.#store.items());
+
+        // The API uses cursor-based pagination and does not return a total count.
+        // When hasMoreContent is true, we return one page beyond current so PrimeNG enables the next-page button.
+        // When hasMoreContent is false, we can calculate the exact total.
+        return page.hasMoreContent
+            ? limit * (currentPage + 1)
+            : limit * (currentPage - 1) + items.length;
+    });
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -167,7 +186,7 @@ export class DotContentDriveShellComponent {
         );
     }
 
-    protected onPaginate(event: LazyLoadEvent) {
+    protected onPaginate(event: DotContentDrivePaginateEvent) {
         // Explicit check because it can potentially be 0
         if (event.rows === undefined || event.first === undefined) {
             return;
@@ -175,7 +194,8 @@ export class DotContentDriveShellComponent {
 
         this.#store.setPagination({
             limit: event.rows,
-            offset: event.first
+            page: event.page ?? 1,
+            offset: event.first ?? 0
         });
     }
 

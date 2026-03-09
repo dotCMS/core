@@ -7,9 +7,29 @@ import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent } from 'primeng/fileupload';
 
 import { DotHttpErrorManagerService, DotMessageService, DotTagsService } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
+import { getDownloadLink } from '@dotcms/utils';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsImportComponent } from './dot-tags-import.component';
+
+const downloadClickMock = jest.fn();
+
+jest.mock('@dotcms/utils', () => ({
+    getDownloadLink: jest.fn(() => ({
+        click: downloadClickMock
+    }))
+}));
+
+function readBlobAsText(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(blob);
+    });
+}
 
 describe('DotTagsImportComponent', () => {
     let spectator: Spectator<DotTagsImportComponent>;
@@ -33,11 +53,18 @@ describe('DotTagsImportComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
+            },
+            {
+                provide: GlobalStore,
+                useValue: {
+                    currentSiteId: jest.fn().mockReturnValue('demo-site-id')
+                }
             }
         ]
     });
 
     beforeEach(() => {
+        jest.clearAllMocks();
         spectator = createComponent();
         component = spectator.component;
     });
@@ -60,6 +87,13 @@ describe('DotTagsImportComponent', () => {
         it('should set the selected file', () => {
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             expect(component.selectedFile()).toBe(mockFile);
+        });
+
+        it('should ignore non-csv files', () => {
+            const nonCsv = new File(['x'], 'test.txt', { type: 'text/plain' });
+            component.onFileSelect({ files: [nonCsv] } as FileSelectEvent);
+
+            expect(component.selectedFile()).toBeNull();
         });
 
         it('should clear result when new file selected', () => {
@@ -178,6 +212,41 @@ describe('DotTagsImportComponent', () => {
             component.selectedFile.set(mockFile);
             spectator.detectChanges();
             expect(innerButton!.disabled).toBe(false);
+        });
+    });
+
+    describe('downloadTemplate', () => {
+        it('should generate a csv template with current site id', async () => {
+            component.downloadTemplate();
+
+            expect(getDownloadLink).toHaveBeenCalledWith(
+                expect.any(Blob),
+                'tags-import-template.csv'
+            );
+            expect(downloadClickMock).toHaveBeenCalled();
+
+            const [blobArg] = (getDownloadLink as jest.Mock).mock.calls[0];
+            const csvText = await readBlobAsText(blobArg as Blob);
+
+            expect(csvText).toContain('"Tag Name","Host ID"');
+            expect(csvText).toContain('"Marketing","demo-site-id"');
+            expect(csvText).toContain('"News","demo-site-id"');
+        });
+
+        it('should fallback to SYSTEM_HOST when current site id is null', async () => {
+            const globalStore = spectator.inject(GlobalStore);
+            (globalStore.currentSiteId as jest.Mock).mockReturnValue(null);
+
+            component.downloadTemplate();
+
+            expect(getDownloadLink).toHaveBeenCalledWith(
+                expect.any(Blob),
+                'tags-import-template.csv'
+            );
+            const [blobArg] = (getDownloadLink as jest.Mock).mock.calls[0];
+            const csvText = await readBlobAsText(blobArg as Blob);
+
+            expect(csvText).toContain('"Marketing","SYSTEM_HOST"');
         });
     });
 });

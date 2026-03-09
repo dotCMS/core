@@ -1,10 +1,6 @@
 @if (vm$ | async; as vm) {
-    <form
-        (ngSubmit)="onSubmit()"
-        [formGroup]="form"
-        class="flex w-lg max-w-lg flex-col items-start justify-center gap-4"
-        data-testId="form">
-        <div class="flex w-full flex-col gap-2">
+    <form (ngSubmit)="onSubmit()" [formGroup]="form" class="url-mode__form" data-testId="form">
+        <div class="url-mode__input-container">
             <label for="url-input">{{ 'dot.binary.field.action.import.from.url' | dm }}</label>
             <input
                 (focus)="handleFocus()"
@@ -13,11 +9,10 @@
                 autocomplete="off"
                 formControlName="url"
                 pInputText
-                class="w-full"
                 placeholder="https://www.dotcms.com/image.png"
                 aria-label="URL input field"
                 data-testId="url-input" />
-            <div class="min-h-6">
+            <div class="error-messsage__container">
                 @if (!vm.error) {
                     <dot-field-validation-message
                         [message]="'dot.binary.field.action.import.from.url.error.message' | dm"
@@ -30,30 +25,28 @@
                 }
             </div>
         </div>
-        <div class="flex w-full items-center justify-end gap-2">
+        <div class="url-mode__actions">
             <p-button
                 (click)="cancelUpload()"
                 [label]="'dot.common.cancel' | dm"
-                styleClass="p-button-outlined min-w-[6.85rem]"
+                styleClass="p-button-outlined"
                 type="button"
                 aria-label="Cancel button"
                 data-testId="cancel-button" />
-            <div class="w-[6.85rem]">
+            <div [style]="{ width: '6.85rem' }">
                 @if (!vm.isLoading) {
                     <p-button
                         [label]="'dot.common.import' | dm"
                         [icon]="'pi pi-download'"
                         type="submit"
                         aria-label="Import button"
-                        data-testId="import-button"
-                        styleClass="w-full" />
+                        data-testId="import-button" />
                 } @else {
                     <p-button
                         [icon]="'pi pi-spin pi-spinner'"
                         type="button"
                         aria-label="Loading button"
-                        data-testId="loading-button"
-                        styleClass="w-full" />
+                        data-testId="loading-button" />
                 }
             </div>
         </div>

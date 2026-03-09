@@ -8,7 +8,7 @@ import {
 } from '@ngrx/signals';
 import { EMPTY } from 'rxjs';
 
-import { computed, effect, EffectRef, inject } from '@angular/core';
+import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
@@ -23,6 +23,7 @@ import { withDragging } from './features/dragging/withDragging';
 import { withSidebar } from './features/sidebar/withSidebar';
 
 import {
+    DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
@@ -47,37 +48,44 @@ const initialState: DotContentDriveState = {
     items: [],
     selectedItems: [],
     status: DotContentDriveStatus.LOADING,
-    totalItems: 0,
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
-    isTreeExpanded: DEFAULT_TREE_EXPANDED
+    isTreeExpanded: DEFAULT_TREE_EXPANDED,
+    pages: [DEFAULT_PAGE]
 };
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    withComputed(({ path, filters, currentSite, pagination, sort }) => {
+    withComputed(({ path, filters, currentSite, pagination, sort, pages }) => {
         return {
-            $request: computed<DotContentDriveSearchRequest>(() => ({
-                assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
-                includeSystemHost: true,
-                filters: {
-                    text: filters()?.title || '',
-                    filterFolders: true
-                },
-                language: filters()?.languageId,
-                contentTypes: filters()?.contentType,
-                baseTypes: filters()?.baseType?.map(
-                    (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
-                ),
-                offset: pagination()?.offset,
-                maxResults: pagination()?.limit,
-                sortBy: sort()?.field + ':' + sort()?.order,
-                archived: false,
-                showFolders:
-                    !filters()?.baseType?.length &&
-                    !filters()?.contentType?.length &&
-                    !filters()?.languageId?.length
-            })),
+            $request: computed<DotContentDriveSearchRequest>(() => {
+                const paginationSignal = pagination();
+                const page = untracked(() => pages()[paginationSignal?.page - 1]);
+
+                return {
+                    assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                    includeSystemHost: true,
+                    filters: {
+                        text: filters()?.title || '',
+                        filterFolders: true
+                    },
+                    language: filters()?.languageId,
+                    contentTypes: filters()?.contentType,
+                    baseTypes: filters()?.baseType?.map(
+                        (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                    ),
+                    contentCursor: page.contentCursor ?? 0,
+                    folderCursor: page.folderCursor ?? 0,
+                    maxResults: paginationSignal?.limit,
+                    sortBy: sort()?.field + ':' + sort()?.order,
+                    archived: false,
+                    showFolders:
+                        page.hasMoreFolders &&
+                        !filters()?.baseType?.length &&
+                        !filters()?.contentType?.length &&
+                        !filters()?.languageId?.length
+                };
+            }),
             // We will need this for the global select all in the future, so I'll leave it here for now
             // https://github.com/dotCMS/core/issues/33338
             $query: computed<string>(() => {
@@ -101,8 +109,8 @@ export const DotContentDriveStore = signalStore(
                     isTreeExpanded
                 });
             },
-            setItems(items: DotContentDriveItem[], totalItems: number) {
-                patchState(store, { items, status: DotContentDriveStatus.LOADED, totalItems });
+            setItems(items: DotContentDriveItem[]) {
+                patchState(store, { items, status: DotContentDriveStatus.LOADED });
             },
             setStatus(status: DotContentDriveStatus) {
                 patchState(store, { status });
@@ -116,7 +124,8 @@ export const DotContentDriveStore = signalStore(
                         : {},
                     pagination: {
                         ...store.pagination(),
-                        offset: 0
+                        offset: 0,
+                        page: 1
                     },
                     path: DEFAULT_PATH
                 });
@@ -126,8 +135,10 @@ export const DotContentDriveStore = signalStore(
                     filters: { ...store.filters(), ...filters },
                     pagination: {
                         ...store.pagination(),
-                        offset: 0
-                    }
+                        offset: 0,
+                        page: 1
+                    },
+                    pages: [DEFAULT_PAGE]
                 });
             },
             removeFilter(filter: string) {
@@ -135,7 +146,8 @@ export const DotContentDriveStore = signalStore(
                 if (removedFilter) {
                     patchState(store, {
                         filters: restFilters,
-                        pagination: { ...store.pagination(), offset: 0 }
+                        pagination: { ...store.pagination(), page: 1, offset: 0 },
+                        pages: [DEFAULT_PAGE]
                     });
                 }
             },
@@ -145,7 +157,8 @@ export const DotContentDriveStore = signalStore(
 
                 patchState(store, {
                     path,
-                    pagination: { ...store.pagination(), offset: 0 },
+                    pagination: { ...store.pagination(), page: 1, offset: 0 },
+                    pages: [DEFAULT_PAGE],
                     filters: {
                         ...store.filters(),
                         title
@@ -153,7 +166,26 @@ export const DotContentDriveStore = signalStore(
                 });
             },
             setPagination(pagination: DotContentDrivePagination) {
-                patchState(store, { pagination });
+                const currentLimit = store.pagination().limit;
+                const limit = pagination.limit;
+                patchState(store, () => {
+                    if (currentLimit == limit) {
+                        return {
+                            pagination: {
+                                ...pagination
+                            }
+                        };
+                    }
+
+                    return {
+                        pagination: {
+                            ...pagination,
+                            page: 1,
+                            offset: 0
+                        },
+                        pages: [DEFAULT_PAGE]
+                    };
+                });
             },
             setSort(sort: DotContentDriveSort) {
                 patchState(store, { sort });
@@ -188,10 +220,35 @@ export const DotContentDriveStore = signalStore(
                         })
                     )
                     .subscribe((response) => {
-                        patchState(store, {
-                            items: response.list,
-                            totalItems: response.contentTotalCount,
-                            status: DotContentDriveStatus.LOADED
+                        patchState(store, (store) => {
+                            const samePage = store.pages.find(
+                                (page) =>
+                                    page.folderCursor === response.nextFolderCursor &&
+                                    page.contentCursor === response.nextContentCursor
+                            );
+
+                            if (samePage) {
+                                return {
+                                    pages: store.pages,
+                                    items: response.list,
+                                    status: DotContentDriveStatus.LOADED
+                                };
+                            }
+
+                            return {
+                                items: response.list,
+                                status: DotContentDriveStatus.LOADED,
+                                pages: [
+                                    ...store.pages,
+                                    {
+                                        hasMoreContent: response.hasMoreContent,
+                                        hasMoreFolders: response.hasMoreFolders,
+                                        folderCursor: response.nextFolderCursor,
+                                        contentCursor: response.nextContentCursor,
+                                        offset: store.pagination.offset
+                                    }
+                                ]
+                            };
                         });
                     });
             },

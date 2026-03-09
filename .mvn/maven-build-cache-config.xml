@@ -1,0 +1,50 @@
+<!--
+Maven Build Cache Extension configuration.
+
+DISABLED BY DEFAULT — caching is opt-in for good reason.
+
+Without careful configuration, the cache can serve stale artifacts when
+inputs change in ways the glob patterns don't capture (e.g. environment
+variables, generated sources, resource filtering). This leads to builds
+that appear to succeed but produce incorrect or inconsistent output,
+which is harder to debug than a clean build failure.
+
+Enable locally only if you understand the trade-offs:
+  ./mvnw install -Dmaven.build.cache.enabled=true
+
+Or persist it for your user in ~/.m2/maven.config:
+  -Dmaven.build.cache.enabled=true
+
+The input glob and include/exclude rules below define what the cache
+treats as a meaningful change. Review them before enabling. A follow-up
+issue exists to improve this configuration before we consider enabling
+it more broadly.
+
+For full configuration reference, see:
+https://maven.apache.org/extensions/maven-build-cache-extension/maven-build-cache-config.xml
+-->
+
+<cache xmlns="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0 https://maven.apache.org/xsd/build-cache-config-1.0.0.xsd">
+    <configuration>
+        <enabled>false</enabled>
+        <hashAlgorithm>SHA-256</hashAlgorithm>
+        <validateXml>true</validateXml>
+        <local>
+            <maxBuildsCached>3</maxBuildsCached>
+        </local>
+        <projectVersioning adjustMetaInf="true"/>
+    </configuration>
+    <input>
+        <global>
+            <glob> {*.java,*.yaml,*.properties,*.js,*.ts,*.json,*.xml,*.mjs,*.jsp} </glob>
+            <includes>
+                <include>src/</include>
+            </includes>
+            <excludes>
+                <exclude>temp.out</exclude>
+            </excludes>
+        </global>
+    </input>
+</cache>

@@ -12,10 +12,11 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
-import com.dotcms.rest.ResponseEntityRestTagListView;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.tag.RestTag;
 import com.dotcms.util.IntegrationTestInitService;
+import java.util.Map;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.tag.business.TagAPI;
@@ -65,10 +66,12 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                     new TagForm(tagName, site.getIdentifier(), null, null));
             final Response result = resource.createTags(request, response, forms);
 
-            assertEquals(201, result.getStatus());
-            final ResponseEntityRestTagListView entity =
-                    (ResponseEntityRestTagListView) result.getEntity();
-            final List<RestTag> tags = entity.getEntity();
+            assertEquals(200, result.getStatus());
+            @SuppressWarnings("unchecked")
+            final ResponseEntityView<Map<String, Object>> entity =
+                    (ResponseEntityView<Map<String, Object>>) result.getEntity();
+            @SuppressWarnings("unchecked")
+            final List<RestTag> tags = (List<RestTag>) entity.getEntity().get("created");
             assertFalse("Should return created tag", tags.isEmpty());
             assertEquals("Tag should be stored under SYSTEM_HOST per tagStorage",
                     Host.SYSTEM_HOST, tags.get(0).siteId);
@@ -99,10 +102,12 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                     new TagForm(tagName, site.getIdentifier(), null, null));
             final Response result = resource.createTags(request, response, forms);
 
-            assertEquals(201, result.getStatus());
-            final ResponseEntityRestTagListView entity =
-                    (ResponseEntityRestTagListView) result.getEntity();
-            final List<RestTag> tags = entity.getEntity();
+            assertEquals(200, result.getStatus());
+            @SuppressWarnings("unchecked")
+            final ResponseEntityView<Map<String, Object>> entity =
+                    (ResponseEntityView<Map<String, Object>>) result.getEntity();
+            @SuppressWarnings("unchecked")
+            final List<RestTag> tags = (List<RestTag>) entity.getEntity().get("created");
             assertFalse(tags.isEmpty());
             assertEquals("Tag should be stored under site's own ID",
                     site.getIdentifier(), tags.get(0).siteId);
@@ -259,11 +264,13 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
             final List<TagForm> forms = List.of(
                     new TagForm(tagName, Host.SYSTEM_HOST, null, null));
             final Response createResult = resource.createTags(request, response, forms);
-            assertEquals(201, createResult.getStatus());
+            assertEquals(200, createResult.getStatus());
 
-            final ResponseEntityRestTagListView createEntity =
-                    (ResponseEntityRestTagListView) createResult.getEntity();
-            final String tagId = createEntity.getEntity().get(0).id;
+            @SuppressWarnings("unchecked")
+            final ResponseEntityView<Map<String, Object>> createEntity =
+                    (ResponseEntityView<Map<String, Object>>) createResult.getEntity();
+            @SuppressWarnings("unchecked")
+            final String tagId = ((List<RestTag>) createEntity.getEntity().get("created")).get(0).id;
 
             // Rename, keep on SYSTEM_HOST
             final UpdateTagForm updateForm = new UpdateTagForm.Builder()
@@ -288,6 +295,61 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         } finally {
             cleanup(tagName, Host.SYSTEM_HOST);
             cleanup(renamedName, Host.SYSTEM_HOST);
+        }
+    }
+
+    /**
+     * Regression for issue #34880: a chained tagStorage must not cause a double-hop on PUT.
+     *
+     * Chain: siteA.tagStorage = siteB, siteB.tagStorage = SYSTEM_HOST
+     *
+     * A tag created for siteA is stored at siteB (one hop, done by TagAPIImpl on create).
+     * GET returns siteId = siteB (the physical storage host).
+     * A subsequent PUT that sends back siteId = siteB must keep the tag at siteB.
+     * Before the fix, PUT would re-resolve siteB.tagStorage = SYSTEM_HOST and silently
+     * move the tag to SYSTEM_HOST on every no-op edit.
+     */
+    @Test
+    public void test_updateTag_noSiteChange_withTagStorageChain_shouldNotDoubleHop()
+            throws Exception {
+
+        final Host siteB = new SiteDataGen().nextPersisted();
+        siteB.setTagStorage(Host.SYSTEM_HOST);
+        APILocator.getHostAPI().save(siteB, systemUser, false);
+
+        final Host siteA = new SiteDataGen().nextPersisted();
+        siteA.setTagStorage(siteB.getIdentifier());
+        APILocator.getHostAPI().save(siteA, systemUser, false);
+
+        final String tagName = "double-hop-" + UUIDGenerator.shorty();
+
+        try {
+            // Create tag for siteA. saveTag resolves siteA.tagStorage = siteB → tag stored at siteB.
+            // This is the exact create-side behaviour the issue describes as working correctly.
+            final Tag createdTag = tagAPI.getTagAndCreate(tagName, "", siteA.getIdentifier(), false, false);
+            assertEquals("Tag must be stored at siteB after tagStorage chain resolution from siteA",
+                    siteB.getIdentifier(), createdTag.getHostId());
+
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
+            // PUT with the already-resolved siteId (siteB) — simulates a no-op UI edit
+            final UpdateTagForm updateForm = new UpdateTagForm.Builder()
+                    .tagName(tagName)
+                    .siteId(siteB.getIdentifier())
+                    .build();
+
+            final ResponseEntityRestTagView result =
+                    resource.updateTag(request, response, createdTag.getTagId(), null, updateForm);
+
+            assertEquals("Tag must stay at siteB — must not double-hop to SYSTEM_HOST",
+                    siteB.getIdentifier(), result.getEntity().siteId);
+
+        } finally {
+            cleanup(tagName, siteB.getIdentifier());
+            cleanup(tagName, Host.SYSTEM_HOST);
         }
     }
 

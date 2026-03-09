@@ -4,7 +4,6 @@ import { MockComponent } from 'ng-mocks';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -12,10 +11,13 @@ import { DotBinaryFieldUiMessageComponent } from './dot-binary-field-ui-message.
 
 import { DotBinaryFieldEditorComponent } from '../dot-binary-field-editor/dot-binary-field-editor.component';
 
-const disabled = signal(false);
-
 describe('DotBinaryFieldUiMessageComponent', () => {
     let spectator: SpectatorHost<DotBinaryFieldUiMessageComponent>;
+    const uiMessage = {
+        message: 'Drag and Drop File',
+        icon: 'pi pi-upload',
+        severity: 'info'
+    };
 
     const createHost = createHostFactory({
         component: DotBinaryFieldUiMessageComponent,
@@ -28,47 +30,48 @@ describe('DotBinaryFieldUiMessageComponent', () => {
         providers: [mockProvider(DotMessagePipe)]
     });
 
-    beforeEach(async () => {
+    const setupHost = async (disabled = false) => {
         spectator = createHost(
             `<dot-binary-field-ui-message [uiMessage]="uiMessage" [disabled]="disabled">
                 <button data-testId="choose-file-btn">Choose File</button>
             </dot-binary-field-ui-message>`,
             {
                 hostProps: {
-                    uiMessage: {
-                        message: 'Drag and Drop File',
-                        icon: 'pi pi-upload',
-                        severity: 'info'
-                    },
+                    uiMessage,
                     disabled
                 }
             }
         );
         spectator.detectChanges();
         await spectator.fixture.whenStable();
-    });
+    };
 
-    it('should have a message, icon, and severity', () => {
-        const messageText = spectator.query(byTestId('ui-message-span')).innerHTML;
-        const messageIconClass = spectator.query(byTestId('ui-message-icon')).className;
-        const messageIconContainer = spectator.query(
-            byTestId('ui-message-icon-container')
-        ).className;
+    describe('default state', () => {
+        beforeEach(async () => {
+            await setupHost();
+        });
 
-        expect(messageText).toBe('Drag and Drop File');
-        expect(messageIconClass).toContain('pi pi-upload');
-        expect(messageIconContainer).toContain('rounded-full');
-    });
+        it('should have a message, icon, and serverity', () => {
+            const messageText = spectator.query(byTestId('ui-message-span')).innerHTML;
+            const messageIconClass = spectator.query(byTestId('ui-message-icon')).className;
+            const messageIconContainer = spectator.query(
+                byTestId('ui-message-icon-container')
+            ).className;
 
-    it('should have a button', () => {
-        const button = spectator.query(byTestId('choose-file-btn'));
-        expect(button).toBeTruthy();
+            expect(messageText).toBe('Drag and Drop File');
+            expect(messageIconClass).toBe('icon pi pi-upload');
+            expect(messageIconContainer).toBe('icon-container info');
+        });
+
+        it('should have a button', () => {
+            const button = spectator.query(byTestId('choose-file-btn'));
+            expect(button).toBeTruthy();
+        });
     });
 
     describe('when disabled', () => {
-        beforeEach(() => {
-            disabled.set(true);
-            spectator.fixture.changeDetectorRef.detectChanges();
+        beforeEach(async () => {
+            await setupHost(true);
         });
 
         it('should add disabled class to host element', () => {
@@ -91,7 +94,7 @@ describe('DotBinaryFieldUiMessageComponent', () => {
             const button = spectator.query(byTestId('choose-file-btn'));
 
             expect(messageText).toBe('Drag and Drop File');
-            expect(messageIconClass).toContain('pi pi-upload');
+            expect(messageIconClass).toBe('icon pi pi-upload');
             expect(button).toBeTruthy();
         });
     });

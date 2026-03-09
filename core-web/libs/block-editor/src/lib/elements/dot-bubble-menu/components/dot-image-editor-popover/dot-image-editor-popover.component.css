@@ -1,0 +1,34 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    display: contents;
+}
+
+form {
+    @apply flex flex-col w-[18.75rem] gap-6 bg-white rounded-md p-4 shadow-md;
+}
+
+.form-group {
+    @apply flex flex-col gap-2;
+}
+
+.form-group label {
+    @apply font-semibold mb-1;
+}
+
+.form-group label .required {
+    @apply text-red-500;
+}
+
+.form-group input[pInputText] {
+    @apply rounded-md border border-gray-300 px-3 py-2 text-base;
+}
+
+.form-group input[pInputText].ng-invalid {
+    @apply border-red-500;
+}
+
+.bubble-menu-actions {
+    @apply flex justify-end gap-2;
+}
