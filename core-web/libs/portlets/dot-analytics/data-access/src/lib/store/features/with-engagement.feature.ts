@@ -147,8 +147,8 @@ export function withEngagement() {
                                             catchError(() => of(null))
                                         )
                                 }).pipe(
-                                    tapResponse(
-                                        ({ current, previous }) => {
+                                    tapResponse({
+                                        next: ({ current, previous }) => {
                                             patchState(store, {
                                                 engagementKpis: {
                                                     status: ComponentStatus.LOADED,
@@ -157,7 +157,7 @@ export function withEngagement() {
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             patchState(store, {
                                                 engagementKpis: {
                                                     status: ComponentStatus.ERROR,
@@ -171,7 +171,7 @@ export function withEngagement() {
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                             })
                         )
@@ -207,8 +207,8 @@ export function withEngagement() {
                                 return analyticsService
                                     .cubeQuery<EngagementDailyEntity>(query)
                                     .pipe(
-                                        tapResponse(
-                                            (rows) => {
+                                        tapResponse({
+                                            next: (rows) => {
                                                 const row = rows?.[0];
                                                 const total = row
                                                     ? Number(
@@ -232,7 +232,7 @@ export function withEngagement() {
                                                     }
                                                 });
                                             },
-                                            (error: HttpErrorResponse) => {
+                                            error: (error: HttpErrorResponse) => {
                                                 patchState(store, {
                                                     engagementBreakdown: {
                                                         status: ComponentStatus.ERROR,
@@ -246,7 +246,7 @@ export function withEngagement() {
                                                     }
                                                 });
                                             }
-                                        )
+                                        })
                                     );
                             })
                         )
@@ -302,8 +302,8 @@ export function withEngagement() {
                                         .cubeQuery<EngagementDailyEntity>(previousQuery)
                                         .pipe(catchError(() => of([])))
                                 }).pipe(
-                                    tapResponse(
-                                        ({ current, previous }) => {
+                                    tapResponse({
+                                        next: ({ current, previous }) => {
                                             patchState(store, {
                                                 engagementSparkline: {
                                                     status: ComponentStatus.LOADED,
@@ -322,7 +322,7 @@ export function withEngagement() {
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             patchState(store, {
                                                 engagementSparkline: {
                                                     status: ComponentStatus.ERROR,
@@ -336,7 +336,7 @@ export function withEngagement() {
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                             })
                         )
@@ -390,8 +390,8 @@ export function withEngagement() {
                                     map(({ device, browser }) =>
                                         toEngagementPlatforms(device, browser)
                                     ),
-                                    tapResponse(
-                                        (platforms) =>
+                                    tapResponse({
+                                        next: (platforms) =>
                                             patchState(store, {
                                                 engagementPlatforms: {
                                                     status: ComponentStatus.LOADED,
@@ -399,7 +399,7 @@ export function withEngagement() {
                                                     error: null
                                                 }
                                             }),
-                                        (error: HttpErrorResponse) =>
+                                        error: (error: HttpErrorResponse) =>
                                             patchState(store, {
                                                 engagementPlatforms: {
                                                     status: ComponentStatus.ERROR,
@@ -412,7 +412,7 @@ export function withEngagement() {
                                                         )
                                                 }
                                             })
-                                    )
+                                    })
                                 );
                             })
                         )

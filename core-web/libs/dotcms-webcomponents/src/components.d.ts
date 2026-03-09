@@ -3802,495 +3802,162 @@ declare namespace LocalJSX {
          */
         "onReorder"?: (event: KeyValueTableCustomEvent<any>) => void;
     }
-
-    interface DotAssetDropZoneAttributes {
-        "dotAssetsURL": string;
-        "maxFileSize": string;
-        "folder": string;
-        "dropFilesText": string;
-        "uploadFileText": string;
-        "displayIndicator": boolean;
-        "createAssetsText": string;
-        "multiMaxSizeErrorLabel": string;
-        "singeMaxSizeErrorLabel": string;
-        "uploadErrorLabel": string;
-        "typesErrorLabel": string;
-    }
-    interface DotAutocompleteAttributes {
-        "disabled": boolean;
-        "placeholder": string;
-        "threshold": number;
-        "maxResults": number;
-        "debounce": number;
-    }
-    interface DotBadgeAttributes {
-        "bgColor": string;
-        "color": string;
-        "size": string;
-        "bordered": boolean;
-    }
-    interface DotBinaryFileAttributes {
-        "name": string;
-        "label": string;
-        "placeholder": string;
-        "hint": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "validationMessage": string;
-        "URLValidationMessage": string;
-        "fileSizeValidationMessage": string;
-        "disabled": boolean;
-        "accept": string;
-        "maxFileLength": string;
-        "buttonLabel": string;
-        "errorMessage": string;
-        "previewImageName": string;
-        "previewImageUrl": string;
-    }
-    interface DotBinaryFilePreviewAttributes {
-        "fileName": string;
-        "previewUrl": string;
-        "deleteLabel": string;
-    }
-    interface DotBinaryTextFieldAttributes {
-        "value": string;
-        "hint": string;
-        "placeholder": string;
-        "required": boolean;
-        "accept": string;
-        "disabled": boolean;
-    }
-    interface DotBinaryUploadButtonAttributes {
-        "name": string;
-        "required": boolean;
-        "accept": string;
-        "disabled": boolean;
-        "maxFileLength": string;
-        "buttonLabel": string;
-    }
-    interface DotCardContentletAttributes {
-        "thumbnailSize": string;
-        "iconSize": string;
-        "checked": boolean;
-        "showVideoThumbnail": boolean;
-    }
-    interface DotCardViewAttributes {
-        "value": string;
-        "showVideoThumbnail": boolean;
-    }
-    interface DotCheckboxAttributes {
-        "name": string;
-        "label": string;
-        "hint": string;
-        "options": string;
-        "required": boolean;
-        "disabled": boolean;
-        "requiredMessage": string;
-        "value": string;
-    }
-    interface DotChipAttributes {
-        "label": string;
-        "deleteLabel": string;
-        "disabled": boolean;
-    }
-    interface DotContentletIconAttributes {
-        "icon": string;
-        "size": string;
-    }
-    interface DotContentletLockIconAttributes {
-        "locked": boolean;
-        "size": string;
-    }
-    interface DotContentletThumbnailAttributes {
-        "height": string;
-        "width": string;
-        "alt": string;
-        "iconSize": string;
-        "backgroundImage": boolean;
-        "showVideoThumbnail": boolean;
-        "playableVideo": boolean;
-        "fieldVariable": string;
-    }
-    interface DotContextMenuAttributes {
-        "fontSize": string;
-    }
-    interface DotDataViewButtonAttributes {
-        "value": string;
-    }
-    interface DotDateAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "validationMessage": string;
-        "disabled": boolean;
-        "min": string;
-        "max": string;
-        "step": string;
-    }
-    interface DotDateRangeAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "max": string;
-        "min": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "disabled": boolean;
-        "displayFormat": string;
-        "presetLabel": string;
-    }
-    interface DotDateTimeAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "validationMessage": string;
-        "disabled": boolean;
-        "min": string;
-        "max": string;
-        "step": string;
-        "dateLabel": string;
-        "timeLabel": string;
-    }
-    interface DotFormAttributes {
-        "fieldsToShow": string;
-        "resetLabel": string;
-        "submitLabel": string;
-        "variable": string;
-    }
-    interface DotFormColumnAttributes {
-        "fieldsToShow": string;
-    }
-    interface DotFormRowAttributes {
-        "fieldsToShow": string;
-    }
-    interface DotHtmlToImageAttributes {
-        "value": string;
-        "height": string;
-        "width": string;
-    }
-    interface DotInputCalendarAttributes {
-        "value": string;
-        "name": string;
-        "required": boolean;
-        "disabled": boolean;
-        "min": string;
-        "max": string;
-        "step": string;
-        "type": string;
-    }
-    interface DotKeyValueAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "duplicatedKeyMessage": string;
-        "disabled": boolean;
-        "uniqueKeys": boolean;
-        "formKeyPlaceholder": string;
-        "formValuePlaceholder": string;
-        "formKeyLabel": string;
-        "formValueLabel": string;
-        "formAddButtonLabel": string;
-        "listDeleteLabel": string;
-        "whiteListEmptyOptionLabel": string;
-        "whiteList": string;
-    }
-    interface DotLabelAttributes {
-        "name": string;
-        "label": string;
-        "required": boolean;
-    }
-    interface DotMaterialIconPickerAttributes {
-        "placeholder": string;
-        "name": string;
-        "value": string;
-        "size": string;
-        "showColor": string;
-        "colorValue": string;
-        "colorLabel": string;
-    }
-    interface DotMultiSelectAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "options": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "disabled": boolean;
-        "size": string;
-    }
-    interface DotProgressBarAttributes {
-        "text": string;
-        "progress": number;
-    }
-    interface DotRadioAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "required": boolean;
-        "disabled": boolean;
-        "requiredMessage": string;
-        "options": string;
-    }
-    interface DotSelectAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "options": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "disabled": boolean;
-    }
-    interface DotSelectButtonAttributes {
-        "value": string;
-    }
-    interface DotStateIconAttributes {
-        "size": string;
-    }
-    interface DotTagsAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "placeholder": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "disabled": boolean;
-        "threshold": number;
-        "debounce": number;
-    }
-    interface DotTextareaAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "validationMessage": string;
-        "disabled": boolean;
-        "regexCheck": string;
-    }
-    interface DotTextfieldAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "placeholder": string;
-        "hint": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "validationMessage": string;
-        "disabled": boolean;
-        "regexCheck": string;
-        "type": string;
-    }
-    interface DotTimeAttributes {
-        "value": string;
-        "name": string;
-        "label": string;
-        "hint": string;
-        "required": boolean;
-        "requiredMessage": string;
-        "validationMessage": string;
-        "disabled": boolean;
-        "min": string;
-        "max": string;
-        "step": string;
-    }
-    interface DotTooltipAttributes {
-        "content": string;
-        "for": string;
-        "delay": number;
-        "position": string;
-    }
-    interface DotVideoThumbnailAttributes {
-        "variable": string;
-        "playable": boolean;
-        "cover": boolean;
-    }
-    interface KeyValueFormAttributes {
-        "disabled": boolean;
-        "addButtonLabel": string;
-        "keyPlaceholder": string;
-        "valuePlaceholder": string;
-        "keyLabel": string;
-        "valueLabel": string;
-        "emptyDropdownOptionLabel": string;
-        "whiteList": string;
-    }
-    interface KeyValueTableAttributes {
-        "disabled": boolean;
-        "buttonLabel": string;
-        "emptyMessage": string;
-    }
-
     interface IntrinsicElements {
-        "dot-asset-drop-zone": Omit<DotAssetDropZone, keyof DotAssetDropZoneAttributes> & { [K in keyof DotAssetDropZone & keyof DotAssetDropZoneAttributes]?: DotAssetDropZone[K] } & { [K in keyof DotAssetDropZone & keyof DotAssetDropZoneAttributes as `attr:${K}`]?: DotAssetDropZoneAttributes[K] } & { [K in keyof DotAssetDropZone & keyof DotAssetDropZoneAttributes as `prop:${K}`]?: DotAssetDropZone[K] };
-        "dot-autocomplete": Omit<DotAutocomplete, keyof DotAutocompleteAttributes> & { [K in keyof DotAutocomplete & keyof DotAutocompleteAttributes]?: DotAutocomplete[K] } & { [K in keyof DotAutocomplete & keyof DotAutocompleteAttributes as `attr:${K}`]?: DotAutocompleteAttributes[K] } & { [K in keyof DotAutocomplete & keyof DotAutocompleteAttributes as `prop:${K}`]?: DotAutocomplete[K] };
-        "dot-badge": Omit<DotBadge, keyof DotBadgeAttributes> & { [K in keyof DotBadge & keyof DotBadgeAttributes]?: DotBadge[K] } & { [K in keyof DotBadge & keyof DotBadgeAttributes as `attr:${K}`]?: DotBadgeAttributes[K] } & { [K in keyof DotBadge & keyof DotBadgeAttributes as `prop:${K}`]?: DotBadge[K] };
-        "dot-binary-file": Omit<DotBinaryFile, keyof DotBinaryFileAttributes> & { [K in keyof DotBinaryFile & keyof DotBinaryFileAttributes]?: DotBinaryFile[K] } & { [K in keyof DotBinaryFile & keyof DotBinaryFileAttributes as `attr:${K}`]?: DotBinaryFileAttributes[K] } & { [K in keyof DotBinaryFile & keyof DotBinaryFileAttributes as `prop:${K}`]?: DotBinaryFile[K] };
-        "dot-binary-file-preview": Omit<DotBinaryFilePreview, keyof DotBinaryFilePreviewAttributes> & { [K in keyof DotBinaryFilePreview & keyof DotBinaryFilePreviewAttributes]?: DotBinaryFilePreview[K] } & { [K in keyof DotBinaryFilePreview & keyof DotBinaryFilePreviewAttributes as `attr:${K}`]?: DotBinaryFilePreviewAttributes[K] } & { [K in keyof DotBinaryFilePreview & keyof DotBinaryFilePreviewAttributes as `prop:${K}`]?: DotBinaryFilePreview[K] };
-        "dot-binary-text-field": Omit<DotBinaryTextField, keyof DotBinaryTextFieldAttributes> & { [K in keyof DotBinaryTextField & keyof DotBinaryTextFieldAttributes]?: DotBinaryTextField[K] } & { [K in keyof DotBinaryTextField & keyof DotBinaryTextFieldAttributes as `attr:${K}`]?: DotBinaryTextFieldAttributes[K] } & { [K in keyof DotBinaryTextField & keyof DotBinaryTextFieldAttributes as `prop:${K}`]?: DotBinaryTextField[K] };
-        "dot-binary-upload-button": Omit<DotBinaryUploadButton, keyof DotBinaryUploadButtonAttributes> & { [K in keyof DotBinaryUploadButton & keyof DotBinaryUploadButtonAttributes]?: DotBinaryUploadButton[K] } & { [K in keyof DotBinaryUploadButton & keyof DotBinaryUploadButtonAttributes as `attr:${K}`]?: DotBinaryUploadButtonAttributes[K] } & { [K in keyof DotBinaryUploadButton & keyof DotBinaryUploadButtonAttributes as `prop:${K}`]?: DotBinaryUploadButton[K] };
+        "dot-asset-drop-zone": DotAssetDropZone;
+        "dot-autocomplete": DotAutocomplete;
+        "dot-badge": DotBadge;
+        "dot-binary-file": DotBinaryFile;
+        "dot-binary-file-preview": DotBinaryFilePreview;
+        "dot-binary-text-field": DotBinaryTextField;
+        "dot-binary-upload-button": DotBinaryUploadButton;
         "dot-card": DotCard;
-        "dot-card-contentlet": Omit<DotCardContentlet, keyof DotCardContentletAttributes> & { [K in keyof DotCardContentlet & keyof DotCardContentletAttributes]?: DotCardContentlet[K] } & { [K in keyof DotCardContentlet & keyof DotCardContentletAttributes as `attr:${K}`]?: DotCardContentletAttributes[K] } & { [K in keyof DotCardContentlet & keyof DotCardContentletAttributes as `prop:${K}`]?: DotCardContentlet[K] };
-        "dot-card-view": Omit<DotCardView, keyof DotCardViewAttributes> & { [K in keyof DotCardView & keyof DotCardViewAttributes]?: DotCardView[K] } & { [K in keyof DotCardView & keyof DotCardViewAttributes as `attr:${K}`]?: DotCardViewAttributes[K] } & { [K in keyof DotCardView & keyof DotCardViewAttributes as `prop:${K}`]?: DotCardView[K] };
-        "dot-checkbox": Omit<DotCheckbox, keyof DotCheckboxAttributes> & { [K in keyof DotCheckbox & keyof DotCheckboxAttributes]?: DotCheckbox[K] } & { [K in keyof DotCheckbox & keyof DotCheckboxAttributes as `attr:${K}`]?: DotCheckboxAttributes[K] } & { [K in keyof DotCheckbox & keyof DotCheckboxAttributes as `prop:${K}`]?: DotCheckbox[K] };
-        "dot-chip": Omit<DotChip, keyof DotChipAttributes> & { [K in keyof DotChip & keyof DotChipAttributes]?: DotChip[K] } & { [K in keyof DotChip & keyof DotChipAttributes as `attr:${K}`]?: DotChipAttributes[K] } & { [K in keyof DotChip & keyof DotChipAttributes as `prop:${K}`]?: DotChip[K] };
-        "dot-contentlet-icon": Omit<DotContentletIcon, keyof DotContentletIconAttributes> & { [K in keyof DotContentletIcon & keyof DotContentletIconAttributes]?: DotContentletIcon[K] } & { [K in keyof DotContentletIcon & keyof DotContentletIconAttributes as `attr:${K}`]?: DotContentletIconAttributes[K] } & { [K in keyof DotContentletIcon & keyof DotContentletIconAttributes as `prop:${K}`]?: DotContentletIcon[K] };
-        "dot-contentlet-lock-icon": Omit<DotContentletLockIcon, keyof DotContentletLockIconAttributes> & { [K in keyof DotContentletLockIcon & keyof DotContentletLockIconAttributes]?: DotContentletLockIcon[K] } & { [K in keyof DotContentletLockIcon & keyof DotContentletLockIconAttributes as `attr:${K}`]?: DotContentletLockIconAttributes[K] } & { [K in keyof DotContentletLockIcon & keyof DotContentletLockIconAttributes as `prop:${K}`]?: DotContentletLockIcon[K] };
-        "dot-contentlet-thumbnail": Omit<DotContentletThumbnail, keyof DotContentletThumbnailAttributes> & { [K in keyof DotContentletThumbnail & keyof DotContentletThumbnailAttributes]?: DotContentletThumbnail[K] } & { [K in keyof DotContentletThumbnail & keyof DotContentletThumbnailAttributes as `attr:${K}`]?: DotContentletThumbnailAttributes[K] } & { [K in keyof DotContentletThumbnail & keyof DotContentletThumbnailAttributes as `prop:${K}`]?: DotContentletThumbnail[K] };
-        "dot-context-menu": Omit<DotContextMenu, keyof DotContextMenuAttributes> & { [K in keyof DotContextMenu & keyof DotContextMenuAttributes]?: DotContextMenu[K] } & { [K in keyof DotContextMenu & keyof DotContextMenuAttributes as `attr:${K}`]?: DotContextMenuAttributes[K] } & { [K in keyof DotContextMenu & keyof DotContextMenuAttributes as `prop:${K}`]?: DotContextMenu[K] };
-        "dot-data-view-button": Omit<DotDataViewButton, keyof DotDataViewButtonAttributes> & { [K in keyof DotDataViewButton & keyof DotDataViewButtonAttributes]?: DotDataViewButton[K] } & { [K in keyof DotDataViewButton & keyof DotDataViewButtonAttributes as `attr:${K}`]?: DotDataViewButtonAttributes[K] } & { [K in keyof DotDataViewButton & keyof DotDataViewButtonAttributes as `prop:${K}`]?: DotDataViewButton[K] };
-        "dot-date": Omit<DotDate, keyof DotDateAttributes> & { [K in keyof DotDate & keyof DotDateAttributes]?: DotDate[K] } & { [K in keyof DotDate & keyof DotDateAttributes as `attr:${K}`]?: DotDateAttributes[K] } & { [K in keyof DotDate & keyof DotDateAttributes as `prop:${K}`]?: DotDate[K] };
-        "dot-date-range": Omit<DotDateRange, keyof DotDateRangeAttributes> & { [K in keyof DotDateRange & keyof DotDateRangeAttributes]?: DotDateRange[K] } & { [K in keyof DotDateRange & keyof DotDateRangeAttributes as `attr:${K}`]?: DotDateRangeAttributes[K] } & { [K in keyof DotDateRange & keyof DotDateRangeAttributes as `prop:${K}`]?: DotDateRange[K] };
-        "dot-date-time": Omit<DotDateTime, keyof DotDateTimeAttributes> & { [K in keyof DotDateTime & keyof DotDateTimeAttributes]?: DotDateTime[K] } & { [K in keyof DotDateTime & keyof DotDateTimeAttributes as `attr:${K}`]?: DotDateTimeAttributes[K] } & { [K in keyof DotDateTime & keyof DotDateTimeAttributes as `prop:${K}`]?: DotDateTime[K] };
+        "dot-card-contentlet": DotCardContentlet;
+        "dot-card-view": DotCardView;
+        "dot-checkbox": DotCheckbox;
+        "dot-chip": DotChip;
+        "dot-contentlet-icon": DotContentletIcon;
+        "dot-contentlet-lock-icon": DotContentletLockIcon;
+        "dot-contentlet-thumbnail": DotContentletThumbnail;
+        "dot-context-menu": DotContextMenu;
+        "dot-data-view-button": DotDataViewButton;
+        "dot-date": DotDate;
+        "dot-date-range": DotDateRange;
+        "dot-date-time": DotDateTime;
         "dot-error-message": DotErrorMessage;
-        "dot-form": Omit<DotForm, keyof DotFormAttributes> & { [K in keyof DotForm & keyof DotFormAttributes]?: DotForm[K] } & { [K in keyof DotForm & keyof DotFormAttributes as `attr:${K}`]?: DotFormAttributes[K] } & { [K in keyof DotForm & keyof DotFormAttributes as `prop:${K}`]?: DotForm[K] };
-        "dot-form-column": Omit<DotFormColumn, keyof DotFormColumnAttributes> & { [K in keyof DotFormColumn & keyof DotFormColumnAttributes]?: DotFormColumn[K] } & { [K in keyof DotFormColumn & keyof DotFormColumnAttributes as `attr:${K}`]?: DotFormColumnAttributes[K] } & { [K in keyof DotFormColumn & keyof DotFormColumnAttributes as `prop:${K}`]?: DotFormColumn[K] };
-        "dot-form-row": Omit<DotFormRow, keyof DotFormRowAttributes> & { [K in keyof DotFormRow & keyof DotFormRowAttributes]?: DotFormRow[K] } & { [K in keyof DotFormRow & keyof DotFormRowAttributes as `attr:${K}`]?: DotFormRowAttributes[K] } & { [K in keyof DotFormRow & keyof DotFormRowAttributes as `prop:${K}`]?: DotFormRow[K] };
-        "dot-html-to-image": Omit<DotHtmlToImage, keyof DotHtmlToImageAttributes> & { [K in keyof DotHtmlToImage & keyof DotHtmlToImageAttributes]?: DotHtmlToImage[K] } & { [K in keyof DotHtmlToImage & keyof DotHtmlToImageAttributes as `attr:${K}`]?: DotHtmlToImageAttributes[K] } & { [K in keyof DotHtmlToImage & keyof DotHtmlToImageAttributes as `prop:${K}`]?: DotHtmlToImage[K] };
-        "dot-input-calendar": Omit<DotInputCalendar, keyof DotInputCalendarAttributes> & { [K in keyof DotInputCalendar & keyof DotInputCalendarAttributes]?: DotInputCalendar[K] } & { [K in keyof DotInputCalendar & keyof DotInputCalendarAttributes as `attr:${K}`]?: DotInputCalendarAttributes[K] } & { [K in keyof DotInputCalendar & keyof DotInputCalendarAttributes as `prop:${K}`]?: DotInputCalendar[K] };
-        "dot-key-value": Omit<DotKeyValue, keyof DotKeyValueAttributes> & { [K in keyof DotKeyValue & keyof DotKeyValueAttributes]?: DotKeyValue[K] } & { [K in keyof DotKeyValue & keyof DotKeyValueAttributes as `attr:${K}`]?: DotKeyValueAttributes[K] } & { [K in keyof DotKeyValue & keyof DotKeyValueAttributes as `prop:${K}`]?: DotKeyValue[K] };
-        "dot-label": Omit<DotLabel, keyof DotLabelAttributes> & { [K in keyof DotLabel & keyof DotLabelAttributes]?: DotLabel[K] } & { [K in keyof DotLabel & keyof DotLabelAttributes as `attr:${K}`]?: DotLabelAttributes[K] } & { [K in keyof DotLabel & keyof DotLabelAttributes as `prop:${K}`]?: DotLabel[K] };
-        "dot-material-icon-picker": Omit<DotMaterialIconPicker, keyof DotMaterialIconPickerAttributes> & { [K in keyof DotMaterialIconPicker & keyof DotMaterialIconPickerAttributes]?: DotMaterialIconPicker[K] } & { [K in keyof DotMaterialIconPicker & keyof DotMaterialIconPickerAttributes as `attr:${K}`]?: DotMaterialIconPickerAttributes[K] } & { [K in keyof DotMaterialIconPicker & keyof DotMaterialIconPickerAttributes as `prop:${K}`]?: DotMaterialIconPicker[K] };
-        "dot-multi-select": Omit<DotMultiSelect, keyof DotMultiSelectAttributes> & { [K in keyof DotMultiSelect & keyof DotMultiSelectAttributes]?: DotMultiSelect[K] } & { [K in keyof DotMultiSelect & keyof DotMultiSelectAttributes as `attr:${K}`]?: DotMultiSelectAttributes[K] } & { [K in keyof DotMultiSelect & keyof DotMultiSelectAttributes as `prop:${K}`]?: DotMultiSelect[K] };
-        "dot-progress-bar": Omit<DotProgressBar, keyof DotProgressBarAttributes> & { [K in keyof DotProgressBar & keyof DotProgressBarAttributes]?: DotProgressBar[K] } & { [K in keyof DotProgressBar & keyof DotProgressBarAttributes as `attr:${K}`]?: DotProgressBarAttributes[K] } & { [K in keyof DotProgressBar & keyof DotProgressBarAttributes as `prop:${K}`]?: DotProgressBar[K] };
-        "dot-radio": Omit<DotRadio, keyof DotRadioAttributes> & { [K in keyof DotRadio & keyof DotRadioAttributes]?: DotRadio[K] } & { [K in keyof DotRadio & keyof DotRadioAttributes as `attr:${K}`]?: DotRadioAttributes[K] } & { [K in keyof DotRadio & keyof DotRadioAttributes as `prop:${K}`]?: DotRadio[K] };
-        "dot-select": Omit<DotSelect, keyof DotSelectAttributes> & { [K in keyof DotSelect & keyof DotSelectAttributes]?: DotSelect[K] } & { [K in keyof DotSelect & keyof DotSelectAttributes as `attr:${K}`]?: DotSelectAttributes[K] } & { [K in keyof DotSelect & keyof DotSelectAttributes as `prop:${K}`]?: DotSelect[K] };
-        "dot-select-button": Omit<DotSelectButton, keyof DotSelectButtonAttributes> & { [K in keyof DotSelectButton & keyof DotSelectButtonAttributes]?: DotSelectButton[K] } & { [K in keyof DotSelectButton & keyof DotSelectButtonAttributes as `attr:${K}`]?: DotSelectButtonAttributes[K] } & { [K in keyof DotSelectButton & keyof DotSelectButtonAttributes as `prop:${K}`]?: DotSelectButton[K] };
-        "dot-state-icon": Omit<DotStateIcon, keyof DotStateIconAttributes> & { [K in keyof DotStateIcon & keyof DotStateIconAttributes]?: DotStateIcon[K] } & { [K in keyof DotStateIcon & keyof DotStateIconAttributes as `attr:${K}`]?: DotStateIconAttributes[K] } & { [K in keyof DotStateIcon & keyof DotStateIconAttributes as `prop:${K}`]?: DotStateIcon[K] };
-        "dot-tags": Omit<DotTags, keyof DotTagsAttributes> & { [K in keyof DotTags & keyof DotTagsAttributes]?: DotTags[K] } & { [K in keyof DotTags & keyof DotTagsAttributes as `attr:${K}`]?: DotTagsAttributes[K] } & { [K in keyof DotTags & keyof DotTagsAttributes as `prop:${K}`]?: DotTags[K] };
-        "dot-textarea": Omit<DotTextarea, keyof DotTextareaAttributes> & { [K in keyof DotTextarea & keyof DotTextareaAttributes]?: DotTextarea[K] } & { [K in keyof DotTextarea & keyof DotTextareaAttributes as `attr:${K}`]?: DotTextareaAttributes[K] } & { [K in keyof DotTextarea & keyof DotTextareaAttributes as `prop:${K}`]?: DotTextarea[K] };
-        "dot-textfield": Omit<DotTextfield, keyof DotTextfieldAttributes> & { [K in keyof DotTextfield & keyof DotTextfieldAttributes]?: DotTextfield[K] } & { [K in keyof DotTextfield & keyof DotTextfieldAttributes as `attr:${K}`]?: DotTextfieldAttributes[K] } & { [K in keyof DotTextfield & keyof DotTextfieldAttributes as `prop:${K}`]?: DotTextfield[K] };
-        "dot-time": Omit<DotTime, keyof DotTimeAttributes> & { [K in keyof DotTime & keyof DotTimeAttributes]?: DotTime[K] } & { [K in keyof DotTime & keyof DotTimeAttributes as `attr:${K}`]?: DotTimeAttributes[K] } & { [K in keyof DotTime & keyof DotTimeAttributes as `prop:${K}`]?: DotTime[K] };
-        "dot-tooltip": Omit<DotTooltip, keyof DotTooltipAttributes> & { [K in keyof DotTooltip & keyof DotTooltipAttributes]?: DotTooltip[K] } & { [K in keyof DotTooltip & keyof DotTooltipAttributes as `attr:${K}`]?: DotTooltipAttributes[K] } & { [K in keyof DotTooltip & keyof DotTooltipAttributes as `prop:${K}`]?: DotTooltip[K] };
-        "dot-video-thumbnail": Omit<DotVideoThumbnail, keyof DotVideoThumbnailAttributes> & { [K in keyof DotVideoThumbnail & keyof DotVideoThumbnailAttributes]?: DotVideoThumbnail[K] } & { [K in keyof DotVideoThumbnail & keyof DotVideoThumbnailAttributes as `attr:${K}`]?: DotVideoThumbnailAttributes[K] } & { [K in keyof DotVideoThumbnail & keyof DotVideoThumbnailAttributes as `prop:${K}`]?: DotVideoThumbnail[K] };
-        "key-value-form": Omit<KeyValueForm, keyof KeyValueFormAttributes> & { [K in keyof KeyValueForm & keyof KeyValueFormAttributes]?: KeyValueForm[K] } & { [K in keyof KeyValueForm & keyof KeyValueFormAttributes as `attr:${K}`]?: KeyValueFormAttributes[K] } & { [K in keyof KeyValueForm & keyof KeyValueFormAttributes as `prop:${K}`]?: KeyValueForm[K] };
-        "key-value-table": Omit<KeyValueTable, keyof KeyValueTableAttributes> & { [K in keyof KeyValueTable & keyof KeyValueTableAttributes]?: KeyValueTable[K] } & { [K in keyof KeyValueTable & keyof KeyValueTableAttributes as `attr:${K}`]?: KeyValueTableAttributes[K] } & { [K in keyof KeyValueTable & keyof KeyValueTableAttributes as `prop:${K}`]?: KeyValueTable[K] };
+        "dot-form": DotForm;
+        "dot-form-column": DotFormColumn;
+        "dot-form-row": DotFormRow;
+        "dot-html-to-image": DotHtmlToImage;
+        "dot-input-calendar": DotInputCalendar;
+        "dot-key-value": DotKeyValue;
+        "dot-label": DotLabel;
+        "dot-material-icon-picker": DotMaterialIconPicker;
+        "dot-multi-select": DotMultiSelect;
+        "dot-progress-bar": DotProgressBar;
+        "dot-radio": DotRadio;
+        "dot-select": DotSelect;
+        "dot-select-button": DotSelectButton;
+        "dot-state-icon": DotStateIcon;
+        "dot-tags": DotTags;
+        "dot-textarea": DotTextarea;
+        "dot-textfield": DotTextfield;
+        "dot-time": DotTime;
+        "dot-tooltip": DotTooltip;
+        "dot-video-thumbnail": DotVideoThumbnail;
+        "key-value-form": KeyValueForm;
+        "key-value-table": KeyValueTable;
     }
 }
 export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
-            "dot-asset-drop-zone": LocalJSX.IntrinsicElements["dot-asset-drop-zone"] & JSXBase.HTMLAttributes<HTMLDotAssetDropZoneElement>;
-            "dot-autocomplete": LocalJSX.IntrinsicElements["dot-autocomplete"] & JSXBase.HTMLAttributes<HTMLDotAutocompleteElement>;
-            "dot-badge": LocalJSX.IntrinsicElements["dot-badge"] & JSXBase.HTMLAttributes<HTMLDotBadgeElement>;
+            "dot-asset-drop-zone": LocalJSX.DotAssetDropZone & JSXBase.HTMLAttributes<HTMLDotAssetDropZoneElement>;
+            "dot-autocomplete": LocalJSX.DotAutocomplete & JSXBase.HTMLAttributes<HTMLDotAutocompleteElement>;
+            "dot-badge": LocalJSX.DotBadge & JSXBase.HTMLAttributes<HTMLDotBadgeElement>;
             /**
              * Represent a dotcms binary file control.
              * @export 
              * @class DotBinaryFileComponent
              */
-            "dot-binary-file": LocalJSX.IntrinsicElements["dot-binary-file"] & JSXBase.HTMLAttributes<HTMLDotBinaryFileElement>;
+            "dot-binary-file": LocalJSX.DotBinaryFile & JSXBase.HTMLAttributes<HTMLDotBinaryFileElement>;
             /**
              * Represent a dotcms text field for the binary file preview.
              * @export 
              * @class DotBinaryFilePreviewComponent
              */
-            "dot-binary-file-preview": LocalJSX.IntrinsicElements["dot-binary-file-preview"] & JSXBase.HTMLAttributes<HTMLDotBinaryFilePreviewElement>;
+            "dot-binary-file-preview": LocalJSX.DotBinaryFilePreview & JSXBase.HTMLAttributes<HTMLDotBinaryFilePreviewElement>;
             /**
              * Represent a dotcms text field for the binary file element.
              * @export 
              * @class DotBinaryFile
              */
-            "dot-binary-text-field": LocalJSX.IntrinsicElements["dot-binary-text-field"] & JSXBase.HTMLAttributes<HTMLDotBinaryTextFieldElement>;
+            "dot-binary-text-field": LocalJSX.DotBinaryTextField & JSXBase.HTMLAttributes<HTMLDotBinaryTextFieldElement>;
             /**
              * Represent a dotcms text field for the binary file element.
              * @export 
              * @class DotBinaryFile
              */
-            "dot-binary-upload-button": LocalJSX.IntrinsicElements["dot-binary-upload-button"] & JSXBase.HTMLAttributes<HTMLDotBinaryUploadButtonElement>;
-            "dot-card": LocalJSX.IntrinsicElements["dot-card"] & JSXBase.HTMLAttributes<HTMLDotCardElement>;
-            "dot-card-contentlet": LocalJSX.IntrinsicElements["dot-card-contentlet"] & JSXBase.HTMLAttributes<HTMLDotCardContentletElement>;
-            "dot-card-view": LocalJSX.IntrinsicElements["dot-card-view"] & JSXBase.HTMLAttributes<HTMLDotCardViewElement>;
-            "dot-checkbox": LocalJSX.IntrinsicElements["dot-checkbox"] & JSXBase.HTMLAttributes<HTMLDotCheckboxElement>;
-            "dot-chip": LocalJSX.IntrinsicElements["dot-chip"] & JSXBase.HTMLAttributes<HTMLDotChipElement>;
+            "dot-binary-upload-button": LocalJSX.DotBinaryUploadButton & JSXBase.HTMLAttributes<HTMLDotBinaryUploadButtonElement>;
+            "dot-card": LocalJSX.DotCard & JSXBase.HTMLAttributes<HTMLDotCardElement>;
+            "dot-card-contentlet": LocalJSX.DotCardContentlet & JSXBase.HTMLAttributes<HTMLDotCardContentletElement>;
+            "dot-card-view": LocalJSX.DotCardView & JSXBase.HTMLAttributes<HTMLDotCardViewElement>;
+            "dot-checkbox": LocalJSX.DotCheckbox & JSXBase.HTMLAttributes<HTMLDotCheckboxElement>;
+            "dot-chip": LocalJSX.DotChip & JSXBase.HTMLAttributes<HTMLDotChipElement>;
             /**
              * Represent a mapping of legacy icons if DotCMS
              * @export 
              * @class DotFileIcon
              */
-            "dot-contentlet-icon": LocalJSX.IntrinsicElements["dot-contentlet-icon"] & JSXBase.HTMLAttributes<HTMLDotContentletIconElement>;
-            "dot-contentlet-lock-icon": LocalJSX.IntrinsicElements["dot-contentlet-lock-icon"] & JSXBase.HTMLAttributes<HTMLDotContentletLockIconElement>;
-            "dot-contentlet-thumbnail": LocalJSX.IntrinsicElements["dot-contentlet-thumbnail"] & JSXBase.HTMLAttributes<HTMLDotContentletThumbnailElement>;
-            "dot-context-menu": LocalJSX.IntrinsicElements["dot-context-menu"] & JSXBase.HTMLAttributes<HTMLDotContextMenuElement>;
-            "dot-data-view-button": LocalJSX.IntrinsicElements["dot-data-view-button"] & JSXBase.HTMLAttributes<HTMLDotDataViewButtonElement>;
-            "dot-date": LocalJSX.IntrinsicElements["dot-date"] & JSXBase.HTMLAttributes<HTMLDotDateElement>;
-            "dot-date-range": LocalJSX.IntrinsicElements["dot-date-range"] & JSXBase.HTMLAttributes<HTMLDotDateRangeElement>;
-            "dot-date-time": LocalJSX.IntrinsicElements["dot-date-time"] & JSXBase.HTMLAttributes<HTMLDotDateTimeElement>;
-            "dot-error-message": LocalJSX.IntrinsicElements["dot-error-message"] & JSXBase.HTMLAttributes<HTMLDotErrorMessageElement>;
-            "dot-form": LocalJSX.IntrinsicElements["dot-form"] & JSXBase.HTMLAttributes<HTMLDotFormElement>;
-            "dot-form-column": LocalJSX.IntrinsicElements["dot-form-column"] & JSXBase.HTMLAttributes<HTMLDotFormColumnElement>;
-            "dot-form-row": LocalJSX.IntrinsicElements["dot-form-row"] & JSXBase.HTMLAttributes<HTMLDotFormRowElement>;
-            "dot-html-to-image": LocalJSX.IntrinsicElements["dot-html-to-image"] & JSXBase.HTMLAttributes<HTMLDotHtmlToImageElement>;
-            "dot-input-calendar": LocalJSX.IntrinsicElements["dot-input-calendar"] & JSXBase.HTMLAttributes<HTMLDotInputCalendarElement>;
-            "dot-key-value": LocalJSX.IntrinsicElements["dot-key-value"] & JSXBase.HTMLAttributes<HTMLDotKeyValueElement>;
+            "dot-contentlet-icon": LocalJSX.DotContentletIcon & JSXBase.HTMLAttributes<HTMLDotContentletIconElement>;
+            "dot-contentlet-lock-icon": LocalJSX.DotContentletLockIcon & JSXBase.HTMLAttributes<HTMLDotContentletLockIconElement>;
+            "dot-contentlet-thumbnail": LocalJSX.DotContentletThumbnail & JSXBase.HTMLAttributes<HTMLDotContentletThumbnailElement>;
+            "dot-context-menu": LocalJSX.DotContextMenu & JSXBase.HTMLAttributes<HTMLDotContextMenuElement>;
+            "dot-data-view-button": LocalJSX.DotDataViewButton & JSXBase.HTMLAttributes<HTMLDotDataViewButtonElement>;
+            "dot-date": LocalJSX.DotDate & JSXBase.HTMLAttributes<HTMLDotDateElement>;
+            "dot-date-range": LocalJSX.DotDateRange & JSXBase.HTMLAttributes<HTMLDotDateRangeElement>;
+            "dot-date-time": LocalJSX.DotDateTime & JSXBase.HTMLAttributes<HTMLDotDateTimeElement>;
+            "dot-error-message": LocalJSX.DotErrorMessage & JSXBase.HTMLAttributes<HTMLDotErrorMessageElement>;
+            "dot-form": LocalJSX.DotForm & JSXBase.HTMLAttributes<HTMLDotFormElement>;
+            "dot-form-column": LocalJSX.DotFormColumn & JSXBase.HTMLAttributes<HTMLDotFormColumnElement>;
+            "dot-form-row": LocalJSX.DotFormRow & JSXBase.HTMLAttributes<HTMLDotFormRowElement>;
+            "dot-html-to-image": LocalJSX.DotHtmlToImage & JSXBase.HTMLAttributes<HTMLDotHtmlToImageElement>;
+            "dot-input-calendar": LocalJSX.DotInputCalendar & JSXBase.HTMLAttributes<HTMLDotInputCalendarElement>;
+            "dot-key-value": LocalJSX.DotKeyValue & JSXBase.HTMLAttributes<HTMLDotKeyValueElement>;
             /**
              * Represent a dotcms label control.
              * @export 
              * @class DotLabelComponent
              */
-            "dot-label": LocalJSX.IntrinsicElements["dot-label"] & JSXBase.HTMLAttributes<HTMLDotLabelElement>;
-            "dot-material-icon-picker": LocalJSX.IntrinsicElements["dot-material-icon-picker"] & JSXBase.HTMLAttributes<HTMLDotMaterialIconPickerElement>;
+            "dot-label": LocalJSX.DotLabel & JSXBase.HTMLAttributes<HTMLDotLabelElement>;
+            "dot-material-icon-picker": LocalJSX.DotMaterialIconPicker & JSXBase.HTMLAttributes<HTMLDotMaterialIconPickerElement>;
             /**
              * Represent a dotcms multi select control.
              * @export 
              * @class DotSelectComponent
              */
-            "dot-multi-select": LocalJSX.IntrinsicElements["dot-multi-select"] & JSXBase.HTMLAttributes<HTMLDotMultiSelectElement>;
+            "dot-multi-select": LocalJSX.DotMultiSelect & JSXBase.HTMLAttributes<HTMLDotMultiSelectElement>;
             /**
              * Represent a dotCMS DotProgressBar control.
              * @export 
              * @class DotProgressBar
              */
-            "dot-progress-bar": LocalJSX.IntrinsicElements["dot-progress-bar"] & JSXBase.HTMLAttributes<HTMLDotProgressBarElement>;
+            "dot-progress-bar": LocalJSX.DotProgressBar & JSXBase.HTMLAttributes<HTMLDotProgressBarElement>;
             /**
              * Represent a dotcms radio control.
              * @export 
              * @class DotRadioComponent
              */
-            "dot-radio": LocalJSX.IntrinsicElements["dot-radio"] & JSXBase.HTMLAttributes<HTMLDotRadioElement>;
+            "dot-radio": LocalJSX.DotRadio & JSXBase.HTMLAttributes<HTMLDotRadioElement>;
             /**
              * Represent a dotcms select control.
              * @export 
              * @class DotSelectComponent
              */
-            "dot-select": LocalJSX.IntrinsicElements["dot-select"] & JSXBase.HTMLAttributes<HTMLDotSelectElement>;
-            "dot-select-button": LocalJSX.IntrinsicElements["dot-select-button"] & JSXBase.HTMLAttributes<HTMLDotSelectButtonElement>;
+            "dot-select": LocalJSX.DotSelect & JSXBase.HTMLAttributes<HTMLDotSelectElement>;
+            "dot-select-button": LocalJSX.DotSelectButton & JSXBase.HTMLAttributes<HTMLDotSelectButtonElement>;
             /**
              * @deprecated Use dot-contentlet-status-chip instead
              */
-            "dot-state-icon": LocalJSX.IntrinsicElements["dot-state-icon"] & JSXBase.HTMLAttributes<HTMLDotStateIconElement>;
-            "dot-tags": LocalJSX.IntrinsicElements["dot-tags"] & JSXBase.HTMLAttributes<HTMLDotTagsElement>;
+            "dot-state-icon": LocalJSX.DotStateIcon & JSXBase.HTMLAttributes<HTMLDotStateIconElement>;
+            "dot-tags": LocalJSX.DotTags & JSXBase.HTMLAttributes<HTMLDotTagsElement>;
             /**
              * Represent a dotcms textarea control.
              * @export 
              * @class DotTextareaComponent
              */
-            "dot-textarea": LocalJSX.IntrinsicElements["dot-textarea"] & JSXBase.HTMLAttributes<HTMLDotTextareaElement>;
+            "dot-textarea": LocalJSX.DotTextarea & JSXBase.HTMLAttributes<HTMLDotTextareaElement>;
             /**
              * Represent a dotcms input control.
              * @export 
              * @class DotTextfieldComponent
              */
-            "dot-textfield": LocalJSX.IntrinsicElements["dot-textfield"] & JSXBase.HTMLAttributes<HTMLDotTextfieldElement>;
-            "dot-time": LocalJSX.IntrinsicElements["dot-time"] & JSXBase.HTMLAttributes<HTMLDotTimeElement>;
-            "dot-tooltip": LocalJSX.IntrinsicElements["dot-tooltip"] & JSXBase.HTMLAttributes<HTMLDotTooltipElement>;
-            "dot-video-thumbnail": LocalJSX.IntrinsicElements["dot-video-thumbnail"] & JSXBase.HTMLAttributes<HTMLDotVideoThumbnailElement>;
-            "key-value-form": LocalJSX.IntrinsicElements["key-value-form"] & JSXBase.HTMLAttributes<HTMLKeyValueFormElement>;
-            "key-value-table": LocalJSX.IntrinsicElements["key-value-table"] & JSXBase.HTMLAttributes<HTMLKeyValueTableElement>;
+            "dot-textfield": LocalJSX.DotTextfield & JSXBase.HTMLAttributes<HTMLDotTextfieldElement>;
+            "dot-time": LocalJSX.DotTime & JSXBase.HTMLAttributes<HTMLDotTimeElement>;
+            "dot-tooltip": LocalJSX.DotTooltip & JSXBase.HTMLAttributes<HTMLDotTooltipElement>;
+            "dot-video-thumbnail": LocalJSX.DotVideoThumbnail & JSXBase.HTMLAttributes<HTMLDotVideoThumbnailElement>;
+            "key-value-form": LocalJSX.KeyValueForm & JSXBase.HTMLAttributes<HTMLKeyValueFormElement>;
+            "key-value-table": LocalJSX.KeyValueTable & JSXBase.HTMLAttributes<HTMLKeyValueTableElement>;
         }
     }
 }
