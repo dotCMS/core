@@ -457,10 +457,18 @@ public class ESIndexAPI implements IndexAPI {
 
 		shards = shards > 0 ? shards : Config.getIntProperty("es.index.number_of_shards", 1);
 
+		if(shards>1){
+			Logger.warn(this.getClass(),"Number of ES shards : " + shards + ". Important to note that the more shards you enable, the slower the index reads.  dotCMS recommends using only 1 shard per replica. ");
+		}
 		Map<String,Object> map  = (settings ==null) ? new HashMap<>() : new ObjectMapper().readValue(settings, LinkedHashMap.class);
 
+
+		String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
+
+
 		map.put("number_of_shards", shards);
-		map.put("index.auto_expand_replicas", "0-all");
+		map.put("index.auto_expand_replicas", autoExpandReplicas);
+
 		map.putIfAbsent("index.mapping.total_fields.limit", 10000);
 		map.putIfAbsent("index.mapping.nested_fields.limit", 10000);
 		map.putIfAbsent("index.query.default_field", Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));

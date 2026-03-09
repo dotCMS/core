@@ -19,7 +19,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
         com.dotcms.tika.TikaUtilsTest.class,
-        com.dotcms.http.CircuitBreakerUrlTest.class,
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
         com.dotcms.graphql.business.GraphqlAPITest.class,

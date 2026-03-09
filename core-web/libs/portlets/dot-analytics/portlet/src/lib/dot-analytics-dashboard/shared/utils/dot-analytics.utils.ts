@@ -30,28 +30,19 @@ export const isValidCustomDateRange = (fromDate: string, toDate: string): boolea
     return differenceInCalendarDays(toDateObj, fromDateObj) >= MIN_CUSTOM_DATE_RANGE_DAYS - 1;
 };
 
-/** Time range values that are no longer supported as URL params */
-const EXCLUDED_TIME_RANGE_URL_VALUES: string[] = [
-    TIME_RANGE_OPTIONS.today,
-    TIME_RANGE_OPTIONS.yesterday
-];
-
 /**
  * Validates and returns a valid time range from a URL parameter value.
- * `today` and `yesterday` are excluded as they are no longer supported options.
  * @param urlValue - URL parameter value for time range
- * @returns Valid TimeRange or null if invalid or excluded
+ * @returns Valid TimeRange or null if invalid
  */
 export const getValidTimeRangeUrl = (urlValue: string): TimeRange | null => {
     if (!urlValue || typeof urlValue !== 'string') {
         return null;
     }
 
-    if (EXCLUDED_TIME_RANGE_URL_VALUES.includes(urlValue)) {
-        return null;
-    }
-
-    return Object.keys(TIME_RANGE_OPTIONS).includes(urlValue) ? (urlValue as TimeRange) : null;
+    return Object.values(TIME_RANGE_OPTIONS).includes(urlValue as TimeRange)
+        ? (urlValue as TimeRange)
+        : null;
 };
 
 /**

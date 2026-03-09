@@ -15,15 +15,8 @@ export function isValidTab(tab: string): tab is DashboardTab {
     return Object.values(DASHBOARD_TABS).includes(tab as DashboardTab);
 }
 
-/** Time range values that are no longer supported as URL params */
-const EXCLUDED_TIME_RANGE_PARAMS: string[] = [
-    TIME_RANGE_OPTIONS.today,
-    TIME_RANGE_OPTIONS.yesterday
-];
-
 /**
  * Converts URL query params to TimeRangeInput.
- * `today` and `yesterday` are excluded and fall back to `last7days`.
  *
  * @param params - The query params from the route
  * @returns A TimeRangeInput (either a predefined range string or a custom date array)
@@ -34,11 +27,6 @@ export function paramsToTimeRange(params: Params | null | undefined): TimeRangeI
     }
 
     const timeRange: string = params['time_range'];
-
-    // Excluded values fall back to the default
-    if (EXCLUDED_TIME_RANGE_PARAMS.includes(timeRange)) {
-        return TIME_RANGE_OPTIONS.last7days;
-    }
 
     // Only return custom date range if both from and to are provided
     if (timeRange === TIME_RANGE_OPTIONS.custom && params['from'] && params['to']) {
