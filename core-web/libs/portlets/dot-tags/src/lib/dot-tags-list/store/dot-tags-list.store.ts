@@ -56,12 +56,14 @@ export const DotTagsListStore = signalStore(
     withMethods((store) => {
         const tagsService = inject(DotTagsService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const globalStore = inject(GlobalStore);
 
         function loadTags() {
             patchState(store, { status: 'loading' });
             tagsService
                 .getTagsPaginated({
                     filter: store.filter() || undefined,
+                    site: globalStore.currentSiteId() || undefined,
                     page: store.page(),
                     per_page: store.rows(),
                     orderBy: store.sortField(),

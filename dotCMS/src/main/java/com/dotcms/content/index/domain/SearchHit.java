@@ -2,10 +2,8 @@ package com.dotcms.content.index.domain;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.elasticsearch.common.document.DocumentField;
-import org.immutables.value.Value;
-
 import java.util.Map;
+import org.immutables.value.Value;
 
 /**
  * Immutable domain representation of a single search result hit from any search engine.

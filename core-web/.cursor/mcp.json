@@ -1,13 +1,17 @@
 {
     "mcpServers": {
         "primeng": {
-            "type": "stdio",
             "command": "npx",
             "args": ["-y", "@primeng/mcp"]
         },
         "playwright": {
             "command": "npx",
             "args": ["@playwright/mcp@latest"]
+        },
+        "nx-mcp": {
+            "type": "stdio",
+            "command": "npx",
+            "args": ["nx", "mcp"]
         }
     }
 }

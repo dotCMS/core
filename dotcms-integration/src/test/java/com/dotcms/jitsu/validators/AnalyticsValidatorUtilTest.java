@@ -832,7 +832,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
      */
     @Test
     public void dataIsRequired() {
-        final int expectedErrorCount = 4;
+        final int expectedErrorCount = 5;
         final String json =
                 "{" +
                     "\"context\": {" +
@@ -869,6 +869,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 expectedErrorCount, errorsField.size());
         assertTrue(errorsField.contains("events[0].data.page"));
         assertTrue(errorsField.contains("events[0].data.page.url"));
+        assertTrue(errorsField.contains("events[0].data.page.locale_id"));
         assertTrue(errorsField.contains("events[0].data.page.doc_encoding"));
         assertTrue(errorsField.contains("events[0].local_time"));
 
@@ -889,6 +890,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         assertEquals(expectedErrorCount, errorsField.size());
         assertTrue(errorsMessages.contains("Required field is missing: data.page"));
         assertTrue(errorsMessages.contains("Required field is missing: data.page.url"));
+        assertTrue(errorsMessages.contains("Required field is missing: data.page.locale_id"));
         assertTrue(errorsMessages.contains("Required field is missing: local_time"));
     }
 
@@ -920,6 +922,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                                 "\"page\": {" +
                                     "\"url\": \"http://www.google.com\"," +
                                     "\"title\": \"Google\"," +
+                                    "\"locale_id\": \"en\"," +
                                     "\"doc_encoding\": \"UTF8\"" +
                                 "}" +
                             "}" +
@@ -961,6 +964,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                                 "\"page\": {" +
                                     "\"url\": \"http://www.google.com\"," +
                                     "\"title\": \"Google\"," +
+                                    "\"locale_id\": \"en\"," +
                                     "\"doc_encoding\": \"UTF8\"" +
                                 "}" +
                             "}" +
@@ -1006,6 +1010,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                                 "\"page\": {" +
                                     "\"url\": \"http://www.google.com\"," +
                                     "\"title\": \"Google\"," +
+                                    "\"locale_id\": \"en\"," +
                                     "\"doc_encoding\": \"UTF8\"," +
                                     "\"extra_field\": \"extra\"" +
                                 "}" +

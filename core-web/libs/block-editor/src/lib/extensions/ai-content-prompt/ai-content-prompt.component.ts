@@ -46,7 +46,7 @@ interface AIContentForm {
         ConfirmDialog,
         DotCopyButtonComponent
     ],
-    styleUrls: ['./ai-content-prompt.component.scss']
+    styleUrls: ['./ai-content-prompt.component.css']
 })
 export class AIContentPromptComponent implements OnInit {
     store: AiContentPromptStore = inject(AiContentPromptStore);

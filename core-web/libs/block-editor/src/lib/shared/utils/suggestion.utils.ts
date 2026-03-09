@@ -56,6 +56,14 @@ const table: DotMenuItem[] = [
     }
 ];
 
+const grid: DotMenuItem[] = [
+    {
+        label: 'Grid (2 columns)',
+        icon: 'grid_view',
+        id: 'gridBlock'
+    }
+];
+
 const paragraph: DotMenuItem = {
     label: 'Paragraph',
     icon: sanitizeUrl(pIcon),
@@ -121,6 +129,7 @@ export const suggestionOptions: DotMenuItem[] = [
     ...image,
     ...headings,
     ...table,
+    ...grid,
     ...list,
     ...block,
     paragraph
@@ -150,7 +159,8 @@ const FORBIDDEN_CHANGE_TO_BLOCKS = {
     horizontalRule: true,
     table: true,
     image: true,
-    video: true
+    video: true,
+    gridBlock: true
 };
 
 export const changeToItems: DotMenuItem[] = [

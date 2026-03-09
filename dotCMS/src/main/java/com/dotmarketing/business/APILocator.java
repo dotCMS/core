@@ -31,11 +31,12 @@ import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.VersionedIndicesAPI;
-import com.dotcms.content.index.opensearch.OpenSearchIndexAPI;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
@@ -728,11 +729,11 @@ public class APILocator extends Locator<APIIndex> {
     }
 
     /**
-     * Open Search Index API
-     * @return {@link OpenSearchIndexAPI}
+     * Vendor-neutral Index API router (currently routes to Elasticsearch).
+     * @return {@link IndexAPI}
      */
-    public static OpenSearchIndexAPI getOpenSearchIndexAPI(){
-        return (OpenSearchIndexAPI) getInstance(APIIndex.OPENSEARCH_INDEX_API);
+    public static IndexAPI getIndexAPI(){
+        return (IndexAPI) getInstance(APIIndex.INDEX_API);
     }
 
 	/**
@@ -745,12 +746,12 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
-	 * Creates a single instance of the {@link ESIndexAPI} class.
+	 * Returns the vendor-neutral {@link IndexAPI} instance backed by {@link IndexAPIImpl}.
 	 *
-	 * @return The {@link ESIndexAPI} class.
+	 * @return The {@link IndexAPI} instance.
 	 */
-	public static ESIndexAPI getESIndexAPI() {
-	    return (ESIndexAPI) getInstance(APIIndex.ES_INDEX_API);
+	public static IndexAPI getESIndexAPI() {
+	    return (IndexAPI) getInstance(APIIndex.ES_INDEX_API);
 	}
 
 	/**
@@ -1430,7 +1431,8 @@ enum APIIndex
     REQUEST_COST_API,
     ANALYTICS_CUSTOM_ATTRIBUTE_API,
     VERSIONED_INDICES_API,
-    OPENSEARCH_INDEX_API
+    OPENSEARCH_INDEX_API,
+    INDEX_API
     ;
 
 	Object create() {
@@ -1470,7 +1472,7 @@ enum APIIndex
     		case TAG_API: return new TagAPIImpl();
     		case INDICIES_API: return new IndiciesAPIImpl();
     		case CONTENLET_INDEX_API: return new ContentletIndexAPIImpl();
-    		case ES_INDEX_API: return new ESIndexAPI();
+    		case ES_INDEX_API: return new IndexAPIImpl();
     		case PUBLISHER_API: return new PublisherAPIImpl();
     		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
     		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
@@ -1532,7 +1534,8 @@ enum APIIndex
                 return new OpenAIVisionAPIImpl();
             case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
             case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
-            case OPENSEARCH_INDEX_API: return CDIUtils.getBeanThrows(OpenSearchIndexAPI.class);
+            case OPENSEARCH_INDEX_API: return new OSIndexAPIImpl();
+            case INDEX_API: return new IndexAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
