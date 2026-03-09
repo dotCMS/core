@@ -131,5 +131,5 @@ export function getQuickEditFields(layout: DotCMSContentTypeLayoutRow[]): QuickE
  * @returns True if the field is supported for quick editing
  */
 export function isQuickEditSupportedField(clazz: string): clazz is QuickEditFieldClass {
-    return QUICK_EDIT_SUPPORTED_FIELDS.includes(clazz as QuickEditFieldClass);
+    return (QUICK_EDIT_SUPPORTED_FIELDS as readonly string[]).includes(clazz);
 }

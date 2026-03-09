@@ -45,7 +45,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
+import { DEFAULT_DEVICE, DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { EDITOR_STATE } from '../../../shared/enums';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
@@ -122,7 +122,7 @@ const infoDisplayPropsSignal = signal(undefined);
 const urlContentMapSignal = signal(undefined);
 
 // Separate signals for view state properties (for test control)
-const deviceSignal = signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'));
+const deviceSignal = signal(DEFAULT_DEVICES.find((device) => device.inode === DEFAULT_DEVICE.inode));
 const socialMediaSignal = signal(null);
 const orientationSignal = signal(Orientation.LANDSCAPE);
 const viewParamsSignal = signal({
