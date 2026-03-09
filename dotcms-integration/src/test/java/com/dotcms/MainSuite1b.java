@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.content.elasticsearch.business.ContentFactoryImplTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.storage.Chainable404StorageCacheTest;
@@ -87,7 +88,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
-        com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
+        ContentFactoryImplTest.class,
         com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class
 })
 

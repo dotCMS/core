@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.content.index.MigrationPhaseTest;
 import com.dotcms.content.index.VersionedIndicesAPITest;
 import com.dotcms.content.index.opensearch.OSIndexAPIImplIntegrationTest;
 import com.dotcms.content.index.opensearch.OSClientConfigTest;
@@ -27,6 +28,7 @@ import org.junit.runners.Suite.SuiteClasses;
  */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        MigrationPhaseTest.class,
         VersionedIndicesAPITest.class,
         OSIndexAPIImplIntegrationTest.class,
         OSClientProviderIntegrationTest.class,

@@ -1,6 +1,6 @@
 package com.dotmarketing.util;
 
-import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX;
+import static com.dotcms.content.elasticsearch.business.ContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

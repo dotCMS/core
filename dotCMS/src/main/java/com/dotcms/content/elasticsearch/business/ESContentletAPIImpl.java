@@ -259,7 +259,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String IS_NEW_CONTENT = "__IS_NEW_CONTENT__";
 
     private final ContentletIndexAPIImpl indexAPI;
-    private final ESContentFactoryImpl contentFactory;
+    private final ContentFactoryImpl contentFactory;
     private final PermissionAPI permissionAPI;
     private final CategoryAPI categoryAPI;
     private final RelationshipAPI relationshipAPI;
@@ -330,7 +330,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public ESContentletAPIImpl() {
         this.uniqueFieldValidationStrategyResolver = Lazy.of(ESContentletAPIImpl::getUniqueFieldValidationStrategyResolver);
         indexAPI = new ContentletIndexAPIImpl();
-        contentFactory = new ESContentFactoryImpl();
+        contentFactory = new ContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
         categoryAPI = APILocator.getCategoryAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
@@ -5971,7 +5971,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * identifier already exists, it will be updated if needed. For example: when a folder path or
      * host is changed The inode is also generated here. For it is used internally to avoid
      * collisions on the identifier table generating a unique asset name. We're taking advantage of
-     * the exising logic on {@link ESContentFactoryImpl}'s save method. That always explore the
+     * the exising logic on {@link ContentFactoryImpl}'s save method. That always explore the
      * given contentlet trying to find a provided inode. Like this:
      * <pre>
      * {@code

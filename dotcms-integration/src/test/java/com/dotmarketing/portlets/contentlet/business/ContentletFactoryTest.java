@@ -8,15 +8,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.DataProviderWeldRunner;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotcms.content.elasticsearch.business.ContentFactoryImpl;
 import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -176,7 +174,7 @@ public class ContentletFactoryTest extends ContentletBaseTest {
              assertNull(contentletCache.get(inode));
              assertNotNull(contentletFactory.find( inode ));
              assertNotNull(contentletCache.get(inode));
-             assertNotEquals(ESContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
+             assertNotEquals(ContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
         }
         //Remove'em all
         contentletFactory.delete(persistentContentlets);
@@ -186,7 +184,7 @@ public class ContentletFactoryTest extends ContentletBaseTest {
             assertNotNull(inode);
             assertNull(contentletCache.get(inode));
             assertNull(contentletFactory.find( inode ));
-            assertEquals(ESContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
+            assertEquals(ContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
         }
     }
 

@@ -9,7 +9,7 @@ import com.dotcms.content.index.domain.SearchHits;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -55,9 +55,9 @@ import org.opensearch.client.opensearch.core.search.HitsMetadata;
 public class OSContentletScrollImpl implements IndexContentletScroll {
 
     private static final Lazy<Integer> SCROLL_KEEP_ALIVE_MINUTES = Lazy.of(() ->
-            Config.getIntProperty("OS_SCROLL_KEEP_ALIVE_MINUTES", 5));
+            IndexConfigHelper.getInt(OSIndexProperty.SCROLL_KEEP_ALIVE_MINUTES, 5));
     private static final Lazy<Integer> SCROLL_BATCH_SIZE = Lazy.of(() ->
-            Config.getIntProperty("OS_SCROLL_BATCH_SIZE", 1000));
+            IndexConfigHelper.getInt(OSIndexProperty.SCROLL_BATCH_SIZE, 1000));
 
     // State fields
     private String scrollId;

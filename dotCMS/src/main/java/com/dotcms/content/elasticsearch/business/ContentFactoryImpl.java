@@ -1,6 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
+import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
@@ -14,15 +16,14 @@ import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTok
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
-import com.dotcms.content.model.annotation.IndexMetadata;
-import com.dotcms.content.model.annotation.IndexMetadata.IndexAccess;
-import com.dotcms.content.model.annotation.IndexMetadata.IndexEngine;
+import com.dotcms.content.model.annotation.IndexRouter;
+import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -126,12 +127,12 @@ import org.apache.commons.lang.StringUtils;
  * @since Mar 22, 2012
  *
  */
+
 @IndexLibraryIndependent
-@IndexMetadata(
-        access = IndexAccess.READ_ONLY,
-        currentlySupports = { IndexEngine.ELASTICSEARCH }
+@IndexRouter(
+        access = IndexAccess.READ_ONLY
 )
-public class ESContentFactoryImpl implements ContentletFactory {
+public class ContentFactoryImpl implements ContentletFactory {
 
     private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
     private static final String[] ES_FIELDS = {"inode", "identifier"};
@@ -229,8 +230,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
-	private final ESQueryCache queryCache;
     private final ContentFactoryIndexOperations indexOperationsES;
+    private final ContentFactoryIndexOperations indexOperationsOS;
+
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
 
@@ -254,12 +256,16 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	 * Default factory constructor that initializes the connection with the
 	 * Elastic index.
 	 */
-	public ESContentFactoryImpl() {
+	public ContentFactoryImpl() {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
-        this.queryCache      = CacheLocator.getESQueryCache();
-        this.indexOperationsES = new ContentFactoryIndexOperationsES(queryCache);
+        this.indexOperationsOS = new ContentFactoryIndexOperationsOS();
+        this.indexOperationsES = new ContentFactoryIndexOperationsES(CacheLocator.getESQueryCache());
 	}
+
+    ContentFactoryIndexOperations indexOperationsDelegate(){
+        return isMigrationComplete() || isReadEnabled() ? indexOperationsOS : indexOperationsES ;
+    }
 
 	@Override
 	public Object loadField(String inode, String fieldContentlet) throws DotDataException {
@@ -292,13 +298,13 @@ public class ESContentFactoryImpl implements ContentletFactory {
                                 field.variable(), field.variable());
             }
         }
-        //if we were able to set the query then give it a try executing it.
+        //if we were able to set the query, then give it a try executing it.
         if (UtilMethods.isSet(loadJsonFieldValueSQL)) {
-            //if the attribute is missing for some reason ms-sql might not like it. we better try-catch this.
+            //if the attribute is missing for some reason, ms-sql might not like it. we better try-catch this.
             final String finalQuery = loadJsonFieldValueSQL;
             return Try.of(() -> new DotConnect().setSQL(finalQuery).addParam(inode).getString("value"))
                     .onFailure(throwable -> {
-                        Logger.warnAndDebug(ESContentFactoryImpl.class, String.format(
+                        Logger.warnAndDebug(ContentFactoryImpl.class, String.format(
                                 "There was an error fetching field variable `%s` from inode `%s` null has been returned.",
                                 field.variable(), inode), throwable);
                     }).getOrNull();
@@ -377,13 +383,13 @@ public class ESContentFactoryImpl implements ContentletFactory {
         try {
             fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
         } catch (Exception e) {
-            Logger.error(ESContentFactoryImpl.class,e.getMessage(),e);
+            Logger.error(ContentFactoryImpl.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
         try {
             velVarfieldsMap = UtilMethods.convertListToHashMap(fields, "getVelocityVarName", String.class);
         } catch (Exception e) {
-            Logger.error(ESContentFactoryImpl.class,e.getMessage(),e);
+            Logger.error(ContentFactoryImpl.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
         List<Map<String, Serializable>> res = new ArrayList<>();
@@ -1312,7 +1318,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public List<Contentlet> findContentletsByHost(final String hostId, final int limit,
             final int offset) {
 		try {
-            final List<String> inodes = indexOperationsES.search("+conhost:" + hostId, limit, offset);
+            final List<String> inodes = indexOperationsDelegate().search("+conhost:" + hostId, limit, offset);
             return findContentlets(inodes);
 		} catch (Exception e) {
 			throw new RuntimeException(e.getMessage(), e);
@@ -1567,7 +1573,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-        return indexOperationsES.indexCount(qq);
+        return indexOperationsDelegate().indexCount(qq);
     }
 
     @Override
@@ -1576,7 +1582,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        return indexOperationsES.searchHits(
+        return indexOperationsDelegate().searchHits(
                 formattedQuery, limit, offset, sortBy);
 
     }
@@ -1594,7 +1600,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @return PaginatedArrayList containing all search results
      */
     PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
-       return indexOperationsES.indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get());
+       return indexOperationsDelegate().indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get());
     }
 
     /**
@@ -1629,7 +1635,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
                                                   final boolean respectFrontendRoles, final int batchSize,
                                                   final String sortBy) {
-       return indexOperationsES.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+       return indexOperationsDelegate().createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
     }
 
     /**
@@ -2188,12 +2194,12 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	            try {
 	                inode = query.substring(index, query.indexOf(" ", index));
 	            } catch (StringIndexOutOfBoundsException e) {
-	                Logger.debug(ESContentFactoryImpl.class, e.toString());
+	                Logger.debug(ContentFactoryImpl.class, e.toString());
 	                inode = query.substring(index);
 	            }
 	            st = CacheLocator.getContentTypeCache().getStructureByInode(inode);
 	            if (!InodeUtils.isSet(st.getInode()) || !UtilMethods.isSet(st.getVelocityVarName())) {
-	                Logger.error(ESContentFactoryImpl.class,
+	                Logger.error(ContentFactoryImpl.class,
 	                        "Unable to find Structure or Structure Velocity Variable Name from passed in structureInode Query : "
 	                                + query);
 
@@ -2212,7 +2218,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	            try {
 	                fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
 	            } catch (Exception e) {
-	                Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
+	                Logger.error(ContentFactoryImpl.class, e.getMessage(), e);
 	                result.setQuery(query);
 	                result.setSortBy(sortBy);
 	                return result;
@@ -2240,7 +2246,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	                                + APILocator.getCategoryAPI().find(catInode,
 	                                        APILocator.getUserAPI().getSystemUser(), true).getCategoryVelocityVarName());
 	                    } catch (Exception e) {
-	                        Logger.error(ESContentFactoryImpl.class, e.getMessage() + " : Error loading category", e);
+	                        Logger.error(ContentFactoryImpl.class, e.getMessage() + " : Error loading category", e);
 	                        result.setQuery(query);
 	                        result.setSortBy(sortBy);
 	                        return result;
@@ -2351,7 +2357,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	        try {
 	            fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
 	        } catch (Exception e) {
-	            Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
+	            Logger.error(ContentFactoryImpl.class, e.getMessage(), e);
 	            return sortBy;
 	        }
 
@@ -2517,7 +2523,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     }
 
     /**
-     * @deprecated Use {@link ESContentFactoryImpl#getQueries(Field, Date)} instead
+     * @deprecated Use {@link ContentFactoryImpl#getQueries(Field, Date)} instead
      * @param field
      * @return
      */

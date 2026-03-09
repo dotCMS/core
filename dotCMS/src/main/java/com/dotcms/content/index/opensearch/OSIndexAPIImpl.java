@@ -17,7 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -124,7 +124,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         AdminLogger.log(this.getClass(), "createIndex",
             "Trying to create index: " + indexName + " with shards: " + shards);
 
-        shards = shards > 0 ? shards : Config.getIntProperty("opensearch.index.number_of_shards", 1);
+        shards = shards > 0 ? shards : IndexConfigHelper.getInt(OSIndexProperty.INDEX_NUMBER_OF_SHARDS, 1);
 
         Map<String, Object> settingsMap = (settings == null) ? new HashMap<>() :
             objectMapper.readValue(settings, LinkedHashMap.class);
@@ -134,7 +134,7 @@ public class OSIndexAPIImpl implements IndexAPI {
         settingsMap.putIfAbsent("index.mapping.total_fields.limit", 10000);
         settingsMap.putIfAbsent("index.mapping.nested_fields.limit", 10000);
         settingsMap.putIfAbsent("index.query.default_field",
-            Config.getStringProperty("OPENSEARCH_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
+            IndexConfigHelper.getString(OSIndexProperty.INDEX_QUERY_DEFAULT_FIELD, "catchall"));
 
         final int finalShards = shards;
         final CreateIndexRequest request = CreateIndexRequest.of(builder ->
@@ -343,7 +343,7 @@ public class OSIndexAPIImpl implements IndexAPI {
     @Override
     public boolean waitUtilIndexReady() {
         ClusterStats stats = null;
-        final int attempts = Config.getIntProperty("OS_CONNECTION_ATTEMPTS", 24);
+        final int attempts = IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_ATTEMPTS, 24);
         for (int i = 0; i < attempts; i++) {
             try {
                 stats = getClusterStats();
@@ -352,7 +352,7 @@ public class OSIndexAPIImpl implements IndexAPI {
                 Logger.error(this.getClass(),
                     "OpenSearch Connection Attempt #" + (i + 1) + ": " + e.getMessage());
             }
-            DateUtil.sleep(Config.getIntProperty("OS_CONNECTION_TIMEOUT", 5) * 1000);
+            DateUtil.sleep(IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_TIMEOUT, 5) * 1000);
         }
         if (stats == null) {
             Logger.fatal(this.getClass(), "Cannot connect to OpenSearch, giving up.");
@@ -456,14 +456,6 @@ public class OSIndexAPIImpl implements IndexAPI {
     @Override
     public String getNameWithClusterIDPrefix(final String name) {
         return hasClusterPrefix(name) ? name : clusterPrefix.get() + name;
-    }
-
-    @Override
-    public String removeClusterIdFromName(final String name) {
-        if (name == null) return "";
-        return name.contains(".")
-                ? name.substring(name.lastIndexOf(".") + 1)
-                : name;
     }
 
     /**

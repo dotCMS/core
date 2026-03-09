@@ -302,7 +302,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             }
 
         } catch (Exception e) {
-            Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
+            Logger.error(ContentFactoryImpl.class, e.getMessage(), e);
             results.setError(e.getMessage());
         }
 

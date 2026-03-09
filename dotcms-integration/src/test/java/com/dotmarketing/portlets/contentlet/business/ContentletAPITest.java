@@ -18,7 +18,7 @@ import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotcms.content.elasticsearch.business.ContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
@@ -8307,7 +8307,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final SearchResponse responseDefaultVariant = APILocator.getContentletAPI().esSearchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnDefaultVariant,
-                        ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
+                        ContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                 false, APILocator.systemUser(), false);
 
         assertEquals(contentDefaultVariant.getIdentifier() + "_"
@@ -8325,7 +8325,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         final SearchResponse responseNewVariant = APILocator.getContentletAPI().esSearchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnNewVariant,
-                        ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
+                        ContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                 false, APILocator.systemUser(), false);
 
         assertEquals(contentNewVariant.getIdentifier() + "_"

@@ -774,24 +774,6 @@ public class ESIndexAPI implements IndexAPI {
 
     }
 
-    /**
-     * Given an alias or index name that might contain a cluster id prefix
-     * (format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>),
-     * this method will return the name without the prefix. In case of name is null, an empty string
-     * will be returned
-     * @param name Index name or alias with the cluster id prefix
-     * @return Index name or alias without the cluster id prefix
-     */
-    public String removeClusterIdFromName(final String name) {
-        if(name==null) return "";
-        return name.indexOf(".")>-1 
-                        ? name.substring(name.lastIndexOf(".")+1, name.length()) 
-                        : name;
-
-	}
-
-
-
 	public List<String> getClosedIndexes() {
 
         return getIndices(false, true);

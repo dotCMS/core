@@ -67,8 +67,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
-import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS;
-import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.ES_TRACK_TOTAL_HITS_DEFAULT;
+import static com.dotcms.content.elasticsearch.business.ContentFactoryImpl.ES_TRACK_TOTAL_HITS;
+import static com.dotcms.content.elasticsearch.business.ContentFactoryImpl.ES_TRACK_TOTAL_HITS_DEFAULT;
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
@@ -80,7 +80,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
-public class ESContentFactoryImplTest extends IntegrationTestBase {
+public class ContentFactoryImplTest extends IntegrationTestBase {
 
     private static Host site;
 
@@ -93,7 +93,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         site = new SiteDataGen().nextPersisted();
     }
 
-    final ESContentFactoryImpl instance = new ESContentFactoryImpl();
+    final ContentFactoryImpl instance = new ContentFactoryImpl();
 
 
     public static class TestCase {
@@ -675,13 +675,13 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#translateQuery(String, String)}
+     * Method to test: {@link ContentFactoryImpl#translateQuery(String, String)}
      * Given Scenario: Perform a query with an enterprise license
      * ExpectedResult: The query should not contain a filter by {@link BaseContentType#PERSONA} nor {@link BaseContentType#FORM}
      */
     @Test
     public void test_translateQueryWithLicense(){
-        final TranslatedQuery translatedQuery = ESContentFactoryImpl
+        final TranslatedQuery translatedQuery = ContentFactoryImpl
                 .translateQuery("+contentType:Host", null);
         assertFalse(translatedQuery.getQuery()
                 .contains("-basetype:" + BaseContentType.PERSONA.getType()));
@@ -690,7 +690,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String)}
+     * Method to test: {@link ContentFactoryImpl#findContentletByIdentifierAnyLanguage(String)}
      * Given Scenario: Happy path to get a contentlet given its identifier regardless of the language
      * ExpectedResult: The method should return a contentlet
      *
@@ -724,7 +724,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String)}
+     * Method to test: {@link ContentFactoryImpl#findContentletByIdentifierAnyLanguage(String)}
      * Given Scenario: Find a contentlet given its identifier regardless of the language and all versions
      * of the contentlet are archived
      * ExpectedResult: The method shouldn't return any contentlet
@@ -764,7 +764,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)}
+     * Method to test: {@link ContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)}
      * Given Scenario: Get a contentlet given its identifier regardless of the language and its archived status
      * ExpectedResult: The method should return a contentlet
      *
@@ -905,7 +905,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#loadJsonField(String, Field)} ()} <br>
+     * Method to test: {@link ContentFactoryImpl#loadJsonField(String, Field)} ()} <br>
      * Lets create a few random Contentlets and test that the properties we know for sure they have
      * can be fetched via json
      */
@@ -947,7 +947,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * This test how {@link com.dotcms.content.elasticsearch.business.ESContentFactoryImpl#save(Contentlet)} persists contentlet when instructed to use the contentlet-as-json field
+     * This test how {@link ContentFactoryImpl#save(Contentlet)} persists contentlet when instructed to use the contentlet-as-json field
      * The other dynamic field columns shouldn't be used to store anything
      * @throws Exception
      */
@@ -1023,7 +1023,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)}
+     * Method to test: {@link ContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)}
      * When: The contentlet had just one version not in the DEFAULT variant
      * Should: return that version anyway
      *
@@ -1046,7 +1046,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 .nextPersisted();
 
 
-        final Contentlet contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+        final Contentlet contentletByIdentifierAnyLanguage = ((ContentFactoryImpl) FactoryLocator.getContentletFactory())
                 .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), variant.name(),false);
 
         assertNotNull(contentletByIdentifierAnyLanguage);
@@ -1054,7 +1054,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)}
+     * Method to test: {@link ContentFactoryImpl#findContentletByIdentifierAnyLanguage(String, boolean)}
      * When: The contentlet had just one version not in the DEFAULT variant but it was archived
      * Should: return {@link Optional#empty()}
      *
@@ -1079,21 +1079,21 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final String identifier = contentlet.getIdentifier();
         APILocator.getContentletAPI().archive(contentlet, APILocator.systemUser(), false);
 
-        Contentlet contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+        Contentlet contentletByIdentifierAnyLanguage = ((ContentFactoryImpl) FactoryLocator.getContentletFactory())
                 .findContentletByIdentifierAnyLanguage(identifier, variant.name(),true);
 
         assertNotNull(contentletByIdentifierAnyLanguage);
         assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
 
 
-        contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+        contentletByIdentifierAnyLanguage = ((ContentFactoryImpl) FactoryLocator.getContentletFactory())
                 .findContentletByIdentifierAnyLanguage(identifier, variant.name(), false);
 
         assertNull(contentletByIdentifierAnyLanguage);
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: The contentlet had several versions in different {@link Language}
      * Should: return all the versions
      */
@@ -1122,7 +1122,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1.getIdentifier());
 
-        final List<Contentlet> contentlets = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+        final List<Contentlet> contentlets = ((ContentFactoryImpl) FactoryLocator.getContentletFactory())
                 .findAllVersions(identifier, false);
 
         assertNotNull(contentlets);
@@ -1137,7 +1137,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: The contentlet had several versions in different {@link Language} and some then are old versions
      * Should: return all the versions even the old ones if the flag is true
      */
@@ -1169,7 +1169,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1Live.getIdentifier());
 
-        final List<Contentlet> contentlets = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+        final List<Contentlet> contentlets = ((ContentFactoryImpl) FactoryLocator.getContentletFactory())
                 .findAllVersions(identifier, true);
 
         assertNotNull(contentlets);
@@ -1210,7 +1210,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: The contentlet had several versions in different {@link Language} and some then are old versions
      * Should: return all the versions even the old ones if the flag is false
      */
@@ -1243,7 +1243,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1Live.getIdentifier());
 
-        final List<Contentlet> contentlets = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+        final List<Contentlet> contentlets = ((ContentFactoryImpl) FactoryLocator.getContentletFactory())
                 .findAllVersions(identifier, false);
 
         assertNotNull(contentlets);
@@ -1275,7 +1275,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: The contentlet had several versions in different {@link Language} into the
      * DEFAULT {@link Variant} and a specific {@link Variant}.
      * Should: return all the versions for the DEFAULT {@link Variant} and the specific {@link Variant}
@@ -1315,7 +1315,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1DefaultVariant.getIdentifier());
 
-        final List<Contentlet> contentlets = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+        final List<Contentlet> contentlets = ((ContentFactoryImpl) FactoryLocator.getContentletFactory())
                 .findAllVersions(identifier, VariantAPI.DEFAULT_VARIANT);
 
         assertNotNull(contentlets);
@@ -1336,7 +1336,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: The contentlet had several versions in different {@link Language} and {@link Variant}
      * Also they have  old versions
      * Should: return all the versions even the old ones into the DEFAULT {@link Variant}
@@ -1386,7 +1386,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final Identifier identifier = APILocator.getIdentifierAPI()
                 .find(contentletLanguage1Live.getIdentifier());
 
-        final List<Contentlet> contentlets = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
+        final List<Contentlet> contentlets = ((ContentFactoryImpl) FactoryLocator.getContentletFactory())
                 .findAllVersions(identifier, VariantAPI.DEFAULT_VARIANT);
 
         assertNotNull(contentlets);
@@ -1415,7 +1415,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Testing the method {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Testing the method {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * This version of the method takes a collection of identifiers and returns all the versions of the contentlets
      * Given scenario: The contentlet had several versions in different {@link Language} `
      * Expected result: The method should return all the versions of the contentlets
@@ -1473,7 +1473,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final Set<String> identifiers = contentlets.stream().map(Contentlet::getIdentifier)
                 .collect(Collectors.toSet());
 
-        ESContentFactoryImpl impl = (ESContentFactoryImpl) FactoryLocator.getContentletFactory();
+        ContentFactoryImpl impl = (ContentFactoryImpl) FactoryLocator.getContentletFactory();
         final List<Contentlet> allVersions = impl.findLiveOrWorkingVersions(identifiers);
 
         Assert.assertEquals(9, allVersions.size());
