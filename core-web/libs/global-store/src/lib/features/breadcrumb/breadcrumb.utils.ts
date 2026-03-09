@@ -151,6 +151,41 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
 };
 
 /**
+ * Rule that defines when the last breadcrumb should be replaced instead of appended.
+ */
+interface ReplaceLastCrumbRule {
+    test: (item: MenuItem, last: MenuItem) => boolean;
+}
+
+/**
+ * Rules to determine if the incoming breadcrumb should replace the last one.
+ * Add new rules here as new patterns emerge.
+ */
+const REPLACE_LAST_CRUMB_RULES: Record<string, ReplaceLastCrumbRule> = {
+    contentEdit: {
+        test: (item, last) => {
+            const regex = /\/content[/?].+/;
+            const normalize = (url: string | undefined) => (url ?? '').replace(/^.*#/, '');
+            return regex.test(normalize(item.url)) && regex.test(normalize(last.url));
+        }
+    },
+    analyticsTab: {
+        test: (item, last) => {
+            const regex = /^analytics-/;
+            return regex.test(item.id ?? '') && regex.test(last.id ?? '');
+        }
+    }
+};
+
+/**
+ * Returns true if the incoming breadcrumb item should replace the current last crumb
+ * instead of being appended as a new one.
+ */
+export function shouldReplaceLastCrumb(item: MenuItem, last: MenuItem): boolean {
+    return Object.values(REPLACE_LAST_CRUMB_RULES).some((rule) => rule.test(item, last));
+}
+
+/**
  * Processes a URL using the special route handlers hashmap.
  * Iterates through all handlers and executes the first one that matches.
  * First checks if the URL already exists in breadcrumbs and returns truncate if found.

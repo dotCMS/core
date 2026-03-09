@@ -79,8 +79,8 @@ export default class DotAnalyticsPageviewReportComponent {
 
     #setupBreadcrumb(): void {
         this.#globalStore.addNewBreadcrumb({
-            id: 'pageview',
-            label: this.#messageService.get('analytics.dashboard.tabs.pageview')
+            id: 'analytics-pageview',
+            label: this.#messageService.get('analytics.dashboard.tabs.pageview'),
         });
     }
 

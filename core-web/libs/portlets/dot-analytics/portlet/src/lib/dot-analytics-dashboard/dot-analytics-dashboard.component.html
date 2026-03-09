@@ -41,21 +41,21 @@
                 }
             </p-tablist>
             <p-tabpanels>
-                @for (tab of tabs; track tab.id) {
-                    <p-tabpanel [value]="tab.id">
-                        @switch (tab.id) {
-                            @case ('pageview') {
-                                <dot-analytics-pageview-report />
-                            }
-                            @case ('conversions') {
-                                <dot-analytics-conversions-report />
-                            }
-                            @case ('engagement') {
-                                <dot-analytics-engagement-report />
-                            }
+                <!-- Single panel: we render only the active tab content so only one report
+                     is in the DOM (PrimeNG 21 does not support reliable lazy on tab panels). -->
+                <p-tabpanel [value]="store.currentTab()">
+                    @switch (store.currentTab()) {
+                        @case ('pageview') {
+                            <dot-analytics-pageview-report />
                         }
-                    </p-tabpanel>
-                }
+                        @case ('conversions') {
+                            <dot-analytics-conversions-report />
+                        }
+                        @case ('engagement') {
+                            <dot-analytics-engagement-report />
+                        }
+                    }
+                </p-tabpanel>
             </p-tabpanels>
         </p-tabs>
     </div>

@@ -17,7 +17,7 @@ import { filter, map } from 'rxjs/operators';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { processSpecialRoute } from './breadcrumb.utils';
+import { processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -142,10 +142,6 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             };
 
             const addNewBreadcrumb = (item: MenuItem) => {
-                // This regex matches the following cases:
-                // - /content/{id}
-                // - /edit-page/content?{params}
-                const contentEditRegex = /\/content[/?].+/;
                 const url = normalizeUrl(item?.url);
 
                 const lastBreadcrumb = store.lastBreadcrumb();
@@ -157,11 +153,15 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 // Before checking if the id is the same, we need to check if the id exists in the breadcrumbs
                 const isSameId = item?.id && lastBreadcrumb?.id && item.id === lastBreadcrumb.id;
 
+                 
+
                 if (isSameUrl || isSameId) {
+            
                     return;
                 }
 
-                if (contentEditRegex.test(url) && contentEditRegex.test(lastBreadcrumbUrl)) {
+      
+                if (lastBreadcrumb && shouldReplaceLastCrumb(item, lastBreadcrumb)) {
                     setLastBreadcrumb(item);
                 } else {
                     appendCrumb(item);
@@ -304,7 +304,15 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                         // Only process if we don't have a matching breadcrumb for the current URL
                         if (!hasMatchingBreadcrumb) {
+                            // Preserve sub-route crumbs (e.g. analytics tab) that child components
+                            // may have appended before the menu finished loading on page reload.
+                            // These crumbs have an id but no url (they're not navigable routes).
+                            const pendingCrumbs = breadcrumbs.filter(
+                                (crumb) => crumb.id && !crumb.url
+                            );
                             store._processUrl(currentUrl);
+                            // Re-append them so they survive the base breadcrumb reset
+                            pendingCrumbs.forEach((crumb) => store.appendCrumb(crumb));
                         }
                     }
                 });

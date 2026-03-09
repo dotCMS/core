@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { withBreadcrumbs } from './breadcrumb.feature';
-import { processSpecialRoute, ROUTE_HANDLERS } from './breadcrumb.utils';
+import { processSpecialRoute, ROUTE_HANDLERS, shouldReplaceLastCrumb } from './breadcrumb.utils';
 
 describe('Breadcrumb Utils - Route Handlers', () => {
     const mockMenuItems: MenuItemEntity[] = [
@@ -228,6 +228,110 @@ describe('Breadcrumb Utils - Route Handlers', () => {
             });
 
             expect(result).toBeUndefined();
+        });
+    });
+});
+
+describe('shouldReplaceLastCrumb', () => {
+    describe('contentEdit rule', () => {
+        it('should return true when both items match /content/{id}', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'New', url: '/dotAdmin/#/content/new-id' },
+                    { label: 'Old', url: '/dotAdmin/#/content/old-id' }
+                )
+            ).toBe(true);
+        });
+
+        it('should return true when both items match /edit-page/content?{params}', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'New', url: '/dotAdmin/#/edit-page/content?url=page2' },
+                    { label: 'Old', url: '/dotAdmin/#/edit-page/content?url=page1' }
+                )
+            ).toBe(true);
+        });
+
+        it('should return false when only new item matches content-edit', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'New', url: '/dotAdmin/#/content/abc' },
+                    { label: 'Old', url: '/dotAdmin/#/c/content' }
+                )
+            ).toBe(false);
+        });
+
+        it('should return false when only last item matches content-edit', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'New', url: '/dotAdmin/#/settings' },
+                    { label: 'Old', url: '/dotAdmin/#/content/abc' }
+                )
+            ).toBe(false);
+        });
+    });
+
+    describe('analyticsTab rule', () => {
+        it('should return true when both ids start with analytics-', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'Conversions', id: 'analytics-conversions' },
+                    { label: 'Engagement', id: 'analytics-engagement' }
+                )
+            ).toBe(true);
+        });
+
+        it('should return true when switching between any analytics tabs', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'Pageview', id: 'analytics-pageview' },
+                    { label: 'Conversions', id: 'analytics-conversions' }
+                )
+            ).toBe(true);
+        });
+
+        it('should return false when only new item id starts with analytics-', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'Conversions', id: 'analytics-conversions' },
+                    { label: 'Other', id: 'some-other-id' }
+                )
+            ).toBe(false);
+        });
+
+        it('should return false when only last item id starts with analytics-', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'Other', id: 'other-id' },
+                    { label: 'Engagement', id: 'analytics-engagement' }
+                )
+            ).toBe(false);
+        });
+
+        it('should return false when neither item has an analytics- id', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'Page A', id: 'page-a' },
+                    { label: 'Page B', id: 'page-b' }
+                )
+            ).toBe(false);
+        });
+    });
+
+    describe('no rule matches', () => {
+        it('should return false for unrelated breadcrumbs', () => {
+            expect(
+                shouldReplaceLastCrumb(
+                    { label: 'Settings', url: '/dotAdmin/#/settings' },
+                    { label: 'Dashboard', url: '/dotAdmin/#/dashboard' }
+                )
+            ).toBe(false);
+        });
+
+        it('should return false when items have no url and no id', () => {
+            expect(
+                shouldReplaceLastCrumb({ label: 'A' }, { label: 'B' })
+            ).toBe(false);
         });
     });
 });
