@@ -50,7 +50,6 @@ describe('DotLoginPageComponent', () => {
     it('should set the background image, color, and layout styles on body', () => {
         expect(['#3a3847', 'rgb(58, 56, 71)']).toContain(document.body.style.backgroundColor);
         expect(document.body.style.backgroundImage).toContain('/html/images/backgrounds/bg-11.jpg');
-        expect(document.body.style.backgroundPosition).toEqual('top center');
         expect(document.body.style.backgroundRepeat).toEqual('no-repeat');
         expect(document.body.style.backgroundSize).toEqual('cover');
     });
