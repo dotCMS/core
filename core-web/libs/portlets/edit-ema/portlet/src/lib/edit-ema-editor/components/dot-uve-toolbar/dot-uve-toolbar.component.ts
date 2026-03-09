@@ -333,15 +333,14 @@ export class DotUveToolbarComponent {
      * @param {number} language
      * @memberof DotEmaComponent
      */
-    onLanguageSelected(language: number) {
-        const language_id = language.toString();
-
+    onLanguageSelected(language: DotLanguage) {
+        const language_id = language.id.toString();
         const languages = this.#store.pageLanguages();
-        const currentLanguage = languages.find((lang) => lang.id === language);
 
-        const languageHasTranslation = languages.find(
-            (lang) => lang.id.toString() === language_id
-        )?.translated;
+        // pageLanguages has the translated flag; fall back to the selector's language object
+        // when this language has never been created for this page (not in pageLanguages yet)
+        const currentLanguage = languages.find((lang) => lang.id === language.id) ?? language;
+        const languageHasTranslation = currentLanguage.translated;
 
         if (!languageHasTranslation) {
             // Show confirmation dialog to create a new translation

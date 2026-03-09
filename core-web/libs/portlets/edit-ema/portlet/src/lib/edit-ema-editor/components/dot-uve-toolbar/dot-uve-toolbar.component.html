@@ -87,7 +87,7 @@
             <dot-language-selector
                 #languageSelector
                 [value]="$currentLanguage() ?? null"
-                (onChange)="onLanguageSelected($event)"
+                (onLanguageChange)="onLanguageSelected($event)"
                 data-testId="uve-toolbar-language-selector" />
 
             <dot-edit-ema-persona-selector

@@ -1527,7 +1527,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        this.uveStore.pageLoad({ language_id: '1' });
+        const currentLanguageId = this.uveStore.pageLanguage()?.id?.toString() ?? '1';
+        this.uveStore.pageLoad({ language_id: currentLanguageId });
     }
 
     #clientPayload() {

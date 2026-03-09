@@ -1954,6 +1954,33 @@ describe('EditEmaEditorComponent', () => {
                         language_id: '2'
                     });
                 });
+
+                it('should call dialog.translatePage when toolbar emits translatePage', () => {
+                    store.pageLoad({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+                    spectator.detectChanges();
+
+                    const translatePagePayload = {
+                        page: { identifier: 'test-page-123', inode: 'inode-123' },
+                        newLanguage: 2
+                    };
+                    const dialogTranslatePageSpy = jest.spyOn(
+                        spectator.component.dialog,
+                        'translatePage'
+                    );
+
+                    spectator.triggerEventHandler(
+                        DotUveToolbarStubComponent,
+                        'translatePage',
+                        translatePagePayload
+                    );
+
+                    expect(dialogTranslatePageSpy).toHaveBeenCalledWith(translatePagePayload);
+                });
             });
 
             describe('Editor content', () => {

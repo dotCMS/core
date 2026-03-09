@@ -45,7 +45,12 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
-import { DEFAULT_DEVICE, DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
+import {
+    DEFAULT_DEVICE,
+    DEFAULT_DEVICES,
+    DEFAULT_PERSONA,
+    PERSONA_KEY
+} from '../../../shared/consts';
 import { EDITOR_STATE } from '../../../shared/enums';
 import {
     HEADLESS_BASE_QUERY_PARAMS,
@@ -66,7 +71,7 @@ import {
  * Stub used in tests to avoid ng-mocks auto-mocking `DotLanguageSelectorComponent`,
  * which uses Angular's signal-based `viewChild()` and can crash when mocked.
  * Uses model() for value to match the real component's API so [value] binds correctly.
- * Keeps EventEmitter for onChange so triggerEventHandler('onChange', id) works in tests.
+ * onLanguageChange matches the real component's output used by (onLanguageChange)="onLanguageSelected($event)".
  */
 @Component({
     selector: 'dot-language-selector',
@@ -76,6 +81,7 @@ import {
 class StubDotLanguageSelectorComponent {
     value = model<number | DotLanguage | null>(null);
     onChange = new EventEmitter<number>();
+    onLanguageChange = new EventEmitter<DotLanguage>();
 }
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
@@ -122,7 +128,9 @@ const infoDisplayPropsSignal = signal(undefined);
 const urlContentMapSignal = signal(undefined);
 
 // Separate signals for view state properties (for test control)
-const deviceSignal = signal(DEFAULT_DEVICES.find((device) => device.inode === DEFAULT_DEVICE.inode));
+const deviceSignal = signal(
+    DEFAULT_DEVICES.find((device) => device.inode === DEFAULT_DEVICE.inode)
+);
 const socialMediaSignal = signal(null);
 const orientationSignal = signal(Orientation.LANDSCAPE);
 const viewParamsSignal = signal({
@@ -918,20 +926,73 @@ describe('DotUveToolbarComponent', () => {
                 expect(spectator.query(byTestId('uve-toolbar-language-selector'))).toBeTruthy();
             });
 
-            it('should call pageLoad when language is selected and exists that page translated', () => {
+            it('should call pageLoad with language_id when selected language has translation', () => {
                 const spyLoadPageAsset = jest.spyOn(baseUVEState, 'pageLoad');
+                const languageWithTranslation = MOCK_PAGE_LANGUAGES[0]; // English, id 1, translated: true
 
-                spectator.triggerEventHandler(StubDotLanguageSelectorComponent, 'onChange', 1);
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithTranslation
+                );
 
-                expect(spyLoadPageAsset).toHaveBeenCalled();
+                expect(spyLoadPageAsset).toHaveBeenCalledWith({ language_id: '1' });
             });
 
-            it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
+            it('should call confirmationService.confirm when selected language has no translation', () => {
                 const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
 
-                spectator.triggerEventHandler(StubDotLanguageSelectorComponent, 'onChange', 2);
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
                 spectator.detectChanges();
+
                 expect(spyConfirmationService).toHaveBeenCalled();
+            });
+
+            it('should emit translatePage with page and newLanguage when user confirms new translation', () => {
+                const translatePageSpy = jest.spyOn(spectator.component.translatePage, 'emit');
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
+
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
+                spectator.detectChanges();
+
+                const acceptCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                    .accept;
+                acceptCallback();
+
+                const expectedPage = pageSnapshotSignal().page;
+                expect(translatePageSpy).toHaveBeenCalledWith({
+                    page: expectedPage,
+                    newLanguage: 2
+                });
+            });
+
+            it('should reset language selector to current language when user rejects new translation', () => {
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
+                const currentLanguage = baseUVEState.pageLanguage();
+                const languageSelector = spectator.query(StubDotLanguageSelectorComponent);
+                const valueSetSpy = jest.spyOn(languageSelector.value, 'set');
+
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
+                spectator.detectChanges();
+
+                const rejectCallback = (confirmationService.confirm as jest.Mock).mock.calls[0][0]
+                    .reject;
+                rejectCallback();
+
+                expect(valueSetSpy).toHaveBeenCalledWith(currentLanguage);
             });
         });
 
