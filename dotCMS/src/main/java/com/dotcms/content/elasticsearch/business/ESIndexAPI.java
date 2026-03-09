@@ -465,7 +465,6 @@ public class ESIndexAPI implements IndexAPI {
 
 		String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
 
-
 		map.put("number_of_shards", shards);
 		map.put("index.auto_expand_replicas", autoExpandReplicas);
 

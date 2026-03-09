@@ -25,7 +25,7 @@ public interface ContentletIndexAPI {
     /**
      * Inits the indexs
      */
-    public void checkAndInitialiazeIndex();
+    public void checkAndInitializeIndex();
 
     public boolean createContentIndex(String indexName) throws DotIndexException, IOException;
 

@@ -30,7 +30,6 @@ import com.liferay.portal.util.ReleaseInfo;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
@@ -50,7 +49,6 @@ import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGISystem;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
@@ -102,7 +100,7 @@ public class InitServlet extends HttpServlet {
         new StartupLogger().log();
 
         //Check and start the ES Content Store
-        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
+        APILocator.getContentletIndexAPI().checkAndInitializeIndex();
         Logger.info(this, "");
 
         Logger.info(this, "");

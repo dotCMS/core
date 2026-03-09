@@ -106,11 +106,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
             "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
-    private static ReindexQueueAPI queueApi = null;
-    private static IndexAPI esIndexApi = null;
+    private ReindexQueueAPI queueApi = null;
+    private IndexAPI esIndexApi = null;
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
-    private static ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+    private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();
@@ -164,7 +164,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Inits the indexes and starts the reindex process if no indexes are found
      */
     @CloseDBIfOpened
-    public synchronized void checkAndInitialiazeIndex() {
+    public synchronized void checkAndInitializeIndex() {
         try {
             // if we don't have a working index, create it
             if (!indexReady()) {

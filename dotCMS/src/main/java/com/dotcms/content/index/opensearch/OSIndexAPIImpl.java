@@ -5,6 +5,7 @@ import static com.dotcms.content.index.opensearch.ConfigurableOpenSearchProvider
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.index.IndexAPI;
+import com.dotmarketing.util.Config;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;
@@ -125,12 +126,16 @@ public class OSIndexAPIImpl implements IndexAPI {
             "Trying to create index: " + indexName + " with shards: " + shards);
 
         shards = shards > 0 ? shards : IndexConfigHelper.getInt(OSIndexProperty.INDEX_NUMBER_OF_SHARDS, 1);
-
+        if(shards>1){
+            Logger.warn(this.getClass(),"Number of OS shards : " + shards + ". Important to note that the more shards you enable, the slower the index reads.  dotCMS recommends using only 1 shard per replica. ");
+        }
         Map<String, Object> settingsMap = (settings == null) ? new HashMap<>() :
             objectMapper.readValue(settings, LinkedHashMap.class);
 
+        final String autoExpandReplicas = IndexConfigHelper.getString(OSIndexProperty.INDEX_AUTO_EXPAND_REPLICAS, "0-1");
+
         settingsMap.put("index.number_of_shards", shards);
-        settingsMap.put("index.auto_expand_replicas", "0-all");
+        settingsMap.put("index.auto_expand_replicas", autoExpandReplicas);
         settingsMap.putIfAbsent("index.mapping.total_fields.limit", 10000);
         settingsMap.putIfAbsent("index.mapping.nested_fields.limit", 10000);
         settingsMap.putIfAbsent("index.query.default_field",
@@ -138,15 +143,15 @@ public class OSIndexAPIImpl implements IndexAPI {
 
         final int finalShards = shards;
         final CreateIndexRequest request = CreateIndexRequest.of(builder ->
-            builder.index(getNameWithClusterIDPrefix(indexName))
-                   .settings(IndexSettings.of(settingsBuilder -> {
-                       settingsBuilder.numberOfShards(finalShards);
-                       settingsBuilder.autoExpandReplicas("0-all");
-                       return settingsBuilder;
-                   }))
-                   .timeout(Time.of(timeBuilder ->
-                       timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
-                   ))
+                builder.index(getNameWithClusterIDPrefix(indexName))
+                        .settings(IndexSettings.of(settingsBuilder -> {
+                            settingsBuilder.numberOfShards(finalShards)
+                                    .autoExpandReplicas(autoExpandReplicas);
+                            return settingsBuilder;
+                        }))
+                        .timeout(Time.of(timeBuilder ->
+                                timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
+                        ))
         );
 
         try {

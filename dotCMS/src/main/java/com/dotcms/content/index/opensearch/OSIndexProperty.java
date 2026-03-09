@@ -108,6 +108,9 @@ public enum OSIndexProperty {
     /** Number of primary shards. Falls back to {@code es.index.number_of_shards}. */
     INDEX_NUMBER_OF_SHARDS("opensearch.index.number_of_shards", "es.index.number_of_shards"),
 
+    /** Number of replicas */
+    INDEX_AUTO_EXPAND_REPLICAS("OS_INDEX_AUTO_EXPAND_REPLICAS","ES_INDEX_AUTO_EXPAND_REPLICAS"),
+
     /** Suffix appended to generated index names. Falls back to {@code ES_INDEX_NAME}. */
     INDEX_NAME("OS_INDEX_NAME", "ES_INDEX_NAME"),
 
