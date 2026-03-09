@@ -109,7 +109,7 @@ New portlets go in `libs/portlets/`. For full patterns, architecture, testing, a
 ### Config
 
 - Use `dot-content-drive` portlet as reference for test config
-- `tsconfig.spec.json` must have `isolatedModules: true` in jest-preset-angular transform options — without it, transitive deps (`@angular/common/http`, `@primeuix/themes/lara`) fail with TS2307
+- `tsconfig.spec.json` tsconfig.spec.json must have "isolatedModules": true in compilerOptions
 - `tsconfig.json` — do NOT add `"strict": true` or `"module": "preserve"`
 - `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`)
 - Import `mockProvider` from `@ngneat/spectator/jest` (not `@ngneat/spectator`)
