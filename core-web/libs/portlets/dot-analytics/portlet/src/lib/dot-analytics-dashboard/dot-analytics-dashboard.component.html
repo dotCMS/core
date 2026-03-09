@@ -41,8 +41,7 @@
                 }
             </p-tablist>
             <p-tabpanels>
-                <!-- Single panel: we render only the active tab content so only one report
-                     is in the DOM (PrimeNG 21 does not support reliable lazy on tab panels). -->
+                <!-- Single panel: we render only the active tab content so only one report -->
                 <p-tabpanel [value]="store.currentTab()">
                     @switch (store.currentTab()) {
                         @case ('pageview') {
