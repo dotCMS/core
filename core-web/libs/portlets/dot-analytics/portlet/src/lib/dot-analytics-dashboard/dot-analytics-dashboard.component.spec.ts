@@ -58,7 +58,6 @@ describe('DotAnalyticsDashboardComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            // GlobalStore is required transitively by child report components (pageview, engagement, conversions)
             mockProvider(GlobalStore, {
                 currentSiteId: jest.fn().mockReturnValue('test-site-123'),
                 addNewBreadcrumb: jest.fn()

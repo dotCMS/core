@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, Type } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -8,6 +8,7 @@ import { TabsModule } from 'primeng/tabs';
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
     DASHBOARD_TAB_LIST,
+    DASHBOARD_TABS,
     DashboardTab,
     DotAnalyticsDashboardStore,
     isValidTab,
@@ -30,9 +31,6 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
         MessageModule,
         TabsModule,
         DotAnalyticsFiltersComponent,
-        DotAnalyticsPageviewReportComponent,
-        DotAnalyticsConversionsReportComponent,
-        DotAnalyticsEngagementReportComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard.component.html',
@@ -53,8 +51,13 @@ export default class DotAnalyticsDashboardComponent {
         !this.#localStorageService.getItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY)
     );
 
-    /** All dashboard tabs — always visible */
     readonly tabs = DASHBOARD_TAB_LIST;
+
+    readonly tabComponents: Record<DashboardTab, Type<unknown>> = {
+        [DASHBOARD_TABS.pageview]: DotAnalyticsPageviewReportComponent,
+        [DASHBOARD_TABS.conversions]: DotAnalyticsConversionsReportComponent,
+        [DASHBOARD_TABS.engagement]: DotAnalyticsEngagementReportComponent
+    };
 
     /**
      * Closes the message banner and stores the preference in localStorage

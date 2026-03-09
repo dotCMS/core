@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -11,7 +11,6 @@ import {
     transformConversionTrendData,
     transformTrafficVsConversionsData
 } from '@dotcms/portlets/dot-analytics/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
@@ -48,18 +47,10 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
         class: 'flex flex-col gap-6 w-full'
     }
 })
-export default class DotAnalyticsConversionsReportComponent implements OnInit {
+export default class DotAnalyticsConversionsReportComponent {
     /** Analytics dashboard store providing conversions data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
-    readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
-
-    ngOnInit(): void {
-        this.#globalStore.addNewBreadcrumb({
-            id: 'analytics-conversions',
-            label: this.#messageService.get('analytics.section.conversions')
-        });
-    }
 
     /** Dynamic chart title including the active time range label */
     protected readonly $trafficVsConversionsTitle = computed(() => {

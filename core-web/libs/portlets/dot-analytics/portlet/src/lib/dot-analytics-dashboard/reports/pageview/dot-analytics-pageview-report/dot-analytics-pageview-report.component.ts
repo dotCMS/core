@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { DotMessageService } from '@dotcms/data-access';
 import {
     DotAnalyticsDashboardStore,
     extractPageTitle,
@@ -12,7 +11,6 @@ import {
     transformDeviceBrowsersData,
     transformPageViewTimeLineData
 } from '@dotcms/portlets/dot-analytics/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
@@ -43,8 +41,6 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
 export default class DotAnalyticsPageviewReportComponent {
     /** Analytics dashboard store providing pageview data and actions */
     readonly store = inject(DotAnalyticsDashboardStore);
-    readonly #globalStore = inject(GlobalStore);
-    readonly #messageService = inject(DotMessageService);
 
     /** Total page views metric data from store */
     protected readonly $totalPageViews = this.store.totalPageViews;
@@ -72,17 +68,6 @@ export default class DotAnalyticsPageviewReportComponent {
     protected readonly $pageViewDeviceBrowsersStatus = computed(
         () => this.store.pageViewDeviceBrowsers().status
     );
-
-    constructor() {
-        this.#setupBreadcrumb();
-    }
-
-    #setupBreadcrumb(): void {
-        this.#globalStore.addNewBreadcrumb({
-            id: 'analytics-pageview',
-            label: this.#messageService.get('analytics.dashboard.tabs.pageview')
-        });
-    }
 
     /** Aggregated metric cards data combining store slices with display metadata */
     protected readonly $metricsData = computed((): MetricData[] => [
