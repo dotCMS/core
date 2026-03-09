@@ -201,13 +201,20 @@ public class PublishingResource {
             )
             @QueryParam("filter") final String filter,
             @Parameter(
-                    description = "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH). " +
-                            "Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, SENDING_TO_ENDPOINTS, " +
-                            "PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY, " +
-                            "SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, " +
-                            "FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, " +
-                            "FAILED_INTEGRITY_CHECK, INVALID_TOKEN, LICENSE_REQUIRED",
-                    example = "SUCCESS,FAILED_TO_PUBLISH"
+                    description = "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH).",
+                    example = "SUCCESS,FAILED_TO_PUBLISH",
+                    schema = @Schema(
+                            type = "string",
+                            allowableValues = {
+                                    "BUNDLE_REQUESTED", "WAITING_FOR_PUBLISHING", "BUNDLING",
+                                    "SENDING_TO_ENDPOINTS", "PUBLISHING_BUNDLE", "BUNDLE_SENT_SUCCESSFULLY",
+                                    "RECEIVED_BUNDLE", "BUNDLE_SAVED_SUCCESSFULLY", "SUCCESS",
+                                    "SUCCESS_WITH_WARNINGS", "FAILED_TO_BUNDLE", "FAILED_TO_SENT",
+                                    "FAILED_TO_SEND_TO_ALL_GROUPS", "FAILED_TO_SEND_TO_SOME_GROUPS",
+                                    "FAILED_TO_PUBLISH", "FAILED_INTEGRITY_CHECK", "INVALID_TOKEN",
+                                    "LICENSE_REQUIRED"
+                            }
+                    )
             )
             @QueryParam("status") final String status) throws DotPublisherException {
 
@@ -324,7 +331,7 @@ public class PublishingResource {
             @Parameter(
                     description = "Bundle identifier",
                     required = true,
-                    example = "f3d9a4b7-staging-bundle-2026-01-15"
+                    example = "01KJWNJM2C67DM56GHBJ4S7B89"
             )
             @PathParam("bundleId") final String bundleId) throws DotPublisherException {
 
@@ -412,7 +419,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Bundle not found",
+                    description = "Bundle not found in either the publishing audit history or the bundle table",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -432,7 +439,7 @@ public class PublishingResource {
             @Parameter(
                     description = "Bundle identifier",
                     required = true,
-                    example = "550e8400-e29b-41d4-a716-446655440000"
+                    example = "01KJWNJM2C67DM56GHBJ4S7B89"
             )
             @PathParam("bundleId") final String bundleId) throws DotDataException, DotPublisherException {
 
@@ -700,7 +707,7 @@ public class PublishingResource {
             @Parameter(
                     description = "Bundle identifier",
                     required = true,
-                    example = "550e8400-e29b-41d4-a716-446655440000"
+                    example = "01KJWNJM2C67DM56GHBJ4S7B89"
             )
             @PathParam("bundleId") final String bundleId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -845,7 +852,9 @@ public class PublishingResource {
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "Purge operation initiated (processes in background)",
+                    description = "Purge operation initiated (processes in background). " +
+                            "The result is delivered as a system notification to the triggering user's " +
+                            "browser session. Non-browser API clients will not receive the completion event.",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ResponseEntityPurgeView.class)
@@ -878,8 +887,19 @@ public class PublishingResource {
             @Parameter(
                     description = "Comma-separated status values to purge. If omitted, uses safe defaults " +
                             "(all terminal + queued, excludes in-progress). " +
-                            "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE",
-                    example = "SUCCESS,FAILED_TO_PUBLISH"
+                            "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE.",
+                    example = "SUCCESS,FAILED_TO_PUBLISH",
+                    schema = @Schema(
+                            type = "string",
+                            allowableValues = {
+                                    "BUNDLE_REQUESTED", "WAITING_FOR_PUBLISHING",
+                                    "BUNDLE_SENT_SUCCESSFULLY", "RECEIVED_BUNDLE", "BUNDLE_SAVED_SUCCESSFULLY",
+                                    "SUCCESS", "SUCCESS_WITH_WARNINGS", "FAILED_TO_BUNDLE", "FAILED_TO_SENT",
+                                    "FAILED_TO_SEND_TO_ALL_GROUPS", "FAILED_TO_SEND_TO_SOME_GROUPS",
+                                    "FAILED_TO_PUBLISH", "FAILED_INTEGRITY_CHECK", "INVALID_TOKEN",
+                                    "LICENSE_REQUIRED"
+                            }
+                    )
             )
             @QueryParam("status") final String status) throws DotDataException {
 
