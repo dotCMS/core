@@ -69,7 +69,7 @@ describe('DotCMSBlockEditorRenderer', () => {
         );
 
         expect(container.firstChild).toHaveClass('test-class');
-        expect(container.firstChild).toHaveStyle('color: rgb(255, 0, 0)');
+        expect(container.firstChild).toHaveStyle('color: red');
     });
 
     describe('Error Handling', () => {
