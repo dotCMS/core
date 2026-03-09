@@ -179,7 +179,6 @@
         "sharedGlobals": [
             "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
-            "{workspaceRoot}/tslint.json",
             "{workspaceRoot}/nx.json",
             "{workspaceRoot}/babel.config.json"
         ],

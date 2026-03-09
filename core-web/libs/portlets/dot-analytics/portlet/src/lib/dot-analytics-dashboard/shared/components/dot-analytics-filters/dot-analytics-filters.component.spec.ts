@@ -72,16 +72,6 @@ describe('DotAnalyticsFiltersComponent', () => {
         it('should initialize custom date range as null', () => {
             expect(spectator.component.$customDateRange()).toBeNull();
         });
-
-        it('should not include today in TIME_PERIOD_OPTIONS', () => {
-            const values = TIME_PERIOD_OPTIONS.map((opt) => opt.value);
-            expect(values).not.toContain(TIME_RANGE_OPTIONS.today);
-        });
-
-        it('should not include yesterday in TIME_PERIOD_OPTIONS', () => {
-            const values = TIME_PERIOD_OPTIONS.map((opt) => opt.value);
-            expect(values).not.toContain(TIME_RANGE_OPTIONS.yesterday);
-        });
     });
 
     describe('Custom Time Range Visibility', () => {

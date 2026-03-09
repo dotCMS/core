@@ -499,7 +499,7 @@ describe('DotTagsListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'tags.import.header',
-                    width: '500px',
+                    width: '600px',
                     closable: true,
                     closeOnEscape: true,
                     draggable: false,

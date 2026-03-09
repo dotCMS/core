@@ -15,6 +15,7 @@ import { GlobalStore } from '@dotcms/store';
 import { FiltersState } from './with-filters.feature';
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
+import { DEFAULT_GRANULARITY } from '../../types';
 import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
     createInitialRequestState,
@@ -28,6 +29,7 @@ import {
     toEngagementSparklineData
 } from '../../utils/data/engagement-data.utils';
 
+// eslint-disable-next-line no-duplicate-imports
 import type {
     ChartData,
     DimensionField,
@@ -278,7 +280,7 @@ export function withEngagement() {
                                         ...ENGAGEMENT_TREND_MEASURES,
                                         ...ENGAGEMENT_SPARKLINE_MEASURES
                                     ])
-                                    .timeRange('day', dateRange, 'day')
+                                    .timeRange('day', dateRange, DEFAULT_GRANULARITY)
                                     .build();
 
                                 const previousQuery = createCubeQuery()
@@ -288,7 +290,7 @@ export function withEngagement() {
                                         ...ENGAGEMENT_TREND_MEASURES,
                                         ...ENGAGEMENT_SPARKLINE_MEASURES
                                     ])
-                                    .timeRange('day', previousRange, 'day')
+                                    .timeRange('day', previousRange, DEFAULT_GRANULARITY)
                                     .build();
 
                                 return forkJoin({
