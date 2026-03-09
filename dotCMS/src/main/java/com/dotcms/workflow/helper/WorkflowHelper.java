@@ -2,7 +2,7 @@ package com.dotcms.workflow.helper;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.elasticsearch.business.ContentFactoryImpl;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.LuceneQueryDateTimeFormatter;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -184,7 +184,7 @@ public class WorkflowHelper {
                     .sanitizeBulkActionsQuery(luceneQuery);
 
             final String queryWithDatesFormatted = LuceneQueryDateTimeFormatter
-                    .findAndReplaceQueryDates(ContentFactoryImpl
+                    .findAndReplaceQueryDates(ESContentFactoryImpl
                             .translateQuery(sanitizedQuery, null).getQuery());
 
             final String query = String.format(ES_WFSTEP_AGGREGATES_QUERY, queryWithDatesFormatted);
@@ -194,7 +194,7 @@ public class WorkflowHelper {
                                     false, user, false).getResponse():
                     this.contentletAPI
                             .esSearchRaw(StringUtils.lowercaseStringExceptMatchingTokens(query,
-                                    ContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
+                                    ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                                     false, user, false);
             //Query must be sent lowercase. It's a must.
 

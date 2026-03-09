@@ -1073,7 +1073,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     private SearchHits indexSearch(String indexName, String query) throws Exception {
 
-        String qq = ContentFactoryImpl.translateQuery(query,
+        String qq = ESContentFactoryImpl.translateQuery(query,
                 ContentletIndexAPIImplTest.MOD_DATA_SORT).getQuery();
 
         if (indexName == null) {

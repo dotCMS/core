@@ -7,7 +7,7 @@ import com.dotcms.business.SystemTableFactory;
 import com.dotcms.business.SystemTableFactoryImpl;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerFactory;
-import com.dotcms.content.elasticsearch.business.ContentFactoryImpl;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
@@ -392,7 +392,7 @@ enum FactoryIndex
 			case PERMISSION_FACTORY: return new PermissionBitFactoryImpl(CacheLocator.getPermissionCache());
             case CALENDAR_EVENT_FACTORY: return new EventFactoryImpl();
             case CATEGORY_FACTORY: return new CategoryFactoryImpl();
-            case CONTENTLET_FACTORY: return new ContentFactoryImpl();
+            case CONTENTLET_FACTORY: return new ESContentFactoryImpl();
             case PLUGIN_FACTORY: return new PluginFactoryDBImpl();
             case LANGUAGE_FACTORY: return new LanguageFactoryImpl();
             case DISTRIBUTED_JOURNAL_FACTORY: return new ReindexQueueFactory();

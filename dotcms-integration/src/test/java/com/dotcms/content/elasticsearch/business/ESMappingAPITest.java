@@ -1076,7 +1076,7 @@ public class ESMappingAPITest {
 
         final SearchResponse raw = contentletAPI.esSearchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(wrappedQueryWithAggregations,
-                        ContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX), false, user, false);
+                        ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX), false, user, false);
 
         final JSONArray jsonArray = new JSONObject(raw.toString()).getJSONObject("aggregations")
                 .getJSONObject("sterms#tag").getJSONArray("buckets");

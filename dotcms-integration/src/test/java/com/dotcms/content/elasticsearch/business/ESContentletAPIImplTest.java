@@ -2668,7 +2668,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: The contentlet had several versions in different {@link Language} into the
      * DEFAULT {@link Variant} and a specific {@link Variant}.
      * Should: return all the versions for the DEFAULT {@link Variant} and the specific {@link Variant}
@@ -2723,7 +2723,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: The contentlet had several versions in different {@link Language} and {@link Variant}
      * Also they have  old versions
      * Should: return all the versions even the old ones into the DEFAULT {@link Variant}
@@ -2796,7 +2796,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: The contentlet had several versions in different {@link Language} but with a limit User,
      * and try to get all the versions using another user.
      * Should: throw a {@link DotSecurityException}
@@ -2852,7 +2852,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ContentFactoryImpl#findAllVersions(Identifier, boolean)}
+     * Method to test: {@link ESContentFactoryImpl#findAllVersions(Identifier, boolean)}
      * When: find for a contentlet that does not exist
      * Should: return a empty list
      */

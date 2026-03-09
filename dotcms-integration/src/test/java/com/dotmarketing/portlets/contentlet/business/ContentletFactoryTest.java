@@ -8,7 +8,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.DataProviderWeldRunner;
-import com.dotcms.content.elasticsearch.business.ContentFactoryImpl;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -174,7 +174,7 @@ public class ContentletFactoryTest extends ContentletBaseTest {
              assertNull(contentletCache.get(inode));
              assertNotNull(contentletFactory.find( inode ));
              assertNotNull(contentletCache.get(inode));
-             assertNotEquals(ContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
+             assertNotEquals(ESContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
         }
         //Remove'em all
         contentletFactory.delete(persistentContentlets);
@@ -184,7 +184,7 @@ public class ContentletFactoryTest extends ContentletBaseTest {
             assertNotNull(inode);
             assertNull(contentletCache.get(inode));
             assertNull(contentletFactory.find( inode ));
-            assertEquals(ContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
+            assertEquals(ESContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
         }
     }
 

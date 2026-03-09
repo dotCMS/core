@@ -132,7 +132,7 @@ import org.apache.commons.lang.StringUtils;
 @IndexRouter(
         access = IndexAccess.READ_ONLY
 )
-public class ContentFactoryImpl implements ContentletFactory {
+public class ESContentFactoryImpl implements ContentletFactory {
 
     private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
     private static final String[] ES_FIELDS = {"inode", "identifier"};
@@ -256,7 +256,7 @@ public class ContentFactoryImpl implements ContentletFactory {
 	 * Default factory constructor that initializes the connection with the
 	 * Elastic index.
 	 */
-	public ContentFactoryImpl() {
+	public ESContentFactoryImpl() {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
         this.indexOperationsOS = new ContentFactoryIndexOperationsOS();
@@ -308,7 +308,7 @@ public class ContentFactoryImpl implements ContentletFactory {
             final String finalQuery = loadJsonFieldValueSQL;
             return Try.of(() -> new DotConnect().setSQL(finalQuery).addParam(inode).getString("value"))
                     .onFailure(throwable -> {
-                        Logger.warnAndDebug(ContentFactoryImpl.class, String.format(
+                        Logger.warnAndDebug(ESContentFactoryImpl.class, String.format(
                                 "There was an error fetching field variable `%s` from inode `%s` null has been returned.",
                                 field.variable(), inode), throwable);
                     }).getOrNull();
@@ -387,13 +387,13 @@ public class ContentFactoryImpl implements ContentletFactory {
         try {
             fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
         } catch (Exception e) {
-            Logger.error(ContentFactoryImpl.class,e.getMessage(),e);
+            Logger.error(ESContentFactoryImpl.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
         try {
             velVarfieldsMap = UtilMethods.convertListToHashMap(fields, "getVelocityVarName", String.class);
         } catch (Exception e) {
-            Logger.error(ContentFactoryImpl.class,e.getMessage(),e);
+            Logger.error(ESContentFactoryImpl.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
         }
         List<Map<String, Serializable>> res = new ArrayList<>();
@@ -2198,12 +2198,12 @@ public class ContentFactoryImpl implements ContentletFactory {
 	            try {
 	                inode = query.substring(index, query.indexOf(" ", index));
 	            } catch (StringIndexOutOfBoundsException e) {
-	                Logger.debug(ContentFactoryImpl.class, e.toString());
+	                Logger.debug(ESContentFactoryImpl.class, e.toString());
 	                inode = query.substring(index);
 	            }
 	            st = CacheLocator.getContentTypeCache().getStructureByInode(inode);
 	            if (!InodeUtils.isSet(st.getInode()) || !UtilMethods.isSet(st.getVelocityVarName())) {
-	                Logger.error(ContentFactoryImpl.class,
+	                Logger.error(ESContentFactoryImpl.class,
 	                        "Unable to find Structure or Structure Velocity Variable Name from passed in structureInode Query : "
 	                                + query);
 
@@ -2222,7 +2222,7 @@ public class ContentFactoryImpl implements ContentletFactory {
 	            try {
 	                fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
 	            } catch (Exception e) {
-	                Logger.error(ContentFactoryImpl.class, e.getMessage(), e);
+	                Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
 	                result.setQuery(query);
 	                result.setSortBy(sortBy);
 	                return result;
@@ -2250,7 +2250,7 @@ public class ContentFactoryImpl implements ContentletFactory {
 	                                + APILocator.getCategoryAPI().find(catInode,
 	                                        APILocator.getUserAPI().getSystemUser(), true).getCategoryVelocityVarName());
 	                    } catch (Exception e) {
-	                        Logger.error(ContentFactoryImpl.class, e.getMessage() + " : Error loading category", e);
+	                        Logger.error(ESContentFactoryImpl.class, e.getMessage() + " : Error loading category", e);
 	                        result.setQuery(query);
 	                        result.setSortBy(sortBy);
 	                        return result;
@@ -2361,7 +2361,7 @@ public class ContentFactoryImpl implements ContentletFactory {
 	        try {
 	            fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
 	        } catch (Exception e) {
-	            Logger.error(ContentFactoryImpl.class, e.getMessage(), e);
+	            Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
 	            return sortBy;
 	        }
 
@@ -2527,7 +2527,7 @@ public class ContentFactoryImpl implements ContentletFactory {
     }
 
     /**
-     * @deprecated Use {@link ContentFactoryImpl#getQueries(Field, Date)} instead
+     * @deprecated Use {@link ESContentFactoryImpl#getQueries(Field, Date)} instead
      * @param field
      * @return
      */
