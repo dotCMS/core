@@ -29,7 +29,7 @@ public interface AbstractRetryBundlesForm {
      */
     @Schema(
             description = "List of bundle identifiers to retry",
-            example = "[\"bundle-123\", \"bundle-456\"]",
+            example = "[\"01KJWNJM2C67DM56GHBJ4S7B89\", \"01KJWNJM2C67DM56GHBJ4S7B90\"]",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     List<String> bundleIds();
