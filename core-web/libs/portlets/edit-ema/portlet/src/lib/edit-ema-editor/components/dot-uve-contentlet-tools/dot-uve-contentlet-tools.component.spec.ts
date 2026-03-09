@@ -531,20 +531,36 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should default to 0px when contentletArea values are undefined', () => {
+                // Use a different contentlet id so the hover overlay is shown when we set areaWithUndefined
+                const areaWithDifferentId = {
+                    ...MOCK_CONTENTLET_AREA,
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        contentlet: {
+                            ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                            identifier: 'other-contentlet-id'
+                        }
+                    }
+                };
+                spectator.setInput('contentletArea', areaWithDifferentId);
+                spectator.detectChanges();
+                const hoverBoundsOther = spectator.query(byTestId('bounds-hover'));
+                spectator.click(hoverBoundsOther as Element);
+                spectator.detectChanges();
+
                 const areaWithUndefined = { ...MOCK_CONTENTLET_AREA, x: undefined };
                 spectator.setInput('contentletArea', areaWithUndefined as ContentletArea);
                 spectator.detectChanges();
 
-                // Re-select after changing contentletArea
                 const hoverBounds = spectator.query(byTestId('bounds-hover'));
                 expect(hoverBounds).toBeTruthy();
-                spectator.click(hoverBounds);
+                spectator.click(hoverBounds as Element);
                 spectator.detectChanges();
 
                 const bounds = spectator.query(byTestId('bounds-selected')) as HTMLElement;
                 expect(bounds).toBeTruthy();
                 // The computed uses ?? operator, so undefined x should default to 0
-                expect(parseInt(bounds.style.left)).toBe(0);
+                expect(parseInt(bounds.style.left, 10)).toBe(0);
             });
         });
 

@@ -306,7 +306,6 @@ describe('DotUveIframeComponent', () => {
     describe('handleInlineScripts', () => {
         let mockIframe: HTMLIFrameElement;
         let mockWindow: Window;
-        let mockClickEvent: MouseEvent;
 
         beforeEach(() => {
             mockIframe = document.createElement('iframe');
@@ -314,7 +313,6 @@ describe('DotUveIframeComponent', () => {
                 addEventListener: jest.fn(),
                 removeEventListener: jest.fn()
             } as unknown as Window;
-            mockClickEvent = new MouseEvent('click', { bubbles: true });
 
             Object.defineProperty(mockIframe, 'contentWindow', {
                 value: mockWindow,
@@ -349,8 +347,15 @@ describe('DotUveIframeComponent', () => {
             (component as any).handleInlineScripts(false);
 
             if (clickHandler) {
-                clickHandler(mockClickEvent);
-                expect(internalNavSpy).toHaveBeenCalledWith(mockClickEvent);
+                const linkTarget = document.createElement('a');
+                linkTarget.setAttribute('href', '/test');
+                const clickEvent = new MouseEvent('click', { bubbles: true });
+                Object.defineProperty(clickEvent, 'target', {
+                    value: linkTarget,
+                    writable: false
+                });
+                clickHandler(clickEvent);
+                expect(internalNavSpy).toHaveBeenCalledWith(clickEvent);
             }
         });
 
@@ -369,8 +374,15 @@ describe('DotUveIframeComponent', () => {
             (component as any).handleInlineScripts(false);
 
             if (clickHandler) {
-                clickHandler(mockClickEvent);
-                expect(inlineEditingSpy).toHaveBeenCalledWith(mockClickEvent);
+                const linkTarget = document.createElement('a');
+                linkTarget.setAttribute('href', '/test');
+                const clickEvent = new MouseEvent('click', { bubbles: true });
+                Object.defineProperty(clickEvent, 'target', {
+                    value: linkTarget,
+                    writable: false
+                });
+                clickHandler(clickEvent);
+                expect(inlineEditingSpy).toHaveBeenCalledWith(clickEvent);
             }
         });
 

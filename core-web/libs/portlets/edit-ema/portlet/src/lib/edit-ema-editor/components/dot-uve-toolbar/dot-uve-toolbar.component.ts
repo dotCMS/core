@@ -221,11 +221,28 @@ export class DotUveToolbarComponent {
 
     /**
      * Fetch the page on a given date
-     * @param {Date} publishDate
+     * @param {Date | string | number} publishDate - Date, ISO string, or timestamp (defaults to now)
      * @memberof DotUveToolbarComponent
      */
-    protected fetchPageOnDate(publishDate: Date = new Date()) {
-        const publishDateUTC = convertLocalTimeToUTC(publishDate);
+    protected fetchPageOnDate(publishDate: Date | string | number = new Date()) {
+        let dateObj: Date;
+        const asDate = publishDate as Date;
+        const hasGetTime =
+            typeof publishDate === 'object' &&
+            publishDate !== null &&
+            typeof (asDate as { getTime?: unknown }).getTime === 'function';
+        if (hasGetTime) {
+            const time = (asDate as Date).getTime();
+            dateObj = Number.isFinite(time) ? new Date(time) : new Date();
+        } else if (typeof publishDate === 'number' || typeof publishDate === 'string') {
+            dateObj = new Date(publishDate);
+        } else {
+            dateObj = new Date();
+        }
+        if (Number.isNaN(dateObj.getTime())) {
+            dateObj = new Date();
+        }
+        const publishDateUTC = convertLocalTimeToUTC(dateObj);
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 

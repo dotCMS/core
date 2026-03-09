@@ -12,6 +12,7 @@ import { of } from 'rxjs';
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -46,6 +47,7 @@ import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import {
+    CurrentUserDataMock,
     DotExperimentsServiceMock,
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
@@ -154,7 +156,8 @@ const createRouteSnapshot = ({ queryParams, data }: { queryParams: object; data:
 });
 
 const mockGlobalStore = {
-    addNewBreadcrumb: jest.fn()
+    addNewBreadcrumb: jest.fn(),
+    loggedUser: signal(CurrentUserDataMock)
 };
 
 /**

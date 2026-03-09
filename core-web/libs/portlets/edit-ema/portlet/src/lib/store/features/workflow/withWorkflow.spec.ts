@@ -1,4 +1,4 @@
-import { describe, expect } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import {
     createServiceFactory,
     mockProvider,
@@ -8,7 +8,6 @@ import {
 import { signalStore, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { flushEffects } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import {
@@ -17,7 +16,7 @@ import {
     DotPropertiesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { withWorkflow } from './withWorkflow';
@@ -33,7 +32,8 @@ import { withPage } from '../page/withPage';
 const pageParams = {
     url: 'new-url',
     language_id: '1',
-    [PERSONA_KEY]: '2'
+    [PERSONA_KEY]: '2',
+    mode: UVE_MODE.EDIT
 };
 
 const initialState = createInitialUVEState({ pageParams });
@@ -55,6 +55,7 @@ describe('withLoad', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
     let dotWorkflowsActionsService: SpyObject<DotWorkflowsActionsService>;
+    let dotContentletLockerService: SpyObject<DotContentletLockerService>;
 
     const createService = createServiceFactory({
         service: uveStoreMock,
@@ -62,7 +63,7 @@ describe('withLoad', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+                getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             {
                 provide: DotPageApiService,
@@ -81,7 +82,10 @@ describe('withLoad', () => {
             },
             {
                 provide: DotContentletLockerService,
-                useValue: { unlock: () => of({}), lock: () => of({}) }
+                useValue: {
+                    unlock: jest.fn().mockReturnValue(of({})),
+                    lock: jest.fn().mockReturnValue(of({}))
+                }
             },
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }
         ]
@@ -91,17 +95,19 @@ describe('withLoad', () => {
         spectator = createService();
         store = spectator.service;
         dotWorkflowsActionsService = spectator.inject(DotWorkflowsActionsService);
+        dotContentletLockerService = spectator.inject(DotContentletLockerService);
     });
 
     it('should start with the initial state', () => {
         expect(store.workflowActions()).toEqual([]);
         expect(store.workflowIsLoading()).toBe(true);
+        expect(store.workflowLockIsLoading()).toBe(false);
     });
 
     it('should fetch workflow actions when page asset inode changes (effect)', () => {
         const getByInodeSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
         store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
-        flushEffects();
+        spectator.flushEffects();
         expect(getByInodeSpy).toHaveBeenCalledWith(MOCK_RESPONSE_HEADLESS.page.inode);
         expect(store.workflowActions()).toEqual(mockWorkflowsActions);
         expect(store.workflowIsLoading()).toBe(false);
@@ -121,6 +127,69 @@ describe('withLoad', () => {
         it('should set workflowIsLoading to true', () => {
             store.setWorkflowActionLoading(true);
             expect(store.workflowIsLoading()).toBe(true);
+        });
+
+        describe('workflowToggleLock', () => {
+            it('should call lock when page is not locked', () => {
+                const inode = 'page-inode-123';
+                store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+                spectator.flushEffects();
+
+                store.workflowToggleLock(inode, false, false);
+
+                expect(dotContentletLockerService.lock).toHaveBeenCalledWith(inode);
+                expect(dotContentletLockerService.unlock).not.toHaveBeenCalled();
+            });
+
+            it('should call unlock when page is locked by current user', () => {
+                const inode = 'page-inode-123';
+                store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+                spectator.flushEffects();
+
+                store.workflowToggleLock(inode, true, true);
+
+                expect(dotContentletLockerService.unlock).toHaveBeenCalledWith(inode);
+                expect(dotContentletLockerService.lock).not.toHaveBeenCalled();
+            });
+
+            it('should call unlock when page is locked by another user', () => {
+                const inode = 'page-inode-123';
+                store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+                spectator.flushEffects();
+
+                store.workflowToggleLock(inode, true, false);
+
+                expect(dotContentletLockerService.unlock).toHaveBeenCalledWith(inode);
+                expect(dotContentletLockerService.lock).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('computed signals', () => {
+        it('should expose $lockIsPageLocked from page and user state', () => {
+            expect(store.$lockIsPageLocked()).toBe(false);
+
+            store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+            spectator.flushEffects();
+            // MOCK_RESPONSE_HEADLESS has locked: false
+            expect(store.$lockIsPageLocked()).toBe(false);
+        });
+
+        it('should expose $lockFeatureEnabled from flags', () => {
+            // Flags are loaded from DotPropertiesService; empty object => no toggle lock flag
+            expect(store.$lockFeatureEnabled()).toBeFalsy();
+        });
+
+        it('should expose $lockOptions when page is set and mode is EDIT', () => {
+            store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+            spectator.flushEffects();
+
+            const options = store.$lockOptions();
+            expect(options).not.toBeNull();
+            expect(options?.inode).toBe(MOCK_RESPONSE_HEADLESS.page.inode);
+            expect(options?.isLocked).toBe(false);
+            expect(options?.canLock).toBe(true);
+            expect(options?.lockedBy).toBe('');
         });
     });
 

@@ -156,7 +156,7 @@ describe('DotUveLockOverlayComponent', () => {
 
             const messages = spectator.component.$overlayMessages();
             expect(messages).toEqual({
-                icon: 'pi pi-lock text-[1.75rem]',
+                icon: 'pi pi-lock text-[1.75rem]!',
                 title: 'uve.editor.overlay.lock.locked.page.title',
                 message: 'uve.editor.overlay.lock.locked.page.description'
             });
@@ -174,7 +174,7 @@ describe('DotUveLockOverlayComponent', () => {
 
             const messages = spectator.component.$overlayMessages();
             expect(messages).toEqual({
-                icon: 'pi pi-lock',
+                icon: 'pi pi-lock text-[1.75rem]!',
                 title: 'uve.editor.overlay.lock.locked.page.title',
                 message: 'uve.editor.overlay.lock.locked.page.description'
             });

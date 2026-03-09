@@ -152,8 +152,8 @@ describe('DotUveContentletQuickEditComponent', () => {
         });
         spectator.detectChanges();
 
-        expect(spectator.query('.empty-state')).toExist();
-        expect(spectator.query('.empty-message')).toHaveText('Select a contentlet');
+        expect(spectator.query('form')).toBeFalsy();
+        expect(spectator.query('.font-bold')).toHaveText('Select a contentlet');
     });
 
     it('should mark required fields with CSS class', () => {

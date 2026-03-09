@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { MockComponent } from 'ng-mocks';
+import { MockComponent, MockModule } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
@@ -357,7 +357,7 @@ describe('DotUveToolbarComponent', () => {
         imports: [
             HttpClientTestingModule,
             FormsModule,
-            DatePickerModule,
+            MockModule(DatePickerModule),
             MockComponent(DotEmaBookmarksComponent),
             DotEmaInfoDisplayComponent,
             MockComponent(DotEmaRunningExperimentComponent),
@@ -965,8 +965,8 @@ describe('DotUveToolbarComponent', () => {
 
                 const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
                 expect(button).toBeTruthy();
-                expect(button.querySelector('.pi-lock-open')).toBeTruthy();
-                expect(button.querySelector('.pi-lock')).toBeNull();
+                expect(button.classList.contains('lock-button--unlocked')).toBeTruthy();
+                expect(button.classList.contains('lock-button--locked')).toBeFalsy();
             });
 
             it('should display locked state when page is locked by current user', () => {
@@ -982,8 +982,8 @@ describe('DotUveToolbarComponent', () => {
 
                 const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
                 expect(button).toBeTruthy();
-                expect(button.querySelector('.pi-lock')).toBeTruthy();
-                expect(button.querySelector('.pi-lock-open')).toBeNull();
+                expect(button.classList.contains('lock-button--locked')).toBeTruthy();
+                expect(button.classList.contains('lock-button--unlocked')).toBeFalsy();
             });
 
             it('should call store.toggleLock when unlocked button is clicked', () => {
@@ -1022,9 +1022,8 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.workflowLockIsLoading.set(true);
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
-                const nativeButton = button.querySelector('button') as HTMLButtonElement | null;
-                expect(nativeButton?.disabled).toBe(true);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLButtonElement;
+                expect(button?.disabled).toBe(true);
             });
 
             it('should enable button when lock operation is not loading', () => {
@@ -1032,9 +1031,8 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.workflowLockIsLoading.set(false);
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
-                const nativeButton = button.querySelector('button') as HTMLButtonElement | null;
-                expect(nativeButton?.disabled).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLButtonElement;
+                expect(button?.disabled).toBe(false);
             });
 
             it('should call store.toggleLock with correct params for page locked by another user', () => {
@@ -1194,7 +1192,7 @@ describe('DotUveToolbarComponent', () => {
                 liveSocialMediaSignal.set(null);
                 spectator.detectChanges();
 
-                expect(spectator.query('p-calendar')).toBeTruthy();
+                expect(spectator.query('p-datepicker')).toBeTruthy();
             });
 
             it('should show calendar when in live mode and socialMedia is false', () => {
@@ -1273,7 +1271,7 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const calendar = spectator.query('p-calendar');
+                const calendar = spectator.query('p-datepicker');
 
                 if (!calendar) {
                     // Calendar not rendered, skip test
@@ -1575,7 +1573,7 @@ describe('DotUveToolbarComponent', () => {
                     const deviceSelector =
                         deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
 
-                    expect(deviceSelector.state()).toEqual({
+                    expect(deviceSelector.$state()).toEqual({
                         device: testDevice,
                         socialMedia: 'facebook',
                         orientation: Orientation.LANDSCAPE
@@ -1591,7 +1589,7 @@ describe('DotUveToolbarComponent', () => {
                     const deviceSelector =
                         deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
 
-                    expect(deviceSelector.devices()).toBeDefined();
+                    expect(deviceSelector.$devices()).toBeDefined();
                 });
 
                 it('should pass isTraditionalPage input to device selector', () => {
@@ -1604,7 +1602,7 @@ describe('DotUveToolbarComponent', () => {
                     const deviceSelector =
                         deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
 
-                    expect(deviceSelector.isTraditionalPage()).toBe(true);
+                    expect(deviceSelector.$isTraditionalPage()).toBe(true);
                 });
 
                 it('should call handleDeviceSelectorChange when stateChange emits', () => {

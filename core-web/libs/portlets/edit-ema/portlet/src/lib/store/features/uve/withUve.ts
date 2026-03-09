@@ -1,6 +1,6 @@
 import { patchState, signalStoreFeature, withHooks, withMethods, withState } from '@ngrx/signals';
 
-import { effect, inject } from '@angular/core';
+import { effect, inject, untracked } from '@angular/core';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
@@ -69,14 +69,15 @@ export function withUve() {
         })),
         withHooks({
             /**
-             * Keep uveCurrentUser in sync with GlobalStore.loggedUser reactively.
+             * Keep uveCurrentUser in sync with GlobalStore.uveCurrentUser reactively.
              * Handles late-loaded user (null initially) and changes (logout, login-as).
              */
             onInit(store) {
+                // TODO: This should be a linked singal/computed instead of an effect
                 const globalStore = inject(GlobalStore);
                 effect(() => {
-                    const loggedUser = globalStore.loggedUser();
-                    store.setUveCurrentUser(loggedUser);
+                    const currentUser = globalStore.loggedUser();
+                    untracked(() => store.setUveCurrentUser(currentUser));
                 });
             }
         })

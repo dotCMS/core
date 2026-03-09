@@ -320,21 +320,24 @@ describe('DotUveStyleEditorFormComponent', () => {
         /** Configures saveStyleEditor to always fail and roll the store back to `rolledBackFontSize`. */
         const makeRollbackOnSaveFailure = (rolledBackFontSize: number) => {
             mockUveStore.saveStyleEditor.mockReturnValue(
-                throwError(() => {
-                    mockUveStore.setPageAsset({
-                        pageAsset: createMockPageAsset(rolledBackFontSize)
-                    });
-                    return new Error('Save failed');
-                })
+                timer(0).pipe(
+                    mergeMap(() => {
+                        mockUveStore.setPageAsset({
+                            pageAsset: createMockPageAsset(rolledBackFontSize)
+                        });
+                        return throwError(() => new Error('Save failed'));
+                    })
+                )
             );
         };
 
-        /** Patches font-size, advances past the debounce, and flushes microtasks. */
+        /** Patches font-size, advances past the debounce, flushes microtasks, then ticks once so delayed error (and rollback) run. */
         const triggerSaveAndWait = (fontSize: number) => {
             spectator.component.$form()?.patchValue({ 'font-size': fontSize });
             tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
             spectator.detectChanges();
             flushMicrotasks();
+            tick(0); // Let saveStyleEditor's timer(0) emit so rollback runs before error handler
             spectator.detectChanges();
         };
 

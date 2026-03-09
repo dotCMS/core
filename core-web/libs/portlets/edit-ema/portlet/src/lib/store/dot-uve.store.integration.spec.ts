@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -14,9 +15,11 @@ import {
     DotMessageService,
     DotPageLayoutService,
     DotPropertiesService,
+    DotSystemConfigService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -118,6 +121,13 @@ describe('UVEStore - Integration Tests ', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: () => of({})
+            }),
+            {
+                provide: GlobalStore,
+                useValue: { loggedUser: signal(CurrentUserDataMock) }
             }
         ]
     });
@@ -125,6 +135,7 @@ describe('UVEStore - Integration Tests ', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
+        spectator.flushEffects(); // Run withUve onInit so uveCurrentUser syncs from GlobalStore.loggedUser
     });
 
     describe('State Structure', () => {

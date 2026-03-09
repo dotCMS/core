@@ -73,6 +73,7 @@ import { WINDOW } from '@dotcms/utils';
 import {
     CONTENTLETS_MOCK_FOR_EDITOR,
     CONTENT_TYPE_MOCK_FOR_EDITOR,
+    CurrentUserDataMock,
     DotCurrentUserServiceMock,
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -162,7 +163,8 @@ const messagesMock = {
 };
 
 const mockGlobalStore = {
-    currentSiteId: signal('demo.dotcms.com')
+    currentSiteId: signal('demo.dotcms.com'),
+    loggedUser: signal(CurrentUserDataMock)
 };
 
 const mockDotUveBridgeService = {

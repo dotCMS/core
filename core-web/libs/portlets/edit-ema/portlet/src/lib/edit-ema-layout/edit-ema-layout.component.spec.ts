@@ -5,6 +5,7 @@ import { MockComponent, MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,12 +23,15 @@ import {
     DotMessageService,
     DotPageLayoutService,
     DotRouterService,
+    DotSystemConfigService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { WINDOW } from '@dotcms/utils';
 import {
+    CurrentUserDataMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     MockDotRouterJestService
@@ -142,6 +146,13 @@ describe('EditEmaLayoutComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: () => of({})
+            }),
+            {
+                provide: GlobalStore,
+                useValue: { loggedUser: signal(CurrentUserDataMock) }
             }
         ]
     });
