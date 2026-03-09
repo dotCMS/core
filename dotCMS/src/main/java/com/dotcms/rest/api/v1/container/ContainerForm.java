@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.container;
 
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.beans.ContainerStructure;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,7 +22,8 @@ public class ContainerForm  extends Validated {
     @Schema(description = "Title of the container", required = true)
     private final String title;
 
-    @Schema(description = "Description of the container (displayed as 'Description' in the UI)")
+    @Schema(description = "Description of the container (displayed as 'Description' in the UI). "
+            + "Also accepts 'description' as an alias field name in JSON.")
     private final String friendlyName;
 
     @Schema(description = "Maximum number of contentlets this container can hold. Set to 0 for no limit.")
@@ -177,6 +179,7 @@ public class ContainerForm  extends Validated {
         private  String title;
 
         @JsonProperty
+        @JsonAlias("description")
         private  String friendlyName;
 
         @JsonProperty

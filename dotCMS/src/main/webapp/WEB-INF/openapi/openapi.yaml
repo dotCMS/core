@@ -22310,7 +22310,7 @@ components:
         friendlyName:
           type: string
           description: Description of the container (displayed as 'Description' in
-            the UI)
+            the UI). Also accepts 'description' as an alias field name in JSON.
         hostId:
           type: string
           description: "Identifier of the site (host) where this container should\
