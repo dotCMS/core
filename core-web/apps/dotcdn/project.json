@@ -7,7 +7,7 @@
     "tags": [],
     "targets": {
         "build": {
-            "executor": "@angular/build:browser",
+            "executor": "@angular-devkit/build-angular:browser",
             "options": {
                 "outputPath": "dist/apps/dotcdn",
                 "index": "apps/dotcdn/src/index.html",

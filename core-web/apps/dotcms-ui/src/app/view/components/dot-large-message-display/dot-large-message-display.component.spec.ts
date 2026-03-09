@@ -1,7 +1,6 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
@@ -55,9 +54,6 @@ describe('DotLargeMessageDisplayComponent', () => {
 
         tick(0);
         spectator.fixture.detectChanges(false);
-        const bodyEl =
-            spectator.debugElement.query(By.css('.dialog-message__body'))?.nativeElement ??
-            document.body.querySelector('.dialog-message__body');
         expect(spectator.component.messages[0].body).toBe('Hello World');
     }));
 
