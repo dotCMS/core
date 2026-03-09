@@ -232,8 +232,6 @@
         "gh-pages": "^6.1.1",
         "happy-dom": "^15.7.4",
         "http-proxy-middleware": "3.0.5",
-        "install": "^0.13.0",
-        "is-ci": "^3.0.1",
         "jest": "29.7.0",
         "jest-environment-jsdom": "29.7.0",
         "jest-html-reporters": "^3.1.5",
