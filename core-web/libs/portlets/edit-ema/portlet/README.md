@@ -1,74 +1,70 @@
 # Edit EMA Portlet
 
-Universal Visual Editor (UVE) portlet for dotCMS - enables in-context editing of pages with drag-and-drop content management.
+Universal Visual Editor (UVE) portlet for dotCMS — enables in-context editing of pages with drag-and-drop content management.
 
 ## Architecture
 
 This portlet follows a **Container/Presentational Component Pattern** to maintain clear separation of concerns:
 
-- **Smart Containers**: Inject `UVEStore`, manage state, pass data down via `@Input`
-- **Presentational Components**: No store injection, receive all data via `@Input`, emit events via `@Output`
+- **Smart Containers**: Inject `UVEStore`, manage state, pass data down
+- **Presentational Components**: No store injection, receive all data via `input()`, emit events via `output()`
 
 ### Component Tree
 
 ```
 DotEmaShellComponent (Smart Container) [UVEStore]
 ├─ EditEmaNavigationBarComponent (Smart Container) [UVEStore]
-│  └─ Receives navigation data via @Input + reads from UVEStore
 │
-├─ Route → EditEmaEditorComponent (Smart Container) [UVEStore]
+└─ Route → EditEmaEditorComponent (Smart Container) [UVEStore]
    ├─ DotUveToolbarComponent (Smart Container) [UVEStore]
-   │  ├─ DotToggleLockButtonComponent (Presentational) [NO STORE]
-   │  │  └─ @Input: toggleLockOptions | @Output: toggleLockClick
-   │  ├─ DotEmaInfoDisplayComponent (Presentational) [NO STORE]
-   │  │  └─ @Input: options | @Output: actionClicked
-   │  ├─ DotUveDeviceSelectorComponent (Presentational) [NO STORE]
-   │  │  └─ @Input: state, devices | @Output: stateChange
-   │  ├─ EditEmaLanguageSelectorComponent (Presentational) [NO STORE]
-   │  │  └─ @Input: contentLanguageId, pageLanguageId | @Output: change
-   │  └─ ... (most toolbar children are presentational)
+   │  ├─ DotToggleLockButtonComponent (Presentational)
+   │  ├─ DotEmaInfoDisplayComponent (Presentational)
+   │  ├─ DotUveDeviceSelectorComponent (Presentational)
+   │  ├─ DotEditorModeSelectorComponent (Presentational)
+   │  ├─ DotUveWorkflowActionsComponent (Presentational)
+   │  ├─ DotEmaRunningExperimentComponent (Presentational)
+   │  ├─ EditEmaPersonaSelectorComponent (Presentational)
+   │  └─ DotEmaBookmarksComponent (Presentational)
    │
-   ├─ DotUvePaletteComponent (Smart Container) [UVEStore]
-   │  ├─ Uses local signalState for tab management (not global store)
-   │  └─ DotUvePaletteListComponent (Smart Container) [DotPaletteListStore + GlobalStore]
-   │     └─ @Input: listType, languageId, pagePath, variantId
-   │     └─ Uses feature store for palette-specific state management
+   ├─ DotUvePaletteComponent (Smart Container) [UVEStore]         [left panel]
+   │  ├─ DotUvePaletteListComponent (Smart Container) [DotPaletteListStore]
+   │  ├─ DotRowReorderComponent (Presentational)
+   │  └─ DotUveStyleEditorFormComponent + DotUveStyleEditorEmptyStateComponent
    │
-   ├─ DotUveContentletQuickEditComponent (Presentational) [NO STORE]
-   │  └─ @Input: data (ContentletEditData), loading | @Output: submit, cancel
-   │  └─ Dynamic form generation based on field types
+   ├─ Browser toolbar (inline in EditEmaEditorComponent)
+   │  └─ DotUveZoomControlsComponent (Smart Container) [UVEStore]
    │
-   ├─ EmaPageDropzoneComponent (Presentational) [NO STORE]
-   │  └─ @Input: containers, dragItem, zoomLevel
-   │  └─ Pure canvas for drag-and-drop operations
+   ├─ DotUveIframeComponent (Presentational)
+   ├─ DotUveContentletToolsComponent (Presentational)
+   ├─ EmaPageDropzoneComponent (Presentational)
+   ├─ DotUveLockOverlayComponent (Smart Container) [UVEStore]
+   ├─ DotUvePageVersionNotFoundComponent (Presentational)
    │
-   └─ DotUveLockOverlayComponent (Smart Container) [UVEStore]
-      └─ Reads toggle lock state directly from UVEStore
+   ├─ Right edit panel (inline, conditionally open)          [right panel]
+   │  ├─ DotUveContentletQuickEditComponent (Presentational)
+   │  └─ DotUveStyleEditorFormComponent (Presentational)
+   │
+   ├─ DotEditEmaDialogComponent (Smart Container)
+   └─ DotBlockEditorSidebarComponent (Presentational)       [full-screen drawer]
 ```
 
 ## Key Patterns
 
 ### Local vs Global State
 
-**Local Component State** (use `signalState()`):
-- UI-specific state (tab selection, form validation, etc.)
-- State that doesn't need cross-component coordination
-- Example: `DotUvePaletteComponent` tab management
+**Global Store State** (`UVEStore`):
+- All shared feature state: page data, editor selections, view modes, workflow
+- Cross-component coordination
+- Example: `editorActiveContentlet`, `viewDevice`, `editorPaletteOpen`
 
-**Global Store State** (use `UVEStore`):
-- Shared feature state (page data, contentlet selection, etc.)
-- Cross-component coordination required
-- Example: `activeContentlet`, `pageAPIResponse`
-
-**Feature Store State** (use component-specific store):
+**Feature Store State** (component-specific store):
 - Domain-specific state for a feature (palette list data, search params, pagination)
 - Encapsulated within a feature boundary
 - Example: `DotPaletteListStore` for palette list management
 
-### Container Component Pattern (with UVEStore)
+### Smart Container Pattern
 
 ```typescript
-// Smart Container (reads from global store, manages state)
 @Component({ selector: 'dot-uve-palette' })
 export class DotUvePaletteComponent {
     protected readonly uveStore = inject(UVEStore);
@@ -76,177 +72,140 @@ export class DotUvePaletteComponent {
     // Read from global store
     readonly $languageId = computed(() => this.uveStore.$languageId());
     readonly $pagePath = computed(() => this.uveStore.$pageURI());
-
-    // Local UI state
-    readonly #localState = signalState({ currentTab: 0 });
-}
-```
-
-### Container Component Pattern (with Feature Store)
-
-```typescript
-// Smart Container with feature store
-@Component({ selector: 'dot-uve-palette-list' })
-export class DotUvePaletteListComponent {
-    readonly #paletteListStore = inject(DotPaletteListStore);
-    readonly #globalStore = inject(GlobalStore);
-
-    // Inputs from parent (for initialization)
-    $type = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
-    $languageId = input.required<number>({ alias: 'languageId' });
-
-    // Read from feature store
-    protected readonly $contenttypes = this.#paletteListStore.contenttypes;
-    protected readonly $pagination = this.#paletteListStore.pagination;
 }
 ```
 
 ### Presentational Component Pattern
 
 ```typescript
-// Presentational (receives props, emits events, NO store injection)
 @Component({ selector: 'dot-uve-contentlet-quick-edit' })
 export class DotUveContentletQuickEditComponent {
-    // NO store injection!
+    // NO store injection
 
-    // Inputs (data down from parent container)
-    data = input.required<ContentletEditData>({ alias: 'data' });
-    loading = input<boolean>(false, { alias: 'loading' });
+    data = input.required<ContentletEditData>();
+    loading = input<boolean>(false);
 
-    // Outputs (events up to parent container)
     submit = output<Record<string, unknown>>();
     cancel = output<void>();
 }
 ```
 
-## Benefits
-
-### Testability
-- **Presentational components**: Easier to test (no mock store needed, pure input/output testing)
-- **Container components**: Clear boundaries (test store interactions separately)
-- **Feature stores**: Isolated testing of domain logic separate from UI
-
-### Reusability
-- **Presentational components**: Can be reused in different contexts without store coupling
-- **Feature stores**: Domain logic can be shared across multiple components
-- **Clear interfaces**: Well-defined @Input/@Output contracts
-
-### Maintainability
-- **Clear separation of concerns**: Smart containers vs presentational components vs feature stores
-- **Localized changes**:
-  - Global store changes affect only global state consumers
-  - Feature store changes affect only feature-specific components
-  - Presentational component changes are isolated
-- **Easier refactoring**: Components can be converted between patterns as needs evolve
-
 ## State Management Architecture
 
 ### UVEStore State Structure
 
-The UVEStore uses a **nested state structure** to clearly separate concerns:
+The `UVEStore` uses a **flat state structure** following NgRx Signal Store best practices. Each property gets its own Signal for fine-grained reactivity. State is organized by domain using prefixes:
 
 ```typescript
 interface UVEState {
-    // ============ DOMAIN STATE (Source of Truth) ============
-    languages: DotLanguage[];
-    isEnterprise: boolean;
-    currentUser?: CurrentUser;
-    experiment?: DotExperiment;
-    pageAPIResponse?: DotCMSPageAsset;
+    // uve* — Global editor system state (withUve)
+    uveStatus: UVE_STATUS;
+    uveCurrentUser: CurrentUser | null;
 
-    // ============ UI STATE (Transient) ============
-    // Nested editor state
-    editor: {
-        // Functional editor state
-        dragItem: EmaDragItem | null;
-        bounds: Container[];
-        state: EDITOR_STATE;
-        activeContentlet: ContentletPayload | null;
-        contentArea: ContentletArea | null;
+    // flags — Feature flags (withFlags)
+    flags?: UVEFlags;
 
-        // UI panel preferences (user-configurable)
-        panels: {
-            palette: { open: boolean };
-            rightSidebar: { open: boolean };
-        };
+    // page* — Page asset data and metadata (withPage)
+    pageParams: DotPageAssetParams | null;
+    pageLanguages: DotLanguage[];
+    pageType: PageType;           // TRADITIONAL | HEADLESS
+    pageExperiment: DotExperiment | null;
+    pageErrorCode: number | null;
 
-        // Editor-specific data
-        ogTags: any | null;
-        styleSchemas: StyleEditorFormSchema[];
-    };
+    // workflow* — Workflow actions and lock state (withWorkflow)
+    workflowActions: DotCMSWorkflowAction[];
+    workflowIsLoading: boolean;
+    workflowLockIsLoading: boolean;
 
-    // Nested toolbar state
-    toolbar: {
-        device: DotDeviceListItem | null;
-        orientation: Orientation | null;
-        socialMedia: string | null;
-        isEditState: boolean;
-        isPreviewModeActive: boolean;
-        ogTagsResults: SeoMetaTagsResult[] | null;
-    };
+    // editor* — Editor UI state (withEditor)
+    editorDragItem: EmaDragItem | null;
+    editorBounds: Container[];
+    editorState: EDITOR_STATE;
+    editorActiveContentlet: ActionPayload | null;
+    editorContentArea: ContentletArea | null;
+    editorPaletteOpen: boolean;
+    editorEditPanelOpen: boolean;
+    editorOgTags: SeoMetaTags | null;
+    editorStyleSchemas: StyleEditorFormSchema[];
+
+    // view* — View modes and preview state (withView)
+    viewDevice: DotDeviceListItem | null;
+    viewDeviceOrientation: Orientation | null;
+    viewSocialMedia: string | null;
+    viewParams: DotUveViewParams | null;
+    viewOgTagsResults: SeoMetaTagsResult[] | null;
+    viewZoomLevel: number;
+    viewZoomIframeDocHeight: number;
 }
 ```
 
-### Accessing Nested State in Components
+### Accessing State
 
-**Container components** access nested state directly:
+Each state property exposes its own Signal. Access them directly from the store:
 
 ```typescript
-// Access editor functional state
-const dragItem = this.uveStore.editor().dragItem;
-const editorState = this.uveStore.editor().state;
+// Reading state
+const paletteOpen = this.uveStore.editorPaletteOpen();
+const device = this.uveStore.viewDevice();
+const status = this.uveStore.uveStatus();
 
-// Access panel preferences
-const isPaletteOpen = this.uveStore.editor().panels.palette.open;
-const isSidebarOpen = this.uveStore.editor().panels.rightSidebar.open;
-
-// Access toolbar state
-const device = this.uveStore.toolbar().device;
-const socialMedia = this.uveStore.toolbar().socialMedia;
+// Computed signals (derived state)
+const canEdit = this.uveStore.editorCanEditContent();
+const pageUrl = this.uveStore.$pageURL();
 ```
 
-**Updating nested state** requires spreading the parent object:
+### Updating State
+
+Use `patchState` with the flat property name — no nested spreading required:
 
 ```typescript
-// Update panel state
 setPaletteOpen(open: boolean) {
-    const editor = store.editor();
-    patchState(store, {
-        editor: {
-            ...editor,
-            panels: {
-                ...editor.panels,
-                palette: { open }
-            }
-        }
-    });
+    patchState(store, { editorPaletteOpen: open });
+}
+
+setViewDevice(device: DotDeviceListItem) {
+    patchState(store, { viewDevice: device });
 }
 ```
 
-### Benefits of Nested State
+### Store Feature Decomposition
 
-- **Clear Grouping**: Related state is grouped together (editor.panels groups all panel preferences)
-- **Easier to Reason About**: The structure mirrors the UI hierarchy
-- **Better Type Safety**: TypeScript can catch errors at deeper levels
-- **Reduced Prop Drilling**: Components get logical state chunks instead of individual properties
+`UVEStore` is composed from focused feature slices, each owning a specific domain:
+
+| Feature | File | Responsibility |
+|---|---|---|
+| `withUve` | `features/uve/` | System lifecycle, current user, init effects |
+| `withFlags` | `features/flags/` | Feature flag loading and access |
+| `withPage` | `features/page/` | Page asset, history, client config |
+| `withPageApi` | `features/page-api/` | Backend interactions: load, reload, save |
+| `withLayout` | `features/layout/` | Layout/template editing |
+| `withWorkflow` | `features/workflow/` | Workflow actions, lock management |
+| `withEditor` | `features/editor/` | Editor UI state, edit capabilities, drag/drop |
+| `withHistory` | `features/history/` | Undo/redo history for optimistic updates |
+| `withTimeMachine` | `features/timeMachine/` | Time-machine/snapshot functionality |
+| `withTrack` | `features/track/` | Analytics tracking |
+
+### Page Types
+
+The store distinguishes two page types, which affect iframe behavior and API calls:
+
+- **`PageType.TRADITIONAL`**: dotCMS server-side rendered pages. Iframe always reloads on changes.
+- **`PageType.HEADLESS`**: External headless apps. Iframe sends a `CLIENT_READY` postMessage with optional GraphQL config. Page data is fetched via REST or GraphQL depending on client config.
 
 ## Running Tests
 
-Run unit tests for this portlet:
 ```bash
+# Run all tests for this portlet
 nx test portlets-edit-ema-portlet
-```
 
-Run specific test file:
-```bash
+# Run a specific test file
 nx test portlets-edit-ema-portlet --testFile=path/to/test.spec.ts
 ```
 
 ## Development
 
-This library uses:
 - **Angular 19+** with standalone components
-- **NgRx Signals** for state management
-- **Modern Angular syntax**: `@if`, `@for`, `input()`, `output()`
-- **PrimeNG** for UI components
+- **NgRx Signals** (`@ngrx/signals`) for state management
+- **Modern Angular syntax**: `@if`, `@for`, `input()`, `output()`, `computed()`
+- **PrimeNG 21** for UI components
 - **Jest + Spectator** for testing
