@@ -216,7 +216,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             accumulatedContent.addAll(chunkFiltered);
             dbOffset += chunkInodesOrdered.size();
 
-            if (dbOffset >= BROWSER_DB_MAX_SCAN_ROWS.get()) {
+            if (dbOffset >= Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT)) {
                 Logger.warn(BrowserAPIImpl.class, String.format(
                         "Scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
                         dbOffset, chunkCount, accumulatedContent.size()));
@@ -721,8 +721,8 @@ public class BrowserAPIImpl implements BrowserAPI {
     // Maximum total DB rows to scan per request across all chunks. Acts as a safety cap to prevent
     // runaway queries when a restricted user has access to a small fraction of site content.
     // Default of 50,000 covers a worst-case ~5% permission pass rate for a full page of 300 items.
-    final Lazy<Integer> BROWSER_DB_MAX_SCAN_ROWS = Lazy.of(
-            () -> Config.getIntProperty("BROWSER_DB_MAX_SCAN_ROWS", 20_000));
+    static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
+    static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
 
     /**
      * Calculates optimal ES chunk size based on percentage of total count for processing inodes.
