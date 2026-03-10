@@ -227,7 +227,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         beforeEach(() => {
             spectator = createComponent();
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
             globalStore = spectator.inject(GlobalStore);
             TestBed.flushEffects();
         });
