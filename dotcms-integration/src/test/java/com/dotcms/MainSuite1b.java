@@ -71,6 +71,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.temp.TempFileResourceTest.class,
         com.dotcms.rest.api.v1.content.ContentVersionResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceHostResolutionIT.class,
         com.dotcms.rest.api.v1.theme.ThemeResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.vtl.VTLResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceIssue15124Test.class,
