@@ -177,7 +177,7 @@ const REPLACE_LAST_CRUMB_RULES: Record<string, ReplaceLastCrumbRule> = {
             if (!itemId || !lastId) {
                 return false;
             }
-            return regex.test(String(itemId)) && regex.test(String(lastId));
+            return regex.test(itemId) && regex.test(lastId);
         }
     }
 };
