@@ -155,7 +155,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 return new ContentUnderParent(filtered, false, 0);
             }
 
-            return getContentByChunks(browserQuery, maxRows, dcSelect);
+            return getContentByChunks(browserQuery, maxRows, sqlQuery);
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
             final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
@@ -177,13 +177,13 @@ public class BrowserAPIImpl implements BrowserAPI {
      *
      * @param browserQuery query containing search criteria, user context, and the current cursor
      * @param maxRows      maximum number of permission-visible items to return
-     * @param dcSelect     pre-built {@link DotConnect} with the select query and its bound params
+     * @param sqlQuery the pre-built SQL select query containing: string query and parameters
      * @return permission-filtered page together with {@code hasMore} and the next cursor value
      * @throws DotDataException     if a DB or permission lookup fails at the data layer
      * @throws DotSecurityException if a security boundary is violated during permission filtering
      */
     private ContentUnderParent getContentByChunks(final BrowserQuery browserQuery,
-            final int maxRows, final DotConnect dcSelect) throws DotDataException, DotSecurityException {
+            final int maxRows, final SelectQuery sqlQuery) throws DotDataException, DotSecurityException {
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
         final int chunkSize = Math.max(maxRows * BROWSER_DB_CHUNK_FACTOR.get(), BROWSER_DB_CHUNK_MIN_SIZE.get());
@@ -200,6 +200,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             chunkCount++;
             Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
 
+            final DotConnect dcSelect = getDotConnect(sqlQuery);
             dcSelect.setStartRow(dbOffset).setMaxRows(chunkSize);
             final List<String> chunkInodesOrdered = collectInodesFromDB(dcSelect);
 
