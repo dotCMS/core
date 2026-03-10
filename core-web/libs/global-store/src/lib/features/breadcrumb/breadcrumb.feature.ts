@@ -138,7 +138,12 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
              */
             const normalizeUrl = (url: string | undefined): string => {
                 if (!url) return '';
-                return url.replace(/^.*#/, ''); // Remove everything up to and including the hash
+                const afterHash = url.replace(/^.*#/, '');
+                // Empty hash (e.g. page.html#) → treat as path without hash for consistent matching
+                if (afterHash === '' && url.includes('#')) {
+                    return url.replace(/#$/, '');
+                }
+                return afterHash === '' ? url : afterHash;
             };
 
             const addNewBreadcrumb = (item: MenuItem) => {
@@ -284,13 +289,14 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 // Persist breadcrumbs to sessionStorage whenever they change
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();
-
-
+                    try {
                         sessionStorage.setItem(
                             BREADCRUMBS_SESSION_KEY,
                             JSON.stringify(breadcrumbs)
                         );
-
+                    } catch {
+                        // Ignore when storage is unavailable (private browsing, quota exceeded)
+                    }
                 });
 
                 // Process current URL when menuItems become available

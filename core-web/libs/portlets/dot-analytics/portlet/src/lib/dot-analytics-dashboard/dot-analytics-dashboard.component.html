@@ -44,7 +44,9 @@
                 @for (tab of tabs; track tab.id) {
                     <p-tabpanel [value]="tab.id">
                         <ng-template #content>
-                            <ng-container *ngComponentOutlet="tabComponents[tab.id]" />
+                            @if (tab.id === store.currentTab()) {
+                                <ng-container *ngComponentOutlet="tabComponents[tab.id]" />
+                            }
                         </ng-template>
                     </p-tabpanel>
                 }
