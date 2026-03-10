@@ -16,7 +16,7 @@ import static com.liferay.util.StringPool.COMMA;
 import static com.liferay.util.StringPool.PERIOD;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.business.ContentMappingAPI;
+import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
@@ -116,14 +116,14 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 
 /**
- * Implementation class for the {@link ContentMappingAPI}.
+ * Implementation class for the {@link ContentIndexMappingAPI}.
  *
  * @author root
  * @since Mar 22nd, 2012
  */
-public class ESMappingAPIImpl implements ContentMappingAPI {
+public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 
-    //This property basically tells the Metadata-API whether or not we should generate metadata upon reindexing a piece of content
+    //This property basically tells the Metadata-API whether we should generate metadata upon reindexing a piece of content
 	public static final String WRITE_METADATA_ON_REINDEX = "write.metadata.on.reindex";
 
 	//If you want to skip indexing metadata dotraw fields set this prop to false
@@ -155,26 +155,32 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final String DOTRAW = "_dotraw";
 	public static final String NO_METADATA = "NO_METADATA";
 
-	static ObjectMapper mapper = null;
+	private static final ObjectMapper mapper = createMapper();
 
-	private UserAPI userAPI;
-	private FolderAPI folderAPI;
-    private IdentifierAPI identifierAPI;
-	private VersionableAPI versionableAPI;
-	private PermissionAPI permissionAPI;
-	private ContentletAPI contentletAPI;
-	private FileMetadataAPI fileMetadataAPI;
-	private HostAPI hostAPI;
-	private FieldAPI fieldAPI;
-	private IndexAPI esIndexAPI;
-	private RelationshipAPI relationshipAPI;
-	private TagAPI tagAPI;
-	private CategoryAPI categoryAPI;
-	private RoleAPI roleAPI;
+	private static ObjectMapper createMapper() {
+		final ObjectMapper m = new ObjectMapper();
+		m.setDateFormat(new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+		return m;
+	}
+
+	private final UserAPI userAPI;
+	private final FolderAPI folderAPI;
+    private final IdentifierAPI identifierAPI;
+	private final VersionableAPI versionableAPI;
+	private final PermissionAPI permissionAPI;
+	private final ContentletAPI contentletAPI;
+	private final FileMetadataAPI fileMetadataAPI;
+	private final HostAPI hostAPI;
+	private final FieldAPI fieldAPI;
+	private final IndexAPI esIndexAPI;
+	private final RelationshipAPI relationshipAPI;
+	private final TagAPI tagAPI;
+	private final CategoryAPI categoryAPI;
+	private final RoleAPI roleAPI;
 	//These two are set as suppliers cuz their instantiation during initialization require of a company to exist.
     //By doing this they will get instantiated once the company users roles haven been settled. After the starter is loaded.
-	private Supplier<ContentTypeAPI> contentTypeAPI;
-	private Supplier<WorkflowAPI> workflowAPI;
+	private final Supplier<ContentTypeAPI> contentTypeAPI;
+	private final Supplier<WorkflowAPI> workflowAPI;
 
 	@VisibleForTesting
 	public ESMappingAPIImpl(
@@ -210,16 +216,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		this.roleAPI = roleAPI;
 		this.contentTypeAPI = contentTypeAPI;
 		this.workflowAPI = workflowAPI;
-
-		if (mapper == null) {
-			synchronized (this.getClass().getName()) {
-				if (mapper == null) {
-					mapper = new ObjectMapper();
-					ThreadSafeSimpleDateFormat df = new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-					mapper.setDateFormat(df);
-				}
-			}
-		}
 	}
 
 	public ESMappingAPIImpl() {

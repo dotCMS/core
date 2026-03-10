@@ -11,6 +11,7 @@ package com.dotcms.enterprise.publishing.sitesearch;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
+import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
@@ -73,14 +74,14 @@ import org.quartz.SchedulerException;
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
     private final IndexAPI indexApi;
-    private final ESMappingAPIImpl mappingAPI;
+    private final ContentIndexMappingAPI mappingAPI;
     private final IndiciesAPI indiciesAPI;
     private ArrayList<Object> list;
     private int indexPosition;
 
     @VisibleForTesting
     public ESSiteSearchAPI(final IndexAPI indexApi,
-            final ESMappingAPIImpl mappingAPI,
+            final ContentIndexMappingAPI mappingAPI,
             final IndiciesAPI indiciesAPI) {
         this.indexApi = indexApi;
         this.mappingAPI = mappingAPI;
@@ -88,7 +89,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     public ESSiteSearchAPI() {
-       this(APILocator.getESIndexAPI(), new ESMappingAPIImpl(), APILocator.getIndiciesAPI());
+       this(APILocator.getESIndexAPI(), APILocator.getContentMappingAPI(), APILocator.getIndiciesAPI());
     }
 
     /**

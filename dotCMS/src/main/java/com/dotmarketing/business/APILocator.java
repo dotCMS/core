@@ -26,11 +26,13 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
+import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.content.index.IndexAPI;
@@ -755,6 +757,15 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
+	 * Returns the singleton {@link ContentIndexMappingAPI} instance.
+	 *
+	 * @return The {@link ContentIndexMappingAPI} instance.
+	 */
+	public static ContentIndexMappingAPI getContentMappingAPI() {
+	    return (ContentIndexMappingAPI) getInstance(APIIndex.CONTENT_MAPPING_API);
+	}
+
+	/**
 	 * Creates a single instance of the {@link PublisherAPI} class.
 	 *
 	 * @return The {@link PublisherAPI} class.
@@ -1432,7 +1443,8 @@ enum APIIndex
     ANALYTICS_CUSTOM_ATTRIBUTE_API,
     VERSIONED_INDICES_API,
     OPENSEARCH_INDEX_API,
-    INDEX_API
+    INDEX_API,
+    CONTENT_MAPPING_API
     ;
 
 	Object create() {
@@ -1536,6 +1548,7 @@ enum APIIndex
             case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
             case OPENSEARCH_INDEX_API: return new OSIndexAPIImpl();
             case INDEX_API: return new IndexAPIImpl();
+            case CONTENT_MAPPING_API: return new ESMappingAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

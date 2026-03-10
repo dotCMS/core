@@ -14,6 +14,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
@@ -108,13 +109,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
     private ReindexQueueAPI queueApi = null;
     private IndexAPI esIndexApi = null;
-    private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
+    private ContentIndexMappingAPI mappingAPI = null;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();
         esIndexApi = APILocator.getESIndexAPI();
+    }
+
+    private ContentIndexMappingAPI getMappingAPI() {
+        if (mappingAPI == null) {
+            mappingAPI = APILocator.getContentMappingAPI();
+        }
+        return mappingAPI;
     }
 
     public synchronized void getRidOfOldIndex() throws DotDataException {
@@ -229,7 +237,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             }
         }
 
-        mappingAPI.putMapping(indexName, mapping);
+        getMappingAPI().putMapping(indexName, mapping);
 
         return true;
     }
@@ -854,7 +862,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 if (this.isWorking(contentlet)) {
 
                     mapping = Try.of(
-                                    () -> objectMapper.writeValueAsString(mappingAPI.toMap(contentlet)))
+                                    () -> objectMapper.writeValueAsString(getMappingAPI().toMap(contentlet)))
                             .getOrElseThrow(
                                     DotRuntimeException::new);
                     if (!forReindex || info.getReindexWorking() == null) {
@@ -870,7 +878,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 if (this.isLive(contentlet)) {
                     if (mapping == null) {
                         mapping = Try.of(
-                                        () -> objectMapper.writeValueAsString(mappingAPI.toMap(contentlet)))
+                                        () -> objectMapper.writeValueAsString(getMappingAPI().toMap(contentlet)))
                                 .getOrElseThrow(
                                         DotRuntimeException::new);
                     }
@@ -929,7 +937,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private List<Contentlet> loadDeps(final Contentlet parentContentlet) {
 
         final List<String> depsIdentifiers =  Sneaky.sneak(() ->
-                this.mappingAPI.dependenciesLeftToReindex(parentContentlet));
+                this.getMappingAPI().dependenciesLeftToReindex(parentContentlet));
 
         if (!UtilMethods.isSet(depsIdentifiers)) {
             return Collections.emptyList();

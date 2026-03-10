@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldFactory;
@@ -66,7 +67,7 @@ import java.util.stream.Collectors;
 public class ESMappingUtilHelper {
 
     private ContentTypeAPI contentTypeAPI;
-    private ESMappingAPIImpl esMappingAPI;
+    private ContentIndexMappingAPI esMappingAPI;
     private RelationshipAPI relationshipAPI;
 
     private static class SingletonHolder {
@@ -80,7 +81,7 @@ public class ESMappingUtilHelper {
 
     private ESMappingUtilHelper() {
         contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-        esMappingAPI = new ESMappingAPIImpl();
+        esMappingAPI = APILocator.getContentMappingAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
     }
 
