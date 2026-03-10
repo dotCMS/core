@@ -124,6 +124,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
             [modal]="true"
             [draggable]="false"
             [resizable]="false"
+            [appendTo]="'body'"
             [(visible)]="editRowDialogOpen"
             (onHide)="closeEditRowDialog()">
             <form class="row-edit-form" (submit)="$event.preventDefault(); submitEditRow()">
