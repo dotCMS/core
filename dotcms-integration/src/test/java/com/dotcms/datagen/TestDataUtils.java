@@ -97,7 +97,7 @@ public class TestDataUtils {
                     "\"type\":\"doc\"," +
                     "\"attrs\":" +
                         "{" +
-                            "\"chartCount\":20," +
+                            "\"charCount\":20," +
                             "\"wordCount\":3," +
                             "\"readingTime\":1" +
                         "}," +
@@ -125,7 +125,7 @@ public class TestDataUtils {
                     "\"type\":\"doc\"," +
                     "\"attrs\":" +
                         "{" +
-                            "\"chartCount\":20," +
+                            "\"charCount\":20," +
                             "\"wordCount\":3," +
                             "\"readingTime\":1" +
                         "}," +
@@ -153,7 +153,7 @@ public class TestDataUtils {
                     "\"type\":\"doc\"," +
                     "\"attrs\":" +
                         "{" +
-                            "\"chartCount\":20," +
+                            "\"charCount\":19," +
                             "\"wordCount\":3," +
                             "\"readingTime\":1" +
                         "}," +

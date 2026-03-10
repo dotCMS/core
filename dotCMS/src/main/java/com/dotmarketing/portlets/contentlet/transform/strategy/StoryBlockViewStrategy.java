@@ -4,6 +4,7 @@ import com.dotcms.api.APIProvider;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.util.StoryBlockUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -65,12 +66,52 @@ public class StoryBlockViewStrategy extends AbstractTransformStrategy<Contentlet
                                                                                  "into a Map: %s", field.variable(),
                                 field.id(), e.getMessage()));
                     }
+                    if (jsonAsMap != null) {
+                        enrichWithReadingStats(jsonAsMap, fieldValue);
+                    }
                     map.put(field.variable(), jsonAsMap);
                 }
 
             });
         }
         return map;
+    }
+
+    /**
+     * Ensures that the reading statistics ({@code charCount}, {@code wordCount}, and
+     * {@code readingTime}) are present in the {@code attrs} of the given Story Block map. If any
+     * of these values are missing — which can happen with content created via the API or older
+     * content that pre-dates the Block Editor stats tracking feature — they are computed from the
+     * raw JSON and added to the map so that the API response always exposes these fields.
+     *
+     * @param jsonAsMap  The deserialized Story Block map to enrich
+     * @param fieldValue The original JSON string of the Story Block field
+     */
+    @SuppressWarnings("unchecked")
+    private void enrichWithReadingStats(final LinkedHashMap<String, Object> jsonAsMap,
+                                        final String fieldValue) {
+        final Object attrsObj = jsonAsMap.get("attrs");
+        Map<String, Object> attrs = (attrsObj instanceof Map) ? (Map<String, Object>) attrsObj : null;
+        final boolean missingStats = attrs == null
+                || !attrs.containsKey("charCount")
+                || !attrs.containsKey("wordCount")
+                || !attrs.containsKey("readingTime");
+
+        if (!missingStats) {
+            return;
+        }
+
+        if (attrs == null) {
+            attrs = new LinkedHashMap<>();
+            jsonAsMap.put("attrs", attrs);
+        }
+
+        final int charCount = StoryBlockUtil.computeCharCount(fieldValue);
+        final int wordCount = StoryBlockUtil.computeWordCount(fieldValue);
+        final int readingTime = StoryBlockUtil.computeReadingTime(wordCount);
+        attrs.put("charCount", charCount);
+        attrs.put("wordCount", wordCount);
+        attrs.put("readingTime", readingTime);
     }
 
 }

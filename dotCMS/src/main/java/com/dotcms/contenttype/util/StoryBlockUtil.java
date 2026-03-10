@@ -4,6 +4,8 @@ import com.dotcms.util.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.OptionalInt;
 
 /**
@@ -113,6 +115,104 @@ public class StoryBlockUtil {
             Logger.debug(StoryBlockUtil.class,
                     "Unable to extract charCount from Story Block JSON: " + e.getMessage());
             return OptionalInt.empty();
+        }
+    }
+
+    /**
+     * Computes the total number of characters contained in the text content of a Story Block JSON.
+     * This recursively collects all {@code text} node values and returns their total length,
+     * matching the character counting behavior of the TipTap editor.
+     *
+     * @param storyBlockValue The JSON string representing the Story Block content
+     * @return The number of characters in all text nodes, or {@code 0} if the value is not set or
+     *         invalid JSON.
+     */
+    public static int computeCharCount(final String storyBlockValue) {
+        if (!UtilMethods.isSet(storyBlockValue)) {
+            return 0;
+        }
+        try {
+            final JsonNode storyBlockJson = JsonUtil.JSON_MAPPER.readTree(storyBlockValue);
+            return joinTextNodes(storyBlockJson).length();
+        } catch (final Exception e) {
+            Logger.debug(StoryBlockUtil.class,
+                    "Unable to compute charCount from Story Block JSON: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Computes the total number of words contained in the text content of a Story Block JSON.
+     * This recursively collects all {@code text} node values, joins them, and splits on whitespace
+     * to count words, matching the word counting behavior of the TipTap editor.
+     *
+     * @param storyBlockValue The JSON string representing the Story Block content
+     * @return The number of words across all text nodes, or {@code 0} if the value is not set,
+     *         contains no text, or is invalid JSON.
+     */
+    public static int computeWordCount(final String storyBlockValue) {
+        if (!UtilMethods.isSet(storyBlockValue)) {
+            return 0;
+        }
+        try {
+            final JsonNode storyBlockJson = JsonUtil.JSON_MAPPER.readTree(storyBlockValue);
+            final String text = joinTextNodes(storyBlockJson).trim();
+            if (text.isEmpty()) {
+                return 0;
+            }
+            return text.split("\\s+").length;
+        } catch (final Exception e) {
+            Logger.debug(StoryBlockUtil.class,
+                    "Unable to compute wordCount from Story Block JSON: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Computes the estimated reading time in minutes for a given word count, using the average
+     * adult reading speed of 265 words per minute as defined by Medium.
+     *
+     * @param wordCount The number of words
+     * @return The estimated reading time in minutes (minimum 0 for empty content)
+     * @see <a href="https://help.medium.com/hc/en-us/articles/214991667-Read-time">Medium Read Time</a>
+     */
+    public static int computeReadingTime(final int wordCount) {
+        if (wordCount <= 0) {
+            return 0;
+        }
+        return (int) Math.ceil(wordCount / 265.0);
+    }
+
+    /**
+     * Builds a single string from all text nodes in a Block Editor JSON by joining them with a
+     * space separator. This models the TipTap editor behavior of treating separate content blocks
+     * as distinct words.
+     *
+     * @param root The root JSON node of the Story Block document
+     * @return A string containing all text content, with text from different nodes separated by
+     *         spaces
+     */
+    private static String joinTextNodes(final JsonNode root) {
+        final List<String> segments = new ArrayList<>();
+        collectTextSegments(root, segments);
+        return String.join(" ", segments);
+    }
+
+    /**
+     * Recursively collects text values from all {@code text} fields in the Block Editor JSON tree
+     * into the provided list.
+     *
+     * @param node     The JSON node to traverse
+     * @param segments The list to append extracted text segments to
+     */
+    private static void collectTextSegments(final JsonNode node, final List<String> segments) {
+        if (node.has("text")) {
+            segments.add(node.get("text").asText());
+        }
+        if (node.has("content") && node.get("content").isArray()) {
+            for (final JsonNode child : node.get("content")) {
+                collectTextSegments(child, segments);
+            }
         }
     }
 
