@@ -38,6 +38,7 @@ export interface EngagementPlatformMetrics {
 export interface EngagementPlatforms {
     device: EngagementPlatformMetrics[];
     browser: EngagementPlatformMetrics[];
+    language: EngagementPlatformMetrics[];
 }
 
 export interface EngagementData {
