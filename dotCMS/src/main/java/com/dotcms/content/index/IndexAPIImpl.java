@@ -88,7 +88,7 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public Map<String, IndexStats> getIndicesStats() {
         if(isMigrationComplete()) {
-            return osImpl.getIndicesStats();
+           return osImpl.getIndicesStats();
         }
         return esImpl.getIndicesStats();
     }
@@ -251,7 +251,7 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public boolean delete(String indexName) {
         if (isMigrationComplete()) {
-            osImpl.delete(indexName);
+           return osImpl.delete(indexName);
         }
         return esImpl.delete(indexName);
     }
@@ -259,7 +259,7 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public boolean deleteMultiple(String... indexNames) {
         if (isMigrationComplete()) {
-            osImpl.deleteMultiple(indexNames);
+            return osImpl.deleteMultiple(indexNames);
         }
         return esImpl.deleteMultiple(indexNames);
     }
@@ -284,7 +284,7 @@ public class IndexAPIImpl implements IndexAPI {
     public CreateIndexStatus createIndex(String indexName, int shards)
             throws DotStateException, IOException {
         if (isMigrationComplete()) {
-            osImpl.createIndex(indexName, shards);
+           return osImpl.createIndex(indexName, shards);
         }
         return esImpl.createIndex(indexName, shards);
     }
@@ -301,7 +301,7 @@ public class IndexAPIImpl implements IndexAPI {
     public CreateIndexStatus createIndex(String indexName, String settings, int shards)
             throws IOException {
         if (isMigrationComplete()) {
-            osImpl.createIndex(indexName, settings, shards);
+            return osImpl.createIndex(indexName, settings, shards);
         }
         return esImpl.createIndex(indexName, settings, shards);
     }
