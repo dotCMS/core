@@ -165,10 +165,14 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             };
 
             const loadBreadcrumbs = () => {
-                const breadcrumbs = JSON.parse(
-                    sessionStorage.getItem(BREADCRUMBS_SESSION_KEY) || '[]'
-                );
-                patchState(store, { breadcrumbs });
+                try {
+                    const breadcrumbs = JSON.parse(
+                        sessionStorage.getItem(BREADCRUMBS_SESSION_KEY) || '[]'
+                    );
+                    patchState(store, { breadcrumbs });
+                } catch {
+                    patchState(store, { breadcrumbs: [] });
+                }
             };
 
             const clearBreadcrumbs = () => {

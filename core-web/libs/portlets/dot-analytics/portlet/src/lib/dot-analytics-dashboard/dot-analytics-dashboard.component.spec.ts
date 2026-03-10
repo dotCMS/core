@@ -6,6 +6,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
+import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
 import { MessageModule } from 'primeng/message';
@@ -30,7 +31,10 @@ const messageServiceMock = new MockDotMessageService({
     'analytics.metrics.unique-visitors': 'Unique Visitors',
     'analytics.metrics.top-page-performance': 'Top Page Performance',
     'analytics.feature.state': 'This feature is in',
-    development: 'development'
+    development: 'development',
+    'analytics.dashboard.tabs.pageview': 'Pageview',
+    'analytics.dashboard.tabs.conversions': 'Conversions',
+    'analytics.dashboard.tabs.engagement': 'Engagement'
 });
 
 describe('DotAnalyticsDashboardComponent', () => {
@@ -215,6 +219,43 @@ describe('DotAnalyticsDashboardComponent', () => {
             store = spectator.inject(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+    });
+
+    describe('Breadcrumb Management', () => {
+        let globalStore: InstanceType<typeof GlobalStore>;
+
+        beforeEach(() => {
+            spectator = createComponent();
+            store = spectator.inject(DotAnalyticsDashboardStore);
+            globalStore = spectator.inject(GlobalStore);
+            TestBed.flushEffects();
+        });
+
+        it('should call addNewBreadcrumb with the default tab on initialization', () => {
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-pageview', label: 'Pageview' })
+            );
+        });
+
+        it('should call addNewBreadcrumb with the new tab when tab changes', () => {
+            jest.clearAllMocks();
+            store.setCurrentTab('conversions');
+            TestBed.flushEffects();
+
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-conversions', label: 'Conversions' })
+            );
+        });
+
+        it('should call addNewBreadcrumb with engagement tab when switched', () => {
+            jest.clearAllMocks();
+            store.setCurrentTab('engagement');
+            TestBed.flushEffects();
+
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-engagement', label: 'Engagement' })
+            );
         });
     });
 

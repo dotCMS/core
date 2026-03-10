@@ -367,6 +367,7 @@ describe('withBreadcrumbs Feature', () => {
                 { label: 'List', url: '/dotAdmin/#/c/content', target: '_self' }
             ]);
             const before = store.breadcrumbs().length;
+            expect(before).toBe(3); // Home + Content + List
 
             store.addNewBreadcrumb({
                 label: 'Edit Content',
@@ -488,42 +489,6 @@ describe('withBreadcrumbs Feature', () => {
 
             expect(store.breadcrumbs().length).toBe(3); // Home + Content + Special Encoded (replaced)
             expect(store.selectLastBreadcrumbLabel()).toBe('Special Encoded');
-        });
-
-        it('should replace last breadcrumb when both items are analytics tabs', () => {
-            store.setBreadcrumbs([
-                { label: 'Marketing', disabled: true },
-                {
-                    label: 'Analytics Dashboard',
-                    url: '/dotAdmin/#/analytics/dashboard',
-                    target: '_self'
-                }
-            ]);
-            store.appendCrumb({ label: 'Engagement', id: 'analytics-engagement' });
-            const before = store.breadcrumbs().length;
-
-            store.addNewBreadcrumb({ label: 'Conversions', id: 'analytics-conversions' });
-
-            expect(store.breadcrumbs().length).toBe(before);
-            expect(store.selectLastBreadcrumbLabel()).toBe('Conversions');
-            expect(store.lastBreadcrumb()?.id).toBe('analytics-conversions');
-        });
-
-        it('should append analytics tab crumb when last breadcrumb is not an analytics tab', () => {
-            store.setBreadcrumbs([
-                { label: 'Marketing', disabled: true },
-                {
-                    label: 'Analytics Dashboard',
-                    url: '/dotAdmin/#/analytics/dashboard',
-                    target: '_self'
-                }
-            ]);
-            const before = store.breadcrumbs().length;
-
-            store.addNewBreadcrumb({ label: 'Engagement', id: 'analytics-engagement' });
-
-            expect(store.breadcrumbs().length).toBe(before + 1);
-            expect(store.selectLastBreadcrumbLabel()).toBe('Engagement');
         });
 
         it('should replace last breadcrumb when both items are analytics tabs', () => {
