@@ -174,10 +174,10 @@ const REPLACE_LAST_CRUMB_RULES: Record<string, ReplaceLastCrumbRule> = {
             const regex = /^analytics-/;
             const itemId = item.id;
             const lastId = last.id;
-            if (itemId == null || itemId === '' || lastId == null || lastId === '') {
+            if (!itemId || !lastId) {
                 return false;
             }
-            return regex.test(itemId) && regex.test(lastId);
+            return regex.test(String(itemId)) && regex.test(String(lastId));
         }
     }
 };

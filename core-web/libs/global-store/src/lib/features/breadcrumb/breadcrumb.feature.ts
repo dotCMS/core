@@ -138,7 +138,9 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
              */
             const normalizeUrl = (url: string | undefined): string => {
                 if (!url) return '';
-                return url.replace(/^.*#/, ''); // Remove everything up to and including the hash
+                const afterHash = url.replace(/^.*#/, ''); // Remove everything up to and including the hash
+                // If URL had no hash or nothing after hash, return original to avoid collapsing distinct URLs
+                return afterHash === '' ? url : afterHash;
             };
 
             const addNewBreadcrumb = (item: MenuItem) => {
@@ -284,7 +286,16 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 // Persist breadcrumbs to sessionStorage whenever they change
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();
-                    sessionStorage.setItem(BREADCRUMBS_SESSION_KEY, JSON.stringify(breadcrumbs));
+
+                    try {
+                        sessionStorage.setItem(
+                            BREADCRUMBS_SESSION_KEY,
+                            JSON.stringify(breadcrumbs)
+                        );
+                    } catch (e) {
+                        // sessionStorage may be unavailable (private mode) or full (QuotaExceededError)
+                        console.warn('[Breadcrumbs] Could not persist to sessionStorage', e);
+                    }
                 });
 
                 // Process current URL when menuItems become available
