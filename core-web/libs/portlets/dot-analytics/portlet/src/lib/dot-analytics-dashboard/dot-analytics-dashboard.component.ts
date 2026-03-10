@@ -33,6 +33,7 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
         DotAnalyticsFiltersComponent,
         DotMessagePipe
     ],
+    providers: [DotAnalyticsDashboardStore],
     templateUrl: './dot-analytics-dashboard.component.html',
     styleUrl: './dot-analytics-dashboard.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

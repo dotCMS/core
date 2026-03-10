@@ -55,8 +55,8 @@ describe('DotAnalyticsDashboardComponent', () => {
             MockComponent(DotAnalyticsMetricComponent),
             MockComponent(DotAnalyticsTopPagesTableComponent)
         ],
+        componentProviders: [DotAnalyticsDashboardStore],
         providers: [
-            DotAnalyticsDashboardStore,
             mockProvider(DotAnalyticsService),
             {
                 provide: DotMessageService,
@@ -77,7 +77,7 @@ describe('DotAnalyticsDashboardComponent', () => {
     describe('Component Rendering', () => {
         beforeEach(() => {
             spectator = createComponent();
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
         });
 
         it('should create component successfully', () => {
@@ -131,7 +131,7 @@ describe('DotAnalyticsDashboardComponent', () => {
     describe('Query Params Logic', () => {
         it('should timeRange be last7days when empty query params', () => {
             spectator = createComponent();
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -142,7 +142,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'last7days'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -155,7 +155,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     to: '2024-01-31'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toEqual(['2024-01-01', '2024-01-31']);
         });
@@ -166,7 +166,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'invalid-range'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -179,7 +179,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     // to: '2024-01-31'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe('last7days');
         });
@@ -192,7 +192,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     to: '1993-01-31'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             // paramsToTimeRange passes through raw date values without order validation;
             // date validation is enforced in the UI layer via isValidCustomDateRange
@@ -205,7 +205,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'today'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -216,7 +216,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'yesterday'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
