@@ -95,6 +95,8 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public Map<String, Integer> flushCaches(List<String> indexNames) {
+        //All this logic will be revisited as we progress making changes on other apis that interact with this
+        //For now it is simply set to work with the ES index provider
         if(isMigrationNotStarted()){
             return esImpl.flushCaches(indexNames);
         }

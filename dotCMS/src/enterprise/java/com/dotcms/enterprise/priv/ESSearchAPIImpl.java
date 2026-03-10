@@ -58,8 +58,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 	@Override
 	public ESSearchResults esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
-		esQuery = (esQuery != null) ? StringUtils.lowercaseStringExceptMatchingTokens(esQuery,
-                ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX) : esQuery;
+		esQuery = (esQuery != null) ? StringUtils.lowercaseStringExceptMatchingTokens(esQuery,ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX) : esQuery;
 		StringBuilder rewrittenESQuery = new StringBuilder(esQuery);
 		SearchResponse resp = esSearchRaw(esQuery, live, user, respectFrontendRoles);
 		ESSearchResults contents = new ESSearchResults(resp, new ArrayList());
