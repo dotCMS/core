@@ -172,11 +172,16 @@ export function listenBlockEditorInlineEvent() {
  * the page height changes — not just on initial load. Works for both traditional
  * (VTL) and headless pages.
  *
+ * Measurement is scheduled with double requestAnimationFrame so it runs after
+ * the browser has finished layout and paint. That avoids posting a height while
+ * subtree/layout is still settling (fonts, images, late injects). ResizeObserver
+ * and resize bursts are coalesced to at most one post per frame pair.
+ *
  * @returns {{ destroyHeightReporter: () => void }} Cleanup function that removes
  * all listeners and disconnects the ResizeObserver.
  */
 export function reportIframeHeight(): { destroyHeightReporter: () => void } {
-    const send = () => {
+    const measureAndSend = () => {
         const height = Math.max(
             document.body?.scrollHeight ?? 0,
             document.documentElement?.scrollHeight ?? 0
@@ -184,23 +189,59 @@ export function reportIframeHeight(): { destroyHeightReporter: () => void } {
         window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
     };
 
+    let rafOuter: number | null = null;
+    let rafInner: number | null = null;
+    let destroyed = false;
+
+    const scheduleSend = () => {
+        if (destroyed || rafOuter !== null) {
+            return;
+        }
+        rafOuter = requestAnimationFrame(() => {
+            rafOuter = null;
+            if (destroyed) {
+                return;
+            }
+            rafInner = requestAnimationFrame(() => {
+                rafInner = null;
+                if (!destroyed) {
+                    measureAndSend();
+                }
+            });
+        });
+    };
+
+    const onLoad = () => scheduleSend();
+    const onResize = () => scheduleSend();
+
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        send();
+        scheduleSend();
     } else {
-        window.addEventListener('load', send);
+        window.addEventListener('load', onLoad);
     }
 
-    window.addEventListener('resize', send);
+    window.addEventListener('resize', onResize);
 
-    const ro = new ResizeObserver(send);
+    const ro = new ResizeObserver(() => scheduleSend());
     ro.observe(document.documentElement);
-    if (document.body) ro.observe(document.body);
+    if (document.body) {
+        ro.observe(document.body);
+    }
 
     return {
         destroyHeightReporter: () => {
+            destroyed = true;
+            if (rafOuter !== null) {
+                cancelAnimationFrame(rafOuter);
+                rafOuter = null;
+            }
+            if (rafInner !== null) {
+                cancelAnimationFrame(rafInner);
+                rafInner = null;
+            }
             ro.disconnect();
-            window.removeEventListener('load', send);
-            window.removeEventListener('resize', send);
+            window.removeEventListener('load', onLoad);
+            window.removeEventListener('resize', onResize);
         }
     };
 }

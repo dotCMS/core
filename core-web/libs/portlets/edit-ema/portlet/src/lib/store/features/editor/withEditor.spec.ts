@@ -649,8 +649,6 @@ describe('withEditor', () => {
                 store.setActiveContentlet(mockContentlet);
 
                 expect(store.editorActiveContentlet()).toEqual(mockContentlet);
-                expect(store.editorPaletteOpen()).toBe(true);
-                // Tab switching to STYLE_EDITOR now handled by DotUvePaletteComponent via effect
             });
         });
 

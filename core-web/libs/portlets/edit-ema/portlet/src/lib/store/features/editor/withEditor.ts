@@ -340,9 +340,7 @@ export function withEditor() {
                 },
                 setActiveContentlet(contentlet: ActionPayload) {
                     patchState(store, {
-                        editorActiveContentlet: contentlet,
-                        editorPaletteOpen: true
-                        // Tab switching now handled by DotUvePaletteComponent watching activeContentlet
+                        editorActiveContentlet: contentlet
                     });
                 },
                 resetActiveContentlet() {
