@@ -142,7 +142,7 @@ public class ContainerResourceHostResolutionIT extends IntegrationTestBase {
         assertEquals("Site should be marked as archived", true, found.isArchived());
 
         // Cleanup — unarchive so the test site doesn't pollute other tests
-        APILocator.getHostAPI().unarchive(site, APILocator.systemUser());
+        APILocator.getHostAPI().unarchive(site, APILocator.systemUser(), false);
     }
 
     // ------------------------------------------------------------------
