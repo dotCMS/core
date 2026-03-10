@@ -97,6 +97,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
+import java.net.URISyntaxException;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;

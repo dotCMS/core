@@ -947,7 +947,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * This test how {@link ESContentFactoryImpl#save(Contentlet)} persists contentlet when instructed to use the contentlet-as-json field
+     * This test how {@link com.dotcms.content.elasticsearch.business.ESContentFactoryImpl#save(Contentlet)} persists contentlet when instructed to use the contentlet-as-json field
      * The other dynamic field columns shouldn't be used to store anything
      * @throws Exception
      */

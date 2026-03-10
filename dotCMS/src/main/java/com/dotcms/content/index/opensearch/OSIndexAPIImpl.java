@@ -447,7 +447,7 @@ public class OSIndexAPIImpl implements IndexAPI {
             settings = "{\n" +
                 "  \"number_of_shards\": 1,\n" +
                 "  \"number_of_replicas\": 0,\n" +
-                "  \"auto_expand_replicas\": \"0-all\",\n" +
+                "  \"auto_expand_replicas\": \"0-1\",\n" +
                 "  \"mapping\": {\n" +
                 "    \"total_fields\": { \"limit\": 10000 },\n" +
                 "    \"nested_fields\": { \"limit\": 10000 }\n" +
