@@ -403,6 +403,7 @@ describe('withBreadcrumbs Feature', () => {
                 { label: 'List', url: '/dotAdmin/#/c/content', target: '_self' }
             ]);
             const before = store.breadcrumbs().length;
+            expect(before).toBe(3); // Home + Content + List
 
             store.addNewBreadcrumb({
                 label: 'New Page',
