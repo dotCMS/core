@@ -1,4 +1,34 @@
-name: Maven Release Process
+#
+# ⚠️ DEPRECATED WORKFLOW ⚠️
+#
+# This workflow is deprecated and has been replaced by the modular release process.
+#
+# Migration Path:
+# → Use: .github/workflows/cicd_6-release.yml
+#
+# The new modular workflow provides:
+# - All functionality from this legacy workflow
+# - Better separation of concerns (modular phases)
+# - Improved error handling and reporting
+# - Java version override support for alternate Java releases
+# - Parallel Java variant builds (cicd_7-release-java-variant.yml)
+# - More flexible configuration options
+#
+# Key improvements:
+# - Modular phases can be reused across different workflows
+# - Better artifact management
+# - Improved observability and debugging
+# - Consistent with modern CI/CD pipeline architecture
+#
+# Deprecation Timeline:
+# - Deprecated: February 2026
+# - Removal: After cicd_6-release.yml proves stable for 2+ production releases
+#
+# Last known usage: January 30, 2026 (10 successful runs in January 2026)
+# Status: Being phased out - new releases should use cicd_6-release.yml
+#
+
+name: Maven Release Process [DEPRECATED]
 on:
   workflow_dispatch:
     inputs:

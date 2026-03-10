@@ -7,6 +7,7 @@ import { DotTagsListComponent } from '../dot-tags-list/dot-tags-list.component';
     standalone: true,
     imports: [DotTagsListComponent],
     template: '<dot-tags-list />',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'flex flex-col h-full min-h-0 block' }
 })
 export class DotTagsShellComponent {}

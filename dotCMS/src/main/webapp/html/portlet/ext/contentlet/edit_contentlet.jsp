@@ -80,6 +80,7 @@
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
 <!--  dotCMS Block Editor Builder -->
+	<link rel="stylesheet" href="/dotcms-block-editor/styles.css" />
 	<script src="/dotcms-block-editor/polyfills.js" type="module"></script>
 	<script src="/dotcms-block-editor/generator-runtime.js" defer></script>
 	<script src="/dotcms-block-editor/main.js" type="module"></script>

@@ -12,4 +12,5 @@ if (environment.production) {
 }
 
 bootstrapApplication(AppComponent, appConfig);
+
 defineCustomElements();

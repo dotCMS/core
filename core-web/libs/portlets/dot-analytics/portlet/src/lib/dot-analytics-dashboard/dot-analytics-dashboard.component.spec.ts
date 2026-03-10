@@ -19,11 +19,11 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
-import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
-import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
-import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
 import DotAnalyticsDashboardComponent from './dot-analytics-dashboard.component';
+import { DotAnalyticsTopPagesTableComponent } from './reports/pageview/dot-analytics-top-pages-table/dot-analytics-top-pages-table.component';
+import { DotAnalyticsChartComponent } from './shared/components/dot-analytics-chart/dot-analytics-chart.component';
+import { DotAnalyticsFiltersComponent } from './shared/components/dot-analytics-filters/dot-analytics-filters.component';
+import { DotAnalyticsMetricComponent } from './shared/components/dot-analytics-metric/dot-analytics-metric.component';
 
 const messageServiceMock = new MockDotMessageService({
     'analytics.metrics.total-pageviews': 'Total Pageviews',
@@ -46,10 +46,10 @@ describe('DotAnalyticsDashboardComponent', () => {
         component: DotAnalyticsDashboardComponent,
         imports: [MessageModule, DotMessagePipe],
         declarations: [
-            MockComponent(DotAnalyticsDashboardChartComponent),
-            MockComponent(DotAnalyticsDashboardFiltersComponent),
-            MockComponent(DotAnalyticsDashboardMetricsComponent),
-            MockComponent(DotAnalyticsDashboardTableComponent)
+            MockComponent(DotAnalyticsChartComponent),
+            MockComponent(DotAnalyticsFiltersComponent),
+            MockComponent(DotAnalyticsMetricComponent),
+            MockComponent(DotAnalyticsTopPagesTableComponent)
         ],
         providers: [
             DotAnalyticsDashboardStore,
@@ -58,6 +58,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+            // GlobalStore is required transitively by child report components (pageview, engagement, conversions)
             mockProvider(GlobalStore, {
                 currentSiteId: jest.fn().mockReturnValue('test-site-123'),
                 addNewBreadcrumb: jest.fn()
@@ -80,14 +81,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render exactly 3 metric cards', () => {
-            // p-tabs renders all panels in DOM, so we need to check only active panel
-            const activePanels = spectator.queryAll('p-tabpanel');
-            const firstPanel = activePanels[0];
-            const metricCards = firstPanel?.querySelectorAll(
-                '[data-testid="analytics-metric-card"]'
-            );
-            expect(metricCards?.length).toBe(3);
+        it('should render pageview report component', () => {
+            const pageviewReport = spectator.query('dot-analytics-pageview-report');
+            expect(pageviewReport).toExist();
         });
 
         it('should render line chart component', () => {
@@ -96,13 +92,13 @@ describe('DotAnalyticsDashboardComponent', () => {
         });
 
         it('should render pageview report when pageview tab is active', () => {
-            const pageviewReport = spectator.query('dot-analytics-dashboard-pageview-report');
+            const pageviewReport = spectator.query('dot-analytics-pageview-report');
             expect(pageviewReport).toExist();
         });
 
         it('should render tab panels for each report type', () => {
             const tabPanels = spectator.queryAll('p-tabpanel');
-            expect(tabPanels.length).toBeGreaterThanOrEqual(1);
+            expect(tabPanels.length).toBe(3);
         });
 
         it('should render filters component', () => {
@@ -161,7 +157,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(store.timeRange()).toEqual(['2024-01-01', '2024-01-31']);
         });
 
-        it('should set timeRange to invalid value when query param is invalid', () => {
+        it('should fall back to last7days when query param is invalid', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'invalid-range'
@@ -169,8 +165,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             });
             store = spectator.inject(DotAnalyticsDashboardStore);
 
-            // Without validation, invalid values are accepted as-is
-            expect(store.timeRange()).toBe('invalid-range');
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
         it('should set timeRange to last7days when custom range has incomplete dates', () => {
@@ -186,7 +181,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(store.timeRange()).toBe('last7days');
         });
 
-        it('should set timeRange to custom range even when dates are inverted', () => {
+        it('should set timeRange to custom range when dates are inverted in query params', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'custom',
@@ -196,8 +191,31 @@ describe('DotAnalyticsDashboardComponent', () => {
             });
             store = spectator.inject(DotAnalyticsDashboardStore);
 
-            // Without validation, inverted date ranges are accepted
+            // paramsToTimeRange passes through raw date values without order validation;
+            // date validation is enforced in the UI layer via isValidCustomDateRange
             expect(store.timeRange()).toEqual(['2024-01-01', '1993-01-31']);
+        });
+
+        it('should set timeRange to last7days when today is in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'today'
+                }
+            });
+            store = spectator.inject(DotAnalyticsDashboardStore);
+
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+
+        it('should set timeRange to last7days when yesterday is in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'yesterday'
+                }
+            });
+            store = spectator.inject(DotAnalyticsDashboardStore);
+
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
     });
 

@@ -5,6 +5,8 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
+import { LazyLoadEvent } from 'primeng/api';
+
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
@@ -191,7 +193,7 @@ describe('DotFolderListViewComponent', () => {
 
             spectator.triggerEventHandler(table, 'onPage', { first: 10, rows: 10 });
 
-            expect(paginateSpy).toHaveBeenCalledWith({ first: 10, rows: 10 });
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 10, rows: 10, page: 2 });
         });
 
         it('should emit sort event when sort changes', () => {
@@ -257,14 +259,13 @@ describe('DotFolderListViewComponent', () => {
             expect(tableElement).toBeTruthy();
         });
 
-        it('should not show pagination when there are 20 or fewer total items', () => {
+        it('should always show pagination regardless of totalItems', () => {
             spectator.setInput('totalItems', 20);
             spectator.detectChanges();
 
-            // Verify pagination is not shown by checking that paginator element doesn't exist
-            // or by verifying the styleClass doesn't indicate pagination
+            // Paginator is always rendered ([paginator]="true")
             const paginator = spectator.query('.p-paginator');
-            expect(paginator).toBeFalsy();
+            expect(paginator).toBeTruthy();
         });
 
         it('should emit paginate event when calling onPage', () => {
@@ -276,7 +277,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.component.onPage(mockEvent);
             spectator.detectChanges();
 
-            expect(paginateSpy).toHaveBeenCalledWith(mockEvent);
+            expect(paginateSpy).toHaveBeenCalledWith({ ...mockEvent, page: 2 });
         });
 
         it('should sync table first value when firstChange event is emitted', () => {
@@ -333,6 +334,110 @@ describe('DotFolderListViewComponent', () => {
             const loadingRow = spectator.query(byTestId('loading-row'));
 
             expect(loadingRow).toBeNull();
+        });
+
+        it('should show loading row when loading is true and items is empty', () => {
+            spectator.setInput('items', []);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRows = spectator.queryAll(byTestId('loading-row'));
+
+            expect(loadingRows.length).toBeGreaterThan(0);
+        });
+
+        it('should show loading row instead of data rows when loading is true and items has data', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRows = spectator.queryAll(byTestId('loading-row'));
+            const itemRows = spectator.queryAll(byTestId('item-row'));
+
+            expect(loadingRows.length).toBe(mockItems.length);
+            expect(itemRows.length).toBe(0);
+        });
+
+        it('should render loading row with checkbox-sized skeleton in first column', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRow = spectator.query(byTestId('loading-row'));
+            const firstCell = loadingRow?.querySelector('td');
+            const skeleton = firstCell?.querySelector('p-skeleton');
+
+            expect(firstCell).toBeTruthy();
+            expect(skeleton).toBeTruthy();
+            expect(skeleton?.getAttribute('height')).toBe('1.5rem');
+            expect(skeleton?.getAttribute('width')).toBe('1.5rem');
+        });
+
+        it('should set $loadingRows length to event.rows when onPage is called', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            spectator.component.onPage({ first: 0, rows: 40 } as LazyLoadEvent);
+            spectator.detectChanges();
+
+            expect(spectator.component.$loadingRows().length).toBe(40);
+        });
+    });
+
+    describe('onPage page number calculation', () => {
+        it('should resolve page 1 when first=0 (falsy)', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 0, rows: 20 });
+
+            // first=0 is falsy → page defaults to 1
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 0, rows: 20, page: 1 });
+        });
+
+        it('should resolve page 2 when first=20, rows=20', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
+        });
+
+        it('should resolve page 3 when first=40, rows=20', () => {
+            spectator.setInput('totalItems', 80);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 40, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 40, rows: 20, page: 3 });
+        });
+    });
+
+    describe('Empty state and pass-through config', () => {
+        it('should set table height and width 100% in $ptConfig when items is empty', () => {
+            spectator.setInput('items', []);
+            spectator.detectChanges();
+
+            const ptConfig = spectator.component.$ptConfig();
+            const tableStyle = ptConfig.table?.style as { height?: string; width?: string };
+
+            expect(tableStyle?.height).toBe('100%');
+            expect(tableStyle?.width).toBe('100%');
+        });
+
+        it('should not set full size in $ptConfig when items has data', () => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            const ptConfig = spectator.component.$ptConfig();
+            const tableStyle = ptConfig.table?.style as { height?: string; width?: string };
+
+            expect(tableStyle?.height).toBeUndefined();
+            expect(tableStyle?.width).toBeUndefined();
         });
     });
 

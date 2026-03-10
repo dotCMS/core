@@ -57,7 +57,7 @@
 
         textarea {
             padding: $spacing-1;
-            min-height: 4rem;
+            min-height: $spacing-8;
             resize: vertical;
         }
 
@@ -106,6 +106,183 @@
                 background-color: $color-palette-gray-200;
                 color: $color-palette-gray-500;
                 cursor: not-allowed;
+            }
+        }
+
+        /* Shared custom dropdown/select styles (template field, tag storage field, etc.) */
+        .custom-field-wrapper {
+            font-family: $font-default;
+            display: flex;
+            flex-direction: column;
+            gap: $spacing-1;
+            max-width: 100%;
+            min-height: $field-height-md;
+        }
+
+        .select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-button {
+            width: 100%;
+            padding: $spacing-1 $spacing-7 $spacing-1 $spacing-2;
+            font-size: $font-size-md;
+            line-height: $line-height;
+            color: $color-palette-gray-700;
+            background-color: $white;
+            border: $field-border-size solid
+                color-mix(in srgb, $color-palette-primary-500 20%, transparent);
+            border-radius: $border-radius-md;
+            cursor: pointer;
+            outline: none;
+            transition:
+                border-color $basic-speed,
+                box-shadow $basic-speed;
+            text-align: left;
+            position: relative;
+            min-height: $field-height-md;
+            overflow: hidden;
+
+            .pi {
+                position: absolute;
+                right: 0;
+                top: 0;
+                height: 100%;
+                width: $field-height-md;
+                min-width: $field-height-md;
+                max-height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: $color-palette-gray-200;
+                color: $color-palette-primary;
+                border-left: $field-border-size solid $color-palette-gray-300;
+                border-top-right-radius: $border-radius-md;
+                border-bottom-right-radius: $border-radius-md;
+                pointer-events: none;
+                font-size: $font-size-sm;
+                box-sizing: border-box;
+            }
+
+            &:focus {
+                border-color: $color-palette-primary-400;
+                box-shadow: 0 0 0 $spacing-xxs
+                    color-mix(in srgb, $color-palette-primary-500 10%, transparent);
+            }
+
+            &:hover {
+                border-color: $color-palette-primary-400;
+            }
+
+            &.placeholder {
+                color: $color-palette-gray-500;
+            }
+
+            &:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+        }
+
+        /* Dropdown panel: single block matching PrimeNG native select behavior */
+        .custom-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: $white;
+            border-radius: $border-radius-md;
+            box-shadow:
+                0 0.25rem 0.375rem -0.0625rem rgba(0, 0, 0, 0.1),
+                0 0.125rem 0.25rem -0.0625rem rgba(0, 0, 0, 0.06);
+            margin-top: $spacing-0;
+            max-height: 25rem;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            padding: $spacing-0;
+
+            &.open {
+                display: block;
+                padding: $spacing-0 $spacing-1;
+            }
+
+            &::-webkit-scrollbar {
+                width: $spacing-1;
+            }
+
+            &::-webkit-scrollbar-track {
+                background: $color-palette-gray-100;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: $color-palette-gray-400;
+                border-radius: $border-radius-sm;
+            }
+
+            &::-webkit-scrollbar-thumb:hover {
+                background: $color-palette-gray-500;
+            }
+        }
+
+        /* Options as list rows matching native select, no individual card styling */
+        .custom-option {
+            padding: $spacing-2 $spacing-2;
+            cursor: pointer;
+            transition: background-color $basic-speed;
+            border: none;
+            border-radius: 0;
+            margin: 0;
+
+            &:hover {
+                background-color: $color-palette-primary-100;
+            }
+
+            &.selected {
+                background-color: $color-palette-primary-200;
+            }
+        }
+
+        .option-title {
+            font-size: $font-size-md;
+            color: $color-palette-gray-700;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        .option-subtitle {
+            font-size: $font-size-sm;
+            color: $color-palette-gray-500;
+            font-weight: 400;
+        }
+
+        .custom-option.placeholder .option-title {
+            color: $color-palette-gray-500;
+            font-style: italic;
+        }
+
+        .more-choices-button {
+            padding: $spacing-2 $spacing-3;
+            text-align: center;
+            cursor: pointer;
+            color: $color-palette-gray-700;
+            font-size: $font-size-md;
+            border-top: $field-border-size solid $color-palette-gray-200;
+            background-color: $white;
+            transition: background-color $basic-speed;
+
+            &:hover {
+                background-color: $color-palette-gray-100;
+            }
+
+            &:active {
+                background-color: $color-palette-gray-200;
+            }
+
+            &.loading {
+                color: $color-palette-gray-500;
+                cursor: wait;
             }
         }
     }

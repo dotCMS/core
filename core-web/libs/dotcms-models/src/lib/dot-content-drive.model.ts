@@ -1,3 +1,5 @@
+import { LazyLoadEvent } from 'primeng/api';
+
 import { DotCMSContentlet } from './dot-contentlet.model';
 
 export interface DotContentDriveFolder {
@@ -27,6 +29,12 @@ export interface DotContentDriveFolder {
 // This will extend the DotCMSContentlet with more properties,
 // but for now we will just use the DotCMSContentlet until we have folders on the request response
 export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
+
+/**
+ * Pagination event emitted by the folder list view,
+ * extending PrimeNG's LazyLoadEvent with a resolved 1-indexed page number.
+ */
+export type DotContentDrivePaginateEvent = LazyLoadEvent & { page: number };
 
 /**
  * Interface representing data needed for context menu interactions
@@ -125,10 +133,16 @@ export interface DotContentDriveSearchRequest {
     filters?: DotContentDriveQueryFilters;
 
     /**
-     * Number of results to skip for pagination.
+     * Number of content items to skip for pagination.
      * @default 0
      */
-    offset?: number;
+    contentCursor?: number;
+
+    /**
+     * Number of folder items to skip for pagination.
+     * @default 0
+     */
+    folderCursor?: number;
 
     /**
      * Maximum number of results to return.
@@ -174,8 +188,11 @@ export interface DotContentDriveSearchRequest {
  * @property {DotContentDriveItem[]} list - The list of content items
  */
 export interface DotContentDriveSearchResponse {
-    contentTotalCount: number;
     folderCount: number;
     contentCount: number;
     list: DotContentDriveItem[];
+    hasMoreContent: boolean;
+    hasMoreFolders: boolean;
+    nextContentCursor: number;
+    nextFolderCursor: number;
 }

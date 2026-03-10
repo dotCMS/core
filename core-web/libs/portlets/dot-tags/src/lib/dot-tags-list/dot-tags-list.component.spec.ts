@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Subject } from 'rxjs';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItemCommandEvent } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -43,6 +43,7 @@ describe('DotTagsListComponent', () => {
             mockProvider(DotTagsListStore, {
                 tags: jest.fn().mockReturnValue(MOCK_TAGS),
                 selectedTags: jest.fn().mockReturnValue(MOCK_TAGS),
+                exportLabelKey: jest.fn().mockReturnValue('tags.export'),
                 filter: jest.fn().mockReturnValue(''),
                 page: jest.fn().mockReturnValue(1),
                 rows: jest.fn().mockReturnValue(25),
@@ -66,7 +67,16 @@ describe('DotTagsListComponent', () => {
         providers: [
             {
                 provide: DotMessageService,
-                useValue: new MockDotMessageService({})
+                useValue: new MockDotMessageService({
+                    'tags.export': 'Export',
+                    'tags.export.all': 'Export All',
+                    'tags.empty.state.title': 'No tags yet',
+                    'tags.empty.state.description': 'Create a tag to get started.',
+                    'tags.delete': 'Delete',
+                    'tags.cancel': 'Cancel',
+                    'tags.confirm.delete.message': 'tags.confirm.delete.message',
+                    'tags.confirm.delete.header': 'tags.confirm.delete.header'
+                })
             }
         ]
     });
@@ -137,6 +147,43 @@ describe('DotTagsListComponent', () => {
         });
     });
 
+    describe('Table layout', () => {
+        it('should have table wrapper for sticky pagination', () => {
+            expect(spectator.query(byTestId('tags-table-wrapper'))).toBeTruthy();
+        });
+    });
+
+    describe('Empty and loading state', () => {
+        it('should show loading skeleton rows in body when status is loading and tags exist (e.g. pagination)', () => {
+            (store.status as jest.Mock).mockReturnValue('loading');
+            (store.tags as jest.Mock).mockReturnValue(MOCK_TAGS);
+            spectator.detectChanges();
+
+            const loadingRows = spectator.queryAll(byTestId('tags-loading-row'));
+            expect(loadingRows.length).toBe(MOCK_TAGS.length);
+            expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
+
+            // Restore defaults for subsequent tests
+            (store.status as jest.Mock).mockReturnValue('loaded');
+        });
+
+        it('should show empty state when no tags (emptymessage)', () => {
+            (store.tags as jest.Mock).mockReturnValue([]);
+            (store.selectedTags as jest.Mock).mockReturnValue([]);
+            (store.status as jest.Mock).mockReturnValue('loaded');
+            spectator.detectChanges();
+
+            const emptyState = spectator.query(byTestId('tags-empty-state'));
+            expect(emptyState).toBeTruthy();
+            expect(emptyState?.textContent).toContain('No tags yet');
+            expect(emptyState?.textContent).toContain('Create a tag to get started.');
+
+            // Restore defaults for subsequent tests
+            (store.tags as jest.Mock).mockReturnValue(MOCK_TAGS);
+            (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
+        });
+    });
+
     describe('Button Interactions', () => {
         describe('Split Button', () => {
             it('should render split button with Add Tag label', () => {
@@ -145,7 +192,7 @@ describe('DotTagsListComponent', () => {
                 expect(btnHost).toBeTruthy();
                 const button = btnHost?.querySelector('button');
                 expect(button).toBeTruthy();
-                expect(button?.textContent).toContain('tags.add.tag');
+                expect(button?.textContent).toContain('add');
             });
 
             it('should have Import option in dropdown menu', () => {
@@ -166,7 +213,7 @@ describe('DotTagsListComponent', () => {
             it('should call openImportDialog when Import menu item is clicked', () => {
                 const spy = jest.spyOn(spectator.component, 'openImportDialog');
                 const menuItem = spectator.component.addTagMenuItems[0];
-                menuItem.command?.();
+                menuItem.command?.({} as unknown as MenuItemCommandEvent);
                 expect(spy).toHaveBeenCalled();
             });
         });
@@ -248,6 +295,22 @@ describe('DotTagsListComponent', () => {
                 spectator.click(button!);
                 expect(store.exportSelectedTags).toHaveBeenCalled();
             });
+
+            it('should show Export All when exportLabelKey returns tags.export.all', () => {
+                (store.exportLabelKey as jest.Mock).mockReturnValue('tags.export.all');
+                spectator.detectChanges();
+
+                const exportBtn = spectator.query(byTestId('tag-export-btn'));
+                expect(exportBtn?.textContent).toContain('Export All');
+            });
+
+            it('should show Export when exportLabelKey returns tags.export', () => {
+                (store.exportLabelKey as jest.Mock).mockReturnValue('tags.export');
+                spectator.detectChanges();
+
+                const exportBtn = spectator.query(byTestId('tag-export-btn'));
+                expect(exportBtn?.textContent).toContain('Export');
+            });
         });
     });
 
@@ -267,7 +330,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
 
@@ -277,7 +340,9 @@ describe('DotTagsListComponent', () => {
                     header: 'tags.add.tag',
                     width: '400px',
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    draggable: false,
+                    position: 'center'
                 })
             );
         });
@@ -287,7 +352,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
             onClose.next({ name: 'new-tag', siteId: 'site1' });
@@ -301,7 +366,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openCreateDialog();
             onClose.next(undefined);
@@ -317,7 +382,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             const tag = MOCK_TAGS[0];
             spectator.component.openEditDialog(tag);
@@ -329,7 +394,9 @@ describe('DotTagsListComponent', () => {
                     width: '400px',
                     data: { tag },
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    draggable: false,
+                    position: 'center'
                 })
             );
         });
@@ -339,7 +406,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             const tag = MOCK_TAGS[0];
             spectator.component.openEditDialog(tag);
@@ -366,7 +433,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openEditDialog(MOCK_TAGS[0]);
             onClose.next(undefined);
@@ -387,9 +454,12 @@ describe('DotTagsListComponent', () => {
                 expect.objectContaining({
                     message: 'tags.confirm.delete.message',
                     header: 'tags.confirm.delete.header',
+                    acceptLabel: 'Delete',
+                    rejectLabel: 'Cancel',
                     defaultFocus: 'reject',
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    position: 'center'
                 })
             );
         });
@@ -421,7 +491,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
 
@@ -429,9 +499,11 @@ describe('DotTagsListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'tags.import.header',
-                    width: '500px',
+                    width: '600px',
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    draggable: false,
+                    position: 'center'
                 })
             );
         });
@@ -441,7 +513,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
             onClose.next(true);
@@ -455,7 +527,7 @@ describe('DotTagsListComponent', () => {
             const dialogService = spectator.inject(DialogService, true);
             jest.spyOn(dialogService, 'open').mockReturnValue({
                 onClose
-            } as DynamicDialogRef);
+            } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
             onClose.next(undefined);

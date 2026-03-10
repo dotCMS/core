@@ -59,14 +59,6 @@ export class DotContentletThumbnail {
     render() {
         const backgroundImageURL =
             this.contentlet && this.backgroundImage ? `url(${this.getImageURL()})` : '';
-        const hostClass = 'flex h-full w-full flex-1 items-center';
-        const containerClass = this.backgroundImage
-            ? 'absolute inset-0 h-full w-full bg-cover bg-center bg-no-repeat'
-            : 'relative h-full w-full';
-        const svgClass = this.isSVG ? ' bg-contain' : '';
-        const imageClass = this.backgroundImage
-            ? 'absolute h-0 w-0'
-            : 'h-full w-full object-cover object-center';
 
         return (
             <Host class={hostClass}>
@@ -79,7 +71,7 @@ export class DotContentletThumbnail {
                     />
                 ) : this.renderImage ? (
                     <div
-                        class={`${containerClass}${svgClass}`}
+                        class={`thumbnail`}
                         style={{
                             'background-image': backgroundImageURL
                         }}>

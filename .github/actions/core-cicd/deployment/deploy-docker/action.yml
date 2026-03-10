@@ -22,8 +22,9 @@ inputs:
     description: 'The commit id that triggered the build'
     required: true
   ref:
-    description: 'The branch or type of build to tag the image with'
-    required: true
+    description: 'The branch or type of build to tag the image with. Only used when docker-use-ref is true; when docker-use-ref is false the version input drives all tags and this is ignored.'
+    required: false
+    default: ''
   docker-use-ref:
     description: 'The branch or type of build to tag the image with'
     required: false
@@ -58,13 +59,25 @@ inputs:
     required: false
     default: ''
   artifact_suffix:
-    description: 'Suffix for artifact names (e.g., -java25). Used to download the correct docker-build-context artifact.'
+    description: 'Suffix for artifact names (e.g., -java-25). Used to download the correct docker-build-context artifact.'
     required: false
     default: ''
   pull:
     description: 'Pull image before building'
     required: false
     default: 'false'
+  identifier-tag:
+    description: 'Optional mutable alias tag managed by the deployment phase (e.g., nightly_20250218_java-25, manual_issue-123_java-25). Applied when non-empty.'
+    required: false
+    default: ''
+  custom-tag:
+    description: 'Optional custom alias tag chosen by the developer (e.g., modernization, java-25-testing). Applied when non-empty.'
+    required: false
+    default: ''
+  extra-tags:
+    description: 'Escape hatch: additional tags in docker/metadata-action format (type=raw,value=...), one per line. Use for cases not covered by identifier-tag or custom-tag.'
+    required: false
+    default: ''
 outputs:
   tags:
     description: "The tags that were used to build the image"
@@ -104,6 +117,9 @@ runs:
         REF: ${{ inputs.ref }}
         USE_REF: ${{ inputs.docker-use-ref }}
         VERSION: ${{ inputs.version }}
+        IDENTIFIER_TAG: ${{ inputs.identifier-tag }}
+        CUSTOM_TAG: ${{ inputs.custom-tag }}
+        EXTRA_TAGS: ${{ inputs.extra-tags }}
       run: |
         
         # Set defaults for flags
@@ -137,6 +153,13 @@ runs:
           echo "type=raw,value=${RESULT}_{{sha}},enable=true" >> $GITHUB_ENV
           echo "type=raw,value=${RESULT},enable=true" >> $GITHUB_ENV
           echo "type=raw,value=latest,enable=${enable_latest}" >> $GITHUB_ENV
+          [[ -n "${IDENTIFIER_TAG}" ]] && echo "type=raw,value=${IDENTIFIER_TAG},enable=true" >> $GITHUB_ENV
+          [[ -n "${CUSTOM_TAG}" ]] && echo "type=raw,value=${CUSTOM_TAG},enable=true" >> $GITHUB_ENV
+          if [[ -n "${EXTRA_TAGS}" ]]; then
+            while IFS= read -r tag_line; do
+              [[ -n "${tag_line}" ]] && echo "${tag_line}" >> $GITHUB_ENV
+            done <<< "${EXTRA_TAGS}"
+          fi
         echo "EOF" >> $GITHUB_ENV
     - name: Docker.io login
       uses: docker/login-action@v3.0.0

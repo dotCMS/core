@@ -1,6 +1,4 @@
 export const TIME_RANGE_OPTIONS = {
-    today: 'today',
-    yesterday: 'yesterday',
     last7days: 'last7days',
     last30days: 'last30days',
     custom: 'custom'
@@ -8,8 +6,6 @@ export const TIME_RANGE_OPTIONS = {
 
 /** Reverse mapping for Internal → URL-friendly */
 export const TIME_RANGE_CUBEJS_MAPPING = {
-    today: 'today',
-    yesterday: 'yesterday',
     last7days: 'from 7 days ago to now',
     last30days: 'from 30 days ago to now'
 } as const;
@@ -76,6 +72,12 @@ export const AnalyticsChartColors = {
         line: '#E5E7EB',
         fill: 'rgba(229, 231, 235, 0.15)',
         bar: 'rgba(229, 231, 235, 0.6)'
+    },
+    // Neutral dark: Gray for secondary/compare lines
+    neutralDark: {
+        line: '#9CA3AF',
+        fill: 'rgba(156, 163, 175, 0.15)',
+        bar: 'rgba(156, 163, 175, 0.6)'
     }
 } as const;
 

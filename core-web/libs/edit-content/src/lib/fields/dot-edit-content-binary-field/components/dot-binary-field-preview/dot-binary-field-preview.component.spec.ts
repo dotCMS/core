@@ -42,6 +42,9 @@ const clickOnInfoButton = (spectator: Spectator<DotBinaryFieldPreviewComponent>)
     spectator.detectChanges();
 };
 
+const queryGlobalByTestId = (testId: string): HTMLElement | null =>
+    document.querySelector(`[data-testid="${testId}"]`);
+
 describe('DotBinaryFieldPreviewComponent', () => {
     let spectator: Spectator<DotBinaryFieldPreviewComponent>;
     let dotResourceLinksService: DotResourceLinksService;
@@ -268,32 +271,14 @@ describe('DotBinaryFieldPreviewComponent', () => {
             // Trigger initial change detection to set up the component
             spectator.detectChanges();
 
-            // Wait for the effect to trigger and fetch resource links
-            // The effect runs when contentlet is set, which triggers fetchResourceLinks()
-            tick();
-            spectator.detectChanges();
-
-            // Now open the dialog
             clickOnInfoButton(spectator);
             tick();
             spectator.detectChanges();
 
-            // PrimeNG Dialog renders content in a portal, so we need to query from document body
-            // Wait for async subscription to complete and dialog content to render
-            tick(100);
-            spectator.detectChanges();
-
-            // Query elements from the document body where PrimeNG Dialog appends content
-            const fileLinkElement = document.querySelector(
-                '[data-testid="resource-link-FileLink"]'
-            );
-            const resourceLinkElement = document.querySelector(
-                '[data-testid="resource-link-Resource-Link"]'
-            );
-            const versionPathElement = document.querySelector(
-                '[data-testid="resource-link-VersionPath"]'
-            );
-            const idPathElement = document.querySelector('[data-testid="resource-link-IdPath"]');
+            const fileLinkElement = queryGlobalByTestId('resource-link-FileLink');
+            const resourceLinkElement = queryGlobalByTestId('resource-link-Resource-Link');
+            const versionPathElement = queryGlobalByTestId('resource-link-VersionPath');
+            const idPathElement = queryGlobalByTestId('resource-link-IdPath');
 
             expect(fileLinkElement).not.toBeNull();
             expect(resourceLinkElement).not.toBeNull();

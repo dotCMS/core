@@ -1,12 +1,20 @@
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { EMPTY, Observable } from 'rxjs';
 
-import { effect, inject, untracked } from '@angular/core';
+import { computed, effect, inject, untracked } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { getDownloadLink } from '@dotcms/utils';
 
 type DotTagsListStatus = 'init' | 'loading' | 'loaded' | 'error';
@@ -37,15 +45,25 @@ const initialState: DotTagsListState = {
 
 export const DotTagsListStore = signalStore(
     withState<DotTagsListState>(initialState),
+    withComputed((store) => ({
+        /** i18n key for Export button: 'tags.export.all' when all rows on page are selected, else 'tags.export'. */
+        exportLabelKey: computed(() => {
+            const selected = store.selectedTags().length;
+            const totalOnPage = store.tags().length;
+            return totalOnPage > 0 && selected === totalOnPage ? 'tags.export.all' : 'tags.export';
+        })
+    })),
     withMethods((store) => {
         const tagsService = inject(DotTagsService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const globalStore = inject(GlobalStore);
 
         function loadTags() {
             patchState(store, { status: 'loading' });
             tagsService
                 .getTagsPaginated({
                     filter: store.filter() || undefined,
+                    site: globalStore.currentSiteId() || undefined,
                     page: store.page(),
                     per_page: store.rows(),
                     orderBy: store.sortField(),
@@ -155,12 +173,24 @@ export const DotTagsListStore = signalStore(
     withHooks((store) => {
         return {
             onInit() {
+                const globalStore = inject(GlobalStore);
+
+                // When site changes, reset pagination and show loading so the table shows skeleton rows until new site's tags load
+                effect(() => {
+                    globalStore.currentSiteId();
+                    untracked(() =>
+                        patchState(store, { page: 1, status: 'loading', selectedTags: [] })
+                    );
+                });
+
                 effect(() => {
                     store.filter();
                     store.page();
                     store.rows();
                     store.sortField();
                     store.sortOrder();
+                    // React to site change: tags are per-site, so reload when current site changes
+                    globalStore.currentSiteId();
 
                     untracked(() => store.loadTags());
                 });

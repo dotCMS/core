@@ -97,7 +97,7 @@ inputs:
     description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
     required: false
   artifact-suffix:
-    description: 'Suffix for artifact names (e.g., -java25). Computed from java-version if not provided.'
+    description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Dash prefix added automatically for Maven artifacts. Computed from java-version if not provided.'
     required: false
 runs:
   using: 'composite'
@@ -115,16 +115,37 @@ runs:
       id: artifact-suffix
       shell: bash
       run: |
+        # Naming Convention for Java Variants:
+        # - User input: suffix without leading separator (e.g., "java25" or "java25-ms")
+        # - Maven artifacts: use dash separator (e.g., "-java25")
+        # - Docker tags: use underscore separator (e.g., "_java25")
+        #
+        # Note: Underscore in Docker tags is non-standard but follows existing dotCMS convention.
+        # Docker typically uses dash or no separator, but we use underscore to distinguish from
+        # version dashes (e.g., "25.02.16-01_java25_abc123" vs "25.02.16-01-java25-abc123").
+        # This convention may be revisited in future.
+
         # Use provided artifact-suffix if set, otherwise compute from java-version
         if [ -n "${{ inputs.artifact-suffix }}" ]; then
-          ARTIFACT_SUFFIX="${{ inputs.artifact-suffix }}"
+          RAW_SUFFIX="${{ inputs.artifact-suffix }}"
         elif [ -n "${{ inputs.java-version }}" ]; then
           JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
-          ARTIFACT_SUFFIX="-java${JAVA_MAJOR}"
+          RAW_SUFFIX="java${JAVA_MAJOR}"
+        else
+          RAW_SUFFIX=""
+        fi
+
+        # Normalize: strip any leading separators, then add dash for Maven artifacts
+        if [ -n "${RAW_SUFFIX}" ]; then
+          while [[ "${RAW_SUFFIX}" =~ ^[-_] ]]; do
+            RAW_SUFFIX="${RAW_SUFFIX:1}"
+          done
+          ARTIFACT_SUFFIX="-${RAW_SUFFIX}"
         else
           ARTIFACT_SUFFIX=""
         fi
-        echo "suffix=${ARTIFACT_SUFFIX}" >> $GITHUB_OUTPUT
+
+        echo "suffix=${ARTIFACT_SUFFIX}" >> "$GITHUB_OUTPUT"
         echo "Artifact suffix: '${ARTIFACT_SUFFIX}'"
 
     - id: setup-license

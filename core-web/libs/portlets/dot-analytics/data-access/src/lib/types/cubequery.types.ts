@@ -8,8 +8,17 @@
  * - 'EventSummary': Conversion and event analytics
  * - 'ContentAttribution': Content attribution for conversions
  * - 'Conversion': Conversions overview data
+ * - 'EngagementDaily' and SessionsBy*: Engagement dashboard cubes
  */
-export type CubePrefix = 'request' | 'EventSummary' | 'ContentAttribution' | 'Conversion';
+export type CubePrefix =
+    | 'request'
+    | 'EventSummary'
+    | 'ContentAttribution'
+    | 'Conversion'
+    | 'EngagementDaily'
+    | 'SessionsByDeviceDaily'
+    | 'SessionsByBrowserDaily'
+    | 'SessionsByLanguageDaily';
 
 /**
  * Sort direction options for ordering queries.
@@ -26,7 +35,7 @@ export type SortDirection = (typeof SortDirection)[keyof typeof SortDirection];
  * Granularity options for time-based queries.
  * Using const assertion for granularity management.
  */
-const Granularity = {
+export const Granularity = {
     HOUR: 'hour',
     DAY: 'day',
     WEEK: 'week',
@@ -34,6 +43,8 @@ const Granularity = {
 } as const;
 
 export type Granularity = (typeof Granularity)[keyof typeof Granularity];
+
+export const DEFAULT_GRANULARITY = Granularity.DAY;
 
 /**
  * CubeJS time dimension configuration
@@ -72,7 +83,10 @@ const DimensionField = {
     CONVERSION_NAME: 'conversionName',
     TOTAL_CONVERSION: 'totalConversion',
     CONV_RATE: 'convRate',
-    TOP_ATTRIBUTED_CONTENT: 'topAttributedContent'
+    TOP_ATTRIBUTED_CONTENT: 'topAttributedContent',
+    DEVICE_CATEGORY: 'deviceCategory',
+    BROWSER_FAMILY: 'browserFamily',
+    LOCALE_ID: 'localeId'
 } as const;
 
 export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField];

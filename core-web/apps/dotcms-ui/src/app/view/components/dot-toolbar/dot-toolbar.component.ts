@@ -73,7 +73,11 @@ export class DotToolbarComponent implements OnInit {
         if (identifier) {
             this.#siteService
                 .switchSite(identifier)
-                .pipe(takeUntilDestroyed(this.#destroyRef))
+                .pipe(
+                    switchMap(() => this.#siteService.getCurrentSite()),
+                    take(1),
+                    takeUntilDestroyed(this.#destroyRef)
+                )
                 .subscribe((site: DotSite) => {
                     // wait for the site to be switched
                     // before redirecting to the site browser

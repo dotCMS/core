@@ -6,20 +6,21 @@
     [formGroup]="form"
     class="flex h-full w-full flex-col items-start justify-center gap-4">
     @if (allowFileNameEdit) {
-        <div class="flex w-full flex-col gap-2">
-            <label class="p-label-input-required" data-testId="editor-label" for="file-name">
-                {{ 'dot.binary.field.action.create.new.file.label' | dm }}
-            </label>
-            <input
-                id="file-name"
-                autocomplete="off"
-                formControlName="name"
-                pInputText
-                class="w-full"
-                placeholder="Ex. template.html"
-                type="text"
-                data-testId="editor-file-name" />
-            <div class="flex min-h-6 items-start">
+        <div class="editor-mode__input-container">
+            <div class="editor-mode__input">
+                <label class="p-label-input-required" data-testId="editor-label" for="file-name">
+                    {{ 'dot.binary.field.action.create.new.file.label' | dm }}
+                </label>
+                <input
+                    id="file-name"
+                    autocomplete="off"
+                    formControlName="name"
+                    pInputText
+                    placeholder="Ex. template.html"
+                    type="text"
+                    data-testId="editor-file-name" />
+            </div>
+            <div class="error-message">
                 <dot-field-validation-message
                     [field]="form.get('name')"
                     [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"

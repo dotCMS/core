@@ -20,6 +20,7 @@
 
 
 name: '-1 PR Check'
+run-name: 'PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }} (@${{ github.event.pull_request.user.login }})'
 
 on:
   pull_request:
@@ -82,7 +83,7 @@ jobs:
       karate: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
       cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
-      e2e: false
+      e2e: ${{ fromJSON(needs.initialize.outputs.filters).build == 'true' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 

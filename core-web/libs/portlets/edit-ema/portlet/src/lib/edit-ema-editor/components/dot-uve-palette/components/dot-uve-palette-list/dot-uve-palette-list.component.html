@@ -136,4 +136,4 @@
 
 <p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" />
 
-<dot-favorite-selector #favoritesPanel />
+<dot-favorite-selector #favoritesPanel (hideControls)="$shouldHideControls.set($event)" />

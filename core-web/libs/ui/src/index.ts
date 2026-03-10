@@ -29,7 +29,7 @@ export * from './lib/components/dot-sidebar-accordion';
 export * from './lib/components/dot-sidebar-header/dot-sidebar-header.component';
 export * from './lib/components/dot-temp-file-thumbnail/dot-temp-file-thumbnail.component';
 export * from './lib/components/dot-content-type/dot-content-type.component';
-export * from './lib/components/dot-site/dot-site.component';
+export { DotSiteComponent } from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
 export * from './lib/components/dot-browser-selector/dot-browser-selector.component';

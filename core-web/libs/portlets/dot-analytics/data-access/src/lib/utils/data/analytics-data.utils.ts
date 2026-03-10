@@ -1,10 +1,10 @@
 import {
     addDays,
     addHours,
+    differenceInDays,
     endOfDay,
     format,
     isSameDay,
-    isSameMonth,
     parse,
     startOfDay,
     subDays
@@ -60,68 +60,6 @@ export function createInitialRequestState<T>(): RequestState<T> {
 }
 
 /**
- * Helper functions to extract numeric values from analytics entities
- */
-
-/**
- * Determines the appropriate granularity for analytics queries based on the time range.
- *
- * This utility centralizes the logic for selecting granularity levels to ensure
- * optimal data visualization and performance across different time periods.
- *
- * @param timeRange - The time range for the analytics query
- * @returns The appropriate granularity level for the given time range
- */
-export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Granularity {
-    if (Array.isArray(timeRange)) {
-        const [fromDate, toDate] = timeRange.map((date) => parse(date, 'yyyy-MM-dd', new Date()));
-
-        if (isSameDay(fromDate, toDate)) {
-            return 'hour';
-        } else if (isSameMonth(fromDate, toDate)) {
-            return 'day';
-        } else {
-            return 'month';
-        }
-    }
-
-    switch (timeRange) {
-        case TIME_RANGE_OPTIONS.today:
-
-        // falls through
-        case TIME_RANGE_OPTIONS.yesterday:
-            // For today/yesterday, use hourly granularity for detailed intraday analysis
-            return 'hour';
-
-        case TIME_RANGE_OPTIONS.last7days:
-            // For last 7 days, use daily granularity
-            return 'day';
-
-        case TIME_RANGE_OPTIONS.last30days:
-            // For last 30 days, use daily granularity
-            return 'day';
-
-        default: {
-            // For custom ranges or other periods, extract days and decide
-            const daysMatch = timeRange.match(/from (\d+) days ago to now/);
-            if (daysMatch) {
-                const numDays = parseInt(daysMatch[1], 10);
-                if (numDays > 90) {
-                    return 'month';
-                } else if (numDays > 30) {
-                    return 'week';
-                } else {
-                    return 'day';
-                }
-            } else {
-                // For custom date ranges, default to day
-                return 'day';
-            }
-        }
-    }
-}
-
-/**
  * Converts TimeRangeInput to TimeRangeCubeJS format for CubeJS queries.
  *
  * @param timeRange - The time range input (predefined option or custom date array)
@@ -141,20 +79,32 @@ export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
 /**
  * Extracts page views count from TotalPageViewsEntity
  */
-export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data['EventSummary.totalEvents'] ?? 0) : 0;
+export const extractPageViews = (data: TotalPageViewsEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.totalEvents'] ?? 0);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
  */
-export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data['EventSummary.uniqueVisitors']) : 0;
+export const extractSessions = (data: UniqueVisitorsEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.uniqueVisitors']);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity
  */
-export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number =>
-    data ? Number(data['EventSummary.totalEvents']) : 0;
+export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number | null => {
+    if (!data) return null;
+    const value = Number(data['EventSummary.totalEvents']);
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts page title from TopPagePerformanceEntity
@@ -600,7 +550,9 @@ type EmptyEntityFactory<T> = (date: Date, dateKey: string) => T;
  * Generic factory for TimelineEntity types.
  * Used for PageViewTimeLineEntity and ConversionTrendEntity which share the same structure.
  */
-export const createEmptyAnalyticsEntity = <T extends TimelineEntity>(
+export const createEmptyAnalyticsEntity = <
+    T extends TimelineEntity & { 'EventSummary.totalEvents': string }
+>(
     date: Date,
     dateKey: string
 ): T =>
@@ -608,7 +560,7 @@ export const createEmptyAnalyticsEntity = <T extends TimelineEntity>(
         'EventSummary.day': dateKey,
         'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
         'EventSummary.totalEvents': '0'
-    }) as unknown as T;
+    }) as T;
 
 /**
  * Factory for TrafficVsConversionsEntity
@@ -663,7 +615,8 @@ export const fillMissingDates = <T extends TimelineEntity>(
         } else {
             filledData.push(createEmptyEntity(currentDate, currentDateKey));
         }
-        currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
+        currentDate =
+            granularity === Granularity.HOUR ? addHours(currentDate, 1) : addDays(currentDate, 1);
     }
 
     return filledData;
@@ -685,14 +638,6 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
     }
 
     switch (timeRange) {
-        case TIME_RANGE_OPTIONS.today:
-            return [startOfDay(today), endOfDay(today)];
-        case TIME_RANGE_OPTIONS.yesterday: {
-            const yesterday = subDays(today, 1);
-
-            return [startOfDay(yesterday), endOfDay(yesterday)];
-        }
-
         case TIME_RANGE_OPTIONS.last7days: {
             const sevenDaysAgo = subDays(today, 6);
 
@@ -708,4 +653,20 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
         default:
             return [startOfDay(today), endOfDay(today)];
     }
+};
+
+/**
+ * Get the previous period of the same length as the given time range, ending the day before the current range starts.
+ * Used for engagement trend comparison (current vs previous period).
+ *
+ * @param timeRange - The current time range (predefined or custom [from, to])
+ * @returns The previous period as [from, to] date strings (yyyy-MM-dd) for Cube queries
+ */
+export const getPreviousPeriod = (timeRange: TimeRangeInput): [string, string] => {
+    const [startDate, endDate] = getDateRange(timeRange);
+    const days = differenceInDays(endDate, startDate) + 1;
+    const previousEnd = subDays(startDate, 1);
+    const previousStart = subDays(previousEnd, days - 1);
+
+    return [format(previousStart, 'yyyy-MM-dd'), format(previousEnd, 'yyyy-MM-dd')];
 };

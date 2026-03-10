@@ -213,6 +213,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotConvertWysiwygToBlockComponent
             ],
             imports: [
+                DotConvertToBlockInfoComponent,
+                DotConvertWysiwygToBlockComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
@@ -503,13 +505,10 @@ describe('Load fields and drag and drop', () => {
         testFieldDragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsDropZoneComponent,
-                TestHostComponent,
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent
-            ],
+            declarations: [ContentTypeFieldsDropZoneComponent, TestHostComponent],
             imports: [
+                DotConvertToBlockInfoComponent,
+                DotConvertWysiwygToBlockComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,

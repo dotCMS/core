@@ -123,7 +123,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public String getSha256() {
-		return Try.of(() -> getMetadata().getSha256()).getOrNull();
+        return Try.of(() -> getMetadata().getSha256()).getOrElse("unknown");
 	}
 
 	public int getHeight() {
@@ -147,8 +147,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
    * @return
    */
   public String getUnderlyingFileName() {
-	  return Try.of(() -> getMetadata().getName())
-			  .getOrNull();
+      return Try.of(() -> getMetadata().getName()).getOrElse("unknown");
   }
 
 	/***

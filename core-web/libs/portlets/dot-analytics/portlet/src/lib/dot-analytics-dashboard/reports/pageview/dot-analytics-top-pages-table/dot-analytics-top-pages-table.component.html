@@ -1,0 +1,99 @@
+@let isLoadingState = $isLoading();
+@let isErrorState = $isError();
+@let isEmptyState = $isEmpty();
+@let tableData = $data();
+
+@let columnsConfig = $columnConfigs();
+@let hasData = tableData && tableData.length > 0;
+@let showRealTable = !isLoadingState && !isErrorState && !isEmptyState && hasData;
+
+@if (isLoadingState) {
+    <div class="flex flex-col gap-3">
+        <div class="p-datatable p-datatable-sm">
+            <div class="p-datatable-header-row flex p-3">
+                @for (columnConfig of columnsConfig; track columnConfig.field) {
+                    <div
+                        [class]="columnConfig.cssClass"
+                        class="flex-1"
+                        [style.width]="columnConfig.width">
+                        <p-skeleton height="1.2rem" width="80%" />
+                    </div>
+                }
+            </div>
+
+            @for (row of skeletonRows; track $index) {
+                <div class="flex p-3">
+                    @for (columnConfig of columnsConfig; track columnConfig.field) {
+                        <div
+                            [class]="columnConfig.cssClass"
+                            class="flex-1"
+                            [style.width]="columnConfig.width">
+                            <p-skeleton height="1rem" [width]="columnConfig.skeletonWidth" />
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+} @else if (isErrorState) {
+    <dot-analytics-state-message
+        message="analytics.error.loading.top-pages-table"
+        icon="pi-exclamation-triangle" />
+} @else if (isEmptyState) {
+    <dot-analytics-empty-state data-testid="empty-table-state" />
+} @else if (showRealTable) {
+    <p-table
+        [value]="tableData"
+        [columns]="columnsConfig"
+        [attr.data-testid]="'analytics-top-pages-table'"
+        styleClass=""
+        [paginator]="true"
+        [rows]="tableConfig.ROWS_PER_PAGE"
+        [dataKey]="tableConfig.DATA_KEY"
+        [sortMode]="tableConfig.SORT_MODE">
+        <ng-template pTemplate="header" let-columns>
+            <tr>
+                @for (columnConfig of columnsConfig; track columnConfig.field) {
+                    <th
+                        [class]="columnConfig.cssClass"
+                        [pSortableColumn]="columnConfig.sortable ? columnConfig.field : undefined"
+                        [style.width]="columnConfig.width">
+                        {{ columnConfig.header | dm }}
+                        @if (columnConfig.sortable) {
+                            <p-sortIcon [field]="columnConfig.field" />
+                        }
+                    </th>
+                }
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row let-rowIndex="rowIndex" let-columns="columns">
+            <tr>
+                @for (columnConfig of columnsConfig; track columnConfig.field) {
+                    <td [class]="columnConfig.cssClass">
+                        @switch (columnConfig.type) {
+                            @case ('link') {
+                                <span>
+                                    {{ row[columnConfig.field] }}
+                                </span>
+                            }
+                            @case ('number') {
+                                <span class="font-semibold">
+                                    {{ row[columnConfig.field] | number }}
+                                </span>
+                            }
+                            @case ('percentage') {
+                                <span class="text-zinc-600 font-medium">
+                                    {{ row[columnConfig.field] }}%
+                                </span>
+                            }
+                            @default {
+                                {{ row[columnConfig.field] }}
+                            }
+                        }
+                    </td>
+                }
+            </tr>
+        </ng-template>
+    </p-table>
+}

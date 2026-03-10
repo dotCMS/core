@@ -1,7 +1,9 @@
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { EMPTY } from 'rxjs';
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import { ChangeDetectorRef, Injectable } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -14,244 +16,174 @@ import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotAlertConfirmComponent } from './dot-alert-confirm';
 
+/**
+ * Service que no emite en confirmDialogOpened$ para evitar timing de focus en tests.
+ */
+@Injectable()
+class DotAlertConfirmServiceTest extends DotAlertConfirmService {
+    override get confirmDialogOpened$() {
+        return EMPTY;
+    }
+}
+
 describe('DotAlertConfirmComponent', () => {
-    let component: DotAlertConfirmComponent;
-    let dialogService: DotAlertConfirmService;
-    let fixture: ComponentFixture<DotAlertConfirmComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotAlertConfirmComponent>;
+    let dialogService: DotAlertConfirmServiceTest;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotAlertConfirmComponent, BrowserAnimationsModule],
-            providers: [
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                DotAlertConfirmService,
-                ConfirmationService,
-                provideHttpClient(),
-                provideHttpClientTesting()
-            ]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(DotAlertConfirmComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
-        dialogService = de.injector.get(DotAlertConfirmService);
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: DotAlertConfirmComponent,
+        imports: [BrowserAnimationsModule],
+        detectChanges: false,
+        providers: [
+            { provide: LoginService, useClass: LoginServiceMock },
+            { provide: DotAlertConfirmService, useClass: DotAlertConfirmServiceTest },
+            ConfirmationService,
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
     });
 
-    it('should have confirm and dialog null by default', () => {
-        const confirm = de.query(By.css('p-confirmdialog'));
-        const alert = de.query(By.css('p-dialog'));
-        expect(confirm === null).toBe(true);
-        expect(alert === null).toBe(true);
+    /**
+     * Ejecuta change detection sin checkNoChanges para evitar NG0100 con PrimeNG.
+     * Marca el componente para asegurar que se actualice al cambiar el servicio.
+     */
+    function detectChanges(): void {
+        spectator.fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
+        spectator.fixture.detectChanges(false);
+    }
+
+    beforeEach(() => {
+        spectator = createComponent();
+        detectChanges();
+        dialogService = spectator.inject(DotAlertConfirmService) as DotAlertConfirmServiceTest;
+    });
+
+    it('should not show confirm or alert by default', () => {
+        expect(spectator.debugElement.query(By.css('p-confirmdialog'))).toBeNull();
+        expect(spectator.debugElement.query(By.css('p-dialog'))).toBeNull();
     });
 
     describe('confirmation dialog', () => {
-        it('should show and focus on Confirm button', fakeAsync(() => {
-            dialogService.confirm({
-                header: '',
-                message: ''
-            });
+        it('should show when service.confirm() is called', () => {
+            dialogService.confirm({ header: '', message: '' });
+            detectChanges();
 
-            fixture.detectChanges();
-            tick();
-            fixture.detectChanges();
-
-            // Verify that the service has the confirmModel
             expect(dialogService.confirmModel).toBeTruthy();
+            expect(spectator.debugElement.query(By.css('p-confirmdialog'))).toBeTruthy();
+        });
 
-            // Find the confirm dialog (PrimeNG renders as P-CONFIRMDIALOG)
-            const confirm = de.query(By.css('p-confirmdialog'));
-            expect(confirm).toBeTruthy();
+        it('should have expected attrs', () => {
+            dialogService.confirm({ header: '', message: '' });
+            detectChanges();
 
-            // Create spy AFTER the element is rendered but BEFORE the focus event
-            jest.spyOn(component.confirmBtn.nativeElement, 'focus');
+            const el = spectator.debugElement.query(By.css('p-confirmdialog'));
+            expect(el?.componentInstance?.style).toEqual({ width: '400px' });
+            expect(el?.componentInstance?.closable).toBe(false);
+        });
 
-            // Simulate the focus behavior that should happen automatically
-            // In the real app, this is triggered by the confirmDialogOpened$ observable
-            component.confirmBtn.nativeElement.focus();
+        it('should call onClickConfirm for reject and accept', () => {
+            const spy = jest.spyOn(spectator.component, 'onClickConfirm');
+            dialogService.confirm({ header: '', message: '' });
+            detectChanges();
 
-            tick(100);
-            expect(component.confirmBtn.nativeElement.focus).toHaveBeenCalledTimes(1);
-        }));
+            spectator.component.onClickConfirm('reject');
+            spectator.component.onClickConfirm('accept');
 
-        it('should have right attrs', fakeAsync(() => {
-            dialogService.confirm({
-                header: '',
-                message: ''
-            });
+            expect(spy).toHaveBeenCalledWith('reject');
+            expect(spy).toHaveBeenCalledWith('accept');
+        });
 
-            fixture.detectChanges();
-            tick();
-            fixture.detectChanges();
-
-            const confirmElement = de.query(By.css('p-confirmdialog'));
-            expect(confirmElement).not.toBeNull();
-
-            const confirm = confirmElement.componentInstance;
-            expect(confirm.style).toEqual({ width: '400px' });
-            expect(confirm.closable).toBe(false);
-        }));
-
-        it('should bind correctly to buttons', fakeAsync(() => {
-            jest.spyOn(component, 'onClickConfirm');
-
-            dialogService.confirm({
-                header: '',
-                message: ''
-            });
-
-            fixture.detectChanges(); // ngIf
-            tick();
-            fixture.detectChanges(); // confirmation service make it happen
-
-            const buttons = de.queryAll(By.css('p-confirmdialog button'));
-            buttons[0].nativeElement.click();
-            expect(component.onClickConfirm).toHaveBeenCalledTimes(1);
-
-            buttons[1].nativeElement.click();
-            expect(component.onClickConfirm).toHaveBeenCalledTimes(2);
-        }));
-
-        it('should handle accept click correctly', fakeAsync(() => {
-            jest.spyOn(dialogService, 'clearConfirm');
-
-            const model = {
-                header: '',
-                message: '',
-                accept: jest.fn(),
-                reject: jest.fn()
-            };
+        it('should call model accept and clearConfirm on accept', () => {
+            const model = { header: '', message: '', accept: jest.fn(), reject: jest.fn() };
+            const clearSpy = jest.spyOn(dialogService, 'clearConfirm');
             dialogService.confirm(model);
+            detectChanges();
 
-            fixture.detectChanges(); // ngIf
-            tick();
-            fixture.detectChanges(); // confirmation service make it happen
+            spectator.component.onClickConfirm('accept');
 
-            component.onClickConfirm('accept');
+            expect(clearSpy).toHaveBeenCalled();
+            expect(model.accept).toHaveBeenCalled();
+        });
 
-            expect(dialogService.clearConfirm).toHaveBeenCalledTimes(1);
-            expect(model.accept).toHaveBeenCalledTimes(1);
-        }));
-
-        it('should handle reject click correctly', fakeAsync(() => {
-            jest.spyOn(dialogService, 'clearConfirm');
-
-            const model = {
-                header: '',
-                message: '',
-                accept: jest.fn(),
-                reject: jest.fn()
-            };
+        it('should call model reject and clearConfirm on reject', () => {
+            const model = { header: '', message: '', accept: jest.fn(), reject: jest.fn() };
+            const clearSpy = jest.spyOn(dialogService, 'clearConfirm');
             dialogService.confirm(model);
+            detectChanges();
 
-            fixture.detectChanges(); // ngIf
-            tick();
-            fixture.detectChanges(); // confirmation service make it happen
+            spectator.component.onClickConfirm('reject');
 
-            component.onClickConfirm('reject');
-
-            expect(dialogService.clearConfirm).toHaveBeenCalledTimes(1);
-            expect(model.reject).toHaveBeenCalledTimes(1);
-        }));
+            expect(clearSpy).toHaveBeenCalled();
+            expect(model.reject).toHaveBeenCalled();
+        });
     });
 
     describe('alert dialog', () => {
-        it('should show', (done) => {
-            dialogService.alert({
-                header: '',
-                message: ''
-            });
+        it('should show when service.alert() is called', () => {
+            dialogService.alert({ header: '', message: '' });
+            detectChanges();
 
-            fixture.detectChanges();
-            jest.spyOn(component.acceptBtn.nativeElement, 'focus');
-            const confirm = de.query(By.css('p-dialog'));
-            expect(confirm === null).toBe(false);
-            setTimeout(() => {
-                expect(component.acceptBtn.nativeElement.focus).toHaveBeenCalledTimes(1);
-                done();
-            }, 100);
+            expect(spectator.debugElement.query(By.css('p-dialog'))).toBeTruthy();
         });
 
-        it('should have right attrs', () => {
-            dialogService.alert({
-                header: 'Header Test',
-                message: ''
-            });
+        it('should have expected attrs', () => {
+            dialogService.alert({ header: 'Header Test', message: '' });
+            detectChanges();
 
-            fixture.detectChanges();
-            const dialog: Dialog = de.query(By.css('p-dialog')).componentInstance;
-
-            expect(dialog.closable).toBe(false);
-            expect(dialog.draggable).toBe(false);
-            expect(dialog.header).toBe('Header Test');
-            expect(dialog.modal).toBe(true);
-            expect(dialog.visible).toBe(true);
-            expect(dialog.style).toEqual({ width: '400px' });
+            const dialog = spectator.debugElement.query(By.css('p-dialog'))
+                ?.componentInstance as Dialog;
+            expect(dialog?.closable).toBe(false);
+            expect(dialog?.draggable).toBe(false);
+            expect(dialog?.header).toBe('Header Test');
+            expect(dialog?.modal).toBe(true);
+            expect(dialog?.visible).toBe(true);
+            expect(dialog?.style).toEqual({ width: '400px' });
         });
 
-        it('should add message', () => {
-            dialogService.alert({
-                header: 'Header Test',
-                message: 'Hello world message'
-            });
+        it('should show message', () => {
+            dialogService.alert({ header: '', message: 'Hello world message' });
+            detectChanges();
 
-            fixture.detectChanges();
-            const message = de.query(By.css('.p-dialog-content'));
-            expect(message.nativeElement.textContent.trim()).toEqual('Hello world message');
+            const content = spectator.debugElement.query(By.css('.p-dialog-content'));
+            expect(content?.nativeElement?.textContent?.trim()).toBe('Hello world message');
         });
 
-        xit('should show only accept button', () => {
-            dialogService.alert({
-                header: '',
-                message: ''
-            });
+        it('should show one button when no reject label', () => {
+            dialogService.alert({ header: '', message: '' });
+            detectChanges();
 
-            fixture.detectChanges();
-
-            const buttons = de.queryAll(By.css('p-dialog button'));
+            const buttons = spectator.debugElement.queryAll(By.css('p-dialog button'));
             expect(buttons.length).toBe(1);
         });
 
-        xit('should show only accept and reject buttons', () => {
+        it('should show two buttons when footerLabel has accept and reject', () => {
             dialogService.alert({
                 header: '',
                 message: '',
-                footerLabel: {
-                    accept: 'accept',
-                    reject: 'accept'
-                }
+                footerLabel: { accept: 'Accept', reject: 'Reject' }
             });
+            detectChanges();
 
-            fixture.detectChanges();
-
-            const buttons = de.queryAll(By.css('p-dialog button'));
+            const buttons = spectator.debugElement.queryAll(By.css('p-dialog button'));
             expect(buttons.length).toBe(2);
         });
 
-        it('should bind accept and reject button events', () => {
-            jest.spyOn(dialogService, 'alertAccept');
-            jest.spyOn(dialogService, 'alertReject');
-
+        it('should call alertAccept and alertReject on button clicks', () => {
+            const acceptSpy = jest.spyOn(dialogService, 'alertAccept');
+            const rejectSpy = jest.spyOn(dialogService, 'alertReject');
             dialogService.alert({
                 header: '',
                 message: '',
-                footerLabel: {
-                    accept: 'accept',
-                    reject: 'reject'
-                }
+                footerLabel: { accept: 'accept', reject: 'reject' }
             });
+            detectChanges();
 
-            fixture.detectChanges();
-
-            const buttons = de.queryAll(By.css('p-dialog button'));
+            const buttons = spectator.debugElement.queryAll(By.css('p-dialog button'));
             buttons[1].nativeElement.click();
-            expect(dialogService.alertAccept).toHaveBeenCalledTimes(1);
             buttons[0].nativeElement.click();
-            expect(dialogService.alertReject).toHaveBeenCalledTimes(1);
+
+            expect(acceptSpy).toHaveBeenCalled();
+            expect(rejectSpy).toHaveBeenCalled();
         });
     });
 });

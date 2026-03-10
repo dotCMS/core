@@ -1,6 +1,8 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+import { signal } from '@angular/core';
+
 jest.mock('@dotcms/utils', () => ({
     ...jest.requireActual('@dotcms/utils'),
     getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
@@ -8,6 +10,7 @@ jest.mock('@dotcms/utils', () => ({
 
 import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { getDownloadLink } from '@dotcms/utils';
 
 import { DotTagsListStore } from './dot-tags-list.store';
@@ -17,7 +20,15 @@ const MOCK_TAGS: DotTag[] = [
     { id: '2', label: 'tag2', siteId: 'site2', siteName: 'Site 2', persona: false }
 ];
 
+const MOCK_API_RESPONSE_BASE = {
+    errors: [],
+    messages: [],
+    permissions: [],
+    i18nMessagesMap: {}
+};
+
 const MOCK_PAGINATED_RESPONSE = {
+    ...MOCK_API_RESPONSE_BASE,
     entity: MOCK_TAGS,
     pagination: { currentPage: 1, perPage: 25, totalEntries: 100 }
 };
@@ -32,17 +43,32 @@ describe('DotTagsListStore', () => {
         providers: [
             mockProvider(DotTagsService, {
                 getTagsPaginated: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
-                createTag: jest.fn().mockReturnValue(of({ entity: MOCK_TAGS })),
-                updateTag: jest.fn().mockReturnValue(of({ entity: MOCK_TAGS[0] })),
-                deleteTags: jest
+                createTag: jest
                     .fn()
-                    .mockReturnValue(of({ entity: { successCount: 2, fails: [] } }))
+                    .mockReturnValue(of({ ...MOCK_API_RESPONSE_BASE, entity: MOCK_TAGS })),
+                updateTag: jest
+                    .fn()
+                    .mockReturnValue(of({ ...MOCK_API_RESPONSE_BASE, entity: MOCK_TAGS[0] })),
+                deleteTags: jest.fn().mockReturnValue(
+                    of({
+                        ...MOCK_API_RESPONSE_BASE,
+                        entity: { successCount: 2, fails: [] }
+                    })
+                )
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(GlobalStore, {
+                get currentSiteId() {
+                    return currentSiteIdSignal;
+                }
+            })
         ]
     });
 
+    let currentSiteIdSignal: ReturnType<typeof signal<string>>;
+
     beforeEach(() => {
+        currentSiteIdSignal = signal('site-1');
         spectator = createService();
         store = spectator.service;
         tagsService = spectator.inject(DotTagsService) as jest.Mocked<DotTagsService>;
@@ -65,9 +91,10 @@ describe('DotTagsListStore', () => {
     });
 
     describe('loadTags', () => {
-        it('should call getTagsPaginated with correct params', () => {
+        it('should call getTagsPaginated with correct params including site', () => {
             expect(tagsService.getTagsPaginated).toHaveBeenCalledWith({
                 filter: undefined,
+                site: 'site-1',
                 page: 1,
                 per_page: 25,
                 orderBy: 'tagname',
@@ -327,5 +354,45 @@ describe('DotTagsListStore', () => {
                 expect.objectContaining({ page: 2, per_page: 50 })
             );
         });
+
+        it('should reset page to 1, set status to loading, and clear selection when currentSiteId changes', () => {
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.setPagination(3, 25);
+            store.setSelectedTags([store.tags()[0]]);
+            spectator.flushEffects();
+            expect(store.page()).toBe(3);
+            expect(store.selectedTags().length).toBe(1);
+
+            currentSiteIdSignal.set('site-2');
+            spectator.flushEffects();
+
+            expect(store.page()).toBe(1);
+            expect(store.selectedTags()).toEqual([]);
+            // Status is set to loading by the site-change effect; loadTags() then runs and sets loaded when the mock completes
+            expect(store.status()).toBe('loaded');
+        });
+
+        it('should pass the updated site to getTagsPaginated when currentSiteId changes', () => {
+            tagsService.getTagsPaginated.mockClear();
+            currentSiteIdSignal.set('site-2');
+            spectator.flushEffects();
+
+            expect(tagsService.getTagsPaginated).toHaveBeenCalledWith(
+                expect.objectContaining({ site: 'site-2' })
+            );
+        });
+    });
+
+    describe('exportLabelKey (computed)', () => {
+        it('should return tags.export when selection is empty or partial', () => {
+            store.setSelectedTags([]);
+            spectator.flushEffects();
+            expect(store.exportLabelKey()).toBe('tags.export');
+
+            store.setSelectedTags([store.tags()[0]]);
+            spectator.flushEffects();
+            expect(store.exportLabelKey()).toBe('tags.export');
+        });
+        // "All selected" case (tags.export.all) is covered by the component spec via Export button label
     });
 });

@@ -3,8 +3,9 @@ import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngne
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, DebugElement, EventEmitter, signal } from '@angular/core';
+import { Component, DebugElement, EventEmitter, model, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -28,6 +29,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
@@ -59,13 +61,14 @@ import {
     getFullPageURL,
     createFavoritePagesURL,
     sanitizeURL,
-    convertLocalTimeToUTC,
-    createFullURL
+    convertLocalTimeToUTC
 } from '../../../utils';
 
 /**
  * Stub used in tests to avoid ng-mocks auto-mocking `DotLanguageSelectorComponent`,
  * which uses Angular's signal-based `viewChild()` and can crash when mocked.
+ * Uses model() for value to match the real component's API so [value] binds correctly.
+ * Keeps EventEmitter for onChange so triggerEventHandler('onChange', id) works in tests.
  */
 @Component({
     selector: 'dot-language-selector',
@@ -73,7 +76,7 @@ import {
     standalone: true
 })
 class StubDotLanguageSelectorComponent {
-    value: unknown;
+    value = model<number | DotLanguage | null>(null);
     onChange = new EventEmitter<number>();
 }
 
@@ -512,13 +515,12 @@ describe('DotUveToolbarComponent', () => {
 
         describe('$pageURLS computed signal', () => {
             it('should call createFullURL to generate version URL', () => {
-                const mockCreateFullURL = createFullURL as jest.Mock;
-                mockCreateFullURL.mockClear();
-
+                const clientHost = 'https://example.com';
+                const path = '/my-page';
                 baseUVEState.pageParams.set({
                     ...params,
-                    url: '/my-page',
-                    clientHost: 'https://example.com'
+                    url: path,
+                    clientHost
                 });
                 spectator.detectChanges();
 
@@ -527,11 +529,12 @@ describe('DotUveToolbarComponent', () => {
                     (u) => u.label === 'uve.toolbar.page.current.view.url'
                 );
 
-                expect(mockCreateFullURL).toHaveBeenCalledWith(
-                    expect.any(Object),
-                    expect.any(String)
-                );
                 expect(versionUrl).toBeTruthy();
+                expect(versionUrl?.value).toBeTruthy();
+                expect(typeof versionUrl?.value).toBe('string');
+                // createFullURL builds URL from clientHost + url + query string from params
+                expect(versionUrl?.value.startsWith(`${clientHost}${path}`)).toBe(true);
+                expect(versionUrl?.value).toContain('?');
             });
 
             it('should construct URL with clientHost and url from pageParams', () => {
@@ -736,6 +739,156 @@ describe('DotUveToolbarComponent', () => {
 
                 spyPersonalized.mockReturnValue(
                     throwError(new Error('Personalization confirmation failed'))
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
+            it('should show backend message from error-message header when personalization API returns HttpErrorResponse', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                const backendMessage =
+                    'Does not exists a Persona with the tag: nonexistent-persona';
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            headers: new HttpHeaders({ 'error-message': backendMessage })
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: backendMessage
+                });
+            });
+
+            it('should show backend message from body error when personalization API returns HttpErrorResponse with error body', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            error: {
+                                error: 'dotcms.api.error.bad_request: Page parameter is missing'
+                            }
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'Page parameter is missing'
+                });
+            });
+
+            it('should show full body error when response has no colon prefix', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                const bodyMessage = 'Something went wrong';
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 500,
+                            error: { error: bodyMessage }
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: bodyMessage
+                });
+            });
+
+            it('should use i18n fallback when error-message header is only whitespace', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            headers: new HttpHeaders({ 'error-message': '   \t  ' })
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
+            it('should use i18n fallback when body error is only whitespace', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            error: { error: '   ' }
+                        })
+                    )
                 );
 
                 acceptFn();

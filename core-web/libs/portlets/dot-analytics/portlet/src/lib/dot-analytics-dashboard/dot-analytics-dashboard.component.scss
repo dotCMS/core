@@ -1,0 +1,6 @@
+@use "variables" as *;
+
+.header-container {
+    background: $color-palette-gray-100;
+    border-bottom: $field-border-size solid $color-palette-gray-300;
+}

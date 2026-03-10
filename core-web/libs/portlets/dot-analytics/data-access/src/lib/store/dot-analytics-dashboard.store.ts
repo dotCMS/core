@@ -1,5 +1,6 @@
 import { patchState, signalStore, withHooks, withMethods } from '@ngrx/signals';
 
+import { Location } from '@angular/common';
 import { effect, inject } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
@@ -13,6 +14,7 @@ import { withPageview } from './features/with-pageview.feature';
 import { DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
 import { TimeRangeInput } from '../types';
 import { isValidTab, paramsToTimeRange } from '../utils/filters.utils';
+import { silentNavigate } from '../utils/router.utils';
 
 /**
  * Analytics Dashboard Store
@@ -35,71 +37,76 @@ export const DotAnalyticsDashboardStore = signalStore(
     withConversions(),
     withEngagement(),
     // Coordinator methods that work across features
-    withMethods((store, route = inject(ActivatedRoute), router = inject(Router)) => ({
-        /**
-         * Sets current tab and syncs URL.
-         */
-        setCurrentTabAndNavigate(tab: DashboardTab): void {
-            store.setCurrentTab(tab);
+    withMethods(
+        (
+            store,
+            route = inject(ActivatedRoute),
+            router = inject(Router),
+            location = inject(Location)
+        ) => ({
+            /**
+             * Sets current tab and syncs URL without triggering Angular router navigation.
+             */
+            setCurrentTabAndNavigate(tab: DashboardTab): void {
+                store.setCurrentTab(tab);
+                silentNavigate(router, location, route, { tab });
+            },
 
-            // Update URL with tab query param
-            // TODO: Find a better way to update the URL with the tab query param.
-            router.navigate([], {
-                relativeTo: route,
-                queryParams: { tab: tab },
-                queryParamsHandling: 'merge',
-                replaceUrl: true
-            });
-        },
+            /**
+             * Refreshes all currently loaded data based on the current tab.
+             */
+            refreshAllData(): void {
+                const currentTab = store.currentTab();
 
-        /**
-         * Refreshes all currently loaded data based on the current tab.
-         */
-        refreshAllData(): void {
-            const currentTab = store.currentTab();
+                switch (currentTab) {
+                    case DASHBOARD_TABS.pageview:
+                        store.loadAllPageviewData();
+                        break;
+                    case DASHBOARD_TABS.engagement:
+                        store.loadEngagementData();
+                        break;
+                    case DASHBOARD_TABS.conversions:
+                        store.loadConversionsData();
+                        break;
+                }
+            },
 
-            switch (currentTab) {
-                case DASHBOARD_TABS.pageview:
-                    store.loadAllPageviewData();
-                    break;
-                case DASHBOARD_TABS.engagement:
-                    store.loadEngagementData();
-                    break;
-                case DASHBOARD_TABS.conversions:
-                    store.loadConversionsData();
-                    break;
+            /**
+             * Updates time range and syncs URL with query params.
+             *
+             * Uses `location.replaceState` (same as `setCurrentTabAndNavigate`) to avoid
+             * triggering router events that would reset component state.
+             *
+             * When `timeRange` is the bare `'custom'` string (dropdown selected but no
+             * dates chosen yet), only the URL is updated — store state is left unchanged
+             * so no data reload is triggered until a full date range is confirmed.
+             */
+            updateTimeRange(timeRange: TimeRangeInput): void {
+                const queryParams: Params = {};
+
+                if (Array.isArray(timeRange)) {
+                    // Complete custom date range — update state and URL
+                    store.setTimeRange(timeRange);
+                    queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
+                    queryParams['from'] = timeRange[0];
+                    queryParams['to'] = timeRange[1];
+                } else {
+                    // Predefined range OR bare 'custom' (no dates yet)
+                    // Only update state for predefined ranges, not for bare 'custom'
+                    if (timeRange !== TIME_RANGE_OPTIONS.custom) {
+                        store.setTimeRange(timeRange);
+                    }
+
+                    queryParams['time_range'] = timeRange;
+                    // Null out from/to to remove them from the URL when switching away from custom
+                    queryParams['from'] = null;
+                    queryParams['to'] = null;
+                }
+
+                silentNavigate(router, location, route, queryParams);
             }
-        },
-
-        /**
-         * Updates time range and syncs URL with query params.
-         */
-        updateTimeRange(timeRange: TimeRangeInput): void {
-            store.setTimeRange(timeRange);
-
-            // Build query params from time range
-            const queryParams: Params = {};
-
-            if (Array.isArray(timeRange)) {
-                // Custom date range
-                queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
-                queryParams['from'] = timeRange[0];
-                queryParams['to'] = timeRange[1];
-            } else {
-                // Predefined range
-                queryParams['time_range'] = timeRange;
-            }
-
-            // Update URL
-            // TODO: Find a better way to update the URL with the time range query params.
-            router.navigate([], {
-                relativeTo: route,
-                queryParams: queryParams,
-                queryParamsHandling: 'merge',
-                replaceUrl: true
-            });
-        }
-    })),
+        })
+    ),
     withHooks({
         onInit(store) {
             const route = inject(ActivatedRoute);

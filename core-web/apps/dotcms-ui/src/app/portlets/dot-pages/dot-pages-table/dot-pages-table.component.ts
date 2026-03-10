@@ -1,4 +1,4 @@
-import { DOCUMENT, CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import {
     afterNextRender,
     ChangeDetectorRef,

@@ -66,6 +66,17 @@ console.error = (...args: unknown[]) => {
     ) {
         return;
     }
+    // Skip JSDOM "Not implemented: navigation" (e.g. location.reload in iframe/contentWindow)
+    const errMsg =
+        args[0] && typeof (args[0] as { message?: string }).message === 'string'
+            ? (args[0] as Error).message
+            : '';
+    if (
+        firstArg.includes('Not implemented: navigation') ||
+        errMsg.includes('Not implemented: navigation')
+    ) {
+        return;
+    }
 
     originalConsoleError(...args);
 };

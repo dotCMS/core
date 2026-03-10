@@ -6,6 +6,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotTag } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotFieldRequiredDirective, DotMessagePipe, DotSiteComponent } from '@dotcms/ui';
 
 @Component({
@@ -27,10 +28,11 @@ export class DotTagsCreateComponent implements OnInit {
     readonly config = inject(DynamicDialogConfig<{ tag?: DotTag }>);
 
     private readonly fb = inject(FormBuilder);
+    private readonly globalStore = inject(GlobalStore);
 
     readonly form = this.fb.group({
         name: ['', Validators.required],
-        siteId: ['']
+        siteId: ['', Validators.required]
     });
 
     isEdit = false;
@@ -42,6 +44,10 @@ export class DotTagsCreateComponent implements OnInit {
             this.form.patchValue({
                 name: tag.label,
                 siteId: tag.siteId
+            });
+        } else {
+            this.form.patchValue({
+                siteId: this.globalStore.currentSiteId() ?? ''
             });
         }
     }

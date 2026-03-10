@@ -77,7 +77,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
             expect(spectator.component.form.valid).toBeFalsy();
             expect(spectator.component.keyControl.hasError('required')).toBeTruthy();
-            expect(spectator.query('.error-message')).toHaveText('Key is required');
+            expect(spectator.query('small.text-red-500')).toHaveText('Key is required');
         });
 
         it('should invalidate form when key is forbidden', () => {
@@ -87,7 +87,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
             expect(spectator.component.form.valid).toBeFalsy();
             expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeTruthy();
-            expect(spectator.query('.error-message')).toHaveText('Key already exists');
+            expect(spectator.query('small.text-red-500')).toHaveText('Key already exists');
         });
 
         it('should invalidate form when value is empty', () => {
@@ -97,7 +97,8 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
             expect(spectator.component.form.valid).toBeFalsy();
             expect(spectator.component.valueControl.hasError('required')).toBeTruthy();
-            expect(spectator.query('.error-message')).toHaveText('Value is required');
+            const valueErrorSmall = spectator.queryAll('small.text-red-500')[1];
+            expect(valueErrorSmall).toHaveText('Value is required');
         });
     });
 

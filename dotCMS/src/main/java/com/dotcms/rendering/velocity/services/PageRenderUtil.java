@@ -540,6 +540,8 @@ public class PageRenderUtil implements Serializable {
         // NOTE: Safe to modify contentlet.getMap() here because the contentlet is a COPY
         // created by hydrate(), not the cached original instance.
         // See: DotContentletTransformerImpl.hydrate() and copy()
+        // We must explicitly remove the key when styles are absent to avoid carrying over
+        // stale data that may have been copied from a previously contaminated cached instance.
 
         if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true)) {
             return;
@@ -549,6 +551,8 @@ public class PageRenderUtil implements Serializable {
 
         if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
             contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
+        } else {
+            contentlet.getMap().remove(Contentlet.STYLE_PROPERTIES_KEY);
         }
     }
 

@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -11,6 +11,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import { SkeletonModule } from 'primeng/skeleton';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -37,16 +38,31 @@ import { DotTagsImportComponent } from '../dot-tags-import/dot-tags-import.compo
         IconFieldModule,
         InputIconModule,
         ConfirmDialogModule,
+        SkeletonModule,
         SplitButtonModule,
         ToolbarModule,
         DotMessagePipe
     ],
     templateUrl: './dot-tags-list.component.html',
     providers: [DotTagsListStore, DialogService, ConfirmationService],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'flex flex-col h-full min-h-0' }
 })
 export class DotTagsListComponent {
     readonly store = inject(DotTagsListStore);
+
+    /** Pass-through config so the table fills 100% height when empty (empty/loading state). */
+    readonly $ptConfig = computed(() => ({
+        table: {
+            style: {
+                'table-layout': 'fixed' as const,
+                ...(this.store.tags().length === 0 && {
+                    height: '100%',
+                    width: '100%'
+                })
+            }
+        }
+    }));
 
     private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -92,7 +108,9 @@ export class DotTagsListComponent {
             header: this.dotMessageService.get('tags.add.tag'),
             width: '400px',
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            draggable: false,
+            position: 'center'
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {
@@ -108,7 +126,9 @@ export class DotTagsListComponent {
             width: '400px',
             data: { tag },
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            draggable: false,
+            position: 'center'
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {
@@ -124,11 +144,14 @@ export class DotTagsListComponent {
         this.confirmationService.confirm({
             message: this.dotMessageService.get('tags.confirm.delete.message', `${count}`),
             header: this.dotMessageService.get('tags.confirm.delete.header'),
-            acceptButtonStyleClass: 'p-button-outlined',
-            rejectButtonStyleClass: 'p-button-primary',
+            acceptLabel: this.dotMessageService.get('tags.delete'),
+            rejectLabel: this.dotMessageService.get('tags.cancel'),
+            acceptButtonStyleClass: 'p-button-primary',
+            rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
             closable: true,
             closeOnEscape: true,
+            position: 'center',
             accept: () => this.store.deleteTags()
         });
     }
@@ -136,9 +159,11 @@ export class DotTagsListComponent {
     openImportDialog(): void {
         const ref = this.dialogService.open(DotTagsImportComponent, {
             header: this.dotMessageService.get('tags.import.header'),
-            width: '500px',
+            width: '600px',
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            draggable: false,
+            position: 'center'
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {
