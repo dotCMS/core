@@ -170,6 +170,8 @@ const REPLACE_LAST_CRUMB_RULES: Record<string, ReplaceLastCrumbRule> = {
         }
     },
     analyticsTab: {
+        // Menu item ids for analytics tabs are strings (e.g. 'analytics-engagement'). Strict type
+        // check avoids RegExp.test() coercing non-strings (e.g. 0 → "0", null → "null").
         test: (item, last) => {
             const regex = /^analytics-/;
             const itemId = item.id;

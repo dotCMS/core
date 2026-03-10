@@ -130,8 +130,8 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             };
 
             /**
-             * Normalizes a URL by removing the '/dotAdmin/#' prefix if present.
-             * Ensures consistent URL comparison regardless of format.
+             * Normalizes a URL for breadcrumb matching: no hash and empty hash (page.html#) both
+             * yield the path (e.g. page.html), so URLs compare consistently.
              *
              * @param url - The URL to normalize
              * @returns The normalized URL path
@@ -139,7 +139,6 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             const normalizeUrl = (url: string | undefined): string => {
                 if (!url) return '';
                 const afterHash = url.replace(/^.*#/, '');
-                // Empty hash (e.g. page.html#) → treat as path without hash for consistent matching
                 if (afterHash === '' && url.includes('#')) {
                     return url.replace(/#$/, '');
                 }

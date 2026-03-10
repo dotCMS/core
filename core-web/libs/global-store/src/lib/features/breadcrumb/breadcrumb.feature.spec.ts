@@ -213,6 +213,16 @@ describe('withBreadcrumbs Feature', () => {
             const parsedData = JSON.parse(savedData);
             expect(parsedData).toEqual(expectedBreadcrumbs);
         });
+
+        it('should not break when sessionStorage.setItem throws (e.g. private browsing, quota)', () => {
+            sessionStorageSetItemSpy.mockImplementation(() => {
+                throw new DOMException('QuotaExceededError');
+            });
+
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(() => TestBed.flushEffects()).not.toThrow();
+            expect(store.breadcrumbs().length).toBe(3);
+        });
     });
 
     describe('Set Breadcrumbs', () => {
