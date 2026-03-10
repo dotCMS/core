@@ -841,12 +841,18 @@ describe('createAnalyticsQueue', () => {
         it('should handle corrupted storage gracefully', () => {
             mockSessionStorage['dot_analytics_queue_test-tab-id-12345'] = 'invalid-json{';
 
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+                // Prevent logger.error (which uses console.error) from affecting the test
+            });
+
             const queue = createAnalyticsQueue(mockConfig);
 
             expect(() => queue.initialize()).not.toThrow();
 
             // Should clear corrupted storage
             expect(sessionStorageRemoveItem).toHaveBeenCalled();
+
+            consoleErrorSpy.mockRestore();
         });
 
         it('should handle missing required fields in persisted queue', () => {
