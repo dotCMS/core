@@ -63,7 +63,7 @@
             "defaultConfiguration": ""
         },
         "serve": {
-            "executor": "@angular-devkit/build-angular:dev-server",
+            "executor": "@angular/build:dev-server",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy.conf.json",
                 "buildTarget": "dotcdn:build"
@@ -76,7 +76,7 @@
             "continuous": true
         },
         "extract-i18n": {
-            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcdn:build"
             }

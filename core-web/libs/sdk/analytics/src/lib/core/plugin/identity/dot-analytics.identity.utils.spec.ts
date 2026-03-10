@@ -30,7 +30,7 @@ describe('DotAnalytics Identity Utils', () => {
     });
 
     beforeEach(() => {
-        // Mock Location object
+        // Base mock Location (passed to extractUTMParameters; we cannot redefine window.location in JSDOM)
         mockLocation = {
             href: 'https://example.com/page?utm_source=google&utm_medium=cpc',
             pathname: '/page',
@@ -41,14 +41,6 @@ describe('DotAnalytics Identity Utils', () => {
             origin: 'https://example.com'
         } as Location;
 
-        // Mock window.location
-        Object.defineProperty(window, 'location', {
-            value: mockLocation,
-            writable: true,
-            configurable: true
-        });
-
-        // Reset mocks
         jest.clearAllMocks();
     });
 
@@ -63,35 +55,22 @@ describe('DotAnalytics Identity Utils', () => {
 
     describe('extractUTMParameters', () => {
         it('should return empty object when no UTM parameters are present', () => {
-            const mockLocationNoUTM = {
+            const locationNoUTM = {
                 ...mockLocation,
                 search: '?param=value&other=test'
             } as Location;
 
-            // Temporarily override window.location
-            Object.defineProperty(window, 'location', {
-                value: mockLocationNoUTM,
-                writable: true,
-                configurable: true
-            });
-
-            const result = extractUTMParameters(window.location);
+            const result = extractUTMParameters(locationNoUTM);
             expect(result).toEqual({});
         });
 
         it('should extract UTM parameters correctly', () => {
-            const mockLocationWithUTM = {
+            const locationWithUTM = {
                 ...mockLocation,
                 search: '?utm_source=google&utm_medium=cpc&utm_campaign=spring_sale&utm_id=12345'
             } as Location;
 
-            Object.defineProperty(window, 'location', {
-                value: mockLocationWithUTM,
-                writable: true,
-                configurable: true
-            });
-
-            const result = extractUTMParameters(window.location);
+            const result = extractUTMParameters(locationWithUTM);
             expect(result).toEqual({
                 source: 'google',
                 medium: 'cpc',
@@ -100,18 +79,12 @@ describe('DotAnalytics Identity Utils', () => {
         });
 
         it('should ignore non-UTM parameters', () => {
-            const mockLocationMixed = {
+            const locationMixed = {
                 ...mockLocation,
                 search: '?utm_source=google&regular_param=value&utm_medium=cpc&other=test'
             } as Location;
 
-            Object.defineProperty(window, 'location', {
-                value: mockLocationMixed,
-                writable: true,
-                configurable: true
-            });
-
-            const result = extractUTMParameters(window.location);
+            const result = extractUTMParameters(locationMixed);
             expect(result).toEqual({
                 source: 'google',
                 medium: 'cpc'
@@ -119,18 +92,12 @@ describe('DotAnalytics Identity Utils', () => {
         });
 
         it('should handle partial UTM parameters', () => {
-            const mockLocationPartial = {
+            const locationPartial = {
                 ...mockLocation,
                 search: '?utm_source=facebook&utm_campaign=summer'
             } as Location;
 
-            Object.defineProperty(window, 'location', {
-                value: mockLocationPartial,
-                writable: true,
-                configurable: true
-            });
-
-            const result = extractUTMParameters(window.location);
+            const result = extractUTMParameters(locationPartial);
             expect(result).toEqual({
                 source: 'facebook',
                 campaign: 'summer'
@@ -138,18 +105,12 @@ describe('DotAnalytics Identity Utils', () => {
         });
 
         it('should handle URL encoded UTM parameters', () => {
-            const mockLocationEncoded = {
+            const locationEncoded = {
                 ...mockLocation,
                 search: '?utm_source=google&utm_campaign=spring%20sale&utm_id=test%201'
             } as Location;
 
-            Object.defineProperty(window, 'location', {
-                value: mockLocationEncoded,
-                writable: true,
-                configurable: true
-            });
-
-            const result = extractUTMParameters(window.location);
+            const result = extractUTMParameters(locationEncoded);
             expect(result).toEqual({
                 source: 'google',
                 campaign: 'spring sale'
