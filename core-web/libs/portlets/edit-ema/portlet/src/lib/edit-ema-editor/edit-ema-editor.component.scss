@@ -19,21 +19,27 @@
     height: 0;
 }
 
-dot-uve-palette {
-    transition: all $basic-speed ease-in-out;
-
+.palette-wrapper {
     grid-column: 1 / 2;
     grid-row: 2 / -1;
-
-    &.closed {
-        width: 0 !important;
-        border-left: none;
-        min-width: 0;
-    }
+    overflow: hidden;
+    width: 0;
+    transition: width $slow-animation-speed ease-in-out;
 
     &.open {
-        width: 18.75rem !important;
+        width: 18.75rem;
+    }
+
+    dot-uve-palette {
+        width: 18.75rem;
         min-width: 18.75rem;
+        display: block;
+        transform: translateX(-100%);
+        transition: transform $slow-animation-speed ease-in-out;
+    }
+
+    &.open dot-uve-palette {
+        transform: translateX(0);
     }
 }
 
@@ -68,7 +74,7 @@ dot-results-seo-tool {
     grid-column: 2 / 3;
 }
 
-// Right sidebar wrapper with width transition
+// Right sidebar wrapper with slide transition
 .edit-panel-wrapper {
     grid-column: 3 / -1;
     grid-row: 2 / -1;
@@ -78,6 +84,17 @@ dot-results-seo-tool {
 
     &.open {
         width: 18.75rem;
+    }
+
+    > * {
+        width: 18.75rem;
+        min-width: 18.75rem;
+        transform: translateX(100%);
+        transition: transform $basic-speed ease-in-out;
+    }
+
+    &.open > * {
+        transform: translateX(0);
     }
 
     ::ng-deep {

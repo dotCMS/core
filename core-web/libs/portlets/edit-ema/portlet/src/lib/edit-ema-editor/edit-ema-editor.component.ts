@@ -87,7 +87,6 @@ import {
     CONTAINER_INSERT_ERROR,
     EDITOR_STATE,
     NG_CUSTOM_EVENTS,
-    PALETTE_CLASSES,
     UVE_STATUS
 } from '../shared/enums';
 import {
@@ -370,10 +369,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly UVE_STATUS = UVE_STATUS;
     readonly UVE_MODE = UVE_MODE;
     readonly DotCMSClazzes = DotCMSClazzes;
-
-    readonly $paletteClass = computed(() => {
-        return this.$paletteOpen ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
-    });
 
     readonly $viewCanvasOuterStyles = this.uveStore.$viewCanvasOuterStyles;
     readonly $viewCanvasInnerStyles = this.uveStore.$viewCanvasInnerStyles;

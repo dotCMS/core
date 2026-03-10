@@ -17,10 +17,9 @@
 }
 
 @if (uveStore.editorCanEditContent()) {
-    <dot-uve-palette
-        [ngClass]="$paletteClass()"
-        (onNodeSelect)="handlePaletteNodeSelect($event)"
-        data-testId="palette" />
+    <div class="palette-wrapper" [class.open]="$paletteOpen">
+        <dot-uve-palette (onNodeSelect)="handlePaletteNodeSelect($event)" data-testId="palette" />
+    </div>
 }
 
 <div

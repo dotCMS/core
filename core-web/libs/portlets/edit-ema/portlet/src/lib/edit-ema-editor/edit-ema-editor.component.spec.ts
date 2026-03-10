@@ -103,7 +103,7 @@ import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.s
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     EDIT_ACTION_PAYLOAD_MOCK,
     MOCK_RESPONSE_VTL,
@@ -576,20 +576,18 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should hide palette when state changes', () => {
-                // First, make sure palette is visible by default
-                expect(spectator.query(byTestId('palette')).classList).toContain(
-                    PALETTE_CLASSES.OPEN
-                );
+                const wrapper = spectator.query('.palette-wrapper');
+
+                // First, make sure palette wrapper is open by default
+                expect(wrapper.classList).toContain('open');
 
                 // Simulate Click the toggle button
                 store.setPaletteOpen(false);
 
                 spectator.detectChanges();
 
-                // Palette should now be hidden
-                expect(spectator.query(byTestId('palette')).classList).toContain(
-                    PALETTE_CLASSES.CLOSED
-                );
+                // Palette wrapper should no longer have the open class
+                expect(wrapper.classList).not.toContain('open');
             });
 
             it('should have a toolbar', () => {
