@@ -1,4 +1,4 @@
-import { describe } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -30,7 +30,7 @@ export const uveStoreMock = signalStore(
     withPage()
 );
 
-describe('UVEStore', () => {
+describe('withPage', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
 
@@ -60,53 +60,66 @@ describe('UVEStore', () => {
     });
 
     it('should have initial state', () => {
-        expect(store.isClientReady()).toBeFalsy();
+        expect(store.isClientReady()).toBe(false);
         expect(store.requestMetadata()).toEqual(null);
         expect(store.pageAssetResponse()).toEqual(null);
-        expect(store.isClientReady()).toBe(false);
     });
 
-    describe('withMethods', () => {
+    describe('client / request metadata', () => {
         it('should set the client ready status', () => {
             store.setIsClientReady(true);
-
             expect(store.isClientReady()).toBe(true);
         });
 
-        describe('setClientConfiguration', () => {
-            it('should set the client configuration', () => {
-                const graphql = {
-                    query: 'test',
-                    variables: {
-                        depth: '1'
-                    }
-                };
-
-                store.setCustomClient(graphql);
-
-                expect(store.requestMetadata()).toEqual(graphql);
-            });
+        it('should set request metadata via setCustomClient', () => {
+            const graphql = {
+                query: 'test',
+                variables: { depth: '1' }
+            };
+            store.setCustomClient(graphql);
+            expect(store.requestMetadata()).toEqual(graphql);
         });
 
-        it('should reset the client configuration', () => {
+        /**
+         * resetClientConfiguration clears page asset and ready state but intentionally
+         * preserves requestMetadata so headless/GraphQL clients keep their query across
+         * pageLoad cycles (see withPageApi / shell behavior).
+         */
+        it('should reset page asset and ready state but preserve requestMetadata', () => {
             const graphql = {
                 query: 'test',
                 variables: {}
             };
-
             store.setCustomClient(graphql);
+            store.setIsClientReady(true);
+            patchStoreState(store, {
+                pageParams: {
+                    url: '/x',
+                    language_id: '1',
+                    [PERSONA_KEY]: 'p',
+                    mode: UVE_MODE.EDIT
+                }
+            });
+            store.setPageAsset({
+                pageAsset: { page: { identifier: 'p1' } } as Parameters<
+                    typeof store.setPageAsset
+                >[0]['pageAsset']
+            });
+
             store.resetClientConfiguration();
 
-            expect(store.requestMetadata()).toEqual(null);
+            expect(store.requestMetadata()).toEqual(graphql);
+            expect(store.isClientReady()).toBe(false);
+            expect(store.pageAssetResponse()).toBeNull();
         });
     });
 
     describe('$requestWithParams', () => {
-        it('should return null when graphql is null', () => {
+        it('should return null when requestMetadata is null', () => {
             expect(store.$requestWithParams()).toBeNull();
         });
 
-        it('should return null when graphql is not set', () => {
+        it('should return null after reset when graphql was never set', () => {
             store.resetClientConfiguration();
             expect(store.$requestWithParams()).toBeNull();
         });
@@ -114,11 +127,8 @@ describe('UVEStore', () => {
         it('should merge graphql variables with page params', () => {
             const graphql = {
                 query: 'test query',
-                variables: {
-                    depth: '1'
-                }
+                variables: { depth: '1' }
             };
-
             const pageParams: DotPageApiParams = {
                 url: '/test-url',
                 mode: UVE_MODE.EDIT,
@@ -126,13 +136,10 @@ describe('UVEStore', () => {
                 variantName: 'DEFAULT',
                 [PERSONA_KEY]: 'persona-id-123'
             };
-
             patchStoreState(store, { pageParams });
             store.setCustomClient(graphql);
 
-            const result = store.$requestWithParams();
-
-            expect(result).toEqual({
+            expect(store.$requestWithParams()).toEqual({
                 query: 'test query',
                 variables: {
                     depth: '1',
@@ -148,12 +155,8 @@ describe('UVEStore', () => {
         it('should preserve existing graphql variables when merging with page params', () => {
             const graphql = {
                 query: 'test query',
-                variables: {
-                    depth: '2',
-                    customVar: 'custom-value'
-                }
+                variables: { depth: '2', customVar: 'custom-value' }
             };
-
             const pageParams: DotPageApiParams = {
                 url: '/another-url',
                 mode: UVE_MODE.PREVIEW,
@@ -161,13 +164,10 @@ describe('UVEStore', () => {
                 variantName: 'VARIANT_A',
                 [PERSONA_KEY]: 'persona-id-456'
             };
-
             patchStoreState(store, { pageParams });
             store.setCustomClient(graphql);
 
-            const result = store.$requestWithParams();
-
-            expect(result).toEqual({
+            expect(store.$requestWithParams()).toEqual({
                 query: 'test query',
                 variables: {
                     depth: '2',
@@ -184,24 +184,17 @@ describe('UVEStore', () => {
         it('should handle missing optional page params', () => {
             const graphql = {
                 query: 'test query',
-                variables: {
-                    depth: '1'
-                }
+                variables: { depth: '1' }
             };
-
             const pageParams: DotPageApiParams = {
                 url: '/test-url',
                 language_id: '1',
                 [PERSONA_KEY]: 'persona-id-123'
-                // mode and variantName are missing
             };
-
             patchStoreState(store, { pageParams });
             store.setCustomClient(graphql);
 
-            const result = store.$requestWithParams();
-
-            expect(result).toEqual({
+            expect(store.$requestWithParams()).toEqual({
                 query: 'test query',
                 variables: {
                     depth: '1',

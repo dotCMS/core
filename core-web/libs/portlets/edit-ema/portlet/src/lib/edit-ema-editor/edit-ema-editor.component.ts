@@ -54,14 +54,7 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import {
-    DotCMSInlineEditingPayload,
-    DotCMSInlineEditingType,
-    DotCMSPage,
-    DotCMSURLContentMap,
-    DotCMSUVEAction,
-    UVE_MODE
-} from '@dotcms/types';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
@@ -750,8 +743,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         if (this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
-
-        this.uveStore.setIsClientReady(true);
     }
 
     onIframeDocHeightChange(height: number): void {
@@ -1130,8 +1121,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             this.host
         );
-        // TODO: Looks like we don't need this anymore
-        // this.iframeMessenger.sendPageData(this.#clientPayload());
     }
 
     private handleDuplicatedContentlet() {
@@ -1464,37 +1453,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
     }
 
-    /**
-     * Handle the inline editing event
-     *
-     * @param {*} { type, data }
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    #handleInlineEditingEvent({
-        type,
-        data
-    }: {
-        type: DotCMSInlineEditingType;
-        data?: DotCMSInlineEditingPayload;
-    }) {
-        switch (type) {
-            case 'BLOCK_EDITOR':
-                this.blockSidebar?.open(data);
-                break;
-
-            case 'WYSIWYG':
-                this.inlineEditingService.initEditor();
-                this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
-                break;
-
-            default:
-                console.warn('Unknown block editor type', type);
-
-                break;
-        }
-    }
-
     private createNewTranslation(language: DotLanguage, page: DotCMSPage): void {
         this.confirmationService.confirm({
             header: this.dotMessageService.get(
@@ -1544,10 +1502,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         };
     }
 
-    #resetContentletArea(): void {
-        this.uveStore.resetContentletArea();
-    }
-
     protected handleSelectContent(contentletActionPayload: ActionPayload): void {
         this.uveStore.setActiveContentlet(contentletActionPayload);
         this.#openStyleEditor();
@@ -1584,18 +1538,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             severity: 'success',
             summary: this.dotMessageService.get('Copied'),
             life: 3000
-        });
-    }
-
-    #scrollToTopLeft(): void {
-        const el = this.editorContent?.nativeElement;
-        if (!el) {
-            return;
-        }
-
-        requestAnimationFrame(() => {
-            el.scrollLeft = 0;
-            el.scrollTop = 0;
         });
     }
 

@@ -169,8 +169,12 @@ export function withPage() {
                     return false;
                 },
                 resetClientConfiguration: () => {
-                    patchState(store, { ...pageLoadingConfigState });
-                    store.clearHistory();
+                    patchState(store, {
+                        pageAssetResponse: null,
+                        isClientReady: false,
+                        history: [],
+                        historyPointer: -1
+                    });
                 },
                 addCurrentPageToHistory: () => {
                     const currentResponse = store.pageAssetResponse();

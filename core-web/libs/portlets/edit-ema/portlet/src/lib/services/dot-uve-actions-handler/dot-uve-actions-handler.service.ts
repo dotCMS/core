@@ -213,10 +213,10 @@ export class DotUveActionsHandlerService {
                     return;
                 }
 
-                const { graphql, params, query: rawQuery } = devConfig || {};
-                const { query = rawQuery, variables } = graphql || {};
+                const { graphql, params } = devConfig || {};
+                const { query, variables } = graphql || {};
 
-                if (query || rawQuery) {
+                if (query) {
                     uveStore.setCustomClient({
                         query,
                         variables: (variables ?? {}) as Record<string, string>
@@ -224,6 +224,7 @@ export class DotUveActionsHandlerService {
                 }
 
                 const pageParams = convertClientParamsToPageParams(params);
+
                 uveStore.pageReload(pageParams);
                 uveStore.setIsClientReady(true);
             },
