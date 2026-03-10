@@ -80,7 +80,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
-public class ContentFactoryImplTest extends IntegrationTestBase {
+public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     private static Host site;
 

@@ -164,7 +164,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Inits the indexes and starts the reindex process if no indexes are found
      */
     @CloseDBIfOpened
-    public synchronized void checkAndInitializeIndex() {
+    public synchronized void checkAndInitialiazeIndex() {
         try {
             // if we don't have a working index, create it
             if (!indexReady()) {

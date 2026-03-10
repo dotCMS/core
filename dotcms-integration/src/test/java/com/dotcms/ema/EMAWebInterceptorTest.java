@@ -64,7 +64,7 @@ public class EMAWebInterceptorTest {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        APILocator.getContentletIndexAPI().checkAndInitializeIndex();
+        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
 
         appsAPI = APILocator.getAppsAPI();
         emaWebInterceptor = new EMAWebInterceptor();

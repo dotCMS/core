@@ -51,7 +51,7 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
-        APILocator.getContentletIndexAPI().checkAndInitializeIndex();
+        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
         IntegrationTestInitService.getInstance().init();
 
     }

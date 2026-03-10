@@ -16,6 +16,7 @@ import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.business.RelationshipFactory;
 import com.dotcms.contenttype.business.RelationshipFactoryImpl;
 import com.dotcms.cube.CubeJSClientFactory;
+import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
