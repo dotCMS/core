@@ -315,15 +315,7 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                         // Only process if we don't have a matching breadcrumb for the current URL
                         if (!hasMatchingBreadcrumb) {
-                            // Preserve sub-route crumbs (e.g. analytics tab) that child components
-                            // may have appended before the menu finished loading on page reload.
-                            // These crumbs have an id but no url (they're not navigable routes).
-                            const pendingCrumbs = breadcrumbs.filter(
-                                (crumb) => crumb.id && !crumb.url
-                            );
                             store._processUrl(currentUrl);
-                            // Re-append them so they survive the base breadcrumb reset
-                            pendingCrumbs.forEach((crumb) => store.appendCrumb(crumb));
                         }
                     }
                 });
