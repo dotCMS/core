@@ -271,8 +271,25 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             return;
         }
 
-        this.valueChange.emit(value);
-        this.onChange?.(JSON.stringify(value));
+        // Eagerly include charCount/wordCount/readingTime in the doc attrs so the
+        // API response always contains this metadata. Without this patch the attrs
+        // would only arrive after the 250 ms debounce fired by the (keyup) handler.
+        const charCount = this.characterCount?.characters?.() ?? 0;
+        const updatedValue: JSONContent =
+            charCount > 0
+                ? {
+                      ...value,
+                      attrs: {
+                          ...(value.attrs || {}),
+                          charCount,
+                          wordCount: this.characterCount?.words?.() ?? 0,
+                          readingTime: this.readingTime
+                      }
+                  }
+                : value;
+
+        this.valueChange.emit(updatedValue);
+        this.onChange?.(JSON.stringify(updatedValue));
         this.updateCharLimitValidity();
     }
 

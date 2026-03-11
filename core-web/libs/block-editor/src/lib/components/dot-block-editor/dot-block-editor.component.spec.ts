@@ -251,6 +251,83 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
             } as unknown as DotBlockEditorComponent['editor'];
         }
 
+        describe('doc attrs (charCount / wordCount / readingTime)', () => {
+            it('should include charCount, wordCount and readingTime in the emitted value when content is not empty', () => {
+                const blockEditorComponent = spectator.query(DotBlockEditorComponent);
+                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+
+                // 265 words at 265 words-per-minute (Medium formula) → readingTime = Math.ceil(265/265) = 1
+                blockEditorComponent.editor = createMockEditor(100, 265);
+                blockEditorComponent.disabled = false;
+
+                const valueWithoutAttrs: typeof BLOCK_EDITOR_FIELD = {
+                    ...BLOCK_EDITOR_FIELD,
+                    attrs: {}
+                };
+
+                blockEditorComponent.onBlockEditorChange(valueWithoutAttrs);
+
+                expect(emitSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        attrs: expect.objectContaining({
+                            charCount: 100,
+                            wordCount: 265,
+                            readingTime: 1
+                        })
+                    })
+                );
+            });
+
+            it('should not override existing attrs when patching doc attrs', () => {
+                const blockEditorComponent = spectator.query(DotBlockEditorComponent);
+                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+
+                blockEditorComponent.editor = createMockEditor(50, 10);
+                blockEditorComponent.disabled = false;
+
+                blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
+
+                // charCount/wordCount are overwritten by the live values from the mock editor;
+                // any other attrs that were already on the doc should still be present.
+                expect(emitSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        type: BLOCK_EDITOR_FIELD.type,
+                        content: BLOCK_EDITOR_FIELD.content,
+                        attrs: expect.objectContaining({
+                            charCount: 50,
+                            wordCount: 10
+                        })
+                    })
+                );
+            });
+
+            it('should emit value unchanged when the editor has no content (charCount = 0)', () => {
+                const blockEditorComponent = spectator.query(DotBlockEditorComponent);
+                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+
+                blockEditorComponent.editor = createMockEditor(0, 0);
+                blockEditorComponent.disabled = false;
+
+                blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
+
+                expect(emitSpy).toHaveBeenCalledWith(BLOCK_EDITOR_FIELD);
+            });
+
+            it('should emit value unchanged when the editor is not yet initialized', () => {
+                const blockEditorComponent = spectator.query(DotBlockEditorComponent);
+                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+
+                // Force the editor to be null to simulate the case where the editor is not yet
+                // initialized (e.g., writeValue called before the async ngOnInit completes).
+                blockEditorComponent.editor = null;
+                blockEditorComponent.disabled = false;
+
+                blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
+
+                expect(emitSpy).toHaveBeenCalledWith(BLOCK_EDITOR_FIELD);
+            });
+        });
+
         it('should set charLimitExceeded error when character count exceeds charLimit', () => {
             const blockEditorComponent = spectator.query(DotBlockEditorComponent);
             const control = spectator.component.form.get('block');
