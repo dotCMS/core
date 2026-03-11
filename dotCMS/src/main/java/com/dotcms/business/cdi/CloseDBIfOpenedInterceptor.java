@@ -1,8 +1,7 @@
 package com.dotcms.business.cdi;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.util.Logger;
+import com.dotcms.business.interceptor.CloseDBIfOpenedHandler;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -12,12 +11,8 @@ import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 
 /**
- * CDI interceptor for {@link CloseDBIfOpened}. Closes the database connection if a new one
- * was opened during method execution.
- *
- * <p>This interceptor fires at the Weld proxy boundary for CDI-managed beans, complementing
- * the ByteBuddy advice that instruments non-CDI classes at load-time. The
- * {@link InterceptorGuard} prevents double-processing when both mechanisms are active.</p>
+ * CDI interceptor for {@link CloseDBIfOpened}. Delegates to {@link CloseDBIfOpenedHandler}
+ * for the actual logic, keeping the implementation DRY with the ByteBuddy advice.
  */
 @Interceptor
 @CloseDBIfOpened
@@ -32,16 +27,15 @@ public class CloseDBIfOpenedInterceptor implements Serializable {
             return context.proceed();
         }
 
-        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
+        final boolean isNewConnection = CloseDBIfOpenedHandler.onEnter();
         try {
             return context.proceed();
         } finally {
             try {
                 final Method method = context.getMethod();
                 final CloseDBIfOpened annotation = method.getAnnotation(CloseDBIfOpened.class);
-                if (annotation != null && annotation.connection() && isNewConnection) {
-                    DbConnectionFactory.closeSilently();
-                }
+                final boolean connectionParam = annotation == null || annotation.connection();
+                CloseDBIfOpenedHandler.onExit(isNewConnection, connectionParam);
             } finally {
                 InterceptorGuard.release(CloseDBIfOpened.class);
             }

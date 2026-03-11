@@ -1,7 +1,7 @@
 package com.dotcms.business.cdi;
 
 import com.dotcms.business.CloseDB;
-import com.dotmarketing.db.DbConnectionFactory;
+import com.dotcms.business.interceptor.CloseDBHandler;
 
 import java.io.Serializable;
 import javax.annotation.Priority;
@@ -10,12 +10,8 @@ import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 
 /**
- * CDI interceptor for {@link CloseDB}. Always closes and commits the database connection
- * after method execution, regardless of whether the connection existed before the call.
- *
- * <p>This interceptor fires at the Weld proxy boundary for CDI-managed beans, complementing
- * the ByteBuddy advice that instruments non-CDI classes at load-time. The
- * {@link InterceptorGuard} prevents double-processing when both mechanisms are active.</p>
+ * CDI interceptor for {@link CloseDB}. Delegates to {@link CloseDBHandler}
+ * for the actual logic, keeping the implementation DRY with the ByteBuddy advice.
  */
 @Interceptor
 @CloseDB
@@ -34,13 +30,9 @@ public class CloseDBInterceptor implements Serializable {
             return context.proceed();
         } finally {
             try {
-                DbConnectionFactory.closeAndCommit();
+                CloseDBHandler.onExit();
             } finally {
-                try {
-                    DbConnectionFactory.closeSilently();
-                } finally {
-                    InterceptorGuard.release(CloseDB.class);
-                }
+                InterceptorGuard.release(CloseDB.class);
             }
         }
     }
