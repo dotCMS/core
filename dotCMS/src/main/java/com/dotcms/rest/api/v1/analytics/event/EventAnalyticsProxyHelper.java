@@ -154,7 +154,6 @@ public class EventAnalyticsProxyHelper {
      * @param cbResponse raw response from the upstream service
      * @return dotCMS-wrapped {@link Response}
      */
-    @SuppressWarnings("unchecked")
     static Response wrapUpstreamResponse(final CircuitBreakerUrl.Response<String> cbResponse) {
         if (cbResponse == null || !UtilMethods.isSet(cbResponse.getResponse())) {
             Logger.warn(EventAnalyticsProxyHelper.class,
@@ -166,30 +165,22 @@ public class EventAnalyticsProxyHelper {
                     .build();
         }
 
+        final int statusCode = cbResponse.getStatusCode();
+
         try {
-            final Map<String, Object> upstreamJson = DotObjectMapperProvider.getInstance()
+            final Object parsedBody = DotObjectMapperProvider.getInstance()
                     .getDefaultObjectMapper()
-                    .readValue(cbResponse.getResponse(), Map.class);
+                    .readValue(cbResponse.getResponse(), Object.class);
 
-            if (upstreamJson.containsKey("error")) {
-                final Map<String, Object> error = (Map<String, Object>) upstreamJson.get("error");
-                final String errorCode = String.valueOf(error.getOrDefault("code", "UPSTREAM_ERROR"));
-                final String errorMessage = String.valueOf(error.getOrDefault("message", "Unknown upstream error"));
-                return Response.status(cbResponse.getStatusCode())
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(errorCode, errorMessage))))
-                        .build();
-            }
-
-            return Response.ok(new ResponseEntityView<>(upstreamJson.get("data"))).build();
+            return Response.status(statusCode)
+                    .entity(new ResponseEntityView<>(parsedBody))
+                    .build();
 
         } catch (final Exception e) {
-            Logger.error(EventAnalyticsProxyHelper.class,
-                    "Failed to parse upstream analytics response: " + e.getMessage(), e);
-            return Response.serverError()
-                    .entity(new ResponseEntityView<>(
-                            List.of(new ErrorEntity("PARSE_ERROR",
-                                    "Failed to parse analytics service response"))))
+            Logger.warn(EventAnalyticsProxyHelper.class,
+                    "Upstream response is not valid JSON (status=" + statusCode + "), forwarding as-is");
+            return Response.status(statusCode)
+                    .entity(new ResponseEntityView<>(cbResponse.getResponse()))
                     .build();
         }
     }
