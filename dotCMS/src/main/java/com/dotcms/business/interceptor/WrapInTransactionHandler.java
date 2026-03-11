@@ -53,6 +53,7 @@ public final class WrapInTransactionHandler {
                 dbOps.setAutoCommit(true);
             }
             if (isNewConnection) {
+                txOps.closeSessionSilently();
                 dbOps.closeConnection();
             }
             txOps.throwException(e);
