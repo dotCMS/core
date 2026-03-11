@@ -2,6 +2,17 @@
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd"
 version="2.0" bean-discovery-mode="annotated">
+    <interceptors>
+        <!-- Enterprise license check must fire first to reject unauthorized calls early -->
+        <class>com.dotcms.business.cdi.EnterpriseFeatureInterceptor</class>
+        <!-- Database connection and transaction interceptors -->
+        <class>com.dotcms.business.cdi.CloseDBIfOpenedInterceptor</class>
+        <class>com.dotcms.business.cdi.CloseDBInterceptor</class>
+        <class>com.dotcms.business.cdi.WrapInTransactionInterceptor</class>
+        <class>com.dotcms.business.cdi.ExternalTransactionInterceptor</class>
+        <!-- Observability -->
+        <class>com.dotcms.business.cdi.LogTimeInterceptor</class>
+    </interceptors>
     <scan>
         <exclude name="org.apache.**"/>
     </scan>
