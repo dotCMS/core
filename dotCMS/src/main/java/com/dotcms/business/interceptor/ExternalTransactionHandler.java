@@ -110,37 +110,19 @@ public final class ExternalTransactionHandler {
      */
     public static <T> T externalizeTransaction(
             final WrapInTransactionHandler.ThrowableSupplier<T> delegate) throws Exception {
-        final DatabaseConnectionOps dbOps = InterceptorServiceProvider.getDatabaseOps();
-        final TransactionOps txOps = InterceptorServiceProvider.getTransactionOps();
-
-        final Connection currentConnection = dbOps.getConnection();
-        final Object currentSession = txOps.getSession();
-
-        final Connection newConn = dbOps.newConnection();
-        dbOps.setConnection(newConn);
-
-        final Object newSession = txOps.createNewSession(newConn);
-        txOps.setSession(newSession);
-        txOps.startTransaction();
-
-        T result = null;
+        final ExternalTransactionState state = onEnter();
         try {
-            final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
-            result = delegate.execute();
-            txOps.handleTransactionInterruption(newConn, threadStack);
-            txOps.commitTransaction();
+            final T result = delegate.execute();
+            onSuccess(state);
+            return result;
         } catch (Throwable e) {
-            txOps.rollbackTransaction();
+            onError(state);
             if (e instanceof Exception) {
                 throw (Exception) e;
             }
             throw new RuntimeException(e);
         } finally {
-            txOps.closeSessionSilently();
-            txOps.setSession(currentSession);
-            dbOps.setConnection(currentConnection);
+            onFinally(state);
         }
-
-        return result;
     }
 }
