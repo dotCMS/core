@@ -8,7 +8,7 @@ import { InputText } from 'primeng/inputtext';
 
 import { Editor } from '@tiptap/core';
 
-import { EditorModalDirective } from '../../../editor-modal/editor-modal.directive';
+import { EditorModalDirective } from '../../../editor-modal';
 
 /**
  * A popover component for editing image properties in the DotCMS block editor.

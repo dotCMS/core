@@ -27,7 +27,7 @@ import { Editor } from '@tiptap/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { EditorModalDirective } from '../../../editor-modal/editor-modal.directive';
+import { EditorModalDirective } from '../../../editor-modal';
 
 interface SearchResultItem {
     displayName: string;

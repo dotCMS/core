@@ -39,10 +39,12 @@ import {
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DragHandleDirective } from '../../ui/drag-handle/drag-handle.directive';
-import { DotAddButtonComponent } from '../../ui/add-button/dot-add-button.component';
-import { DotBubbleMenuComponent } from '../../ui/bubble-menu/dot-bubble-menu.component';
-import { DotContextMenuComponent } from '../../ui/context-menu/dot-context-menu.component';
+import {
+    DragHandleDirective,
+    DotAddButtonComponent,
+    DotBubbleMenuComponent,
+    DotContextMenuComponent
+} from '../../ui';
 import { AssetFormModule } from '../../extensions/asset-form/asset-form.module';
 import {
     BubbleFormComponent,

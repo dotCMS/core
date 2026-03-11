@@ -5,7 +5,7 @@ import { Card } from 'primeng/card';
 import { DotSpinnerComponent } from '@dotcms/ui';
 
 import { AngularNodeViewComponent } from '../../core/node-view/node-view-renderer';
-import { ContentletStatePipe } from '../../shared/pipes/contentlet-state/contentlet-state.pipe';
+import { ContentletStatePipe } from '../../shared';
 
 @Component({
     selector: 'dot-contentlet-block',

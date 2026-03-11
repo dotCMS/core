@@ -35,8 +35,7 @@ import { DotImageEditorPopoverComponent } from './components/dot-image-editor-po
 import { DotLinkEditorPopoverComponent } from './components/dot-link-editor-popover/dot-link-editor-popover.component';
 import { getContentletDataFromSelection } from './utils';
 
-import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../../extensions/ai-content-prompt/ai-content-prompt.extension';
-import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../../extensions/ai-image-prompt/ai-image-prompt.extension';
+import { AI_CONTENT_PROMPT_EXTENSION_NAME, AI_IMAGE_PROMPT_EXTENSION_NAME } from '../../extensions';
 import {
     codeIcon,
     headerIcons,
