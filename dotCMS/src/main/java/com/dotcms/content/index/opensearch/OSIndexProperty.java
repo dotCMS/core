@@ -45,6 +45,9 @@ public enum OSIndexProperty {
     /** Connection establishment timeout in milliseconds. No ES equivalent. */
     CONNECTION_TIMEOUT("OS_CONNECTION_TIMEOUT", null),
 
+    /** Retry sleep delay in seconds between connection attempts. No ES equivalent. */
+    CONNECTION_RETRY_SLEEP_SECONDS("OS_CONNECTION_RETRY_SLEEP_SECONDS", null),
+
     /** Socket read timeout in milliseconds. No ES equivalent. */
     SOCKET_TIMEOUT("OS_SOCKET_TIMEOUT", null),
 

@@ -24,15 +24,15 @@ import java.util.Set;
 /**
  * Vendor-neutral router implementation of {@link IndexAPI}.
  *
- * <p>Delegates every index operation to the appropriate vendor implementation based
- * on the active feature flags:</p>
+ * <p>Routing is controlled by {@code FEATURE_FLAG_OPEN_SEARCH_PHASE}. Each operation
+ * delegates based on the current {@link IndexConfigHelper.MigrationPhase}:</p>
  * <ul>
- *   <li><strong>Read operations</strong> — routed to {@link OSIndexAPIImpl} when
- *       {@code FEATURE_FLAG_OPEN_SEARCH_READ} is enabled, otherwise to {@link ESIndexAPI}.</li>
- *   <li><strong>Write operations</strong> — dual-write when
- *       {@code FEATURE_FLAG_OPEN_SEARCH_WRITE} is enabled: both {@link OSIndexAPIImpl} and
- *       {@link ESIndexAPI} receive the mutation so both indices stay consistent during
- *       the migration window. ES result is always authoritative.</li>
+ *   <li><strong>Phase 3 (COMPLETE)</strong> — all operations route exclusively to
+ *       {@link OSIndexAPIImpl}.</li>
+ *   <li><strong>Phases 0–2</strong> — read operations route to {@link ESIndexAPI};
+ *       mutating operations that must stay consistent (e.g. clearIndex, updateReplicas,
+ *       createAlias) are dual-written to both implementations so both indices
+ *       remain in sync during the migration window.</li>
  * </ul>
  *
  * <p>This class mirrors the pattern established by

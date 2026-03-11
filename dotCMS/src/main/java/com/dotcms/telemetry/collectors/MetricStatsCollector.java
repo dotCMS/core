@@ -10,6 +10,7 @@ import com.dotcms.telemetry.business.TimeoutConfig;
 import com.dotcms.telemetry.cache.MetricCacheConfig;
 import com.dotcms.telemetry.cache.MetricCacheManager;
 import com.dotcms.telemetry.util.MetricCaches;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
@@ -140,23 +141,44 @@ public class MetricStatsCollector {
 
                 try {
                     // Submit metric collection as a task with timeout
-                    final Callable<Optional<MetricValue>> task = () -> cacheManager.get(
-                        metricType.getName(),
-                        () -> {
-                            // Supplier called = cache miss
-                            flags[2] = true;
-                            final long computationStart = System.currentTimeMillis();
-                            try {
-                                final Optional<MetricValue> result = getMetricValue(metricType);
-                                timingData[0] = System.currentTimeMillis() - computationStart;
-                                return result;
-                            } catch (final DotDataException e) {
-                                timingData[0] = System.currentTimeMillis() - computationStart;
-                                Logger.error(this, "Error getting metric value for " + metricType.getName(), e);
-                                return Optional.empty();
+                    final Callable<Optional<MetricValue>> task = () -> {
+                        try {
+                            return cacheManager.get(
+                                metricType.getName(),
+                                () -> {
+                                    // Supplier called = cache miss
+                                    flags[2] = true;
+                                    final long computationStart = System.currentTimeMillis();
+                                    try {
+                                        final Optional<MetricValue> result = getMetricValue(metricType);
+                                        timingData[0] = System.currentTimeMillis() - computationStart;
+                                        return result;
+                                    } catch (final DotDataException e) {
+                                        timingData[0] = System.currentTimeMillis() - computationStart;
+                                        Logger.error(this, "Error getting metric value for " + metricType.getName(), e);
+                                        return Optional.empty();
+                                    }
+                                }
+                            );
+                        } finally {
+                            // Defensive cleanup: close any DB connection left on this thread's
+                            // ThreadLocal by metrics that don't manage their own connection lifecycle.
+                            // Without this, a non-DBMetricType that opens a connection via DotConnect
+                            // without cleanup will "poison" the ThreadLocal — causing wrapConnection()
+                            // in subsequent DBMetricType metrics to skip its closeSilently(), leaking
+                            // the connection when the executor thread terminates. See #34926.
+                            if (DbConnectionFactory.connectionExists()) {
+                                if (!(metricType instanceof DBMetricType)) {
+                                    Logger.warn(MetricStatsCollector.class,
+                                            String.format("MetricType '%s' (%s) left a DB connection open on the "
+                                                + "telemetry thread. This connection will be closed defensively. "
+                                                + "The metric should manage its own connection lifecycle.",
+                                                metricType.getName(), metricType.getClass().getSimpleName()));
+                                }
+                                DbConnectionFactory.closeSilently();
                             }
                         }
-                    );
+                    };
                     final Future<Optional<MetricValue>> future = executor.submit(task);
 
                     try {
