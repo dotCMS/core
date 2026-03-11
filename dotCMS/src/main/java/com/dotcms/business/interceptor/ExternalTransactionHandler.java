@@ -78,11 +78,11 @@ public final class ExternalTransactionHandler {
     }
 
     /**
-     * Called when the annotated method throws.
+     * Called when the annotated method throws. Rolls back the transaction.
+     * The caller is responsible for rethrowing the original exception.
      */
-    public static void onError(final ExternalTransactionState state, final Throwable thrown) throws Exception {
+    public static void onError(final ExternalTransactionState state) {
         InterceptorServiceProvider.getTransactionOps().rollbackTransaction();
-        InterceptorServiceProvider.getTransactionOps().throwException(thrown);
     }
 
     /**
@@ -97,5 +97,50 @@ public final class ExternalTransactionHandler {
             txOps.setSession(state.currentSession);
             dbOps.setConnection(state.currentConnection);
         }
+    }
+
+    // ---- Lambda convenience method (used by LocalTransaction.externalizeTransaction) ----
+
+    /**
+     * Wraps a lambda in an externalized transaction. Creates a new connection and transaction,
+     * executes the delegate, commits, and restores the original connection/session.
+     *
+     * @param delegate the operation to execute in the external transaction
+     * @return the result of the operation
+     */
+    public static <T> T externalizeTransaction(
+            final WrapInTransactionHandler.ThrowableSupplier<T> delegate) throws Exception {
+        final DatabaseConnectionOps dbOps = InterceptorServiceProvider.getDatabaseOps();
+        final TransactionOps txOps = InterceptorServiceProvider.getTransactionOps();
+
+        final Connection currentConnection = dbOps.getConnection();
+        final Object currentSession = txOps.getSession();
+
+        final Connection newConn = dbOps.newConnection();
+        dbOps.setConnection(newConn);
+
+        final Object newSession = txOps.createNewSession(newConn);
+        txOps.setSession(newSession);
+        txOps.startTransaction();
+
+        T result = null;
+        try {
+            final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
+            result = delegate.execute();
+            txOps.handleTransactionInterruption(newConn, threadStack);
+            txOps.commitTransaction();
+        } catch (Throwable e) {
+            txOps.rollbackTransaction();
+            if (e instanceof Exception) {
+                throw (Exception) e;
+            }
+            throw new RuntimeException(e);
+        } finally {
+            txOps.closeSessionSilently();
+            txOps.setSession(currentSession);
+            dbOps.setConnection(currentConnection);
+        }
+
+        return result;
     }
 }

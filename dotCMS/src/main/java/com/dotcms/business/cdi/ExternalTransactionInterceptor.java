@@ -37,8 +37,11 @@ public class ExternalTransactionInterceptor implements Serializable {
             ExternalTransactionHandler.onSuccess(state);
             return result;
         } catch (Throwable t) {
-            ExternalTransactionHandler.onError(state, t);
-            return null; // unreachable
+            ExternalTransactionHandler.onError(state);
+            if (t instanceof Exception) {
+                throw (Exception) t;
+            }
+            throw new RuntimeException(t);
         } finally {
             ExternalTransactionHandler.onFinally(state);
             InterceptorGuard.release(ExternalTransaction.class);

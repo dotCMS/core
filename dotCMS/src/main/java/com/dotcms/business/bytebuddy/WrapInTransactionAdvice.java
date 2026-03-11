@@ -23,7 +23,7 @@ public class WrapInTransactionAdvice {
             if (state != null) {
                 if (t != null) {
                     if (state.isLocalTransaction) {
-                        WrapInTransactionHandler.onError(state, t);
+                        WrapInTransactionHandler.onError(state);
                     }
                 } else if (state.isLocalTransaction) {
                     WrapInTransactionHandler.onSuccess(state);

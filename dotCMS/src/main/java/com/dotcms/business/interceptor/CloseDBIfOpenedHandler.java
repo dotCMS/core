@@ -28,4 +28,40 @@ public final class CloseDBIfOpenedHandler {
             InterceptorServiceProvider.getDatabaseOps().closeSilently();
         }
     }
+
+    // ---- Lambda convenience method (used by DbConnectionFactory.wrapConnection) ----
+
+    /**
+     * Wraps a lambda with connection cleanup. If no connection existed before the call,
+     * closes it silently afterward. Preserves thread interrupt status during cleanup.
+     *
+     * @param delegate the operation to execute
+     * @return the result of the operation
+     */
+    public static <T> T wrapConnection(
+            final WrapInTransactionHandler.ThrowableSupplier<T> delegate) throws Exception {
+        final DatabaseConnectionOps dbOps = InterceptorServiceProvider.getDatabaseOps();
+        final boolean isNewConnection = !dbOps.connectionExists();
+
+        try {
+            return delegate.execute();
+        } catch (Throwable e) {
+            if (e instanceof Exception) {
+                throw (Exception) e;
+            }
+            throw new RuntimeException(e);
+        } finally {
+            if (isNewConnection && dbOps.connectionExists()) {
+                // Preserve interrupted status but ensure connection cleanup completes
+                final boolean wasInterrupted = Thread.interrupted();
+                try {
+                    dbOps.closeSilently();
+                } finally {
+                    if (wasInterrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        }
+    }
 }
