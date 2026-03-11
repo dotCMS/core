@@ -9,13 +9,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.db.DbConnectionFactory;
 
-import java.sql.SQLException;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 
 /**
  * CDI-based health check for database availability.
@@ -64,20 +64,39 @@ public class DatabaseHealthCheck extends HealthCheckBase {
         }
 
         return measureExecution(() -> {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            Future<String> future = executor.submit(() -> {
-                try (Connection conn = DbConnectionFactory.getConnection()) {
+            final ExecutorService executor = Executors.newSingleThreadExecutor();
+            final Future<String> future = executor.submit(() -> {
+                // Bypass ThreadLocal caching — get a fresh connection directly from the pool
+                // to test actual database connectivity rather than validating cached state
+                Connection conn = null;
+                try {
+                    conn = DbConnectionFactory.getDataSource().getConnection();
                     if (conn == null) {
                         throw new SQLException("Database connection is null");
                     }
-                    try (var stmt = conn.prepareStatement("SELECT 1")) {
-                        var rs = stmt.executeQuery();
-                        if (!rs.next() || rs.getInt(1) != 1) {
-                            throw new SQLException("Database query 'SELECT 1' failed or returned unexpected result");
+                    // JDBC4 isValid() is the standard health check approach — pgjdbc
+                    // implements it without statement allocation, unlike prepareStatement("SELECT 1")
+                    if (!conn.isValid(2)) {
+                        throw new SQLException("Database connection validation failed (isValid returned false)");
+                    }
+                    final String dbVersion = Config.DB_VERSION > 0 ? String.valueOf(Config.DB_VERSION) : "unknown";
+                    return "Database connection OK (DB version: " + dbVersion + ", verified with isValid)";
+                } finally {
+                    // Interrupt-resilient cleanup: clear interrupted flag so close() completes,
+                    // then restore it afterward to avoid orphaning connections on timeout
+                    if (conn != null) {
+                        final boolean wasInterrupted = Thread.interrupted();
+                        try {
+                            conn.close();
+                        } catch (final SQLException e) {
+                            Logger.debug(DatabaseHealthCheck.class,
+                                    "Error closing health check connection: " + e.getMessage());
+                        } finally {
+                            if (wasInterrupted) {
+                                Thread.currentThread().interrupt();
+                            }
                         }
                     }
-                    String dbVersion = Config.DB_VERSION > 0 ? String.valueOf(Config.DB_VERSION) : "unknown";
-                    return "Database connection OK (DB version: " + dbVersion + ", verified with query)";
                 }
             });
 
@@ -90,7 +109,16 @@ public class DatabaseHealthCheck extends HealthCheckBase {
             } catch (ExecutionException e) {
                 throw new Exception("Database connection failed: " + e.getCause().getMessage(), e.getCause());
             } finally {
-                executor.shutdownNow();
+                // Graceful shutdown: allow in-flight cleanup to complete before forcing
+                executor.shutdown();
+                try {
+                    if (!executor.awaitTermination(3, TimeUnit.SECONDS)) {
+                        executor.shutdownNow();
+                    }
+                } catch (InterruptedException e) {
+                    executor.shutdownNow();
+                    Thread.currentThread().interrupt();
+                }
             }
         });
     }
