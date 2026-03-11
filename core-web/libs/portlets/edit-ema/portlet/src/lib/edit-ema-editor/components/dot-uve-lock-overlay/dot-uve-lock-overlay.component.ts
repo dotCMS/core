@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -8,6 +8,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     selector: 'dot-uve-lock-overlay',
     imports: [DotMessagePipe],
     templateUrl: './dot-uve-lock-overlay.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'block absolute top-0 left-0 w-full h-full z-10 pointer-events-none'
     }

@@ -125,10 +125,10 @@ describe('DotBlockEditorSidebarComponent', () => {
     it('should set drawer with correct inputs', () => {
         const drawer = spectator.query(Drawer);
         expect(drawer.position()).toBe('right');
-        expect(drawer.blockScroll()).toBe(true);
-        expect(drawer.dismissible()).toBe(false);
-        expect(drawer.closable()).toBe(false);
-        expect(drawer.closeOnEscape()).toBe(false);
+        expect(drawer.blockScroll).toBe(true);
+        expect(drawer.dismissible).toBe(false);
+        expect(drawer.closable).toBe(false);
+        expect(drawer.closeOnEscape).toBe(false);
     });
 
     it('should set inputs to the block editor', () => {

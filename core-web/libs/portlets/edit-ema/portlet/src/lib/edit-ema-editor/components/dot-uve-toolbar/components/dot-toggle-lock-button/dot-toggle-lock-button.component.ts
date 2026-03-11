@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -25,6 +25,7 @@ export interface ToggleLockEvent {
 @Component({
     selector: 'dot-toggle-lock-button',
     templateUrl: './dot-toggle-lock-button.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ButtonModule, TooltipModule, DotMessagePipe]
 })
 export class DotToggleLockButtonComponent {

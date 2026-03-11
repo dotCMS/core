@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { MockProvider } from 'ng-mocks';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { computed, signal } from '@angular/core';
@@ -80,7 +79,7 @@ describe('DotRowReorderComponent', () => {
     const createComponent = createComponentFactory({
         component: DotRowReorderComponent,
         providers: [
-            MockProvider(UVEStore, {
+            mockProvider(UVEStore, {
                 pageAsset: signal(null),
                 updateLayout: jest.fn(),
                 updateRows: jest.fn()

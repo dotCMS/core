@@ -2,6 +2,7 @@ import { patchState } from '@ngrx/signals';
 
 import { Location } from '@angular/common';
 import {
+    ChangeDetectionStrategy,
     Component,
     computed,
     DestroyRef,
@@ -49,6 +50,7 @@ import {
     selector: 'dot-ema-shell',
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ButtonModule,
         ConfirmDialogModule,

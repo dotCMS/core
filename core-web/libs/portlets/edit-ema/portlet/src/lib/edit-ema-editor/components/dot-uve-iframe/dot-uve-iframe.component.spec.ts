@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
-import { MockProvider } from 'ng-mocks';
+import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 
 import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SeoMetaTagsResult, SeoMetaTags } from '@dotcms/dotcms-models';
@@ -22,6 +21,10 @@ describe('DotUveIframeComponent', () => {
     let mockDotSeoMetaTagsService: DotSeoMetaTagsService;
     let mockDotSeoMetaTagsUtilService: DotSeoMetaTagsUtilService;
     let mockInlineEditService: InlineEditService;
+
+    let pageTypeSignal: WritableSignal<PageType>;
+    let pageRenderSignal: WritableSignal<string>;
+    let editorEnableInlineEditSignal: WritableSignal<boolean>;
 
     const mockPageRender = '<html><head></head><body>Test Content</body></html>';
     const mockSeoResults: SeoMetaTagsResult[] = [
@@ -44,26 +47,33 @@ describe('DotUveIframeComponent', () => {
     const createComponent = createComponentFactory({
         component: DotUveIframeComponent,
         providers: [
-            MockProvider(DotSeoMetaTagsService, {
+            mockProvider(DotSeoMetaTagsService, {
                 getMetaTagsResults: jest.fn().mockReturnValue(of(mockSeoResults))
             }),
-            MockProvider(DotSeoMetaTagsUtilService, {
+            mockProvider(DotSeoMetaTagsUtilService, {
                 getMetaTags: jest.fn().mockReturnValue(mockOgTags)
             }),
-            MockProvider(InlineEditService, {
+            mockProvider(InlineEditService, {
                 injectInlineEdit: jest.fn(),
                 removeInlineEdit: jest.fn()
             }),
-            MockProvider(UVEStore, {
-                $pageRender: signal(mockPageRender),
-                editorEnableInlineEdit: signal(false),
-                pageType: signal(PageType.HEADLESS),
-                setSeoData: jest.fn()
-            })
+            {
+                provide: UVEStore,
+                useFactory: () => ({
+                    $pageRender: pageRenderSignal,
+                    editorEnableInlineEdit: editorEnableInlineEditSignal,
+                    pageType: pageTypeSignal,
+                    setSeoData: jest.fn()
+                })
+            }
         ]
     });
 
     beforeEach(() => {
+        pageTypeSignal = signal(PageType.HEADLESS);
+        pageRenderSignal = signal(mockPageRender);
+        editorEnableInlineEditSignal = signal(false);
+
         spectator = createComponent({
             props: {
                 src: 'https://example.com/test',
@@ -146,7 +156,7 @@ describe('DotUveIframeComponent', () => {
 
     describe('onIframeLoad - HEADLESS page type', () => {
         beforeEach(() => {
-            mockUVEStore.pageType = signal(PageType.HEADLESS);
+            pageTypeSignal.set(PageType.HEADLESS);
         });
 
         it('should emit load event for HEADLESS page type', () => {
@@ -168,9 +178,7 @@ describe('DotUveIframeComponent', () => {
         let mockWindow: Window;
 
         beforeEach(() => {
-            mockUVEStore.pageType = signal(PageType.TRADITIONAL);
-            mockUVEStore.$pageRender = signal(mockPageRender);
-            mockUVEStore.editorEnableInlineEdit = signal(false);
+            pageTypeSignal.set(PageType.TRADITIONAL);
 
             // Create mock iframe with contentDocument and contentWindow
             mockIframe = document.createElement('iframe');
@@ -269,7 +277,6 @@ describe('DotUveIframeComponent', () => {
             });
 
             component.iframe = { nativeElement: mockIframe } as any;
-            mockUVEStore.editorEnableInlineEdit = signal(false);
         });
 
         afterEach(() => {
@@ -537,14 +544,11 @@ describe('DotUveIframeComponent', () => {
 
         it('should set OG tags and results in store in a single update', () => {
             (component as any).setSeoData();
-            // Wait for observable to complete
-            setTimeout(() => {
-                expect(mockUVEStore.setSeoData).toHaveBeenCalledTimes(1);
-                expect(mockUVEStore.setSeoData).toHaveBeenCalledWith({
-                    ogTags: mockOgTags,
-                    ogTagsResults: mockSeoResults
-                });
-            }, 0);
+            expect(mockUVEStore.setSeoData).toHaveBeenCalledTimes(1);
+            expect(mockUVEStore.setSeoData).toHaveBeenCalledWith({
+                ogTags: mockOgTags,
+                ogTagsResults: mockSeoResults
+            });
         });
 
         it('should not set SEO data if iframe element is not available', () => {
@@ -579,34 +583,19 @@ describe('DotUveIframeComponent', () => {
             });
 
             component.iframe = { nativeElement: mockIframe } as any;
-            mockUVEStore.$pageRender = signal(mockPageRender);
-            mockUVEStore.editorEnableInlineEdit = signal(false);
         });
 
         it('should insert page content when pageType changes to TRADITIONAL', () => {
-            mockUVEStore.pageType = signal(PageType.TRADITIONAL);
             const insertSpy = jest.spyOn(component as any, 'insertPageContent');
-
-            // Trigger effect by accessing the signal
-            mockUVEStore.pageType();
+            pageTypeSignal.set(PageType.TRADITIONAL);
             spectator.detectChanges();
-
-            // Effect should run on next tick
-            setTimeout(() => {
-                expect(insertSpy).toHaveBeenCalled();
-            }, 0);
+            expect(insertSpy).toHaveBeenCalled();
         });
 
         it('should not insert page content when pageType is HEADLESS', () => {
-            mockUVEStore.pageType = signal(PageType.HEADLESS);
             const insertSpy = jest.spyOn(component as any, 'insertPageContent');
-
-            mockUVEStore.pageType();
             spectator.detectChanges();
-
-            setTimeout(() => {
-                expect(insertSpy).not.toHaveBeenCalled();
-            }, 0);
+            expect(insertSpy).not.toHaveBeenCalled();
         });
     });
 

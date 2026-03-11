@@ -1,7 +1,8 @@
-import { fromEvent } from 'rxjs';
+import { fromEvent, Subject } from 'rxjs';
 
 import { NgStyle } from '@angular/common';
 import {
+    ChangeDetectionStrategy,
     Component,
     ElementRef,
     EventEmitter,
@@ -15,7 +16,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { filter } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SafeUrlPipe } from '@dotcms/ui';
@@ -37,6 +38,7 @@ import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils';
     standalone: true,
     templateUrl: './dot-uve-iframe.component.html',
     styleUrls: ['./dot-uve-iframe.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [NgStyle, SafeUrlPipe]
 })
 export class DotUveIframeComponent {
@@ -105,6 +107,11 @@ export class DotUveIframeComponent {
      * @type {Signal<number>}
      */
     readonly $iframeDocHeight = signal<number>(0);
+
+    /**
+     * Emits on every iframe load to cancel the previous click listener subscription.
+     */
+    private readonly iframeClickListener$ = new Subject<void>();
 
     /**
      * Rendered HTML for traditional pages.
@@ -219,6 +226,8 @@ export class DotUveIframeComponent {
             return;
         }
 
+        this.iframeClickListener$.next();
+
         fromEvent<MouseEvent>(win, 'click')
             .pipe(
                 filter((e) => {
@@ -228,6 +237,7 @@ export class DotUveIframeComponent {
                         !!target.closest('[data-mode]') || !!target.dataset?.mode;
                     return hasLink || hasInlineEditTarget;
                 }),
+                takeUntil(this.iframeClickListener$),
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((e) => {
@@ -259,9 +269,12 @@ export class DotUveIframeComponent {
             return;
         }
 
-        this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
-            const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
-            this.uveStore.setSeoData({ ogTags, ogTagsResults: results });
-        });
+        this.dotSeoMetaTagsService
+            .getMetaTagsResults(doc)
+            .pipe(take(1))
+            .subscribe((results) => {
+                const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
+                this.uveStore.setSeoData({ ogTags, ogTagsResults: results });
+            });
     }
 }

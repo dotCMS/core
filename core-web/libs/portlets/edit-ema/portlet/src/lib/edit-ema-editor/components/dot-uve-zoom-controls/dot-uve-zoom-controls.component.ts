@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -9,6 +9,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     standalone: true,
     templateUrl: './dot-uve-zoom-controls.component.html',
     styleUrls: ['./dot-uve-zoom-controls.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ButtonModule]
 })
 export class DotUveZoomControlsComponent {

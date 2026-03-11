@@ -1,5 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
-import { MockProvider } from 'ng-mocks';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -68,7 +67,7 @@ describe('DotUveContentletToolsComponent', () => {
     const createComponent = createComponentFactory({
         component: DotUveContentletToolsComponent,
         providers: [
-            MockProvider(DotMessageService, {
+            mockProvider(DotMessageService, {
                 get: (key: string) => {
                     const messages: Record<string, string> = {
                         content: 'Content',

@@ -129,8 +129,8 @@ export class DotUveToolbarComponent {
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $socialMedia = this.#store.viewSocialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
-    readonly $isPaletteOpen = this.#store.editorPaletteOpen();
-    readonly $canEditPage = this.#store.editorCanEditContent();
+    readonly $isPaletteOpen = this.#store.editorPaletteOpen;
+    readonly $canEditPage = this.#store.editorCanEditContent;
 
     /**
      * Popover passthrough styles for the "Copy URLs" popover.
@@ -253,7 +253,7 @@ export class DotUveToolbarComponent {
     }
 
     protected togglePalette(): void {
-        this.#store.setPaletteOpen(!this.$isPaletteOpen);
+        this.#store.setPaletteOpen(!this.$isPaletteOpen());
     }
 
     /**

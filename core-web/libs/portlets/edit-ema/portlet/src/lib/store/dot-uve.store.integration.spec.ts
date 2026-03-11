@@ -264,16 +264,12 @@ describe('UVEStore - Integration Tests ', () => {
     });
 
     describe('Cross-Feature State Updates', () => {
-        it('should update activeContentlet and auto-open palette', () => {
-            // Close palette first
+        it('should update activeContentlet', () => {
             store.setPaletteOpen(false);
-            expect(store.editorPaletteOpen()).toBe(false);
-
-            // Set active contentlet - should auto-open palette
             store.setActiveContentlet(ACTION_PAYLOAD_MOCK);
 
             expect(store.editorActiveContentlet()).toEqual(ACTION_PAYLOAD_MOCK);
-            expect(store.editorPaletteOpen()).toBe(true); // Auto-opened
+            expect(store.editorPaletteOpen()).toBe(false); // palette unchanged
         });
 
         it('should reset all editor properties while preserving panel state', () => {

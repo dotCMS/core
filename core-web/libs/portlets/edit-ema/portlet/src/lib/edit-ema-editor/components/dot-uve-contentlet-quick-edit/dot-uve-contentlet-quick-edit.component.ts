@@ -1,4 +1,5 @@
 import {
+    ChangeDetectionStrategy,
     Component,
     computed,
     effect,
@@ -77,7 +78,8 @@ export interface ContentletEditData {
         DotMessagePipe
     ],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
-    styleUrl: './dot-uve-contentlet-quick-edit.component.scss'
+    styleUrl: './dot-uve-contentlet-quick-edit.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveContentletQuickEditComponent {
     private readonly fb = inject(FormBuilder);
