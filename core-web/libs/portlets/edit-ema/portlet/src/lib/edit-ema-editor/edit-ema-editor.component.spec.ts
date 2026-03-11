@@ -62,7 +62,7 @@ import {
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -1034,18 +1034,17 @@ describe('EditEmaEditorComponent', () => {
                     const dialog = spectator.query(DotEmaDialogComponent);
                     jest.spyOn(dialog, 'editUrlContentMapContentlet');
 
-                    spectator.triggerEventHandler(DotUveToolbarStubComponent, 'editUrlContentMap', {
+                    const payload = {
                         identifier: '123',
                         inode: '456',
                         title: 'Hello World'
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    } as any);
+                    } as unknown as DotCMSURLContentMap;
 
-                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith({
-                        identifier: '123',
-                        inode: '456',
-                        title: 'Hello World'
+                    spectator.triggerEventHandler(DotUveToolbarStubComponent, 'editUrlContentMap', {
+                        payload
                     });
+
+                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith(payload);
                 });
 
                 describe('reorder navigation', () => {
@@ -1687,8 +1686,9 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     expect(
-                        (spectator.component as unknown as { $progressBar: () => boolean })
-                            .$progressBar()
+                        (
+                            spectator.component as unknown as { $progressBar: () => boolean }
+                        ).$progressBar()
                     ).toBe(false);
                 });
 
