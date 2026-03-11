@@ -1,10 +1,10 @@
 <iframe
     (load)="onIframeLoad()"
-    [src]="src | safeUrl"
-    [title]="title"
+    [src]="src() | safeUrl"
+    [title]="title()"
     [ngStyle]="{
-        pointerEvents: pointerEvents,
-        opacity: opacity
+        pointerEvents: pointerEvents(),
+        opacity: opacity()
     }"
     sandbox="allow-scripts allow-same-origin allow-forms"
     #iframe

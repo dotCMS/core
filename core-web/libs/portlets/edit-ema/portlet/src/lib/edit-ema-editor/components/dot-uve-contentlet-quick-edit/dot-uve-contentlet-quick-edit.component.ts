@@ -138,11 +138,7 @@ export class DotUveContentletQuickEditComponent {
             const validators = [];
 
             // Handle checkbox with multiple options - value should be an array
-            if (
-                field.clazz === DotCMSClazzes.CHECKBOX &&
-                field.options &&
-                field.options.length > 0
-            ) {
+            if (field.clazz === DotCMSClazzes.CHECKBOX && field.options?.length) {
                 // Convert string value to array if needed
                 if (typeof fieldValue === 'string' && fieldValue) {
                     fieldValue = fieldValue.split(',').map((v) => v.trim());

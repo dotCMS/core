@@ -4,15 +4,14 @@ import { NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    ElementRef,
-    EventEmitter,
-    inject,
-    Input,
-    Output,
-    ViewChild,
-    signal,
     DestroyRef,
-    effect
+    ElementRef,
+    ViewChild,
+    effect,
+    inject,
+    input,
+    output,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -48,53 +47,25 @@ export class DotUveIframeComponent {
      */
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
-    /**
-     * URL to load in the iframe.
-     * @type {string}
-     */
-    @Input() src!: string;
-    /**
-     * Accessible title for the iframe.
-     * @type {string}
-     */
-    @Input() title!: string;
-    /**
-     * CSS pointer-events value for the iframe overlay.
-     * @type {string | null}
-     */
-    @Input() pointerEvents!: string | null;
-    /**
-     * Opacity of the iframe overlay (0–1).
-     * @type {number | null}
-     */
-    @Input() opacity!: number | null;
-    /**
-     * Host origin for postMessage communication.
-     * @type {string}
-     * @default '*'
-     */
-    @Input() host = '*';
+    /** URL to load in the iframe. */
+    src = input.required<string>();
+    /** Accessible title for the iframe. */
+    title = input.required<string>();
+    /** CSS pointer-events value for the iframe overlay. */
+    pointerEvents = input.required<string | null>();
+    /** Opacity of the iframe overlay (0–1). */
+    opacity = input.required<number | null>();
+    /** Host origin for postMessage communication. */
+    host = input<string>('*');
 
-    /**
-     * Emitted when the iframe has finished loading.
-     * @type {EventEmitter<void>}
-     */
-    @Output() load = new EventEmitter<void>();
-    /**
-     * Emitted when a click targets an internal link or inline-edit element.
-     * @type {EventEmitter<MouseEvent>}
-     */
-    @Output() internalNav = new EventEmitter<MouseEvent>();
-    /**
-     * Emitted when a click targets an inline-edit element.
-     * @type {EventEmitter<MouseEvent>}
-     */
-    @Output() inlineEditing = new EventEmitter<MouseEvent>();
-    /**
-     * Emitted when the iframe document height changes.
-     * @type {EventEmitter<number>}
-     */
-    @Output() iframeDocHeightChange = new EventEmitter<number>();
+    /** Emitted when the iframe has finished loading. */
+    load = output<void>();
+    /** Emitted when a click targets an internal link or inline-edit element. */
+    internalNav = output<MouseEvent>();
+    /** Emitted when a click targets an inline-edit element. */
+    inlineEditing = output<MouseEvent>();
+    /** Emitted when the iframe document height changes. */
+    iframeDocHeightChange = output<number>();
 
     protected readonly uveStore = inject(UVEStore);
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);

@@ -3,8 +3,8 @@ import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
-    Input,
     inject,
+    input,
     signal
 } from '@angular/core';
 
@@ -32,9 +32,9 @@ const DROP_INDICATOR_HEIGHT_PX = 3;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmaPageDropzoneComponent {
-    @Input() containers: Container[] = [];
-    @Input() dragItem: EmaDragItem | null = null;
-    @Input() zoomLevel = 1;
+    containers = input<Container[]>([]);
+    dragItem = input<EmaDragItem | null>(null);
+    zoomLevel = input<number>(1);
 
     pointerPosition: Record<string, string> = POINTER_INITIAL_POSITION;
 
@@ -71,13 +71,13 @@ export class EmaPageDropzoneComponent {
         const opacity = isEmpty ? '0.1' : '1';
         // Adjust coordinates for zoom level
         const adjustedHeight = isEmpty
-            ? targetRect.height / this.zoomLevel
+            ? ((targetRect.height / this.zoomLevel()) as number)
             : DROP_INDICATOR_HEIGHT_PX;
         const top = this.getTop(isEmpty);
 
         this.pointerPosition = {
-            left: `${(targetRect.left - parentRect.left) / this.zoomLevel}px`,
-            width: `${targetRect.width / this.zoomLevel}px`,
+            left: `${(targetRect.left - parentRect.left) / this.zoomLevel()}px`,
+            width: `${targetRect.width / this.zoomLevel()}px`,
             opacity,
             top,
             height: `${adjustedHeight}px`
@@ -112,8 +112,8 @@ export class EmaPageDropzoneComponent {
         // Adjust coordinates for zoom level
         // getBoundingClientRect() returns viewport coordinates, but we need
         // coordinates relative to the transformed parent, so we adjust by zoom
-        const adjustedTop = (targetRect.top - parentRect.top) / this.zoomLevel;
-        const adjustedHeight = targetRect.height / this.zoomLevel;
+        const adjustedTop = (targetRect.top - parentRect.top) / this.zoomLevel();
+        const adjustedHeight = targetRect.height / this.zoomLevel();
 
         if (isEmpty) {
             return `${adjustedTop}px`;

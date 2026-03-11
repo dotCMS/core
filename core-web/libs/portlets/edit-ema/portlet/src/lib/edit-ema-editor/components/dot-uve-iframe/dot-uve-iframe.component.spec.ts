@@ -97,11 +97,11 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should set inputs correctly', () => {
-            expect(component.src).toBe('https://example.com/test');
-            expect(component.title).toBe('Test Iframe');
-            expect(component.pointerEvents).toBe('auto');
-            expect(component.opacity).toBe(1);
-            expect(component.host).toBe('*');
+            expect(component.src()).toBe('https://example.com/test');
+            expect(component.title()).toBe('Test Iframe');
+            expect(component.pointerEvents()).toBe('auto');
+            expect(component.opacity()).toBe(1);
+            expect(component.host()).toBe('*');
         });
     });
 

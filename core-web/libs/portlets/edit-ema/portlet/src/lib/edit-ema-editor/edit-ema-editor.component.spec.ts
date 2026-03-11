@@ -1100,9 +1100,11 @@ describe('EditEmaEditorComponent', () => {
                         title: 'Hello World'
                     } as unknown as DotCMSURLContentMap;
 
-                    spectator.triggerEventHandler(DotUveToolbarStubComponent, 'editUrlContentMap', {
+                    spectator.triggerEventHandler(
+                        DotUveToolbarStubComponent,
+                        'editUrlContentMap',
                         payload
-                    });
+                    );
 
                     expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith(payload);
                 });

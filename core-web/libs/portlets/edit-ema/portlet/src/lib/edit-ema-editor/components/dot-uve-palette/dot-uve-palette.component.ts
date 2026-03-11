@@ -1,14 +1,7 @@
 import { patchState, signalState } from '@ngrx/signals';
 
 import { NgClass } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    Output,
-    computed,
-    inject
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
 
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -68,10 +61,8 @@ export class DotUvePaletteComponent {
         root: { class: 'h-full min-h-0' }
     };
 
-    /**
-     * Emits whenever the active tab in the palette changes.
-     */
-    @Output() onTabChange = new EventEmitter<UVE_PALETTE_TABS>();
+    /** Emits whenever the active tab in the palette changes. */
+    onTabChange = output<UVE_PALETTE_TABS>();
 
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
@@ -101,7 +92,7 @@ export class DotUvePaletteComponent {
     /**
      * Emits when a tree node is selected to scroll to the corresponding element.
      */
-    @Output() onNodeSelect = new EventEmitter<{ selector: string; type: string }>();
+    onNodeSelect = output<{ selector: string; type: string }>();
 
     constructor() {
         // Tab management is now handled locally without effects

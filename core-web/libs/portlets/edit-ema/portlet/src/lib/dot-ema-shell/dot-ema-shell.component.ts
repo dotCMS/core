@@ -21,6 +21,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -77,8 +78,14 @@ export class DotEmaShellComponent implements OnInit {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
+    readonly #dotMessageService = inject(DotMessageService);
     protected readonly $lockOptions = this.uveStore.$lockOptions;
     protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
+    protected readonly $lockedByDisplay = computed(
+        () =>
+            this.$lockOptions()?.lockedBy ??
+            this.#dotMessageService.get('uve.shell.page.locked.unknown.user')
+    );
     protected readonly $showLockBanner = computed(() => {
         const lockOptions = this.$lockOptions();
         return !!lockOptions?.isLocked && !lockOptions.isLockedByCurrentUser;

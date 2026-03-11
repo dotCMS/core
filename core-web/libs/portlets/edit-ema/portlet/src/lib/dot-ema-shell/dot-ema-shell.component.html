@@ -6,10 +6,7 @@
                     <div class="flex items-center gap-2">
                         <i class="pi pi-info-circle"></i>
                         <span class="inline leading-6" data-testid="message-content">
-                            {{
-                                'uve.shell.page.locked.locked.by'
-                                    | dm: [$lockOptions()?.lockedBy ?? '']
-                            }}
+                            {{ 'uve.shell.page.locked.locked.by' | dm: [$lockedByDisplay()] }}
                             @if ($lockOptions()?.canLock) {
                                 <button
                                     class="inline-flex items-center underline text-blue-600 hover:text-blue-700"

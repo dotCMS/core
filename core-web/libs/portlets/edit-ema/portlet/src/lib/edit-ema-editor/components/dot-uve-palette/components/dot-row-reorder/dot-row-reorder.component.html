@@ -1,0 +1,95 @@
+@if (rows().length > 0) {
+    <div
+        cdkDropList
+        cdkDropListLockAxis="y"
+        (cdkDropListDropped)="drop($event)"
+        class="row-reorder-list">
+        @for (row of rows(); track $index; let i = $index) {
+            <div cdkDrag class="row-item" [cdkDragDisabled]="isColumnDragging()">
+                <div class="row-header">
+                    <div class="row-handle" cdkDragHandle (click)="$event.stopPropagation()">
+                        <i class="pi pi-bars"></i>
+                    </div>
+                    <div
+                        class="row-label"
+                        (click)="selectRow(i + 1)"
+                        (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()">
+                        {{ getRowLabel(row, i) }}
+                    </div>
+                    <button
+                        type="button"
+                        class="row-toggle"
+                        [attr.aria-expanded]="isRowExpanded(i)"
+                        [attr.aria-label]="isRowExpanded(i) ? 'Collapse row' : 'Expand row'"
+                        (click)="toggleRow(i); $event.stopPropagation()"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()">
+                        <i
+                            class="pi"
+                            [class.pi-chevron-down]="isRowExpanded(i)"
+                            [class.pi-chevron-right]="!isRowExpanded(i)"></i>
+                    </button>
+                </div>
+
+                @if (isRowExpanded(i) && row.columns?.length) {
+                    <div
+                        class="row-body"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()">
+                        <div
+                            cdkDropList
+                            cdkDropListLockAxis="y"
+                            [cdkDropListData]="row.columns"
+                            (cdkDropListDropped)="dropColumn($event, i)"
+                            class="row-columns">
+                            @for (column of row.columns; track $index; let j = $index) {
+                                <div
+                                    cdkDrag
+                                    class="row-column"
+                                    (cdkDragStarted)="setColumnDragging(true)"
+                                    (cdkDragEnded)="setColumnDragging(false)">
+                                    <div class="column-handle" cdkDragHandle>
+                                        <i class="pi pi-bars"></i>
+                                    </div>
+                                    <div
+                                        class="column-label"
+                                        (dblclick)="
+                                            openEditColumnDialog(i, j); $event.stopPropagation()
+                                        "
+                                        (mousedown)="$event.stopPropagation()"
+                                        (touchstart)="$event.stopPropagation()">
+                                        {{ getColumnLabel(column, j) }}
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+} @else {
+    <div class="empty-state">
+        <span>No rows available</span>
+    </div>
+}
+
+<p-dialog
+    [header]="editingColumn() ? 'Edit Column' : 'Edit Row'"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [appendTo]="'body'"
+    [(visible)]="editRowDialogOpen"
+    (onHide)="closeEditRowDialog()">
+    <form class="row-edit-form" (submit)="$event.preventDefault(); submitEditRow()">
+        <label class="row-edit-label" for="row-styleClass">name</label>
+        <input id="row-styleClass" type="text" pInputText [formControl]="rowStyleClassControl" />
+
+        <div class="row-edit-actions">
+            <button pButton type="submit" label="Submit"></button>
+        </div>
+    </form>
+</p-dialog>

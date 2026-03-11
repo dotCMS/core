@@ -4,11 +4,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
-    EventEmitter,
-    inject,
-    Output,
     Signal,
+    computed,
+    inject,
+    output,
     signal,
     viewChild
 } from '@angular/core';
@@ -86,8 +85,8 @@ export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<DotLanguageSelectorComponent>('languageSelector');
 
-    @Output() translatePage = new EventEmitter<{ page: DotCMSPage; newLanguage: number }>();
-    @Output() editUrlContentMap = new EventEmitter<DotCMSURLContentMap>();
+    translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
+    editUrlContentMap = output<DotCMSURLContentMap>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
