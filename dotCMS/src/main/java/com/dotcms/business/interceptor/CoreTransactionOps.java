@@ -32,7 +32,11 @@ public final class CoreTransactionOps implements TransactionOps {
 
     @Override
     public void rollbackTransaction() {
-        HibernateUtil.rollbackTransaction();
+        try {
+            HibernateUtil.rollbackTransaction();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
