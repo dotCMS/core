@@ -42,7 +42,8 @@
         @if (dialogActions?.accept) {
             <p-button
                 [label]="dialogActions.accept.label"
-                [disabled]="dialogActions.accept.disabled"
+                [disabled]="dialogActions.accept.disabled || savingContentType()"
+                [loading]="savingContentType()"
                 (click)="dialogActions.accept.action?.()"
                 data-testId="dotDialogAcceptAction"></p-button>
         }
