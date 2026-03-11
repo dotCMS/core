@@ -357,7 +357,7 @@ public class OSIndexAPIImpl implements IndexAPI {
                 Logger.error(this.getClass(),
                     "OpenSearch Connection Attempt #" + (i + 1) + ": " + e.getMessage());
             }
-            DateUtil.sleep(IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_TIMEOUT, 5) * 1000);
+            DateUtil.sleep(IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_RETRY_SLEEP_SECONDS, 5) * 1000);
         }
         if (stats == null) {
             Logger.fatal(this.getClass(), "Cannot connect to OpenSearch, giving up.");

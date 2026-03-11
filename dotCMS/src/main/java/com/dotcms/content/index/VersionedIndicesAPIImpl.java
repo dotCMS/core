@@ -10,10 +10,10 @@ import com.dotmarketing.util.UtilMethods;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +27,8 @@ import java.util.Optional;
 @ApplicationScoped
 public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
 
-    final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private final IndicesFactory indicesFactory;
     private static final Cache cache = new Cache();
@@ -159,9 +160,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
 
             final String timestampStr = indexName.substring(lastUnderscoreIndex + 1);
-            final Date parsedDate = timestampFormatter.parse(timestampStr);
-            return parsedDate.toInstant();
-        } catch (ParseException e) {
+            final LocalDateTime ldt = LocalDateTime.parse(timestampStr, TIMESTAMP_FORMATTER);
+            return ldt.atZone(ZoneId.systemDefault()).toInstant();
+        } catch (Exception e) {
             throw new DotDataException("Failed to extract timestamp from index name: " + indexName, e);
         }
     }
