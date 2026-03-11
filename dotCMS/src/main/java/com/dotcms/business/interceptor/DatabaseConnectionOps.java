@@ -37,7 +37,7 @@ public interface DatabaseConnectionOps {
     /**
      * Commits and closes the current thread's connection, swallowing any exceptions.
      */
-    void closeAndCommit();
+    void closeAndCommit() throws Exception;
 
     /**
      * Closes the current thread's connection silently, swallowing any exceptions.
