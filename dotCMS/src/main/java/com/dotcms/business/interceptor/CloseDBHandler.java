@@ -11,7 +11,7 @@ public final class CloseDBHandler {
     /**
      * Called after the annotated method completes. Commits and closes the connection.
      */
-    public static void onExit() {
+    public static void onExit() throws Exception {
         try {
             InterceptorServiceProvider.getDatabaseOps().closeAndCommit();
         } finally {

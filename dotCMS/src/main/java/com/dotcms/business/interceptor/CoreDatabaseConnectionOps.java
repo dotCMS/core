@@ -36,7 +36,7 @@ public final class CoreDatabaseConnectionOps implements DatabaseConnectionOps {
     }
 
     @Override
-    public void closeAndCommit() {
+    public void closeAndCommit() throws Exception {
         DbConnectionFactory.closeAndCommit();
     }
 
