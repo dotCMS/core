@@ -3,6 +3,7 @@ import { DOMSerializer } from 'prosemirror-model';
 
 import { Component, computed, input, signal, viewChild } from '@angular/core';
 
+import type { ContextMenuPassThroughOptions } from 'primeng/types/contextmenu';
 import { ContextMenu } from 'primeng/contextmenu';
 import { Ripple } from 'primeng/ripple';
 
@@ -15,7 +16,7 @@ import { ContextMenuItem, Platform } from './context-menu.interfaces';
 import { htmlToMarkdown } from './markdown.utils';
 
 /** PrimeNG 21 PassThrough (pt) – root/panel styling; item template styles itself via Tailwind. */
-const CONTEXT_MENU_PT = {
+const CONTEXT_MENU_PT: ContextMenuPassThroughOptions = {
     root: {
         class: 'w-max min-w-[11rem] rounded-lg border border-gray-200 bg-white p-1 shadow-md'
     },
@@ -28,7 +29,7 @@ const CONTEXT_MENU_PT = {
     separator: {
         class: 'my-1 border-t border-gray-200'
     }
-} as const;
+};
 
 /**
  * Context menu component for the dot editor that provides clipboard operations
@@ -41,7 +42,6 @@ const CONTEXT_MENU_PT = {
  */
 @Component({
     selector: 'dot-editor-context-menu',
-    standalone: true,
     templateUrl: './dot-context-menu.component.html',
     imports: [ContextMenu, Ripple, DotMessagePipe]
 })
