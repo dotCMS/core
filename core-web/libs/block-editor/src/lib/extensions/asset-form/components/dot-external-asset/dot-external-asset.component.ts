@@ -1,6 +1,9 @@
+import { fromEvent } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     EventEmitter,
     Output,
     ViewChild,
@@ -9,6 +12,7 @@ import {
     ChangeDetectorRef,
     inject
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { EditorAssetTypes } from '@dotcms/dotcms-models';
@@ -51,6 +55,7 @@ export class DotExternalAssetComponent {
 
     private readonly fb = inject(FormBuilder);
     private readonly cd = inject(ChangeDetectorRef);
+    private readonly destroyRef = inject(DestroyRef);
 
     constructor() {
         this.form = this.fb.group({
@@ -90,16 +95,21 @@ export class DotExternalAssetComponent {
 
         this.disableAction = true;
 
-        video.addEventListener('error', (e) => {
-            this.form.controls.url.setErrors({ message: handleLoadVideoError(e) });
-            this.cd.detectChanges();
-        });
+        fromEvent<ErrorEvent>(video, 'error')
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((e) => {
+                this.form.controls.url.setErrors({ message: handleLoadVideoError(e) });
+                this.cd.detectChanges();
+            });
 
-        video.addEventListener('canplay', () => {
-            this.form.controls.url.setErrors(null);
-            this.disableAction = false;
-            this.cd.detectChanges();
-        });
+        fromEvent(video, 'canplay')
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+                this.form.controls.url.setErrors(null);
+                this.disableAction = false;
+                this.cd.detectChanges();
+            });
+
         video.src = `${url}#t=0.1`;
     }
 }

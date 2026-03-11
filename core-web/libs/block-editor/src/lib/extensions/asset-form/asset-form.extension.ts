@@ -61,6 +61,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     let component: ComponentRef<AssetFormComponent>;
     let element: Element;
     let preventClose = false;
+    let pendingPreventCloseReset: number | null = null;
 
     function onStart({ editor, type, getPosition }: StartProps) {
         setUpTippy(editor);
@@ -74,19 +75,32 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         formTippy.show();
     }
 
-    function onHide(editor): void {
+    function onHide(editor: Editor): void {
         if (preventClose) {
             return;
         }
 
+        cancelPendingReset();
+        // Always restore editable state when hiding, in case it was locked
+        if (!editor.isEditable) {
+            editor.setOptions({ editable: true });
+        }
         editor.commands.closeAssetForm();
         formTippy?.hide();
         component?.destroy();
     }
 
     function onDestroy() {
+        cancelPendingReset();
         formTippy?.destroy();
         component?.destroy();
+    }
+
+    function cancelPendingReset() {
+        if (pendingPreventCloseReset !== null) {
+            cancelAnimationFrame(pendingPreventCloseReset);
+            pendingPreventCloseReset = null;
+        }
     }
 
     function setUpTippy(editor: Editor) {
@@ -120,7 +134,13 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         component.changeDetectorRef.detectChanges();
     }
 
-    function onPreventClose(editor, value) {
+    /**
+     * Toggles preventClose flag and editor editable state.
+     * When preventClose is true, the editor is set to non-editable to prevent
+     * focus-driven hide while a dialog (e.g. file picker) is open.
+     */
+    function onPreventClose(editor: Editor, value: boolean) {
+        cancelPendingReset();
         preventClose = value;
         editor.setOptions({ editable: !value });
     }
@@ -145,9 +165,14 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                             .command(({ tr }) => {
                                 preventClose = true;
                                 tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, { open: true, type });
-                                setTimeout(() => {
+                                // Reset preventClose after the current frame so the focus
+                                // handler (triggered by the blur/focus cycle of opening the
+                                // form) does not immediately close it.
+                                cancelPendingReset();
+                                pendingPreventCloseReset = requestAnimationFrame(() => {
                                     preventClose = false;
-                                }, 0);
+                                    pendingPreventCloseReset = null;
+                                });
 
                                 return true;
                             })

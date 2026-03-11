@@ -4,7 +4,7 @@ import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
@@ -54,7 +54,7 @@ describe('DotEditContentBlockEditorComponent', () => {
     const createHost = createHostFactory({
         component: DotEditContentBlockEditorComponent,
         host: MockFormComponent,
-        imports: [ReactiveFormsModule, BlockEditorModule],
+        imports: [ReactiveFormsModule, DotBlockEditorComponent],
         providers: [
             {
                 provide: DotEditContentStore,

@@ -11,7 +11,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
  */
 @Pipe({
     name: 'contentletState',
-    standalone: false
+    standalone: true
 })
 export class ContentletStatePipe implements PipeTransform {
     transform({ live, working, deleted, hasLiveVersion }: DotCMSContentlet) {

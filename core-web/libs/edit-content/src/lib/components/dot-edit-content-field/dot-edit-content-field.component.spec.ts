@@ -18,7 +18,7 @@ import {
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { BlockEditorModule } from '@dotcms/block-editor';
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotHttpErrorManagerService,
     DotLicenseService,
@@ -137,7 +137,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
     [FIELD_TYPES.BLOCK_EDITOR]: {
         component: DotEditContentBlockEditorComponent,
-        imports: [BlockEditorModule],
+        imports: [DotBlockEditorComponent],
         providers: [
             {
                 provide: DotEditContentStore,

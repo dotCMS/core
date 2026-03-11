@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 
 import { Drawer } from 'primeng/drawer';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -95,8 +95,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotBlockEditorSidebarComponent,
-        imports: [BlockEditorModule],
-        declarations: [MockComponent(DotBlockEditorComponent)],
+        imports: [MockComponent(DotBlockEditorComponent)],
         providers: [
             DotAlertConfirmService,
             { provide: DotMessageService, useValue: messageServiceMock },

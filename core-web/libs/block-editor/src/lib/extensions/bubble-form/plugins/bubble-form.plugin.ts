@@ -87,7 +87,7 @@ export class BubbleFormView extends BubbleMenuView {
         this.editor.on('focus', this.focusHandler);
 
         // We need to also react to page scrolling.
-        document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
+        document.body.addEventListener('scroll', this.scrollHandler, true);
     }
 
     override update(view: EditorView, prevState?: EditorState): void {
@@ -172,10 +172,16 @@ export class BubbleFormView extends BubbleMenuView {
     }
 
     override destroy() {
+        this.element.removeEventListener('mousedown', this.mousedownHandler, { capture: true });
+        this.editor.off('focus', this.focusHandler);
+        document.body.removeEventListener('scroll', this.scrollHandler, true);
         this.tippy?.destroy();
+        this.component?.destroy();
+        this.$destroy.next(true);
+        this.$destroy.complete();
     }
 
-    private hanlderScroll(e: Event) {
+    private scrollHandler = (e: Event) => {
         if (!this.shouldHideOnScroll(e.target as HTMLElement)) {
             return true;
         }
@@ -184,7 +190,7 @@ export class BubbleFormView extends BubbleMenuView {
         setTimeout(() => this.update(this.editor.view));
 
         return null;
-    }
+    };
 
     private tippyRect(node, type) {
         const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();

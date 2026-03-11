@@ -399,6 +399,21 @@ export const ActionsMenu = (
         name: 'actionsMenu',
         priority: 1000, // If open, give priority on events
 
+        onDestroy() {
+            if (suggestionsComponent) {
+                suggestionsComponent.destroy();
+                suggestionsComponent = null;
+            }
+            if (myTippy) {
+                myTippy.destroy();
+                myTippy = undefined;
+            }
+            if (!destroy$.closed) {
+                destroy$.next(true);
+                destroy$.complete();
+            }
+        },
+
         addOptions() {
             return {
                 pluginKey: 'actionsMenu',

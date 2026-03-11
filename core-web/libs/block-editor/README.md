@@ -8,7 +8,9 @@ Run `nx test block-editor` to execute the unit tests.
 
 ## Folder Structure
 
-The top-level `folders` are `Extensions`, `Nodes`, and `Shared`. This is because we use `tiptap` which is based on `extensions` for new capabilities to the editor, and `nodes` which are the elements. The folder structure to use is as follows:
+The library is organized by domain under `lib/src/lib/`: **core/** (editor shell, count bar, editor directive, node-view), **ui/** (bubble menu, context menu, add button, floating button, drag handle, table), **extensions/** (TipTap extensions), **nodes/** (custom node types), **shared/** (directives, pipes, services, utils). See **STRUCTURE_PROPOSAL.md** for details.
+
+The previous top-level folders were `Extensions`, `Nodes`, and `Shared`. This is because we use `tiptap` which is based on `extensions` for new capabilities to the editor, and `nodes` which are the elements. The folder structure to use is as follows:
 
 ```
 |-- lib
