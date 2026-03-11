@@ -2,7 +2,7 @@ import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import tippy, { GetReferenceClientRect } from 'tippy.js';
 
-import { ComponentRef, ViewContainerRef } from '@angular/core';
+import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -216,6 +216,7 @@ function getCustomActions(customBlocks): Array<DotMenuItem> {
 
 export const ActionsMenu = (
     viewContainerRef: ViewContainerRef,
+    injector: Injector,
     customBlocks: RemoteCustomExtensions,
     disabledExtensions: { shouldShowAIExtensions: boolean | unknown }
 ) => {
@@ -272,7 +273,9 @@ export const ActionsMenu = (
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
-        suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
+        suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent, {
+            injector
+        });
 
         // Setting Inputs
         suggestionsComponent.instance.items = items;

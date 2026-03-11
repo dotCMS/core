@@ -98,6 +98,7 @@ import {
     SetDocAttrStep,
     SuggestionsService
 } from '../../shared';
+import { SharedModule } from '../../shared/shared.module';
 import {
     DragHandleDirective,
     DotAddButtonComponent,
@@ -123,7 +124,8 @@ import { EditorDirective } from '../editor-directive/editor.directive';
         DotFloatingButtonDirective,
         FloatingButtonComponent,
         AssetFormModule,
-        BubbleFormComponent
+        BubbleFormComponent,
+        SharedModule
     ],
     providers: [
         DialogService,
@@ -252,6 +254,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     writeValue(content: JSONContent): void {
         this.value = content;
         this.setEditorContent(content);
+        // When the editor already exists (e.g. form patched after init), set content directly
+        // so the view updates even if [ngModel] has already run.
+        if (this.editor && content != null) {
+            this.editor.chain().setContent(content, true).run();
+        }
     }
 
     setDisabledState(isDisabled: boolean): void {
@@ -301,6 +308,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         if (changes['languageId'] && this.editor && !changes['languageId'].firstChange) {
             const newLanguageId = this.contentlet?.languageId || this.languageId;
             this.editor.storage.dotConfig.lang = newLanguageId;
+        }
+        // When value input changes (e.g. [value]="contentlet.blogContent") and editor exists, set content
+        if (changes['value'] && this.editor && changes['value'].currentValue != null) {
+            this.setEditorContent(changes['value'].currentValue);
+            this.editor.chain().setContent(changes['value'].currentValue, true).run();
         }
     }
 
@@ -393,6 +405,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     private subscribeToEditorEvents() {
         this.editor.on('create', () => {
             this.setEditorContent(this.value);
+            // When writeValue() ran before the editor existed, this.value is already set.
+            // Push it into the editor now so the view shows it (directive may not be ready yet).
+            if (this.value != null) {
+                this.editor.chain().setContent(this.value, true).run();
+            }
             this.updateCharCount();
             // Validate char limit on initial load (e.g., existing content over limit)
             this.updateCharLimitValidity();
@@ -629,7 +646,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             }),
             Subscript,
             Superscript,
-            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks(), {
+            ActionsMenu(this.viewContainerRef, this.#injector, this.getParsedCustomBlocks(), {
                 shouldShowAIExtensions: isAIPluginInstalled
             }),
             BubbleFormExtension(this.viewContainerRef),
