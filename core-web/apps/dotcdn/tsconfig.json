@@ -4,7 +4,10 @@
     "include": [],
     "compilerOptions": {
         "types": ["jest", "node"],
-        "target": "es2020"
+        "target": "es2020",
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "lib": ["dom", "dom.iterable", "es2022"]
     },
     "references": [
         {

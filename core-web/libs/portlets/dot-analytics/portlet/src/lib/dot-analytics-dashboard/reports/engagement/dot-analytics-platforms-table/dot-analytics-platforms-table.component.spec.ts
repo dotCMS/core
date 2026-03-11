@@ -22,6 +22,11 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
             { name: 'Chrome', views: 55000, percentage: 57, time: '2m 30s' },
             { name: 'Safari', views: 25000, percentage: 26, time: '2m 15s' },
             { name: 'Firefox', views: 15655, percentage: 17, time: '2m 00s' }
+        ],
+        language: [
+            { name: 'en', views: 60000, percentage: 63, time: '2m 40s' },
+            { name: 'es', views: 25000, percentage: 26, time: '2m 10s' },
+            { name: 'fr', views: 10655, percentage: 11, time: '1m 55s' }
         ]
     };
 
@@ -48,10 +53,10 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
             expect(spectator.query('p-card')).toExist();
         });
 
-        it('should display p-tabs with 2 tab panels', () => {
+        it('should display p-tabs with 3 tab panels', () => {
             spectator.detectChanges();
             expect(spectator.query('p-tabs')).toExist();
-            expect(spectator.queryAll('p-tabpanel').length).toBe(2);
+            expect(spectator.queryAll('p-tabpanel').length).toBe(3);
         });
     });
 
@@ -94,12 +99,52 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
             expect(browserData[0].name).toBe('Chrome');
         });
 
+        it('should compute language data from platforms input', () => {
+            spectator.detectChanges();
+            const languageData = spectator.component.$languageData();
+            expect(languageData.length).toBe(3);
+            expect(languageData[0].name).toBe('en');
+        });
+
         it('should return empty arrays when platforms is null', () => {
             spectator.setInput('platforms', null);
             spectator.detectChanges();
 
             expect(spectator.component.$deviceData()).toEqual([]);
             expect(spectator.component.$browserData()).toEqual([]);
+            expect(spectator.component.$languageData()).toEqual([]);
+        });
+    });
+
+    describe('Empty State', () => {
+        it('should show full empty state when all platform data is empty and status is LOADED', () => {
+            spectator.setInput('platforms', { device: [], browser: [], language: [] });
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="platforms-empty-all"]')).toExist();
+            expect(spectator.query('p-tabs')).not.toExist();
+        });
+
+        it('should not show full empty state when at least one tab has data', () => {
+            spectator.setInput('platforms', {
+                device: [],
+                browser: [],
+                language: [{ name: 'en', views: 100, percentage: 100, time: '1m 0s' }]
+            });
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="platforms-empty-all"]')).not.toExist();
+            expect(spectator.query('p-tabs')).toExist();
+        });
+
+        it('should not show full empty state while loading', () => {
+            spectator.setInput('platforms', { device: [], browser: [], language: [] });
+            spectator.setInput('status', ComponentStatus.LOADING);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="platforms-empty-all"]')).not.toExist();
         });
     });
 });
