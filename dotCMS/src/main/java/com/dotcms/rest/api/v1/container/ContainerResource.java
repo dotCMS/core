@@ -224,31 +224,6 @@ public class ContainerResource implements Serializable {
         }
     }
 
-    /**
-     * Resolves the host for a container operation. If a valid {@code hostId} is provided in the
-     * request form, the corresponding host is returned. Otherwise, falls back to the current
-     * request's site context.
-     */
-    private Host resolveHost(final String hostId, final User user,
-                             final HttpServletRequest request) throws DotSecurityException {
-
-        if (UtilMethods.isSet(hostId)) {
-            try {
-                final Host host = APILocator.getHostAPI().find(hostId, user, false);
-                if (host != null && !host.isArchived()) {
-                    return host;
-                }
-            } catch (DotSecurityException e) {
-                throw e;
-            } catch (DotDataException e) {
-                Logger.warn(this, () -> "Unable to resolve host with id: " + hostId
-                        + ", falling back to current request host. Error: " + e.getMessage());
-            }
-        }
-
-        return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-    }
-
     private Optional<String> checkHost(final String hostId, final User user) {
 
         String checkedHostId = null;
@@ -801,7 +776,7 @@ public class ContainerResource implements Serializable {
                 .requestAndResponse(request, response).requiredBackendUser(true)
                 .rejectWhenNoUser(true).init();
         final User user = initData.getUser();
-        final Host host = resolveHost(containerForm.getHostId(), user, request);
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
 
         return saveNewAndPublish(containerForm, user, host, pageMode);
@@ -896,7 +871,7 @@ public class ContainerResource implements Serializable {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
         final User user         = initData.getUser();
-        final Host host         = resolveHost(containerForm.getHostId(), user, request);
+        final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
         final Container container = this.getContainerWorking(containerForm.getIdentifier(), user, host);
 
