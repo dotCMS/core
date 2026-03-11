@@ -23,7 +23,7 @@ const regexYoutube = /(youtube\.com\/watch\?v=.*)|(youtu\.be\/.*)/;
 @Component({
     selector: 'dot-external-asset',
     templateUrl: './dot-external-asset.component.html',
-    styleUrls: ['./dot-external-asset.component.scss'],
+    styleUrls: ['./dot-external-asset.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })

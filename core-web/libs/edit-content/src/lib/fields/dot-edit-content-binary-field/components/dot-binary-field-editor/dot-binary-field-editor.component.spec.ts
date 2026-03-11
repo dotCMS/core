@@ -1,14 +1,10 @@
 import { MonacoEditorComponent, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
-import { MockComponent } from 'ng-mocks';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { MockModule } from 'ng-mocks';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
 
@@ -59,13 +55,14 @@ describe('DotBinaryFieldEditorComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotBinaryFieldEditorComponent,
-        declarations: [MockComponent(MonacoEditorComponent)],
-        imports: [
-            MonacoEditorModule,
-            InputTextModule,
-            ButtonModule,
-            DotMessagePipe,
-            DotFieldValidationMessageComponent
+        overrideComponents: [
+            [
+                DotBinaryFieldEditorComponent,
+                {
+                    remove: { imports: [MonacoEditorModule] },
+                    add: { imports: [MockModule(MonacoEditorModule)] }
+                }
+            ]
         ],
         providers: [
             DotBinaryFieldValidatorService,
@@ -93,7 +90,7 @@ describe('DotBinaryFieldEditorComponent', () => {
             detectChanges: false,
             props: {
                 allowFileNameEdit: true
-            } as unknown
+            }
         });
 
         component = spectator.component;
@@ -108,7 +105,7 @@ describe('DotBinaryFieldEditorComponent', () => {
     it('should emit cancel event on escape keydown', () => {
         const event = new KeyboardEvent('keydown', { key: 'Escape' });
 
-        const cancelSpy = jest.spyOn(spectator.component.$cancel, 'emit');
+        const cancelSpy = jest.spyOn(spectator.component.cancel, 'emit');
         const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
         const stopPropagationSpy = jest.spyOn(event, 'stopPropagation');
 
@@ -205,7 +202,7 @@ describe('DotBinaryFieldEditorComponent', () => {
             expect(component.mimeType).toBe('plain/text');
         }));
         it('should emit cancel event when cancel button is clicked', () => {
-            const spy = jest.spyOn(component.$cancel, 'emit');
+            const spy = jest.spyOn(component.cancel, 'emit');
             const cancelBtn = spectator.query(byTestId('cancel-button'));
 
             spectator.click(cancelBtn);
@@ -214,7 +211,7 @@ describe('DotBinaryFieldEditorComponent', () => {
         });
 
         it('should emit tempFileUploaded event when import button is clicked if form is valid', () => {
-            const spy = jest.spyOn(component.$tempFileUploaded, 'emit');
+            const spy = jest.spyOn(component.tempFileUploaded, 'emit');
             const spyFormDisabled = jest.spyOn(component.form, 'disable');
             const spyFormEnabled = jest.spyOn(component.form, 'enable');
             const spyFileUpload = jest
@@ -238,7 +235,7 @@ describe('DotBinaryFieldEditorComponent', () => {
         });
 
         it('should not emit tempFileUploaded event when import button is clicked if form is invalid', () => {
-            const spy = jest.spyOn(component.$tempFileUploaded, 'emit');
+            const spy = jest.spyOn(component.tempFileUploaded, 'emit');
             const spyFormDisabled = jest.spyOn(component.form, 'disable');
             const spyFormEnabled = jest.spyOn(component.form, 'enable');
             const spyFileUpload = jest

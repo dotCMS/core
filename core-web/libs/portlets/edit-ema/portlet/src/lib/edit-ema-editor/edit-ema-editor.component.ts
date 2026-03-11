@@ -294,11 +294,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        const url = new URL(href, location.origin);
+        const url = new URL(href, this.window.location.origin);
         // Get the query parameters from the URL
         const urlQueryParams = Object.fromEntries(url.searchParams.entries());
 
-        if (url.hostname !== location.hostname) {
+        if (url.hostname !== this.window.location.hostname) {
             this.window.open(href, '_blank');
 
             return;
@@ -970,7 +970,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             [NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED]: () => {
                 const htmlPageReferer = event.detail.payload?.htmlPageReferer;
-                const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
+                const url = new URL(htmlPageReferer, this.window.location.origin); // Add base for relative URLs
                 const targetUrl = getTargetUrl(
                     url.pathname,
                     this.uveStore.pageAPIResponse().urlContentMap

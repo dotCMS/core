@@ -19,6 +19,7 @@ import {
     ContentAttributionEntity,
     ConversionsOverviewEntity,
     ConvertingVisitorsEntity,
+    DEFAULT_GRANULARITY,
     RequestState,
     TimeRangeInput,
     TotalConversionsEntity
@@ -30,7 +31,6 @@ import {
     createEmptyAnalyticsEntity,
     createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
-    determineGranularityForTimeRange,
     fillMissingDates,
     toTimeRangeCubeJS,
     TrafficVsConversionsEntity
@@ -117,15 +117,14 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
 
                             return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
-                                tapResponse(
-                                    (entities) => {
+                                tapResponse({
+                                    next: (entities) => {
                                         const totalConversionsEntity =
                                             aggregateTotalConversions(entities);
-
                                         patchState(store, {
                                             totalConversions: {
                                                 status: ComponentStatus.LOADED,
@@ -134,7 +133,7 @@ export function withConversions() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -148,7 +147,7 @@ export function withConversions() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -177,22 +176,20 @@ export function withConversions() {
                                 .conversions()
                                 .measures(['totalEvents'])
                                 .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
-
-                            const granularity = determineGranularityForTimeRange(timeRange);
 
                             return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
                                 map((entities) =>
                                     fillMissingDates<ConversionTrendEntity>(
                                         entities,
                                         timeRange,
-                                        granularity,
+                                        DEFAULT_GRANULARITY,
                                         createEmptyAnalyticsEntity
                                     )
                                 ),
-                                tapResponse(
-                                    (data) => {
+                                tapResponse({
+                                    next: (data) => {
                                         patchState(store, {
                                             conversionTrend: {
                                                 status: ComponentStatus.LOADED,
@@ -201,7 +198,7 @@ export function withConversions() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -215,7 +212,7 @@ export function withConversions() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -247,8 +244,8 @@ export function withConversions() {
                                 .build();
 
                             return analyticsService.cubeQuery<ConvertingVisitorsEntity>(query).pipe(
-                                tapResponse(
-                                    (entities) => {
+                                tapResponse({
+                                    next: (entities) => {
                                         patchState(store, {
                                             convertingVisitors: {
                                                 status: ComponentStatus.LOADED,
@@ -257,7 +254,7 @@ export function withConversions() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -271,7 +268,7 @@ export function withConversions() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -300,10 +297,8 @@ export function withConversions() {
                                 .fromCube('EventSummary')
                                 .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
                                 .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), 'day')
+                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
                                 .build();
-
-                            const granularity = determineGranularityForTimeRange(timeRange);
 
                             return analyticsService
                                 .cubeQuery<TrafficVsConversionsEntity>(query)
@@ -312,12 +307,12 @@ export function withConversions() {
                                         fillMissingDates(
                                             entities,
                                             timeRange,
-                                            granularity,
+                                            DEFAULT_GRANULARITY,
                                             createEmptyTrafficVsConversionsEntity
                                         )
                                     ),
-                                    tapResponse(
-                                        (entities) => {
+                                    tapResponse({
+                                        next: (entities) => {
                                             patchState(store, {
                                                 trafficVsConversions: {
                                                     status: ComponentStatus.LOADED,
@@ -326,7 +321,7 @@ export function withConversions() {
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -340,7 +335,7 @@ export function withConversions() {
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )
@@ -374,8 +369,8 @@ export function withConversions() {
                                 .build();
 
                             return analyticsService.cubeQuery<ContentAttributionEntity>(query).pipe(
-                                tapResponse(
-                                    (entities) => {
+                                tapResponse({
+                                    next: (entities) => {
                                         patchState(store, {
                                             contentConversions: {
                                                 status: ComponentStatus.LOADED,
@@ -384,7 +379,7 @@ export function withConversions() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -398,7 +393,7 @@ export function withConversions() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -438,8 +433,8 @@ export function withConversions() {
                             return analyticsService
                                 .cubeQuery<ConversionsOverviewEntity>(query)
                                 .pipe(
-                                    tapResponse(
-                                        (entities) => {
+                                    tapResponse({
+                                        next: (entities) => {
                                             patchState(store, {
                                                 conversionsOverview: {
                                                     status: ComponentStatus.LOADED,
@@ -448,7 +443,7 @@ export function withConversions() {
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -462,7 +457,7 @@ export function withConversions() {
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )

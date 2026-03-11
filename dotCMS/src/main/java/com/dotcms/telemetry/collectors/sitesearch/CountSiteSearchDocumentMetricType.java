@@ -1,6 +1,6 @@
 package com.dotcms.telemetry.collectors.sitesearch;
 
-import com.dotcms.content.elasticsearch.business.IndexStats;
+import com.dotcms.content.index.domain.IndexStats;
 import com.dotmarketing.exception.DotDataException;
 
 import java.util.Collection;
@@ -31,7 +31,7 @@ public class CountSiteSearchDocumentMetricType extends IndicesSiteSearchMetricTy
     @Override
     public Optional<Object> getValue(Collection<IndexStats> indices) throws DotDataException {
         return Optional.of(indices.stream()
-                .collect(Collectors.summingLong(IndexStats::getDocumentCount))
+                .collect(Collectors.summingLong(IndexStats::documentCount))
         );
     }
 }

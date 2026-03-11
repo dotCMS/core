@@ -178,7 +178,10 @@ function execCommand({
         video: () => editor.commands.openAssetForm({ type: 'video' }),
         aiContentPrompt: () => editor.commands.openAIPrompt(),
         aiContent: () => editor.commands.insertAINode(),
-        aiImagePrompt: () => editor.commands.openImagePrompt()
+        aiImagePrompt: () => editor.commands.openImagePrompt(),
+        gridBlock: () => {
+            editor.chain().deleteRange(range).insertGridBlock().focus().run();
+        }
     };
 
     getCustomActions(customBlocks).forEach((option) => {
