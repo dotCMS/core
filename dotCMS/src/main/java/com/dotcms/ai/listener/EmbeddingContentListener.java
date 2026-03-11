@@ -8,7 +8,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletArchiveEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -113,7 +113,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
      *
      * @param contentlet
      */
-    @CloseDBIfOpened
+    @WrapInTransaction
     private void addToIndexesIfNeeded(final Contentlet contentlet) {
         final String contentType = contentlet.getContentType().variable();
         if (contentType == null) {
@@ -146,7 +146,7 @@ public class EmbeddingContentListener implements ContentletListener<Contentlet> 
      * If a contentlet is unpublished, we delete it from the dot_embeddings no matter what index it is part of
      * @param contentlet
      */
-    @CloseDBIfOpened
+    @WrapInTransaction
     private void deleteFromIndexes(final Contentlet contentlet) {
         try {
             getConfigJson(contentlet.getHost());
