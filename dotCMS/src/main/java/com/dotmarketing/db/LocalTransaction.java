@@ -99,7 +99,7 @@ public class LocalTransaction {
             throws DotDataException, DotSecurityException {
         try {
             WrapInTransactionHandler.wrap(delegate::execute);
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (DotDataException | DotSecurityException | RuntimeException e) {
             throw e;
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
