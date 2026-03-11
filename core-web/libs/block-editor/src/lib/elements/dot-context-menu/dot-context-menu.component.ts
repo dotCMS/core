@@ -14,6 +14,22 @@ import { MENU_LABELS, PLATFORM_PATTERNS, SHORTCUTS } from './context-menu.consta
 import { ContextMenuItem, Platform } from './context-menu.interfaces';
 import { htmlToMarkdown } from './markdown.utils';
 
+/** PrimeNG 21 PassThrough (pt) – root/panel styling; item template styles itself via Tailwind. */
+const CONTEXT_MENU_PT = {
+    root: {
+        class: 'w-max min-w-[11rem] rounded-lg border border-gray-200 bg-white p-1 shadow-md'
+    },
+    rootList: {
+        class: 'm-0 outline-none'
+    },
+    itemContent: {
+        class: 'm-0'
+    },
+    separator: {
+        class: 'my-1 border-t border-gray-200'
+    }
+} as const;
+
 /**
  * Context menu component for the dot editor that provides clipboard operations
  * and markdown conversion functionality.
@@ -25,8 +41,8 @@ import { htmlToMarkdown } from './markdown.utils';
  */
 @Component({
     selector: 'dot-editor-context-menu',
+    standalone: true,
     templateUrl: './dot-context-menu.component.html',
-    styleUrls: ['./dot-context-menu.component.css'],
     imports: [ContextMenu, Ripple, DotMessagePipe]
 })
 export class DotContextMenuComponent {
@@ -35,6 +51,7 @@ export class DotContextMenuComponent {
 
     protected readonly target = computed(() => this.$editor().view.dom.parentElement);
     protected readonly items = computed(() => this.buildMenuItems());
+    protected readonly pt = CONTEXT_MENU_PT;
     private readonly hasSelection = signal(false);
 
     private get platform(): Platform {
