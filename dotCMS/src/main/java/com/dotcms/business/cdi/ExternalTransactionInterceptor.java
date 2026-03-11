@@ -14,6 +14,9 @@ import javax.interceptor.InvocationContext;
  * CDI interceptor for {@link ExternalTransaction}. Delegates to
  * {@link ExternalTransactionHandler} for the actual logic, keeping the implementation DRY
  * with the ByteBuddy advice.
+ *
+ * <p>Nesting is safe: external transactions always create a new connection and restore
+ * the previous one on exit, regardless of nesting depth.</p>
  */
 @Interceptor
 @ExternalTransaction
@@ -24,10 +27,6 @@ public class ExternalTransactionInterceptor implements Serializable {
 
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Exception {
-        if (!InterceptorGuard.acquire(ExternalTransaction.class)) {
-            return context.proceed();
-        }
-
         ExternalTransactionState state = null;
         try {
             state = ExternalTransactionHandler.onEnter();
@@ -44,7 +43,6 @@ public class ExternalTransactionInterceptor implements Serializable {
             throw new RuntimeException(t);
         } finally {
             ExternalTransactionHandler.onFinally(state);
-            InterceptorGuard.release(ExternalTransaction.class);
         }
     }
 }

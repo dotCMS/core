@@ -13,6 +13,9 @@ import javax.interceptor.InvocationContext;
 /**
  * CDI interceptor for {@link CloseDBIfOpened}. Delegates to {@link CloseDBIfOpenedHandler}
  * for the actual logic, keeping the implementation DRY with the ByteBuddy advice.
+ *
+ * <p>Nesting is safe: if a connection already exists, {@code onEnter()} returns
+ * {@code false} for {@code isNewConnection} and {@code onExit()} skips the close.</p>
  */
 @Interceptor
 @CloseDBIfOpened
@@ -23,22 +26,14 @@ public class CloseDBIfOpenedInterceptor implements Serializable {
 
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Exception {
-        if (!InterceptorGuard.acquire(CloseDBIfOpened.class)) {
-            return context.proceed();
-        }
-
         final boolean isNewConnection = CloseDBIfOpenedHandler.onEnter();
         try {
             return context.proceed();
         } finally {
-            try {
-                final Method method = context.getMethod();
-                final CloseDBIfOpened annotation = method.getAnnotation(CloseDBIfOpened.class);
-                final boolean connectionParam = annotation == null || annotation.connection();
-                CloseDBIfOpenedHandler.onExit(isNewConnection, connectionParam);
-            } finally {
-                InterceptorGuard.release(CloseDBIfOpened.class);
-            }
+            final Method method = context.getMethod();
+            final CloseDBIfOpened annotation = method.getAnnotation(CloseDBIfOpened.class);
+            final boolean connectionParam = annotation == null || annotation.connection();
+            CloseDBIfOpenedHandler.onExit(isNewConnection, connectionParam);
         }
     }
 }

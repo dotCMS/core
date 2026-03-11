@@ -22,18 +22,10 @@ public class CloseDBInterceptor implements Serializable {
 
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Exception {
-        if (!InterceptorGuard.acquire(CloseDB.class)) {
-            return context.proceed();
-        }
-
         try {
             return context.proceed();
         } finally {
-            try {
-                CloseDBHandler.onExit();
-            } finally {
-                InterceptorGuard.release(CloseDB.class);
-            }
+            CloseDBHandler.onExit();
         }
     }
 }

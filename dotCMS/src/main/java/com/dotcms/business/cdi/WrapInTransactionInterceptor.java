@@ -14,6 +14,11 @@ import javax.interceptor.InvocationContext;
  * CDI interceptor for {@link WrapInTransaction}. Delegates to
  * {@link WrapInTransactionHandler} for the actual logic, keeping the implementation DRY
  * with the ByteBuddy advice.
+ *
+ * <p>Nesting is safe: {@code onEnter()} calls {@code startLocalTransactionIfNeeded()}
+ * which returns {@code false} if already in a transaction — so nested calls just execute
+ * inside the existing transaction, and {@code onSuccess}/{@code onFinally} skip
+ * commit/cleanup because {@code isLocalTransaction} is {@code false}.</p>
  */
 @Interceptor
 @WrapInTransaction
@@ -24,10 +29,6 @@ public class WrapInTransactionInterceptor implements Serializable {
 
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Exception {
-        if (!InterceptorGuard.acquire(WrapInTransaction.class)) {
-            return context.proceed();
-        }
-
         TransactionState state = null;
         try {
             state = WrapInTransactionHandler.onEnter();
@@ -44,7 +45,6 @@ public class WrapInTransactionInterceptor implements Serializable {
             throw new RuntimeException(t);
         } finally {
             WrapInTransactionHandler.onFinally(state);
-            InterceptorGuard.release(WrapInTransaction.class);
         }
     }
 }
