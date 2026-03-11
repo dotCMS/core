@@ -5,7 +5,8 @@
         "types": ["jasmine", "node"],
         "target": "ES2022",
         "useDefineForClassFields": false,
-        "moduleResolution": "bundler"
+        "moduleResolution": "bundler",
+        "isolatedModules": true
     },
     "files": ["src/test.ts", "src/polyfills.ts"],
     "include": ["**/*.spec.ts", "**/*.d.ts"]

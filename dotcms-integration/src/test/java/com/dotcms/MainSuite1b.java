@@ -63,6 +63,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.graphql.datafetcher.CategoryFieldDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.FolderCollectionDataFetcherTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
+        com.dotcms.rest.api.v2.tags.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest.class,
