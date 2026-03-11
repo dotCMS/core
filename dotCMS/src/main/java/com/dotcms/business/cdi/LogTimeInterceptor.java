@@ -1,9 +1,8 @@
 package com.dotcms.business.cdi;
 
+import com.dotcms.business.interceptor.LogTimeHandler;
 import com.dotcms.util.LogTime;
-import com.dotmarketing.util.Logger;
 import org.apache.commons.lang.time.StopWatch;
-import org.apache.logging.log4j.Level;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -13,11 +12,8 @@ import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 
 /**
- * CDI interceptor for {@link LogTime}. Measures and logs the execution time of annotated methods.
- *
- * <p>This interceptor fires at the Weld proxy boundary for CDI-managed beans, complementing
- * the ByteBuddy advice that instruments non-CDI classes at load-time. The
- * {@link InterceptorGuard} prevents double-processing when both mechanisms are active.</p>
+ * CDI interceptor for {@link LogTime}. Delegates to {@link LogTimeHandler} for the actual
+ * logging logic, keeping the implementation DRY with the ByteBuddy advice.
  */
 @Interceptor
 @LogTime
@@ -43,15 +39,8 @@ public class LogTimeInterceptor implements Serializable {
                 final LogTime annotation = method.getAnnotation(LogTime.class);
                 final String loggingLevel = (annotation != null)
                         ? annotation.loggingLevel() : "DEBUG";
-                final Class<?> clazz = method.getDeclaringClass();
-                final String message = "Call for class: " + clazz.getName() + "#"
-                        + method.getName() + ", duration:" + stopWatch.getTime() + " millis";
-
-                if (Level.INFO.toString().equals(loggingLevel)) {
-                    Logger.info(clazz, message);
-                } else {
-                    Logger.debug(clazz, message);
-                }
+                LogTimeHandler.logTime(method.getDeclaringClass(), method.getName(),
+                        stopWatch.getTime(), loggingLevel);
             } finally {
                 InterceptorGuard.release(LogTime.class);
             }

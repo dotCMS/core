@@ -1,7 +1,6 @@
 package com.dotcms.business.cdi;
 
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.DotInvalidLicenseException;
+import com.dotcms.business.interceptor.EnterpriseFeatureHandler;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.util.EnterpriseFeature;
 
@@ -13,12 +12,9 @@ import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
 
 /**
- * CDI interceptor for {@link EnterpriseFeature}. Validates that the current dotCMS instance
- * has the required Enterprise License level before allowing method execution.
- *
- * <p>This interceptor fires at the Weld proxy boundary for CDI-managed beans, complementing
- * the ByteBuddy advice that instruments non-CDI classes at load-time. The
- * {@link InterceptorGuard} prevents double-processing when both mechanisms are active.</p>
+ * CDI interceptor for {@link EnterpriseFeature}. Delegates to
+ * {@link EnterpriseFeatureHandler} for the actual logic, keeping the implementation DRY
+ * with the ByteBuddy advice.
  */
 @Interceptor
 @EnterpriseFeature
@@ -38,11 +34,7 @@ public class EnterpriseFeatureInterceptor implements Serializable {
             final EnterpriseFeature annotation = method.getAnnotation(EnterpriseFeature.class);
             if (annotation != null) {
                 final LicenseLevel requiredLevel = annotation.licenseLevel();
-                final String errorMsg = annotation.errorMsg();
-                final int currentLicenseLevel = LicenseUtil.getLevel();
-                if (currentLicenseLevel < requiredLevel.level) {
-                    throw new DotInvalidLicenseException(errorMsg);
-                }
+                EnterpriseFeatureHandler.checkLicense(requiredLevel.level, annotation.errorMsg());
             }
             return context.proceed();
         } finally {
