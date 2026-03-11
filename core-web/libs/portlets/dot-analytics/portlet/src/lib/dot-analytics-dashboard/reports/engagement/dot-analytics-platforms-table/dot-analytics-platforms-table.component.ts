@@ -23,6 +23,7 @@ export interface PlatformDataItem {
 export interface PlatformsData {
     device: PlatformDataItem[];
     browser: PlatformDataItem[];
+    language: PlatformDataItem[];
 }
 
 /**
@@ -60,6 +61,9 @@ export class DotAnalyticsPlatformsTableComponent {
     /** Derived browser rows from platforms data */
     readonly $browserData = computed(() => this.$platforms()?.browser ?? []);
 
+    /** Derived language rows from platforms data */
+    readonly $languageData = computed(() => this.$platforms()?.language ?? []);
+
     /** Whether the component is in a loading or init state */
     readonly $isLoading = computed(() => {
         const status = this.$status();
@@ -70,6 +74,10 @@ export class DotAnalyticsPlatformsTableComponent {
     readonly $isAllEmpty = computed(() => {
         if (this.$isLoading()) return false;
 
-        return this.$deviceData().length === 0 && this.$browserData().length === 0;
+        return (
+            this.$deviceData().length === 0 &&
+            this.$browserData().length === 0 &&
+            this.$languageData().length === 0
+        );
     });
 }

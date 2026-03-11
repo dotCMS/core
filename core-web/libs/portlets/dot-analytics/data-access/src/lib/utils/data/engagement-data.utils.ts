@@ -8,6 +8,7 @@ import type {
     EngagementPlatforms,
     SessionsByBrowserDailyEntity,
     SessionsByDeviceDailyEntity,
+    SessionsByLanguageDailyEntity,
     SparklineDataPoint
 } from '../../types';
 
@@ -269,15 +270,36 @@ export function toEngagementPlatformsFromBrowser(
 }
 
 /**
- * Build full EngagementPlatforms from device and browser arrays.
+ * Map SessionsByLanguageDaily rows to language platform metrics.
+ */
+export function toEngagementPlatformsFromLanguage(
+    rows: SessionsByLanguageDailyEntity[] | null
+): EngagementPlatformMetrics[] {
+    if (!rows?.length) return [];
+    const total = rows.reduce(
+        (sum, r) => sum + parseNum(r['SessionsByLanguageDaily.engagedSessions']),
+        0
+    );
+    return rows.map((row) => {
+        const views = parseNum(row['SessionsByLanguageDaily.engagedSessions']);
+        const avgSec = parseNum(row['SessionsByLanguageDaily.avgEngagedSessionTimeSeconds']);
+        const name = row['SessionsByLanguageDaily.localeId'] ?? 'Other';
+        return toPlatformMetrics(name, views, total, avgSec);
+    });
+}
+
+/**
+ * Build full EngagementPlatforms from device, browser, and language arrays.
  */
 export function toEngagementPlatforms(
     deviceRows: SessionsByDeviceDailyEntity[] | null,
-    browserRows: SessionsByBrowserDailyEntity[] | null
+    browserRows: SessionsByBrowserDailyEntity[] | null,
+    languageRows: SessionsByLanguageDailyEntity[] | null
 ): EngagementPlatforms {
     return {
         device: toEngagementPlatformsFromDevice(deviceRows),
-        browser: toEngagementPlatformsFromBrowser(browserRows)
+        browser: toEngagementPlatformsFromBrowser(browserRows),
+        language: toEngagementPlatformsFromLanguage(languageRows)
     };
 }
 
@@ -299,5 +321,5 @@ export function getEmptyEngagementChartData(): ChartData {
  * Default empty EngagementPlatforms when no data.
  */
 export function getEmptyEngagementPlatforms(): EngagementPlatforms {
-    return { device: [], browser: [] };
+    return { device: [], browser: [], language: [] };
 }
