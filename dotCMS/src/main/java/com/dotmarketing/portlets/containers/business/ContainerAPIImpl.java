@@ -812,10 +812,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			for (ContainerStructure cs : containerStructureList) {
 				cs.setContainerId(container.getIdentifier());
 				cs.setContainerInode(container.getInode());
-				// Clear the id so Hibernate treats these as new entities (INSERT)
-				// rather than existing ones (UPDATE). The Hibernate mapping uses
-				// unsaved-value="" which means any non-empty id triggers an update.
-				cs.setId(null);
 			}
 			saveContainerStructures(containerStructureList);
 		}

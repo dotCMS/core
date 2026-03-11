@@ -1209,6 +1209,11 @@ describe('DotUveToolbarComponent', () => {
             // (x instanceof Date) then x.getTime(). Making instanceof always true causes
             // getTime() to be called on non-Date values and throws.
 
+            beforeEach(() => {
+                liveViewModeSignal.set(UVE_MODE.LIVE);
+                liveSocialMediaSignal.set(null);
+            });
+
             it('should show calendar when in live mode', () => {
                 liveSocialMediaSignal.set(null);
                 spectator.detectChanges();
