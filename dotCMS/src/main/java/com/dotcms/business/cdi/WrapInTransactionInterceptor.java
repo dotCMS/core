@@ -37,8 +37,11 @@ public class WrapInTransactionInterceptor implements Serializable {
             WrapInTransactionHandler.onSuccess(state);
             return result;
         } catch (Throwable t) {
-            WrapInTransactionHandler.onError(state, t);
-            return null; // unreachable — onError always throws
+            WrapInTransactionHandler.onError(state);
+            if (t instanceof Exception) {
+                throw (Exception) t;
+            }
+            throw new RuntimeException(t);
         } finally {
             WrapInTransactionHandler.onFinally(state);
             InterceptorGuard.release(WrapInTransaction.class);

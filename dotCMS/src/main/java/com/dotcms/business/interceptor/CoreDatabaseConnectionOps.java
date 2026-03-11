@@ -44,4 +44,14 @@ public final class CoreDatabaseConnectionOps implements DatabaseConnectionOps {
     public void closeSilently() {
         DbConnectionFactory.closeSilently();
     }
+
+    @Override
+    public void setAutoCommit(final boolean autoCommit) {
+        DbConnectionFactory.setAutoCommit(autoCommit);
+    }
+
+    @Override
+    public void closeConnection() {
+        DbConnectionFactory.closeConnection();
+    }
 }

@@ -71,6 +71,8 @@ public final class InterceptorServiceProvider {
         @Override public Connection newConnection() { return null; }
         @Override public void closeAndCommit() { }
         @Override public void closeSilently() { }
+        @Override public void setAutoCommit(boolean autoCommit) { }
+        @Override public void closeConnection() { }
     }
 
     private enum NoOpTransactionOps implements TransactionOps {

@@ -43,4 +43,14 @@ public interface DatabaseConnectionOps {
      * Closes the current thread's connection silently, swallowing any exceptions.
      */
     void closeSilently();
+
+    /**
+     * Sets the auto-commit mode on the current thread's connection.
+     */
+    void setAutoCommit(boolean autoCommit);
+
+    /**
+     * Closes the current thread's connection (without the silent/swallow semantics).
+     */
+    void closeConnection();
 }

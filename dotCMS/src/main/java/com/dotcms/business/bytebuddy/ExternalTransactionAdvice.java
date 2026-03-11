@@ -22,7 +22,7 @@ public class ExternalTransactionAdvice {
         try {
             if (state != null) {
                 if (throwable != null) {
-                    ExternalTransactionHandler.onError(state, throwable);
+                    ExternalTransactionHandler.onError(state);
                 } else {
                     ExternalTransactionHandler.onSuccess(state);
                 }
