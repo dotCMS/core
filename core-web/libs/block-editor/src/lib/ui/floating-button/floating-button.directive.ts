@@ -1,9 +1,9 @@
 import { PluginKey } from 'prosemirror-state';
+import { Subject } from 'rxjs';
 
 import {
     ComponentRef,
     Directive,
-    ElementRef,
     OnDestroy,
     OnInit,
     ViewContainerRef,
@@ -54,6 +54,7 @@ export class DotFloatingButtonDirective implements OnInit, OnDestroy {
     readonly pluginKey = input<string>('floating-button');
 
     private componentRef: ComponentRef<FloatingButtonComponent> | null = null;
+    private readonly click$ = new Subject<void>();
 
     ngOnInit(): void {
         const editor = this.editor();
@@ -64,18 +65,24 @@ export class DotFloatingButtonDirective implements OnInit, OnDestroy {
         this.componentRef = this.vcr.createComponent(FloatingButtonComponent);
         const element = this.componentRef.location.nativeElement;
 
+        // Forward component output via Subject so the plugin never subscribes to the
+        // component's OutputRef (avoids NG0953 when the plugin view is created asynchronously).
+        this.componentRef.instance.byClick.subscribe(() => this.click$.next());
+
         editor.registerPlugin(
             DotFloatingButtonPlugin({
                 pluginKey: FLOATING_BUTTON_PLUGIN_KEY,
                 editor,
                 element,
                 component: this.componentRef,
+                onClick$: this.click$.asObservable(),
                 dotUploadFileService: this.uploadService
             })
         );
     }
 
     ngOnDestroy(): void {
+        this.click$.complete();
         this.editor().unregisterPlugin(FLOATING_BUTTON_PLUGIN_KEY);
         this.componentRef?.destroy();
         this.componentRef = null;

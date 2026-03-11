@@ -9,8 +9,8 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { Checkbox } from 'primeng/checkbox';
 import { Button } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
 import { InputText } from 'primeng/inputtext';
 
 import { DotFieldRequiredDirective } from '@dotcms/ui';

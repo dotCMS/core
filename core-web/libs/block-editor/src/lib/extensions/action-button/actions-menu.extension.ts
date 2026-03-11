@@ -23,12 +23,12 @@ import {
     FloatingActionsPlugin,
     FloatingActionsProps,
     ItemsType,
+    NodeTypes,
     suggestionOptions,
     SuggestionPopperModifiers,
     SuggestionsCommandProps,
     SuggestionsComponent
 } from '../../shared';
-import { NodeTypes } from '../../shared';
 import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../ai-content-prompt/ai-content-prompt.extension';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../ai-image-prompt/ai-image-prompt.extension';
 

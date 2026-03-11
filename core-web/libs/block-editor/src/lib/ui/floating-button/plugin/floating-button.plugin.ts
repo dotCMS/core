@@ -1,7 +1,7 @@
 import { computePosition, flip, offset, shift } from '@floating-ui/dom';
 import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { ComponentRef } from '@angular/core';
 
@@ -25,6 +25,8 @@ export interface DotFloatingButtonPluginOptions {
     element: HTMLElement;
     /** Angular `ComponentRef` for the floating button -- used to push inputs via `setInput()`. */
     component: ComponentRef<FloatingButtonComponent>;
+    /** Emits when the user clicks the import button. Use this instead of subscribing to component.instance.byClick to avoid NG0953. */
+    onClick$: Observable<void>;
     /** Service for uploading external images into dotCMS. */
     dotUploadFileService: DotUploadFileService;
 }
@@ -79,7 +81,8 @@ export class DotFloatingButtonPluginView {
         editor,
         component,
         element,
-        view
+        view,
+        onClick$
     }: DotFloatingButtonPluginOptions & { view: EditorView }) {
         this.editor = editor;
         this.element = element;
@@ -87,7 +90,7 @@ export class DotFloatingButtonPluginView {
         this.component = component;
         this.dotUploadFileService = dotUploadFileService;
 
-        this.component.instance.byClick.subscribe(() => this.uploadImagedotCMS());
+        onClick$.pipe(takeUntil(this.$destroy)).subscribe(() => this.uploadImagedotCMS());
 
         this.element.remove();
         this.element.style.visibility = 'visible';

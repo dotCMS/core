@@ -27,33 +27,6 @@ import {
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import {
-    DotAiService,
-    DotContentSearchService,
-    DotLanguagesService,
-    DotMessageService,
-    DotPropertiesService,
-    DotWorkflowActionsFireService,
-    DotContentTypeService
-} from '@dotcms/data-access';
-import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
-
-import {
-    DragHandleDirective,
-    DotAddButtonComponent,
-    DotBubbleMenuComponent,
-    DotContextMenuComponent
-} from '../../ui';
-import { AssetFormModule } from '../../extensions/asset-form/asset-form.module';
-import {
-    BubbleFormComponent,
-    DotFloatingButtonDirective,
-    FloatingButtonComponent
-} from '../../extensions';
-import { EditorDirective } from '../editor-directive/editor.directive';
-import { DotEditorCountBarComponent } from '../dot-editor-count-bar/dot-editor-count-bar.component';
-
 import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
@@ -70,12 +43,23 @@ import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
+    DotAiService,
+    DotContentSearchService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPropertiesService,
+    DotWorkflowActionsFireService,
+    DotContentTypeService
+} from '@dotcms/data-access';
+import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import {
     DotCMSContentlet,
     DotCMSContentTypeField,
     EDITOR_MARKETING_KEYS,
     IMPORT_RESULTS,
     RemoteCustomExtensions
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     ActionsMenu,
@@ -83,15 +67,19 @@ import {
     AIImagePromptExtension,
     AssetUploader,
     BubbleAssetFormExtension,
+    BubbleFormComponent,
     BubbleFormExtension,
     DotCMSTableExtensions,
     DotComands,
     DotConfigExtension,
+    DotFloatingButtonDirective,
     DotTableCellContextMenu,
+    FloatingButtonComponent,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
+import { AssetFormModule } from '../../extensions/asset-form/asset-form.module';
 import {
     AIContentNode,
     ContentletBlock,
@@ -107,8 +95,17 @@ import {
     formatHTML,
     removeInvalidNodes,
     RestoreDefaultDOMAttrs,
-    SetDocAttrStep
+    SetDocAttrStep,
+    SuggestionsService
 } from '../../shared';
+import {
+    DragHandleDirective,
+    DotAddButtonComponent,
+    DotBubbleMenuComponent,
+    DotContextMenuComponent
+} from '../../ui';
+import { DotEditorCountBarComponent } from '../dot-editor-count-bar/dot-editor-count-bar.component';
+import { EditorDirective } from '../editor-directive/editor.directive';
 
 @Component({
     selector: 'dot-block-editor',
@@ -139,6 +136,7 @@ import {
         DotMessageService,
         DotContentTypeService,
         DotWorkflowActionsFireService,
+        SuggestionsService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotBlockEditorComponent),
@@ -673,7 +671,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                 }
             }),
             ...DotCMSTableExtensions,
-            DotTableCellContextMenu(this.viewContainerRef),
+            DotTableCellContextMenu(this.viewContainerRef, this.#injector),
             GridColumn
         ];
 

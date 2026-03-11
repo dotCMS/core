@@ -2,7 +2,7 @@ import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { ComponentRef, ViewContainerRef } from '@angular/core';
+import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
 
 import { Editor, Extension } from '@tiptap/core';
 
@@ -14,6 +14,8 @@ import { SuggestionsComponent, popperModifiers } from '../../shared';
 interface TableContextMenuOptions {
     editor: Editor;
     viewContainerRef: ViewContainerRef;
+    /** Injector that provides SuggestionsService (e.g. from the block editor). Required for DeferBlock injector. */
+    injector: Injector;
 }
 
 interface TableNode {
@@ -156,14 +158,14 @@ function initializeComponent(options: TableContextMenuOptions): {
     component: ComponentRef<SuggestionsComponent>;
     tippyInstance: Instance;
 } {
-    const { editor, viewContainerRef } = options;
+    const { editor, viewContainerRef, injector } = options;
     const { element: editorElement } = editor.options;
 
-    if (!editorElement || !viewContainerRef) {
-        throw new Error('Editor element or ViewContainerRef is not available');
+    if (!editorElement || !viewContainerRef || !injector) {
+        throw new Error('Editor element, ViewContainerRef, or Injector is not available');
     }
 
-    const component = viewContainerRef.createComponent(SuggestionsComponent);
+    const component = viewContainerRef.createComponent(SuggestionsComponent, { injector });
     const element = component.location.nativeElement;
 
     const tippyInstance = tippy(editorElement as HTMLElement, {
@@ -287,7 +289,7 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
 };
 
 // Extension Export
-export const DotTableCellContextMenu = (viewContainerRef: ViewContainerRef) => {
+export const DotTableCellContextMenu = (viewContainerRef: ViewContainerRef, injector: Injector) => {
     return Extension.create({
         name: 'dotTableCellContextMenu',
         priority: 800,
@@ -295,7 +297,8 @@ export const DotTableCellContextMenu = (viewContainerRef: ViewContainerRef) => {
             return [
                 TableCellContextMenuPlugin({
                     editor: this.editor,
-                    viewContainerRef: viewContainerRef
+                    viewContainerRef,
+                    injector
                 })
             ];
         }
