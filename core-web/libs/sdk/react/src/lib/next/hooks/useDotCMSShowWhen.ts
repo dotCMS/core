@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
 import { UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
@@ -33,11 +33,5 @@ import { getUVEState } from '@dotcms/uve';
  * }
  */
 export const useDotCMSShowWhen = (when: UVE_MODE): boolean => {
-    const [show, setShow] = useState(false);
-
-    useEffect(() => {
-        setShow(getUVEState()?.mode === when);
-    }, [when]);
-
-    return show;
+    return useMemo(() => getUVEState()?.mode === when, [when]);
 };

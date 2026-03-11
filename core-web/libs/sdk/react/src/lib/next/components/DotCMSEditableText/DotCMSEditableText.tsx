@@ -43,17 +43,15 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
 }: Readonly<DotCMSEditableTextProps<T>>) {
     const editorRef = useRef<Editor['editor'] | null>(null);
     const [scriptSrc, setScriptSrc] = useState('');
-    const [initEditor, setInitEditor] = useState(false);
-    const [content, setContent] = useState(contentlet?.[fieldName] || '');
 
-    useEffect(() => {
-        setContent(contentlet?.[fieldName] || '');
-    }, [fieldName, contentlet]);
+    // Derive content and initEditor directly from props/external state
+    // to avoid synchronous setState calls inside useEffect (set-state-in-effect rule)
+    const content = (contentlet?.[fieldName] as string) || '';
+    const uveState = getUVEState();
+    const initEditor = uveState?.mode === UVE_MODE.EDIT && !!uveState?.dotCMSHost?.length;
 
     useEffect(() => {
         const state = getUVEState();
-
-        setInitEditor(state?.mode === UVE_MODE.EDIT && !!state?.dotCMSHost?.length);
 
         if (!contentlet || !fieldName) {
             console.error(
@@ -80,8 +78,6 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
 
         const createURL = new URL(__TINYMCE_PATH_ON_DOTCMS__, state.dotCMSHost);
         setScriptSrc(createURL.toString());
-
-        const content = (contentlet?.[fieldName] as string) || '';
 
         editorRef.current?.setContent(content, { format });
     }, [format, fieldName, contentlet, content]);

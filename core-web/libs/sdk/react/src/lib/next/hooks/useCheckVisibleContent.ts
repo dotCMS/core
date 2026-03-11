@@ -26,14 +26,22 @@ export const useCheckVisibleContent = (ref: RefObject<HTMLDivElement>) => {
     const [haveContent, setHaveContent] = useState<boolean>(false);
 
     useLayoutEffect(() => {
-        if (!ref.current) {
-            setHaveContent(false);
+        const element = ref.current;
 
+        if (!element) {
             return;
         }
 
-        const { height } = ref.current.getBoundingClientRect();
-        setHaveContent(height > 0);
+        // Use ResizeObserver so setState is called inside a callback (not synchronously
+        // in the effect body), satisfying the react-hooks/set-state-in-effect rule.
+        const observer = new ResizeObserver((entries) => {
+            const entry = entries[0];
+            setHaveContent(entry.contentRect.height > 0);
+        });
+
+        observer.observe(element);
+
+        return () => observer.disconnect();
     }, [ref]);
 
     return haveContent;

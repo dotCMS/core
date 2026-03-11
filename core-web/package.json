@@ -229,7 +229,7 @@
         "eslint-plugin-jsx-a11y": "6.10.2",
         "eslint-plugin-playwright": "2.9.0",
         "eslint-plugin-react": "7.37.5",
-        "eslint-plugin-react-hooks": "5.0.0",
+        "eslint-plugin-react-hooks": "^7.0.1",
         "fake-indexeddb": "5.0.2",
         "fetch-mock": "9.11.0",
         "flatpickr": "4.5.7",
