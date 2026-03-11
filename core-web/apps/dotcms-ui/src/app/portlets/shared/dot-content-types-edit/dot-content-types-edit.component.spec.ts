@@ -387,6 +387,30 @@ describe('DotContentTypesEditComponent', () => {
                     workflow: ['123', '456']
                 });
             });
+
+            it('should set savingContentType to true while creating and false on success', fakeAsync(() => {
+                const response$ = new Subject<DotCMSContentType[]>();
+                jest.spyOn(crudService, 'postData').mockReturnValue(response$.asObservable());
+
+                contentTypeForm.triggerEventHandler('$send', mockContentType);
+                expect(comp.savingContentType()).toBe(true);
+
+                response$.next([{ ...mockContentType, id: '123', layout: [] }]);
+                response$.complete();
+                tick();
+
+                expect(comp.savingContentType()).toBe(false);
+            }));
+
+            it('should set savingContentType to false on create error', () => {
+                jest.spyOn(crudService, 'postData').mockReturnValue(
+                    throwError(mockResponseView(403))
+                );
+                jest.spyOn(dotHttpErrorManagerService, 'handle');
+
+                contentTypeForm.triggerEventHandler('$send', mockContentType);
+                expect(comp.savingContentType()).toBe(false);
+            });
         });
 
         describe('bind dialog actions to form', () => {
@@ -916,6 +940,30 @@ describe('DotContentTypesEditComponent', () => {
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+            });
+
+            it('should set savingContentType to true while updating and false on success', fakeAsync(() => {
+                const response$ = new Subject<DotCMSContentType>();
+                jest.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
+
+                contentTypeForm.triggerEventHandler('$send', fakeContentType);
+                expect(comp.savingContentType()).toBe(true);
+
+                response$.next(fakeContentType);
+                response$.complete();
+                tick();
+
+                expect(comp.savingContentType()).toBe(false);
+            }));
+
+            it('should set savingContentType to false on update error', () => {
+                jest.spyOn(crudService, 'putData').mockReturnValue(
+                    throwError(mockResponseView(403))
+                );
+                jest.spyOn(dotHttpErrorManagerService, 'handle');
+
+                contentTypeForm.triggerEventHandler('$send', fakeContentType);
+                expect(comp.savingContentType()).toBe(false);
             });
         });
 
