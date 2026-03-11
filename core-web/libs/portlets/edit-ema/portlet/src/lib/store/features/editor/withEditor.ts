@@ -127,24 +127,6 @@ export function withEditor() {
                 );
             });
 
-            // const hasPermissionToEditStyles = computed(() => {
-            //     const canEditPage = store.pageAsset()?.page?.canEdit;
-            //     const isExperimentRunning = [
-            //         DotExperimentStatus.RUNNING,
-            //         DotExperimentStatus.SCHEDULED
-            //     ].includes(store.pageExperiment()?.status);
-
-            //     return canEditPage && !isExperimentRunning && !store.$lockIsPageLocked();
-            // });
-
-            // const $isStyleEditorEnabled = computed(() => {
-            //     if (isTraditionalPage()) {
-            //         return flags().FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
-            //     }
-
-            //     return flags().FEATURE_FLAG_UVE_STYLE_EDITOR;
-            // });
-
             // Public capabilities (exported via EditorComputed interface)
             const editorCanEditContent = computed(() => {
                 return editorHasAccessToEditMode() && store.viewMode() === UVE_MODE.EDIT;

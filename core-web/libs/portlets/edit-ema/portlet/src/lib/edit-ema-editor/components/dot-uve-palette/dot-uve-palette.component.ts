@@ -7,6 +7,7 @@ import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
@@ -18,7 +19,7 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 interface TabHeaderConfig {
     value: UVE_PALETTE_TABS;
     icon: string;
-    tooltip: string;
+    tooltipKey: string;
 }
 
 /**
@@ -34,6 +35,7 @@ interface TabHeaderConfig {
         NgClass,
         TabsModule,
         TooltipModule,
+        DotMessagePipe,
         DotRowReorderComponent,
         DotUvePaletteListComponent
     ],
@@ -46,10 +48,26 @@ export class DotUvePaletteComponent {
     protected readonly dotPageLayoutService = inject(DotPageLayoutService);
     protected readonly $tabHeaders = computed<TabHeaderConfig[]>(() => {
         const tabs: TabHeaderConfig[] = [
-            { value: UVE_PALETTE_TABS.CONTENT_TYPES, icon: 'pi-stop', tooltip: 'Content types' },
-            { value: UVE_PALETTE_TABS.WIDGETS, icon: 'pi-th-large', tooltip: 'Widgets' },
-            { value: UVE_PALETTE_TABS.FAVORITES, icon: 'pi-star', tooltip: 'Favorites' },
-            { value: UVE_PALETTE_TABS.LAYERS, icon: 'pi-table', tooltip: 'Layers' }
+            {
+                value: UVE_PALETTE_TABS.CONTENT_TYPES,
+                icon: 'pi-stop',
+                tooltipKey: 'uve.palette.tab.content.types'
+            },
+            {
+                value: UVE_PALETTE_TABS.WIDGETS,
+                icon: 'pi-th-large',
+                tooltipKey: 'uve.palette.widgets.title'
+            },
+            {
+                value: UVE_PALETTE_TABS.FAVORITES,
+                icon: 'pi-star',
+                tooltipKey: 'uve.palette.favorites.title'
+            },
+            {
+                value: UVE_PALETTE_TABS.LAYERS,
+                icon: 'pi-table',
+                tooltipKey: 'uve.palette.tab.layers'
+            }
         ];
         return tabs;
     });

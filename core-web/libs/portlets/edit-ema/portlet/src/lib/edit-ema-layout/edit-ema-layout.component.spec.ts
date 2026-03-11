@@ -1,7 +1,7 @@
 import { expect, describe } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
-import { MockComponent, MockProvider } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -119,30 +119,15 @@ describe('EditEmaLayoutComponent', () => {
                 getByInode: jest.fn(() => of([]))
             }),
             mockProvider(ConfirmationService),
-            MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
-            MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
-            MockProvider(DotLanguagesService, new DotLanguagesServiceMock(), 'useValue'),
-            MockProvider(
-                DotLicenseService,
-                {
-                    isEnterprise: () => of(true)
-                },
-                'useValue'
-            ),
-            MockProvider(
-                DotContentletLockerService,
-                {
-                    unlock: (_inode: string) => of({})
-                },
-                'useValue'
-            ),
-            MockProvider(
-                LoginService,
-                {
-                    getCurrentUser: () => of({})
-                },
-                'useValue'
-            ),
+            { provide: DotExperimentsService, useValue: DotExperimentsServiceMock },
+            { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
+            { provide: DotLicenseService, useValue: { isEnterprise: () => of(true) } },
+            {
+                provide: DotContentletLockerService,
+                useValue: { unlock: (_inode: string) => of({}) }
+            },
+            { provide: LoginService, useValue: { getCurrentUser: () => of({}) } },
             {
                 provide: WINDOW,
                 useValue: window
