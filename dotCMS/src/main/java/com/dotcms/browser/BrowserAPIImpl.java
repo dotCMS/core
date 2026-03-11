@@ -149,7 +149,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             // When pagination is not requested (public overload passes -1), fetch everything at once.
             if (maxRows <= 0) {
-                final DotConnect dcSelect = getDotConnect(sqlQuery);
+                final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+                sqlQuery.params.forEach(dcSelect::addParam);
                 final List<String> allInodesOrdered = collectInodesFromDB(dcSelect);
                 final List<Contentlet> filtered = getContentFilteredByRole(browserQuery, allInodesOrdered);
                 return new ContentUnderParent(filtered, false, 0);
@@ -272,20 +273,6 @@ public class BrowserAPIImpl implements BrowserAPI {
         final DotConnect dc = new DotConnect().setSQL(paginatedSQL);
         sqlQuery.params.forEach(dc::addParam);
         return dc;
-    }
-
-    /**
-     * Creates a {@link DotConnect} preloaded with the select query and its bound parameters from a
-     * {@link SelectQuery} may further configure pagination
-     * ({@code setStartRow}/{@code setMaxRows}) before executing.
-     *
-     * @param sqlQuery the pre-built SQL select query containing: string query and parameters
-     * @return a {@link DotConnect} ready to execute
-     */
-    private static DotConnect getDotConnect(final SelectQuery sqlQuery) {
-        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-        sqlQuery.params.forEach(dcSelect::addParam);
-        return dcSelect;
     }
 
     /**
@@ -472,8 +459,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
 
             // ES text-filter this chunk, then permission-filter the matches
-            // Process chunks in parallel for better throughput
-            final Set<String> esFiltered = parallelChunksInES(browserQuery, candidateChunkInodes, chunkSize);
+            final Set<String> esFiltered = processESDirectly(browserQuery, new LinkedHashSet<>(candidateChunkInodes));
             if (!esFiltered.isEmpty()) {
                 final List<Contentlet> chunkFiltered = getContentFilteredByRole(browserQuery, new LinkedList<>(esFiltered));
                 accumulatedContent.addAll(chunkFiltered);
@@ -512,82 +498,6 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return new ContentUnderParent(page, hasMore, nextContentCursor);
-    }
-
-    /**
-     * Processes chunks of candidate inodes in parallel for improved performance.
-     * Each chunk is processed directly through ES without further internal partitioning.
-     *
-     * @param browserQuery The browser query containing search criteria
-     * @param allCandidateInodes All candidate inodes to process
-     * @param totalCandidates Total number of candidates
-     * @return Set of filtered inodes that match the search criteria
-     */
-    private Set<String> parallelChunksInES(final BrowserQuery browserQuery,
-            final List<String> allCandidateInodes, final int totalCandidates) {
-        // Calculate the optimal ES chunk size based on total count
-        final int esChunkSize = calculateESChunkSizeFromTotalCount(totalCandidates);
-
-        final Set<String> collectedInodes = Collections.synchronizedSet(new LinkedHashSet<>());
-        final long startTime = System.currentTimeMillis();
-
-        // Create chunks for parallel processing
-        final List<List<String>> chunks = Lists.partition(allCandidateInodes, esChunkSize);
-
-        final int actualChunks = chunks.size();
-        Logger.debug(this, String.format("Processing %d chunks in parallel", actualChunks));
-
-        // Process chunks in parallel using CompletableFuture
-        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
-        final CompletableFuture[] futures = new CompletableFuture[actualChunks];
-
-        for (int i = 0; i < actualChunks; i++) {
-            final List<String> chunk = chunks.get(i);
-            final int chunkIndex = i + 1;
-            futures[i] = CompletableFuture
-                .supplyAsync(() -> {
-                    // Process chunk directly without internal partitioning
-                    final Set<String> chunkMatches = processESDirectly(browserQuery, new LinkedHashSet<>(chunk));
-                    Logger.debug(BrowserAPIImpl.this, String.format("Processed chunk %d/%d: %d inodes, found %d matches.",
-                            chunkIndex, actualChunks, chunk.size(), chunkMatches.size()));
-                    return chunkMatches;
-                }, submitter)
-                .orTimeout(60, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    Logger.error(BrowserAPIImpl.this, String.format("Chunk %d failed: %s", chunkIndex, throwable.getMessage()), throwable);
-                    return new LinkedHashSet<>();
-                });
-        }
-
-        // Wait for all chunks to complete and collect results
-        try {
-            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
-            allFutures.get(120, TimeUnit.SECONDS); // Global timeout
-            for (CompletableFuture<Set<String>> future : futures) {
-                try {
-                    Set<String> chunkMatches = future.get();
-                    collectedInodes.addAll(chunkMatches);
-                } catch (Exception e) {
-                    Logger.warn(this, "Failed to get result from chunk future: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-            final long totalDuration = System.currentTimeMillis() - startTime;
-            Logger.debug(this, String.format(
-                "Single Query Chunked parallel processing completed: %d candidates in %d chunks → %d total matches in %d ms",
-                totalCandidates, actualChunks, collectedInodes.size(), totalDuration));
-
-        } catch (InterruptedException e) {
-            Logger.error(this, "Parallel chunk processing interrupted: " + e.getMessage(), e);
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            Logger.error(this, "Parallel chunk processing execution error: " + e.getMessage(), e);
-        } catch (TimeoutException e) {
-            Logger.error(this, "Parallel chunk processing timed out: " + e.getMessage(), e);
-        }
-
-        return collectedInodes;
     }
 
     /**
@@ -777,32 +687,6 @@ public class BrowserAPIImpl implements BrowserAPI {
     // Default of 50,000 covers a worst-case ~5% permission pass rate for a full page of 300 items.
     static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
     static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
-
-    /**
-     * Calculates optimal ES chunk size based on percentage of total count for processing inodes.
-     * The chunk size is calculated as a percentage of the total count, with minimum and maximum limits
-     * to ensure reasonable ES performance and memory usage.
-     *
-     * @param totalCount Total number of inodes to process
-     * @return Calculated ES chunk size within configured bounds
-     */
-    private int calculateESChunkSizeFromTotalCount(int totalCount) {
-        if (totalCount <= 0) {
-            return SINGLE_QUERY_ES_CHUNK_MIN_SIZE.get();
-        }
-
-        // Calculate chunk size as percentage of total count
-        final double percentage = SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get() / 100.0;
-        int calculatedSize = (int) Math.ceil(totalCount * percentage);
-
-        // Calculate estimated number of ES chunks
-        final int estimatedChunks = (int) Math.ceil((double) totalCount / calculatedSize);
-
-        Logger.debug(this, String.format("ES chunk size calculation: total=%d, percentage=%.1f%%, calculated=%d, final=%d, estimated ES chunks=%d",
-            totalCount, SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get(), (int) Math.ceil(totalCount * percentage), calculatedSize, estimatedChunks));
-
-        return calculatedSize;
-    }
 
     /**
      * Represents content items under a specific parent along with the total count.
