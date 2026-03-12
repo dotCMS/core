@@ -12,6 +12,7 @@ version="2.0" bean-discovery-mode="annotated">
         <class>com.dotcms.business.cdi.ExternalTransactionInterceptor</class>
         <!-- Observability -->
         <class>com.dotcms.business.cdi.LogTimeInterceptor</class>
+        <class>com.dotcms.business.cdi.RequestCostInterceptor</class>
     </interceptors>
     <scan>
         <exclude name="org.apache.**"/>
