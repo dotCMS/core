@@ -109,6 +109,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
     private ReindexQueueAPI queueApi = null;
     private IndexAPI esIndexApi = null;
+
     private ContentIndexMappingAPI mappingAPI = null;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
