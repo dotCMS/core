@@ -20,6 +20,7 @@ import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RenderedContainersDataFetcher;
+import com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RunningExperimentFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.VanityURLFetcher;
@@ -164,6 +165,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         pageFields.put("runningExperimentId", new TypeFetcher(
                 GraphQLString, new RunningExperimentFetcher())
         );
+        pageFields.put("numberContents", new TypeFetcher(GraphQLInt, new NumberContentsDataFetcher()));
         
         // Expose the page as its underlying contentlet type to enable inline fragments
         // for accessing content-type-specific fields like SEO metadata
