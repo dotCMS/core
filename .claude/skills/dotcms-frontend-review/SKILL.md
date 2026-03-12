@@ -9,8 +9,8 @@ Intelligent, self-validating pull request reviewer that automatically selects th
 ## Usage
 
 ```bash
-/review <PR_NUMBER>
-/review <PR_URL>
+/dotcms-frontend-review <PR_NUMBER>
+/dotcms-frontend-review <PR_URL>
 ```
 
 ## How It Works
