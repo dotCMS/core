@@ -267,12 +267,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param offset   number of rows to skip from the beginning of the result set
      * @return a {@link DotConnect} ready to execute with pagination built into the SQL
      */
-    private static DotConnect buildPaginatedDotConnect(final SelectQuery sqlQuery,
-            final int limit, final int offset) {
+    private static DotConnect buildPaginatedDotConnect(final SelectQuery sqlQuery, final int limit, final int offset) {
         final String paginatedSQL = sqlQuery.selectQuery + " LIMIT " + limit + " OFFSET " + offset;
-        final DotConnect dc = new DotConnect().setSQL(paginatedSQL);
-        sqlQuery.params.forEach(dc::addParam);
-        return dc;
+        final DotConnect dcSelect = new DotConnect().setSQL(paginatedSQL);
+        sqlQuery.params.forEach(dcSelect::addParam);
+        return dcSelect;
     }
 
     /**
