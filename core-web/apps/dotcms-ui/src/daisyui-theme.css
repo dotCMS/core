@@ -1,0 +1,60 @@
+/*
+ * DaisyUI theme and scope for VTL custom fields.
+ * Light theme only; dark theme is not included to avoid dark mode.
+ * DaisyUI is scoped to dot-native-field (semantic components in custom fields).
+ */
+@plugin "daisyui" {
+    root: 'dot-native-field';
+}
+@plugin "daisyui/theme" {
+    name: 'light';
+    default: true;
+    prefersdark: true;
+    root: 'dot-native-field';
+    --color-base: white;
+    --color-base-content: var(--p-inputtext-color);
+    --radius-field: var(--p-inputtext-border-radius);
+    --border: 1px;
+    --input-color: var(--p-inputtext-color);
+    --color-error: var(--p-message-error-simple-color);
+}
+
+/*
+ * Utilities applied at runtime (e.g. VTL custom fields, JS setting className) are not
+ * in files Tailwind scans at build time, so they get purged. @source inline() forces
+ * them into the generated CSS. This list should primarily contain Tailwind utility
+ * classes; include DaisyUI classes (e.g. rounded-box) here only when they are applied
+ * dynamically at runtime and would otherwise be purged.
+ */
+@source inline("w-full min-w-0 rounded-box justify-between bg-white shadow-sm max-h-60 overflow-y-auto overflow-x-hidden list-none text-left py-2 px-3 cursor-pointer rounded-lg flex flex-col gap-0.5 items-start font-medium block text-xs opacity-80 hidden border mt-4 rounded transition-all duration-300 ease-in-out max-w-full z-[1] p-2 overflow-hidden truncate mt-2 my-2 max-h-64 min-h-0 text-base-content/70");
+@source inline("{hover:,}bg-primary/10");
+@source inline("bg-primary/20 border-primary/30 text-error");
+@source inline("modal-box modal-action modal");
+dot-native-field {
+    .input {
+        font-size: 1rem;
+        font-family: inherit;
+        font-feature-settings: inherit;
+        outline-color: transparent;
+        box-shadow: var(--p-inputtext-shadow);
+        transition:
+            background var(--p-inputtext-transition-duration),
+            color var(--p-inputtext-transition-duration),
+            border-color var(--p-inputtext-transition-duration),
+            outline-color var(--p-inputtext-transition-duration),
+            box-shadow var(--p-inputtext-transition-duration);
+
+        &:focus,
+        &:focus-within {
+            box-shadow: var(--p-inputtext-focus-ring-shadow);
+            border-color: var(--p-inputtext-focus-border-color);
+            outline: var(--p-inputtext-focus-ring-width) var(--p-inputtext-focus-ring-style)
+                var(--p-inputtext-focus-ring-color);
+            outline-offset: var(--p-inputtext-focus-ring-offset);
+        }
+    }
+    .text-error {
+        color: var(--p-inputtext-invalid-border-color);
+    }
+}
+

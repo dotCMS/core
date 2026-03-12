@@ -1,21 +1,6 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
-@plugin "daisyui" {
-    /* Solo tema light; no se incluye dark para evitar modo oscuro. */
-    themes: light --default;
-    /* DaisyUI solo aplica dentro de dot-native-field (componentes semánticos en custom fields). */
-    root: 'dot-native-field';
-}
-
-/*
- * Utilities applied at runtime (e.g. VTL custom fields, JS setting className) are not
- * in files Tailwind scans at build time, so they get purged. @source inline() forces
- * them into the generated CSS. Add only Tailwind utilities here (no DaisyUI component
- * classes like btn, dropdown, menu).
- */
-@source inline("w-full min-w-0 rounded-box justify-between bg-white shadow-sm max-h-60 overflow-y-auto overflow-x-hidden list-none text-left py-2 px-3 cursor-pointer rounded-lg flex flex-col gap-0.5 items-start font-medium block text-xs opacity-80 hidden border mt-4 rounded transition-all duration-300 ease-in-out max-w-full z-[1] p-2 overflow-hidden truncate");
-@source inline("{hover:,}bg-primary/10");
-@source inline("bg-primary/20 border-primary/30");
+@import './daisyui-theme.css';
 
 :root {
     --experiment-nav-size: 80px;
@@ -37,7 +22,7 @@ a:visited {
     @apply text-primary-800;
 }
 
-/* The .form > div is because the app form is using a div to wrap the fields. */
+/* The .form > div is because the app form uses a div to wrap the fields. */
 .form {
     @apply w-full space-y-5;
 }
@@ -51,10 +36,10 @@ a:visited {
 }
 
 /*
-Since we using space-y-5, we need to hide the empty fields.
-This selector needs work, I don't want to have to specify every single component that don't needs to be hidden.
-TODO: (migration) check all the forms for the "hint" or "error" messages when empty it adds extra space between fields
-*/
+ * With space-y-5, we need to hide empty fields.
+ * This selector needs work; we don't want to specify every single component that shouldn't be hidden.
+ * TODO: (migration) check all forms for "hint" or "error" messages when empty — they add extra space between fields.
+ */
 /* .form
     *:not(
         .p-checkbox-box,

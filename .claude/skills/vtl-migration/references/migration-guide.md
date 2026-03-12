@@ -187,19 +187,25 @@ Use **DaisyUI component classes** for buttons, inputs, selects, modals, and link
 For `dojoType="dijit.Dialog"` elements, use the native HTML `<dialog>` element with **DaisyUI modal** classes: `modal`, `modal-box`, `modal-action`.
 
 ```html
-<!-- Open the modal using ID.showModal() method -->
-<button type="button" class="btn btn-primary" onclick="myDialog.showModal()">Open modal</button>
+<button type="button" id="openModalButton" class="btn btn-primary">Open modal</button>
 <dialog id="myDialog" class="modal">
   <div class="modal-box">
     <h3 class="font-bold text-lg">Hello!</h3>
     <p class="py-4">Press ESC key or click the button below to close</p>
     <div class="modal-action">
       <form method="dialog">
-        <button type="button" class="btn">Close</button>
+        <button type="submit" class="btn">Close</button>
       </form>
     </div>
   </div>
 </dialog>
+<script>
+  const myDialog = document.getElementById('myDialog');
+  const openModalButton = document.getElementById('openModalButton');
+  openModalButton?.addEventListener('click', () => {
+    myDialog?.showModal();
+  });
+</script>
 ```
 
 ### Rule 10: Replace inline event handlers with `addEventListener()`

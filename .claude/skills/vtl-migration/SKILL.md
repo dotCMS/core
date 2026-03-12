@@ -118,18 +118,25 @@ titleField.onChange((value) => {
 
 **Native dialog with DaisyUI modal** (replaces `dojoType="dijit.Dialog"`):
 ```html
-<button type="button" class="btn btn-primary" onclick="my_modal_1.showModal()">Open modal</button>
-<dialog id="my_modal_1" class="modal">
+<button type="button" id="openModalButton" class="btn btn-primary">Open modal</button>
+<dialog id="myDialog" class="modal">
   <div class="modal-box">
     <h3 class="font-bold text-lg">Hello!</h3>
     <p class="py-4">Press ESC key or click the button below to close</p>
     <div class="modal-action">
       <form method="dialog">
-        <button type="button" class="btn">Close</button>
+        <button type="submit" class="btn">Close</button>
       </form>
     </div>
   </div>
 </dialog>
+<script>
+  const myDialog = document.getElementById('myDialog');
+  const openModalButton = document.getElementById('openModalButton');
+  openModalButton?.addEventListener('click', () => {
+    myDialog?.showModal();
+  });
+</script>
 ```
 
 **Styling (DaisyUI):** Buttons → `btn`, `btn-primary`, `btn-ghost`, `btn-sm`. Inputs → `input input-bordered`. Selects → `select select-bordered`. Links → `link link-primary`. Use Tailwind for layout (`flex`, `gap`, `w-full`). Full reference in `references/migration-guide.md` → “Styling with DaisyUI”.
