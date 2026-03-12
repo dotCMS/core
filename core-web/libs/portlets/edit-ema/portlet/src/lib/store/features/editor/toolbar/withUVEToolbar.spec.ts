@@ -13,7 +13,6 @@ import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing'
 import { withUVEToolbar } from './withUVEToolbar';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
-import { WithFlagsState } from '../../flags/models';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import {
@@ -22,6 +21,7 @@ import {
     URL_CONTENT_MAP_MOCK
 } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
+import { WithFlagsState } from '../../flags/models';
 
 const pageParams = {
     url: 'test-url',
