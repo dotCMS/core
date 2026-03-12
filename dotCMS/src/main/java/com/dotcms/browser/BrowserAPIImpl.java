@@ -268,9 +268,12 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return a {@link DotConnect} ready to execute with pagination built into the SQL
      */
     private static DotConnect buildPaginatedDotConnect(final SelectQuery sqlQuery, final int limit, final int offset) {
-        final String paginatedSQL = sqlQuery.selectQuery + " LIMIT " + limit + " OFFSET " + offset;
+        final String paginatedSQL = sqlQuery.selectQuery + " LIMIT ? OFFSET ?";
         final DotConnect dcSelect = new DotConnect().setSQL(paginatedSQL);
         sqlQuery.params.forEach(dcSelect::addParam);
+        dcSelect.addParam(limit);
+        dcSelect.addParam(offset);
+
         return dcSelect;
     }
 
