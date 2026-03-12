@@ -66,50 +66,31 @@ public class DatabaseHealthCheck extends HealthCheckBase {
         return measureExecution(() -> {
             final ExecutorService executor = Executors.newSingleThreadExecutor();
             final Future<String> future = executor.submit(() -> {
-                // Bypass ThreadLocal caching — get a fresh connection directly from the pool
-                // to test actual database connectivity rather than validating cached state
-                Connection conn = null;
-                try {
-                    conn = DbConnectionFactory.getDataSource().getConnection();
+                // getDataSource().getConnection() bypasses ThreadLocal — try-with-resources is safe
+                // because close() returns the connection to HikariCP's pool (no ownership conflict).
+                // HikariCP validates connections on borrow, so successfully getting one = DB is reachable.
+                try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
                     if (conn == null) {
                         throw new SQLException("Database connection is null");
                     }
-                    // JDBC4 isValid() is the standard health check approach — pgjdbc
-                    // implements it without statement allocation, unlike prepareStatement("SELECT 1")
-                    if (!conn.isValid(2)) {
-                        throw new SQLException("Database connection validation failed (isValid returned false)");
-                    }
                     final String dbVersion = Config.DB_VERSION > 0 ? String.valueOf(Config.DB_VERSION) : "unknown";
-                    return "Database connection OK (DB version: " + dbVersion + ", verified with isValid)";
-                } finally {
-                    // Interrupt-resilient cleanup: clear interrupted flag so close() completes,
-                    // then restore it afterward to avoid orphaning connections on timeout
-                    if (conn != null) {
-                        final boolean wasInterrupted = Thread.interrupted();
-                        try {
-                            conn.close();
-                        } catch (final SQLException e) {
-                            Logger.debug(DatabaseHealthCheck.class,
-                                    "Error closing health check connection: " + e.getMessage());
-                        } finally {
-                            if (wasInterrupted) {
-                                Thread.currentThread().interrupt();
-                            }
-                        }
-                    }
+                    return "Database connection OK (DB version: " + dbVersion + ")";
                 }
             });
 
             try {
-                // Fail fast if the DB is unavailable or blocked — 2 second timeout
-                return future.get(2, TimeUnit.SECONDS);
+                final int timeoutSeconds = Config.getIntProperty(
+                        "health.check.database.timeout.seconds", 2);
+                return future.get(timeoutSeconds, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 future.cancel(true);
-                throw new Exception("Database connection timeout (over 2 seconds)", e);
+                throw new Exception("Database connection timeout (over " +
+                        Config.getIntProperty("health.check.database.timeout.seconds", 2) + " seconds)", e);
             } catch (ExecutionException e) {
                 throw new Exception("Database connection failed: " + e.getCause().getMessage(), e.getCause());
             } finally {
-                // Graceful shutdown: allow in-flight cleanup to complete before forcing
+                // Graceful shutdown: let close() complete before interrupting — pgjdbc can
+                // throw during clearWarnings() on an interrupted thread, same class of issue as #34490
                 executor.shutdown();
                 try {
                     if (!executor.awaitTermination(3, TimeUnit.SECONDS)) {
