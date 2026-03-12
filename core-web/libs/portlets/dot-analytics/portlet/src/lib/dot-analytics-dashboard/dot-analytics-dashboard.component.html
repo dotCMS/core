@@ -34,7 +34,7 @@
 
     <div class="px-4">
         <!-- Tabs -->
-        <p-tabs [value]="store.currentTab()" (valueChange)="onTabChange($event)">
+        <p-tabs [lazy]="true" [value]="store.currentTab()" (valueChange)="onTabChange($event)">
             <p-tablist>
                 @for (tab of tabs; track tab.id) {
                     <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
@@ -43,17 +43,9 @@
             <p-tabpanels>
                 @for (tab of tabs; track tab.id) {
                     <p-tabpanel [value]="tab.id">
-                        @switch (tab.id) {
-                            @case ('pageview') {
-                                <dot-analytics-pageview-report />
-                            }
-                            @case ('conversions') {
-                                <dot-analytics-conversions-report />
-                            }
-                            @case ('engagement') {
-                                <dot-analytics-engagement-report />
-                            }
-                        }
+                        <ng-template #content>
+                            <ng-container *ngComponentOutlet="tabComponents[tab.id]" />
+                        </ng-template>
                     </p-tabpanel>
                 }
             </p-tabpanels>
