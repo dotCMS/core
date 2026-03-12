@@ -1110,7 +1110,9 @@ describe('EditEmaEditorComponent', () => {
                     };
 
                     // First, ensure page starts in locked state (use componentStore so effect sees it)
-                    const initialResponse = componentStore.pageAsset()!;
+                    const initialResponse = componentStore.pageAsset() as NonNullable<
+                        ReturnType<typeof componentStore.pageAsset>
+                    >;
                     componentStore.updatePageResponse({
                         ...initialResponse,
                         page: {
@@ -1131,7 +1133,9 @@ describe('EditEmaEditorComponent', () => {
                     expect(resetActiveContentletSpy).not.toHaveBeenCalled();
 
                     // Unlock the page (triggers $resetActiveContentletOnUnlockEffect)
-                    const lockedResponse = componentStore.pageAsset()!;
+                    const lockedResponse = componentStore.pageAsset() as NonNullable<
+                        ReturnType<typeof componentStore.pageAsset>
+                    >;
                     componentStore.updatePageResponse({
                         ...lockedResponse,
                         page: {
@@ -1155,7 +1159,9 @@ describe('EditEmaEditorComponent', () => {
                     expect(componentStore.editorActiveContentlet()).toBeNull();
 
                     // Set page as locked first
-                    const currentResponse = componentStore.pageAsset()!;
+                    const currentResponse = componentStore.pageAsset() as NonNullable<
+                        ReturnType<typeof componentStore.pageAsset>
+                    >;
                     componentStore.updatePageResponse({
                         ...currentResponse,
                         page: {
