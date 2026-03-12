@@ -158,7 +158,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             final int chunkSize = Math.max(maxRows * BROWSER_DB_CHUNK_FACTOR.get(), BROWSER_DB_CHUNK_MIN_SIZE.get());
 
-            Logger.debug(this, "::::: Using DB Chunked to retrieve content by role filtering ::::");
+            Logger.debug(this, "::::: Using DB Chunked to retrieve content filtered by role ::::");
             return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, false);
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
@@ -221,7 +221,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 break;
             }
 
-            // if applyESFilter is true ES text-filter this chunk, then permission-filter the matches otherwise just then permission-filter the matches
+            // if applyESFilter is true ES text-filter this chunk, then permission-filter, otherwise just permission-filter the matches
             List<Contentlet> chunkFiltered = getChunkFiltered(browserQuery, applyESFilter, candidateChunkInodes);
             accumulatedContent.addAll(chunkFiltered);
 
