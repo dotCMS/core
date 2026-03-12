@@ -1,22 +1,26 @@
 package com.dotcms.content.business;
 
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import org.elasticsearch.ElasticsearchException;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 /**
- * This API provides useful methods and mechanisms to map properties that are present in a {@link Contentlet} object,
- * specially for ES indexation purposes.
+ * Vendor-neutral API for mapping and serializing {@link Contentlet} objects for index storage.
+ *
+ * <p>Implementations must not expose any vendor-specific types (Elasticsearch, OpenSearch, etc.)
+ * in their public method signatures. Routing to the active index provider is handled by the
+ * router implementation.</p>
  *
  * @author root
  * @since Mar 22nd, 2012
  */
+@IndexLibraryIndependent
 public interface ContentIndexMappingAPI {
 
 	boolean RESPECT_FRONTEND_ROLES = Boolean.TRUE;
@@ -29,7 +33,7 @@ public interface ContentIndexMappingAPI {
      * @param mapping JSON mapping string
      * @return {@code true} if the mapping was acknowledged by all nodes
      */
-    boolean putMapping(List<String> indexes, String mapping) throws ElasticsearchException, IOException;
+    boolean putMapping(List<String> indexes, String mapping) throws IOException;
 
     /**
      * Applies the given mapping to a single index.
@@ -38,7 +42,7 @@ public interface ContentIndexMappingAPI {
      * @param mapping   JSON mapping string
      * @return {@code true} if the mapping was acknowledged
      */
-    boolean putMapping(String indexName, String mapping) throws ElasticsearchException, IOException;
+    boolean putMapping(String indexName, String mapping) throws IOException;
 
     /**
      * Returns the current mapping for the given index as a JSON string.
@@ -46,7 +50,7 @@ public interface ContentIndexMappingAPI {
      * @param index index name
      * @return mapping JSON
      */
-    String getMapping(String index) throws ElasticsearchException, IOException;
+    String getMapping(String index) throws IOException;
 
     /**
      * Returns the mapping for a specific field in the given index.

@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
@@ -16,12 +15,17 @@ import static com.liferay.util.StringPool.COMMA;
 import static com.liferay.util.StringPool.PERIOD;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.IndexMappingRestOperations;
+import com.dotcms.content.index.opensearch.MappingOperationsOS;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
+import com.dotcms.content.model.annotation.IndexRouter;
+import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.KeyValueField;
@@ -90,7 +94,6 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -104,16 +107,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.indices.GetFieldMappingsRequest;
-import org.elasticsearch.client.indices.GetFieldMappingsResponse;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.client.indices.PutMappingRequest;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentType;
 
 /**
  * Implementation class for the {@link ContentIndexMappingAPI}.
@@ -121,6 +114,8 @@ import org.elasticsearch.common.xcontent.XContentType;
  * @author root
  * @since Mar 22nd, 2012
  */
+@IndexRouter(access = IndexAccess.READ_WRITE)
+@IndexLibraryIndependent
 public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 
     //This property basically tells the Metadata-API whether we should generate metadata upon reindexing a piece of content
@@ -172,7 +167,6 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 	private final FileMetadataAPI fileMetadataAPI;
 	private final HostAPI hostAPI;
 	private final FieldAPI fieldAPI;
-	private final IndexAPI esIndexAPI;
 	private final RelationshipAPI relationshipAPI;
 	private final TagAPI tagAPI;
 	private final CategoryAPI categoryAPI;
@@ -181,6 +175,10 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
     //By doing this they will get instantiated once the company users roles haven been settled. After the starter is loaded.
 	private final Supplier<ContentTypeAPI> contentTypeAPI;
 	private final Supplier<WorkflowAPI> workflowAPI;
+
+    // ---- Vendor-specific REST delegates ----
+    private final IndexMappingRestOperations esOps;
+    private final IndexMappingRestOperations osOps;
 
 	@VisibleForTesting
 	public ESMappingAPIImpl(
@@ -193,7 +191,6 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 			final FileMetadataAPI fileMetadataAPI,
 			final HostAPI hostAPI,
 			final FieldAPI fieldAPI,
-			final IndexAPI esIndexAPI,
 			final RelationshipAPI relationshipAPI,
 			final TagAPI tagAPI,
 			final CategoryAPI categoryAPI,
@@ -209,13 +206,14 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 		this.fileMetadataAPI = fileMetadataAPI;
 		this.hostAPI = hostAPI;
 		this.fieldAPI = fieldAPI;
-		this.esIndexAPI = esIndexAPI;
 		this.relationshipAPI = relationshipAPI;
 		this.tagAPI = tagAPI;
 		this.categoryAPI = categoryAPI;
 		this.roleAPI = roleAPI;
 		this.contentTypeAPI = contentTypeAPI;
 		this.workflowAPI = workflowAPI;
+		this.esOps = new MappingOperationsES();
+		this.osOps = CDIUtils.getBeanThrows(MappingOperationsOS.class);
 	}
 
 	public ESMappingAPIImpl() {
@@ -223,81 +221,58 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 			APILocator.getIdentifierAPI(), APILocator.getVersionableAPI(),
 			APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
 			APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
-			APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
+			APILocator.getFieldAPI(),
 			APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
 			APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
 			//Use memoized Suppliers to avoid re-instantiating the API on every call
 			Lazy.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())),
-			Lazy.of(APILocator::getWorkflowAPI));
+			Lazy.of(APILocator::getWorkflowAPI)
+        );
 	}
 
     /**
-     * This method takes a mapping string and puts it in a collection of
-     * indexes
-     * @param indexes
-     * @param mapping
-     * @return
-     * @throws ElasticsearchException
-     * @throws IOException
+     * Returns the active mapping REST provider based on the current migration phase.
+     * Defaults to the ES implementation.
      */
-    public boolean putMapping(final List<String> indexes, final String mapping)
-            throws ElasticsearchException, IOException {
-
-        final PutMappingRequest request = new PutMappingRequest(
-                indexes.stream().map(indexName -> esIndexAPI
-                        .getNameWithClusterIDPrefix(indexName)).toArray(String[]::new));
-        request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        request.source(mapping, XContentType.JSON);
-
-        final AcknowledgedResponse putMappingResponse = RestHighLevelClientProvider.getInstance()
-                .getClient().indices()
-                .putMapping(request, RequestOptions.DEFAULT);
-
-        return putMappingResponse.isAcknowledged();
+    private IndexMappingRestOperations getProvider() {
+        return IndexConfigHelper.isMigrationComplete() ? osOps : esOps;
     }
 
     /**
-     * This method takes a mapping string and puts it in the specified index
-     * @param indexName
-     * @param mapping
-     * @return
-     * @throws ElasticsearchException
-     * @throws IOException
+     * Accessor for the ES mapping operations — exposed for testing.
+     * @return ES mapping operations delegate
      */
-    public boolean putMapping(final String indexName, final String mapping)
-            throws ElasticsearchException, IOException {
+    public IndexMappingRestOperations esOps() {
+        return esOps;
+    }
 
+    /**
+     * Accessor for the OS mapping operations — exposed for testing.
+     * @return OS mapping operations delegate
+     */
+    public IndexMappingRestOperations osOps() {
+        return osOps;
+    }
+
+    @Override
+    public boolean putMapping(final List<String> indexes, final String mapping) throws IOException {
+        return getProvider().putMapping(indexes, mapping);
+    }
+
+    @Override
+    public boolean putMapping(final String indexName, final String mapping) throws IOException {
         return putMapping(CollectionsUtils.list(indexName), mapping);
     }
 
+    @Override
+    public String getMapping(final String index) throws IOException {
+        return getProvider().getMapping(index);
+    }
 
-	/**
-	 * Gets the mapping params for an index and type
-	 * @param index
-	 * @return
-	 * @throws ElasticsearchException
-	 * @throws IOException
-	 */
-	public  String getMapping(final String index) throws ElasticsearchException, IOException{
-
-		final GetMappingsRequest request = new GetMappingsRequest();
-		request.indices(index);
-
-		final GetMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
-				.indices().getMapping(request, RequestOptions.DEFAULT);
-
-		return getMappingResponse.mappings().get(index).source().string();
-	}
-
-	public Map<String, Object> getFieldMappingAsMap(final String index, final String fieldName) throws IOException {
-	    final GetFieldMappingsRequest request = new GetFieldMappingsRequest();
-	    request.indices(index).fields(fieldName);
-        final GetFieldMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
-                .indices().getFieldMapping(request, RequestOptions.DEFAULT);
-
-        return getMappingResponse.mappings().get(index).get(fieldName) != null ? getMappingResponse
-                .mappings().get(index).get(fieldName).sourceAsMap() : Collections
-                .emptyMap();
+    @Override
+    public Map<String, Object> getFieldMappingAsMap(final String index,
+            final String fieldName) throws IOException {
+        return getProvider().getFieldMappingAsMap(index, fieldName);
     }
 
 	@SuppressWarnings("unchecked")
