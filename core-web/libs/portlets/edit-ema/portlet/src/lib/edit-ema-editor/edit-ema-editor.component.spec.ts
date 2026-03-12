@@ -696,7 +696,12 @@ describe('EditEmaEditorComponent', () => {
             describe('$pageURLS', () => {
                 it('should construct live URL with clientHost and url from pageParams', () => {
                     patchState(store, {
-                        pageParams: { url: '/my-page', clientHost: 'https://example.com' }
+                        pageParams: {
+                            url: '/my-page',
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        }
                     });
 
                     const urls = spectator.component.$pageURLS();
@@ -707,7 +712,12 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should strip /index suffix from live URL', () => {
                     patchState(store, {
-                        pageParams: { url: '/my-page/index', clientHost: 'https://example.com' }
+                        pageParams: {
+                            url: '/my-page/index',
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        }
                     });
 
                     const liveUrl = spectator.component
@@ -721,7 +731,9 @@ describe('EditEmaEditorComponent', () => {
                     patchState(store, {
                         pageParams: {
                             url: '/my-page/index.html',
-                            clientHost: 'https://example.com'
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
                         }
                     });
 
@@ -734,7 +746,12 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should fallback to window.location.origin when clientHost is not provided', () => {
                     patchState(store, {
-                        pageParams: { url: '/my-page', clientHost: undefined }
+                        pageParams: {
+                            url: '/my-page',
+                            clientHost: undefined,
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        }
                     });
 
                     const liveUrl = spectator.component
@@ -746,7 +763,12 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should default to root path when url is undefined', () => {
                     patchState(store, {
-                        pageParams: { url: undefined, clientHost: 'https://example.com' }
+                        pageParams: {
+                            url: undefined,
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        }
                     });
 
                     const liveUrl = spectator.component
@@ -758,7 +780,12 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should include current view URL', () => {
                     patchState(store, {
-                        pageParams: { url: '/my-page', clientHost: 'https://example.com' }
+                        pageParams: {
+                            url: '/my-page',
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        }
                     });
 
                     const viewUrl = spectator.component
@@ -773,7 +800,12 @@ describe('EditEmaEditorComponent', () => {
             describe('$pageURL', () => {
                 it('should return the live URL from $pageURLS', () => {
                     patchState(store, {
-                        pageParams: { url: '/about-us', clientHost: 'https://example.com' }
+                        pageParams: {
+                            url: '/about-us',
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        }
                     });
 
                     expect(spectator.component.$pageURL()).toBe('https://example.com/about-us');
@@ -781,7 +813,12 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should return root URL when url is undefined', () => {
                     patchState(store, {
-                        pageParams: { url: undefined, clientHost: 'https://example.com' }
+                        pageParams: {
+                            url: undefined,
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        }
                     });
 
                     expect(spectator.component.$pageURL()).toBe('https://example.com/');
@@ -789,7 +826,12 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should strip /index from URL', () => {
                     patchState(store, {
-                        pageParams: { url: '/about-us/index', clientHost: 'https://example.com' }
+                        pageParams: {
+                            url: '/about-us/index',
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        }
                     });
 
                     expect(spectator.component.$pageURL()).toBe('https://example.com/about-us');
