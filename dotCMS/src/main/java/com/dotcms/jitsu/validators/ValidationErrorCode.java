@@ -61,6 +61,8 @@ public enum ValidationErrorCode {
      * Indicates that a field expected to be a number is either empty or not a number.
      * This error occurs when validating fields that should contain number values.
      */
-    INVALID_NUMBER_TYPE;
+    INVALID_NUMBER_TYPE,
+
+    INVALID_JSON;
 
 }

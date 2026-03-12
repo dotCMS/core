@@ -2,11 +2,13 @@ package com.dotcms.rest.api.v1.analytics.event;
 
 import com.dotcms.jitsu.validators.AnalyticsValidator.AnalyticsValidationException;
 import com.dotcms.jitsu.validators.SiteAuthValidator;
+import com.dotcms.jitsu.validators.ValidationErrorCode;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +35,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * REST proxy resource that intercepts requests to {@code /v1/analytics/**} and forwards them to
@@ -80,8 +84,6 @@ public class EventAnalyticsProxyResource {
      * @param response       the HTTP servlet response
      * @param asyncResponse  async response handle
      * @param uriInfo        URI info used to forward query parameters
-     * @param subPath        path segment(s) after {@code /event/}
-     * @param siteAuth       site authentication key to be validated
      * @param body           JSON request body to forward upstream
      */
     @Operation(
@@ -103,7 +105,7 @@ public class EventAnalyticsProxyResource {
                     content = @Content(mediaType = "application/json"))
     })
     @POST
-    @Path("/event/{subPath:.*}")
+    @Path("/event/ingest")
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -113,13 +115,33 @@ public class EventAnalyticsProxyResource {
             @Suspended final AsyncResponse asyncResponse,
             @Context final UriInfo uriInfo,
             @Parameter(description = "Sub-path after /event/")
-            @PathParam("subPath") final String subPath,
-            @Parameter(description = "Site authentication key", required = true)
-            @QueryParam("siteAuth") final String siteAuth,
             final String body) {
 
         try {
-            new SiteAuthValidator().validate(siteAuth);
+            final Map<String, Object> bodyMap = JsonUtil.getJsonFromString(body);
+            Object context = bodyMap.get("context");
+
+            if (context == null) {
+                Logger.warn(this, "Context is required");
+                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseEntityView<>(
+                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_SITE_AUTH.name(), "SiteAuth is required"))))
+                        .build());
+                return;
+            }
+
+            Object siteAuth = ((Map<String, Object>) context).get("site_auth");
+
+            if (siteAuth == null) {
+                Logger.warn(this, "SiteAuth is required");
+                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseEntityView<>(
+                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_SITE_AUTH.name(), "SiteAuth is required"))))
+                        .build());
+                return;
+            }
+
+            new SiteAuthValidator().validate(siteAuth.toString());
         } catch (final AnalyticsValidationException e) {
             Logger.warn(this, "SiteAuth validation failed for analytics proxy: " + e.getMessage());
             asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
@@ -127,10 +149,17 @@ public class EventAnalyticsProxyResource {
                             List.of(new ErrorEntity(e.getCode().name(), e.getMessage()))))
                     .build());
             return;
+        } catch (IOException e) {
+            Logger.warn(this, "SiteAuth validation failed for analytics proxy: " + e.getMessage());
+            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(), e.getMessage()))))
+                    .build());
+            return;
         }
 
         ResponseUtil.handleAsyncResponse(
-                () -> EventAnalyticsProxyHelper.proxy("event/" + subPath, uriInfo, body),
+                () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, body),
                 asyncResponse);
     }
 
