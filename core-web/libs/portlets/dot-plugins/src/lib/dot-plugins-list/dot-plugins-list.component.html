@@ -1,6 +1,7 @@
+<p-toast position="top-left" [life]="3000" />
 <div class="flex flex-col h-full min-h-0">
     <p-toolbar class="gap-1 px-3 justify-start border-none! flex-shrink-0">
-        <div class="flex w-full flex-wrap items-center gap-2 py-3">
+        <div class="flex w-full items-center gap-2 py-3">
             <label class="flex items-center gap-2">
                 <input
                     type="checkbox"
@@ -31,27 +32,35 @@
                     data-testid="plugins-deploy-btn" />
             }
 
-            <p-button
-                [label]="'plugins.upload' | dm"
-                icon="pi pi-upload"
-                (onClick)="openUploadDialog()"
-                data-testid="plugins-upload-btn" />
-            <p-button
-                [label]="'plugins.refresh' | dm"
-                icon="pi pi-refresh"
-                [outlined]="true"
-                (onClick)="refresh()"
-                data-testid="plugins-refresh-btn" />
-            <p-button
-                [label]="'plugins.extra-packages' | dm"
-                icon="pi pi-cog"
-                [outlined]="true"
-                (onClick)="openExtraPackagesDialog()"
-                data-testid="plugins-extra-packages-btn" />
+            <div class="flex gap-2 ml-auto">
+                <p-button
+                    [label]="'plugins.upload' | dm"
+                    icon="pi pi-upload"
+                    (onClick)="openUploadDialog()"
+                    data-testid="plugins-upload-btn" />
+                <p-button
+                    [label]="'plugins.refresh' | dm"
+                    icon="pi pi-refresh"
+                    [outlined]="true"
+                    (onClick)="refresh()"
+                    data-testid="plugins-refresh-btn" />
+                <p-button
+                    [label]="'plugins.restart' | dm"
+                    icon="pi pi-replay"
+                    [outlined]="true"
+                    (onClick)="confirmRestart()"
+                    data-testid="plugins-restart-btn" />
+                <p-button
+                    [label]="'plugins.extra-packages' | dm"
+                    icon="pi pi-cog"
+                    [outlined]="true"
+                    (onClick)="openExtraPackagesDialog()"
+                    data-testid="plugins-extra-packages-btn" />
+            </div>
         </div>
     </p-toolbar>
 
-    <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
+    <div class="flex-1 min-h-0 flex flex-col overflow-hidden" data-testid="plugins-table-wrapper">
         <p-table
             [value]="store.bundles()"
             [lazy]="false"
@@ -64,6 +73,7 @@
             [loading]="store.status() === 'loading'"
             [scrollable]="true"
             scrollHeight="flex"
+            [pt]="$ptConfig()"
             class="flex-1 min-h-0"
             data-testid="plugins-table">
             <ng-template pTemplate="header">
@@ -124,8 +134,26 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="emptymessage">
-                <tr>
-                    <td colspan="4" class="text-center p-4">{{ 'plugins.empty' | dm }}</td>
+                <tr class="hover:bg-transparent! h-full">
+                    <td colspan="4" class="relative h-full min-h-[50vh] border-none p-0 align-top">
+                        <div
+                            class="absolute inset-0 flex flex-col items-center justify-center gap-4"
+                            data-testid="plugins-empty-state">
+                            <div class="flex items-center justify-center w-20 h-20 rounded-full">
+                                <i
+                                    class="pi pi-box text-[var(--surface-500)] text-6xl!"
+                                    aria-hidden="true"></i>
+                            </div>
+                            <div class="flex flex-col text-center">
+                                <h3 class="m-0 text-lg font-medium text-gray-800">
+                                    {{ 'plugins.empty.state.title' | dm }}
+                                </h3>
+                                <p class="m-0 text-[var(--text-color)] text-base leading-6">
+                                    {{ 'plugins.empty.state.description' | dm }}
+                                </p>
+                            </div>
+                        </div>
+                    </td>
                 </tr>
             </ng-template>
         </p-table>

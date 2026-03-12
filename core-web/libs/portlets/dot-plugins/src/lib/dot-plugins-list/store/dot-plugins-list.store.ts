@@ -136,6 +136,13 @@ export const DotPluginsListStore = signalStore(
             processExports(bundle: string) {
                 handlePluginAction(osgiService.processExports(bundle), () => loadBundles());
             },
+            restart(onSuccess?: () => void) {
+                handlePluginAction(osgiService.restart(), () => {
+                    loadBundles();
+                    loadAvailablePlugins();
+                    onSuccess?.();
+                });
+            },
             updateExtraPackages(packages: string) {
                 handlePluginAction(osgiService.updateExtraPackages(packages), () =>
                     loadExtraPackages()

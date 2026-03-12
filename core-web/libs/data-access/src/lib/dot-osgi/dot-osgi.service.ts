@@ -79,4 +79,12 @@ export class DotOsgiService {
             packages
         });
     }
+
+    /**
+     * Restarts the OSGI framework and all dynamic plugins (cluster-wide).
+     * Returns the server message (e.g. "OSGI Framework Restarted") on success.
+     */
+    restart(): Observable<DotCMSAPIResponse<unknown>> {
+        return this.#http.put<DotCMSAPIResponse<unknown>>(`${OSGI_BASE}/_restart`, {});
+    }
 }

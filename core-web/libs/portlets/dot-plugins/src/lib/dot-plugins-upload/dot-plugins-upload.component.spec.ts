@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotHttpErrorManagerService, DotOsgiService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService, DotOsgiService } from '@dotcms/data-access';
 
 import { DotPluginsUploadComponent } from './dot-plugins-upload.component';
 
@@ -17,6 +17,7 @@ describe('DotPluginsUploadComponent', () => {
                 uploadBundles: jest.fn().mockReturnValue(of({ entity: {} }))
             }),
             mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotMessageService, { get: (key: string, ..._args: string[]) => key }),
             mockProvider(DynamicDialogRef, { close: jest.fn() })
         ],
         shallow: true

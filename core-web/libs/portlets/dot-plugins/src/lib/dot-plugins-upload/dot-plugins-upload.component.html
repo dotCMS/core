@@ -1,22 +1,61 @@
-<p class="mb-4">{{ 'plugins.upload.instructions' | dm }}</p>
+<div class="flex flex-col gap-4">
+    <p class="text-lg">{{ 'plugins.upload.instructions' | dm }}</p>
 
-<p-fileupload
-    mode="advanced"
-    [multiple]="true"
-    [accept]="'.jar'"
-    [chooseLabel]="'plugins.upload.choose-files' | dm"
-    chooseIcon="pi pi-upload"
-    (onSelect)="onFileSelect($event)"
-    (onClear)="onFileClear()"
-    [showUploadButton]="false"
-    [showCancelButton]="false"
-    data-testid="plugins-upload-files" />
+    <p-fileupload
+        #fileUpload
+        mode="advanced"
+        [multiple]="true"
+        [accept]="'.jar'"
+        [showUploadButton]="false"
+        [showCancelButton]="false"
+        [auto]="false"
+        [customUpload]="true"
+        styleClass="w-full"
+        (onSelect)="onFileSelect($event)"
+        (onClear)="onFileClear()"
+        [pt]="{
+            header: {
+                style: {
+                    padding: '0',
+                    border: '0'
+                }
+            }
+        }"
+        data-testid="plugins-upload-files">
+        <ng-template #header></ng-template>
+        <ng-template #content>
+            <div
+                class="group w-full rounded-xl bg-surface-100 border border-surface-200 p-8 flex flex-col items-center justify-center text-center gap-4 min-h-[250px] cursor-pointer"
+                (click)="fileUpload.choose()">
+                <div
+                    class="w-24 h-24 rounded-full bg-primary-100 text-primary flex items-center justify-center transition-colors group-hover:bg-primary-200">
+                    <i class="pi pi-upload !text-4xl" aria-hidden="true"></i>
+                </div>
+
+                <p class="text-2xl font-semibold text-color">
+                    {{ 'plugins.upload.dropzone.prefix' | dm }}
+                    <span class="text-primary hover:underline">
+                        {{ 'plugins.upload.choose-files' | dm }}
+                    </span>
+                    {{ 'plugins.upload.dropzone.suffix' | dm }}
+                </p>
+
+                <p class="text-base text-color-secondary">
+                    {{ 'plugins.upload.jar-support' | dm }}
+                </p>
+
+                @if (selectedFilesSummary(); as summary) {
+                    <span class="text-sm font-medium text-color">{{ summary }}</span>
+                }
+            </div>
+        </ng-template>
+    </p-fileupload>
+</div>
 
 <div class="flex justify-end gap-2 mt-4">
     <p-button
         [label]="'plugins.cancel' | dm"
-        severity="secondary"
-        [outlined]="true"
+        text
         (onClick)="close()"
         data-testid="plugins-upload-cancel-btn" />
     <p-button

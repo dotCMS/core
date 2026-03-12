@@ -48,4 +48,10 @@ describe('DotOsgiService', () => {
         const req = spectator.expectOne('/api/v1/osgi/jar/my.jar', HttpMethod.DELETE);
         req.flush({});
     });
+
+    it('should restart OSGI framework', () => {
+        spectator.service.restart().subscribe();
+        const req = spectator.expectOne('/api/v1/osgi/_restart', HttpMethod.PUT);
+        req.flush({});
+    });
 });

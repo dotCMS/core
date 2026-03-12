@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { SelectModule } from 'primeng/select';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
@@ -37,17 +38,31 @@ const BUNDLE_STATE_LABELS: Record<number, string> = {
         ButtonModule,
         SelectModule,
         ConfirmDialogModule,
+        ToastModule,
         ToolbarModule,
         DotMessagePipe
     ],
     templateUrl: './dot-plugins-list.component.html',
-    providers: [DotPluginsListStore, DialogService, ConfirmationService],
+    providers: [DotPluginsListStore, DialogService, ConfirmationService, MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
 export class DotPluginsListComponent {
     readonly store = inject(DotPluginsListStore);
     selectedJar: string | null = null;
+
+    /** Pass-through config so the table fills 100% height when empty (empty state centered). */
+    readonly $ptConfig = computed(() => ({
+        table: {
+            style: {
+                'table-layout': 'fixed' as const,
+                ...(this.store.bundles().length === 0 && {
+                    height: '100%',
+                    width: '100%'
+                })
+            }
+        }
+    }));
     private readonly dialogService = inject(DialogService);
 
     getAvailableJarOptions(): { label: string; value: string }[] {
@@ -55,6 +70,7 @@ export class DotPluginsListComponent {
     }
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
+    private readonly messageService = inject(MessageService);
 
     getStateLabel(state: number): string {
         return BUNDLE_STATE_LABELS[state] ?? 'plugins.state.unknown';
@@ -116,6 +132,27 @@ export class DotPluginsListComponent {
             closable: true,
             closeOnEscape: true,
             accept: () => this.store.undeploy(bundle.jarFile)
+        });
+    }
+
+    confirmRestart(): void {
+        this.confirmationService.confirm({
+            message: this.dotMessageService.get('plugins.confirm.restart.message'),
+            header: this.dotMessageService.get('plugins.restart'),
+            acceptButtonStyleClass: 'p-button-primary',
+            rejectButtonStyleClass: 'p-button-outlined',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
+            accept: () =>
+                this.store.restart(() => {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: this.dotMessageService.get('plugins.restart'),
+                        detail: this.dotMessageService.get('plugins.restart.success'),
+                        life: 3000
+                    });
+                })
         });
     }
 }
