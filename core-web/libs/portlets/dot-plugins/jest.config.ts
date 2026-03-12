@@ -1,5 +1,5 @@
 export default {
-    displayName: 'portlet',
+    displayName: 'portlets-dot-plugins-portlet',
     preset: '../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     coverageDirectory: '../../../coverage/libs/portlets/dot-plugins',

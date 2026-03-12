@@ -1,5 +1,5 @@
 {
-    "name": "portlet",
+    "name": "portlets-dot-plugins-portlet",
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-plugins/src",
     "prefix": "dot",

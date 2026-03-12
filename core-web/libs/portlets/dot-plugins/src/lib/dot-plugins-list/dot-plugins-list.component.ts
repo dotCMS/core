@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { SelectModule } from 'primeng/select';
-import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -49,7 +49,14 @@ const BUNDLE_STATE_LABELS: Record<number, string> = {
 })
 export class DotPluginsListComponent {
     readonly store = inject(DotPluginsListStore);
+    protected readonly BUNDLE_STATE = BUNDLE_STATE;
     selectedJar: string | null = null;
+    isDragging = signal(false);
+    private dragCounter = 0;
+
+    readonly availableJarOptions = computed(() =>
+        this.store.availableJars().map((j) => ({ label: j, value: j }))
+    );
 
     /** Pass-through config so the table fills 100% height when empty (empty state centered). */
     readonly $ptConfig = computed(() => ({
@@ -63,11 +70,8 @@ export class DotPluginsListComponent {
             }
         }
     }));
-    private readonly dialogService = inject(DialogService);
 
-    getAvailableJarOptions(): { label: string; value: string }[] {
-        return this.store.availableJars().map((j) => ({ label: j, value: j }));
-    }
+    private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly messageService = inject(MessageService);
@@ -97,26 +101,16 @@ export class DotPluginsListComponent {
     }
 
     openExtraPackagesDialog(): void {
-        const ref = this.dialogService.open(DotPluginsExtraPackagesComponent, {
+        this.dialogService.open(DotPluginsExtraPackagesComponent, {
             header: this.dotMessageService.get('plugins.extra-packages.title'),
             width: '600px',
             closable: true,
             closeOnEscape: true
         });
-        ref?.onClose.pipe(take(1)).subscribe(() => {
-            /* dialog closed */
-        });
     }
 
     deploySelectedJar(jar: string): void {
         this.store.deploy(jar);
-    }
-
-    onLazyLoad(event: TableLazyLoadEvent): void {
-        const rows = (event.rows as number) ?? this.store.rows();
-        const first = (event.first as number) ?? 0;
-        const page = Math.floor(first / rows) + 1;
-        this.store.setPagination(page, rows);
     }
 
     confirmUndeploy(bundle: BundleMap): void {
@@ -132,6 +126,54 @@ export class DotPluginsListComponent {
             closable: true,
             closeOnEscape: true,
             accept: () => this.store.undeploy(bundle.jarFile)
+        });
+    }
+
+    onDragEnter(event: DragEvent): void {
+        event.preventDefault();
+        this.dragCounter++;
+        this.isDragging.set(true);
+    }
+
+    onDragLeave(event: DragEvent): void {
+        event.preventDefault();
+        this.dragCounter--;
+        if (this.dragCounter === 0) {
+            this.isDragging.set(false);
+        }
+    }
+
+    onDragOver(event: DragEvent): void {
+        event.preventDefault();
+    }
+
+    onDrop(event: DragEvent): void {
+        event.preventDefault();
+        this.dragCounter = 0;
+        this.isDragging.set(false);
+
+        const allFiles = Array.from(event.dataTransfer?.files ?? []);
+        if (allFiles.length === 0) return;
+
+        const jarFiles = allFiles.filter((f) => f.name.toLowerCase().endsWith('.jar'));
+
+        if (jarFiles.length === 0) {
+            this.messageService.add({
+                severity: 'error',
+                summary: this.dotMessageService.get('plugins.drag-and-drop.invalid-files.title'),
+                detail: this.dotMessageService.get('plugins.drag-and-drop.invalid-files.detail'),
+                life: 5000
+            });
+            return;
+        }
+
+        this.store.uploadBundles(jarFiles, () => {
+            this.messageService.add({
+                severity: 'success',
+                summary: this.dotMessageService.get('plugins.upload.title'),
+                detail: this.dotMessageService.get('plugins.upload.success'),
+                life: 3000
+            });
         });
     }
 

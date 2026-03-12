@@ -12,21 +12,15 @@ type DotPluginsListStatus = 'init' | 'loading' | 'loaded' | 'error';
 interface DotPluginsListState {
     bundles: BundleMap[];
     availableJars: string[];
-    extraPackages: string;
     status: DotPluginsListStatus;
     ignoreSystemBundles: boolean;
-    page: number;
-    rows: number;
 }
 
 const initialState: DotPluginsListState = {
     bundles: [],
     availableJars: [],
-    extraPackages: '',
     status: 'init',
-    ignoreSystemBundles: true,
-    page: 1,
-    rows: 25
+    ignoreSystemBundles: true
 };
 
 export const DotPluginsListStore = signalStore(
@@ -70,21 +64,6 @@ export const DotPluginsListStore = signalStore(
                 });
         }
 
-        function loadExtraPackages() {
-            osgiService
-                .getExtraPackages()
-                .pipe(
-                    take(1),
-                    catchError((error) => {
-                        httpErrorManager.handle(error);
-                        return EMPTY;
-                    })
-                )
-                .subscribe((response) => {
-                    patchState(store, { extraPackages: response.entity ?? '' });
-                });
-        }
-
         function handlePluginAction(source$: Observable<unknown>, onSuccess: () => void) {
             patchState(store, { status: 'loading' });
             source$
@@ -102,17 +81,14 @@ export const DotPluginsListStore = signalStore(
         return {
             loadBundles,
             loadAvailablePlugins,
-            loadExtraPackages,
             setIgnoreSystemBundles(value: boolean) {
                 patchState(store, { ignoreSystemBundles: value });
             },
-            setPagination(page: number, rows: number) {
-                patchState(store, { page, rows });
-            },
-            uploadBundles(files: File[]) {
+            uploadBundles(files: File[], onSuccess?: () => void) {
                 handlePluginAction(osgiService.uploadBundles(files), () => {
                     loadBundles();
                     loadAvailablePlugins();
+                    onSuccess?.();
                 });
             },
             deploy(jar: string) {
@@ -142,11 +118,6 @@ export const DotPluginsListStore = signalStore(
                     loadAvailablePlugins();
                     onSuccess?.();
                 });
-            },
-            updateExtraPackages(packages: string) {
-                handlePluginAction(osgiService.updateExtraPackages(packages), () =>
-                    loadExtraPackages()
-                );
             }
         };
     }),

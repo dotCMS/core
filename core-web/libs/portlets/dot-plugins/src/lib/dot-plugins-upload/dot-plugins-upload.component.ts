@@ -2,11 +2,9 @@ import { EMPTY } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     computed,
     inject,
-    NgZone,
     signal,
     viewChild
 } from '@angular/core';
@@ -32,8 +30,6 @@ export class DotPluginsUploadComponent {
     readonly #osgiService = inject(DotOsgiService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #cdr = inject(ChangeDetectorRef);
-    readonly #ngZone = inject(NgZone);
 
     readonly fileUploadRef = viewChild<FileUpload>('fileUpload');
 
@@ -52,17 +48,11 @@ export class DotPluginsUploadComponent {
         const raw = event.files ?? (event as { currentFiles?: File[] }).currentFiles;
         const rawFiles = Array.isArray(raw) ? raw : raw != null ? [raw] : [];
         const jars = rawFiles.filter((f) => f?.name?.toLowerCase().endsWith('.jar'));
-        this.#ngZone.run(() => {
-            this.selectedFiles.set(jars);
-            this.#cdr.markForCheck();
-        });
+        this.selectedFiles.set(jars);
     }
 
     onFileClear(): void {
-        this.#ngZone.run(() => {
-            this.selectedFiles.set([]);
-            this.#cdr.markForCheck();
-        });
+        this.selectedFiles.set([]);
     }
 
     upload(): void {
