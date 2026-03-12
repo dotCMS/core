@@ -266,7 +266,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         this.destroy$.complete();
     }
 
-    onBlockEditorChange(value: JSONContent) {
+    onBlockEditorChange(value: JSONContent): void {
         if (this.disabled) {
             return;
         }
@@ -274,6 +274,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         // Eagerly include charCount/wordCount/readingTime in the doc attrs so the
         // API response always contains this metadata. Without this patch the attrs
         // would only arrive after the 250 ms debounce fired by the (keyup) handler.
+        // `characterCount` is derived from `this.editor?.storage`, so it can be
+        // undefined when the editor hasn't finished initializing (async ngOnInit).
         const charCount = this.characterCount?.characters?.() ?? 0;
         const updatedValue: JSONContent =
             charCount > 0

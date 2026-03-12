@@ -53,7 +53,7 @@ class MockFormComponent {
     });
 }
 
-describe('DotBlockEditorComponent - ControlValueAccesor', () => {
+describe('DotBlockEditorComponent - ControlValueAccessor', () => {
     let spectator: Spectator<MockFormComponent>;
     const createComponent = createComponentFactory({
         component: MockFormComponent
@@ -63,13 +63,16 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
         spectator = createComponent();
     });
 
-    it('should set form value when binary file changes', () => {
+    it('should update form value when onBlockEditorChange is called', () => {
         const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-        blockEditorComponent.value = BLOCK_EDITOR_FIELD;
+        const control = spectator.component.form.get('block');
 
-        const formValue = spectator.component.form.get('block').value;
+        // Reset to null first so the assertion proves onChange actually propagated
+        control.setValue(null);
 
-        expect(formValue).toEqual(JSON.stringify(BLOCK_EDITOR_FIELD));
+        blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
+
+        expect(control.value).toEqual(JSON.stringify(BLOCK_EDITOR_FIELD));
     });
 
     describe('Disabled State', () => {
@@ -95,9 +98,11 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
             blockEditorComponent.editor = mockEditor as typeof blockEditorComponent.editor;
 
             blockEditorComponent.setDisabledState(false);
+            spectator.detectChanges();
             expect(mockEditor.setEditable).toHaveBeenCalledWith(true);
 
             blockEditorComponent.setDisabledState(true);
+            spectator.detectChanges();
             expect(mockEditor.setEditable).toHaveBeenCalledWith(false);
         });
 
@@ -105,8 +110,8 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
             const blockEditorComponent = spectator.query(DotBlockEditorComponent);
             const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
 
-            // Set disabled state
-            blockEditorComponent.disabled = true;
+            // Use the CVA method to set disabled state
+            blockEditorComponent.setDisabledState(true);
 
             // Try to trigger change
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
@@ -118,8 +123,8 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
             const blockEditorComponent = spectator.query(DotBlockEditorComponent);
             const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
 
-            // Ensure not disabled
-            blockEditorComponent.disabled = false;
+            // Use the CVA method to set disabled state
+            blockEditorComponent.setDisabledState(false);
 
             // Trigger change
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
@@ -258,7 +263,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
                 // 265 words at 265 words-per-minute (Medium formula) → readingTime = Math.ceil(265/265) = 1
                 blockEditorComponent.editor = createMockEditor(100, 265);
-                blockEditorComponent.disabled = false;
+                blockEditorComponent.setDisabledState(false);
 
                 const valueWithoutAttrs: typeof BLOCK_EDITOR_FIELD = {
                     ...BLOCK_EDITOR_FIELD,
@@ -283,7 +288,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
                 const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
 
                 blockEditorComponent.editor = createMockEditor(50, 10);
-                blockEditorComponent.disabled = false;
+                blockEditorComponent.setDisabledState(false);
 
                 blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
@@ -306,7 +311,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
                 const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
 
                 blockEditorComponent.editor = createMockEditor(0, 0);
-                blockEditorComponent.disabled = false;
+                blockEditorComponent.setDisabledState(false);
 
                 blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
@@ -320,7 +325,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
                 // Force the editor to be null to simulate the case where the editor is not yet
                 // initialized (e.g., writeValue called before the async ngOnInit completes).
                 blockEditorComponent.editor = null;
-                blockEditorComponent.disabled = false;
+                blockEditorComponent.setDisabledState(false);
 
                 blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
@@ -334,7 +339,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
             blockEditorComponent.editor = createMockEditor(150);
             blockEditorComponent.charLimit = 100;
-            blockEditorComponent.disabled = false;
+            blockEditorComponent.setDisabledState(false);
 
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
@@ -351,7 +356,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
             blockEditorComponent.editor = createMockEditor(150);
             blockEditorComponent.charLimit = 100;
-            blockEditorComponent.disabled = false;
+            blockEditorComponent.setDisabledState(false);
 
             // Ensure untouched initially
             expect(control.touched).toBe(false);
@@ -370,7 +375,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
             blockEditorComponent.editor = createMockEditor(50);
             blockEditorComponent.charLimit = 100;
-            blockEditorComponent.disabled = false;
+            blockEditorComponent.setDisabledState(false);
 
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
@@ -389,7 +394,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
             blockEditorComponent.editor = createMockEditor(50);
             blockEditorComponent.charLimit = 100;
-            blockEditorComponent.disabled = false;
+            blockEditorComponent.setDisabledState(false);
 
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
@@ -403,7 +408,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
             blockEditorComponent.editor = createMockEditor(150);
             // charLimit remains NaN (its default when field variable is undefined)
-            blockEditorComponent.disabled = false;
+            blockEditorComponent.setDisabledState(false);
 
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
@@ -416,7 +421,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
             blockEditorComponent.editor = createMockEditor(150);
             blockEditorComponent.charLimit = 0;
-            blockEditorComponent.disabled = false;
+            blockEditorComponent.setDisabledState(false);
 
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
@@ -429,7 +434,7 @@ describe('DotBlockEditorComponent - ControlValueAccesor', () => {
 
             blockEditorComponent.editor = createMockEditor(100);
             blockEditorComponent.charLimit = 100;
-            blockEditorComponent.disabled = false;
+            blockEditorComponent.setDisabledState(false);
 
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
