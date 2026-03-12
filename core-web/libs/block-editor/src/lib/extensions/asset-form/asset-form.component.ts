@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
-import { DEFAULT_LANG_ID } from '../../shared/utils';
+import { DEFAULT_LANG_ID } from '../../shared';
 
 @Component({
     selector: 'dot-asset-form',

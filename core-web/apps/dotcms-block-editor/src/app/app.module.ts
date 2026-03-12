@@ -9,7 +9,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotPropertiesService,
     DotContentSearchService,
@@ -26,7 +26,7 @@ import { AppComponent } from './app.component';
         BrowserAnimationsModule,
         CommonModule,
         FormsModule,
-        BlockEditorModule,
+        DotBlockEditorComponent,
         OrderListModule,
         ListboxModule,
         HttpClientModule,

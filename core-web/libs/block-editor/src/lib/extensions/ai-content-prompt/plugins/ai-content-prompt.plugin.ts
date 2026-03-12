@@ -105,6 +105,7 @@ export class AIContentPromptView {
     }
 
     destroy() {
+        this.component?.destroy();
         this.destroy$.next(true);
         this.destroy$.complete();
     }

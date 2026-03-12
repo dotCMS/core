@@ -1,6 +1,5 @@
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
-import { Props } from 'tippy.js';
 
 import { ViewContainerRef } from '@angular/core';
 
@@ -26,22 +25,6 @@ declare module '@tiptap/core' {
     }
 }
 
-const tippyOptions: Partial<Props> = {
-    interactive: true,
-    maxWidth: 'none',
-    trigger: 'manual',
-    placement: 'bottom-start',
-    hideOnClick: 'toggle',
-    popperOptions: {
-        modifiers: [
-            {
-                name: 'animate-flip',
-                options: { fallbackPlacements: ['top-start'] }
-            }
-        ]
-    }
-};
-
 export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
     const formValue$ = new Subject<{ [key: string]: string }>();
 
@@ -51,7 +34,6 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
         addOptions() {
             return {
                 element: null,
-                tippyOptions: {},
                 pluginKey: BUBBLE_FORM_PLUGIN_KEY,
                 shouldShow: () => true
             };
@@ -106,7 +88,6 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
                     pluginKey: BUBBLE_FORM_PLUGIN_KEY,
                     editor: this.editor,
                     element: componentElement,
-                    tippyOptions: tippyOptions,
                     component: component,
                     form$: formValue$
                 })

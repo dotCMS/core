@@ -8,7 +8,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { ContentletBlockComponent } from './contentlet-block.component';
 
-import { AngularNodeViewRenderer } from '../../NodeViewRenderer';
+import { AngularNodeViewRenderer } from '../../core/node-view/node-view-renderer';
 import { contentletToJSON } from '../../shared';
 
 export type ContentletBlockOptions = {

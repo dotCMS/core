@@ -1,5 +1,4 @@
 import { PluginKey } from 'prosemirror-state';
-import tippy, { GetReferenceClientRect, Instance, Props } from 'tippy.js';
 
 import { ComponentRef, ViewContainerRef } from '@angular/core';
 
@@ -10,6 +9,8 @@ import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { AssetFormComponent } from './asset-form.component';
 import { bubbleAssetFormPlugin } from './plugins/bubble-asset-form.plugin';
+
+import { createFloatingUI, type FloatingUIInstance } from '../../shared/utils/floating-ui.utils';
 
 export const BUBBLE_ASSET_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
 
@@ -27,27 +28,10 @@ declare module '@tiptap/core' {
     }
 }
 
-const tippyOptions: Partial<Props> = {
-    interactive: true,
-    duration: 0,
-    maxWidth: 'none',
-    trigger: 'manual',
-    placement: 'bottom-start',
-    hideOnClick: 'toggle',
-    popperOptions: {
-        modifiers: [
-            {
-                name: 'animate-flip',
-                options: { fallbackPlacements: ['top-start'] }
-            }
-        ]
-    }
-};
-
 interface StartProps {
     editor: Editor;
     type: EditorAssetTypes;
-    getPosition: GetReferenceClientRect;
+    getPosition: () => DOMRect;
 }
 
 export interface RenderProps {
@@ -57,47 +41,52 @@ export interface RenderProps {
 }
 
 export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => {
-    let formTippy: Instance | undefined;
+    let formFloating: FloatingUIInstance | undefined;
     let component: ComponentRef<AssetFormComponent>;
-    let element: Element;
+    let element: HTMLElement;
     let preventClose = false;
+    let pendingPreventCloseReset: number | null = null;
 
     function onStart({ editor, type, getPosition }: StartProps) {
-        setUpTippy(editor);
         setUpComponent(editor, type);
 
-        formTippy.setProps({
-            content: element,
-            getReferenceClientRect: getPosition,
+        formFloating = createFloatingUI(getPosition, element, {
+            placement: 'bottom-start',
+            offset: 8,
+            zIndex: 10,
+            onHide: () => onHide(editor),
             onClickOutside: () => onHide(editor)
         });
-        formTippy.show();
+        formFloating.show();
     }
 
-    function onHide(editor): void {
+    function onHide(editor: Editor): void {
         if (preventClose) {
             return;
         }
 
+        cancelPendingReset();
+        if (!editor.isEditable) {
+            editor.setOptions({ editable: true });
+        }
         editor.commands.closeAssetForm();
-        formTippy?.hide();
+        formFloating?.destroy();
+        formFloating = undefined;
         component?.destroy();
     }
 
     function onDestroy() {
-        formTippy?.destroy();
+        cancelPendingReset();
+        formFloating?.destroy();
+        formFloating = undefined;
         component?.destroy();
     }
 
-    function setUpTippy(editor: Editor) {
-        const { element } = editor.options;
-        const editorIsAttached = !!element.parentElement;
-
-        if (formTippy || !editorIsAttached) {
-            return;
+    function cancelPendingReset() {
+        if (pendingPreventCloseReset !== null) {
+            cancelAnimationFrame(pendingPreventCloseReset);
+            pendingPreventCloseReset = null;
         }
-
-        formTippy = tippy(element.parentElement, tippyOptions);
     }
 
     function setUpComponent(editor: Editor, type: EditorAssetTypes) {
@@ -116,11 +105,17 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
             onHide(editor);
         };
 
-        element = component.location.nativeElement;
+        element = component.location.nativeElement as HTMLElement;
         component.changeDetectorRef.detectChanges();
     }
 
-    function onPreventClose(editor, value) {
+    /**
+     * Toggles preventClose flag and editor editable state.
+     * When preventClose is true, the editor is set to non-editable to prevent
+     * focus-driven hide while a dialog (e.g. file picker) is open.
+     */
+    function onPreventClose(editor: Editor, value: boolean) {
+        cancelPendingReset();
         preventClose = value;
         editor.setOptions({ editable: !value });
     }
@@ -131,7 +126,6 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         addOptions() {
             return {
                 element: null,
-                tippyOptions: {},
                 pluginKey: BUBBLE_ASSET_FORM_PLUGIN_KEY
             };
         },
@@ -145,9 +139,14 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                             .command(({ tr }) => {
                                 preventClose = true;
                                 tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, { open: true, type });
-                                setTimeout(() => {
+                                // Reset preventClose after the current frame so the focus
+                                // handler (triggered by the blur/focus cycle of opening the
+                                // form) does not immediately close it.
+                                cancelPendingReset();
+                                pendingPreventCloseReset = requestAnimationFrame(() => {
                                     preventClose = false;
-                                }, 0);
+                                    pendingPreventCloseReset = null;
+                                });
 
                                 return true;
                             })

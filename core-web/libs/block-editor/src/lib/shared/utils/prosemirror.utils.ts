@@ -6,7 +6,7 @@ import { Editor } from '@tiptap/core';
 
 import { CustomNodeTypes, NodeTypes } from './constants.utils';
 
-import { toJSONFn } from '../../NodeViewRenderer';
+import { toJSONFn } from '../../core/node-view/node-view-renderer';
 
 const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);
 const imgTagRex = new RegExp(/<img[^>]*src="[^"]*"[^>]*>/gm);

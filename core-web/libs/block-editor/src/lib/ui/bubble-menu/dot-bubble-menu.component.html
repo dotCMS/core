@@ -1,0 +1,176 @@
+<div
+    class="bubble-menu"
+    [class.hidden]="!showShould()"
+    #bubbleMenu
+    tiptapBubbleMenu
+    (mousedown)="preventLostEditorSelection($event)"
+    (click)="closePopups()"
+    [editor]="editor()"
+    [options]="bubbleMenuOptions"
+    [updateDelay]="250">
+    @if (showImageMenu()) {
+        <p-button text size="small" (onClick)="toggleImageModal($event)">
+            {{ 'block-editor.bubble-menu.image.properties' | dm }}
+        </p-button>
+        <div class="divider"></div>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().setTextAlign('left').run()"
+            [class.is-active]="editor().isActive({ textAlign: 'left' })">
+            <i class="pi pi-align-left"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().setTextAlign('center').run()"
+            [class.is-active]="editor().isActive({ textAlign: 'center' })">
+            <i class="pi pi-align-center"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().setTextAlign('right').run()"
+            [class.is-active]="editor().isActive({ textAlign: 'right' })">
+            <i class="pi pi-align-right"></i>
+        </p-button>
+
+        <div class="divider"></div>
+        <p-button
+            text
+            size="small"
+            [class.is-active]="imageHasLink()"
+            (onClick)="toggleLinkModal($event)">
+            <i class="pi pi-link"></i>
+        </p-button>
+    } @else if (showContentMenu()) {
+        <p-button text size="small" (onClick)="goToContentlet()">
+            <i class="pi pi-pencil"></i>
+        </p-button>
+    } @else {
+        <p-select
+            #dropdown
+            class="bubble-menu-dropdown"
+            [(ngModel)]="dropdownItem"
+            [options]="nodeTypeOptions"
+            (onChange)="runConvertToCommand($event.value)"
+            optionLabel="name"
+            scrollHeight="300px"
+            appendTo="body"></p-select>
+        <div class="divider"></div>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().toggleBold().run()"
+            [class.is-active]="editor().isActive('bold')">
+            <b class="font-bold bubble-menu-icon">B</b>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().toggleUnderline().run()"
+            [class.is-active]="editor().isActive('underline')">
+            <u class="font-bold bubble-menu-icon">U</u>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().toggleItalic().run()"
+            [class.is-active]="editor().isActive('italic')">
+            <i class="font-bold bubble-menu-icon">I</i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().toggleStrike().run()"
+            [class.is-active]="editor().isActive('strike')">
+            <s class="font-bold bubble-menu-icon">S</s>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().toggleSuperscript().run()"
+            [class.is-active]="editor().isActive('superscript')">
+            <span class="material-icons bubble-menu-icon">superscript</span>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().toggleSubscript().run()"
+            [class.is-active]="editor().isActive('subscript')">
+            <span class="material-icons bubble-menu-icon">subscript</span>
+        </p-button>
+        <div class="divider"></div>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().setTextAlign('left').run()"
+            [class.is-active]="editor().isActive({ textAlign: 'left' })">
+            <i class="pi pi-align-left"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().setTextAlign('center').run()"
+            [class.is-active]="editor().isActive({ textAlign: 'center' })">
+            <i class="pi pi-align-center"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().setTextAlign('right').run()"
+            [class.is-active]="editor().isActive({ textAlign: 'right' })">
+            <i class="pi pi-align-right"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().setTextAlign('justify').run()"
+            [class.is-active]="editor().isActive({ textAlign: 'justify' })">
+            <i class="pi pi-align-justify"></i>
+        </p-button>
+        <div class="divider"></div>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().toggleBulletList().run()"
+            [class.is-active]="editor().isActive('bulletList')">
+            <i class="pi pi-list"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().toggleOrderedList().run()"
+            [class.is-active]="editor().isActive('orderedList')">
+            <i class="pi pi-list-check"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().sinkListItem('listItem').run()"
+            [disabled]="!editor().can().sinkListItem('listItem')">
+            <i class="pi pi-arrow-right"></i>
+        </p-button>
+        <p-button
+            text
+            size="small"
+            (onClick)="editor().chain().focus().liftListItem('listItem').run()"
+            [disabled]="!editor().can().liftListItem('listItem')">
+            <i class="pi pi-arrow-left"></i>
+        </p-button>
+        <div class="divider"></div>
+        <p-button
+            text
+            size="small"
+            [class.is-active]="editor().isActive('link')"
+            (onClick)="toggleLinkModal($event)">
+            <i class="pi pi-link"></i>
+        </p-button>
+        <p-button text size="small" (onClick)="editor().chain().focus().unsetAllMarks().run()">
+            <i class="pi pi-eraser"></i>
+        </p-button>
+    }
+</div>
+
+<dot-link-editor-popover #linkModal [editor]="editor()" />
+<dot-image-editor-popover #imageModal [editor]="editor()" />

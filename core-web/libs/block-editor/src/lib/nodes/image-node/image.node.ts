@@ -24,7 +24,8 @@ export const ImageNode = Image.extend({
             inline: false,
             selectable: true,
             allowBase64: true,
-            HTMLAttributes: {}
+            HTMLAttributes: {},
+            resize: false
         };
     },
 

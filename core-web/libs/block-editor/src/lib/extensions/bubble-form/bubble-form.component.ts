@@ -7,7 +7,13 @@ import {
     ViewChildren,
     inject
 } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
+import { Button } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { InputText } from 'primeng/inputtext';
+
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DynamicControl } from './model';
 
@@ -15,7 +21,8 @@ import { DynamicControl } from './model';
     selector: 'dot-bubble-form',
     templateUrl: './bubble-form.component.html',
     styleUrls: ['./bubble-form.component.css'],
-    standalone: false
+    standalone: true,
+    imports: [ReactiveFormsModule, Checkbox, Button, InputText, DotFieldRequiredDirective]
 })
 export class BubbleFormComponent {
     @ViewChildren('group') inputs: QueryList<ElementRef>;

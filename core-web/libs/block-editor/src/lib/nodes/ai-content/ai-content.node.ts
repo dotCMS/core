@@ -1,7 +1,6 @@
 import { Node } from '@tiptap/core';
 
-import { findNodeByType } from '../../shared';
-import { NodeTypes } from '../../shared/utils';
+import { findNodeByType, NodeTypes } from '../../shared';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {

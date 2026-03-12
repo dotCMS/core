@@ -12,7 +12,7 @@ import { map, take } from 'rxjs/operators';
 
 import { JSONContent } from '@tiptap/core';
 
-import { BlockEditorModule } from '@dotcms/block-editor';
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -39,7 +39,7 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
     imports: [
         FormsModule,
-        BlockEditorModule,
+        DotBlockEditorComponent,
         DrawerModule,
         DotMessagePipe,
         ButtonModule,

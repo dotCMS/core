@@ -1,8 +1,7 @@
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
-import tippy, { GetReferenceClientRect } from 'tippy.js';
 
-import { ComponentRef, ViewContainerRef } from '@angular/core';
+import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -23,12 +22,12 @@ import {
     FloatingActionsPlugin,
     FloatingActionsProps,
     ItemsType,
+    NodeTypes,
     suggestionOptions,
-    SuggestionPopperModifiers,
     SuggestionsCommandProps,
     SuggestionsComponent
 } from '../../shared';
-import { NodeTypes } from '../../shared/utils';
+import { createFloatingUI, type FloatingUIInstance } from '../../shared/utils/floating-ui.utils';
 import { AI_CONTENT_PROMPT_EXTENSION_NAME } from '../ai-content-prompt/ai-content-prompt.extension';
 import { AI_IMAGE_PROMPT_EXTENSION_NAME } from '../ai-image-prompt/ai-image-prompt.extension';
 
@@ -60,30 +59,21 @@ export type FloatingMenuOptions = Omit<FloatingMenuPluginProps, 'editor' | 'elem
     suggestion: Omit<SuggestionOptions, 'editor'>;
 };
 
-function getTippyInstance({
-    element,
+function getFloatingUIInstance({
     content,
-    rect,
+    getReferenceRect,
     onHide
 }: {
-    element: Element;
-    content: Element;
-    rect: GetReferenceClientRect;
+    content: HTMLElement;
+    getReferenceRect: () => DOMRect;
     onHide?: () => void;
-}) {
-    return tippy(element, {
-        content: content,
+}): FloatingUIInstance {
+    return createFloatingUI(getReferenceRect, content, {
         placement: 'bottom',
-        popperOptions: {
-            modifiers: SuggestionPopperModifiers
-        },
-        getReferenceClientRect: rect,
-        showOnCreate: true,
-        interactive: true,
-        offset: [120, 10],
-        trigger: 'manual',
-        maxWidth: 'none',
-        onHide
+        offset: 10,
+        zIndex: 10,
+        onHide,
+        onClickOutside: onHide
     });
 }
 
@@ -216,10 +206,11 @@ function getCustomActions(customBlocks): Array<DotMenuItem> {
 
 export const ActionsMenu = (
     viewContainerRef: ViewContainerRef,
+    injector: Injector,
     customBlocks: RemoteCustomExtensions,
     disabledExtensions: { shouldShowAIExtensions: boolean | unknown }
 ) => {
-    let myTippy;
+    let myFloating: FloatingUIInstance | undefined;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
     const suggestionKey = new PluginKey('suggestionPlugin');
     const destroy$: Subject<boolean> = new Subject<boolean>();
@@ -233,10 +224,10 @@ export const ActionsMenu = (
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
         if (shouldShow) {
             setUpSuggestionComponent(editor, range);
-            myTippy = getTippyInstance({
-                element: editor.options.element.parentElement,
-                content: suggestionsComponent.location.nativeElement,
-                rect: clientRect,
+            const contentEl = suggestionsComponent.location.nativeElement as HTMLElement;
+            myFloating = getFloatingUIInstance({
+                content: contentEl,
+                getReferenceRect: clientRect,
                 onHide: () => {
                     editor.commands.focus();
                     const queryRange = updateQueryRange({ editor, range });
@@ -252,6 +243,7 @@ export const ActionsMenu = (
                     editor.commands.freezeScroll(false);
                 }
             });
+            myFloating.show();
         }
     }
 
@@ -272,7 +264,9 @@ export const ActionsMenu = (
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
-        suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
+        suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent, {
+            injector
+        });
 
         // Setting Inputs
         suggestionsComponent.instance.items = items;
@@ -366,7 +360,7 @@ export const ActionsMenu = (
 
         if (key === 'Escape') {
             event.stopImmediatePropagation();
-            myTippy.hide();
+            myFloating?.hide();
 
             return true;
         }
@@ -387,7 +381,7 @@ export const ActionsMenu = (
     }
 
     function onExit({ editor }): void {
-        myTippy?.destroy();
+        myFloating?.destroy();
         editor.commands.freezeScroll(false);
         suggestionsComponent?.destroy();
         suggestionsComponent = null;
@@ -398,6 +392,21 @@ export const ActionsMenu = (
     return Extension.create<FloatingMenuOptions>({
         name: 'actionsMenu',
         priority: 1000, // If open, give priority on events
+
+        onDestroy() {
+            if (suggestionsComponent) {
+                suggestionsComponent.destroy();
+                suggestionsComponent = null;
+            }
+            if (myFloating) {
+                myFloating.destroy();
+                myFloating = undefined;
+            }
+            if (!destroy$.closed) {
+                destroy$.next(true);
+                destroy$.complete();
+            }
+        },
 
         addOptions() {
             return {

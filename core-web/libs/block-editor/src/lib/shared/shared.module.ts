@@ -17,13 +17,12 @@ import {
 import { SuggestionsService } from './services';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, Button],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, Button, ContentletStatePipe],
     declarations: [
         SuggestionsComponent,
         SuggestionListComponent,
         SuggestionsListItemComponent,
         SuggestionLoadingListComponent,
-        ContentletStatePipe,
         EmptyMessageComponent
     ],
     providers: [SuggestionsService],

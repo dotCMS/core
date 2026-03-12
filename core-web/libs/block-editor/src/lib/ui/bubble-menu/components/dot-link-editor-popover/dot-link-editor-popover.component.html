@@ -1,0 +1,104 @@
+<div
+    dotEditorModal
+    #popover
+    class="link-editor-popover__panel"
+    [editor]="editor()"
+    <input
+        #input
+        pInputText
+        type="text"
+        placeholder="Paste link or search for pages"
+        class="search-input"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchQueryChange($event)"
+        (keydown.enter)="addLinkToNode(searchQuery())"
+        (keydown)="handleSearchInputKeyDown($event)" />
+
+    @if (showLoading()) {
+        <div class="loading-skeleton-container" [style.height]="'15.625rem'">
+            @for (item of [1, 2, 3]; track item) {
+                <div class="listbox-item">
+                    <p-skeleton width="48px" height="48px" />
+                    <div class="skeleton-lines">
+                        <p-skeleton width="80%" height="14px" />
+                        <p-skeleton width="40%" height="14px" />
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (showSearchResults()) {
+        <p-listbox
+            #resultListbox
+            optionLabel="displayName"
+            [options]="searchResults() || []"
+            (onChange)="selectLink($event.value)"
+            [listStyle]="{ height: '15.625rem' }">
+            <ng-template #item let-item>
+                <div class="listbox-item">
+                    @if (item.hasTitleImage) {
+                        <img [src]="'/dA/' + item.inode" alt="icon" class="listbox-item__img" />
+                    } @else {
+                        <span class="listbox-item__icon pi pi-file"></span>
+                    }
+                    <div class="listbox-item__content">
+                        <div class="listbox-item__title">{{ item.displayName }}</div>
+                        <div class="listbox-item__url">{{ item.url }}</div>
+                    </div>
+                </div>
+            </ng-template>
+
+            <ng-template pTemplate="empty" #empty>
+                <div class="empty-message">
+                    <span class="empty-message__text">
+                        No results for
+                        <br />
+                        <b>{{ searchQuery() }}</b>
+                        <br />
+                        <br />
+                        Press
+                        <kbd>Enter</kbd>
+                        to use the typed link
+                    </span>
+                </div>
+            </ng-template>
+        </p-listbox>
+    }
+
+    @if (showLinkDetails()) {
+        <div class="current-link-view">
+            <div class="current-link-view__header">
+                <span class="pi pi-globe current-link-view__icon"></span>
+                <a
+                    [href]="existingLinkUrl()"
+                    [target]="linkTargetAttribute()"
+                    rel="noopener noreferrer"
+                    class="current-link-view__link">
+                    {{ existingLinkUrl() }}
+                </a>
+            </div>
+            <div class="current-link-view__checkbox-container">
+                <p-checkbox
+                    [checked]="linkTargetAttribute() === '_blank'"
+                    (onChange)="updateLinkTargetAttribute($event)"
+                    [binary]="true"
+                    [inputId]="'openInNewWindow'" />
+                <label for="openInNewWindow">Open link in new window</label>
+            </div>
+            <div class="current-link-view__actions">
+                <p-button
+                    type="button"
+                    variant="outlined"
+                    size="small"
+                    (onClick)="copyExistingLinkToClipboard()"
+                    label="Copy Link" />
+                <p-button
+                    type="button"
+                    size="small"
+                    (onClick)="removeLinkFromEditor()"
+                    label="Remove Link" />
+            </div>
+        </div>
+    }
+</div>

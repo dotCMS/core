@@ -6,7 +6,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { map } from 'rxjs/operators';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotSafeHtmlPipe, DotDiffPipe } from '@dotcms/ui';
 
 import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
@@ -14,7 +14,7 @@ import { DotContentCompareTableData } from '../../store/dot-content-compare.stor
 @Component({
     selector: 'dot-content-compare-block-editor',
     templateUrl: './dot-content-compare-block-editor.component.html',
-    imports: [CommonModule, BlockEditorModule, DotSafeHtmlPipe, DotDiffPipe]
+    imports: [CommonModule, DotBlockEditorComponent, DotSafeHtmlPipe, DotDiffPipe]
 })
 export class DotContentCompareBlockEditorComponent implements AfterViewInit {
     private sanitizer = inject(DomSanitizer);

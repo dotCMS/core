@@ -1,0 +1,26 @@
+<div class="text-xl mb-2">Floating Menu</div>
+<tiptap-editor [editor]="editor" [(ngModel)]="value" id="editor-with-floating-menu"></tiptap-editor>
+<tiptap-floating-menu [editor]="editor">
+    <div class="border border-black rounded-sm" data-test-id="floating-menu">
+        <button
+            type="button"
+            class="px-1"
+            (click)="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+            [ngClass]="{ 'bg-gray-900 text-white': editor.isActive('heading', { level: 1 }) }">
+            h1
+        </button>
+        <button
+            type="button"
+            class="px-1 boder border-0 border-l border-black"
+            (click)="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+            [ngClass]="{ 'bg-gray-900 text-white': editor.isActive('heading', { level: 2 }) }">
+            h2
+        </button>
+        <button
+            type="button"
+            class="px-1 boder border-0 border-l border-black"
+            [ngClass]="{ 'bg-gray-900 text-white': editor.isActive('bulletList') }">
+            bullet list
+        </button>
+    </div>
+</tiptap-floating-menu>

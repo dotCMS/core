@@ -28,12 +28,14 @@ export class BubbleAssetFormView {
     private pluginKey: PluginKey;
     private render: () => RenderProps;
 
+    private focusHandler = () => this.render().onHide(this.editor);
+
     constructor({ editor, view, pluginKey, render }: BubbleAssetFormViewProps) {
         this.editor = editor;
         this.view = view;
         this.pluginKey = pluginKey;
         this.render = render;
-        this.editor.on('focus', () => this.render().onHide(this.editor));
+        this.editor.on('focus', this.focusHandler);
     }
 
     update(view: EditorView, prevState?: EditorState): void {
@@ -63,6 +65,7 @@ export class BubbleAssetFormView {
     }
 
     destroy() {
+        this.editor.off('focus', this.focusHandler);
         this.render().onDestroy();
     }
 }
