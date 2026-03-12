@@ -1,6 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
 import { of } from 'rxjs';
-import { Instance, Props } from 'tippy.js';
 
 import {
     ChangeDetectionStrategy,
@@ -174,34 +173,11 @@ export class DotBubbleMenuComponent implements OnInit {
         }
     ];
 
-    protected readonly tippyOptions: Partial<Props> = {
-        maxWidth: '100%',
-        placement: 'top-start',
-        trigger: 'manual',
-        onBeforeUpdate: this.onBeforeUpdate.bind(this),
-        onClickOutside: this.onClickOutside.bind(this),
-        appendTo: (element) => {
-            // Append it to the block editor host, so it is outside of the editor container
-            const blockEditorHost = element?.parentElement?.parentElement ?? document.body;
-
-            return blockEditorHost;
-        },
-        popperOptions: {
-            modifiers: [
-                // This modifier is needed to flip the bubble menu when it is too close to the edge of the screen
-                {
-                    name: 'animate-flip',
-                    options: {
-                        fallbackPlacements: ['top', 'bottom']
-                    }
-                },
-                // This modifier adds an attribute to the tippy element to hide it when the reference is hidden
-                {
-                    name: 'hide',
-                    phase: 'main'
-                }
-            ]
-        }
+    protected readonly bubbleMenuOptions = {
+        placement: 'top-start' as const,
+        flip: true,
+        onUpdate: this.onBeforeUpdate.bind(this),
+        onHide: () => this.closePopups()
     };
 
     ngOnInit() {
@@ -462,18 +438,5 @@ export class DotBubbleMenuComponent implements OnInit {
 
         // Return null if no pattern matched
         return null;
-    }
-
-    private onClickOutside(instance: Instance, event: MouseEvent) {
-        const target = event.target as HTMLElement;
-        const isImageElement = this.imageModal().tippyElement?.contains(target);
-        const isLinkElement = this.linkModal().tippyElement?.contains(target);
-
-        if (isImageElement || isLinkElement) {
-            return;
-        }
-
-        instance.hide();
-        this.closePopups();
     }
 }

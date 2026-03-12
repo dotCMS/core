@@ -1,6 +1,5 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
 import { array, assert, object, optional, string } from 'superstruct';
-import tippy from 'tippy.js';
 
 import {
     ChangeDetectorRef,
@@ -30,7 +29,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
-import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
+import CharacterCount from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
@@ -40,6 +39,7 @@ import { Superscript } from '@tiptap/extension-superscript';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
+import type { CharacterCountStorage } from '@tiptap/extensions';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
@@ -190,12 +190,6 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     readonly dotMarketingConfigService = inject(DotMarketingConfigService);
     readonly dotAiService = inject(DotAiService);
 
-    readonly dotDragHandleOptions = {
-        duration: 250,
-        zIndex: 5,
-        placement: 'left'
-    };
-
     get characterCount(): CharacterCountStorage {
         return this.editor?.storage.characterCount;
     }
@@ -257,7 +251,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         // When the editor already exists (e.g. form patched after init), set content directly
         // so the view updates even if [ngModel] has already run.
         if (this.editor && content != null) {
-            this.editor.chain().setContent(content, true).run();
+            this.editor.chain().setContent(content).run();
         }
     }
 
@@ -275,7 +269,6 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     ngOnInit() {
         this.#dotMessageService.init();
         this.isAIPluginInstalled$ = this.dotAiService.checkPluginInstallation();
-        tippy.setDefaultProps({ zIndex: 10 });
         this.setFieldVariable(); // Set the field variables - Before the editor is created
         combineLatest([
             this.showVideoThumbnail$(),
@@ -312,7 +305,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         // When value input changes (e.g. [value]="contentlet.blogContent") and editor exists, set content
         if (changes['value'] && this.editor && changes['value'].currentValue != null) {
             this.setEditorContent(changes['value'].currentValue);
-            this.editor.chain().setContent(changes['value'].currentValue, true).run();
+            this.editor.chain().setContent(changes['value'].currentValue).run();
         }
     }
 
@@ -408,7 +401,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             // When writeValue() ran before the editor existed, this.value is already set.
             // Push it into the editor now so the view shows it (directive may not be ready yet).
             if (this.value != null) {
-                this.editor.chain().setContent(this.value, true).run();
+                this.editor.chain().setContent(this.value, { emitUpdate: true }).run();
             }
             this.updateCharCount();
             // Validate char limit on initial load (e.g., existing content over limit)

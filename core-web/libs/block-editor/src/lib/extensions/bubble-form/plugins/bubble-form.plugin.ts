@@ -2,7 +2,6 @@ import { Node } from 'prosemirror-model';
 import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Observable, Subject, Subscription } from 'rxjs';
-import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef } from '@angular/core';
 
@@ -11,7 +10,8 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
-import { BASIC_TIPPY_OPTIONS, getNodePosition } from '../../../shared';
+import { getNodePosition } from '../../../shared';
+import { createFloatingUI, type FloatingUIInstance } from '../../../shared/utils/floating-ui.utils';
 import { BubbleFormComponent } from '../bubble-form.component';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
 import { imageFormControls } from '../utils';
@@ -20,7 +20,6 @@ export interface BubbleFormProps {
     pluginKey: PluginKey;
     editor: Editor;
     element: HTMLElement;
-    tippyOptions?: Partial<Props>;
     component?: ComponentRef<BubbleFormComponent>;
     form$: Observable<{ [key: string]: string }>;
 }
@@ -44,9 +43,8 @@ export class BubbleFormView extends BubbleMenuView {
 
     public override view: EditorView;
 
-    public override tippy: Instance | undefined;
-
-    public override tippyOptions?: Partial<Props>;
+    /** Floating UI instance used for positioning (replaces Tippy). Base class 'tippy' is left undefined. */
+    private floatingRef: FloatingUIInstance | undefined;
 
     public pluginKey: PluginKey;
 
@@ -57,14 +55,12 @@ export class BubbleFormView extends BubbleMenuView {
     private formValuesSubscription: Subscription;
 
     constructor(props: BubbleFormViewProps) {
-        const { editor, element, view, tippyOptions = {}, pluginKey, component } = props;
+        const { editor, element, view, pluginKey, component } = props;
 
         super(props);
         this.editor = editor;
         this.element = element;
         this.view = view;
-
-        this.tippyOptions = tippyOptions;
 
         // Detaches menu content from its current parent
         this.element.remove();
@@ -103,7 +99,7 @@ export class BubbleFormView extends BubbleMenuView {
 
         // Check that the current plugin state is different to previous plugin state.
         if (next?.open === prev?.open) {
-            this.tippy?.popperInstance?.forceUpdate();
+            this.floatingRef?.updatePosition();
 
             return;
         }
@@ -117,48 +113,50 @@ export class BubbleFormView extends BubbleMenuView {
 
         this.createTooltip();
 
-        this.tippy?.setProps({
-            getReferenceClientRect: () => {
-                if (selection instanceof NodeSelection) {
-                    const node = view.nodeDOM(from) as HTMLElement;
+        const getReferenceRect = () => {
+            if (selection instanceof NodeSelection) {
+                const node = view.nodeDOM(from) as HTMLElement;
 
-                    if (node) {
-                        this.node = doc.nodeAt(from);
-                        const type = this.node.type.name;
+                if (node) {
+                    this.node = doc.nodeAt(from);
+                    const type = this.node.type.name;
 
-                        return this.tippyRect(node, type);
-                    }
+                    return this.getFloatingRect(node, type);
                 }
-
-                return posToDOMRect(view, from, to);
             }
-        });
+
+            return posToDOMRect(view, from, to);
+        };
+        this.floatingRef?.setReferenceRect(getReferenceRect);
 
         next.open ? this.show() : this.hide();
     }
 
-    override createTooltip() {
-        const { element: editorElement } = this.editor.options;
+    createTooltip() {
+        const editorElement = this.editor.options.element as Element;
         const editorIsAttached = !!editorElement.parentElement;
 
-        if (this.tippy || !editorIsAttached) {
+        if (this.floatingRef || !editorIsAttached) {
             return;
         }
 
-        this.tippy = tippy(editorElement.parentElement, {
-            ...this.tippyOptions,
-            ...BASIC_TIPPY_OPTIONS,
-            content: this.element,
-            onShow: () => {
-                requestAnimationFrame(() => {
-                    // firefox validation because of https://github.com/dotCMS/core/issues/30327
-                    const isFirefox = /firefox/i.test(navigator.userAgent);
-                    if (!isFirefox) {
-                        this.component.instance.inputs.first.nativeElement.focus();
-                    }
-                });
+        this.floatingRef = createFloatingUI(
+            () => (editorElement.parentElement as HTMLElement).getBoundingClientRect(),
+            this.element,
+            {
+                placement: 'bottom-start',
+                offset: 8,
+                zIndex: 10,
+                onShow: () => {
+                    requestAnimationFrame(() => {
+                        const isFirefox = /firefox/i.test(navigator.userAgent);
+                        if (!isFirefox && this.component?.instance?.inputs?.first) {
+                            this.component.instance.inputs.first.nativeElement.focus();
+                        }
+                    });
+                }
             }
-        });
+        );
     }
 
     override focusHandler = () => {
@@ -168,14 +166,17 @@ export class BubbleFormView extends BubbleMenuView {
     };
 
     override show() {
-        this.tippy?.show();
+        this.floatingRef?.show();
     }
 
     override destroy() {
         this.element.removeEventListener('mousedown', this.mousedownHandler, { capture: true });
         this.editor.off('focus', this.focusHandler);
         document.body.removeEventListener('scroll', this.scrollHandler, true);
-        this.tippy?.destroy();
+        if (this.floatingRef) {
+            this.floatingRef.destroy();
+            this.floatingRef = undefined;
+        }
         this.component?.destroy();
         this.$destroy.next(true);
         this.$destroy.complete();
@@ -192,14 +193,14 @@ export class BubbleFormView extends BubbleMenuView {
         return null;
     };
 
-    private tippyRect(node, type) {
+    private getFloatingRect(node: HTMLElement, type: string): DOMRect {
         const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();
 
         return domRect || getNodePosition(node, type);
     }
 
     private shouldHideOnScroll(node: HTMLElement): boolean {
-        return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
+        return this.element.contains(node);
     }
 }
 

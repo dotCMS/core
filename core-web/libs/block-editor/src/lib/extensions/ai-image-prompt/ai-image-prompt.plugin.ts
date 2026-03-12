@@ -2,7 +2,6 @@ import { Node } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
-import { Instance, Props } from 'tippy.js';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -37,10 +36,6 @@ export class AIImagePromptView {
     public node: Node;
 
     public view: EditorView;
-
-    public tippy: Instance | undefined;
-
-    public tippyOptions: Partial<Props>;
 
     public pluginKey: PluginKey;
 

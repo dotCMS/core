@@ -1,5 +1,3 @@
-import { Props } from 'tippy.js';
-
 import { Component, ElementRef, HostListener, input, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -37,11 +35,6 @@ export class DotImageEditorPopoverComponent {
         title: new FormControl('')
     });
 
-    protected readonly tippyOptions: Partial<Props> = {
-        onShow: this.initializeFormWithImageData.bind(this),
-        onShown: this.focusSearchInput.bind(this)
-    };
-
     @HostListener('document:keydown.escape', ['$event'])
     protected onEscapeKey(event: KeyboardEvent) {
         if (event.key === 'Escape') {
@@ -67,7 +60,9 @@ export class DotImageEditorPopoverComponent {
      * Shows the image editor popover.
      */
     show() {
+        this.initializeFormWithImageData();
         this.popover?.show();
+        requestAnimationFrame(() => this.focusSearchInput());
     }
 
     /**

@@ -1,9 +1,8 @@
-import tippy, { Instance } from 'tippy.js';
-
 import { Directive, ElementRef, OnDestroy, OnInit, inject, input } from '@angular/core';
 
 import { Editor, isNodeSelection, posToDOMRect } from '@tiptap/core';
-import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
+
+import { createFloatingUI, type FloatingUIInstance } from '../../shared/utils/floating-ui.utils';
 
 @Directive({
     selector: 'dot-editor-modal[editor], [dotEditorModal][editor]',
@@ -11,31 +10,25 @@ import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
 })
 export class EditorModalDirective implements OnInit, OnDestroy {
     readonly editor = input.required<Editor>();
-    readonly tippyOptions = input<BubbleMenuPluginProps['tippyOptions']>({});
 
     private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
-    private tippy: Instance;
+    private floating: FloatingUIInstance | null = null;
 
     private editorElement: HTMLElement;
 
-    private readonly PROPER_MODIFIERS = {
-        modifiers: [
-            {
-                name: 'animate-flip',
-                options: { fallbackPlacements: ['top-start'] }
-            }
-        ]
-    };
-
     /**
-     * The native element of the Tippy instance.
+     * The native element of the floating modal.
      */
     get nativeElement() {
         return this.elRef.nativeElement;
     }
 
+    get isVisible() {
+        return this.floating?.isVisible ?? false;
+    }
+
     ngOnInit(): void {
-        const { element: editorElement } = this.editor().options;
+        const editorElement = this.editor().options.element as Element;
         const editorIsAttached = !!editorElement.parentElement;
 
         if (!editorIsAttached) {
@@ -43,36 +36,33 @@ export class EditorModalDirective implements OnInit, OnDestroy {
         }
 
         this.editorElement = editorElement as HTMLElement;
-        this.tippy = tippy(editorElement, {
-            duration: 0,
-            content: this.elRef.nativeElement,
-            interactive: true,
-            trigger: 'manual',
+        const el = this.elRef.nativeElement;
+        this.floating = createFloatingUI(() => this.getReferenceClientRect(), el, {
             placement: 'bottom-start',
-            popperOptions: this.PROPER_MODIFIERS,
-            hideOnClick: 'toggle',
-            getReferenceClientRect: this.getReferenceClientRect.bind(this),
-            ...this.tippyOptions()
+            offset: 0,
+            zIndex: 10,
+            onClickOutside: () => this.hide()
         });
 
         editorElement.addEventListener('mousedown', () => this.hide());
     }
 
     ngOnDestroy(): void {
-        this.tippy?.destroy();
-        this.editorElement.removeEventListener('mousedown', () => this.hide());
+        this.floating?.destroy();
+        this.floating = null;
+        this.editorElement?.removeEventListener('mousedown', () => this.hide());
     }
 
     show() {
-        this.tippy.show();
+        this.floating?.show();
     }
 
     hide() {
-        this.tippy.hide();
+        this.floating?.hide();
     }
 
     toggle() {
-        this.tippy.state.isVisible ? this.hide() : this.show();
+        this.floating?.isVisible ? this.hide() : this.show();
     }
 
     private getReferenceClientRect() {

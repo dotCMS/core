@@ -1,13 +1,14 @@
+import { TiptapEditorDirective, TiptapFloatingMenuDirective } from 'ngx-tiptap';
+
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import { TiptapEditorDirective, TiptapFloatingMenuDirective } from 'ngx-tiptap';
 
 @Component({
-    selector: 'app-floating-menu',
+    selector: 'dot-floating-menu',
     imports: [CommonModule, FormsModule, TiptapEditorDirective, TiptapFloatingMenuDirective],
     templateUrl: './floating-menu.html',
     styleUrls: ['./floating-menu.css']

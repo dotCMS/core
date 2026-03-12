@@ -1,5 +1,4 @@
 import { Observable, Subject } from 'rxjs';
-import { Instance, Props } from 'tippy.js';
 
 import { HttpClient } from '@angular/common/http';
 import {
@@ -89,14 +88,6 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         }
     });
 
-    readonly tippyModalOptions: Partial<Props> = {
-        onShow: this.initializeExistingLinkData.bind(this),
-        onShown: this.focusSearchInput.bind(this),
-        onHide: this.clearEditorHighlight.bind(this),
-        placement: 'bottom',
-        onClickOutside: this.onClickOutside.bind(this)
-    };
-
     /**
      * Handles the Escape key press to close the popover.
      * This provides a consistent way for users to cancel link editing.
@@ -134,20 +125,27 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      * Toggles the visibility of the image editor popover.
      */
     toggle() {
-        this.popover?.toggle();
+        if (this.popover?.isVisible) {
+            this.hide();
+        } else {
+            this.show();
+        }
     }
 
     /**
-     * Shows the image editor popover.
+     * Shows the link editor popover.
      */
     show() {
+        this.initializeExistingLinkData();
         this.popover?.show();
+        requestAnimationFrame(() => this.focusSearchInput());
     }
 
     /**
-     * Hides the image editor popover.
+     * Hides the link editor popover.
      */
     hide() {
+        this.clearEditorHighlight();
         this.popover?.hide();
     }
 
@@ -311,21 +309,5 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
                 limit: 5
             })
             .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
-    }
-
-    /**
-     * Handles clicks outside the link editor popover.
-     * If the click is on a link option, it does not hide the popover.
-     * @param instance - The Tippy instance.
-     * @param event - The mouse event.
-     */
-    private onClickOutside(instance: Instance, event: MouseEvent) {
-        const target = event.target as HTMLElement;
-        const clickedOnBubbleMenu = target?.closest('[tiptapbubblemenu]');
-        if (clickedOnBubbleMenu) {
-            return;
-        }
-
-        instance.hide();
     }
 }

@@ -1,12 +1,13 @@
+import { describe, expect, it, vi } from 'vitest';
+
 import { Editor } from '@tiptap/core';
 import Document from '@tiptap/extension-document';
 import Paragraph from '@tiptap/extension-paragraph';
 import Text from '@tiptap/extension-text';
 import { PluginKey } from '@tiptap/pm/state';
-import { describe, expect, it, vi } from 'vitest';
 
-import { FloatingMenu } from '../src/floating-menu.js';
 import { FloatingMenuView } from '../src/floating-menu-plugin.js';
+import { FloatingMenu } from '../src/floating-menu.js';
 
 function createEditor(content = '<p>Hello world</p>') {
     return new Editor({

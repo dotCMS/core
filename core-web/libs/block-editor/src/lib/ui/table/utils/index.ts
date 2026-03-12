@@ -1,10 +1,13 @@
-import { Instance } from 'tippy.js';
-
 import { Editor } from '@tiptap/core';
 
 import { DotMenuItem } from '../../../shared';
 
-export const getCellsOptions = (editor: Editor, tippy: Instance) => {
+/** Any floating menu instance that can be hidden (Floating UI or legacy). */
+export interface TableCellMenuRef {
+    hide(): void;
+}
+
+export const getCellsOptions = (editor: Editor, cellMenuRef: TableCellMenuRef) => {
     const menu: DotMenuItem[] = [
         {
             label: 'Toggle row Header',
@@ -12,7 +15,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'toggleRowHeader',
             command: () => {
                 editor.commands.toggleHeaderRow();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '0'
         },
@@ -22,7 +25,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'toggleColumnHeader',
             command: () => {
                 editor.commands.toggleHeaderColumn();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '1'
         },
@@ -35,7 +38,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'mergeCells',
             command: () => {
                 editor.commands.mergeCells();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             disabled: true,
             tabindex: '2'
@@ -46,7 +49,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'splitCells',
             command: () => {
                 editor.commands.splitCell();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             disabled: true,
             tabindex: '3'
@@ -61,7 +64,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'insertAbove',
             command: () => {
                 editor.commands.addRowBefore();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '4'
         },
@@ -71,7 +74,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'insertBellow',
             command: () => {
                 editor.commands.addRowAfter();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '5'
         },
@@ -81,7 +84,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'insertLeft',
             command: () => {
                 editor.commands.addColumnBefore();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '6'
         },
@@ -91,7 +94,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'insertRight',
             command: () => {
                 editor.commands.addColumnAfter();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '7'
         },
@@ -104,7 +107,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'deleteRow',
             command: () => {
                 editor.commands.deleteRow();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '8'
         },
@@ -114,7 +117,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'deleteColumn',
             command: () => {
                 editor.commands.deleteColumn();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '9'
         },
@@ -124,7 +127,7 @@ export const getCellsOptions = (editor: Editor, tippy: Instance) => {
             id: 'deleteTable',
             command: () => {
                 editor.commands.deleteTable();
-                tippy.hide();
+                cellMenuRef.hide();
             },
             tabindex: '10'
         }

@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-import { CharacterCountStorage } from '@tiptap/extension-character-count';
+import type { CharacterCountStorage } from '@tiptap/extensions';
 
 @Component({
     selector: 'dot-editor-count-bar',

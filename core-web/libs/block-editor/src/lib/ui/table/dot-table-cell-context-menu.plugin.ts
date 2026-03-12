@@ -1,6 +1,5 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
-import tippy, { Instance, Props } from 'tippy.js';
 
 import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
 
@@ -8,7 +7,8 @@ import { Editor, Extension } from '@tiptap/core';
 
 import { getCellsOptions } from './utils';
 
-import { SuggestionsComponent, popperModifiers } from '../../shared';
+import { SuggestionsComponent } from '../../shared';
+import { createFloatingUI, type FloatingUIInstance } from '../../shared/utils/floating-ui.utils';
 
 // Types and Interfaces
 interface TableContextMenuOptions {
@@ -56,28 +56,6 @@ const CELL_OPTION_IDS = {
     SPLIT_CELLS: 'splitCells'
 } as const;
 
-const TIPPY_OPTIONS: Partial<Props> = {
-    trigger: 'manual',
-    interactive: true,
-    appendTo: document.body,
-    placement: 'auto-start',
-    duration: 0,
-    hideOnClick: false,
-    maxWidth: 'none',
-    popperOptions: {
-        modifiers: popperModifiers
-    },
-    onClickOutside: (instance: Instance<Props>, event: Event) => {
-        const target = event.target as HTMLElement;
-
-        if (target.classList.contains(CSS_CLASSES.CELL_ARROW)) {
-            return;
-        }
-
-        instance.hide();
-    }
-};
-
 // Helper Functions
 function setFocusDecoration(selection: Selection): Decoration {
     // Get the before and after position of the parent cell where the selection is
@@ -86,8 +64,8 @@ function setFocusDecoration(selection: Selection): Decoration {
     });
 }
 
-function displayTableOptions(event: MouseEvent, tippyInstance: Instance | null): void {
-    if (!tippyInstance || !event.target) {
+function displayTableOptions(event: MouseEvent, floatingInstance: FloatingUIInstance | null): void {
+    if (!floatingInstance || !event.target) {
         return;
     }
 
@@ -96,23 +74,13 @@ function displayTableOptions(event: MouseEvent, tippyInstance: Instance | null):
 
     const target = event.target as HTMLElement;
 
-    // Check if tippy is already visible - toggle behavior
-    if (tippyInstance.state.isVisible) {
-        // If already visible, hide it (toggle behavior)
-        tippyInstance.hide();
-
+    if (floatingInstance.isVisible) {
+        floatingInstance.hide();
         return;
     }
 
-    // Set position and show
-    tippyInstance.setProps({
-        getReferenceClientRect: () => target.getBoundingClientRect()
-    });
-
-    // Use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(() => {
-        tippyInstance.show();
-    });
+    floatingInstance.setReferenceRect(() => target.getBoundingClientRect());
+    requestAnimationFrame(() => floatingInstance.show());
 }
 
 function isArrowClicked(element: HTMLElement | null): boolean {
@@ -156,7 +124,7 @@ function handleComponentSetup(editor: Editor, component: ComponentRef<Suggestion
 
 function initializeComponent(options: TableContextMenuOptions): {
     component: ComponentRef<SuggestionsComponent>;
-    tippyInstance: Instance;
+    floatingInstance: FloatingUIInstance;
 } {
     const { editor, viewContainerRef, injector } = options;
     const { element: editorElement } = editor.options;
@@ -166,24 +134,33 @@ function initializeComponent(options: TableContextMenuOptions): {
     }
 
     const component = viewContainerRef.createComponent(SuggestionsComponent, { injector });
-    const element = component.location.nativeElement;
+    const element = component.location.nativeElement as HTMLElement;
 
-    const tippyInstance = tippy(editorElement as HTMLElement, {
-        ...TIPPY_OPTIONS,
-        content: element,
-        onShow: () => handleComponentSetup(editor, component),
-        onHide: () => {
-            editor.commands.freezeScroll(false);
+    const floatingInstance = createFloatingUI(
+        () => (editorElement as HTMLElement).getBoundingClientRect(),
+        element,
+        {
+            placement: 'bottom-start',
+            offset: 8,
+            zIndex: 10,
+            appendTo: document.body,
+            onShow: () => handleComponentSetup(editor, component),
+            onHide: () => {
+                editor.commands.freezeScroll(false);
+            },
+            onClickOutside: (e) => {
+                if ((e?.target as HTMLElement)?.classList?.contains(CSS_CLASSES.CELL_ARROW)) return;
+                floatingInstance.hide();
+            }
         }
-    });
+    );
 
-    // Configure component instance
     component.instance.title = '';
-    component.instance.items = getCellsOptions(editor, tippyInstance);
+    component.instance.items = getCellsOptions(editor, floatingInstance);
     component.instance.currentLanguage = editor.storage.dotConfig?.lang || 'en';
     component.changeDetectorRef.detectChanges();
 
-    return { component, tippyInstance };
+    return { component, floatingInstance };
 }
 
 function getGrandparentNode(view: EditorView): TableNode | null {
@@ -200,7 +177,7 @@ function shouldShowTableOptions(view: EditorView): boolean {
 
 // Main Plugin
 const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
-    let tippyCellOptions: Instance | null = null;
+    let floatingCellOptions: FloatingUIInstance | null = null;
     let componentRef: ComponentRef<SuggestionsComponent> | null = null;
 
     return new Plugin({
@@ -211,9 +188,9 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
             },
             init: () => {
                 try {
-                    const { tippyInstance, component } = initializeComponent(options);
+                    const { floatingInstance, component } = initializeComponent(options);
                     componentRef = component;
-                    tippyCellOptions = tippyInstance;
+                    floatingCellOptions = floatingInstance;
                 } catch (error) {
                     console.error('Failed to initialize table cell context menu:', error);
                 }
@@ -234,7 +211,7 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
             },
             handleKeyDown(_, event) {
                 const { key } = event;
-                const isVisible = tippyCellOptions?.state.isVisible;
+                const isVisible = floatingCellOptions?.isVisible;
 
                 if (!isVisible) {
                     return false;
@@ -242,7 +219,7 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
 
                 if (key === 'Escape') {
                     event.stopImmediatePropagation();
-                    tippyCellOptions?.hide();
+                    floatingCellOptions?.hide();
 
                     return true;
                 }
@@ -268,14 +245,14 @@ const TableCellContextMenuPlugin = (options: TableContextMenuOptions) => {
             handleDOMEvents: {
                 contextmenu: (view: EditorView, event) => {
                     if (shouldShowTableOptions(view)) {
-                        displayTableOptions(event, tippyCellOptions);
+                        displayTableOptions(event, floatingCellOptions);
                     }
                 },
                 mousedown: (view, event) => {
                     const target = event.target as HTMLElement;
 
                     if (isArrowClicked(target)) {
-                        displayTableOptions(event, tippyCellOptions);
+                        displayTableOptions(event, floatingCellOptions);
                     } else if (
                         event.button === RIGHT_MOUSE_BUTTON &&
                         shouldShowTableOptions(view)

@@ -46,7 +46,7 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
             return;
         }
 
-        this.editor.chain().setContent(value, true).run();
+        this.editor.chain().setContent(value).run();
     }
 
     // Registers a callback function that is called when the control's value changes in the UI.
@@ -83,14 +83,16 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
         this.el.nativeElement.innerHTML = '';
 
         // insert the editor in the dom
-        this.el.nativeElement.appendChild(this.editor.options.element.firstChild as ChildNode);
+        this.el.nativeElement.appendChild(
+            (this.editor.options.element as Element).firstChild as ChildNode
+        );
 
         // update the options for the editor
         this.editor.setOptions({ element: this.el.nativeElement });
 
         // update content to the editor
         if (innerHTML) {
-            this.editor.chain().setContent(innerHTML, false).run();
+            this.editor.chain().setContent(innerHTML).run();
         }
 
         // register blur handler to update `touched` property

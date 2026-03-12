@@ -6,7 +6,7 @@
     (mousedown)="preventLostEditorSelection($event)"
     (click)="closePopups()"
     [editor]="editor()"
-    [tippyOptions]="tippyOptions"
+    [options]="bubbleMenuOptions"
     [updateDelay]="250">
     @if (showImageMenu()) {
         <p-button text size="small" (onClick)="toggleImageModal($event)">

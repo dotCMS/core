@@ -19,7 +19,6 @@
         <button
             type="button"
             class="px-1 boder border-0 border-l border-black"
-            (click)="editor.chain().focus().toggleBulletList().run()"
             [ngClass]="{ 'bg-gray-900 text-white': editor.isActive('bulletList') }">
             bullet list
         </button>

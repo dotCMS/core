@@ -1,5 +1,4 @@
 import { PluginKey } from 'prosemirror-state';
-import tippy, { GetReferenceClientRect, Instance, Props } from 'tippy.js';
 
 import { ComponentRef, ViewContainerRef } from '@angular/core';
 
@@ -10,6 +9,8 @@ import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { AssetFormComponent } from './asset-form.component';
 import { bubbleAssetFormPlugin } from './plugins/bubble-asset-form.plugin';
+
+import { createFloatingUI, type FloatingUIInstance } from '../../shared/utils/floating-ui.utils';
 
 export const BUBBLE_ASSET_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
 
@@ -27,27 +28,10 @@ declare module '@tiptap/core' {
     }
 }
 
-const tippyOptions: Partial<Props> = {
-    interactive: true,
-    duration: 0,
-    maxWidth: 'none',
-    trigger: 'manual',
-    placement: 'bottom-start',
-    hideOnClick: 'toggle',
-    popperOptions: {
-        modifiers: [
-            {
-                name: 'animate-flip',
-                options: { fallbackPlacements: ['top-start'] }
-            }
-        ]
-    }
-};
-
 interface StartProps {
     editor: Editor;
     type: EditorAssetTypes;
-    getPosition: GetReferenceClientRect;
+    getPosition: () => DOMRect;
 }
 
 export interface RenderProps {
@@ -57,22 +41,23 @@ export interface RenderProps {
 }
 
 export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => {
-    let formTippy: Instance | undefined;
+    let formFloating: FloatingUIInstance | undefined;
     let component: ComponentRef<AssetFormComponent>;
-    let element: Element;
+    let element: HTMLElement;
     let preventClose = false;
     let pendingPreventCloseReset: number | null = null;
 
     function onStart({ editor, type, getPosition }: StartProps) {
-        setUpTippy(editor);
         setUpComponent(editor, type);
 
-        formTippy.setProps({
-            content: element,
-            getReferenceClientRect: getPosition,
+        formFloating = createFloatingUI(getPosition, element, {
+            placement: 'bottom-start',
+            offset: 8,
+            zIndex: 10,
+            onHide: () => onHide(editor),
             onClickOutside: () => onHide(editor)
         });
-        formTippy.show();
+        formFloating.show();
     }
 
     function onHide(editor: Editor): void {
@@ -81,18 +66,19 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         }
 
         cancelPendingReset();
-        // Always restore editable state when hiding, in case it was locked
         if (!editor.isEditable) {
             editor.setOptions({ editable: true });
         }
         editor.commands.closeAssetForm();
-        formTippy?.hide();
+        formFloating?.destroy();
+        formFloating = undefined;
         component?.destroy();
     }
 
     function onDestroy() {
         cancelPendingReset();
-        formTippy?.destroy();
+        formFloating?.destroy();
+        formFloating = undefined;
         component?.destroy();
     }
 
@@ -101,17 +87,6 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
             cancelAnimationFrame(pendingPreventCloseReset);
             pendingPreventCloseReset = null;
         }
-    }
-
-    function setUpTippy(editor: Editor) {
-        const { element } = editor.options;
-        const editorIsAttached = !!element.parentElement;
-
-        if (formTippy || !editorIsAttached) {
-            return;
-        }
-
-        formTippy = tippy(element.parentElement, tippyOptions);
     }
 
     function setUpComponent(editor: Editor, type: EditorAssetTypes) {
@@ -130,7 +105,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
             onHide(editor);
         };
 
-        element = component.location.nativeElement;
+        element = component.location.nativeElement as HTMLElement;
         component.changeDetectorRef.detectChanges();
     }
 
@@ -151,7 +126,6 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         addOptions() {
             return {
                 element: null,
-                tippyOptions: {},
                 pluginKey: BUBBLE_ASSET_FORM_PLUGIN_KEY
             };
         },

@@ -11,7 +11,6 @@ import { FloatingMenuPlugin, FloatingMenuPluginProps } from '@tiptap/extension-f
 export class FloatingMenuDirective implements OnInit, OnDestroy {
     @Input() pluginKey: FloatingMenuPluginProps['pluginKey'] = 'NgxTiptapFloatingMenu';
     @Input() editor!: Editor;
-    @Input() tippyOptions: FloatingMenuPluginProps['tippyOptions'] = {};
     @Input() shouldShow: FloatingMenuPluginProps['shouldShow'] = null;
 
     private readonly _el = inject(ElementRef<HTMLElement>);
@@ -26,7 +25,6 @@ export class FloatingMenuDirective implements OnInit, OnDestroy {
                 pluginKey: this.pluginKey,
                 editor: this.editor,
                 element: this._el.nativeElement,
-                tippyOptions: this.tippyOptions,
                 shouldShow: this.shouldShow
             })
         );

@@ -12,7 +12,7 @@ import { Editor, isNodeEmpty } from '@tiptap/core';
 import {
     DragHandlePlugin,
     dragHandlePluginDefaultKey,
-    DragHandlePluginProps
+    normalizeNestedOptions
 } from '@tiptap/extension-drag-handle';
 import { Node } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -49,12 +49,8 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
         ((data: { node: Node | null; editor: Editor; pos: number }) => void) | undefined
     >(undefined);
 
-    /**
-     * Optional Tippy.js options for the drag handle tooltip
-     */
-    tippyOptions = input<DragHandlePluginProps['tippyOptions']>(undefined);
-
     private plugin = signal<Plugin | null>(null);
+    private unbindPlugin: (() => void) | null = null;
     private elementRef = inject(ElementRef<HTMLElement>);
 
     ngAfterViewInit(): void {
@@ -68,24 +64,24 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
             return;
         }
 
-        this.plugin.set(
-            DragHandlePlugin({
-                editor: editor,
-                element: this.elementRef.nativeElement,
-                pluginKey: this.pluginKey(),
-                tippyOptions: this.tippyOptions(),
-                onNodeChange: (data) => {
-                    const onNodeChange = this.onNodeChange();
-                    if (onNodeChange) {
-                        onNodeChange(data);
-                    } else {
-                        this.handleNodeChange(data.node);
-                    }
+        const result = DragHandlePlugin({
+            editor: editor,
+            element: this.elementRef.nativeElement,
+            pluginKey: this.pluginKey(),
+            nestedOptions: normalizeNestedOptions(false),
+            onNodeChange: (data) => {
+                const onNodeChange = this.onNodeChange();
+                if (onNodeChange) {
+                    onNodeChange(data);
+                } else {
+                    this.handleNodeChange(data.node);
                 }
-            })
-        );
+            }
+        });
 
-        editor.registerPlugin(this.plugin());
+        this.plugin.set(result.plugin);
+        this.unbindPlugin = result.unbind;
+        editor.registerPlugin(result.plugin);
     }
 
     ngOnDestroy(): void {
@@ -106,6 +102,8 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
      * Cleanup the plugin when the directive is destroyed
      */
     private cleanupPlugin(): void {
+        this.unbindPlugin?.();
+        this.unbindPlugin = null;
         const editor = this.editor();
         if (editor && !editor.isDestroyed && this.plugin()) {
             editor.unregisterPlugin(this.pluginKey());
