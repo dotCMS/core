@@ -656,17 +656,17 @@ public class BrowserAPIImpl implements BrowserAPI {
     });
 
     // ===========================================
-    // CONFIGURATION PROPERTIES FOR ES CHUNK SIZING
+    // CONFIGURATION PROPERTIES FOR PARALLEL CONTENTLET LOADING
     // ===========================================
 
-    //Configuration for ES chunk percentage calculation
-    final Lazy<Double> SINGLE_QUERY_ES_CHUNK_PERCENTAGE = Lazy.of(
+    // Percentage of total inodes used to calculate the chunk size for parallel contentlet loading.
+    final Lazy<Double> CONTENTLET_PARALLEL_CHUNK_PERCENTAGE = Lazy.of(
             () -> {
-                final String value = Config.getStringProperty("BROWSE_API_SINGLE_QUERY_ES_CHUNK_PERCENTAGE", "30.0");
+                final String value = Config.getStringProperty("BROWSER_CONTENTLET_PARALLEL_CHUNK_PERCENTAGE", "30.0");
                 try {
                     return Double.parseDouble(value);
                 } catch (NumberFormatException e) {
-                    Logger.warn(this.getClass(), "Invalid ES chunk percentage value: " + value + ", using default 30.0");
+                    Logger.warn(this.getClass(), "Invalid contentlet chunk percentage value: " + value + ", using default 30.0");
                     return 30.0;
                 }
             });
@@ -934,7 +934,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int totalInodes = inodesOrdered.size();
         final long startTime = System.currentTimeMillis();
 
-        // Use the same 30% heuristic for contentlet loading chunks
+        // Chunk size driven by BROWSER_CONTENTLET_PARALLEL_CHUNK_PERCENTAGE (default 30%)
         final int chunkSize = calculateContentletChunkSize(totalInodes);
 
         Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes, chunk size: %d",
@@ -957,12 +957,11 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Calculates optimal chunk size for contentlet loading using 30% heuristic.
-     * Similar to ES chunk calculation but optimized for database operations.
+     * Calculates optimal chunk size for parallel contentlet loading. Uses
+     * {@code BROWSER_CONTENTLET_PARALLEL_CHUNK_PERCENTAGE} (default 30%) of the total inode count.
      */
     private int calculateContentletChunkSize(int totalInodes) {
-        // Use the same percentage logic as ES chunks
-        final double percentage = SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get() / 100.0;
+        final double percentage = CONTENTLET_PARALLEL_CHUNK_PERCENTAGE.get() / 100.0;
         int calculatedSize = (int) Math.ceil(totalInodes * percentage);
 
         // Apply bounds - smaller max than ES since DB operations are typically more expensive
@@ -972,7 +971,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         calculatedSize = Math.max(calculatedSize, minSize);
         calculatedSize = Math.min(calculatedSize, maxSize);
 
-        Logger.debug(this, String.format("Contentlet chunk calculation: %d inodes → %d per chunk (%.1f%% of total)",
+        Logger.debug(this, String.format("Parallel contentlet chunk: %d inodes → %d per chunk (%.1f%% of total)",
             totalInodes, calculatedSize, percentage * 100));
 
         return calculatedSize;
