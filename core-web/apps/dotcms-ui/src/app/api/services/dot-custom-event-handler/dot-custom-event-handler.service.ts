@@ -80,10 +80,12 @@ export class DotCustomEventHandlerService {
                         'generate-secure-password': this.generateSecurePassword.bind(this),
                         'compare-contentlet': this.openCompareDialog.bind(this),
                         'license-changed': this.updateLicense.bind(this),
-
-                        // THIS NEEDS TESTING
-                        'edit-host': this.editContentletLegacy.bind(this),
-                        'create-host': this.createContentletLegacy.bind(this)
+                        'edit-host': contentEditorFeatureFlag
+                            ? this.editContentlet.bind(this)
+                            : this.editContentletLegacy.bind(this),
+                        'create-host': contentEditorFeatureFlag
+                            ? this.createContentlet.bind(this)
+                            : this.createContentletLegacy.bind(this)
                     };
                 }
             });
