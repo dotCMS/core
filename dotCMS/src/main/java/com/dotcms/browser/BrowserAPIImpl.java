@@ -156,7 +156,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                 return new ContentUnderParent(filtered, false, 0);
             }
 
-            return getContentByChunks(browserQuery, maxRows, sqlQuery);
+            Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
+            final int chunkSize = Math.max(maxRows * BROWSER_DB_CHUNK_FACTOR.get(), BROWSER_DB_CHUNK_MIN_SIZE.get());
+
+            return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, false);
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
             final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
@@ -176,20 +179,27 @@ public class BrowserAPIImpl implements BrowserAPI {
      * returned by the previous page. On the first page it is 0.
      * </p>
      *
-     * @param browserQuery query containing search criteria, user context, and the current cursor
-     * @param maxRows      maximum number of permission-visible items to return
-     * @param sqlQuery the pre-built SQL select query containing: string query and parameters
+     * @param browserQuery  query containing search criteria, user context, and the current cursor
+     * @param maxRows       maximum number of permission-visible items to return
+     * @param sqlQuery      the pre-built SQL select query containing: string query and parameters
+     * @param chunkSize     number of DB rows to fetch per iteration
+     * @param applyESFilter when {@code true}, each chunk is text-filtered through Elasticsearch
+     *                      before permission filtering; when {@code false}, only permission
+     *                      filtering is applied
      * @return permission-filtered page together with {@code hasMore} and the next cursor value
      * @throws DotDataException     if a DB or permission lookup fails at the data layer
      * @throws DotSecurityException if a security boundary is violated during permission filtering
      */
     private ContentUnderParent getContentByChunks(final BrowserQuery browserQuery,
-            final int maxRows, final SelectQuery sqlQuery) throws DotDataException, DotSecurityException {
+            final int maxRows, final SelectQuery sqlQuery, final int chunkSize,
+            final boolean applyESFilter) throws DotDataException, DotSecurityException {
+
+        final int scanLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
-        final int chunkSize = Math.max(maxRows * BROWSER_DB_CHUNK_FACTOR.get(), BROWSER_DB_CHUNK_MIN_SIZE.get());
-        int chunkCount = 0;
+        List<String> candidateChunkInodes;
         int dbOffset = browserQuery.contentCursor;
+        int chunkCount = 0;
         int nextContentCursor;
         boolean hasMore = false;
 
@@ -202,36 +212,38 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
 
             final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, chunkSize, dbOffset);
-            final List<String> chunkInodesOrdered = collectInodesFromDB(dcSelectChunk);
+            candidateChunkInodes = collectInodesFromDB(dcSelectChunk);
 
-            if (chunkInodesOrdered.isEmpty()) {
+            if (candidateChunkInodes.isEmpty()) {
                 Logger.debug(this, String.format("DB exhausted at offset %d after %d chunks.",
                         dbOffset, chunkCount));
                 nextContentCursor = dbOffset;
                 break;
             }
 
-            final List<Contentlet> chunkFiltered = getContentFilteredByRole(browserQuery, chunkInodesOrdered);
-
+            // if applyESFilter is true ES text-filter this chunk, then permission-filter the matches otherwise just then permission-filter the matches
+            List<Contentlet> chunkFiltered = getChunkFiltered(browserQuery, applyESFilter, candidateChunkInodes);
             accumulatedContent.addAll(chunkFiltered);
-            dbOffset += chunkInodesOrdered.size();
 
-            if (dbOffset >= Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT)) {
+            dbOffset += candidateChunkInodes.size();
+
+            if (dbOffset >= scanLimit) {
                 Logger.warn(BrowserAPIImpl.class, String.format(
                         "Scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
                         dbOffset, chunkCount, accumulatedContent.size()));
                 nextContentCursor = dbOffset;
+                hasMore = true;
                 break;
             }
 
             if (accumulatedContent.size() >= maxRows) {
-                hasMore = (chunkInodesOrdered.size() == chunkSize);
+                hasMore = (candidateChunkInodes.size() == chunkSize);
                 nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
-                        chunkInodesOrdered, dbOffset);
+                        candidateChunkInodes, dbOffset);
                 break;
             }
 
-            if (chunkInodesOrdered.size() < chunkSize) {
+            if (candidateChunkInodes.size() < chunkSize) {
                 Logger.debug(this, String.format(
                         "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
                         accumulatedContent.size()));
@@ -255,6 +267,36 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return new ContentUnderParent(contentInPage, hasMore, nextContentCursor);
+    }
+
+    /**
+     * Filters a single DB chunk down to the contentlets the user is allowed to read.
+     * <p>
+     * When {@code applyESFilter} is {@code true}, the chunk is first narrowed by an Elasticsearch
+     * text-search query (matching {@link BrowserQuery#filter} / {@link BrowserQuery#fileName})
+     * before permission filtering is applied. When {@code false}, only permission filtering runs.
+     * </p>
+     *
+     * @param browserQuery         query providing the text filter, user, and role context
+     * @param applyESFilter        {@code true} to run ES text filtering before permission check
+     * @param candidateChunkInodes DB-ordered inodes fetched in the current chunk
+     * @return permission-visible contentlets from this chunk; empty list when none pass
+     * @throws DotDataException     if a DB or permission lookup fails
+     * @throws DotSecurityException if a security boundary is violated during filtering
+     */
+    private List<Contentlet> getChunkFiltered(final BrowserQuery browserQuery,
+            final boolean applyESFilter, final List<String> candidateChunkInodes) throws DotDataException, DotSecurityException {
+
+        if (applyESFilter) {
+            final Set<String> esFiltered = processESDirectly(
+                    browserQuery, new LinkedHashSet<>(candidateChunkInodes));
+            if (!esFiltered.isEmpty()) {
+                return getContentFilteredByRole(browserQuery, new LinkedList<>(esFiltered));
+            }
+        } else {
+            return getContentFilteredByRole(browserQuery, candidateChunkInodes);
+        }
+        return List.of();
     }
 
     /**
@@ -427,79 +469,24 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Hybrid Chunked DB + ES: Fetches DB inodes in SQL-paginated chunks, text-filters each chunk
-     * via Elasticsearch, then permission-filters the accumulated results. Stops early once enough
-     * items are collected or the safety scan cap is reached, avoiding full-table scans on large
-     * sites where a restricted user has access to only a small fraction of the content.
+     * Hybrid Chunked DB + ES: delegates to {@link #getContentByChunks} with
+     * {@code applyESFilter=true}, so each DB chunk is text-filtered through Elasticsearch before
+     * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}(default 900).
+     *
+     * @param browserQuery query containing the text filter, user context, and current cursor
+     * @param maxRows      maximum number of permission-visible items to return
+     * @param sqlQuery     pre-built SQL select query with bound parameters
+     * @return permission-filtered page with {@code hasMore} and the next DB cursor
+     * @throws DotDataException     if a DB or ES lookup fails
+     * @throws DotSecurityException if a security boundary is violated during permission filtering
      */
     ContentUnderParent doHybridSingleChunkedQueryES(final BrowserQuery browserQuery,
             final int maxRows, final SelectQuery sqlQuery) throws DotDataException, DotSecurityException {
-        final List<Contentlet> accumulatedContent = new ArrayList<>();
 
-        Logger.debug(this, "::::: Using Hybrid Query Chunked for text filtering ::::");
-
+        Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
         final int chunkSize = Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
-        final int scanLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
 
-        List<String> candidateChunkInodes;
-        int dbOffset = browserQuery.contentCursor;   // resume from where the previous page stopped
-        int chunkCount = 0;
-        int nextContentCursor;
-        boolean hasMore = false;
-
-        while (true) {
-            chunkCount++;
-            Logger.debug(this, String.format("Hybrid DB+ES #%d chunk: starting DB row %d", chunkCount, dbOffset));
-
-            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, chunkSize, dbOffset);
-            candidateChunkInodes = collectInodesFromDB(dcSelectChunk);
-
-            if (candidateChunkInodes.isEmpty()) {
-                Logger.debug(this, "Hybrid DB+ES: no more inodes from DB — stopping");
-                nextContentCursor = dbOffset;
-                break;
-            }
-
-            // ES text-filter this chunk, then permission-filter the matches
-            final Set<String> esFiltered = processESDirectly(browserQuery, new LinkedHashSet<>(candidateChunkInodes));
-            if (!esFiltered.isEmpty()) {
-                final List<Contentlet> chunkFiltered = getContentFilteredByRole(browserQuery, new LinkedList<>(esFiltered));
-                accumulatedContent.addAll(chunkFiltered);
-            }
-
-            dbOffset += candidateChunkInodes.size();
-
-            if (dbOffset >= scanLimit) {
-                Logger.warn(BrowserAPIImpl.class, String.format(
-                        "Hybrid DB+ES scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
-                        dbOffset, chunkCount, accumulatedContent.size()));
-                nextContentCursor = dbOffset;
-                break;
-            }
-
-            if (accumulatedContent.size() >= maxRows) {
-                // Point cursor to the DB row just after the last item on the page.
-                hasMore = (candidateChunkInodes.size() == chunkSize);
-                nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows, candidateChunkInodes, dbOffset);
-                break;
-            }
-
-            if (candidateChunkInodes.size() < chunkSize) {
-                Logger.debug(this, "Hybrid DB+ES: partial chunk — DB exhausted");
-                nextContentCursor = dbOffset;
-                break;
-            }
-        }
-
-        final int accumulatedSize = accumulatedContent.size();
-        final int to = Math.min(maxRows, accumulatedSize);
-        final List<Contentlet> page = new ArrayList<>(accumulatedContent.subList(0, to));
-
-        if (!hasMore && to < accumulatedSize) {
-            hasMore = true;
-        }
-
-        return new ContentUnderParent(page, hasMore, nextContentCursor);
+        return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, true);
     }
 
     /**
