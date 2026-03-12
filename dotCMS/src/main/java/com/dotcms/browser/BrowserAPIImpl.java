@@ -523,7 +523,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<Contentlet> contentlets = contentletAPI.search(
                 esQuery,
                 browserQuery.maxResults > 0 ? browserQuery.maxResults : maxRows,
-                maxRows,
+                startRow,
                 browserQuery.sortBy,
                 browserQuery.user,
                 browserQuery.respectFrontEndRoles // false for backend searches
@@ -668,10 +668,6 @@ public class BrowserAPIImpl implements BrowserAPI {
                     return 30.0;
                 }
             });
-
-    //Minimum ES chunk size to ensure reasonable performance
-    final Lazy<Integer> SINGLE_QUERY_ES_CHUNK_MIN_SIZE = Lazy.of(
-            () -> Config.getIntProperty("BROWSE_API_SINGLE_QUERY_ES_CHUNK_MIN_SIZE", 100));
 
     // Multiplier applied to (startRow + maxRows) to determine the DB chunk size for permission-aware pagination.
     // A factor of 3 means: fetch 3x the needed rows per chunk, expecting ~1/3 may be filtered by permissions.
