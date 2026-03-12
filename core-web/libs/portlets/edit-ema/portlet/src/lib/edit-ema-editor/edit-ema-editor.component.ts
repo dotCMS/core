@@ -398,17 +398,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     readonly $pageURL = computed((): string => {
-        // Removed pageAPIResponse - use normalized accessors
-        if (!this.uveStore.pageAsset()?.page?.pageURI) {
-            return '';
-        }
-        const site = this.uveStore.pageAsset()?.site;
-        const page = this.uveStore.pageAsset()?.page;
-        const hostname = site?.hostname || 'mysite.com';
-        const protocol = page?.httpsRequired ? 'https' : 'http';
-        const pageURI = page.pageURI;
-        const url = pageURI.startsWith('/') ? pageURI : `/${pageURI}`;
-        return `${protocol}://${hostname}${url}`;
+        return this.$pageURLS()[0]?.value ?? '/';
     });
 
     get contentWindow(): Window | null {

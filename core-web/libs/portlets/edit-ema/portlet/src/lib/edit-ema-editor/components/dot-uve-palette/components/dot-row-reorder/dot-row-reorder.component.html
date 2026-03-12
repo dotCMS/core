@@ -5,13 +5,18 @@
         (cdkDropListDropped)="drop($event)"
         class="row-reorder-list">
         @for (row of rows(); track $index; let i = $index) {
-            <div cdkDrag class="row-item" [cdkDragDisabled]="isColumnDragging()">
+            <div
+                cdkDrag
+                class="row-item"
+                data-testid="row-item"
+                [cdkDragDisabled]="isColumnDragging()">
                 <div class="row-header">
                     <div class="row-handle" cdkDragHandle (click)="$event.stopPropagation()">
                         <i class="pi pi-bars"></i>
                     </div>
                     <div
                         class="row-label"
+                        data-testid="row-label"
                         (click)="selectRow(i + 1)"
                         (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
                         (mousedown)="$event.stopPropagation()"
@@ -21,6 +26,7 @@
                     <button
                         type="button"
                         class="row-toggle"
+                        data-testid="row-toggle"
                         [attr.aria-expanded]="isRowExpanded(i)"
                         [attr.aria-label]="isRowExpanded(i) ? 'Collapse row' : 'Expand row'"
                         (click)="toggleRow(i); $event.stopPropagation()"
@@ -55,6 +61,7 @@
                                     </div>
                                     <div
                                         class="column-label"
+                                        data-testid="column-label"
                                         (dblclick)="
                                             openEditColumnDialog(i, j); $event.stopPropagation()
                                         "
@@ -71,7 +78,7 @@
         }
     </div>
 } @else {
-    <div class="empty-state">
+    <div class="empty-state" data-testid="empty-state">
         <span>No rows available</span>
     </div>
 }

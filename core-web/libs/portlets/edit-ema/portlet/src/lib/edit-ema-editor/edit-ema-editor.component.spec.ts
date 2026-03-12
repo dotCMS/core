@@ -692,6 +692,109 @@ describe('EditEmaEditorComponent', () => {
                     });
                 });
             });
+
+            describe('$pageURLS', () => {
+                it('should construct live URL with clientHost and url from pageParams', () => {
+                    patchState(store, {
+                        pageParams: { url: '/my-page', clientHost: 'https://example.com' }
+                    });
+
+                    const urls = spectator.component.$pageURLS();
+                    const liveUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                    expect(liveUrl?.value).toBe('https://example.com/my-page');
+                });
+
+                it('should strip /index suffix from live URL', () => {
+                    patchState(store, {
+                        pageParams: { url: '/my-page/index', clientHost: 'https://example.com' }
+                    });
+
+                    const liveUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                    expect(liveUrl?.value).toBe('https://example.com/my-page');
+                });
+
+                it('should strip /index.html suffix from live URL', () => {
+                    patchState(store, {
+                        pageParams: {
+                            url: '/my-page/index.html',
+                            clientHost: 'https://example.com'
+                        }
+                    });
+
+                    const liveUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                    expect(liveUrl?.value).toBe('https://example.com/my-page');
+                });
+
+                it('should fallback to window.location.origin when clientHost is not provided', () => {
+                    patchState(store, {
+                        pageParams: { url: '/my-page', clientHost: undefined }
+                    });
+
+                    const liveUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                    expect(liveUrl?.value).toBe(`${window.location.origin}/my-page`);
+                });
+
+                it('should default to root path when url is undefined', () => {
+                    patchState(store, {
+                        pageParams: { url: undefined, clientHost: 'https://example.com' }
+                    });
+
+                    const liveUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.live.url');
+
+                    expect(liveUrl?.value).toBe('https://example.com/');
+                });
+
+                it('should include current view URL', () => {
+                    patchState(store, {
+                        pageParams: { url: '/my-page', clientHost: 'https://example.com' }
+                    });
+
+                    const viewUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.current.view.url');
+
+                    expect(viewUrl).toBeTruthy();
+                    expect(typeof viewUrl?.value).toBe('string');
+                });
+            });
+
+            describe('$pageURL', () => {
+                it('should return the live URL from $pageURLS', () => {
+                    patchState(store, {
+                        pageParams: { url: '/about-us', clientHost: 'https://example.com' }
+                    });
+
+                    expect(spectator.component.$pageURL()).toBe('https://example.com/about-us');
+                });
+
+                it('should return root URL when url is undefined', () => {
+                    patchState(store, {
+                        pageParams: { url: undefined, clientHost: 'https://example.com' }
+                    });
+
+                    expect(spectator.component.$pageURL()).toBe('https://example.com/');
+                });
+
+                it('should strip /index from URL', () => {
+                    patchState(store, {
+                        pageParams: { url: '/about-us/index', clientHost: 'https://example.com' }
+                    });
+
+                    expect(spectator.component.$pageURL()).toBe('https://example.com/about-us');
+                });
+            });
         });
 
         describe('customer actions', () => {

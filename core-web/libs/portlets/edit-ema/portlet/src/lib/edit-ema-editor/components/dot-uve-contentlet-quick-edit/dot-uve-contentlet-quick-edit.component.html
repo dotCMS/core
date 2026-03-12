@@ -1,3 +1,6 @@
+<!-- inert: blocks all user interaction (clicks, keyboard, focus) on this element and its subtree while saving.
+             Must use [attr.inert]="'' : null" — setting to null removes the attribute entirely.
+             [inert]="false" would set inert="false" which still activates it (any presence triggers it). -->
 @if ($contentletForm() && data().fields.length > 0) {
     <form
         [formGroup]="$contentletForm()!"

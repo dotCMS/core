@@ -1,6 +1,5 @@
 import { fromEvent, Subject } from 'rxjs';
 
-import { NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -38,7 +37,7 @@ import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils';
     templateUrl: './dot-uve-iframe.component.html',
     styleUrls: ['./dot-uve-iframe.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [NgStyle, SafeUrlPipe]
+    imports: [SafeUrlPipe]
 })
 export class DotUveIframeComponent {
     /**

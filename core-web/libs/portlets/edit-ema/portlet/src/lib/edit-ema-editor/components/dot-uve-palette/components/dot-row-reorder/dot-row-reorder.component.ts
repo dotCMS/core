@@ -46,24 +46,22 @@ export class DotRowReorderComponent {
 
     private readonly expandedRowIndexes = signal<Set<number>>(new Set());
     private readonly columnDragging = signal<boolean>(false);
-    protected readonly editRowDialogOpen = signal<boolean>(false);
+    readonly editRowDialogOpen = signal<boolean>(false);
     private readonly editingRowIndex = signal<number | null>(null);
-    protected readonly editingColumn = signal<{ rowIndex: number; columnIndex: number } | null>(
-        null
-    );
+    readonly editingColumn = signal<{ rowIndex: number; columnIndex: number } | null>(null);
 
-    protected readonly rowStyleClassControl = new FormControl<string>('', { nonNullable: true });
+    readonly rowStyleClassControl = new FormControl<string>('', { nonNullable: true });
 
-    protected rows = computed(() => {
+    rows = computed(() => {
         const pageLayout = this.uveStore.pageAsset()?.layout;
         return pageLayout?.body?.rows ?? [];
     });
 
-    protected getRowLabel(row: DotPageAssetLayoutRow, index: number): string {
+    getRowLabel(row: DotPageAssetLayoutRow, index: number): string {
         return row.styleClass || `Row ${index + 1}`;
     }
 
-    protected getColumnLabel(column: DotPageAssetLayoutColumn, index: number): string {
+    getColumnLabel(column: DotPageAssetLayoutColumn, index: number): string {
         return column.styleClass || `Column ${index + 1}`;
     }
 
