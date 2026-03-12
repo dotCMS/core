@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v2.tags;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -12,27 +13,38 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.ResponseEntityTagOperationView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.tag.RestTag;
 import com.dotcms.util.IntegrationTestInitService;
-import java.util.Map;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration tests for the v2 TagResource, focused on tagStorage-aware
- * site handling across create, update, and list operations.
+ * Integration tests for the v2 TagResource, covering tagStorage-aware
+ * site handling and UTF-8/Unicode support across create, update, import,
+ * and export operations.
  *
  * @author hassandotcms
  */
@@ -353,6 +365,197 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    // --- UTF-8 / Unicode Tests ---
+
+    /**
+     * Bulk creation of tags across multiple Unicode scripts (Chinese, Japanese,
+     * Arabic, Korean, Cyrillic, mixed) should all succeed and be searchable.
+     */
+    @Test
+    public void test_createTags_withMultipleUnicodeScripts_shouldSucceed() throws Exception {
+        final String chinese = "百度一下-" + UUIDGenerator.shorty();
+        final String japanese = "東京タワー-" + UUIDGenerator.shorty();
+        final String arabic = "مرحبا-" + UUIDGenerator.shorty();
+        final String korean = "태그테스트-" + UUIDGenerator.shorty();
+        final String cyrillic = "тегтест-" + UUIDGenerator.shorty();
+        final String mixed = "dotCMS-百度-タグ-" + UUIDGenerator.shorty();
+        final List<String> allNames = List.of(chinese, japanese, arabic, korean, cyrillic, mixed);
+
+        try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
+            final List<TagForm> forms = List.of(
+                    new TagForm(chinese, Host.SYSTEM_HOST, null, null),
+                    new TagForm(japanese, Host.SYSTEM_HOST, null, null),
+                    new TagForm(arabic, Host.SYSTEM_HOST, null, null),
+                    new TagForm(korean, Host.SYSTEM_HOST, null, null),
+                    new TagForm(cyrillic, Host.SYSTEM_HOST, null, null),
+                    new TagForm(mixed, Host.SYSTEM_HOST, null, null));
+
+            final Response createResult = resource.createTags(request, response, forms);
+            assertEquals(200, createResult.getStatus());
+            @SuppressWarnings("unchecked")
+            final ResponseEntityView<Map<String, Object>> entity =
+                    (ResponseEntityView<Map<String, Object>>) createResult.getEntity();
+            @SuppressWarnings("unchecked")
+            final List<RestTag> created = (List<RestTag>) entity.getEntity().get("created");
+            assertEquals("All 6 Unicode tags should be created", 6, created.size());
+
+            // Verify Chinese tag is searchable
+            final ResponseEntityPaginatedDataView listResult = resource.list(
+                    request, response, "百度", false, Host.SYSTEM_HOST, 1, 25, "tagname", "ASC");
+            assertFalse("Chinese tag should be findable via search",
+                    ((List<?>) listResult.getEntity()).isEmpty());
+        } finally {
+            allNames.forEach(name -> cleanup(name.toLowerCase(), Host.SYSTEM_HOST));
+        }
+    }
+
+    /**
+     * A UTF-8 tag should be renamable to another UTF-8 name and remain searchable.
+     */
+    @Test
+    public void test_updateTag_renameUtf8ToUtf8_shouldSucceed() throws Exception {
+        final String originalName = "百度一下-" + UUIDGenerator.shorty();
+        final String renamedName = "谷歌搜索-" + UUIDGenerator.shorty();
+
+        try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
+            final Tag created = tagAPI.getTagAndCreate(
+                    originalName, "", Host.SYSTEM_HOST, false, false);
+
+            final UpdateTagForm updateForm = new UpdateTagForm.Builder()
+                    .tagName(renamedName)
+                    .siteId(Host.SYSTEM_HOST)
+                    .build();
+
+            final ResponseEntityRestTagView result = resource.updateTag(
+                    request, response, created.getTagId(), null, updateForm);
+
+            assertEquals(renamedName.toLowerCase(), result.getEntity().label);
+
+            final ResponseEntityPaginatedDataView listResult = resource.list(
+                    request, response, "谷歌", false, Host.SYSTEM_HOST, 1, 25, "tagname", "ASC");
+            assertFalse("Renamed UTF-8 tag should be findable",
+                    ((List<?>) listResult.getEntity()).isEmpty());
+        } finally {
+            cleanup(originalName.toLowerCase(), Host.SYSTEM_HOST);
+            cleanup(renamedName.toLowerCase(), Host.SYSTEM_HOST);
+        }
+    }
+
+    /**
+     * Importing a CSV with multi-script tag names (Japanese, Korean, Cyrillic)
+     * should create all tags and persist them correctly in the database.
+     */
+    @Test
+    public void test_importTags_withMultipleUnicodeScripts_shouldCreateAll() throws Exception {
+        final String japanese = "東京タワー-" + UUIDGenerator.shorty();
+        final String korean = "태그테스트-" + UUIDGenerator.shorty();
+        final String cyrillic = "тегтест-" + UUIDGenerator.shorty();
+        final List<String> allNames = List.of(japanese, korean, cyrillic);
+
+        try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
+            final String csv = buildCsv(allNames, Host.SYSTEM_HOST);
+            final FormDataMultiPart multipart = createMultipartWithCsv(csv);
+            final ResponseEntityTagOperationView importResult =
+                    resource.importTags(request, response, multipart);
+            assertNotNull(importResult);
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> stats = (Map<String, Object>) importResult.getEntity();
+            assertEquals("All 3 tags should import", 3, stats.get("successCount"));
+
+            for (final String name : allNames) {
+                assertNotNull(name + " should exist in DB",
+                        tagAPI.getTagByNameAndHost(name.toLowerCase(), Host.SYSTEM_HOST));
+            }
+        } finally {
+            allNames.forEach(name -> cleanup(name.toLowerCase(), Host.SYSTEM_HOST));
+        }
+    }
+
+    /**
+     * Exporting tags as JSON should preserve UTF-8 characters in the output.
+     */
+    @Test
+    public void test_exportTagsJson_withUtf8Tags_shouldPreserveCharacters() throws Exception {
+        final String tag = "json导出-" + UUIDGenerator.shorty();
+
+        try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
+            tagAPI.getTagAndCreate(tag, "", Host.SYSTEM_HOST, false, false);
+
+            final Response result = resource.exportTags(
+                    request, response, "json", false, Host.SYSTEM_HOST, tag);
+
+            assertEquals(200, result.getStatus());
+            final String json = streamToString(result);
+            assertTrue("JSON should contain UTF-8 tag", json.contains(tag.toLowerCase()));
+            assertTrue("JSON should have tags array", json.contains("\"tags\""));
+        } finally {
+            cleanup(tag.toLowerCase(), Host.SYSTEM_HOST);
+        }
+    }
+
+    /**
+     * Round-trip: export UTF-8 tags as CSV, verify the output preserves characters,
+     * then re-import — should detect duplicates, not create new tags.
+     */
+    @Test
+    public void test_exportCsvThenReimport_withUtf8Tags_shouldRoundTrip() throws Exception {
+        final String tag1 = "往返测试-" + UUIDGenerator.shorty();
+        final String tag2 = "ラウンドトリップ-" + UUIDGenerator.shorty();
+
+        try {
+            final TagResource resource = createTagResource();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getRequestURI()).thenReturn("/api/v2/tags");
+            final HttpServletResponse response = new MockHttpResponse();
+
+            tagAPI.getTagAndCreate(tag1, "", Host.SYSTEM_HOST, false, false);
+            tagAPI.getTagAndCreate(tag2, "", Host.SYSTEM_HOST, false, false);
+
+            // Export as CSV
+            final Response exportResult = resource.exportTags(
+                    request, response, "csv", false, Host.SYSTEM_HOST, null);
+            assertEquals(200, exportResult.getStatus());
+
+            final String csv = streamToString(exportResult);
+            assertTrue("CSV should contain tag1", csv.contains(tag1.toLowerCase()));
+            assertTrue("CSV should contain tag2", csv.contains(tag2.toLowerCase()));
+
+            // Re-import — all should be duplicates
+            final FormDataMultiPart multipart = createMultipartWithCsv(csv);
+            final ResponseEntityTagOperationView importResult =
+                    resource.importTags(request, response, multipart);
+            assertNotNull(importResult);
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> stats = (Map<String, Object>) importResult.getEntity();
+            assertTrue("Should detect duplicates",
+                    (int) stats.get("duplicateCount") >= 2);
+            assertEquals("No new tags on re-import", 0, stats.get("successCount"));
+        } finally {
+            cleanup(tag1.toLowerCase(), Host.SYSTEM_HOST);
+            cleanup(tag2.toLowerCase(), Host.SYSTEM_HOST);
+        }
+    }
+
     // --- Helpers ---
 
     private TagResource createTagResource() {
@@ -374,6 +577,51 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         site.setTagStorage(tagStorageId);
         APILocator.getHostAPI().save(site, systemUser, false);
         return site;
+    }
+
+    /**
+     * Reads a StreamingOutput response into a UTF-8 string.
+     */
+    private String streamToString(final Response resp) throws Exception {
+        final StreamingOutput streaming = (StreamingOutput) resp.getEntity();
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        streaming.write(baos);
+        return baos.toString(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Builds a CSV string with "Tag Name,Host ID" header and one row per tag name.
+     */
+    private String buildCsv(final List<String> tagNames, final String hostId) {
+        final StringBuilder sb = new StringBuilder(String.format("Tag Name,Host ID%n"));
+        for (final String name : tagNames) {
+            sb.append(String.format("\"%s\",\"%s\"%n", name, hostId));
+        }
+        return sb.toString();
+    }
+
+    private FormDataMultiPart createMultipartWithCsv(final String csvContent) throws Exception {
+        final File tempDir = Files.createTempDirectory("tmp_upload_test").toFile();
+        tempDir.deleteOnExit();
+        final File csvFile = new File(tempDir, "tags-import.csv");
+        csvFile.deleteOnExit();
+        Files.write(csvFile.toPath(), csvContent.getBytes(StandardCharsets.UTF_8));
+
+        final InputStream fileInputStream = Files.newInputStream(csvFile.toPath());
+        final FormDataBodyPart bodyPart = mock(FormDataBodyPart.class);
+        when(bodyPart.getEntityAs(InputStream.class)).thenReturn(fileInputStream);
+
+        final ContentDisposition disposition = ContentDisposition
+                .type("form-data")
+                .fileName("tags-import.csv")
+                .build();
+        when(bodyPart.getContentDisposition()).thenReturn(disposition);
+
+        final FormDataMultiPart multipart = mock(FormDataMultiPart.class);
+        when(multipart.getFields("file")).thenReturn(List.of(bodyPart));
+        when(multipart.getBodyParts()).thenReturn(List.of(bodyPart));
+
+        return multipart;
     }
 
     private void cleanup(final String tagName, final String hostId) {
