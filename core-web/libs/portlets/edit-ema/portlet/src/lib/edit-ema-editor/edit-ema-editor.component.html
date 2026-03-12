@@ -135,7 +135,7 @@
                             'iframe-wrapper--device': $iframeWrapper()
                         }"
                         [ngStyle]="$iframeWrapperStyles()"
-                        class="iframe-wrapper">
+                        class="iframe-wrapper transition-all duration-300">
                         @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
                             <dot-uve-page-version-not-found />
                         }
