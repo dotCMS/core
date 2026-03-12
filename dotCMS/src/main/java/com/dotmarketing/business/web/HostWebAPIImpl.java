@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.dotmarketing.business.web;
 
@@ -14,7 +14,11 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
+import com.dotmarketing.portlets.contentlet.business.HostResolutionResult;
+import com.dotmarketing.portlets.contentlet.business.HostResolver;
+import com.dotmarketing.portlets.contentlet.business.NestedHostPatternCache;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -88,13 +92,89 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
             optionalHost = this.getCurrentHostFromSession(request, user, respectAnonPerms);
         }
 
-        final Host host = optionalHost.isPresent() ? optionalHost.get() : resolveHostName(request.getServerName(),
-                user, respectAnonPerms);
+        // Resolve host from server name when no explicit override is present
+        Host host = optionalHost.isPresent()
+                ? optionalHost.get()
+                : resolveHostName(request.getServerName(), user, respectAnonPerms);
+
+        // For requests resolved via the HTTP Host header (not via a session or request-param
+        // override), check whether the URI belongs to a more-specific nested host.  Backend users
+        // with an explicit session-based host selection are not subject to nested-host routing so
+        // that the admin UI always addresses the selected site directly.
+        if (optionalHost.isEmpty()) {
+            host = applyNestedHostResolution(request, host, user, respectAnonPerms);
+        }
 
         checkHostPermission(user, respectAnonPerms, host);
         storeCurrentHost(request, user, host);
 
         return host;
+    }
+
+    /**
+     * Checks the {@link NestedHostPatternCache} to see whether the incoming request URI matches a
+     * nested host that lives under {@code topLevelHost}.
+     *
+     * <p>When a nested host <em>is</em> matched:</p>
+     * <ol>
+     *   <li>The remaining URI (the original URI with the nested-host path prefix stripped) is stored
+     *       as the {@link Constants#CMS_FILTER_URI_OVERRIDE} request attribute so that
+     *       {@link com.dotmarketing.filters.CMSFilter} and every downstream component that calls
+     *       {@link com.dotmarketing.filters.CMSUrlUtil#getURIFromRequest} transparently sees the
+     *       content-relative path of the nested site instead of the full, prefixed URL.</li>
+     *   <li>The nested {@link Host} object is returned so that content resolution, permission
+     *       checks, and session storage all operate against the correct site.</li>
+     * </ol>
+     *
+     * <p>If no nested host pattern matches, or if any error occurs while loading the nested host
+     * object, {@code topLevelHost} is returned unchanged and no request attribute is modified.</p>
+     *
+     * @param request          the current HTTP servlet request
+     * @param topLevelHost     the top-level host resolved from the HTTP {@code Host} header
+     * @param user             the current user (used for permission-checked host lookup)
+     * @param respectAnonPerms whether anonymous front-end permissions should be respected
+     * @return the nested {@link Host} when a pattern matched; otherwise {@code topLevelHost}
+     */
+    private Host applyNestedHostResolution(final HttpServletRequest request,
+                                           final Host topLevelHost,
+                                           final User user,
+                                           final boolean respectAnonPerms) {
+
+        if (topLevelHost == null || !UtilMethods.isSet(topLevelHost.getIdentifier())) {
+            return topLevelHost;
+        }
+
+        final String requestUri = request.getRequestURI();
+        if (!UtilMethods.isSet(requestUri)) {
+            return topLevelHost;
+        }
+
+        final HostResolutionResult resolution = HostResolver.getInstance()
+                .resolve(topLevelHost.getIdentifier(), requestUri);
+
+        if (!resolution.isNested()) {
+            return topLevelHost;
+        }
+
+        try {
+            final Host nestedHost = find(resolution.getResolvedHostId(), user, respectAnonPerms);
+            if (nestedHost != null && UtilMethods.isSet(nestedHost.getIdentifier())) {
+                // Override the URI so that CMSFilter's getURIFromRequest returns the stripped path
+                request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, resolution.getRemainingUri());
+                Logger.debug(HostWebAPIImpl.class,
+                        () -> "Nested host resolved: uri=" + requestUri
+                                + " topLevelHost=" + topLevelHost.getHostname()
+                                + " nestedHost=" + nestedHost.getHostname()
+                                + " remainingUri=" + resolution.getRemainingUri());
+                return nestedHost;
+            }
+        } catch (final Exception e) {
+            Logger.warn(HostWebAPIImpl.class,
+                    "Could not load nested host '" + resolution.getResolvedHostId()
+                            + "' for URI '" + requestUri + "': " + e.getMessage());
+        }
+
+        return topLevelHost;
     }
 
     private void storeCurrentHost(final HttpServletRequest request, final User user, final Host host) {
@@ -145,6 +225,11 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
     private Optional<Host> getCurrentHostFromRequest(final HttpServletRequest request, final User user, final boolean respectAnonPerms)
             throws DotDataException, DotSecurityException {
+
+        // AC10: prefer the nested-host resolved by NestedHostResolutionFilter (set as CMS_RESOLVED_HOST)
+        if (request.getAttribute(WebKeys.CMS_RESOLVED_HOST) != null) {
+            return Optional.of((Host) request.getAttribute(WebKeys.CMS_RESOLVED_HOST));
+        }
 
 	    final String hostId = request.getParameter("host_id");
 

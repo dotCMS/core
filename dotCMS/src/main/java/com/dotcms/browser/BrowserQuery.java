@@ -60,6 +60,7 @@ public class BrowserQuery {
     final boolean showContent;
     final boolean showShorties;
     final boolean showDefaultLangItems;
+    final boolean showSubHosts;
     final boolean useElasticsearchFiltering;
     final boolean filterFolderNames;
     final Set<Long> languageIds;
@@ -111,6 +112,7 @@ public class BrowserQuery {
                 + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:"
                 + showDefaultLangItems + ", sortByDesc:" + sortByDesc + ", showLinks:"
                 + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties
+                + ", showSubHosts:" + showSubHosts
                 + ", luceneQuery:" + luceneQuery
                 + ", languageIds:" + StringUtils.join(languageIds)
                 + ", baseTypes:" + StringUtils.join(baseTypes)
@@ -139,6 +141,7 @@ public class BrowserQuery {
         this.showFolders = builder.showFolders;
         this.showContent = builder.showContent;
         this.showShorties = builder.showShorties;
+        this.showSubHosts = builder.showSubHosts;
         this.mimeTypes     = builder.mimeTypes;
         this.extensions    = builder.extensions;
         this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) || builder.sortByDesc;
@@ -251,6 +254,7 @@ public class BrowserQuery {
         private boolean showArchived = false;
         private boolean showContent = true;
         private boolean showShorties = false;
+        private boolean showSubHosts = false;
         private boolean showFolders = false;
         private boolean sortByDesc = false;
         private boolean showLinks = false;
@@ -302,6 +306,7 @@ public class BrowserQuery {
             this.extensions = browserQuery.extensions;
             this.showContent = browserQuery.showContent;
             this.showShorties = browserQuery.showShorties;
+            this.showSubHosts = browserQuery.showSubHosts;
             this.showDefaultLangItems = browserQuery.showDefaultLangItems;
         }
 
@@ -459,6 +464,19 @@ public class BrowserQuery {
          */
         public Builder showShorties(@Nonnull boolean showShorties) {
             this.showShorties = showShorties;
+            return this;
+        }
+
+        /**
+         * Determines whether sub-hosts (hosts whose {@code parentHost} field points to the
+         * currently-browsed host or folder) should be included in the browser listing response.
+         *
+         * @param showSubHosts If sub-hosts should be returned, set to {@code true}.
+         *
+         * @return The current Builder instance.
+         */
+        public Builder showSubHosts(@Nonnull boolean showSubHosts) {
+            this.showSubHosts = showSubHosts;
             return this;
         }
 

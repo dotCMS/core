@@ -186,7 +186,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 				/* adding host url */
 				stringbuf = "<url><loc>"
-						+ XMLUtils.xmlEscape("http://" + host.getHostname() + "/")
+						+ XMLUtils.xmlEscape(host.getAbsoluteBaseUrl() + "/")
 						+ "</loc><lastmod>"
 						+ modifiedDateStringValue
 						+ "</lastmod><changefreq>daily</changefreq></url>\n";
@@ -257,8 +257,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 						try {
 							if (usePermalinks) {
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://"
-												+ host.getHostname()
+										+ XMLUtils.xmlEscape(host.getAbsoluteBaseUrl()
 												+ "/permalink/"
 												+ contenlet.getIdentifier()
 												+ "/" + st.getPagedetail()
@@ -312,16 +311,14 @@ public class XMLSitemapJob implements Job, StatefulJob {
 												+ "], uri [" + uri + "]");
 								if(StringUtils.isNotEmpty(uri)){
 									stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://"
-												+ host.getHostname() + uri)
+										+ XMLUtils.xmlEscape(host.getAbsoluteBaseUrl() + uri)
 										+ "</loc><lastmod>"
 										+ modifiedDateStringValue
 										+ "</lastmod><changefreq>daily</changefreq></url>\n";
 								}
 							} else {
 								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://"
-												+ host.getHostname()
+										+ XMLUtils.xmlEscape(host.getAbsoluteBaseUrl()
 												+ pageIdentifier.getURI()
 												+ "?id="
 												+ contenlet.getIdentifier())
@@ -418,13 +415,12 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 			stringbuf = "<url><loc>"
 					+ XMLUtils
-					.xmlEscape( "http://"
-							+ host.getHostname()
+					.xmlEscape( host.getAbsoluteBaseUrl()
 							+ folderIdent.getURI() )
 					+ "</loc><lastmod>" + modifiedDateStringValue
 					+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
-			Logger.debug( this, "Writing the XMLConfiguration for Folder[" + XMLUtils.xmlEscape( "http://" + host.getHostname() + folderIdent.getURI() ) + "]" );
+			Logger.debug( this, "Writing the XMLConfiguration for Folder[" + XMLUtils.xmlEscape( host.getAbsoluteBaseUrl() + folderIdent.getURI() ) + "]" );
 
 			isIndexPageAlreadyConfigured = true;
 
@@ -447,16 +443,14 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					} else {
 						stringbuf = "<url><loc>"
 								+ XMLUtils
-								.xmlEscape( "http://"
-										+ host.getHostname()
+								.xmlEscape( host.getAbsoluteBaseUrl()
 										+ childChild2Ident.getURI() )
 								+ "</loc><lastmod>"
 								+ modifiedDateStringValue
 								+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
 						Logger.debug( this, "Writing the XMLConfiguration Second Level Check for [" + XMLUtils
-								.xmlEscape( "http://"
-										+ host.getHostname()
+								.xmlEscape( host.getAbsoluteBaseUrl()
 										+ childChild2Ident.getURI() ) + "]" );
 
 						writeFile( stringbuf );
@@ -621,8 +615,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			String url = identifier.getParentPath() + contentlet.getStringProperty( FileAssetAPI.FILE_NAME_FIELD );
 
 			String stringbuf = "<url><loc>"
-					+ XMLUtils.xmlEscape( "http://"
-					+ host.getHostname()
+					+ XMLUtils.xmlEscape( host.getAbsoluteBaseUrl()
 					+ UtilMethods.encodeURIComponent( url ) )
 					+ "</loc><lastmod>"
 					+ modifiedDateStringValue
@@ -639,7 +632,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 		if ( page.isLive() && !page.isArchived() ) {
 
 			String indexPageConfiguration = "/" + CMSFilter.CMS_INDEX_PAGE;
-			String pathToPageUrl = XMLUtils.xmlEscape( "http://" + host.getHostname() + childChild2Ident.getURI() );
+			String pathToPageUrl = XMLUtils.xmlEscape( host.getAbsoluteBaseUrl() + childChild2Ident.getURI() );
 
 			if ( pathToPageUrl.endsWith( indexPageConfiguration ) && isIndexPageAlreadyConfigured ) {
 				Logger.debug( this, "Index Page is already configured, skipping the process [" + pathToPageUrl + "]" );

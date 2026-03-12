@@ -261,6 +261,8 @@ import com.dotmarketing.startup.runonce.Task251029RemoveContentTypesLegacyPortle
 import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTree;
 import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTable;
 import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenu;
+import com.dotmarketing.startup.runonce.Task260312AddHostFolderFieldToHostContentType;
+import com.dotmarketing.startup.runonce.Task260313SyncHostIdentifierAssetName;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -596,6 +598,8 @@ public class TaskLocatorUtil {
         .add(Task251103AddStylePropertiesColumnInMultiTree.class)
         .add(Task251212AddVersionColumnIndicesTable.class)
         .add(Task260206AddUsagePortletToMenu.class)
+        .add(Task260312AddHostFolderFieldToHostContentType.class)
+        .add(Task260313SyncHostIdentifierAssetName.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

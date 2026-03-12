@@ -15,7 +15,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.exception.DotRuntimeException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class IdentifierAPIImpl implements IdentifierAPI {
 
@@ -240,6 +243,64 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public void updateUserReferences(final String userId, final String replacementUserId)
 			throws DotDataException, DotSecurityException {
 		identifierFactory.updateUserReferences(userId,replacementUserId);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	@CloseDBIfOpened
+	public List<Identifier> findDescendantHostIdentifiers(final String topLevelHostId)
+			throws DotDataException {
+		return identifierFactory.findDescendantHostIdentifiers(topLevelHostId);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	@CloseDBIfOpened
+	public List<Identifier> findDirectChildHostIdentifiers(final String parentHostId)
+			throws DotDataException {
+		return identifierFactory.findDirectChildHostIdentifiers(parentHostId);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Traverses the {@code host_inode} chain of {@link com.dotmarketing.beans.Identifier} rows
+	 * until it finds a row whose {@code hostId} equals
+	 * {@link com.dotmarketing.beans.Host#SYSTEM_HOST}.  Returns the UUID of that row.
+	 * A visited-set prevents an infinite loop if the database is in a corrupted cycle state.</p>
+	 */
+	@Override
+	@CloseDBIfOpened
+	public String getTopLevelHostId(final Host host) throws DotDataException {
+		if (host == null) {
+			throw new DotStateException("host must not be null");
+		}
+		final Set<String> visited = new HashSet<>();
+		String currentId = host.getIdentifier();
+		while (UtilMethods.isSet(currentId)) {
+			if (!visited.add(currentId)) {
+				throw new DotRuntimeException(
+						"Cycle detected in host hierarchy at identifier: " + currentId);
+			}
+			final Identifier identifier = identifierFactory.find(currentId);
+			if (identifier == null || !UtilMethods.isSet(identifier.getId())) {
+				throw new DotStateException(
+						"Could not find Identifier for host id: " + currentId);
+			}
+			final String parentHostId = identifier.getHostId();
+			if (!UtilMethods.isSet(parentHostId)
+					|| Host.SYSTEM_HOST.equals(parentHostId)) {
+				// This identifier belongs to a top-level host
+				return currentId;
+			}
+			currentId = parentHostId;
+		}
+		throw new DotStateException(
+				"Could not determine top-level host for host id: " + host.getIdentifier());
 	}
 
 }

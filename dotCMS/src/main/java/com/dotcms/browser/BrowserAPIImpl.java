@@ -10,7 +10,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI.Type;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -1301,6 +1303,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         List<Map<String, Object>> returnList = new ArrayList<>();
         final Role[] roles = APILocator.getRoleAPI().loadRolesForUser(browserQuery.user.getUserId()).toArray(new Role[0]);
 
+        if (browserQuery.showSubHosts) {
+            returnList.addAll(this.getSubHosts(browserQuery, roles));
+        }
+
         if (browserQuery.showFolders) {
             returnList.addAll(this.getFolders(browserQuery,  roles));
         }
@@ -1366,6 +1372,18 @@ public class BrowserAPIImpl implements BrowserAPI {
         int nextContentCursor = browserQuery.contentCursor;
         int nextFolderCursor = browserQuery.folderCursor;
 
+        // Sub-hosts — when enabled, include direct child hosts before regular folders.
+        // Sub-hosts behave like navigable nodes and are not subject to cursor-based pagination
+        // since their number is typically tiny.
+        if (browserQuery.showSubHosts) {
+            final List<Map<String, Object>> subHostMaps = getSubHosts(browserQuery, roles);
+            if (!subHostMaps.isEmpty()) {
+                list.addAll(subHostMaps);
+                folderCount += subHostMaps.size();
+                maxResults = Math.max(0, maxResults - subHostMaps.size());
+            }
+        }
+
         // Folders — cursor-based: slice starting from folderCursor.
         // When hasMoreFolders=false is returned, the caller should set showFolders=false
         // on the next request to skip this query entirely.
@@ -1377,8 +1395,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (folderStart < totalFolders) {
                 final int folderEnd = Math.min(folderStart + maxResults, totalFolders);
                 list.addAll(allFolders.subList(folderStart, folderEnd));
-                folderCount = folderEnd - folderStart;
-                maxResults -= folderCount;
+                final int addedFolderCount = folderEnd - folderStart;
+                folderCount += addedFolderCount;
+                maxResults -= addedFolderCount;
                 nextFolderCursor = folderEnd;
                 hasMoreFolders = folderEnd < totalFolders;
             }
@@ -2000,6 +2019,152 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
         return List.of();
     } // getFolders.
+
+    /**
+     * Returns the direct child hosts (sub-hosts) visible to the requesting user at the
+     * currently-browsed level.
+     *
+     * <p>A sub-host is a {@link Host} whose {@link com.dotmarketing.beans.Identifier} record has
+     * {@code host_inode} pointing to the parent site and {@code parent_path} matching the
+     * currently-browsed folder path ({@code "/"} at the site root).</p>
+     *
+     * <p>The result excludes the System Host itself and any hosts for which the requesting user
+     * does not hold at least {@link PermissionAPI#PERMISSION_READ}.</p>
+     *
+     * @param browserQuery query containing site/folder context and user credentials
+     * @param roles        roles held by the requesting user
+     * @return alphabetically-ordered list of sub-host map entries; never {@code null}
+     */
+    private List<Map<String, Object>> getSubHosts(final BrowserQuery browserQuery,
+            final Role[] roles) {
+
+        // The system host has no sub-hosts in the browser context.
+        if (browserQuery.site.isSystemHost()) {
+            return List.of();
+        }
+
+        // The path level we are currently browsing.
+        final String effectivePath = browserQuery.folder.isSystemFolder()
+                ? "/" : browserQuery.folder.getPath();
+        final String parentHostId = browserQuery.site.getIdentifier();
+
+        try {
+            final List<Identifier> allChildIds = APILocator.getIdentifierAPI()
+                    .findDirectChildHostIdentifiers(parentHostId);
+            if (allChildIds.isEmpty()) {
+                return List.of();
+            }
+
+            final List<Map<String, Object>> result = new ArrayList<>();
+            for (final Identifier childId : allChildIds) {
+                // Filter to those whose parent_path matches the browsed folder level.
+                if (!effectivePath.equals(childId.getParentPath())) {
+                    continue;
+                }
+                try {
+                    final Host childHost = APILocator.getHostAPI()
+                            .find(childId.getId(), browserQuery.user, false);
+                    if (childHost == null || !UtilMethods.isSet(childHost.getIdentifier())) {
+                        continue;
+                    }
+                    final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(
+                            childHost, roles, browserQuery.user);
+                    if (!permissions.contains(PERMISSION_READ)) {
+                        continue;
+                    }
+                    result.add(buildSubHostMap(childHost, permissions));
+                } catch (final Exception e) {
+                    Logger.warn(this, "Could not load sub-host '" + childId.getId()
+                            + "': " + e.getMessage());
+                }
+            }
+            // Sort alphabetically by hostname so the list is deterministic.
+            result.sort(Comparator.comparing(
+                    m -> String.valueOf(m.getOrDefault("name", ""))));
+            return result;
+        } catch (final Exception e) {
+            Logger.error(this, "Could not load sub-hosts under site '" + parentHostId
+                    + "' path '" + effectivePath + "': " + e.getMessage(), e);
+            return List.of();
+        }
+    }
+
+    /**
+     * Builds the sub-host view maps for all direct child hosts of the site in the given
+     * {@code browserQuery}.  Only child hosts for which the query user has at minimum
+     * {@link PermissionAPI#PERMISSION_READ} are included.
+     *
+     * <p>Sub-hosts are represented as map entries similar to folders so that the front-end
+     * can navigate into them.  Each entry carries {@code "type" = "site"},
+     * {@code "isSubHost" = true}, and {@code "__icon__" = "siteIcon"} as distinguishing
+     * markers.</p>
+     *
+     * @param browserQuery the query containing site context and user credentials
+     * @param roles        roles associated with the requesting user
+     * @return ordered list of sub-host maps (may be empty); never {@code null}
+     * @deprecated Use {@link #getSubHosts(BrowserQuery, Role[])} instead, which correctly
+     *     filters by the browsed folder path.
+     */
+    @Deprecated
+    private List<Map<String, Object>> buildSubHostsView(final BrowserQuery browserQuery,
+            final Role[] roles) {
+        try {
+            final List<Identifier> childHostIdentifiers = APILocator.getIdentifierAPI()
+                    .findDirectChildHostIdentifiers(browserQuery.site.getIdentifier());
+            if (childHostIdentifiers.isEmpty()) {
+                return List.of();
+            }
+            final List<Map<String, Object>> result = new ArrayList<>();
+            for (final Identifier childId : childHostIdentifiers) {
+                try {
+                    final Host childHost = APILocator.getHostAPI()
+                            .find(childId.getId(), browserQuery.user, false);
+                    if (childHost == null || !UtilMethods.isSet(childHost.getIdentifier())) {
+                        continue;
+                    }
+                    final List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(
+                            childHost, roles, browserQuery.user);
+                    if (!permissions.contains(PERMISSION_READ)) {
+                        continue;
+                    }
+                    result.add(buildSubHostMap(childHost, permissions));
+                } catch (final Exception e) {
+                    Logger.warn(this, "Could not load child host with id: " + childId.getId()
+                            + ": " + e.getMessage());
+                }
+            }
+            // Sort alphabetically by hostname so the list is deterministic.
+            result.sort(Comparator.comparing(
+                    m -> String.valueOf(m.getOrDefault("name", ""))));
+            return result;
+        } catch (final Exception e) {
+            Logger.error(this, "Could not load sub-hosts for site: "
+                    + browserQuery.site.getIdentifier() + ": " + e.getMessage(), e);
+            return List.of();
+        }
+    }
+
+    /**
+     * Builds a single map entry representing a child {@link Host} in the content-drive tree.
+     * The map structure mirrors folder entries so that the front-end can treat sub-hosts as
+     * navigable nodes.
+     *
+     * @param host        the child host to represent
+     * @param permissions integer permission IDs the requesting user holds on the host
+     * @return map ready to be added to a {@link PaginatedContents} list
+     */
+    private Map<String, Object> buildSubHostMap(final Host host, final List<Integer> permissions) {
+        final Map<String, Object> map = new HashMap<>(host.getMap());
+        map.put("type", "site");
+        map.put("name", host.getHostname());
+        map.put("title", host.getHostname());
+        map.put("extension", "site");
+        map.put("__icon__", "siteIcon");
+        // Store permissions as integer IDs (consistent with how hydrate() stores them).
+        map.put("permissions", permissions);
+        map.put("isSubHost", Boolean.TRUE);
+        return map;
+    }
 
     /**
      * Generates a default view of folders based on the given browser query and roles.

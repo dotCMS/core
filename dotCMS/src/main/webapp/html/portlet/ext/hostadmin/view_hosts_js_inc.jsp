@@ -53,9 +53,11 @@
 	var deleteConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-host-confirm")) %>';
 	var unarchiveConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unarchive-host-confirm")) %>';
 	var archiveConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "archive-host-confirm")) %>';
+	var archiveCascadeInfoMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "archive-host-cascade-info")) %>';
 	var unpublishConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unpublish-host-confirm")) %>';
 	var publishConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-host-confirm")) %>';
 	var makeDefaultConfirmMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "make-default-host-confirm")) %>';
+	var deleteHostHasDescendantsMessage = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete-host-has-descendants-error")) %>';
 
 	var enterprise = <%=LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level%>;
 
@@ -127,7 +129,7 @@
 
         tableHeaderColumnTemplate: '<th>{fieldName}</th>',
 
-        tableRowTemplate: '<tr id="row{identifier}">\
+        tableRowTemplate: '<tr id="row{identifier}" class="{archivedClass}">\
             		<td width="25%">\
             			<div class="host-list__item" id="hostName{identifier}">\
             				<span class="{imgSrc}"></span>\
@@ -208,6 +210,7 @@
         constructor: function(){
             this.currentPage = 1;
             this.RESULTS_PER_PAGE = 20;
+            this._deletePollingActive = false;
         },
         openAddHostDialog: function(){
         	dojo.style('addHostDialog', {width: '450px'});
@@ -425,6 +428,7 @@
                 else
                 	content.hostName = content[hostNameField.fieldVelocityVarName];
                 content.rowColumns = rowColumnsHTML;
+                content.archivedClass = content.archived ? 'host-list__row--archived' : '';
 
                 var rowHTML = dojo.replace(this.tableRowTemplate, content);
                 dojo.place(rowHTML, 'hostsTableBody', 'last');
@@ -598,9 +602,28 @@
 			}
 		},
 		archiveHost: function (id) {
-			if(confirm(archiveConfirmMessage)) {
-				HostAjax.archiveHost(id, dojo.hitch(this, this.refreshHostTable));
-			}
+			var self = this;
+			// Show cascade warning if this host has nested child sites.
+			var message = archiveConfirmMessage;
+			var countUrl = '/api/v1/site/' + id + '/descendants/count';
+			dojo.xhrGet({
+				url: countUrl,
+				handleAs: 'json',
+				load: function(data) {
+					var count = data && data.entity != null ? data.entity : 0;
+					if (count > 0) {
+						message = message + '\n\n' + archiveCascadeInfoMessage.replace('{0}', count);
+					}
+					if (confirm(message)) {
+						HostAjax.archiveHost(id, dojo.hitch(self, self.refreshHostTable));
+					}
+				},
+				error: function() {
+					if (confirm(message)) {
+						HostAjax.archiveHost(id, dojo.hitch(self, self.refreshHostTable));
+					}
+				}
+			});
 		},
 		unarchiveHost: function (id) {
 			if(confirm(unarchiveConfirmMessage)) {
@@ -612,8 +635,28 @@
 				DWRUtil.removeAllRows(dojo.byId('hostsTableHeader'));
 			    DWRUtil.removeAllRows(dojo.byId('hostsTableBody'));
 			    dojo.byId('resultsSummary').innerHTML = this.tableLoadingTemplate;
+			    this._deletePollingActive = true;
 			    setTimeout(dojo.hitch(this, this.refreshAfterDelete, id), 1000);
-				HostAjax.deleteHost(id, dojo.hitch(this, this.refreshHostTable));
+				HostAjax.deleteHost(id, {
+					callback: dojo.hitch(this, function() {
+						this._deletePollingActive = false;
+						this.refreshHostTable();
+					}),
+					exceptionHandler: dojo.hitch(this, this.handleDeleteHostError)
+				});
+			}
+		},
+		handleDeleteHostError: function(message, exception) {
+			this._deletePollingActive = false;
+			this.refreshHostTable();
+			var isDescendantError = exception && exception.javaClassName &&
+				exception.javaClassName.indexOf('HostHasDescendantsException') >= 0;
+			if (isDescendantError) {
+				var match = message.match(/has\s+(\d+)\s+descendant\s+host/);
+				var count = match ? match[1] : '?';
+				alert(deleteHostHasDescendantsMessage.replace('{0}', count));
+			} else {
+				alert(message);
 			}
 		},
         refreshAfterDelete: function(identifier){
@@ -628,6 +671,10 @@
             HostAjax.findHostsPaginated(filter, showDeleted, offset, count, callMetaData);
         },
         refreshAfterDeleteCallback: function(data, identifier){
+            // If the delete was cancelled (e.g., blocked due to descendants), stop polling
+            if (!this._deletePollingActive) {
+                return;
+            }
             var list = data.list;
 			var isDeletionDone = true;
             for (var i = 0; i < list.length; i++) {
@@ -635,6 +682,7 @@
                 	isDeletionDone = false;
             }
             if(isDeletionDone){
+                this._deletePollingActive = false;
             	setTimeout(dojo.hitch(this, this.refreshHostTable), 200);
             }else{
             	dojo.attr(identifier + "SetupProgress",'innerHTML','<%= LanguageUtil.get(pageContext, "Processing") %> . . . .');

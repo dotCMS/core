@@ -18,6 +18,12 @@
         (onNodeExpand)="onNodeExpand.emit($event)"
         (onNodeCollapse)="onNodeCollapse.emit($event)">
         <ng-template let-node pTemplate="default">
+            @if (node.data?.type === 'nested-host') {
+                <i
+                    class="pi pi-globe text-sm text-(--color-palette-gray-800) mr-1"
+                    data-testid="nested-host-icon"
+                    aria-hidden="true"></i>
+            }
             <span
                 data-testid="tree-node-label"
                 [attr.data-json-node]="node.data | json"

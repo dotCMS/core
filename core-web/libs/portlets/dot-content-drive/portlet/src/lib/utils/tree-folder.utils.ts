@@ -23,23 +23,36 @@ export const generateAllParentPaths = (path: string): string[] => {
 };
 
 /**
- * Transforms a DotFolder into a TreeNodeItem
+ * Transforms a DotFolder into a TreeNodeItem.
  *
- * @param {DotFolder} folder - The folder to transform
+ * When {@link DotFolder.isHost} is {@code true} the folder entry actually represents a nested
+ * host (sub-site).  In that case the tree node is created with:
+ * - `data.type   = 'nested-host'`
+ * - `data.hostname` = the nested host's own hostname (so expanding the node loads its root
+ *   folders via `//hostname/`)
+ * - `data.path   = '/'` (root of the nested host)
+ * - `label`      = the hostname string (the {@link FolderNamePipe} returns it unchanged)
+ *
+ * @param {DotFolder} folder - The folder (or nested-host entry) to transform
  * @returns {DotFolderTreeNodeItem} The tree node item
  */
 export const createTreeNode = (
     folder: DotFolder,
     parent?: DotFolderTreeNodeItem
 ): DotFolderTreeNodeItem => {
+    const isNestedHost = folder.isHost === true;
+
     let node: DotFolderTreeNodeItem = {
         key: folder.id,
-        label: folder.path,
+        // For nested hosts use the hostname as label so the FolderNamePipe returns it as-is.
+        // For regular folders the FolderNamePipe extracts the last path segment from path.
+        label: isNestedHost ? folder.hostName : folder.path,
         data: {
             id: folder.id,
             hostname: folder.hostName,
-            path: folder.path,
-            type: 'folder'
+            // For nested hosts, path is always '/' so expanding loads the host root folders.
+            path: isNestedHost ? '/' : folder.path,
+            type: isNestedHost ? 'nested-host' : 'folder'
         },
         leaf: false
     };

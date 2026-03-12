@@ -46,6 +46,19 @@ public class SiteForm {
 
     private final List<SimpleSiteVariableForm> variables;
 
+    /**
+     * The identifier of the parent host or folder for this site. When set, the site becomes a
+     * nested host under the specified parent. When null or empty, the site is created as a
+     * top-level host (parent is System Host). Accepted values:
+     * <ul>
+     *   <li>A host identifier UUID (e.g., {@code "48190c8c-42c4-46af-8d1a-0cd5db894797"}) — the
+     *       site is nested directly under that parent host.</li>
+     *   <li>A folder identifier UUID — the site is nested under that specific folder within its
+     *       host.</li>
+     * </ul>
+     */
+    private final String parentHost;
+
     @JsonCreator
     public SiteForm(@JsonProperty("aliases") final String aliases,
             @JsonProperty("siteName") final String siteName,
@@ -64,7 +77,8 @@ public class SiteForm {
             @JsonProperty("inode") final String inode,
             @JsonProperty("default") final boolean isDefault,
             @JsonProperty("forceExecution") final boolean forceExecution,
-            @JsonProperty("variables") List<SimpleSiteVariableForm> siteVariables) {
+            @JsonProperty("variables") List<SimpleSiteVariableForm> siteVariables,
+            @JsonProperty("parentHost") final String parentHost) {
 
         this.aliases = aliases;
         this.siteName = siteName;
@@ -84,6 +98,7 @@ public class SiteForm {
         this.isDefault = isDefault;
         this.forceExecution = forceExecution;
         this.variables = siteVariables;
+        this.parentHost = parentHost;
     }
 
     public String getIdentifier() {
@@ -158,6 +173,16 @@ public class SiteForm {
         return variables;
     }
 
+    /**
+     * Returns the identifier of the parent host or folder for this site. A {@code null} or empty
+     * value means the site is top-level (parent is System Host).
+     *
+     * @return parent host/folder identifier, or {@code null} for a top-level site
+     */
+    public String getParentHost() {
+        return parentHost;
+    }
+
     @Override
     public String toString() {
         return "SiteForm{" +
@@ -174,6 +199,7 @@ public class SiteForm {
                 ", proxyUrlForEditMode=" + proxyUrlForEditMode +
                 ", default='" + isDefault + '\'' +
                 ", embeddedDashboard='" + embeddedDashboard + '\'' +
+                ", parentHost='" + parentHost + '\'' +
                 '}';
     }
 }

@@ -80,6 +80,29 @@ interface DotSiteState {
             :host {
                 display: contents;
             }
+
+            .site-selector__item {
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+            }
+
+            .site-selector__nested-icon {
+                font-size: 0.75rem;
+                opacity: 0.6;
+                flex-shrink: 0;
+            }
+
+            .site-selector__item--archived {
+                opacity: 0.55;
+                font-style: italic;
+            }
+
+            .site-selector__archived-icon {
+                font-size: 0.75rem;
+                color: var(--yellow-500, #f59e0b);
+                flex-shrink: 0;
+            }
         `
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -410,16 +433,42 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     }
 
     /**
-     * Sets sites with automatic sorting by name
+     * Sets sites with hierarchical tree-order sorting so parent sites always precede
+     * their children. Within each level siblings are sorted alphabetically by hostname.
+     *
+     * Sort key: `(parentPath + hostname).toLowerCase()`
+     *
+     * Because `parentPath` for a root site is `"/"` and for a child is
+     * `"/parentHostname/"`, the combined key naturally groups each parent with its
+     * subtree before the next root-level sibling:
+     *
+     *   `"/alpha.com"` → root alpha.com
+     *   `"/alpha.com/child.com"` → child of alpha (sorts right after alpha)
+     *   `"/beta.com"` → root beta.com  (sorts after the whole alpha subtree)
      *
      * @private
      * @param sites The sites to set
      */
     private setSites(sites: DotSite[]): void {
-        const sorted = [...sites].sort((a, b) =>
-            (a.hostname || '').localeCompare(b.hostname || '')
-        );
+        const sorted = [...sites].sort((a, b) => {
+            const keyA = ((a.parentPath ?? '/') + (a.hostname ?? '')).toLowerCase();
+            const keyB = ((b.parentPath ?? '/') + (b.hostname ?? '')).toLowerCase();
+            return keyA.localeCompare(keyB);
+        });
         patchState(this.$state, { sites: sorted });
+    }
+
+    /**
+     * Computes the nesting depth of a site from its `parentPath`.
+     *
+     * Root-level sites (`parentPath === "/"`) have depth 0.
+     * Each additional path segment adds 1 to the depth.
+     *
+     * @param site The site whose depth to compute
+     * @returns Nesting depth (0 for root sites)
+     */
+    getSiteDepth(site: DotSite): number {
+        return (site.parentPath ?? '/').split('/').filter(Boolean).length;
     }
 
     /**

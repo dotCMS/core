@@ -309,7 +309,7 @@ public class HostAjax {
 		if (site.isLocked()) {
 			APILocator.getContentletAPI().unlock(site, user, respectFrontendRoles);
 		}
-		this.hostAPI.archive(site, user, respectFrontendRoles);
+		this.hostAPI.cascadeArchive(site, user, respectFrontendRoles);
 	}
 
     /**

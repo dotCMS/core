@@ -26,6 +26,7 @@ export class MockFormComponent {
     formGroup: FormGroup;
     field: DotCMSContentTypeField;
     contentlet: DotCMSContentlet;
+    hostId: string | null = null;
 }
 
 describe('DotEditContentHostFolderFieldComponent', () => {
@@ -53,7 +54,10 @@ describe('DotEditContentHostFolderFieldComponent', () => {
     beforeEach(() => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-host-folder-field [field]="field" [contentlet]="contentlet" />
+                <dot-edit-content-host-folder-field
+                    [field]="field"
+                    [contentlet]="contentlet"
+                    [hostId]="hostId" />
             </form>`,
             {
                 hostProps: {
@@ -63,7 +67,8 @@ describe('DotEditContentHostFolderFieldComponent', () => {
                     field: HOST_FOLDER_TEXT_MOCK,
                     contentlet: createFakeContentlet({
                         [HOST_FOLDER_TEXT_MOCK.variable]: null
-                    })
+                    }),
+                    hostId: null
                 }
             }
         );
@@ -144,6 +149,44 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             expect(hostFormControl.value).toBe('demo.dotcms.com:/level1/child1/');
             expect(field.pathControl.value.key).toBe(nodeSelected.key);
             expect(field.$treeSelect().value.label).toBe(nodeSelected.label);
+        }));
+    });
+
+    describe('hostId input pre-fill', () => {
+        it('should expose $hostId signal on the inner component when hostId is passed', () => {
+            // Set hostId on the host component and detect changes
+            spectator.hostComponent.hostId = 'my-test-host.com';
+            spectator.detectChanges();
+
+            expect(field.$hostId()).toBe('my-test-host.com');
+        });
+
+        it('should pre-fill the store with hostId when form value is null', fakeAsync(() => {
+            // Use the first site from TREE_SELECT_SITES_MOCK as the target
+            const targetSite = TREE_SELECT_SITES_MOCK[0]; // demo.dotcms.com
+
+            // Ensure form value is null and set hostId to the target site label
+            hostFormControl.setValue(null);
+            spectator.hostComponent.hostId = targetSite.label;
+            spectator.detectChanges();
+            tick();
+
+            expect(field.$hostId()).toBe(targetSite.label);
+            // The store should select the matching site because hostId was used as the path
+            expect(field.store.nodeSelected()?.label).toBe(targetSite.label);
+        }));
+
+        it('should use form value over hostId when form value is already set', fakeAsync(() => {
+            // Form has second site; hostId points to first site — form value must win
+            const formSite = TREE_SELECT_SITES_MOCK[1]; // nico.dotcms.com
+
+            hostFormControl.setValue(formSite.label);
+            spectator.hostComponent.hostId = TREE_SELECT_SITES_MOCK[0].label; // demo.dotcms.com
+            spectator.detectChanges();
+            tick();
+
+            // Store should reflect the form value (nico.dotcms.com), not the hostId (demo.dotcms.com)
+            expect(field.store.nodeSelected()?.label).toBe(formSite.label);
         }));
     });
 

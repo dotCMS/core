@@ -53,4 +53,9 @@ export class DotEditContentHostFolderFieldComponent extends BaseWrapperField {
      * It is used to display the contentlet in the component.
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    /**
+     * Optional host identifier used to pre-fill the host/folder field when no form value is set.
+     * Forwarded directly to the inner dot-host-folder-field component.
+     */
+    $hostId = input<string | null>(null, { alias: 'hostId' });
 }

@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import static com.dotmarketing.portlets.contentlet.business.HostFactoryImpl.SITE_IS_LIVE_OR_STOPPED;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -278,6 +279,75 @@ public class HostFactoryImplTest extends IntegrationTestBase {
         assertNull(hostFromDB);
         assertNull(templateFromDB);
 
+    }
+
+    // -----------------------------------------------------------------------
+    // isDescendantHost tests
+    // -----------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link HostFactoryImpl#isDescendantHost(String, String)}
+     * Given Scenario: A host that is NOT in the ancestor chain of another.
+     * ExpectedResult: Returns {@code false}.
+     */
+    @Test
+    public void test_isDescendantHost_unrelatedHost_returnsFalse()
+            throws DotDataException, DotSecurityException {
+        final HostFactoryImpl hostFactory = new HostFactoryImpl();
+
+        final Host siteA = new SiteDataGen().name("site-a-" + System.currentTimeMillis())
+                .nextPersisted(true);
+        final Host siteB = new SiteDataGen().name("site-b-" + System.currentTimeMillis())
+                .nextPersisted(true);
+
+        try {
+            assertFalse("Unrelated siteB should NOT be a descendant of siteA",
+                    hostFactory.isDescendantHost(siteB.getIdentifier(), siteA.getIdentifier()));
+        } finally {
+            APILocator.getHostAPI().archive(siteA, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(siteA, APILocator.systemUser(), false);
+            APILocator.getHostAPI().archive(siteB, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(siteB, APILocator.systemUser(), false);
+        }
+    }
+
+    /**
+     * Method to test: {@link HostFactoryImpl#isDescendantHost(String, String)}
+     * Given Scenario: Blank arguments are provided.
+     * ExpectedResult: Returns {@code false} without errors.
+     */
+    @Test
+    public void test_isDescendantHost_blankArguments_returnsFalse() throws DotDataException {
+        final HostFactoryImpl hostFactory = new HostFactoryImpl();
+
+        assertFalse("Blank potentialDescendantId should return false",
+                hostFactory.isDescendantHost("", "some-ancestor-id"));
+        assertFalse("Blank ancestorId should return false",
+                hostFactory.isDescendantHost("some-host-id", ""));
+        assertFalse("Both blank should return false",
+                hostFactory.isDescendantHost("", ""));
+    }
+
+    /**
+     * Method to test: {@link HostFactoryImpl#isDescendantHost(String, String)}
+     * Given Scenario: A host ID is checked against itself.
+     * ExpectedResult: Returns {@code false} (a host is not a descendant of itself).
+     */
+    @Test
+    public void test_isDescendantHost_selfCheck_returnsFalse()
+            throws DotDataException, DotSecurityException {
+        final HostFactoryImpl hostFactory = new HostFactoryImpl();
+
+        final Host site = new SiteDataGen().name("site-self-" + System.currentTimeMillis())
+                .nextPersisted(true);
+
+        try {
+            assertFalse("A host should not be considered a descendant of itself",
+                    hostFactory.isDescendantHost(site.getIdentifier(), site.getIdentifier()));
+        } finally {
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+        }
     }
 }
 

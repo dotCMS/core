@@ -21,13 +21,13 @@
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-21",
-            "path": "${env:HOME}/.sdkman/candidates/java/21.0.8-ms",
+            "path": "~/.sdkman/candidates/java/21.0.8-ms",
             "default": true
         }
     ],
 
     // Java Home for Terminal
-    "java.home": "/Users/fmontes/.sdkman/candidates/java/21.0.8-ms",
+    "java.home": "~/.sdkman/candidates/java/21.0.8-ms",
 
     // Disable Maven lifecycle execution in IDE (use CLI instead)
     "java.configuration.updateBuildConfiguration": "disabled",
@@ -66,5 +66,6 @@
         "**/node_modules": true,
         "**/dist": true
     },
-    "java.compile.nullAnalysis.mode": "disabled"
+    "java.compile.nullAnalysis.mode": "disabled",
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable"
 }

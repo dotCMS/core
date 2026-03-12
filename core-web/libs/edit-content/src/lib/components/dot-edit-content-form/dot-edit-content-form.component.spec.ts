@@ -6,6 +6,8 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -63,6 +65,7 @@ import {
     MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
 import { generatePreviewUrl } from '../../utils/functions.util';
+import { HOST_FOLDER_TEXT_MOCK } from '../../utils/mocks';
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
@@ -1065,6 +1068,59 @@ describe('DotFormComponent', () => {
                 expect(workflowActions).toBeTruthy();
                 expect(restoreButton).toBeFalsy();
             });
+        });
+    });
+
+    describe('HOST_FOLDER prefill via prefillHostId', () => {
+        const HOST_FOLDER_CONTENT_TYPE = {
+            ...MOCK_CONTENTTYPE_1_TAB,
+            variable: 'HostMock',
+            fields: [
+                // Keep layout fields from original mock (Row + Column)
+                MOCK_CONTENTTYPE_1_TAB.fields[0],
+                MOCK_CONTENTTYPE_1_TAB.fields[1],
+                // Add a HOST_FOLDER field
+                {
+                    ...HOST_FOLDER_TEXT_MOCK,
+                    sortOrder: 2
+                }
+            ]
+        };
+
+        beforeEach(() => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(HOST_FOLDER_CONTENT_TYPE)
+            );
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            // Start from a clean state: no contentlet, no prefill
+            patchState(unprotected(store), { contentlet: null, prefillHostId: null });
+        });
+
+        it('should pre-fill HOST_FOLDER field with prefillHostId when creating new content', () => {
+            const hostId = 'abc-uuid-123';
+
+            // Set prefillHostId before initialization to simulate ?hostId=abc-uuid-123 query param
+            patchState(unprotected(store), { prefillHostId: hostId });
+
+            store.initializeNewContent(HOST_FOLDER_CONTENT_TYPE.variable);
+            spectator.detectChanges();
+
+            const hostFolderControl = component.form.get(HOST_FOLDER_TEXT_MOCK.variable);
+            expect(hostFolderControl).toBeTruthy();
+            expect(hostFolderControl?.value).toBe(hostId);
+        });
+
+        it('should fall back to default resolution when prefillHostId is null', () => {
+            // prefillHostId is already null from beforeEach
+            store.initializeNewContent(HOST_FOLDER_CONTENT_TYPE.variable);
+            spectator.detectChanges();
+
+            const hostFolderControl = component.form.get(HOST_FOLDER_TEXT_MOCK.variable);
+            expect(hostFolderControl).toBeTruthy();
+            // With null contentlet and no prefillHostId, resolution falls back to defaultValue
+            expect(hostFolderControl?.value).toBe(HOST_FOLDER_TEXT_MOCK.defaultValue ?? null);
         });
     });
 });

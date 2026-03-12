@@ -514,9 +514,11 @@ export class DotEditContentFormComponent implements OnInit {
      *
      * This method:
      * 1. Gets the appropriate resolution function for the field type
-     * 2. Applies the resolution function to extract the value
-     * 3. Casts the value to the correct type
-     * 4. Falls back to null if no value can be resolved
+     * 2. For new content with a HOST_FOLDER field, applies the prefillHostId query param
+     *    so the tree-picker pre-selects the correct host when `?hostId=<uuid>` is present
+     * 3. Applies the resolution function to extract the value
+     * 4. Casts the value to the correct type
+     * 5. Falls back to null if no value can be resolved
      *
      * @private
      * @param {DotCMSContentTypeField} field - The field configuration
@@ -532,6 +534,16 @@ export class DotEditContentFormComponent implements OnInit {
             console.warn(`No resolution function found for field type: ${field.fieldType}`);
 
             return null;
+        }
+
+        // For new HOST_FOLDER fields, pre-fill with the hostId query param when present.
+        // The HostFolderField's loadSites() accepts either a hostname or a site identifier,
+        // so passing the raw UUID is sufficient for site selection.
+        if (field.fieldType === FIELD_TYPES.HOST_FOLDER && !contentlet) {
+            const prefillHostId = this.$store.prefillHostId();
+            if (prefillHostId) {
+                return prefillHostId;
+            }
         }
 
         const value = resolutionFn(contentlet, field);

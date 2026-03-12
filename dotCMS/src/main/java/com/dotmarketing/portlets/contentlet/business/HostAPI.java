@@ -127,29 +127,102 @@ public interface HostAPI {
     Host findByAlias(final String alias, final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
-     * Marks the given host as archived
+     * Archives <em>only</em> the given host, leaving its descendant hosts in their current state.
      *
-     * @param host
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotContentletStateException
+     * <p>This is the <strong>single-target, non-cascading</strong> variant.  If you need to
+     * archive a host together with all of its descendant hosts in one operation, use
+     * {@link #cascadeArchive(Host, User, boolean)} instead.
+     *
+     * @param host                  The {@link Host} to archive.
+     * @param user                  The {@link User} performing the operation.
+     * @param respectFrontendRoles  If front-end role restrictions should apply, {@code true};
+     *                              {@code false} for back-end operations.
+     * @throws DotDataException             An error occurred when accessing the data source.
+     * @throws DotSecurityException         The user does not have the required permissions.
+     * @throws DotContentletStateException  The host contentlet is in an invalid state.
      */
     public void archive(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
 
 
     /**
-     * Unmarks the given host as archived
+     * Restores <em>only</em> the given host from its archived state, leaving every descendant host
+     * in whatever archived/non-archived state it is currently in.
      *
-     * @param host
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws DotContentletStateException
+     * <p>This is the <strong>single-target, non-cascading</strong> variant.  Calling this method
+     * on a host whose children were archived as part of a previous {@link #cascadeArchive} will
+     * <em>not</em> automatically restore those children — they must be unarchived individually or
+     * via {@link #cascadeUnarchive(Host, User, boolean)}.
+     *
+     * <p>Example: given a hierarchy {@code A → B → C} where all three hosts are archived,
+     * calling {@code unarchive(A, ...)} unarchives only {@code A}; hosts {@code B} and {@code C}
+     * remain archived.
+     *
+     * @param host                  The {@link Host} to unarchive.
+     * @param user                  The {@link User} performing the operation.
+     * @param respectFrontendRoles  If front-end role restrictions should apply, {@code true};
+     *                              {@code false} for back-end operations.
+     * @throws DotDataException             An error occurred when accessing the data source.
+     * @throws DotSecurityException         The user does not have the required permissions.
+     * @throws DotContentletStateException  The host contentlet is in an invalid state.
      */
 	public void unarchive(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
+
+    /**
+     * Archives the given host <em>and all of its descendant hosts</em> (at every depth) in a
+     * single transactional operation.  Descendants are archived deepest-first so that child sites
+     * are archived before their parent, which preserves the integrity of the hierarchy.
+     *
+     * <p>This method is a no-op if the host has no descendant hosts — it degrades gracefully to
+     * archiving only the root site. Each descendant host that cannot be found (e.g. already
+     * removed between the query and the archive call) is silently skipped with a warning log
+     * entry so that the remaining descendants are still processed.
+     *
+     * <p>The caller is responsible for ensuring that the root site is <strong>not</strong> the
+     * default site before invoking this method.
+     *
+     * @param site                  The root host to archive together with all of its descendants.
+     * @param user                  The {@link User} performing the operation.
+     * @param respectFrontendRoles  If front-end role restrictions should apply, {@code true};
+     *                              {@code false} for back-end operations.
+     *
+     * @throws DotDataException             An error occurred when accessing the data source.
+     * @throws DotSecurityException         The user does not have the required permissions.
+     * @throws DotContentletStateException  The host contentlet is in an invalid state.
+     */
+    void cascadeArchive(Host site, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException;
+
+    /**
+     * Unarchives the given host <em>and all of its descendant hosts</em> (at every depth) in a
+     * single transactional operation.  Descendants are unarchived deepest-first so that child
+     * sites are unarchived before their parent, which preserves the integrity of the hierarchy.
+     *
+     * <p>This method is a no-op if the host has no descendant hosts — it degrades gracefully to
+     * unarchiving only the root site. Each descendant host that cannot be found (e.g. already
+     * removed between the query and the unarchive call) is silently skipped with a warning log
+     * entry so that the remaining descendants are still processed.
+     *
+     * <p><strong>Manual-operator action only.</strong>  Per the nestable-hosts specification,
+     * archiving a host cascades automatically to all descendants, but <em>unarchiving is always
+     * a deliberate, manual step</em>.  This method must <strong>never</strong> be invoked
+     * automatically (e.g. as a side-effect of unarchiving a parent host, from a scheduler, or
+     * from any code path that does not represent an explicit operator request).  Callers must
+     * obtain affirmative confirmation from the user before invoking this method.
+     *
+     * @apiNote Restricted to explicit operator action.  Do not call this method from automated
+     *          workflows, background jobs, or as a cascading side-effect of any other operation.
+     *
+     * @param site                  The root host to unarchive together with all of its descendants.
+     * @param user                  The {@link User} performing the operation.
+     * @param respectFrontendRoles  If front-end role restrictions should apply, {@code true};
+     *                              {@code false} for back-end operations.
+     *
+     * @throws DotDataException             An error occurred when accessing the data source.
+     * @throws DotSecurityException         The user does not have the required permissions.
+     * @throws DotContentletStateException  The host contentlet is in an invalid state.
+     */
+    void cascadeUnarchive(Host site, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException;
 
 	/**
 	 * Removes the given host plus all assets under it, use with caution.
@@ -248,6 +321,32 @@ public interface HostAPI {
      *                              operation.
      */
     List<Host> findAllFromCache(final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns the direct child hosts that are located at the given path within the specified
+     * parent host.  These are hosts whose {@code Identifier.host_inode} equals
+     * {@code parentHostId} and whose {@code Identifier.parent_path} equals {@code parentPath}.
+     *
+     * <p>Use {@code "/"} as {@code parentPath} to find nested hosts at the root level of the
+     * parent host.  Use a folder path such as {@code "/myFolder/"} to find nested hosts placed
+     * inside a specific folder within the parent host.
+     *
+     * <p>The returned list is filtered to those the calling user has read access to. Hosts to
+     * which the user has no permission are silently omitted.
+     *
+     * @param parentHostId         identifier of the parent host
+     * @param parentPath           folder path within the parent host (starts and ends with
+     *                             {@code /})
+     * @param user                 the {@link User} performing this action
+     * @param respectFrontendRoles {@code true} to filter by front-end roles as well
+     *
+     * @return mutable, possibly-empty list of matching child {@link Host} objects
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions.
+     */
+    List<Host> findDirectChildHosts(String parentHostId, String parentPath, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Saves the host into the system
@@ -565,5 +664,31 @@ public interface HostAPI {
      * @return The total number of Sites.
      */
     long count(final User user, final boolean respectFrontendRoles);
+
+    /**
+     * Returns the number of descendant hosts (at any depth) for the given site. A descendant host
+     * is one whose {@code Identifier.hostId} chain leads back to the specified host at any level of
+     * nesting. This is used to block deletion when nested children still exist.
+     *
+     * @param site The parent {@link Host} whose descendant count is requested.
+     *
+     * @return The total number of descendant hosts.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    long countDescendantHosts(final Host site) throws DotDataException;
+
+    /**
+     * Returns the number of folders that belong to any descendant host of the given site (at any
+     * depth). This count is used to give users a picture of how much content is nested under the
+     * child hosts when deletion is blocked.
+     *
+     * @param site The parent {@link Host} whose descendant folder count is requested.
+     *
+     * @return The total number of folders across all descendant hosts.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    long countDescendantFolders(final Host site) throws DotDataException;
 
 }

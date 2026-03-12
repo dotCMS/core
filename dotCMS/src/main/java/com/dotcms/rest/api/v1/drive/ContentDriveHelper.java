@@ -125,6 +125,7 @@ public class ContentDriveHelper {
             .respectFrontEndRoles(false)
             .contentCursor(requestForm.contentCursor())
             .folderCursor(requestForm.folderCursor())
+            .showSubHosts(requestForm.showSubHosts())
             //These are not always present
             .withContentTypes(
                 contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())

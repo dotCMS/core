@@ -138,30 +138,100 @@ public class FolderHelper {
 
     /**
      * This method returns a folder structure with their children recursively based on
-     * the folder returned by findFolderByPath
+     * the folder returned by findFolderByPath.  In addition to regular sub-folders, any
+     * nested hosts whose {@code Identifier.host_inode} equals the owning host and whose
+     * {@code Identifier.parent_path} equals the folder's path are included as child nodes
+     * with {@code isHost == true}.
      *
-     * @param folder  parent folder to  find
-     * @param user user
+     * @param folder  parent folder to find
+     * @param user    user making the request
      * @return FolderView a folder structure with their children recursively
      */
-    private final FolderView getFolders(final Folder folder, final User user){
+    private FolderView getFolders(final Folder folder, final User user) {
 
-        final List<FolderView> foldersChildCustoms = new LinkedList<>();
-        List<Folder> children = null;
+        final List<FolderView> children = new LinkedList<>();
+
+        // 1. Regular sub-folders
         try {
-            children = APILocator.getFolderAPI().findSubFolders(folder, user, false);
-        } catch (Exception e) {
-            Logger.error(this, "Error getting findSubFolders for folder "+folder.getPath(), e);
-        }
-
-        if(children != null && !children.isEmpty()){
-            for(final Folder child : children){
-                final FolderView recursiveFolder = getFolders(child, user);
-                foldersChildCustoms.add(recursiveFolder);
+            final List<Folder> subFolders =
+                    APILocator.getFolderAPI().findSubFolders(folder, user, false);
+            if (subFolders != null) {
+                for (final Folder child : subFolders) {
+                    children.add(getFolders(child, user));
+                }
             }
+        } catch (final Exception e) {
+            Logger.error(this, "Error getting findSubFolders for folder " + folder.getPath(), e);
         }
 
-        return new FolderView(folder,foldersChildCustoms);
+        // 2. Nested hosts that live at this folder path within the owning host
+        try {
+            final String owningHostId = folder.getHostId();
+            final String folderPath = folder.getPath();
+            if (UtilMethods.isSet(owningHostId) && UtilMethods.isSet(folderPath)) {
+                final List<Host> nestedHosts =
+                        hostAPI.findDirectChildHosts(owningHostId, folderPath, user, false);
+                if (nestedHosts != null) {
+                    for (final Host nestedHost : nestedHosts) {
+                        children.add(getFolderViewForHost(nestedHost, owningHostId, user));
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            Logger.error(this,
+                    "Error getting nested hosts for folder " + folder.getPath(), e);
+        }
+
+        return new FolderView(folder, children);
+    }
+
+    /**
+     * Builds a {@link FolderView} that represents a nested host as a node in the folder tree.
+     * The host's own root-level folders and direct nested sub-hosts are included as children.
+     *
+     * @param nestedHost   the nested host to represent
+     * @param parentHostId identifier of the immediate parent host
+     * @param user         user making the request
+     * @return a {@link FolderView} with {@code isHost == true}
+     */
+    private FolderView getFolderViewForHost(final Host nestedHost,
+            final String parentHostId, final User user) {
+
+        final List<FolderView> children = new LinkedList<>();
+        final String hostId = nestedHost.getIdentifier();
+
+        // Root-level folders of this nested host
+        try {
+            final List<Folder> rootFolders =
+                    APILocator.getFolderAPI().findSubFolders(nestedHost, user, false);
+            if (rootFolders != null) {
+                for (final Folder child : rootFolders) {
+                    children.add(getFolders(child, user));
+                }
+            }
+        } catch (final Exception e) {
+            Logger.error(this,
+                    "Error getting root folders for nested host " + nestedHost.getHostname(), e);
+        }
+
+        // Direct nested sub-hosts of this host (at their root level)
+        try {
+            final List<Host> subHosts =
+                    hostAPI.findDirectChildHosts(hostId, "/", user, false);
+            if (subHosts != null) {
+                for (final Host subHost : subHosts) {
+                    children.add(getFolderViewForHost(subHost, hostId, user));
+                }
+            }
+        } catch (final Exception e) {
+            Logger.error(this,
+                    "Error getting direct child hosts for nested host " + nestedHost.getHostname(),
+                    e);
+        }
+
+        // The node path is the identifier's parent_path — "/" for root-level nested hosts.
+        // We use "/" as the canonical path for all root-level nested host nodes in the tree.
+        return new FolderView(nestedHost, parentHostId, "/", children);
     }
 
     /**
@@ -210,6 +280,7 @@ public class FolderHelper {
     /**
      * Will find the subfolders living directly under the host passed.
      * If pathToSearch is sent is going to filter the path of the subfolder by it.
+     * Also includes any direct child nested hosts located at the same level.
      */
     private List<FolderSearchResultView> findSubfoldersUnderHost(final String siteId,
             final String pathToSearch, final User user)
@@ -234,12 +305,35 @@ public class FolderHelper {
                                         .doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user))
                                         .getOrElse(false))));
 
+        // Include direct nested hosts whose parent_path is "/" within this site.
+        // Each nested host is represented with its own hostname as the hostName field so the
+        // Angular tree can navigate into it as an independent host.
+        try {
+            final List<Host> nestedHosts =
+                    APILocator.getHostAPI().findDirectChildHosts(siteId, FORWARD_SLASH, user,
+                            DONT_RESPECT_FRONT_END_ROLES);
+            for (final Host nestedHost : nestedHosts) {
+                subFolders.add(new FolderSearchResultView(
+                        nestedHost.getIdentifier(),
+                        nestedHost.getInode(),
+                        FORWARD_SLASH,
+                        nestedHost.getHostname(),
+                        true,  // addChildrenAllowed — hosts can always receive folders
+                        true   // isHost
+                ));
+            }
+        } catch (final Exception e) {
+            Logger.warn(this,
+                    "Could not fetch nested hosts under site '" + siteId + "': " + e.getMessage());
+        }
+
         return subFolders;
     }
 
     /**
-     * Will find the subfolders living directly under the host passed and the last valid folder (splitting the pathToSearch by the last '/').
-     * And filter the results by what is left after the last '/'.
+     * Will find the subfolders living directly under the host passed and the last valid folder
+     * (splitting the pathToSearch by the last '/').  Also includes any direct nested hosts whose
+     * {@code parent_path} equals the resolved folder path within the parent site.
      */
     private List<FolderSearchResultView> findSubfoldersUnderFolder(final String siteId,
             final String pathToSearch, final User user)
@@ -269,6 +363,28 @@ public class FolderHelper {
                                     Try.of(() -> APILocator.getPermissionAPI()
                                             .doesUserHavePermission(folder, PERMISSION_CAN_ADD_CHILDREN, user))
                                             .getOrElse(false))));
+
+            // Include direct nested hosts placed at this folder level within the parent site.
+            final String folderPath = lastValidFolder.getPath(); // e.g. "/en/"
+            try {
+                final List<Host> nestedHosts =
+                        APILocator.getHostAPI().findDirectChildHosts(siteId, folderPath, user,
+                                DONT_RESPECT_FRONT_END_ROLES);
+                for (final Host nestedHost : nestedHosts) {
+                    subFolders.add(new FolderSearchResultView(
+                            nestedHost.getIdentifier(),
+                            nestedHost.getInode(),
+                            FORWARD_SLASH,
+                            nestedHost.getHostname(),
+                            true,  // addChildrenAllowed
+                            true   // isHost
+                    ));
+                }
+            } catch (final Exception e) {
+                Logger.warn(this,
+                        "Could not fetch nested hosts under folder '" + folderPath
+                                + "' of site '" + siteId + "': " + e.getMessage());
+            }
         }
         return subFolders;
     }

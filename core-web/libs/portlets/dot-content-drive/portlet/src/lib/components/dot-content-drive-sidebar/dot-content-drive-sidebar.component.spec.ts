@@ -125,7 +125,8 @@ describe('DotContentDriveSidebarComponent', () => {
                 loadFolders: jest.fn(),
                 loadChildFolders: jest.fn(),
                 updateFolders: jest.fn(),
-                setSelectedNode: jest.fn()
+                setSelectedNode: jest.fn(),
+                switchToHost: jest.fn()
             }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
@@ -240,6 +241,92 @@ describe('DotContentDriveSidebarComponent', () => {
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
 
                 expect(contentDriveStore.setSelectedNode).toHaveBeenCalledWith(customNode);
+            });
+
+            it('should call store.switchToHost when a top-level site node (type=site) is selected', () => {
+                jest.clearAllMocks();
+
+                const siteNode: DotFolderTreeNodeItem = {
+                    key: 'site-id',
+                    label: 'demo.dotcms.com',
+                    data: {
+                        id: 'site-id',
+                        hostname: 'demo.dotcms.com',
+                        path: '',
+                        type: 'site'
+                    },
+                    leaf: false
+                };
+
+                const mockEvent: TreeNodeSelectEvent = {
+                    originalEvent: new Event('click'),
+                    node: siteNode
+                };
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
+
+                expect(contentDriveStore.switchToHost).toHaveBeenCalledWith({
+                    identifier: 'site-id',
+                    hostname: 'demo.dotcms.com',
+                    aliases: null
+                });
+                expect(contentDriveStore.setSelectedNode).not.toHaveBeenCalled();
+            });
+
+            it('should call store.switchToHost when a nested host node (type=nested-host) is selected', () => {
+                jest.clearAllMocks();
+
+                const nestedHostNode: DotFolderTreeNodeItem = {
+                    key: 'nested-host-id',
+                    label: 'nested.example.com',
+                    data: {
+                        id: 'nested-host-id',
+                        hostname: 'nested.example.com',
+                        path: '',
+                        type: 'nested-host'
+                    },
+                    leaf: false
+                };
+
+                const mockEvent: TreeNodeSelectEvent = {
+                    originalEvent: new Event('click'),
+                    node: nestedHostNode
+                };
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
+
+                expect(contentDriveStore.switchToHost).toHaveBeenCalledWith({
+                    identifier: 'nested-host-id',
+                    hostname: 'nested.example.com',
+                    aliases: null
+                });
+                expect(contentDriveStore.setSelectedNode).not.toHaveBeenCalled();
+            });
+
+            it('should NOT call store.switchToHost for regular folder nodes', () => {
+                jest.clearAllMocks();
+
+                const folderNode: DotFolderTreeNodeItem = {
+                    key: 'regular-folder',
+                    label: '/documents/',
+                    data: {
+                        id: 'regular-folder',
+                        hostname: 'demo.dotcms.com',
+                        path: '/documents/',
+                        type: 'folder'
+                    },
+                    leaf: false
+                };
+
+                const mockEvent: TreeNodeSelectEvent = {
+                    originalEvent: new Event('click'),
+                    node: folderNode
+                };
+
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
+
+                expect(contentDriveStore.switchToHost).not.toHaveBeenCalled();
+                expect(contentDriveStore.setSelectedNode).toHaveBeenCalledWith(folderNode);
             });
         });
 

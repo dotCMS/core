@@ -5,6 +5,7 @@ import static com.dotmarketing.util.Logger.error;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -120,6 +121,53 @@ public class SiteHelper implements Serializable {
 	public void unarchive(final Host site, final User user, final boolean respectAnonPerms) throws DotSecurityException, DotDataException {
 
 		hostAPI.unarchive(site, user, respectAnonPerms);
+	}
+
+	/**
+	 * Archive a site and all of its descendant hosts (cascade archive).
+	 *
+	 * <p>The descendant count is captured before the archive operation begins, so the returned
+	 * value always reflects the number of descendants that were targeted for archiving.
+	 *
+	 * @param site             The root site to archive along with all descendants.
+	 * @param user             The user performing the operation.
+	 * @param respectAnonPerms Whether to respect anonymous permissions.
+	 * @return The number of descendant hosts that were targeted for archiving (may be 0 if the
+	 *         site has no descendants).
+	 * @throws DotSecurityException If the user lacks permission.
+	 * @throws DotDataException     If a data access error occurs.
+	 */
+	public long cascadeArchive(final Host site, final User user, final boolean respectAnonPerms)
+			throws DotSecurityException, DotDataException {
+		final long descendantCount = hostAPI.countDescendantHosts(site);
+		hostAPI.cascadeArchive(site, user, respectAnonPerms);
+		return descendantCount;
+	}
+
+	/**
+	 * Unarchive a site and all of its descendant hosts (cascade unarchive).
+	 *
+	 * <p>The descendant count is captured before the unarchive operation begins, so the returned
+	 * value always reflects the number of descendants that were targeted for unarchiving.
+	 *
+	 * <p><strong>Manual-operator action only.</strong>  Per the nestable-hosts specification,
+	 * unarchiving is always a deliberate, manual step.  Callers must have obtained explicit
+	 * confirmation from the operator before invoking this method.  It must never be called from
+	 * automated workflows, background jobs, or as a side-effect of any other operation.
+	 *
+	 * @param site             The root site to unarchive along with all descendants.
+	 * @param user             The user performing the operation.
+	 * @param respectAnonPerms Whether to respect anonymous permissions.
+	 * @return The number of descendant hosts that were targeted for unarchiving (may be 0 if the
+	 *         site has no descendants).
+	 * @throws DotSecurityException If the user lacks permission.
+	 * @throws DotDataException     If a data access error occurs.
+	 */
+	public long cascadeUnarchive(final Host site, final User user, final boolean respectAnonPerms)
+			throws DotSecurityException, DotDataException {
+		final long descendantCount = hostAPI.countDescendantHosts(site);
+		hostAPI.cascadeUnarchive(site, user, respectAnonPerms);
+		return descendantCount;
 	}
 
 	/**
@@ -338,6 +386,17 @@ public class SiteHelper implements Serializable {
 				.withIsWorking(host.isWorking())
 				.withModDate(host.getModDate())
 				.withModUser(host.getModUser());
+
+		// Populate parentPath from the Identifier row.  For a brand-new (not yet persisted)
+		// host the identifier may not exist yet – in that case fall back to the default "/".
+		if (host.getIdentifier() != null) {
+			final Identifier identifier = io.vavr.control.Try.of(
+					() -> APILocator.getIdentifierAPI().find(host.getIdentifier())
+			).getOrNull();
+			if (identifier != null && identifier.getParentPath() != null) {
+				builder.withParentPath(identifier.getParentPath());
+			}
+		}
 
 		final List<HostVariable> variablesForHost;
 		if (null != user && siteVariables == null) {

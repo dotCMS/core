@@ -14,7 +14,7 @@ import { ActivatedRoute } from '@angular/router';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotContentDriveService } from '@dotcms/data-access';
-import { DotContentDriveItem, DotContentDriveSearchRequest } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, DotContentDriveSearchRequest, DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
@@ -254,6 +254,26 @@ export const DotContentDriveStore = signalStore(
             },
             reloadContentDrive() {
                 this.loadItems();
+            },
+
+            /**
+             * Switches the local context to a different host within the Content Drive.
+             *
+             * This performs a "local" site switch scoped to the Content Drive portlet:
+             * it updates the current site, resets the path to the root, and clears
+             * pagination without touching the global toolbar site selector.
+             *
+             * @param site - The DotSite to switch to
+             */
+            switchToHost(site: DotSite) {
+                patchState(store, {
+                    currentSite: site,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    status: DotContentDriveStatus.LOADING,
+                    pagination: DEFAULT_PAGINATION,
+                    pages: [DEFAULT_PAGE]
+                });
             }
         };
     }),

@@ -196,4 +196,60 @@ public interface IdentifierAPI {
 	 */
 	public void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException;
 
+	/**
+	 * Returns all {@link Identifier} rows for nested hosts that are direct or transitive
+	 * descendants of the given top-level host, using a {@code WITH RECURSIVE} CTE query.
+	 *
+	 * <p>Only rows where {@code asset_type = 'contentlet'} and
+	 * {@code asset_subtype = 'Host'} are returned.  The starting host itself is not included in
+	 * the result — only its descendants.</p>
+	 *
+	 * <p>This method is the data source for
+	 * {@link com.dotmarketing.portlets.contentlet.business.NestedHostPatternCache} pattern-bucket
+	 * construction, for delete-validation (block delete when descendants exist), and for
+	 * cascade-archive operations.</p>
+	 *
+	 * @param topLevelHostId the UUID of the top-level host to walk from
+	 * @return list of all descendant host {@link Identifier} records at every depth; never
+	 *         {@code null}, empty when no nested children exist
+	 * @throws DotDataException if a database error occurs
+	 */
+	List<Identifier> findDescendantHostIdentifiers(String topLevelHostId) throws DotDataException;
+
+	/**
+	 * Returns the {@link Identifier} rows for all <em>direct</em> child hosts of the given parent
+	 * host.  Only the immediate children are returned — grandchildren and deeper descendants are
+	 * not included.
+	 *
+	 * <p>A direct child host is an {@code Identifier} row where
+	 * {@code host_inode = parentHostId}, {@code asset_type = 'contentlet'}, and
+	 * {@code asset_subtype = 'Host'}.</p>
+	 *
+	 * @param parentHostId the UUID of the parent host whose direct child hosts are required; must
+	 *                     not be {@code null}
+	 * @return list of {@link Identifier} records for the immediate child hosts; never {@code null},
+	 *         empty when no children exist
+	 * @throws DotDataException if a database error occurs
+	 */
+	List<Identifier> findDirectChildHostIdentifiers(String parentHostId) throws DotDataException;
+
+	/**
+	 * Traverses the {@code Identifier.hostId} chain starting from the given host until it finds an
+	 * entry whose {@code hostId} equals {@code SYSTEM_HOST_ID}.  Returns the UUID of that
+	 * top-level host.
+	 *
+	 * <p>For a host that is already top-level ({@code Identifier.hostId == SYSTEM_HOST_ID}) this
+	 * method returns the host's own UUID.</p>
+	 *
+	 * <p>Uses {@link IdentifierCache} — no additional database hits beyond the cache warm-up on
+	 * the first traversal of each level.</p>
+	 *
+	 * @param host the host whose top-level ancestor is required; must not be {@code null}
+	 * @return the UUID of the top-level host at the root of this host's hierarchy
+	 * @throws DotDataException if a database error occurs while loading an Identifier
+	 * @throws com.dotmarketing.exception.DotRuntimeException if a cycle is detected in the
+	 *         {@code host_inode} chain (defensive; should never happen in a healthy database)
+	 */
+	String getTopLevelHostId(Host host) throws DotDataException;
+
 }

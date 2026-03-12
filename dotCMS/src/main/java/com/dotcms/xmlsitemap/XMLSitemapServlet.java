@@ -69,8 +69,7 @@ public class XMLSitemapServlet extends HttpServlet {
 						if (itemChild.isWorking() && !itemChild.isArchived()) {
 							Identifier identifier = APILocator.getIdentifierAPI().find(itemChild);
 							sitemapIndex.append("<sitemap>");
-							sitemapIndex.append("<loc>"+ XMLUtils.xmlEscape("http://"
-									+ host.getHostname()
+							sitemapIndex.append("<loc>"+ XMLUtils.xmlEscape(host.getAbsoluteBaseUrl()
 									+ UtilMethods.encodeURIComponent(identifier.getParentPath()+itemChild.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))
 							+ "</loc>");
 							sitemapIndex.append("<lastmod>"+UtilMethods.dateToHTMLDate(itemChild.getModDate(), "yyyy-MM-dd")+"</lastmod>");

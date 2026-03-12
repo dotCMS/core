@@ -92,6 +92,11 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
+		<filter-name>NestedHostResolutionFilter</filter-name>
+		<filter-class>com.dotcms.filters.NestedHostResolutionFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>CMSFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -212,6 +217,10 @@
     
     <filter-mapping>
         <filter-name>VanityURLFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>NestedHostResolutionFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
     <filter-mapping>

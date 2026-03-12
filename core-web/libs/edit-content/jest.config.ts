@@ -4,6 +4,11 @@ export default {
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
+    moduleNameMapper: {
+        // canvas native module is not compatible with the current Node.js version;
+        // mock it out so JSDOM does not attempt to load the binary.
+        '^canvas$': '<rootDir>/src/__mocks__/canvas.js'
+    },
     transform: {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',

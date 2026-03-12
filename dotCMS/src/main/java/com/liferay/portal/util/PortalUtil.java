@@ -439,7 +439,7 @@ public class PortalUtil {
   public static User getUser(HttpSession session) {
     User user = null;
     if (session != null) {
-      user = (User) session.getAttribute(WebKeys.USER);
+      user = Try.of(() -> (User) session.getAttribute(WebKeys.USER)).getOrNull();
       if (user == null) {
         String userId = PortalUtil.getUserId(session);
         if (userId == null) {

@@ -166,6 +166,7 @@ public class BrowserResource {
                         .maxResults(browserQueryForm.getMaxResults())
                         .sortBy(browserQueryForm.getSortBy())
                         .sortByDesc(browserQueryForm.isSortByDesc())
+                        .showSubHosts(browserQueryForm.isShowSubHosts())
                         .withUser(initData.getUser())
                         .build()))
         ).build();

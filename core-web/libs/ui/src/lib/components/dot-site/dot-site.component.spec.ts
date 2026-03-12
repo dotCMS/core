@@ -111,7 +111,7 @@ describe('DotSiteComponent', () => {
             expect(select.disabled()).toBe(false);
         });
 
-        it('should sort sites alphabetically by hostname', () => {
+        it('should sort root sites alphabetically by hostname (no parentPath)', () => {
             const unsortedSites: DotSite[] = [
                 { hostname: 'zebra.com', identifier: 'site1', archived: false, aliases: null },
                 { hostname: 'alpha.com', identifier: 'site2', archived: false, aliases: null },
@@ -131,6 +131,145 @@ describe('DotSiteComponent', () => {
             expect(sortedSites[0].hostname).toBe('alpha.com');
             expect(sortedSites[1].hostname).toBe('beta.com');
             expect(sortedSites[2].hostname).toBe('zebra.com');
+        });
+
+        it('should sort parent sites before their children (tree order)', () => {
+            // alpha.com is root; child.alpha.com is nested under alpha.com;
+            // beta.com is root and should appear after alpha's whole subtree.
+            const hierarchicalSites: DotSite[] = [
+                {
+                    hostname: 'beta.com',
+                    identifier: 'beta',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/'
+                },
+                {
+                    hostname: 'child.alpha.com',
+                    identifier: 'child-alpha',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/alpha.com/'
+                },
+                {
+                    hostname: 'alpha.com',
+                    identifier: 'alpha',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/'
+                }
+            ];
+
+            siteService.getSites.mockReturnValue(
+                of({
+                    sites: hierarchicalSites,
+                    pagination: mockPagination
+                })
+            );
+
+            spectator.detectChanges();
+
+            const sortedSites = spectator.component.$state.sites();
+            expect(sortedSites[0].hostname).toBe('alpha.com'); // root, alphabetically first
+            expect(sortedSites[1].hostname).toBe('child.alpha.com'); // child of alpha, before beta
+            expect(sortedSites[2].hostname).toBe('beta.com'); // root, alphabetically after alpha subtree
+        });
+
+        it('should sort multiple levels of nesting in correct DFS order', () => {
+            const deepHierarchy: DotSite[] = [
+                {
+                    hostname: 'grandchild.child.alpha.com',
+                    identifier: 'grandchild',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/alpha.com/child.alpha.com/'
+                },
+                {
+                    hostname: 'beta.com',
+                    identifier: 'beta',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/'
+                },
+                {
+                    hostname: 'alpha.com',
+                    identifier: 'alpha',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/'
+                },
+                {
+                    hostname: 'child.alpha.com',
+                    identifier: 'child-alpha',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/alpha.com/'
+                }
+            ];
+
+            siteService.getSites.mockReturnValue(
+                of({
+                    sites: deepHierarchy,
+                    pagination: mockPagination
+                })
+            );
+
+            spectator.detectChanges();
+
+            const sortedSites = spectator.component.$state.sites();
+            expect(sortedSites[0].hostname).toBe('alpha.com');
+            expect(sortedSites[1].hostname).toBe('child.alpha.com');
+            expect(sortedSites[2].hostname).toBe('grandchild.child.alpha.com');
+            expect(sortedSites[3].hostname).toBe('beta.com');
+        });
+    });
+
+    describe('getSiteDepth', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should return 0 for a root site with parentPath "/"', () => {
+            const site: DotSite = {
+                hostname: 'root.com',
+                identifier: 'root',
+                archived: false,
+                aliases: null,
+                parentPath: '/'
+            };
+            expect(spectator.component.getSiteDepth(site)).toBe(0);
+        });
+
+        it('should return 0 when parentPath is undefined (backward compat)', () => {
+            const site: DotSite = {
+                hostname: 'legacy.com',
+                identifier: 'legacy',
+                archived: false,
+                aliases: null
+            };
+            expect(spectator.component.getSiteDepth(site)).toBe(0);
+        });
+
+        it('should return 1 for a site nested one level deep', () => {
+            const site: DotSite = {
+                hostname: 'child.com',
+                identifier: 'child',
+                archived: false,
+                aliases: null,
+                parentPath: '/parent.com/'
+            };
+            expect(spectator.component.getSiteDepth(site)).toBe(1);
+        });
+
+        it('should return 2 for a site nested two levels deep', () => {
+            const site: DotSite = {
+                hostname: 'grandchild.com',
+                identifier: 'grandchild',
+                archived: false,
+                aliases: null,
+                parentPath: '/grandparent.com/parent.com/'
+            };
+            expect(spectator.component.getSiteDepth(site)).toBe(2);
         });
     });
 

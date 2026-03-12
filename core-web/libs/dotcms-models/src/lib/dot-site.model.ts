@@ -12,12 +12,17 @@
  * - `identifier`: The unique site identifier (primary key).
  * - `hostname`: The main hostname for the site (used for display/select).
  * - `aliases`: Any alias hostnames, or null if none.
+ * - `parentPath`: The Identifier parentPath for this site. Top-level sites have `"/"`;
+ *   nested sites have a path like `"/en/"` or `"/en/nestedHost1/"`.
+ *   Consumers can compute display depth as:
+ *   `depth = parentPath.split('/').filter(Boolean).length`
  */
 export interface DotSite {
     archived?: boolean;
     identifier: string;
     hostname: string;
     aliases: string | null;
+    parentPath?: string;
 }
 
 export interface ContentByFolderParams {

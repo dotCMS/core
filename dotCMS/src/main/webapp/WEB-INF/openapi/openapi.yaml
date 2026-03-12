@@ -13542,9 +13542,10 @@ paths:
   /v1/site/{siteId}:
     delete:
       description: Deletes the specified site asynchronously. The default site cannot
-        be deleted; you must first mark another site as default before deleting. The
-        'siteId' parameter is the site identifier (also known as 'hostId' or 'host'
-        in other parts of the API).
+        be deleted; you must first mark another site as default before deleting. Deletion
+        is also blocked when the site has descendant (nested) hosts; all descendants
+        must be removed first. The 'siteId' parameter is the site identifier (also
+        known as 'hostId' or 'host' in other parts of the API).
       operationId: deleteSite
       parameters:
       - description: Identifier of the site to delete (siteId/hostId are used interchangeably)
@@ -13566,6 +13567,8 @@ paths:
           description: Unauthorized access
         "403":
           description: User does not have permission to delete sites
+        "409":
+          description: Site has descendant hosts that must be deleted first
       summary: Delete a site
       tags:
       - Site
@@ -13600,9 +13603,10 @@ paths:
   /v1/site/{siteId}/_archive:
     put:
       description: "Archives the specified site. The default site cannot be archived.\
-        \ If the site is locked, it will be unlocked before archiving. The 'siteId'\
-        \ parameter is the site identifier (also known as 'hostId' or 'host' in other\
-        \ parts of the API)."
+        \ If the site is locked, it will be unlocked before archiving. When cascade=true,\
+        \ all descendant hosts are archived as well. The 'siteId' parameter is the\
+        \ site identifier (also known as 'hostId' or 'host' in other parts of the\
+        \ API)."
       operationId: archiveSite
       parameters:
       - description: Identifier of the site to archive (siteId/hostId are used interchangeably)
@@ -13611,13 +13615,22 @@ paths:
         required: true
         schema:
           type: string
+      - description: "When true, archive all descendant hosts as well (cascade archive).\
+          \ Defaults to false."
+        in: query
+        name: cascade
+        schema:
+          type: boolean
+          default: false
       responses:
         "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySiteView"
-          description: Site archived successfully
+          description: "Site archived successfully. When cascade=false the entity\
+            \ is a SiteView; when cascade=true the entity is a map with 'site', 'cascade',\
+            \ and 'descendantsArchived' fields."
         "400":
           description: "Cannot archive the default site, or site does not exist"
         "401":
@@ -13690,9 +13703,10 @@ paths:
       - Site
   /v1/site/{siteId}/_unarchive:
     put:
-      description: Restores a previously archived site to its active state. The 'siteId'
-        parameter is the site identifier (also known as 'hostId' or 'host' in other
-        parts of the API).
+      description: "Restores a previously archived site to its active state. When\
+        \ cascade=true, all descendant hosts are unarchived as well. The 'siteId'\
+        \ parameter is the site identifier (also known as 'hostId' or 'host' in other\
+        \ parts of the API)."
       operationId: unarchiveSite
       parameters:
       - description: Identifier of the site to unarchive (siteId/hostId are used interchangeably)
@@ -13701,13 +13715,22 @@ paths:
         required: true
         schema:
           type: string
+      - description: "When true, unarchive all descendant hosts as well (cascade unarchive).\
+          \ Defaults to false."
+        in: query
+        name: cascade
+        schema:
+          type: boolean
+          default: false
       responses:
         "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySiteView"
-          description: Site unarchived successfully
+          description: "Site unarchived successfully. When cascade=false the entity\
+            \ is a SiteView; when cascade=true the entity is a map with 'site', 'cascade',\
+            \ and 'descendantsUnarchived' fields."
         "400":
           description: Site does not exist
         "401":
@@ -13744,6 +13767,35 @@ paths:
         "404":
           description: Site not found
       summary: Unpublish a site
+      tags:
+      - Site
+  /v1/site/{siteId}/descendants/count:
+    get:
+      description: Returns the number of nested child hosts under the specified site.
+        Useful for presenting cascade-archive or cascade-unarchive confirmation dialogs
+        before performing the action. A result of 0 means the site has no nested children.
+      operationId: countSiteDescendants
+      parameters:
+      - description: Identifier of the site (siteId/hostId are used interchangeably)
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: Descendant count returned successfully — entity is a Long
+        "401":
+          description: Unauthorized access
+        "403":
+          description: User does not have permission to view sites
+        "404":
+          description: Site not found
+      summary: Count descendant (nested) hosts
       tags:
       - Site
   /v1/site/{siteId}/setup_progress:
@@ -21614,6 +21666,8 @@ components:
           type: boolean
         showPages:
           type: boolean
+        showSubHosts:
+          type: boolean
         showWorking:
           type: boolean
         sortBy:
@@ -24108,6 +24162,8 @@ components:
       properties:
         addChildrenAllowed:
           type: boolean
+        host:
+          type: boolean
         hostName:
           type: string
         id:
@@ -24126,7 +24182,11 @@ components:
         getiDate:
           type: string
           format: date-time
+        host:
+          type: boolean
         hostId:
+          type: string
+        hostname:
           type: string
         identifier:
           type: string
@@ -24949,6 +25009,8 @@ components:
           type: string
         parent:
           type: boolean
+        parentHost:
+          type: string
         permissionId:
           type: string
         permissionType:
@@ -31552,6 +31614,8 @@ components:
         languageId:
           type: integer
           format: int64
+        parentHost:
+          type: string
         proxyUrlForEditMode:
           type: string
         runDashboard:

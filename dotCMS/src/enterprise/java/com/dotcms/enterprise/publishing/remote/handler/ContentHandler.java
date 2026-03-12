@@ -102,6 +102,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -189,7 +190,13 @@ public class ContentHandler implements IHandler {
 
         List<File> contents = isHost ? FileUtil.listFilesRecursively(bundleFolder, new HostBundler().getFileFilter()) :
 				FileUtil.listFilesRecursively(bundleFolder, new ContentBundler().getFileFilter());
-		Collections.sort(contents);
+		if (isHost) {
+			// Sort host files by absolute path length ascending so that parent hosts (shorter paths)
+			// are always imported before their nested child hosts (longer paths), preserving hierarchy.
+			contents.sort(Comparator.comparingInt(f -> f.getAbsolutePath().length()));
+		} else {
+			Collections.sort(contents);
+		}
 		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
 		handleContents(contents, bundleFolder, isHost);
 		HandlerUtil.setExistingContent(config.getId(), existingContentMap);

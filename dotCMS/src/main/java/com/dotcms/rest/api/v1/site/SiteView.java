@@ -53,6 +53,17 @@ public class SiteView {
 
     private final List<SimpleSiteVarView> variables;
 
+    /**
+     * The parent-path segment of this site's Identifier row. For top-level sites the value is
+     * {@code "/"}.  For nested sites the value reflects the full ancestor path within the
+     * top-level host, e.g. {@code "/en/"} or {@code "/en/nestedHost1/"}.
+     * <p>
+     * The Angular site-selector computes the display depth from this field:
+     * {@code depth = parentPath.split('/').filter(Boolean).length}
+     * </p>
+     */
+    private final String parentPath;
+
     private SiteView(Builder builder) {
         identifier = builder.identifier;
         inode = builder.inode;
@@ -78,6 +89,7 @@ public class SiteView {
         modDate = builder.modDate;
         modUser = builder.modUser;
         variables = builder.variables;
+        parentPath = builder.parentPath;
     }
 
     public String getIdentifier() {
@@ -176,6 +188,16 @@ public class SiteView {
         return variables;
     }
 
+    /**
+     * Returns the Identifier {@code parentPath} for this site. Top-level sites return {@code "/"};
+     * nested sites return the full ancestor path, e.g. {@code "/en/"}.
+     *
+     * @return parent path string, never {@code null}
+     */
+    public String getParentPath() {
+        return parentPath;
+    }
+
     public static final class Builder {
         private String identifier;
         private String inode;
@@ -201,6 +223,7 @@ public class SiteView {
         private Date modDate;
         private String modUser;
         private List<SimpleSiteVarView> variables;
+        private String parentPath = "/";
 
         private Builder() {
         }
@@ -326,6 +349,18 @@ public class SiteView {
 
         public Builder withVariables(List<SimpleSiteVarView> val) {
             variables = val;
+            return this;
+        }
+
+        /**
+         * Sets the {@code parentPath} value derived from the site's {@link com.dotmarketing.beans.Identifier}.
+         * Defaults to {@code "/"} if not set.
+         *
+         * @param val parent path string (e.g. {@code "/"} for top-level, {@code "/en/"} for nested)
+         * @return this builder
+         */
+        public Builder withParentPath(final String val) {
+            parentPath = val != null ? val : "/";
             return this;
         }
 
