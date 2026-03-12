@@ -2,15 +2,20 @@
     [model]="items()"
     [target]="target()"
     [appendTo]="'body'"
+    [pt]="pt"
     (onShow)="onContextMenuShow()">
     <ng-template #item let-item>
         <a
             pRipple
-            class="flex items-center justify-between p-menuitem-link no-underline!"
+            class="group flex items-center justify-between gap-6! rounded-md px-3 py-2.5 text-gray-900 no-underline! transition-[background-color] duration-150 hover:bg-[var(--color-palette-primary-100)] focus:outline-none focus:shadow-none p-contextmenu-item-link"
+            [class.rounded-none]="item.disabled"
+            [class.bg-gray-200]="item.disabled"
+            [class.text-gray-600]="item.disabled"
             (click)="onItemClick($event, item)">
-            <span class="menu-item-label">{{ item.label | dm }}</span>
+            <span class="text-sm leading-tight text-gray-900">{{ item.label | dm }}</span>
             @if (item.shortcut) {
-                <span class="menu-item-shortcut">
+                <span
+                    class="shrink-0 text-xs font-medium tracking-wide text-gray-300 group-hover:text-gray-600">
                     {{ item.shortcut }}
                 </span>
             }
