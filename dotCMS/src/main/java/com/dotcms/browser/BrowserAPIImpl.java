@@ -156,9 +156,9 @@ public class BrowserAPIImpl implements BrowserAPI {
                 return new ContentUnderParent(filtered, false, 0);
             }
 
-            Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
             final int chunkSize = Math.max(maxRows * BROWSER_DB_CHUNK_FACTOR.get(), BROWSER_DB_CHUNK_MIN_SIZE.get());
 
+            Logger.debug(this, "::::: Using DB Chunked to retrieve content by role filtering ::::");
             return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, false);
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
@@ -483,9 +483,9 @@ public class BrowserAPIImpl implements BrowserAPI {
     ContentUnderParent doHybridSingleChunkedQueryES(final BrowserQuery browserQuery,
             final int maxRows, final SelectQuery sqlQuery) throws DotDataException, DotSecurityException {
 
-        Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
         final int chunkSize = Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
 
+        Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
         return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, true);
     }
 
