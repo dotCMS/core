@@ -45,9 +45,9 @@ services:
           memory: 2G
 
   dotcms:
-    image: dotcms/dotcms:latest
+    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
     environment:
-      CMS_JAVA_OPTS: '-Xmx1g '
+      CMS_JAVA_OPTS: '-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=*:8000'
       LANG: 'C.UTF-8'
       TZ: 'UTC'
       DB_BASE_URL: "jdbc:postgresql://db/dotcms"
@@ -62,6 +62,11 @@ services:
       #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
       #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
       #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260211/starter-20260211.zip'
+
+      DOT_CA_EVENT_MANAGER_BASE_URL: 'http://host.docker.internal:8080'
+      DOT_CA_EVENT_MANAGER_CUSTOMER_ID: 'cust-001'
+      DOT_CA_EVENT_MANAGER_PASSWORD: 'abc'
+      DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
     depends_on:
       - db
       - opensearch      
@@ -73,6 +78,7 @@ services:
       - db_net
       - opensearch-net
     ports:
+      - "8000:8000"
       - "8082:8082"
       - "8443:8443"
       - "4000:4000" # Glowroot web ui if enabled
