@@ -1,4 +1,4 @@
-import { expect, describe } from '@jest/globals';
+import { describe, expect } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -13,6 +13,7 @@ import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing'
 import { withUVEToolbar } from './withUVEToolbar';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
+import { WithFlagsState } from '../../flags/models';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import {
@@ -48,9 +49,12 @@ const initialState: UVEState = {
     }
 };
 
+const initialFlagsState: WithFlagsState = { flags: {} };
+
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
+    withState<WithFlagsState>(initialFlagsState),
     withUVEToolbar()
 );
 
