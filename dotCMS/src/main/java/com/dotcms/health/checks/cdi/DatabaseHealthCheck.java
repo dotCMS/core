@@ -5,6 +5,7 @@ import com.dotcms.health.config.HealthCheckConfig.HealthCheckMode;
 import com.dotcms.health.model.HealthStatus;
 import com.dotcms.health.service.DatabaseHealthEventManager;
 import com.dotcms.health.util.HealthCheckBase;
+import com.dotcms.health.util.HealthCheckUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -13,7 +14,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -64,43 +64,30 @@ public class DatabaseHealthCheck extends HealthCheckBase {
         }
 
         return measureExecution(() -> {
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
-            final Future<String> future = executor.submit(() -> {
+            final int timeoutMs = Config.getIntProperty(
+                    "health.check.database.timeout.seconds", 2) * 1000;
+            return HealthCheckUtils.executeWithTimeout(() -> {
                 // getDataSource().getConnection() bypasses ThreadLocal — try-with-resources is safe
                 // because close() returns the connection to HikariCP's pool (no ownership conflict).
-                // HikariCP validates connections on borrow, so successfully getting one = DB is reachable.
+                // No deeper code relies on this connection; we just borrow, validate, and release.
                 try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
                     if (conn == null) {
                         throw new SQLException("Database connection is null");
                     }
+                    // isValid() confirms the database can process requests, not just that a
+                    // TCP connection exists. Covers edge cases where HikariCP skips borrow
+                    // validation (idle < 500ms) or the DB accepts connections but can't
+                    // serve queries. pgjdbc implements this with the empty query protocol —
+                    // one round-trip, no statement allocation.
+                    final int timeoutSeconds = Config.getIntProperty(
+                            "health.check.database.timeout.seconds", 2);
+                    if (!conn.isValid(timeoutSeconds)) {
+                        throw new SQLException("Database connection validation failed (isValid returned false)");
+                    }
                     final String dbVersion = Config.DB_VERSION > 0 ? String.valueOf(Config.DB_VERSION) : "unknown";
                     return "Database connection OK (DB version: " + dbVersion + ")";
                 }
-            });
-
-            try {
-                final int timeoutSeconds = Config.getIntProperty(
-                        "health.check.database.timeout.seconds", 2);
-                return future.get(timeoutSeconds, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                future.cancel(true);
-                throw new Exception("Database connection timeout (over " +
-                        Config.getIntProperty("health.check.database.timeout.seconds", 2) + " seconds)", e);
-            } catch (ExecutionException e) {
-                throw new Exception("Database connection failed: " + e.getCause().getMessage(), e.getCause());
-            } finally {
-                // Graceful shutdown: let close() complete before interrupting — pgjdbc can
-                // throw during clearWarnings() on an interrupted thread, same class of issue as #34490
-                executor.shutdown();
-                try {
-                    if (!executor.awaitTermination(3, TimeUnit.SECONDS)) {
-                        executor.shutdownNow();
-                    }
-                } catch (InterruptedException e) {
-                    executor.shutdownNow();
-                    Thread.currentThread().interrupt();
-                }
-            }
+            }, timeoutMs, "Database health check");
         });
     }
 
