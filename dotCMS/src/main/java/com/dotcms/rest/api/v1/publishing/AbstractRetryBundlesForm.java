@@ -61,7 +61,6 @@ public interface AbstractRetryBundlesForm {
                     "FAILED_ENDPOINTS sends only to previously failed endpoints. " +
                     "Case-sensitive: must be uppercase.",
             example = "FAILED_ENDPOINTS",
-            allowableValues = {"ALL_ENDPOINTS", "FAILED_ENDPOINTS"},
             defaultValue = "ALL_ENDPOINTS"
     )
     @Value.Default

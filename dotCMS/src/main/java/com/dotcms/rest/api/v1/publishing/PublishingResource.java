@@ -201,20 +201,15 @@ public class PublishingResource {
             )
             @QueryParam("filter") final String filter,
             @Parameter(
-                    description = "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH).",
-                    example = "SUCCESS,FAILED_TO_PUBLISH",
-                    schema = @Schema(
-                            type = "string",
-                            allowableValues = {
-                                    "BUNDLE_REQUESTED", "WAITING_FOR_PUBLISHING", "BUNDLING",
-                                    "SENDING_TO_ENDPOINTS", "PUBLISHING_BUNDLE", "BUNDLE_SENT_SUCCESSFULLY",
-                                    "RECEIVED_BUNDLE", "BUNDLE_SAVED_SUCCESSFULLY", "SUCCESS",
-                                    "SUCCESS_WITH_WARNINGS", "FAILED_TO_BUNDLE", "FAILED_TO_SENT",
-                                    "FAILED_TO_SEND_TO_ALL_GROUPS", "FAILED_TO_SEND_TO_SOME_GROUPS",
-                                    "FAILED_TO_PUBLISH", "FAILED_INTEGRITY_CHECK", "INVALID_TOKEN",
-                                    "LICENSE_REQUIRED"
-                            }
-                    )
+                    description = "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH). " +
+                            "Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, " +
+                            "SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, " +
+                            "RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY, SUCCESS, " +
+                            "SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, " +
+                            "FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS, " +
+                            "FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, " +
+                            "LICENSE_REQUIRED",
+                    example = "SUCCESS,FAILED_TO_PUBLISH"
             )
             @QueryParam("status") final String status) throws DotPublisherException {
 
@@ -887,19 +882,14 @@ public class PublishingResource {
             @Parameter(
                     description = "Comma-separated status values to purge. If omitted, uses safe defaults " +
                             "(all terminal + queued, excludes in-progress). " +
-                            "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE.",
-                    example = "SUCCESS,FAILED_TO_PUBLISH",
-                    schema = @Schema(
-                            type = "string",
-                            allowableValues = {
-                                    "BUNDLE_REQUESTED", "WAITING_FOR_PUBLISHING",
-                                    "BUNDLE_SENT_SUCCESSFULLY", "RECEIVED_BUNDLE", "BUNDLE_SAVED_SUCCESSFULLY",
-                                    "SUCCESS", "SUCCESS_WITH_WARNINGS", "FAILED_TO_BUNDLE", "FAILED_TO_SENT",
-                                    "FAILED_TO_SEND_TO_ALL_GROUPS", "FAILED_TO_SEND_TO_SOME_GROUPS",
-                                    "FAILED_TO_PUBLISH", "FAILED_INTEGRITY_CHECK", "INVALID_TOKEN",
-                                    "LICENSE_REQUIRED"
-                            }
-                    )
+                            "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE. " +
+                            "Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, " +
+                            "BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY, " +
+                            "SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, " +
+                            "FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS, " +
+                            "FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, " +
+                            "LICENSE_REQUIRED",
+                    example = "SUCCESS,FAILED_TO_PUBLISH"
             )
             @QueryParam("status") final String status) throws DotDataException {
 
