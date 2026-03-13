@@ -733,7 +733,7 @@ describe('DotSiteComponent', () => {
             expect(options.length).toBe(2);
         });
 
-        it('should insert pinnedOption in alphabetical order when not in loaded sites', () => {
+        it('should show pinnedOption at the top of $options', () => {
             const pinned = mockSites[0]; // example.com
             const loadedSites = [mockSites[1], mockSites[2]]; // [demo.com, test.com]
 
@@ -746,9 +746,7 @@ describe('DotSiteComponent', () => {
 
             const options = spectator.component.$options();
             expect(options).toHaveLength(3);
-            // example.com sorts after demo.com — verify it appears in options at its alphabetical position
-            const pinnedIndex = options.findIndex((s) => s.identifier === pinned.identifier);
-            expect(pinnedIndex).toBe(1); // demo.com(0) < example.com(1) < test.com(2)
+            expect(options[0]).toEqual(pinned);
         });
 
         it('should not duplicate pinnedOption when it is already in the loaded sites', () => {
@@ -764,7 +762,8 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
-            // Pinned is in loaded list — return loaded as-is (no injection needed)
+            // Pinned is at top, duplicates removed — total count stays the same
+            expect(select.options[0]).toEqual(pinned);
             expect(select.options.length).toBe(3);
 
             // Verify example.com appears only once
@@ -837,8 +836,8 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
-            // Pinned is already in the reloaded list — it appears in its alphabetical position
-            expect(select.options.find((s) => s.identifier === pinned.identifier)).toBeTruthy();
+            // Pinned is always at the top after filter is cleared
+            expect(select.options[0]).toEqual(pinned);
         }));
 
         it('should handle case-insensitive filter matching for pinnedOption', fakeAsync(() => {
@@ -859,8 +858,8 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
-            // EXAMPLE.COM matches the 'example' filter case-insensitively and is inserted alphabetically
-            expect(select.options.find((s) => s.identifier === 'site99')).toBeTruthy();
+            // EXAMPLE.COM matches the 'example' filter case-insensitively and is pinned at top
+            expect(select.options[0]).toEqual(pinned);
         }));
     });
 
@@ -1117,7 +1116,7 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         expect(hostSpectator.component.$state.pinnedOption()).toBeNull();
     }));
 
-    it('should include pinnedOption in $options when writeValue is called', fakeAsync(() => {
+    it('should show pinnedOption at the top of $options when writeValue is called', fakeAsync(() => {
         const testValue = mockSites[0].identifier; // example.com
         const loadedSites = [mockSites[1], mockSites[2]]; // [demo.com, test.com]
 
@@ -1129,9 +1128,7 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
 
         const options = hostSpectator.component.$options();
         expect(options.length).toBe(3);
-        // example.com is inserted alphabetically: demo.com(0) < example.com(1) < test.com(2)
-        const pinnedIndex = options.findIndex((s) => s.identifier === mockSites[0].identifier);
-        expect(pinnedIndex).toBe(1);
+        expect(options[0]).toEqual(mockSites[0]);
     }));
 
     it('should handle null value from FormControl', fakeAsync(() => {

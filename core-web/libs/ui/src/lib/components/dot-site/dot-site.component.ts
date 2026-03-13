@@ -201,8 +201,9 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
 
     /**
      * Computed options for the select dropdown.
-     * Combines pinned option (if any) with lazy-loaded options.
-     * The pinned option is inserted in alphabetical order so the list stays sorted after site switches.
+     * The pinned option (current site) is always at the top so it remains accessible
+     * even when the current site is on a page not yet loaded. The rest of the list
+     * is alphabetical (duplicates of the pinned site are removed).
      */
     $options = computed<DotSite[]>(() => {
         const loaded = this.$state.sites();
@@ -223,26 +224,10 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             }
         }
 
-        // If pinned is already in the loaded list, no need to inject it
-        if (loaded.some((s) => s.identifier === pinned.identifier)) {
-            return loaded;
-        }
+        // Pin current site at the top; remove it from the sorted list to avoid duplicates
+        const withoutPinned = loaded.filter((s) => s.identifier !== pinned.identifier);
 
-        // Insert pinned in its alphabetical position so order stays consistent
-        const result = [...loaded];
-        const insertAt = result.findIndex(
-            (s) =>
-                (s.hostname || '').localeCompare(pinned.hostname || '', undefined, {
-                    sensitivity: 'base'
-                }) > 0
-        );
-        if (insertAt === -1) {
-            result.push(pinned);
-        } else {
-            result.splice(insertAt, 0, pinned);
-        }
-
-        return result;
+        return [pinned, ...withoutPinned];
     });
 
     /**
