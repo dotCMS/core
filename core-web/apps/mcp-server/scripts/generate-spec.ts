@@ -20,7 +20,8 @@ const ALLOWED_PREFIXES = [
     '/api/v1/themes',
     '/api/v1/templates',
     '/api/v1/assets',
-    '/api/es/search'
+    // '/api/es/search'
+    '/api/content/_search'
 ];
 
 const DEFAULT_SPEC_PATH = '/api/openapi.json';
@@ -123,10 +124,14 @@ async function generateSpec() {
                             const stripped: Record<string, unknown> = {};
                             if (resp.description) stripped.description = resp.description;
                             if (resp.content) {
-                                // Keep only content type keys, remove schemas
-                                stripped.contentTypes = Object.keys(
+                                // Keep standard `content` key but strip schemas — only MIME type keys remain
+                                const strippedContent: Record<string, unknown> = {};
+                                for (const mimeType of Object.keys(
                                     resp.content as Record<string, unknown>
-                                );
+                                )) {
+                                    strippedContent[mimeType] = {};
+                                }
+                                stripped.content = strippedContent;
                             }
                             strippedResponses[status] = stripped;
                         }

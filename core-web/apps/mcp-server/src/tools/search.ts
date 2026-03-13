@@ -9,38 +9,25 @@ export const schema = {
         .string()
         .max(100_000)
         .describe(
-            'JavaScript async function body to explore the OpenAPI spec. The `spec` global contains the dereferenced OpenAPI spec with `paths` object. Return the data you need.'
+            'JavaScript async function body. The `spec` global contains the dereferenced OpenAPI spec. Return the data you need.'
         )
 };
 
 export const metadata: ToolMetadata = {
     name: 'search',
-    description: `Search and explore the dotCMS REST API specification. Write JavaScript code that runs in a sandbox with the \`spec\` global containing the full dereferenced OpenAPI spec.
+    description: `Explore the dotCMS REST API specification. Write JavaScript that runs in a sandbox with the \`spec\` global.
 
-The spec object has: { openapi, info, paths }
-- spec.paths is an object keyed by path (e.g., "/api/v1/content")
-- Each path has HTTP methods (get, post, put, delete) with operation details
+Spec structure:
+- \`spec.paths\` — object keyed by path string (e.g. "/api/v1/contenttype")
+- Method keys are lowercase: get, post, put, delete
+- Each operation has: summary, parameters, requestBody, responses
+- \`requestBody.content\` is keyed by MIME type (e.g. "application/json"), then \`.schema\` for the body shape
+- \`parameters\` is an array of { name, in, required, schema } — "in" is "query", "path", or "header"
+- \`responses\` keys are HTTP status codes; schemas are stripped — only description and content MIME type keys remain (e.g. \`responses['200'].content['application/json']\` is \`{}\`)
 
-Examples:
-  // List all available endpoint paths
-  return Object.keys(spec.paths)
-
-  // Find endpoints related to content types
-  return Object.entries(spec.paths)
-    .filter(([path]) => path.includes('contenttype'))
-    .map(([path, methods]) => ({ path, methods: Object.keys(methods) }))
-
-  // Get details of a specific endpoint
-  return spec.paths['/api/v1/content'].get
-
-  // Find all POST endpoints
-  return Object.entries(spec.paths)
-    .filter(([_, methods]) => methods.post)
-    .map(([path]) => path)
-
-  // Inspect request body schema for creating content
-  const post = spec.paths['/api/v1/content'].post
-  return post?.requestBody?.content?.['application/json']?.schema`,
+Example:
+  const op = spec.paths['/api/v1/contenttype'].get
+  return { summary: op.summary, params: op.parameters?.map(p => p.name) }`,
     annotations: {
         title: 'Search dotCMS API Spec',
         readOnlyHint: true,

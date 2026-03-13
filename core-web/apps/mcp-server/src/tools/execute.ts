@@ -28,67 +28,11 @@ Use api.request(options) where options is:
 
 Auth is handled automatically — tokens are never exposed to your code.
 
-Examples:
-  // List content types
-  const result = await api.request({ path: '/api/v1/contenttype' })
-  return result
+Always use the \`search\` tool first to discover the correct endpoint path and request/response schema before calling \`execute\`.
 
-  // Get a specific content type
-  const result = await api.request({ path: '/api/v1/contenttype/id/webPageContent' })
-  return result
-
-  // Search content with Elasticsearch
-  const result = await api.request({
-    method: 'POST',
-    path: '/api/v1/es/search',
-    body: { query: 'contentType:webPageContent +languageId:1 +deleted:false +working:true' }
-  })
-  return pick(result.contentlets, ['identifier', 'title', 'modDate'])
-
-  // Get page render
-  const result = await api.request({
-    path: '/api/v1/page/render/about-us',
-    query: { language_id: '1' }
-  })
-  return result
-
-  // Browse navigation
-  const result = await api.request({ path: '/api/v1/nav/?depth=2' })
-  return result
-
-  // Upload an asset (base64)
-  const result = await api.request({
-    method: 'PUT',
-    path: '/api/v1/assets',
-    formData: {
-      assetPath: '/images/logo.png',
-      file: { name: 'logo.png', type: 'image/png', data: '<base64-encoded-content>' }
-    }
-  })
-  return result
-
-  // Upload a file from URL
-  const result = await api.request({
-    method: 'PUT',
-    path: '/api/v1/assets',
-    formData: {
-      assetPath: '/documents/report.pdf',
-      file: { name: 'report.pdf', type: 'application/pdf', url: 'https://example.com/report.pdf' }
-    }
-  })
-  return result
-
-  // Create a temp file from a remote URL (returns temp ID for use in content creation)
-  const result = await api.request({
-    method: 'POST',
-    path: '/api/v1/temp/byUrl',
-    body: {
-      remoteUrl: 'https://example.com/photo.png',
-      fileName: 'my-image.png',
-      maxFileLength: '50MB'
-    }
-  })
-  return result.tempFiles
+Tips:
+- Use \`pick(arr, fields)\` to return only the fields you need — responses can be very large
+- For file uploads use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
 
 Helper utilities available: pick(arr, fields), table(arr), count(arr, field), sum(arr, field), first(arr, n)`,
     annotations: {
