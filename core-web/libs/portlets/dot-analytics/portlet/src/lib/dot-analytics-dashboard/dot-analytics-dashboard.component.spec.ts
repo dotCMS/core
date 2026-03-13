@@ -6,6 +6,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
+import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
 import { MessageModule } from 'primeng/message';
@@ -30,7 +31,10 @@ const messageServiceMock = new MockDotMessageService({
     'analytics.metrics.unique-visitors': 'Unique Visitors',
     'analytics.metrics.top-page-performance': 'Top Page Performance',
     'analytics.feature.state': 'This feature is in',
-    development: 'development'
+    development: 'development',
+    'analytics.dashboard.tabs.pageview': 'Pageview',
+    'analytics.dashboard.tabs.conversions': 'Conversions',
+    'analytics.dashboard.tabs.engagement': 'Engagement'
 });
 
 describe('DotAnalyticsDashboardComponent', () => {
@@ -51,14 +55,13 @@ describe('DotAnalyticsDashboardComponent', () => {
             MockComponent(DotAnalyticsMetricComponent),
             MockComponent(DotAnalyticsTopPagesTableComponent)
         ],
+        componentProviders: [DotAnalyticsDashboardStore],
         providers: [
-            DotAnalyticsDashboardStore,
             mockProvider(DotAnalyticsService),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            // GlobalStore is required transitively by child report components (pageview, engagement, conversions)
             mockProvider(GlobalStore, {
                 currentSiteId: jest.fn().mockReturnValue('test-site-123'),
                 addNewBreadcrumb: jest.fn()
@@ -74,7 +77,7 @@ describe('DotAnalyticsDashboardComponent', () => {
     describe('Component Rendering', () => {
         beforeEach(() => {
             spectator = createComponent();
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
         });
 
         it('should create component successfully', () => {
@@ -128,7 +131,7 @@ describe('DotAnalyticsDashboardComponent', () => {
     describe('Query Params Logic', () => {
         it('should timeRange be last7days when empty query params', () => {
             spectator = createComponent();
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -139,7 +142,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'last7days'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -152,7 +155,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     to: '2024-01-31'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toEqual(['2024-01-01', '2024-01-31']);
         });
@@ -163,7 +166,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'invalid-range'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -176,7 +179,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     // to: '2024-01-31'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe('last7days');
         });
@@ -189,7 +192,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     to: '1993-01-31'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             // paramsToTimeRange passes through raw date values without order validation;
             // date validation is enforced in the UI layer via isValidCustomDateRange
@@ -202,7 +205,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'today'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -213,9 +216,46 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'yesterday'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+    });
+
+    describe('Breadcrumb Management', () => {
+        let globalStore: InstanceType<typeof GlobalStore>;
+
+        beforeEach(() => {
+            spectator = createComponent();
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
+            globalStore = spectator.inject(GlobalStore);
+            TestBed.flushEffects();
+        });
+
+        it('should call addNewBreadcrumb with the default tab on initialization', () => {
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-pageview', label: 'Pageview' })
+            );
+        });
+
+        it('should call addNewBreadcrumb with the new tab when tab changes', () => {
+            jest.clearAllMocks();
+            store.setCurrentTab('conversions');
+            TestBed.flushEffects();
+
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-conversions', label: 'Conversions' })
+            );
+        });
+
+        it('should call addNewBreadcrumb with engagement tab when switched', () => {
+            jest.clearAllMocks();
+            store.setCurrentTab('engagement');
+            TestBed.flushEffects();
+
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-engagement', label: 'Engagement' })
+            );
         });
     });
 

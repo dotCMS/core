@@ -17,7 +17,6 @@ import type {
 } from '@dotcms/portlets/dot-analytics/data-access';
 // eslint-disable-next-line no-duplicate-imports
 import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import DotAnalyticsEngagementReportComponent from './dot-analytics-engagement-report.component';
@@ -84,10 +83,6 @@ describe('DotAnalyticsEngagementReportComponent', () => {
         error: null
     });
 
-    const mockGlobalStore = {
-        addNewBreadcrumb: jest.fn()
-    };
-
     const createComponent = createComponentFactory({
         component: DotAnalyticsEngagementReportComponent,
         imports: [
@@ -108,10 +103,6 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                     engagementPlatforms: mockPlatforms,
                     engagementSparkline: mockSparkline
                 }
-            },
-            {
-                provide: GlobalStore,
-                useValue: mockGlobalStore
             },
             mockProvider(DotMessageService, {
                 get: jest.fn().mockReturnValue('Engagement')
@@ -148,15 +139,6 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             spectator = createComponent();
             spectator.detectChanges();
             expect(spectator.component).toBeTruthy();
-        });
-
-        it('should add breadcrumb on init', () => {
-            spectator = createComponent();
-            spectator.detectChanges();
-            expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith({
-                id: 'engagement',
-                label: 'Engagement'
-            });
         });
     });
 

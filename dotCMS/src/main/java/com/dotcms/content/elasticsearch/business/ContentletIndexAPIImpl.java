@@ -106,11 +106,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
             "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
-    private static ReindexQueueAPI queueApi = null;
-    private static IndexAPI esIndexApi = null;
+    private ReindexQueueAPI queueApi = null;
+    private IndexAPI esIndexApi = null;
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
-    private static ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+    private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();

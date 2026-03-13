@@ -584,9 +584,9 @@ Used after a fix PR is merged to clean up the Discussion thread.
 ## Example: Diagnose Flow
 
 ```
-Developer: /skill-doctor review
+Developer: /skill-doctor dotcms-frontend-review
 
-1. Validate: .claude/skills/review/ exists (repo version, no local override)
+1. Validate: .claude/skills/dotcms-frontend-review/ exists (repo version, no local override)
 2. Classify: invalid_command (gh pr diff --name-only doesn't exist)
 3. Investigate:
    - Reproduce: gh pr diff --name-only -> "unknown flag: --name-only"
