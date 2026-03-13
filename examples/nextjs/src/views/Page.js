@@ -19,7 +19,7 @@ export function Page({ pageContent }) {
                 <Header navItems={navigation?.children} />
             )}
 
-            <main className="container m-auto">
+            <main className="container mx-auto">
                 <DotCMSLayoutBody
                     page={pageAsset}
                     components={pageComponents}

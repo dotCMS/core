@@ -5,8 +5,8 @@ import { BlockEditorNode } from '@dotcms/types';
 import * as blockValidator from '@dotcms/uve/internal';
 
 import {
-    DotCMSBlockEditorRenderer,
-    CustomRendererProps
+    CustomRendererProps,
+    DotCMSBlockEditorRenderer
 } from '../../components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
 import * as isDevModeHook from '../../hooks/useIsDevMode';
 

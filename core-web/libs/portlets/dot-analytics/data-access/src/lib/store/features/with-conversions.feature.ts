@@ -121,11 +121,10 @@ export function withConversions() {
                                 .build();
 
                             return analyticsService.cubeQuery<TotalConversionsEntity>(query).pipe(
-                                tapResponse(
-                                    (entities) => {
+                                tapResponse({
+                                    next: (entities) => {
                                         const totalConversionsEntity =
                                             aggregateTotalConversions(entities);
-
                                         patchState(store, {
                                             totalConversions: {
                                                 status: ComponentStatus.LOADED,
@@ -134,7 +133,7 @@ export function withConversions() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -148,7 +147,7 @@ export function withConversions() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -189,8 +188,8 @@ export function withConversions() {
                                         createEmptyAnalyticsEntity
                                     )
                                 ),
-                                tapResponse(
-                                    (data) => {
+                                tapResponse({
+                                    next: (data) => {
                                         patchState(store, {
                                             conversionTrend: {
                                                 status: ComponentStatus.LOADED,
@@ -199,7 +198,7 @@ export function withConversions() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -213,7 +212,7 @@ export function withConversions() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -245,8 +244,8 @@ export function withConversions() {
                                 .build();
 
                             return analyticsService.cubeQuery<ConvertingVisitorsEntity>(query).pipe(
-                                tapResponse(
-                                    (entities) => {
+                                tapResponse({
+                                    next: (entities) => {
                                         patchState(store, {
                                             convertingVisitors: {
                                                 status: ComponentStatus.LOADED,
@@ -255,7 +254,7 @@ export function withConversions() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -269,7 +268,7 @@ export function withConversions() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -312,8 +311,8 @@ export function withConversions() {
                                             createEmptyTrafficVsConversionsEntity
                                         )
                                     ),
-                                    tapResponse(
-                                        (entities) => {
+                                    tapResponse({
+                                        next: (entities) => {
                                             patchState(store, {
                                                 trafficVsConversions: {
                                                     status: ComponentStatus.LOADED,
@@ -322,7 +321,7 @@ export function withConversions() {
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -336,7 +335,7 @@ export function withConversions() {
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )
@@ -370,8 +369,8 @@ export function withConversions() {
                                 .build();
 
                             return analyticsService.cubeQuery<ContentAttributionEntity>(query).pipe(
-                                tapResponse(
-                                    (entities) => {
+                                tapResponse({
+                                    next: (entities) => {
                                         patchState(store, {
                                             contentConversions: {
                                                 status: ComponentStatus.LOADED,
@@ -380,7 +379,7 @@ export function withConversions() {
                                             }
                                         });
                                     },
-                                    (error: HttpErrorResponse) => {
+                                    error: (error: HttpErrorResponse) => {
                                         const errorMessage =
                                             error.message ||
                                             dotMessageService.get(
@@ -394,7 +393,7 @@ export function withConversions() {
                                             }
                                         });
                                     }
-                                )
+                                })
                             );
                         })
                     )
@@ -434,8 +433,8 @@ export function withConversions() {
                             return analyticsService
                                 .cubeQuery<ConversionsOverviewEntity>(query)
                                 .pipe(
-                                    tapResponse(
-                                        (entities) => {
+                                    tapResponse({
+                                        next: (entities) => {
                                             patchState(store, {
                                                 conversionsOverview: {
                                                     status: ComponentStatus.LOADED,
@@ -444,7 +443,7 @@ export function withConversions() {
                                                 }
                                             });
                                         },
-                                        (error: HttpErrorResponse) => {
+                                        error: (error: HttpErrorResponse) => {
                                             const errorMessage =
                                                 error.message ||
                                                 dotMessageService.get(
@@ -458,7 +457,7 @@ export function withConversions() {
                                                 }
                                             });
                                         }
-                                    )
+                                    })
                                 );
                         })
                     )

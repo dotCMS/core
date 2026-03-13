@@ -18,7 +18,7 @@ import { Button } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
 
 import { DotThemesService } from '@dotcms/data-access';
-import { DotTheme, DotPagination } from '@dotcms/dotcms-models';
+import { DotPagination, DotTheme } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotThemeComponent } from './dot-theme.component';
