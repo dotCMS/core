@@ -13,7 +13,12 @@ import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
 import { Orientation, PageType, UVEState } from './models';
 
-import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
+import {
+    DEFAULT_DEVICE,
+    DEFAULT_IFRAME_DOC_HEIGHT,
+    DEFAULT_VIEW_ZOOM_LEVEL,
+    UVE_FEATURE_FLAGS
+} from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 
 // Some properties can be computed
@@ -52,8 +57,8 @@ const initialState: UVEState = {
     viewSocialMedia: null,
     viewParams: null,
     viewOgTagsResults: null,
-    viewZoomLevel: 1,
-    viewZoomIframeDocHeight: 0
+    viewZoomLevel: DEFAULT_VIEW_ZOOM_LEVEL,
+    viewZoomIframeDocHeight: DEFAULT_IFRAME_DOC_HEIGHT
 };
 
 /**

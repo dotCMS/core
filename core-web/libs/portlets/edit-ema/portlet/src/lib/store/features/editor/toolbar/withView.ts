@@ -5,14 +5,16 @@ import { computed } from '@angular/core';
 import { DotDevice, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
-import { DEFAULT_PERSONA } from '../../../../shared/consts';
+import {
+    DEFAULT_IFRAME_DOC_HEIGHT,
+    DEFAULT_IFRAME_DOC_WIDTH,
+    DEFAULT_PERSONA
+} from '../../../../shared/consts';
 import { InfoOptions } from '../../../../shared/models';
 import { getFullPageURL, getIsDefaultVariant, getOrientation } from '../../../../utils';
 import { PageComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
-
-const VIEW_CANVAS_BASE_WIDTH = 1520;
 
 /**
  * View feature for UVE store - manages editor view modes, preview configuration, and zoom controls.
@@ -118,22 +120,24 @@ export function withView() {
 
             // Zoom state accessors
             $viewZoomLevel: computed(() => store.viewZoomLevel()),
-            $viewIframeDocHeight: computed(() => store.viewZoomIframeDocHeight()),
+            $viewIframeDocHeight: computed(
+                () => store.viewZoomIframeDocHeight() || DEFAULT_IFRAME_DOC_HEIGHT
+            ),
 
             // Canvas styles for zoom transform
             $viewCanvasOuterStyles: computed(() => {
                 const zoom = store.viewZoomLevel();
-                const height = store.viewZoomIframeDocHeight() || 800;
+                const height = store.viewZoomIframeDocHeight();
                 return {
-                    width: `${VIEW_CANVAS_BASE_WIDTH * zoom}px`,
+                    width: `${DEFAULT_IFRAME_DOC_WIDTH * zoom}px`,
                     height: `${height * zoom}px`
                 };
             }),
             $viewCanvasInnerStyles: computed(() => {
                 const zoom = store.viewZoomLevel();
-                const height = store.viewZoomIframeDocHeight() || 800;
+                const height = store.viewZoomIframeDocHeight();
                 return {
-                    width: `${VIEW_CANVAS_BASE_WIDTH}px`,
+                    width: `${DEFAULT_IFRAME_DOC_WIDTH}px`,
                     height: `${height}px`,
                     transform: `scale(${zoom})`,
                     transformOrigin: 'top left'

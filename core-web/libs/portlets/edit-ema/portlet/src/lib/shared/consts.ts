@@ -25,6 +25,12 @@ export const BASE_IFRAME_MEASURE_UNIT = 'px';
 
 export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
 
+export const DEFAULT_IFRAME_DOC_HEIGHT = 800;
+
+export const DEFAULT_IFRAME_DOC_WIDTH = 1520;
+
+export const DEFAULT_VIEW_ZOOM_LEVEL = 1;
+
 export const COMMON_ERRORS: CommonErrorsInfo = {
     [CommonErrors.NOT_FOUND]: {
         icon: 'compass',
