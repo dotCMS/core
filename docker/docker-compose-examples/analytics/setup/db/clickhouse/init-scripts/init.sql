@@ -950,7 +950,7 @@ SELECT
     /* "last seen" dimension states (tables-only values) */
     argMaxState(device_category, e.utc_time) AS device_category_state,
     argMaxState(browser_family, e.utc_time)  AS browser_family_state,
-    argMaxState(coalesce(locale_id, ''), e.utc_time) AS locale_id_state
+    argMaxStateIf(locale_id, e.utc_time, e.event_type = 'pageview' AND locale_id IS NOT NULL) AS locale_id_state
 FROM clickhouse_test_db.events AS e
      /* Device mapping via table */
      LEFT JOIN clickhouse_test_db.device_category_map AS d_dev
@@ -1199,7 +1199,7 @@ FROM
             /* UA for fallback matching */
             lowerUTF8(argMaxMerge(user_agent_state)) AS ua_l,
 
-            coalesce(nullIf(argMaxMerge(locale_id_state), ''), '') AS locale_id
+            coalesce(argMaxMerge(locale_id_state), '') AS locale_id
         FROM clickhouse_test_db.session_states
         GROUP BY (
                   customer_id,
