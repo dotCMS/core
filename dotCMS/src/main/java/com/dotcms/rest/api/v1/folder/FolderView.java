@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.folder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Date;
 import java.util.List;
@@ -156,7 +157,12 @@ public class FolderView {
     /**
      * Returns {@code true} when this node represents a nested host rather than a plain folder.
      * The Angular tree UI uses this flag to render a site-icon instead of a folder-icon.
+     * <p>
+     * {@code @JsonProperty} keeps the serialized key as {@code "isHost"} — without it Jackson
+     * strips the {@code is} prefix and emits {@code "host"}, which the TypeScript interface does
+     * not recognise.
      */
+    @JsonProperty("isHost")
     public boolean isHost() {
         return isHost;
     }

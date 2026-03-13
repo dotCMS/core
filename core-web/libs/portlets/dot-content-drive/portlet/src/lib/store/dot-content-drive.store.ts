@@ -51,20 +51,28 @@ const initialState: DotContentDriveState = {
     pagination: DEFAULT_PAGINATION,
     sort: DEFAULT_SORT,
     isTreeExpanded: DEFAULT_TREE_EXPANDED,
-    pages: [DEFAULT_PAGE]
+    pages: [DEFAULT_PAGE],
+    browseHostname: undefined
 };
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    withComputed(({ path, filters, currentSite, pagination, sort, pages }) => {
+    withComputed(({ path, filters, currentSite, browseHostname, pagination, sort, pages }) => {
         return {
             $request: computed<DotContentDriveSearchRequest>(() => {
                 const paginationSignal = pagination();
                 const page = untracked(() => pages()[paginationSignal?.page - 1]);
+                // Use browseHostname when set (navigating inside a nested host); fall back to
+                // the globally-selected site.  This lets nested-host nodes behave like folders
+                // without switching the global site context.
+                const hostname = browseHostname() || currentSite()?.hostname;
 
                 return {
-                    assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
-                    includeSystemHost: true,
+                    assetPath: `//${hostname}${path() || '/'}`,
+                    // Only include SYSTEM_HOST content when the user is at a top-level site
+                    // root (no folder path, no nested-host context). Inside any folder or
+                    // nested host, show only the content belonging to that specific location.
+                    includeSystemHost: !browseHostname() && !path(),
                     filters: {
                         text: filters()?.title || '',
                         filterFolders: true
@@ -272,7 +280,8 @@ export const DotContentDriveStore = signalStore(
                     filters: {},
                     status: DotContentDriveStatus.LOADING,
                     pagination: DEFAULT_PAGINATION,
-                    pages: [DEFAULT_PAGE]
+                    pages: [DEFAULT_PAGE],
+                    browseHostname: undefined
                 });
             }
         };

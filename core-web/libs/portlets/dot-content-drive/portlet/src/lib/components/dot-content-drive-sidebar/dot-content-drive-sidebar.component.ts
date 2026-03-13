@@ -109,7 +109,7 @@ export class DotContentDriveSidebarComponent {
     protected onNodeSelect(event: TreeNodeSelectEvent): void {
         const { node } = event;
 
-        if (node.data?.type === 'site' || node.data?.type === 'nested-host') {
+        if (node.data?.type === 'site') {
             this.#store.switchToHost({
                 identifier: node.data.id,
                 hostname: node.data.hostname,
@@ -118,6 +118,8 @@ export class DotContentDriveSidebarComponent {
             return;
         }
 
+        // Nested-host nodes behave like folders — selecting one just navigates into the
+        // host's root without switching the global site context.
         this.#store.setSelectedNode(node);
     }
 

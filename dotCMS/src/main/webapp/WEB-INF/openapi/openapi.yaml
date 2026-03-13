@@ -24162,14 +24162,14 @@ components:
       properties:
         addChildrenAllowed:
           type: boolean
-        host:
-          type: boolean
         hostName:
           type: string
         id:
           type: string
         inode:
           type: string
+        isHost:
+          type: boolean
         path:
           type: string
     FolderView:
@@ -24182,8 +24182,6 @@ components:
         getiDate:
           type: string
           format: date-time
-        host:
-          type: boolean
         hostId:
           type: string
         hostname:
@@ -24192,6 +24190,8 @@ components:
           type: string
         inode:
           type: string
+        isHost:
+          type: boolean
         modDate:
           type: string
           format: date-time

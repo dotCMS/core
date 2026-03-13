@@ -37,8 +37,8 @@ public class Task260312AddHostFolderFieldToHostContentType implements StartupTas
         try {
             final ContentType hostType = getHostContentType();
             if (hostType == null) {
-                Logger.warn(this, "Host content type not found – skipping task.");
-                return false;
+
+                throw new DotRuntimeException("Host content type not found");
             }
             final boolean fieldMissing = hostType.fields().stream()
                     .noneMatch(f -> f instanceof HostFolderField
@@ -51,7 +51,7 @@ public class Task260312AddHostFolderFieldToHostContentType implements StartupTas
         } catch (final Exception e) {
             Logger.error(this, "Error checking Host content type for HostFolderField: "
                     + e.getMessage(), e);
-            return false;
+            throw new DotRuntimeException("Error checking Host content type for HostFolderField: ");
         }
     }
 

@@ -107,6 +107,13 @@ export interface DotContentDriveState extends DotContentDriveInit {
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
     pages: DotContentDrivePage[];
+    /**
+     * Hostname used for building the `assetPath` passed to the drive/search API.
+     * Updated whenever a tree node is selected (including nested-host nodes).
+     * Falls back to `currentSite.hostname` when `undefined` (e.g. right after a
+     * top-level site switch via the site selector).
+     */
+    browseHostname?: string;
 }
 
 /**

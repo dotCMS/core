@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.folder;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * This class represents the REST View of a Folder. It's used by several Endpoints and related
  * classes, such as the {@link FolderResource}, the
@@ -65,7 +67,12 @@ public class FolderSearchResultView {
     /**
      * Returns {@code true} if this entry represents a nested host (sub-site) rather than a
      * regular folder.
+     * <p>
+     * The explicit {@code @JsonProperty} prevents Jackson from stripping the {@code is} prefix
+     * and serializing this as {@code "host"} — keeping the JSON key as {@code "isHost"} to match
+     * the TypeScript {@code DotFolder} interface.
      */
+    @JsonProperty("isHost")
     public boolean isHost() {
         return isHost;
     }

@@ -514,10 +514,12 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         // any programmatic caller of save() also benefits from this guard.
         validateParentHostNotCircular(hostToBeSaved);
 
-        // Capture parentHostId NOW from the caller-supplied host before checkin() overwrites the
-        // contentlet map. After checkin() the returned contentlet is rebuilt from the DB and
-        // HostFolderField values may not be present in the in-memory map.
+        // Capture parentHostId and hostname NOW from the caller-supplied host before checkin()
+        // overwrites the contentlet map. After checkin() the returned contentlet is rebuilt from
+        // the DB and dynamic field values (HostFolderField, hostName) may not be present in the
+        // in-memory map.
         final String parentHostId = hostToBeSaved.getParentHost();
+        final String hostname = hostToBeSaved.getHostname();
 
         contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, hostToBeSaved.getMap().get(Contentlet.DONT_VALIDATE_ME));
         APILocator.getContentletAPI().copyProperties(contentletHost, hostToBeSaved.getMap());
@@ -535,7 +537,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         // Persist parent host / folder relationship to the Identifier table.
         // This keeps identifier.host_inode, identifier.parent_path and identifier.asset_name
         // consistent with the parentHost HostFolderField value after every save.
-        persistParentHostRelationship(contentletHost, parentHostId, user);
+        persistParentHostRelationship(contentletHost, parentHostId, hostname, user);
 
         if (null != contentletHost.get(Host.HOST_NAME_KEY) && null != hostToBeSaved.get(Host.HOST_NAME_KEY) &&
                 !contentletHost.isNew() && !contentletHost.getTitle().equals(hostToBeSaved.get(Host.HOST_NAME_KEY))) {
@@ -1225,10 +1227,14 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
      * @throws DotSecurityException if the user does not have permission to read the parent folder
      */
     private void persistParentHostRelationship(final Contentlet savedContentlet,
-            final String parentId, final User user)
+            final String parentId, final String hostnameFromCaller, final User user)
             throws DotDataException, DotSecurityException {
 
-        final String hostname = (String) savedContentlet.get(Host.HOST_NAME_KEY);
+        // Prefer the hostname captured before checkin(); fall back to the post-checkin contentlet
+        // map in case a future caller omits it.
+        final String hostname = UtilMethods.isSet(hostnameFromCaller)
+                ? hostnameFromCaller
+                : (String) savedContentlet.get(Host.HOST_NAME_KEY);
         if (!UtilMethods.isSet(hostname)) {
             // Cannot set asset_name without a hostname – skip (validation should catch this earlier).
             Logger.warn(this, "Cannot persist parent-host relationship for contentlet '"

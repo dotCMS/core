@@ -60,6 +60,9 @@ public class ShortyIdAPIImpl implements ShortyIdAPI {
   @Override
   public Optional<ShortyId> getShorty(final String shortStr, final ShortyInputType shortyType) {
 
+    if (shortStr == null || shortStr.isEmpty()) {
+      return Optional.empty();
+    }
 
     try {
       if(shortStr.startsWith(TempFileAPI.TEMP_RESOURCE_PREFIX) && APILocator.getTempFileAPI().isTempResource(shortStr)) {

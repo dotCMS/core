@@ -468,17 +468,33 @@ When `showSubHosts=true`:
 
 ### 14.2 Frontend rendering
 
-The frontend uses the existing `baseType` discriminator:
+The frontend uses the `isHost` flag returned by `FolderSearchResultView`:
 
-- `baseType=HOST` nodes render with the host icon.
-- Clicking a `baseType=HOST` node triggers a "switch site context" action scoped to the folder browser.
+- `isHost=true` nodes render with the host icon and `type='nested-host'`.
+- **Clicking** a `nested-host` node navigates into the host's root _without_ switching the
+  global site context.  The global site selector always shows the top-level site the user
+  originally selected.  This is intentional: nested hosts are folders in the UX, not separate
+  site contexts.
+
+#### Content Drive — `browseHostname` state
+
+`DotContentDriveStore` keeps a `browseHostname` field alongside `path`.  Both are updated
+whenever a tree node is selected (`setSelectedNode`).  The `assetPath` fed to `drive/search`
+is built as:
+
+```
+//${browseHostname || currentSite.hostname}${path || '/'}
+```
+
+Selecting a top-level _site_ node (`type='site'`) still calls `switchToHost`, which resets
+`browseHostname` to `undefined` so the fallback to `currentSite.hostname` takes effect.
 
 ### 14.3 Inline subtree expansion
 
 When a nested host node is expanded in the folder tree:
 
-- The `nodeExpand` event handler detects `baseType=HOST`.
-- It calls `BrowserAPI` with `siteId=nestedHost.identifier` and `folderPath=/`.
+- The `nodeExpand` event handler reads `node.data.hostname` (the nested host's own hostname).
+- It calls `POST /api/v1/folder/byPath` with `path=//nestedHostname/`.
 - The nested host's folder tree is loaded inline as children of that node.
 
 Deep-linking is supported: expanding a nested host node always shows its full subfolder tree inline.

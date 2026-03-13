@@ -273,7 +273,7 @@ describe('DotContentDriveSidebarComponent', () => {
                 expect(contentDriveStore.setSelectedNode).not.toHaveBeenCalled();
             });
 
-            it('should call store.switchToHost when a nested host node (type=nested-host) is selected', () => {
+            it('should call store.setSelectedNode (not switchToHost) when a nested host node (type=nested-host) is selected', () => {
                 jest.clearAllMocks();
 
                 const nestedHostNode: DotFolderTreeNodeItem = {
@@ -282,7 +282,7 @@ describe('DotContentDriveSidebarComponent', () => {
                     data: {
                         id: 'nested-host-id',
                         hostname: 'nested.example.com',
-                        path: '',
+                        path: '/',
                         type: 'nested-host'
                     },
                     leaf: false
@@ -295,12 +295,9 @@ describe('DotContentDriveSidebarComponent', () => {
 
                 spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', mockEvent);
 
-                expect(contentDriveStore.switchToHost).toHaveBeenCalledWith({
-                    identifier: 'nested-host-id',
-                    hostname: 'nested.example.com',
-                    aliases: null
-                });
-                expect(contentDriveStore.setSelectedNode).not.toHaveBeenCalled();
+                // Nested-host nodes behave like folders — no host context switch.
+                expect(contentDriveStore.switchToHost).not.toHaveBeenCalled();
+                expect(contentDriveStore.setSelectedNode).toHaveBeenCalledWith(nestedHostNode);
             });
 
             it('should NOT call store.switchToHost for regular folder nodes', () => {
