@@ -1,12 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    inject,
-    OnInit,
-    signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -17,7 +10,6 @@ import {
     AnalyticsChartColors,
     DotAnalyticsDashboardStore
 } from '@dotcms/portlets/dot-analytics/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
@@ -52,21 +44,13 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
         class: 'flex flex-col gap-6 w-full'
     }
 })
-export default class DotAnalyticsEngagementReportComponent implements OnInit {
+export default class DotAnalyticsEngagementReportComponent {
     /** Analytics dashboard store providing engagement data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
-    readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
 
     /** Controls visibility of the "How it's calculated" dialog */
     readonly $showCalculationDialog = signal(false);
-
-    ngOnInit(): void {
-        this.#globalStore.addNewBreadcrumb({
-            id: 'engagement',
-            label: this.#messageService.get('analytics.dashboard.tabs.engagement')
-        });
-    }
 
     /** KPIs slice: data and status for the metric cards */
     readonly $kpis = computed(() => this.store.engagementKpis().data);

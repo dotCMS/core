@@ -5,7 +5,7 @@ import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Config;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
@@ -45,9 +45,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Default
 public class OSBulkHelper {
 
-    private static final int DEFAULT_BULK_TIMEOUT_MS = Config.getIntProperty("OPENSEARCH_BULK_TIMEOUT", 30000);
-    private static final int DEFAULT_BATCH_SIZE = Config.getIntProperty("OPENSEARCH_BULK_BATCH_SIZE", 100);
-    private static final String DEFAULT_INDEX_SUFFIX = Config.getStringProperty("ES_INDEX_NAME", "content");
+    private static final int DEFAULT_BULK_TIMEOUT_MS = IndexConfigHelper.getInt(OSIndexProperty.BULK_TIMEOUT, 30000);
+    private static final int DEFAULT_BATCH_SIZE = IndexConfigHelper.getInt(OSIndexProperty.BULK_BATCH_SIZE, 100);
+    private static final String DEFAULT_INDEX_SUFFIX = IndexConfigHelper.getString(OSIndexProperty.INDEX_NAME, "content");
 
     @Inject
     private OSClientProvider clientProvider;
