@@ -540,16 +540,16 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         if (!read) return;
 
         if (folder.selected) {
-            var folderIMG = selectedFolderImg;
-            var folderClass = 'folderSelected';
+            var folderIMG = folder.isSubHost ? worldImgOnImg : selectedFolderImg;
+            var folderClass = folder.isSubHost ? '' : 'folderSelected';
             selectedFolder = folder.inode;
         } else {
-            var folderIMG = noSelectedFolderImg;
+            var folderIMG = folder.isSubHost ? worldImgOffImg : noSelectedFolderImg;
             var folderClass = '';
         }
 
         if(folder.open) {
-            if(folder.childrenFolders.length == 0)
+            if(!folder.childrenFolders || folder.childrenFolders.length == 0)
                 var signIMG = shimIMG;
             else
                 var signIMG = lessSignIMG;
@@ -1000,6 +1000,9 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
             $(signImgId).className = plusSignIMG;
 
+            if (inodes[inode] && inodes[inode].isSubHost)
+                $(inode + '-TreeFolderIMG').className = worldImgOffImg;
+
             DWRUtil.removeAllOptions(inode + '-TreeChildrenUL');
 
             openFolders.remove(inode);
@@ -1007,8 +1010,14 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         } else {
             if(inode!=activeHost){
                 var imgId = inode + '-TreeFolderIMG';
-                $(imgId).className = folderAniIMG;
-                BrowserAjax.openFolderTree (inode, function (data) { openTreeFolderCallBack(inode, data); } );
+                if (inodes[inode] && inodes[inode].isSubHost) {
+                    $(imgId).className = worldAniIMG;
+                    var hostId = inodes[inode].identifier || inode;
+                    BrowserAjax.openHostTree(hostId, function (data) { openTreeFolderCallBack(inode, data); });
+                } else {
+                    $(imgId).className = folderAniIMG;
+                    BrowserAjax.openFolderTree (inode, function (data) { openTreeFolderCallBack(inode, data); } );
+                }
             }
         }
     }
@@ -1021,7 +1030,9 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             addChildFolder(parent, data[j]);
         }
 
-        if (selectedFolder == parent)
+        if (inodes[parent] && inodes[parent].isSubHost)
+            $(imgId).className = worldImgOnImg;
+        else if (selectedFolder == parent)
             $(imgId).className = selectedFolderImg;
         else
             $(imgId).className = noSelectedFolderImg;
