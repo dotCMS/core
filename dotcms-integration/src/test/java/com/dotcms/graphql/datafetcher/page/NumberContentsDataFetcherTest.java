@@ -67,7 +67,7 @@ public class NumberContentsDataFetcherTest {
         final DotGraphQLContext context = DotGraphQLContext.createServletContext()
                 .with(user)
                 .build();
-        context.addParam("pageMode", PageMode.PREVIEW.name());
+        context.addParam("pageMode", PageMode.PREVIEW_MODE.name());
         context.addParam("languageId", String.valueOf(defaultLanguage.getId()));
 
         Mockito.when(environment.getContext()).thenReturn(context);
@@ -128,7 +128,7 @@ public class NumberContentsDataFetcherTest {
         final DotGraphQLContext context = DotGraphQLContext.createServletContext()
                 .with(user)
                 .build();
-        context.addParam("pageMode", PageMode.PREVIEW.name());
+        context.addParam("pageMode", PageMode.PREVIEW_MODE.name());
         context.addParam("languageId", String.valueOf(defaultLanguage.getId()));
 
         Mockito.when(environment.getContext()).thenReturn(context);
@@ -178,7 +178,7 @@ public class NumberContentsDataFetcherTest {
 
         // Pre-build the PageRenderUtil and cache it in the context
         final PageRenderUtil pageRenderUtil = new PageRenderUtil(
-                page, user, PageMode.PREVIEW, defaultLanguage.getId(), defaultHost);
+                page, user, PageMode.PREVIEW_MODE, defaultLanguage.getId(), defaultHost);
 
         final var fetcher = new NumberContentsDataFetcher();
         final var environment = Mockito.mock(DataFetchingEnvironment.class);
