@@ -5,12 +5,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ALLOWED_PREFIXES = [
-    '/api/v1/content',
     '/api/v1/contenttype',
     '/api/v1/page',
     '/api/v1/nav',
     '/api/v1/workflow',
-    '/api/v1/es',
     '/api/v1/category',
     '/api/v1/tags',
     '/api/v1/folder',
@@ -22,7 +20,7 @@ const ALLOWED_PREFIXES = [
     '/api/v1/themes',
     '/api/v1/templates',
     '/api/v1/assets',
-    '/api/es'
+    '/api/es/search'
 ];
 
 const DEFAULT_SPEC_PATH = '/api/openapi.json';
