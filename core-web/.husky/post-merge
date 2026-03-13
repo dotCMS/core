@@ -6,51 +6,12 @@
 root="$(git rev-parse --show-toplevel)"
 
 if [ -f "$root/lefthook.yml" ]; then
-    # mise is required: lefthook commands use 'mise exec --' for toolchain
-    if ! command -v mise >/dev/null 2>&1; then
-        shell_name="$(basename "${SHELL:-/bin/sh}")"
-        case "$shell_name" in
-            zsh)  rc_file="~/.zshrc";    activate_cmd='eval "$(mise activate zsh)"' ;;
-            bash) rc_file="~/.bashrc";   activate_cmd='eval "$(mise activate bash)"' ;;
-            fish) rc_file="~/.config/fish/config.fish"; activate_cmd='mise activate fish | source' ;;
-            *)    rc_file="your shell rc"; activate_cmd="eval \"\$(mise activate $shell_name)\"" ;;
-        esac
-
-        echo ""
-        echo "dotCMS uses mise to manage development tools (Node, Java, lefthook, etc.)."
-        echo ""
-        echo "1. Install mise:"
-        echo "   curl https://mise.run | sh"
-        echo ""
-        echo "2. Activate in your shell ($shell_name):"
-        echo "   echo '$activate_cmd' >> $rc_file"
-        echo "   source $rc_file"
-        echo ""
-        echo "3. Install project tools:"
-        echo "   mise trust && mise install"
-        echo ""
+    # New branch: dispatch to lefthook (requires mise for toolchain)
+    if ! command -v lefthook >/dev/null 2>&1 && ! mise which lefthook >/dev/null 2>&1; then
+        echo "ERROR: lefthook not found. Run: mise install"
         echo "Skip this hook with: LEFTHOOK=0 git merge"
         exit 1
     fi
-
-    if ! command -v lefthook >/dev/null 2>&1 && ! mise which lefthook >/dev/null 2>&1; then
-        echo "Project tools not installed. Running 'mise install'..."
-        mise trust --yes 2>/dev/null
-        if ! mise install; then
-            echo ""
-            echo "ERROR: 'mise install' failed. Fix the issue above, then retry your command."
-            echo "Skip this hook with: LEFTHOOK=0 git merge"
-            exit 1
-        fi
-        if ! command -v lefthook >/dev/null 2>&1 && ! mise which lefthook >/dev/null 2>&1; then
-            echo ""
-            echo "ERROR: lefthook not found after 'mise install'."
-            echo "Try: mise install lefthook"
-            exit 1
-        fi
-        echo ""
-    fi
-
     if command -v lefthook >/dev/null 2>&1; then
         exec lefthook run post-merge --no-auto-install "$@"
     else
