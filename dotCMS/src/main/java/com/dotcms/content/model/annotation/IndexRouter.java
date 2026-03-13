@@ -19,19 +19,13 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface IndexMetadata {
+public @interface IndexRouter {
 
     /**
      * Defines the type of index access this class or method performs.
      * @return the access type (default: READ_ONLY)
      */
     IndexAccess access() default IndexAccess.READ_ONLY;
-
-    /**
-     * Specifies which search engine(s) this class/method works with.
-     * @return the supported index engine (default: ELASTICSEARCH)
-     */
-    IndexEngine [] currentlySupports() default IndexEngine.ELASTICSEARCH;
 
     /**
      * Optional notes about index usage, migration blockers, or special considerations.
@@ -52,23 +46,6 @@ public @interface IndexMetadata {
 
         /** Only performs write operations on the search index */
         WRITE_ONLY
-    }
-
-    /**
-     * Enum defining which search engine(s) the component works with.
-     */
-    enum IndexEngine {
-        /** Only works with Elasticsearch */
-        ELASTICSEARCH,
-
-        /** Only works with OpenSearch */
-        OPENSEARCH,
-
-        /** Works with both Elasticsearch and OpenSearch */
-        BOTH,
-
-        /** Engine compatibility unknown or not specified */
-        UNKNOWN
     }
 
 }

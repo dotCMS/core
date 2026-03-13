@@ -1,7 +1,5 @@
 import { Route } from '@angular/router';
 
-import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
-
 import DotAnalyticsDashboardComponent from './dot-analytics-dashboard/dot-analytics-dashboard.component';
 import { analyticsHealthGuard } from './guards/analytics-health.guard';
 
@@ -22,7 +20,6 @@ export const dotAnalyticsRoutes: Route[] = [
     {
         path: 'dashboard',
         canMatch: [analyticsHealthGuard],
-        providers: [DotAnalyticsDashboardStore],
         component: DotAnalyticsDashboardComponent
     },
     {
