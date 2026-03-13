@@ -1,4 +1,4 @@
-package com.dotcms.business.cdi;
+package com.dotcms.cdi.business;
 
 import com.dotcms.business.CloseDB;
 import com.dotcms.business.interceptor.CloseDBHandler;

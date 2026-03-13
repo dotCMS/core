@@ -4,15 +4,15 @@ xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/
 version="2.0" bean-discovery-mode="annotated">
     <interceptors>
         <!-- Enterprise license check must fire first to reject unauthorized calls early -->
-        <class>com.dotcms.business.cdi.EnterpriseFeatureInterceptor</class>
+        <class>com.dotcms.cdi.business.EnterpriseFeatureInterceptor</class>
         <!-- Database connection and transaction interceptors -->
-        <class>com.dotcms.business.cdi.CloseDBIfOpenedInterceptor</class>
-        <class>com.dotcms.business.cdi.CloseDBInterceptor</class>
-        <class>com.dotcms.business.cdi.WrapInTransactionInterceptor</class>
-        <class>com.dotcms.business.cdi.ExternalTransactionInterceptor</class>
+        <class>com.dotcms.cdi.business.CloseDBIfOpenedInterceptor</class>
+        <class>com.dotcms.cdi.business.CloseDBInterceptor</class>
+        <class>com.dotcms.cdi.business.WrapInTransactionInterceptor</class>
+        <class>com.dotcms.cdi.business.ExternalTransactionInterceptor</class>
         <!-- Observability -->
-        <class>com.dotcms.business.cdi.LogTimeInterceptor</class>
-        <class>com.dotcms.business.cdi.RequestCostInterceptor</class>
+        <class>com.dotcms.cdi.business.LogTimeInterceptor</class>
+        <class>com.dotcms.cdi.business.RequestCostInterceptor</class>
     </interceptors>
     <scan>
         <exclude name="org.apache.**"/>
