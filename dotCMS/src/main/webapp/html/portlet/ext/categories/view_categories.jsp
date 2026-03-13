@@ -1106,7 +1106,7 @@
 	<div dojoType="dijit.layout.ContentPane" style="width:300px;" class="box" hasShadow="true">
 		<dl class="vertical">
 			<dt><label for="uploadFile" class="required"><%= LanguageUtil.get(pageContext, "Import-Options") %></label></dt>
-			<dd><input type="file" id="uploadFile" class="upload"/></dd>
+			<dd><div class="fileAjaxUploader"><input type="file" id="uploadFile" class="upload"/></div></dd>
 			<div class="clear"></div>
 
 			<dt><label class="required"><%= LanguageUtil.get(pageContext, "Import-Options") %></label></dt>

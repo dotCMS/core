@@ -626,6 +626,78 @@ public class StaticPublisherIntegrationTestHelper {
         return new TestCase(livePageWithContent.page, filesExpected, livePageWithContent.language, assetsMap);
     }
 
+    /**
+     * Creates a TestCase for a live page that verifies {@code $URLMapContent} is NOT populated
+     * when bundling a regular (non-URL-mapped) HTML page. The container code renders a distinct
+     * marker string only if {@code $URLMapContent} is set, so the expected HTML output is
+     * {@code <div></div>} (empty container) when the variable is correctly absent.
+     */
+    public static TestCase getLivePageWhenURLMapContentIsNotPopulated()
+            throws WebAssetException, DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Field textField = new FieldDataGen().type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen().field(textField).nextPersisted();
+
+        // Container code outputs a marker ONLY if $URLMapContent is populated.
+        // For regular (non-URL-mapped) pages $URLMapContent must always be null/empty.
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .withContentType(contentType, "#if($URLMapContent)URLMapContentSet#end")
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .site(host)
+                .withContainer(container.getIdentifier())
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .host(host)
+                .languageId(language.getId())
+                .setProperty(textField.variable(), "pageContent")
+                .nextPersisted();
+
+        final HTMLPageAsset page = ((HTMLPageDataGen) new HTMLPageDataGen(folder, template)
+                .host(host)
+                .languageId(language.getId()))
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContainer(container)
+                .setPage(page)
+                .setContentlet(contentlet)
+                .nextPersisted();
+
+        ContentletDataGen.publish(contentlet);
+        TemplateDataGen.publish(template);
+        ContainerDataGen.publish(container);
+        HTMLPageDataGen.publish(page);
+
+        final String xmlFilePath = File.separator + "live" + File.separator
+                + host.getHostname() + File.separator
+                + language.getId()
+                + page.getURI().replace("/", File.separator)
+                + HTMLPAGE_ASSET_EXTENSION;
+
+        final String pageFilePath = File.separator + "live" + File.separator
+                + host.getHostname() + File.separator
+                + language.getId()
+                + page.getURI().replace("/", File.separator);
+
+        // With the fix, $URLMapContent is null so #if block doesn't execute → empty container
+        final List<FileExpected> filesExpected = list(
+                new FileExpected(xmlFilePath, null, true),
+                new FileExpected(pageFilePath, "<div></div>", true)
+        );
+
+        final Map<String, String> assetsMap = getAssetsMap(page);
+
+        return new TestCase(page, filesExpected, list(language), assetsMap);
+    }
+
     public static TestCase getWorkingPage() {
         final PageWithDependencies workingPageWithContent = new PageWithDependenciesBuilder().build();
 

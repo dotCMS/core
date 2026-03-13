@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
+import com.dotcms.business.interceptor.InterceptorHandlerTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
@@ -102,7 +103,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.factories.MultiTreeAPITest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
-        com.dotmarketing.filters.FiltersTest.class
+        com.dotmarketing.filters.FiltersTest.class,
+        InterceptorHandlerTest.class
 })
 public class MainSuite2a {
 
