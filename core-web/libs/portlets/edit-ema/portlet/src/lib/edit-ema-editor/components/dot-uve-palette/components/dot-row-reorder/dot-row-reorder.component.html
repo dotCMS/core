@@ -3,19 +3,19 @@
         cdkDropList
         cdkDropListLockAxis="y"
         (cdkDropListDropped)="drop($event)"
-        class="row-reorder-list">
+        class="flex flex-col gap-2">
         @for (row of rows(); track $index; let i = $index) {
             <div
                 cdkDrag
-                class="row-item"
+                class="flex flex-col items-stretch gap-2 p-3 bg-(--surface-ground) rounded cursor-default transition-shadow duration-200 hover:shadow-md"
                 data-testid="row-item"
                 [cdkDragDisabled]="isColumnDragging()">
-                <div class="row-header">
-                    <div class="row-handle" cdkDragHandle (click)="$event.stopPropagation()">
+                <div class="flex items-center gap-3 min-w-0 cursor-pointer">
+                    <div class="flex items-center text-(--text-color-secondary) cursor-grab select-none active:cursor-grabbing" cdkDragHandle (click)="$event.stopPropagation()">
                         <i class="pi pi-bars"></i>
                     </div>
                     <div
-                        class="row-label"
+                        class="flex-1 text-sm text-(--text-color) min-w-0"
                         data-testid="row-label"
                         (click)="selectRow(i + 1)"
                         (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
@@ -23,25 +23,22 @@
                         (touchstart)="$event.stopPropagation()">
                         {{ getRowLabel(row, i) }}
                     </div>
-                    <button
-                        type="button"
-                        class="row-toggle"
+                    <p-button
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        [icon]="isRowExpanded(i) ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                         data-testid="row-toggle"
                         [attr.aria-expanded]="isRowExpanded(i)"
                         [attr.aria-label]="isRowExpanded(i) ? 'Collapse row' : 'Expand row'"
                         (click)="toggleRow(i); $event.stopPropagation()"
                         (mousedown)="$event.stopPropagation()"
-                        (touchstart)="$event.stopPropagation()">
-                        <i
-                            class="pi"
-                            [class.pi-chevron-down]="isRowExpanded(i)"
-                            [class.pi-chevron-right]="!isRowExpanded(i)"></i>
-                    </button>
+                        (touchstart)="$event.stopPropagation()" />
                 </div>
 
                 @if (isRowExpanded(i) && row.columns?.length) {
                     <div
-                        class="row-body"
+                        class="pl-7"
                         (mousedown)="$event.stopPropagation()"
                         (touchstart)="$event.stopPropagation()">
                         <div
@@ -49,18 +46,19 @@
                             cdkDropListLockAxis="y"
                             [cdkDropListData]="row.columns"
                             (cdkDropListDropped)="dropColumn($event, i)"
-                            class="row-columns">
+                            data-testid="row-columns"
+                            class="flex flex-col gap-2">
                             @for (column of row.columns; track $index; let j = $index) {
                                 <div
                                     cdkDrag
-                                    class="row-column"
+                                    class="flex items-center gap-2 text-xs text-(--text-color) bg-(--surface-card) rounded p-2 px-3 row-column"
                                     (cdkDragStarted)="setColumnDragging(true)"
                                     (cdkDragEnded)="setColumnDragging(false)">
-                                    <div class="column-handle" cdkDragHandle>
+                                    <div class="inline-flex items-center justify-center text-(--text-color-secondary) cursor-grab select-none active:cursor-grabbing" cdkDragHandle>
                                         <i class="pi pi-bars"></i>
                                     </div>
                                     <div
-                                        class="column-label"
+                                        class="flex-1 min-w-0"
                                         data-testid="column-label"
                                         (dblclick)="
                                             openEditColumnDialog(i, j); $event.stopPropagation()
@@ -78,7 +76,7 @@
         }
     </div>
 } @else {
-    <div class="empty-state" data-testid="empty-state">
+    <div class="flex justify-center items-center p-8 text-(--text-color-secondary)" data-testid="empty-state">
         <span>No rows available</span>
     </div>
 }
@@ -91,11 +89,11 @@
     [appendTo]="'body'"
     [(visible)]="editRowDialogOpen"
     (onHide)="closeEditRowDialog()">
-    <form class="row-edit-form" (submit)="$event.preventDefault(); submitEditRow()">
-        <label class="row-edit-label" for="row-styleClass">name</label>
+    <form class="flex flex-col gap-3 min-w-80" (submit)="$event.preventDefault(); submitEditRow()">
+        <label class="text-sm text-(--text-color)" for="row-styleClass">name</label>
         <input id="row-styleClass" type="text" pInputText [formControl]="rowStyleClassControl" />
 
-        <div class="row-edit-actions">
+        <div class="flex justify-end">
             <button pButton type="submit" label="Submit"></button>
         </div>
     </form>

@@ -35,9 +35,9 @@ import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils';
     selector: 'dot-uve-iframe',
     standalone: true,
     templateUrl: './dot-uve-iframe.component.html',
-    styleUrls: ['./dot-uve-iframe.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [SafeUrlPipe]
+    imports: [SafeUrlPipe],
+    host: { class: 'block relative' }
 })
 export class DotUveIframeComponent {
     /**

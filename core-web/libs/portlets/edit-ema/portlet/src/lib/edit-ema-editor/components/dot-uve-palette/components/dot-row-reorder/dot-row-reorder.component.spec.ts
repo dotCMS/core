@@ -419,7 +419,7 @@ describe('DotRowReorderComponent', () => {
                 previousContainer: container
             } as CdkDragDrop<DotPageAssetLayoutColumn[]>;
 
-            spectator.triggerEventHandler('.row-columns', 'cdkDropListDropped', dropEvent);
+            spectator.triggerEventHandler('[data-testid="row-columns"]', 'cdkDropListDropped', dropEvent);
             spectator.detectChanges();
 
             expect(mockUVEStore.updateLayout).toHaveBeenCalled();
@@ -439,7 +439,7 @@ describe('DotRowReorderComponent', () => {
             } as CdkDragDrop<DotPageAssetLayoutColumn[]>;
 
             const updateRowsSpy = jest.spyOn(mockUVEStore, 'updateRows');
-            spectator.triggerEventHandler('.row-columns', 'cdkDropListDropped', dropEvent);
+            spectator.triggerEventHandler('[data-testid="row-columns"]', 'cdkDropListDropped', dropEvent);
             spectator.detectChanges();
 
             expect(updateRowsSpy).not.toHaveBeenCalled();

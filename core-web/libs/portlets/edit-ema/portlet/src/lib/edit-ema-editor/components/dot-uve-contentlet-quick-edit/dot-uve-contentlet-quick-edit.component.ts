@@ -78,7 +78,7 @@ export interface ContentletEditData {
         DotMessagePipe
     ],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
-    styleUrl: './dot-uve-contentlet-quick-edit.component.scss',
+    host: { class: 'flex flex-col h-full' },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveContentletQuickEditComponent {
