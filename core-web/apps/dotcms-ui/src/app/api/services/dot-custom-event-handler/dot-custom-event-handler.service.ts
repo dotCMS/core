@@ -81,10 +81,10 @@ export class DotCustomEventHandlerService {
                         'compare-contentlet': this.openCompareDialog.bind(this),
                         'license-changed': this.updateLicense.bind(this),
                         'edit-host': contentEditorFeatureFlag
-                            ? this.editContentlet.bind(this)
+                            ? this.editHost.bind(this)
                             : this.editContentletLegacy.bind(this),
                         'create-host': contentEditorFeatureFlag
-                            ? this.createContentlet.bind(this)
+                            ? this.createHost.bind(this)
                             : this.createContentletLegacy.bind(this)
                     };
                 }
@@ -151,6 +151,34 @@ export class DotCustomEventHandlerService {
                 }
 
                 this.router.navigate([`content/${$event.detail.data.inode}`]);
+            });
+    }
+
+    private editHost($event: CustomEvent): void {
+        const hostVariable = 'Host';
+        this.dotContentTypeService
+            .getContentType(hostVariable)
+            .pipe(take(1))
+            .subscribe((contentType) => {
+                if (this.shouldRedirectToOldContentEditor(contentType)) {
+                    return this.editContentletLegacy($event);
+                }
+
+                this.router.navigate([`content/${$event.detail.data.inode}`]);
+            });
+    }
+
+    private createHost($event: CustomEvent): void {
+        const hostVariable = 'Host';
+        this.dotContentTypeService
+            .getContentType(hostVariable)
+            .pipe(take(1))
+            .subscribe((contentType) => {
+                if (this.shouldRedirectToOldContentEditor(contentType)) {
+                    return this.createContentletLegacy($event);
+                }
+
+                this.router.navigate([`content/new/${hostVariable}`]);
             });
     }
 

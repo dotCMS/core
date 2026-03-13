@@ -471,12 +471,12 @@ describe('DotCustomEventHandlerService', () => {
                     detail: {
                         name: 'edit-host',
                         data: {
-                            inode: '123',
-                            contentType: 'Host'
+                            inode: '123'
                         }
                     }
                 })
             );
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
@@ -486,11 +486,12 @@ describe('DotCustomEventHandlerService', () => {
                 new CustomEvent('ng-event', {
                     detail: {
                         name: 'create-host',
-                        data: { contentType: 'Host' }
+                        data: { url: 'hello.world.com' }
                     }
                 })
             );
 
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
             expect(router.navigate).toHaveBeenCalledWith(['content/new/Host']);
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
@@ -572,12 +573,12 @@ describe('DotCustomEventHandlerService', () => {
                     detail: {
                         name: 'edit-host',
                         data: {
-                            inode: '123',
-                            contentType: 'Host'
+                            inode: '123'
                         }
                     }
                 })
             );
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
@@ -590,11 +591,12 @@ describe('DotCustomEventHandlerService', () => {
                 new CustomEvent('ng-event', {
                     detail: {
                         name: 'create-host',
-                        data: { contentType: 'Host' }
+                        data: { url: 'hello.world.com' }
                     }
                 })
             );
 
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
             expect(router.navigate).toHaveBeenCalledWith(['content/new/Host']);
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
@@ -664,12 +666,12 @@ describe('DotCustomEventHandlerService', () => {
                     detail: {
                         name: 'edit-host',
                         data: {
-                            inode: '123',
-                            contentType: 'Host'
+                            inode: '123'
                         }
                     }
                 })
             );
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
             expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
         });
 
@@ -683,10 +685,11 @@ describe('DotCustomEventHandlerService', () => {
                 new CustomEvent('ng-event', {
                     detail: {
                         name: 'create-host',
-                        data: { contentType: 'Host' }
+                        data: { url: 'hello.world.com' }
                     }
                 })
             );
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
             expect(router.navigate).not.toHaveBeenCalledWith(['content/new/Host']);
         });
     });
