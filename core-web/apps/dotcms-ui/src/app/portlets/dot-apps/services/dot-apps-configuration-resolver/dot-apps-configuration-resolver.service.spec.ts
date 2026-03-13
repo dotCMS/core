@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -8,6 +8,7 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, ParamMap } from '@angular/router';
 
 import { DotCurrentUserService, DotSystemConfigService, DotAppsService } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotApp } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
@@ -53,6 +54,13 @@ describe('DotAppsConfigurationResolver', () => {
                     useClass: DotCurrentUserServiceMock
                 },
                 GlobalStore,
+                {
+                    provide: DotcmsEventsService,
+                    useValue: {
+                        subscribeTo: jest.fn().mockReturnValue(EMPTY),
+                        subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
+                    }
+                },
                 provideHttpClient(),
                 provideHttpClientTesting()
             ]

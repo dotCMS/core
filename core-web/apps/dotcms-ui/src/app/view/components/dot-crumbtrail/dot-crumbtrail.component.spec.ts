@@ -1,10 +1,12 @@
 import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
+import { EMPTY } from 'rxjs';
 
 import { MenuItem } from 'primeng/api';
 
 import { DotCurrentUserService, DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
@@ -21,7 +23,11 @@ describe('DotCrumbtrailComponent', () => {
             GlobalStore,
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
-            mockProvider(DotCurrentUserService)
+            mockProvider(DotCurrentUserService),
+            mockProvider(DotcmsEventsService, {
+                subscribeTo: jest.fn().mockReturnValue(EMPTY),
+                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
+            })
         ],
         detectChanges: false
     });
