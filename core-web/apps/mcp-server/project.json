@@ -23,7 +23,8 @@
                     "cp README.md ../../dist/apps/mcp-server/"
                 ],
                 "cwd": "apps/mcp-server",
-                "parallel": false
+                "parallel": false,
+                "forwardAllArgs": false
             }
         },
         "serve": {

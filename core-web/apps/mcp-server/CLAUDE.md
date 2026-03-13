@@ -23,18 +23,8 @@ yarn nx lint mcp-server
 ```
 
 ### Environment Setup
-The MCP server requires two environment variables:
-```bash
-export DOTCMS_URL="https://your-dotcms-instance.com"
-export AUTH_TOKEN="your-api-token"
-```
 
-Optional:
-```bash
-export SANDBOX_TIMEOUT=15000  # Sandbox execution timeout in ms (default: 15000)
-```
-
-#### Configuration example:
+Configure the MCP server via the `env` block in your MCP client config:
 
 ```json
 {
@@ -46,12 +36,18 @@ export SANDBOX_TIMEOUT=15000  # Sandbox execution timeout in ms (default: 15000)
       ],
       "env": {
         "DOTCMS_URL": "http://localhost:8080",
-        "AUTH_TOKEN": "YOUR_AUTH_TOKEN"
+        "AUTH_TOKEN": "eyJ0eXAiOiJKV1Qi..."
       }
     }
   }
 }
 ```
+
+| Variable | Required | Description |
+|---|---|---|
+| `DOTCMS_URL` | Yes | Base URL of the dotCMS instance |
+| `AUTH_TOKEN` | Yes | JWT Bearer token (generate in dotCMS → User Tools → API Tokens) |
+| `SANDBOX_TIMEOUT` | No | Sandbox execution timeout in ms (default: `15000`) |
 
 ## Architecture Overview
 

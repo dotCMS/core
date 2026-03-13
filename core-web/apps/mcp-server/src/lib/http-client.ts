@@ -32,7 +32,7 @@ function isFileDescriptor(value: unknown): value is FileFieldDescriptor {
 async function resolveFileDescriptor(desc: FileFieldDescriptor): Promise<Blob> {
     if (desc.data) {
         const binary = Buffer.from(desc.data, 'base64');
-        return new Blob([binary], { type: desc.type });
+        return new Blob([new Uint8Array(binary)], { type: desc.type });
     }
     if (desc.url) {
         const response = await fetch(desc.url);
