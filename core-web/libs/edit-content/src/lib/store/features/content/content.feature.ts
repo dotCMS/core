@@ -150,10 +150,22 @@ export function withContent() {
                         switchMap((contentType) => {
                             patchState(store, { state: ComponentStatus.LOADING });
 
+                            // Use initialactions, but fallback to defaultactions
+                            // if the backend returns an empty array (e.g. Host content type)
+                            const schemes$ = workflowActionService
+                                .getDefaultActions(contentType)
+                                .pipe(
+                                    switchMap((actions) =>
+                                        actions.length > 0
+                                            ? of(actions)
+                                            : workflowActionService.getWorkFlowActions(contentType)
+                                    )
+                                );
+
                             return forkJoin({
                                 contentType:
                                     dotContentTypeService.getContentTypeWithRender(contentType),
-                                schemes: workflowActionService.getDefaultActions(contentType)
+                                schemes: schemes$
                             }).pipe(
                                 tapResponse({
                                     next: ({ contentType, schemes }) => {
