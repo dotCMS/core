@@ -1305,17 +1305,24 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function previewHTMLPage(url, content) {
-        // We can't new CustomEvent becuase it's not supported by IE11
-        var customEvent = document.createEvent("CustomEvent");
-        customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "edit-page",
-            data: {
-                hostId: myHostId,
-                url: url,
-                languageId: content.languageId
+
+        console.debug("previewing Page")
+        console.debug("previewHTMLPage: "+url);
+        console.debug("contentHost: "+content.host);
+        console.debug("content: ", content);
+
+
+
+        document.dispatchEvent(new CustomEvent("ng-event", {
+            detail: {
+                name: "edit-page",
+                data: {
+                    hostId: content.host || activeHost || myHostId,
+                    url: url,
+                    languageId: content.languageId
+                }
             }
-        });
-        document.dispatchEvent(customEvent);
+        }));
     }
 
     function editHTMLPage (objId, referer) {

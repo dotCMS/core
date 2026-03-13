@@ -2479,7 +2479,12 @@ public class BrowserAjax {
 			if(folder != null) {
 				return folderMap(folder);
 			}else{
-				Host host = APILocator.getHostAPI().find(folderId, user, respectFrontendRoles);
+				// folderId may be a contentlet inode rather than an identifier — resolve it first
+				final Identifier hostIdentifier = Try.of(
+						() -> APILocator.getIdentifierAPI().findFromInode(folderId)).getOrNull();
+				final String resolvedHostId = (hostIdentifier != null && InodeUtils.isSet(hostIdentifier.getId()))
+						? hostIdentifier.getId() : folderId;
+				Host host = APILocator.getHostAPI().find(resolvedHostId, user, respectFrontendRoles);
 				if(host!=null && InodeUtils.isSet(host.getIdentifier())){
 					Map<String, Object> folderMap = new HashMap<>();
 					folderMap.put("type", "folder");

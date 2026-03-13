@@ -194,7 +194,10 @@ public class BrowserQuery {
         String calculatedSiteId = null;
         // Determine the appropriate Site ID based on provided data
         if (isSite) {
-            calculatedSiteId = UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder : parentId;
+            // Use identifier.getId() (not parentId) because parentId may be a contentlet inode
+            // rather than the identifier UUID. findFromInode() resolves either, but the site
+            // must be looked up by its stable identifier, not a version-specific inode.
+            calculatedSiteId = UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder : identifier.getId();
         } else {
             if (null != folderObj) {
                 calculatedSiteId = Folder.SYSTEM_FOLDER.equals(folderObj.getInode()) && UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder :
@@ -202,7 +205,14 @@ public class BrowserQuery {
             }
         }
         final String siteId = calculatedSiteId;
-        final Host siteObj = Try.of(() -> APILocator.getHostAPI().find(siteId, user, respectFrontEndPermissions)).getOrNull();
+        // Always use respectFrontEndRoles=false here: getParents() is a backend admin
+        // resolution method. DWR requests set X-Requested-With which forces PageMode to LIVE
+        // (respectAnonPerms=true), which breaks lookups for unpublished nested hosts.
+        final Host siteObj = Try.of(() -> APILocator.getHostAPI().find(siteId, user, false))
+                .onFailure(e -> Logger.warn(BrowserQuery.class,
+                        String.format("Could not resolve Site '%s' for parentId '%s': %s",
+                                siteId, parentId, e.getMessage())))
+                .getOrNull();
         if (null == folderObj || UtilMethods.isEmpty(folderObj.getIdentifier()) || null == siteObj || UtilMethods.isEmpty(siteObj.getIdentifier())) {
             final String errorMsg = String.format("Parent ID '%s' [ %s ] does not match any existing Folder or Site.",
                     parentId, siteId);

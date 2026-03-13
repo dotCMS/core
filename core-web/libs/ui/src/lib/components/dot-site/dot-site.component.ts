@@ -81,6 +81,29 @@ interface DotSiteState {
             :host {
                 display: contents;
             }
+
+            .site-selector__item {
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+            }
+
+            .site-selector__nested-icon {
+                font-size: 0.75rem;
+                opacity: 0.6;
+                flex-shrink: 0;
+            }
+
+            .site-selector__item--archived {
+                opacity: 0.55;
+                font-style: italic;
+            }
+
+            .site-selector__archived-icon {
+                font-size: 0.75rem;
+                color: var(--yellow-500, #f59e0b);
+                flex-shrink: 0;
+            }
         `
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -201,9 +224,8 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
 
     /**
      * Computed options for the select dropdown.
-     * The pinned option (current site) is always at the top so it remains accessible
-     * even when the current site is on a page not yet loaded. The rest of the list
-     * is alphabetical (duplicates of the pinned site are removed).
+     * Combines pinned option (if any) with lazy-loaded options.
+     * The pinned option is always at the top and filtered out from the lazy-loaded list to avoid duplicates.
      */
     $options = computed<DotSite[]>(() => {
         const loaded = this.$state.sites();
@@ -218,16 +240,17 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         // If filtering, only show pinned if it matches the filter
         if (filterValue) {
             const pinnedName = pinned.hostname.toLowerCase();
+            const matchesFilter = pinnedName.includes(filterValue);
 
-            if (!pinnedName.includes(filterValue)) {
+            if (!matchesFilter) {
                 return loaded;
             }
         }
 
-        // Pin current site at the top; remove it from the sorted list to avoid duplicates
-        const withoutPinned = loaded.filter((s) => s.identifier !== pinned.identifier);
+        // Filter out pinned from loaded to avoid duplicates, then prepend pinned
+        const filtered = loaded.filter((s) => s.identifier !== pinned.identifier);
 
-        return [pinned, ...withoutPinned];
+        return [pinned, ...filtered];
     });
 
     /**
@@ -443,16 +466,42 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     }
 
     /**
-     * Sets sites with automatic sorting by name
+     * Sets sites with hierarchical tree-order sorting so parent sites always precede
+     * their children. Within each level siblings are sorted alphabetically by hostname.
+     *
+     * Sort key: `(parentPath + hostname).toLowerCase()`
+     *
+     * Because `parentPath` for a root site is `"/"` and for a child is
+     * `"/parentHostname/"`, the combined key naturally groups each parent with its
+     * subtree before the next root-level sibling:
+     *
+     *   `"/alpha.com"` → root alpha.com
+     *   `"/alpha.com/child.com"` → child of alpha (sorts right after alpha)
+     *   `"/beta.com"` → root beta.com  (sorts after the whole alpha subtree)
      *
      * @private
      * @param sites The sites to set
      */
     private setSites(sites: DotSite[]): void {
-        const sorted = [...sites].sort((a, b) =>
-            (a.hostname || '').localeCompare(b.hostname || '', undefined, { sensitivity: 'base' })
-        );
+        const sorted = [...sites].sort((a, b) => {
+            const keyA = ((a.parentPath ?? '/') + (a.hostname ?? '')).toLowerCase();
+            const keyB = ((b.parentPath ?? '/') + (b.hostname ?? '')).toLowerCase();
+            return keyA.localeCompare(keyB);
+        });
         patchState(this.$state, { sites: sorted });
+    }
+
+    /**
+     * Computes the nesting depth of a site from its `parentPath`.
+     *
+     * Root-level sites (`parentPath === "/"`) have depth 0.
+     * Each additional path segment adds 1 to the depth.
+     *
+     * @param site The site whose depth to compute
+     * @returns Nesting depth (0 for root sites)
+     */
+    getSiteDepth(site: DotSite): number {
+        return (site.parentPath ?? '/').split('/').filter(Boolean).length;
     }
 
     /**

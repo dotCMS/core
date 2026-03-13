@@ -231,7 +231,7 @@ export class DotContentDriveShellComponent {
                 data: {
                     type: 'folder',
                     path: contentlet.path,
-                    hostname: this.#store.currentSite()?.hostname,
+                    hostname: this.#store.browseHostname() || this.#store.currentSite()?.hostname,
                     id: contentlet.identifier,
                     fromTable: true
                 },
