@@ -149,7 +149,9 @@ describe('DotSiteComponent', () => {
 
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 2,
-                per_page: 40
+                per_page: 40,
+                live: false,
+                system: true
             });
         });
 
@@ -422,6 +424,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'example'
             });
         }));
@@ -442,6 +446,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'example'
             });
 
@@ -468,6 +474,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 2,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'example'
             });
         }));
@@ -496,7 +504,9 @@ describe('DotSiteComponent', () => {
             expect(input.value).toBe('');
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
-                per_page: 40
+                per_page: 40,
+                live: false,
+                system: true
             });
         }));
 
@@ -510,6 +520,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'demo'
             });
         }));
@@ -521,6 +533,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'example'
             });
         }));
@@ -581,6 +595,30 @@ describe('DotSiteComponent', () => {
             expect(spectator.component.placeholder()).toBe('');
             expect(spectator.component.class()).toBe('w-full');
             expect(spectator.component.id()).toBe('');
+            expect(spectator.component.showSystemHost()).toBe(true);
+        });
+
+        it('should pass system: false to getSites when showSystemHost is false', () => {
+            spectator = createComponent({ detectChanges: false });
+            siteService = spectator.inject(DotSiteService, true);
+            siteService.getSites.mockReturnValue(
+                of({ sites: mockSites, pagination: mockPagination })
+            );
+
+            spectator.setInput('showSystemHost', false);
+            spectator.detectChanges();
+
+            expect(siteService.getSites).toHaveBeenCalledWith(
+                expect.objectContaining({ system: false })
+            );
+        });
+
+        it('should pass system: true to getSites when showSystemHost is true (default)', () => {
+            spectator.detectChanges();
+
+            expect(siteService.getSites).toHaveBeenCalledWith(
+                expect.objectContaining({ system: true })
+            );
         });
 
         it('should trigger ControlValueAccessor onChange when model signal changes', () => {
@@ -695,9 +733,9 @@ describe('DotSiteComponent', () => {
             expect(options.length).toBe(2);
         });
 
-        it('should show pinnedOption at the top of $options', () => {
-            const pinned = mockSites[0];
-            const loadedSites = [mockSites[1], mockSites[2]];
+        it('should insert pinnedOption in alphabetical order when not in loaded sites', () => {
+            const pinned = mockSites[0]; // example.com
+            const loadedSites = [mockSites[1], mockSites[2]]; // [demo.com, test.com]
 
             patchState(spectator.component.$state, {
                 pinnedOption: pinned,
@@ -707,12 +745,15 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const options = spectator.component.$options();
-            expect(options[0]).toEqual(pinned);
+            expect(options).toHaveLength(3);
+            // example.com sorts after demo.com — verify it appears in options at its alphabetical position
+            const pinnedIndex = options.findIndex((s) => s.identifier === pinned.identifier);
+            expect(pinnedIndex).toBe(1); // demo.com(0) < example.com(1) < test.com(2)
         });
 
-        it('should filter out pinnedOption from loaded options to avoid duplicates', () => {
-            const pinned = mockSites[0];
-            // Loaded sites include the pinned option (duplicate)
+        it('should not duplicate pinnedOption when it is already in the loaded sites', () => {
+            const pinned = mockSites[0]; // example.com
+            // Loaded sites already include the pinned option
             const loadedSites = [mockSites[0], mockSites[1], mockSites[2]];
 
             patchState(spectator.component.$state, {
@@ -723,11 +764,10 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
-            // Should have pinned at top, then only demo.com and test.com (example.com filtered out)
-            expect(select.options[0]).toEqual(pinned);
+            // Pinned is in loaded list — return loaded as-is (no injection needed)
             expect(select.options.length).toBe(3);
 
-            // Verify example.com only appears once (as pinned)
+            // Verify example.com appears only once
             const exampleCount = select.options.filter((s) => s.identifier === 'site1').length;
             expect(exampleCount).toBe(1);
         });
@@ -779,7 +819,7 @@ describe('DotSiteComponent', () => {
         }));
 
         it('should show pinnedOption when filter is cleared', fakeAsync(() => {
-            const pinned = mockSites[0];
+            const pinned = mockSites[0]; // example.com
 
             patchState(spectator.component.$state, {
                 pinnedOption: pinned,
@@ -797,7 +837,8 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
-            expect(select.options[0]).toEqual(pinned);
+            // Pinned is already in the reloaded list — it appears in its alphabetical position
+            expect(select.options.find((s) => s.identifier === pinned.identifier)).toBeTruthy();
         }));
 
         it('should handle case-insensitive filter matching for pinnedOption', fakeAsync(() => {
@@ -818,7 +859,8 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
-            expect(select.options[0]).toEqual(pinned);
+            // EXAMPLE.COM matches the 'example' filter case-insensitively and is inserted alphabetically
+            expect(select.options.find((s) => s.identifier === 'site99')).toBeTruthy();
         }));
     });
 
@@ -866,7 +908,9 @@ describe('DotSiteComponent', () => {
             expect(spectator.component.$state.filterValue()).toBe('');
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
-                per_page: 40
+                per_page: 40,
+                live: false,
+                system: true
             });
         }));
 
@@ -950,7 +994,9 @@ describe('DotSiteComponent', () => {
             // Should use pageSize when last is undefined
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
-                per_page: 40
+                per_page: 40,
+                live: false,
+                system: true
             });
         });
 
@@ -1071,9 +1117,9 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         expect(hostSpectator.component.$state.pinnedOption()).toBeNull();
     }));
 
-    it('should show pinnedOption at the top of $options when writeValue is called', fakeAsync(() => {
-        const testValue = mockSites[0].identifier;
-        const loadedSites = [mockSites[1], mockSites[2]];
+    it('should include pinnedOption in $options when writeValue is called', fakeAsync(() => {
+        const testValue = mockSites[0].identifier; // example.com
+        const loadedSites = [mockSites[1], mockSites[2]]; // [demo.com, test.com]
 
         patchState(hostSpectator.component.$state, { sites: loadedSites });
         hostComponent.siteControl.setValue(testValue);
@@ -1082,8 +1128,10 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         hostSpectator.detectChanges();
 
         const options = hostSpectator.component.$options();
-        expect(options[0]).toEqual(mockSites[0]);
         expect(options.length).toBe(3);
+        // example.com is inserted alphabetically: demo.com(0) < example.com(1) < test.com(2)
+        const pinnedIndex = options.findIndex((s) => s.identifier === mockSites[0].identifier);
+        expect(pinnedIndex).toBe(1);
     }));
 
     it('should handle null value from FormControl', fakeAsync(() => {

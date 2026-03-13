@@ -10,6 +10,7 @@ import {
     inject,
     signal,
     effect,
+    untracked,
     forwardRef,
     computed,
     OnInit,
@@ -122,6 +123,21 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     disabled = input<boolean>(false);
 
     /**
+     * Version counter that triggers a full site list reload when it changes.
+     * Pass `globalStore.siteListVersion()` here so the dropdown reacts to backend
+     * site events (SAVE_SITE, PUBLISH_SITE, etc.) without needing direct WebSocket access.
+     * Defaults to 0 — the initial value does NOT trigger a reload (ngOnInit handles the first load).
+     */
+    reload = input<number>(0);
+
+    /**
+     * Whether to include the SYSTEM_HOST site in the dropdown list.
+     * Defaults to `true` (show it). Set to `false` to hide it — e.g. in the toolbar
+     * where the system host is not a valid selection context.
+     */
+    showSystemHost = input<boolean>(true);
+
+    /**
      * Two-way model binding for the selected site.
      * Accepts a string (site identifier), a DotSite object, or null if no site is selected.
      * Used to drive the currently selected value in the dropdown.
@@ -186,7 +202,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     /**
      * Computed options for the select dropdown.
      * Combines pinned option (if any) with lazy-loaded options.
-     * The pinned option is always at the top and filtered out from the lazy-loaded list to avoid duplicates.
+     * The pinned option is inserted in alphabetical order so the list stays sorted after site switches.
      */
     $options = computed<DotSite[]>(() => {
         const loaded = this.$state.sites();
@@ -201,17 +217,32 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         // If filtering, only show pinned if it matches the filter
         if (filterValue) {
             const pinnedName = pinned.hostname.toLowerCase();
-            const matchesFilter = pinnedName.includes(filterValue);
 
-            if (!matchesFilter) {
+            if (!pinnedName.includes(filterValue)) {
                 return loaded;
             }
         }
 
-        // Filter out pinned from loaded to avoid duplicates, then prepend pinned
-        const filtered = loaded.filter((s) => s.identifier !== pinned.identifier);
+        // If pinned is already in the loaded list, no need to inject it
+        if (loaded.some((s) => s.identifier === pinned.identifier)) {
+            return loaded;
+        }
 
-        return [pinned, ...filtered];
+        // Insert pinned in its alphabetical position so order stays consistent
+        const result = [...loaded];
+        const insertAt = result.findIndex(
+            (s) =>
+                (s.hostname || '').localeCompare(pinned.hostname || '', undefined, {
+                    sensitivity: 'base'
+                }) > 0
+        );
+        if (insertAt === -1) {
+            result.push(pinned);
+        } else {
+            result.splice(insertAt, 0, pinned);
+        }
+
+        return result;
     });
 
     /**
@@ -260,6 +291,23 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
                 error: () => {
                     patchState(this.$state, { pinnedOption: null, loading: false });
                 }
+            });
+        });
+
+        // Reload effect — resets the lazy-loaded sites list when the version counter changes.
+        // The initial value (0) is intentionally skipped: ngOnInit handles the first load.
+        // untracked() prevents onLazyLoad's internal signal reads (sites, totalRecords) from
+        // being tracked as dependencies of this effect, which would cause an infinite loop.
+        effect(() => {
+            const version = this.reload();
+            if (version === 0) {
+                return;
+            }
+
+            untracked(() => {
+                this.loadedPages.clear();
+                patchState(this.$state, { sites: [], totalRecords: 0, filterValue: '' });
+                this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
             });
         });
     }
@@ -417,7 +465,7 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
      */
     private setSites(sites: DotSite[]): void {
         const sorted = [...sites].sort((a, b) =>
-            (a.hostname || '').localeCompare(b.hostname || '')
+            (a.hostname || '').localeCompare(b.hostname || '', undefined, { sensitivity: 'base' })
         );
         patchState(this.$state, { sites: sorted });
     }
@@ -585,6 +633,8 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             .getSites({
                 page: pageToLoad,
                 per_page: this.pageSize,
+                live: false,
+                system: this.showSystemHost(),
                 ...(filter ? { filter } : {})
             })
             .subscribe({
