@@ -276,6 +276,7 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public void createIndex(String indexName) throws DotStateException, IOException {
+        System.out.println("Creating index no settings: " + indexName);
         if (isMigrationComplete()) {
             osImpl.createIndex(indexName);
         }
@@ -285,6 +286,7 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public CreateIndexStatus createIndex(String indexName, int shards)
             throws DotStateException, IOException {
+        System.out.println("Creating index with shards : " + indexName);
         if (isMigrationComplete()) {
            return osImpl.createIndex(indexName, shards);
         }
@@ -302,6 +304,9 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public CreateIndexStatus createIndex(String indexName, String settings, int shards)
             throws IOException {
+
+        System.out.println("Creating index With settings and shards: " + indexName);
+
         if (isMigrationComplete()) {
             return osImpl.createIndex(indexName, settings, shards);
         }

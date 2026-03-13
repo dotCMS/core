@@ -11,7 +11,6 @@ package com.dotcms.enterprise.publishing.sitesearch;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
-import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
@@ -38,6 +37,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -74,14 +74,14 @@ import org.quartz.SchedulerException;
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
     private final IndexAPI indexApi;
-    private final ContentIndexMappingAPI mappingAPI;
+    private final ESMappingAPIImpl mappingAPI;
     private final IndiciesAPI indiciesAPI;
     private ArrayList<Object> list;
     private int indexPosition;
 
     @VisibleForTesting
     public ESSiteSearchAPI(final IndexAPI indexApi,
-            final ContentIndexMappingAPI mappingAPI,
+            final ESMappingAPIImpl mappingAPI,
             final IndiciesAPI indiciesAPI) {
         this.indexApi = indexApi;
         this.mappingAPI = mappingAPI;
@@ -89,7 +89,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     public ESSiteSearchAPI() {
-       this(APILocator.getESIndexAPI(), APILocator.getContentMappingAPI(), APILocator.getIndiciesAPI());
+       this(APILocator.getESIndexAPI(), new ESMappingAPIImpl(), APILocator.getIndiciesAPI());
     }
 
     /**
@@ -721,8 +721,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         indicesToRemove.removeAll(listOfIndicesWithAlias);
 
         //Remove Indices which were created in the last day from the list of indicesToRemove
-        final Date yesterdayDate = Date.from(Instant.now().minus(Duration.ofDays(1)));
-        final String yesterdayDateTimestamp = ContentletIndexAPIImpl.timestampFormatter.format(yesterdayDate);
+        //final Date yesterdayDate = Date.from(Instant.now().minus(Duration.ofDays(1)));
+        final LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+        final String yesterdayDateTimestamp = ContentletIndexAPIImpl.timestampFormatter.format(yesterday);
         final long yesterdayDateLong = Long.parseLong(yesterdayDateTimestamp);
 
         final List<String> listOfIndicesCreatedInTheLast24Hours = new ArrayList<>();

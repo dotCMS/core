@@ -1,6 +1,7 @@
 package com.dotcms.content.index.opensearch;
 
 import com.dotcms.cdi.CDIUtils;
+import com.dotcms.content.elasticsearch.business.MappingOperationsES;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexMappingRestOperations;
 import com.dotmarketing.util.Logger;
@@ -90,11 +91,12 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
 
     @Override
     public String getMapping(final String index) throws IOException {
+        final String prefixed = osIndexAPI.getNameWithClusterIDPrefix(index);
         final GetMappingResponse response = clientProvider.getClient()
                 .indices()
-                .getMapping(r -> r.index(index));
+                .getMapping(r -> r.index(prefixed));
 
-        final IndexMappingRecord record = response.get(index);
+        final IndexMappingRecord record = response.get(prefixed);
         if (record == null) {
             return "{}";
         }
@@ -112,11 +114,12 @@ public class MappingOperationsOS implements IndexMappingRestOperations {
     @Override
     public Map<String, Object> getFieldMappingAsMap(final String index,
             final String fieldName) throws IOException {
+        final String prefixed = osIndexAPI.getNameWithClusterIDPrefix(index);
         final GetFieldMappingResponse response = clientProvider.getClient()
                 .indices()
-                .getFieldMapping(r -> r.index(index).fields(fieldName));
+                .getFieldMapping(r -> r.index(prefixed).fields(fieldName));
 
-        final TypeFieldMappings typeMappings = response.get(index);
+        final TypeFieldMappings typeMappings = response.get(prefixed);
         if (typeMappings == null) {
             return Collections.emptyMap();
         }

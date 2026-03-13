@@ -142,7 +142,7 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 	};
 
 	// if you want to limit the size of the field `metadata.content`
-	// it can be accomplished by setting this property to the number of chars desired
+	// it can be achieved by setting this property to the number of chars desired
 	// by default it'll attempt to include the whole thing returned by the FileMetadataAPI
 	public static final String INDEX_METADATA_CONTENT_LENGTH = "index.metadata.content.length";
 
@@ -197,6 +197,31 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 			final RoleAPI roleAPI,
 			final Supplier<ContentTypeAPI> contentTypeAPI,
 			final Supplier<WorkflowAPI> workflowAPI) {
+		this(userAPI, folderAPI, identifierAPI, versionableAPI, permissionAPI, contentletAPI,
+				fileMetadataAPI, hostAPI, fieldAPI, relationshipAPI, tagAPI, categoryAPI, roleAPI,
+				contentTypeAPI, workflowAPI,
+				new MappingOperationsES(),
+				CDIUtils.getBeanThrows(MappingOperationsOS.class));
+	}
+
+	private ESMappingAPIImpl(
+			final UserAPI userAPI,
+			final FolderAPI folderAPI,
+			final IdentifierAPI identifierAPI,
+			final VersionableAPI versionableAPI,
+			final PermissionAPI permissionAPI,
+			final ContentletAPI contentletAPI,
+			final FileMetadataAPI fileMetadataAPI,
+			final HostAPI hostAPI,
+			final FieldAPI fieldAPI,
+			final RelationshipAPI relationshipAPI,
+			final TagAPI tagAPI,
+			final CategoryAPI categoryAPI,
+			final RoleAPI roleAPI,
+			final Supplier<ContentTypeAPI> contentTypeAPI,
+			final Supplier<WorkflowAPI> workflowAPI,
+			final IndexMappingRestOperations esOps,
+			final IndexMappingRestOperations osOps) {
 		this.userAPI = userAPI;
 		this.folderAPI = folderAPI;
 		this.identifierAPI = identifierAPI;
@@ -212,8 +237,41 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 		this.roleAPI = roleAPI;
 		this.contentTypeAPI = contentTypeAPI;
 		this.workflowAPI = workflowAPI;
-		this.esOps = new MappingOperationsES();
-		this.osOps = CDIUtils.getBeanThrows(MappingOperationsOS.class);
+		this.esOps = esOps;
+		this.osOps = osOps;
+	}
+
+	/**
+	 * Creates an {@link ESMappingAPIImpl} that always routes REST mapping operations
+	 * ({@code putMapping}, {@code getMapping}, {@code getFieldMappingAsMap}) through the provided
+	 * {@code osOps} delegate, regardless of the current migration phase.
+	 *
+	 * <p>Intended exclusively for integration tests that target a live OpenSearch container.
+	 * All other dependencies are resolved from {@link APILocator}.</p>
+	 *
+	 * @param osOps the OpenSearch {@link IndexMappingRestOperations} to use for both delegates
+	 * @return a fully-wired {@link ESMappingAPIImpl} forced to route to OpenSearch
+	 */
+	@VisibleForTesting
+	public static ESMappingAPIImpl usingOS(final IndexMappingRestOperations osOps) {
+		return new ESMappingAPIImpl(
+				APILocator.getUserAPI(),
+				APILocator.getFolderAPI(),
+				APILocator.getIdentifierAPI(),
+				APILocator.getVersionableAPI(),
+				APILocator.getPermissionAPI(),
+				APILocator.getContentletAPI(),
+				APILocator.getFileMetadataAPI(),
+				APILocator.getHostAPI(),
+				APILocator.getFieldAPI(),
+				APILocator.getRelationshipAPI(),
+				APILocator.getTagAPI(),
+				APILocator.getCategoryAPI(),
+				APILocator.getRoleAPI(),
+				Lazy.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())),
+				Lazy.of(APILocator::getWorkflowAPI),
+				osOps,
+				osOps);
 	}
 
 	public ESMappingAPIImpl() {

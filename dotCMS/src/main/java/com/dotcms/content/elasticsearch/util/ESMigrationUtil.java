@@ -33,7 +33,7 @@ public class ESMigrationUtil {
 	 */
 	public void migrateStructure(Structure struct) throws DotDataException, DotSecurityException, DotMappingException {
 		
-		new ContentletIndexAPIImpl().checkAndInitialiazeIndex();
+		new ContentletIndexAPIImpl().checkAndInitializeIndex();
 		
 		
 		ContentletAPI capi = APILocator.getContentletAPI();

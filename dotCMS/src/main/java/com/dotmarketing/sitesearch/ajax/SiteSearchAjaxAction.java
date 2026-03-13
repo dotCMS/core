@@ -3,6 +3,7 @@ package com.dotmarketing.sitesearch.ajax;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -114,7 +115,8 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			Logger.warn(this, e.getMessage(), e);
 		}
 
-		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format(new Date());
+		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format(
+                LocalDateTime.now());
 		APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
 
 		if(def)
