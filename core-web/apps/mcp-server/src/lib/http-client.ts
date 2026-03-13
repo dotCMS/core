@@ -75,6 +75,18 @@ export function createApiAdapter(): Adapter {
             const method = (options.method || 'GET').toUpperCase();
             const urlPath = options.path || '/';
 
+            // Validate that the path is a relative path and cannot override the base URL
+            if (!urlPath.startsWith('/')) {
+                throw new Error("options.path must be a relative path starting with '/'");
+            }
+            // Explicitly reject protocol-relative URLs like "//attacker.example/path"
+            if (urlPath.startsWith('//')) {
+                throw new Error("options.path must not be a protocol-relative URL");
+            }
+            // Reject values that look like they start with a URL scheme (e.g. "http:", "https:")
+            if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(urlPath)) {
+                throw new Error("options.path must not be an absolute URL");
+            }
             // Build URL with query params
             const url = new URL(urlPath, baseUrl);
             if (options.query) {
