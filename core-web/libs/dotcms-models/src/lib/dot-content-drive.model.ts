@@ -1,6 +1,21 @@
-import { LazyLoadEvent } from 'primeng/api';
-
 import { DotCMSContentlet } from './dot-contentlet.model';
+
+/**
+ * Pagination/sort/filter event shape compatible with PrimeNG's LazyLoadEvent.
+ * Defined locally so dotcms-models does not depend on primeng; consumers can pass
+ * a real LazyLoadEvent from p-table/p-dataView.
+ */
+export interface DotContentDriveLazyLoadEvent {
+    first?: number;
+    last?: number;
+    rows?: number;
+    sortField?: string;
+    sortOrder?: number;
+    multiSortMeta?: Array<{ field: string; order: number }>;
+    filters?: Record<string, { value?: unknown; matchMode?: string; operator?: string }>;
+    globalFilter?: unknown;
+    forceUpdate?: () => void;
+}
 
 export interface DotContentDriveFolder {
     __icon__: 'folderIcon';
@@ -32,9 +47,9 @@ export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
 
 /**
  * Pagination event emitted by the folder list view,
- * extending PrimeNG's LazyLoadEvent with a resolved 1-indexed page number.
+ * extending the lazy-load event shape with a resolved 1-indexed page number.
  */
-export type DotContentDrivePaginateEvent = LazyLoadEvent & { page: number };
+export type DotContentDrivePaginateEvent = DotContentDriveLazyLoadEvent & { page: number };
 
 /**
  * Interface representing data needed for context menu interactions

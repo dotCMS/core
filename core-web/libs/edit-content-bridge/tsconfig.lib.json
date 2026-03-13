@@ -3,10 +3,10 @@
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
         "declaration": true,
-        "module": "ESNext",
+        "module": "preserve",
         "moduleResolution": "bundler",
         "target": "ES2015",
-        "lib": ["es2020", "dom"],
+        "lib": ["dom", "es2022"],
         "types": ["node", "vite/client"],
         "skipLibCheck": true,
         "noPropertyAccessFromIndexSignature": false,
