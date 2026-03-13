@@ -26,21 +26,24 @@ public class PushBundleForm extends Validated {
     private static final Set<String> VALID_OPERATIONS = Set.of("publish", "expire", "publishexpire");
 
     @Schema(
-            description = "Operation type: publish, expire, or publishexpire",
+            description = "Operation type: publish, expire, or publishexpire. Case-insensitive (PUBLISH, Publish, publish all accepted).",
             example = "publish",
-            requiredMode = Schema.RequiredMode.REQUIRED
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            allowableValues = {"publish", "expire", "publishexpire"}
     )
     private String operation;
 
     @Schema(
-            description = "Scheduled publish date in ISO 8601 format with timezone offset",
-            example = "2025-03-15T14:30:00-05:00"
+            description = "Scheduled publish date in ISO 8601 format with timezone offset (required for publish/publishexpire)",
+            example = "2025-03-15T14:30:00-05:00",
+            format = "date-time"
     )
     private String publishDate;
 
     @Schema(
-            description = "Scheduled expire date in ISO 8601 format with timezone offset",
-            example = "2025-04-15T14:30:00-05:00"
+            description = "Scheduled expire date in ISO 8601 format with timezone offset (required for expire/publishexpire)",
+            example = "2025-04-15T14:30:00-05:00",
+            format = "date-time"
     )
     private String expireDate;
 
