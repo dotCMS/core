@@ -523,6 +523,29 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
+     * Add the editor page script to VTL pages
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addEditorPageScript(rendered = ''): string {
+        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
+        const bodyExists = rendered.includes('</body>');
+
+        /*
+         * For advance template case. It might not include `body` tag.
+         */
+        if (!bodyExists) {
+            return rendered + scriptString;
+        }
+
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
+
+        return updatedRendered;
+    }
+
+    /**
      * Add custom styles to the rendered content
      *
      * @param {string} rendered
@@ -577,8 +600,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
         const origin = this.window.location.origin;
         const fileWithBase = injectBaseTag({ html, url, origin });
+        const fileWithScript = this.addEditorPageScript(fileWithBase);
+        const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
 
-        return this.addCustomStyles(fileWithBase);
+        return fileWithStylesAndScript;
     }
 
     ngOnDestroy(): void {
