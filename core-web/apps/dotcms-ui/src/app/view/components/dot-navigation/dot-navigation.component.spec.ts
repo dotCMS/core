@@ -1,5 +1,5 @@
 import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
-import { EMPTY, of } from 'rxjs';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -14,7 +14,7 @@ import {
     DotRouterService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
@@ -63,10 +63,6 @@ describe('DotNavigationComponent collapsed', () => {
                 useValue: { getSystemConfig: () => of({}) }
             },
             GlobalStore,
-            mockProvider(DotcmsEventsService, {
-                subscribeTo: jest.fn().mockReturnValue(EMPTY),
-                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
-            }),
             provideHttpClient(),
             provideHttpClientTesting()
         ]
@@ -254,10 +250,6 @@ describe('DotNavigationComponent expanded', () => {
                 useValue: { getSystemConfig: () => of({}) }
             },
             GlobalStore,
-            mockProvider(DotcmsEventsService, {
-                subscribeTo: jest.fn().mockReturnValue(EMPTY),
-                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
-            }),
             provideHttpClient(),
             provideHttpClientTesting()
         ]

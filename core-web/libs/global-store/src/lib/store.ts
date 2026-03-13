@@ -20,7 +20,6 @@ import { DotSite } from '@dotcms/dotcms-models';
 
 import { withBreadcrumbs } from './features/breadcrumb/breadcrumb.feature';
 import { withMenu } from './features/menu/with-menu.feature';
-import { withSiteEvents } from './features/with-site-events/with-site-events.feature';
 import { withSystem } from './features/with-system/with-system.feature';
 import { withUser } from './features/with-user/with-user.feature';
 
@@ -159,7 +158,6 @@ export const GlobalStore = signalStore(
     }),
     withUser(),
     withMenu(),
-    withFeature(({ siteDetails, setCurrentSite }) => withSiteEvents(siteDetails, setCurrentSite)),
     withFeature(({ menuItemsEntities }) => withBreadcrumbs(menuItemsEntities)),
     withHooks({
         /**

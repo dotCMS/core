@@ -1,5 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { EMPTY } from 'rxjs';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -8,7 +7,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotSystemConfigService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -42,10 +40,6 @@ describe('DotSubNavComponent', () => {
                 useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
             },
             GlobalStore,
-            mockProvider(DotcmsEventsService, {
-                subscribeTo: jest.fn().mockReturnValue(EMPTY),
-                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
-            }),
             provideHttpClient(),
             provideHttpClientTesting()
         ]

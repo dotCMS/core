@@ -132,8 +132,7 @@ describe('DotToolbarComponent', () => {
             }),
             mockProvider(GlobalStore, {
                 setCurrentSite: jest.fn(),
-                siteDetails: jest.fn().mockReturnValue(siteMock),
-                siteListVersion: jest.fn().mockReturnValue(0)
+                siteDetails: jest.fn().mockReturnValue(siteMock)
             }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             { provide: SiteService, useValue: siteServiceMock },

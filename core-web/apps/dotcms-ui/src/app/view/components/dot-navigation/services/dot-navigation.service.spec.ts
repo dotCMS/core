@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { EMPTY, Observable, of, Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -94,10 +94,6 @@ class DotcmsEventsServiceMock {
 
     subscribeTo() {
         return this._events;
-    }
-
-    subscribeToEvents() {
-        return EMPTY;
     }
 
     trigger() {

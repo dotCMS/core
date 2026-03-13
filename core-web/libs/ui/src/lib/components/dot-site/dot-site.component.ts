@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     model,
     output,
     input,
@@ -18,6 +19,7 @@ import {
     ViewChild,
     HostListener
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
 import { IconFieldModule } from 'primeng/iconfield';
@@ -26,6 +28,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
 
 import { DotSiteService } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotSite } from '@dotcms/dotcms-models';
 
 interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
@@ -94,6 +97,8 @@ interface DotSiteState {
 })
 export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy {
     private siteService = inject(DotSiteService);
+    readonly #eventsService = inject(DotcmsEventsService);
+    readonly #destroyRef = inject(DestroyRef);
 
     @HostListener('focus')
     onHostFocus(): void {
@@ -301,6 +306,25 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         if (this.$state.sites().length === 0) {
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
+
+        this.#eventsService
+            .subscribeToEvents([
+                'SAVE_SITE',
+                'PUBLISH_SITE',
+                'UN_ARCHIVE_SITE',
+                'UPDATE_SITE',
+                'UPDATE_SITE_PERMISSIONS',
+                'ARCHIVE_SITE',
+                'SWITCH_SITE'
+            ])
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
+                untracked(() => {
+                    this.loadedPages.clear();
+                    patchState(this.$state, { sites: [], totalRecords: 0, filterValue: '' });
+                    this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
+                });
+            });
     }
 
     ngOnDestroy(): void {

@@ -7,7 +7,7 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -18,6 +18,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Select, SelectLazyLoadEvent } from 'primeng/select';
 
 import { DotSiteService } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotPagination, DotSite } from '@dotcms/dotcms-models';
 
 import { DotSiteComponent } from './dot-site.component';
@@ -65,7 +66,14 @@ describe('DotSiteComponent', () => {
     const createComponent = createComponentFactory({
         component: DotSiteComponent,
         imports: [ReactiveFormsModule],
-        providers: [mockProvider(DotSiteService), provideHttpClient(), provideHttpClientTesting()]
+        providers: [
+            mockProvider(DotSiteService),
+            mockProvider(DotcmsEventsService, {
+                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
+            }),
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
     });
 
     beforeEach(() => {
@@ -1061,7 +1069,14 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         component: DotSiteComponent,
         host: FormHostComponent,
         imports: [ReactiveFormsModule],
-        providers: [mockProvider(DotSiteService), provideHttpClient(), provideHttpClientTesting()],
+        providers: [
+            mockProvider(DotSiteService),
+            mockProvider(DotcmsEventsService, {
+                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
+            }),
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
         detectChanges: false
     });
 

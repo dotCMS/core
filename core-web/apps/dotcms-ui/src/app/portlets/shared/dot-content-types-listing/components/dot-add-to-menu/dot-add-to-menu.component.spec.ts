@@ -1,4 +1,4 @@
-import { EMPTY, of } from 'rxjs';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -8,7 +8,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
-import { CoreWebService, DotcmsEventsService } from '@dotcms/dotcms-js';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import {
     CoreWebServiceMock,
@@ -132,13 +132,6 @@ describe('DotAddToMenuComponent', () => {
                     useValue: { getSystemConfig: () => of({}) }
                 },
                 GlobalStore,
-                {
-                    provide: DotcmsEventsService,
-                    useValue: {
-                        subscribeTo: jest.fn().mockReturnValue(EMPTY),
-                        subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
-                    }
-                },
                 provideHttpClient(),
                 provideHttpClientTesting(),
                 DotNavigationService

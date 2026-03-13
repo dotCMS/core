@@ -1,5 +1,5 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { EMPTY, of } from 'rxjs';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -11,7 +11,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCurrentUserService, DotSystemConfigService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { MenuGroup } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
@@ -138,10 +137,6 @@ describe('DotNavItemComponent', () => {
                 useValue: { getSystemConfig: () => of({}) }
             },
             GlobalStore,
-            mockProvider(DotcmsEventsService, {
-                subscribeTo: jest.fn().mockReturnValue(EMPTY),
-                subscribeToEvents: jest.fn().mockReturnValue(EMPTY)
-            }),
             provideHttpClient(),
             provideHttpClientTesting()
         ],
