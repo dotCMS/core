@@ -58,14 +58,14 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     private final Lazy<Path> PUBLISHING_FILTERS_FOLDER = Lazy.of(() -> Path.of(APILocator.getFileAssetAPI().getRealAssetsRootPath(), "server" , "publishing-filters" ));
 
     @Override
-    public final PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
+    public PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
 
         return publish( config, new PublishStatus() );
     }
 
     @CloseDBIfOpened
     @Override
-    public final PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException {
+    public PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException {
 
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 

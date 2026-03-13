@@ -1,14 +1,14 @@
 package com.dotmarketing.db;
 
 
-import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotcms.business.interceptor.ExternalTransactionHandler;
+import com.dotcms.business.interceptor.WrapInTransactionHandler;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import io.vavr.control.Try;
 
 import java.sql.Connection;
@@ -46,39 +46,8 @@ public class LocalTransaction {
      */
     static public <T> T externalizeTransaction(final ReturnableDelegate<T> delegate)
             throws Exception {
-        T result = null;
-        // gets the current conn
-        final Connection currentConnection = DbConnectionFactory.getConnection();
-        final Session currentSession = HibernateUtil.getSession();
-        // creates a new one
-        final Connection newTransactionConnection = DbConnectionFactory.getDataSource()
-                .getConnection();
-
-        // overrides the current thread
-        DbConnectionFactory.setConnection(newTransactionConnection);
-        final Session newSession = HibernateUtil.createNewSession(newTransactionConnection);
-        HibernateUtil.setSession(newSession);
-
-        HibernateUtil.startTransaction();
-
-        try {
-            final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
-            result = delegate.execute();
-            handleTransactionInteruption(newTransactionConnection, threadStack);
-            HibernateUtil.commitTransaction();
-        } catch (Throwable e) {
-
-            HibernateUtil.rollbackTransaction();
-            throwException(e);
-        } finally {
-
-            HibernateUtil.closeSessionSilently();
-            // return the previous conn, if needed
-            HibernateUtil.setSession(currentSession);
-            DbConnectionFactory.setConnection(currentConnection);
-        }
-        return result;
-    } // transaction.
+        return ExternalTransactionHandler.externalizeTransaction(delegate::execute);
+    }
 
     /**
      * @param delegate {@link ReturnableDelegate}
@@ -91,7 +60,7 @@ public class LocalTransaction {
     public static <T> T wrapReturnWithListeners(final ReturnableDelegate<T> delegate)
             throws Exception {
         return wrapReturn(delegate);
-    } // wrapReturn.
+    }
 
 
     /**
@@ -112,34 +81,8 @@ public class LocalTransaction {
      *                          myDBMethod(args); });
      */
     public static <T> T wrapReturn(final ReturnableDelegate<T> delegate) throws Exception {
-
-        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
-        final boolean isLocalTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
-        T result = null;
-
-        try {
-            final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
-            final Connection conn = DbConnectionFactory.getConnection();
-            result = delegate.execute();
-            if (isLocalTransaction) {
-                handleTransactionInteruption(conn, threadStack);
-                HibernateUtil.commitTransaction();
-            }
-        } catch (Throwable e) {
-            handleException(isLocalTransaction, e);
-        } finally {
-
-            if (isLocalTransaction) {
-                DbConnectionFactory.setAutoCommit(true);
-                if (isNewConnection) {
-                    DbConnectionFactory.closeConnection();
-                }
-            }
-        }
-
-        return result;
-    } // wrapReturn.
+        return WrapInTransactionHandler.wrapReturn(delegate::execute);
+    }
 
     /**
      * @param delegate {@link VoidDelegate}
@@ -154,33 +97,14 @@ public class LocalTransaction {
      */
     public static void wrap(final VoidDelegate delegate)
             throws DotDataException, DotSecurityException {
-
-        final boolean isNewConnection = !DbConnectionFactory.connectionExists();
-        final boolean isLocalTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-
         try {
-
-            final StackTraceElement[] threadStack = Thread.currentThread().getStackTrace();
-            final Connection conn = DbConnectionFactory.getConnection();
-            delegate.execute();
-
-            if (isLocalTransaction) {
-                handleTransactionInteruption(conn, threadStack);
-                HibernateUtil.commitTransaction();
-            }
+            WrapInTransactionHandler.wrap(delegate::execute);
+        } catch (DotDataException | DotSecurityException | RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            handleException(isLocalTransaction, e);
-        } finally {
-
-            if (isLocalTransaction) {
-
-                DbConnectionFactory.setAutoCommit(true);
-                if (isNewConnection) {
-                    DbConnectionFactory.closeConnection();
-                }
-            }
+            throw new DotDataException(e.getMessage(), e);
         }
-    } // wrap.
+    }
 
     @SuppressWarnings("unchecked")
     static <T extends Throwable, R> R sneakyThrow(Throwable t) throws T {
@@ -214,15 +138,6 @@ public class LocalTransaction {
             }
         };
     }
-
-
-    private static <T extends Throwable> void handleException(final boolean isLocalTransaction,
-            final Throwable t) throws T, DotDataException {
-        if (isLocalTransaction) {
-            HibernateUtil.rollbackTransaction();
-        }
-        throw (T) t;
-    } // handleException.
 
 
     public static void handleTransactionInteruption(final Connection conn,
