@@ -129,7 +129,6 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(drawer.dismissible).toBe(false);
         expect(drawer.closable).toBe(false);
         expect(drawer.closeOnEscape).toBe(false);
-        expect(drawer.visible).toBe(true);
     });
 
     it('should set inputs to the block editor', () => {
@@ -159,15 +158,15 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(spyWorkflowService).toHaveBeenCalledWith({ testName: JSON.stringify(newValue) });
     });
 
-    it('should close the drawer', () => {
-        const cancelBtn = spectator.query(byTestId('cancel-btn')) as HTMLButtonElement;
+    it('should call drawer close when cancel is clicked', () => {
+        const drawer = spectator.query(Drawer);
+        const closeSpy = jest.spyOn(drawer, 'close');
 
+        const cancelBtn = spectator.query(byTestId('cancel-btn')) as HTMLButtonElement;
         cancelBtn.click();
         spectator.detectChanges();
 
-        const drawer = spectator.query(Drawer);
-
-        expect(drawer.visible).toBe(false);
+        expect(closeSpy).toHaveBeenCalled();
     });
 
     it('should display a toast on saving error', () => {

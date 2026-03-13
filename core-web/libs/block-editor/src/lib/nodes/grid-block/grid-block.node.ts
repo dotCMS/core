@@ -163,6 +163,35 @@ export const GridBlock = Node.create({
 
                 return false;
             },
+            Delete: ({ editor }) => {
+                const { state } = editor;
+                const { $from, empty } = state.selection;
+
+                if (!empty) {
+                    return false;
+                }
+
+                // Find the gridColumn ancestor
+                for (let depth = $from.depth; depth > 0; depth--) {
+                    if ($from.node(depth).type.name === 'gridColumn') {
+                        // Check if cursor is at the very end of the column content.
+                        // $from.pos is inside the deepest node (e.g. paragraph),
+                        // $from.end(depth) is at the end of the column content.
+                        // The difference accounts for closing tokens of nested nodes.
+                        const cursorAtEnd = $from.pos === $from.end($from.depth);
+                        const lastChildInColumn =
+                            $from.index(depth) === $from.node(depth).childCount - 1;
+
+                        if (cursorAtEnd && lastChildInColumn) {
+                            return true;
+                        }
+
+                        return false;
+                    }
+                }
+
+                return false;
+            },
             Tab: ({ editor }) => {
                 const { state } = editor;
                 const { $from } = state.selection;

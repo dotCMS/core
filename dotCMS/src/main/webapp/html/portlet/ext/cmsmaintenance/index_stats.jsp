@@ -94,7 +94,6 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<th><%= LanguageUtil.get(pageContext,"Index-Name") %></th>
 					<th><%= LanguageUtil.get(pageContext,"Created") %></th>
 					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Count") %></th>
-					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Shards") %></th>
 					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Replicas") %></th>
 					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Size") %></th>
 					<th style="text-align: center"><%= LanguageUtil.get(pageContext,"Health") %></th>
@@ -133,7 +132,6 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<td align="center">
 						<%=status !=null ? status.documentCount() : "n/a"%>
 					</td>
-					<td align="center"><%=(health !=null) ? health.numberOfShards() : "n/a"%></td>
 					<td align="center"><%=(health !=null) ? health.numberOfReplicas(): "n/a"%></td>
 					<td align="center"><%=status !=null ? status.size(): "n/a"%></td>
 					<td align="center">

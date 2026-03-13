@@ -771,7 +771,7 @@ public class DbConnectionFactory {
      * @param <T> the return type of the operation
      * @return the result of the operation
      * @throws DotDataException if a database error occurs
-     * @see com.dotmarketing.db.CloseDBIfOpened
+     * @see com.dotcms.business.CloseDBIfOpened
      * @see com.dotmarketing.db.LocalTransaction#wrapReturn
      */
     public static <T> T wrapConnection(final com.dotcms.util.ReturnableDelegate<T> delegate) throws DotDataException {

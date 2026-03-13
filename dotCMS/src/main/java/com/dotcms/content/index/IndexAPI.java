@@ -1,6 +1,7 @@
 package com.dotcms.content.index;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
@@ -264,12 +265,19 @@ public interface IndexAPI {
     List<String> getLiveWorkingIndicesSortedByCreationDateDesc();
 
     /**
-     * Removes the cluster ID prefix from an index or alias name.
-     *
-     * @param name index name or alias with potential cluster prefix
-     * @return name without cluster prefix
+     * Given an alias or index name that might contain a cluster id prefix
+     * (format: <b>{@link IndicesFactory#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>),
+     * this method will return the name without the prefix. In case of name it is null, an empty string
+     * will be returned
+     * @param name Index name or alias with the cluster id prefix
+     * @return Index name or alias without the cluster id prefix
      */
-    String removeClusterIdFromName(String name);
+    default String removeClusterIdFromName(final String name) {
+        if (name == null) return "";
+        return name.contains(".")
+                ? name.substring(name.lastIndexOf(".") + 1)
+                : name;
+    }
 
     /**
      * Gets a list of closed indices.

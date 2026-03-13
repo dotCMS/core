@@ -457,10 +457,17 @@ public class ESIndexAPI implements IndexAPI {
 
 		shards = shards > 0 ? shards : Config.getIntProperty("es.index.number_of_shards", 1);
 
+		if(shards>1){
+			Logger.warn(this.getClass(),"Number of ES shards : " + shards + ". Important to note that the more shards you enable, the slower the index reads.  dotCMS recommends using only 1 shard per replica. ");
+		}
 		Map<String,Object> map  = (settings ==null) ? new HashMap<>() : new ObjectMapper().readValue(settings, LinkedHashMap.class);
 
+
+		String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
+
 		map.put("number_of_shards", shards);
-		map.put("index.auto_expand_replicas", "0-all");
+		map.put("index.auto_expand_replicas", autoExpandReplicas);
+
 		map.putIfAbsent("index.mapping.total_fields.limit", 10000);
 		map.putIfAbsent("index.mapping.nested_fields.limit", 10000);
 		map.putIfAbsent("index.query.default_field", Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
@@ -773,24 +780,6 @@ public class ESIndexAPI implements IndexAPI {
 	    
 
     }
-
-    /**
-     * Given an alias or index name that might contain a cluster id prefix
-     * (format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>),
-     * this method will return the name without the prefix. In case of name is null, an empty string
-     * will be returned
-     * @param name Index name or alias with the cluster id prefix
-     * @return Index name or alias without the cluster id prefix
-     */
-    public String removeClusterIdFromName(final String name) {
-        if(name==null) return "";
-        return name.indexOf(".")>-1 
-                        ? name.substring(name.lastIndexOf(".")+1, name.length()) 
-                        : name;
-
-	}
-
-
 
 	public List<String> getClosedIndexes() {
 
