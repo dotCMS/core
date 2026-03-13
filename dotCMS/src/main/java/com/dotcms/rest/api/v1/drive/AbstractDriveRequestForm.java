@@ -343,6 +343,24 @@ public interface AbstractDriveRequestForm {
     default boolean showFolders(){return true; }
 
     /**
+     * Whether to include direct child hosts (sub-hosts) of the current site in the results.
+     * <p>
+     * When true and browsing at a site root, the response list will include direct child
+     * hosts of the current site as navigable tree nodes, in addition to the site's own
+     * folders and content.  Sub-hosts appear with {@code "type": "site"} and
+     * {@code "isSubHost": true} in each entry.
+     * </p>
+     *
+     * <p>This parameter has no effect when browsing inside a specific folder (i.e. when
+     * the resolved path points to a non-system folder).</p>
+     *
+     * @return true to include direct child host nodes, false to omit them (default)
+     */
+    @JsonProperty("showSubHosts")
+    @Value.Default
+    default boolean showSubHosts() { return false; }
+
+    /**
      * Content cursor: the DB row to start scanning content from (returned as
      * {@code nextContentCursor} in the previous page response).
      * <p>

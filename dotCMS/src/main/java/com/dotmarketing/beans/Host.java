@@ -13,9 +13,13 @@ import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
 import java.io.File;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -60,10 +64,16 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 	public static final String SYSTEM_HOST_NAME = com.dotmarketing.util.StringUtils.camelCaseLower(Host.SYSTEM_HOST);
 
 	public static final String TAG_STORAGE = "tagStorage";
-	
+
     public static final String HOST_VELOCITY_VAR_NAME = "Host";
-    
+
     public static final String EMBEDDED_DASHBOARD = "embeddedDashboard";
+
+    /**
+     * Velocity variable name for the {@code parentHost} {@link com.dotcms.contenttype.model.field.HostFolderField}
+     * that enables nestable hosts. A blank/null value means the host is a top-level host.
+     */
+    public static final String PARENT_HOST_KEY = "parentHost";
 
 	@Override
 	public String getInode() {
@@ -181,8 +191,24 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		if (this.isSystemHost())
 			return null;
 		try {
+			// For nested hosts, the Identifier.hostId points to the parent host.
+			// If it is not the System Host, return that parent host so that
+			// permissions propagate through the host hierarchy.
+			final String myId = this.getIdentifier();
+			if (UtilMethods.isSet(myId)) {
+				final Identifier identifier = APILocator.getIdentifierAPI().find(myId);
+				if (identifier != null
+						&& UtilMethods.isSet(identifier.getHostId())
+						&& !Host.SYSTEM_HOST.equals(identifier.getHostId())) {
+					final Host parentHost = APILocator.getHostAPI()
+							.find(identifier.getHostId(), APILocator.systemUser(), false);
+					if (parentHost != null && UtilMethods.isSet(parentHost.getIdentifier())) {
+						return parentHost;
+					}
+				}
+			}
 			return APILocator.getHostAPI().findSystemHost();
-		} catch (DotDataException e) {
+		} catch (final DotSecurityException e) {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
@@ -202,6 +228,155 @@ public class Host extends Contentlet implements Permissionable,Treeable,Parentab
 		map.put(TAG_STORAGE, tagStorageId);
 	}
 
+    /**
+     * Returns the identifier of the parent host or folder for this host, or {@code null} /
+     * empty string when this is a top-level host.
+     *
+     * @return parent host/folder identifier, or {@code null}
+     */
+    public String getParentHost() {
+        final Object val = map.get(PARENT_HOST_KEY);
+        return val != null ? val.toString() : null;
+    }
+
+    /**
+     * Sets the parent host or folder identifier for this host.  Pass {@code null} or an empty
+     * string to make this a top-level host.
+     *
+     * @param parentHostId identifier of the parent host or folder, or {@code null}
+     */
+    public void setParentHost(final String parentHostId) {
+        map.put(PARENT_HOST_KEY, parentHostId);
+    }
+
+    /**
+     * Returns the fully-qualified absolute base URL for this host.
+     *
+     * <p>For a <strong>top-level</strong> host (one whose {@code Identifier.hostId} equals
+     * {@link #SYSTEM_HOST}), this returns {@code "https://" + getHostname()}.
+     *
+     * <p>For a <strong>nested</strong> host the method climbs the ancestor chain via the
+     * {@code Identifier.hostId} links until it reaches the top-level host, accumulating the
+     * path segment contributed by each intermediate host along the way. The top-level host
+     * provides the domain name; every nested level prepends its folder path (from
+     * {@code Identifier.parentPath}) and its own hostname to the path.
+     *
+     * <p>Cycle detection: if the same identifier UUID is encountered twice during the traversal
+     * a {@link DotRuntimeException} is thrown to prevent an infinite loop caused by corrupted
+     * database state.
+     *
+     * <p>Examples:
+     * <pre>
+     *   Top-level host (dotcms.com)
+     *     → https://dotcms.com
+     *
+     *   nestedHost directly under dotcms.com  (parentPath = /)
+     *     → https://dotcms.com/nestedHost
+     *
+     *   nestedHost2 under folder /en/ in dotcms.com  (parentPath = /en/)
+     *     → https://dotcms.com/en/nestedHost2
+     *
+     *   nestedHost2 under nestedHost1 under dotcms.com  (each parentPath = /)
+     *     → https://dotcms.com/nestedHost1/nestedHost2
+     * </pre>
+     *
+     * @return fully-qualified URL prefix for this host, never {@code null}
+     * @throws DotRuntimeException if a data-access error occurs or a cycle is detected in the
+     *                             ancestor chain
+     */
+    @JsonIgnore
+    public String getAbsoluteBaseUrl() {
+        if (isSystemHost()) {
+            return "";
+        }
+
+        final String myId = this.getIdentifier();
+        if (!UtilMethods.isSet(myId)) {
+            return "https://" + getHostname();
+        }
+
+        try {
+            final Identifier myIdentifier = APILocator.getIdentifierAPI().find(myId);
+            if (myIdentifier == null || !UtilMethods.isSet(myIdentifier.getId())) {
+                return "https://" + getHostname();
+            }
+
+            if (!UtilMethods.isSet(myIdentifier.getHostId())
+                    || Host.SYSTEM_HOST.equals(myIdentifier.getHostId())) {
+                // This is already a top-level host.
+                return "https://" + getHostname();
+            }
+
+            // Nested host: traverse the ancestor chain, collecting the path segment that
+            // each level contributes.  We walk from THIS host upward; for each nested
+            // level we prepend (parentPath-without-leading-slash + hostname + "/") to the
+            // deque.  When we arrive at the top-level host we consume the deque to build
+            // the final URL.
+            final Deque<String> pathSegments = new ArrayDeque<>();
+            final Set<String> visited = new HashSet<>();
+
+            Host current = this;
+            Identifier currentIdent = myIdentifier;
+
+            while (true) {
+                final String currentHostId = current.getIdentifier();
+                if (!visited.add(currentHostId)) {
+                    throw new DotRuntimeException(
+                            "Cycle detected in host ancestor chain at host '"
+                                    + current.getHostname() + "' (id=" + currentHostId + ")");
+                }
+
+                final String parentId = currentIdent.getHostId();
+                if (!UtilMethods.isSet(parentId) || Host.SYSTEM_HOST.equals(parentId)) {
+                    // 'current' is the top-level host — use its hostname as the domain.
+                    final StringBuilder url = new StringBuilder("https://")
+                            .append(current.getHostname());
+                    if (!pathSegments.isEmpty()) {
+                        url.append('/');
+                        for (final String seg : pathSegments) {
+                            url.append(seg);
+                        }
+                        // Remove the trailing slash added by the innermost segment.
+                        if (url.charAt(url.length() - 1) == '/') {
+                            url.setLength(url.length() - 1);
+                        }
+                    }
+                    return url.toString();
+                }
+
+                // Accumulate this host's contribution: strippedParentPath + hostname + "/"
+                final String pPath = currentIdent.getParentPath();
+                final String stripped = (pPath != null && pPath.startsWith("/"))
+                        ? pPath.substring(1)
+                        : (pPath != null ? pPath : "");
+                pathSegments.addFirst(stripped + current.getHostname() + "/");
+
+                // Move up to the direct parent host.
+                final Host parentHost = APILocator.getHostAPI()
+                        .find(parentId, APILocator.systemUser(), false);
+                if (parentHost == null || !UtilMethods.isSet(parentHost.getIdentifier())) {
+                    throw new DotRuntimeException(
+                            "Cannot resolve parent host for id '" + parentId
+                                    + "' while building absolute base URL for host '"
+                                    + getHostname() + "'");
+                }
+                final Identifier parentIdent =
+                        APILocator.getIdentifierAPI().find(parentHost.getIdentifier());
+                if (parentIdent == null || !UtilMethods.isSet(parentIdent.getId())) {
+                    throw new DotRuntimeException(
+                            "Cannot load identifier for parent host '"
+                                    + parentHost.getHostname() + "' (id=" + parentId + ")");
+                }
+                current = parentHost;
+                currentIdent = parentIdent;
+            }
+
+        } catch (final DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(
+                    "Failed to compute absolute base URL for host '" + getHostname() + "': "
+                            + e.getMessage(), e);
+        }
+    }
 
 	@Override
 	public String toString() {

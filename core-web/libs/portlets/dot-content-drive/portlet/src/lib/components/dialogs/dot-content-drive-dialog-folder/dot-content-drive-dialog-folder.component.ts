@@ -63,7 +63,8 @@ export class DotContentDriveDialogFolderComponent {
     #dotMessageService = inject(DotMessageService);
     #dotContentTypeService = inject(DotContentTypeService);
 
-    #hostName = this.#store.currentSite().hostname;
+    // Use browseHostname when set (user is inside a nested host); fall back to currentSite.
+    #hostName = this.#store.browseHostname() || this.#store.currentSite()?.hostname;
 
     $folder = input<DotContentDriveFolder | undefined>(undefined, { alias: 'folder' });
 

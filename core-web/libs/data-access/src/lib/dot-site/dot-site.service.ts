@@ -16,6 +16,12 @@ interface SiteBase {
     identifier: string;
     aliases: string | null;
     archived: boolean;
+    /**
+     * The Identifier parentPath for this site. Top-level sites return `"/"`;
+     * nested sites return the full ancestor path, e.g. `"/en/"`.
+     * Always present in the backend response (defaults to `"/"` for top-level sites).
+     */
+    parentPath: string;
     // The display name property varies between endpoints and is overridden in extending interfaces.
 }
 
@@ -152,6 +158,76 @@ export class DotSiteService {
     }
 
     /**
+     * Archives the specified site (and all its nested descendants when {@code cascade} is true).
+     *
+     * The backend always performs a cascade-archive by default to ensure nested child sites are
+     * archived together with the parent. The caller should show a confirmation dialog before
+     * invoking this method; use {@link countSiteDescendants} to determine whether to include a
+     * cascade-warning in that dialog.
+     *
+     * @param siteId  The identifier of the site to archive.
+     * @param cascade When {@code true} (default), all descendant hosts are archived as well.
+     * @returns An observable emitting the updated {@link DotSite} object after archiving.
+     */
+    archiveSite(siteId: string, cascade = true): Observable<DotSite> {
+        const url = `${BASE_SITE_URL}/${siteId}/_archive${cascade ? '?cascade=true' : ''}`;
+        return this.#http
+            .put<{
+                entity:
+                    | SiteDetailEntity
+                    | { site: SiteDetailEntity; cascade: boolean; descendantsArchived: number };
+            }>(url, null)
+            .pipe(
+                map((response) => {
+                    // When cascade=true the entity is a wrapper object; extract the inner site.
+                    const raw = response.entity;
+                    const siteEntity = ('site' in raw ? raw.site : raw) as SiteDetailEntity;
+                    return this.normalizeSiteDetailEntity(siteEntity);
+                })
+            );
+    }
+
+    /**
+     * Unarchives the specified site (and all its nested descendants when {@code cascade} is true).
+     *
+     * @param siteId  The identifier of the site to unarchive.
+     * @param cascade When {@code true}, all descendant hosts are unarchived as well.
+     *                Defaults to {@code false} to avoid unintentionally reactivating many sites.
+     * @returns An observable emitting the updated {@link DotSite} object after unarchiving.
+     */
+    unarchiveSite(siteId: string, cascade = false): Observable<DotSite> {
+        const url = `${BASE_SITE_URL}/${siteId}/_unarchive${cascade ? '?cascade=true' : ''}`;
+        return this.#http
+            .put<{
+                entity:
+                    | SiteDetailEntity
+                    | { site: SiteDetailEntity; cascade: boolean; descendantsUnarchived: number };
+            }>(url, null)
+            .pipe(
+                map((response) => {
+                    const raw = response.entity;
+                    const siteEntity = ('site' in raw ? raw.site : raw) as SiteDetailEntity;
+                    return this.normalizeSiteDetailEntity(siteEntity);
+                })
+            );
+    }
+
+    /**
+     * Returns the count of nested descendant hosts under the specified site.
+     *
+     * Use this before calling {@link archiveSite} to decide whether to display a cascade-warning
+     * confirmation dialog.  A result of {@code 0} means the site has no nested children.
+     *
+     * @param siteId The identifier of the site.
+     * @returns An observable emitting the number of descendant hosts ({@code 0} if none).
+     */
+    countSiteDescendants(siteId: string): Observable<number> {
+        return this.#http
+            .get<{ entity: number }>(`${BASE_SITE_URL}/${siteId}/descendants/count`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Switches the current working site to the provided site.
      *
      * If a specific site is provided, this method will perform a site switch to that site by its identifier.
@@ -214,7 +290,8 @@ export class DotSiteService {
             identifier: site.identifier,
             hostname: site.name,
             aliases: site.aliases,
-            archived: site.archived
+            archived: site.archived,
+            parentPath: site.parentPath
         };
     }
 
@@ -226,7 +303,8 @@ export class DotSiteService {
             identifier: site.identifier,
             hostname: site.siteName,
             aliases: site.aliases,
-            archived: site.archived
+            archived: site.archived,
+            parentPath: site.parentPath
         };
     }
 }

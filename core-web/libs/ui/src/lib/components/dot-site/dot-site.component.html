@@ -43,8 +43,37 @@
         </p-iconfield>
     </ng-template>
 
+    <ng-template let-site pTemplate="selectedItem">
+        <span
+            class="site-selector__item"
+            [class.site-selector__item--archived]="site?.archived"
+            [title]="site?.archived ? site.hostname + ' (Archived)' : site?.hostname">
+            @if (site?.archived) {
+                <i
+                    class="pi pi-inbox site-selector__archived-icon"
+                    aria-label="Archived"
+                    title="Archived"></i>
+            }
+            {{ site?.hostname }}
+        </span>
+    </ng-template>
+
     <ng-template let-site #item>
-        <span [class.font-bold]="$state.pinnedOption()?.identifier === site.identifier">
+        <span
+            [class]="'site-selector__item site-depth-' + getSiteDepth(site)"
+            [class.font-bold]="$state.pinnedOption()?.identifier === site.identifier"
+            [class.site-selector__item--archived]="site.archived"
+            [style.padding-left.rem]="getSiteDepth(site) * 1.25"
+            [title]="site.archived ? site.hostname + ' (Archived)' : site.hostname">
+            @if (getSiteDepth(site) > 0) {
+                <i class="pi pi-angle-right site-selector__nested-icon" aria-hidden="true"></i>
+            }
+            @if (site.archived) {
+                <i
+                    class="pi pi-inbox site-selector__archived-icon"
+                    aria-label="Archived"
+                    title="Archived"></i>
+            }
             {{ site.hostname }}
         </span>
     </ng-template>

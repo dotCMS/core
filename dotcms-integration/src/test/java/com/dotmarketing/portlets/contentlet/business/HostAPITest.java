@@ -20,11 +20,13 @@ import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -35,6 +37,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
@@ -1910,15 +1913,294 @@ public class HostAPITest extends IntegrationTestBase  {
                 siteByKey.get().getIdentifier(), defaultSiteId);
     }
 
+    // =========================================================================
+    // Tests for nestable-host identifier persistence (Sub-AC 2 of AC 1)
+    // =========================================================================
+
     /**
      * <ul>
-     *     <li><b>Method to test: </b>{@link HostAPI#findByName(String, User, boolean)}</li>
-     *     <li><b>Given Scenario: </b>Call {@code findByName} with a site's UUID identifier instead
-     *     of its name. This tests the fallback mechanism in {@link HostFactoryImpl#findSiteByIdIfUUID}
-     *     that checks if the provided "name" is actually a UUID and attempts to find the site by ID.</li>
-     *     <li><b>Expected Result: </b>The Site API must successfully find the site by its UUID
-     *     identifier even when using the findByName method, returning the same site as would be
-     *     returned by {@code find(id, user, false)}.</li>
+     *   <li><b>Method to test:</b> {@link HostAPI#save(Host, User, boolean)} – parent-host
+     *   persistence via {@code persistParentHostRelationship}</li>
+     *   <li><b>Given Scenario:</b> A new host is saved with no {@link Host#PARENT_HOST_KEY} field
+     *   set (i.e. a top-level host).</li>
+     *   <li><b>Expected Result:</b> The host's {@link Identifier} must have
+     *   {@code hostId = SYSTEM_HOST}, {@code parentPath = "/"}, and
+     *   {@code assetName = hostname}.</li>
+     * </ul>
+     */
+    @Test
+    public void save_topLevelHost_identifierAnchoredUnderSystemHost() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final long ts = System.currentTimeMillis();
+        final String hostname = "toplevel-" + ts + ".test.dotcms.com";
+        Host site = null;
+        try {
+            site = new SiteDataGen().name(hostname).nextPersisted();
+
+            final Identifier identifier =
+                    APILocator.getIdentifierAPI().find(site.getIdentifier());
+
+            assertNotNull("Identifier must not be null for a saved host", identifier);
+            assertEquals("Top-level host must be anchored under SYSTEM_HOST",
+                    Host.SYSTEM_HOST, identifier.getHostId());
+            assertEquals("parentPath must be '/' for a top-level host",
+                    "/", identifier.getParentPath());
+            assertEquals("asset_name must equal hostname",
+                    hostname, identifier.getAssetName());
+        } finally {
+            if (site != null) {
+                unpublishHost(site, systemUser);
+                archiveHost(site, systemUser);
+                deleteHost(site, systemUser);
+            }
+        }
+    }
+
+    /**
+     * <ul>
+     *   <li><b>Method to test:</b> {@link HostAPI#save(Host, User, boolean)} – parent-host
+     *   persistence via {@code persistParentHostRelationship}</li>
+     *   <li><b>Given Scenario:</b> A child host is saved with {@link Host#PARENT_HOST_KEY} pointing
+     *   to an existing parent host's identifier.</li>
+     *   <li><b>Expected Result:</b> The child host's {@link Identifier} must have
+     *   {@code hostId = parentHost.identifier}, {@code parentPath = "/"}, and
+     *   {@code assetName = childHostname}.</li>
+     * </ul>
+     */
+    @Test
+    public void save_hostWithParentHost_identifierPointsToParentHost() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final long ts = System.currentTimeMillis();
+        final String parentHostname = "parent-" + ts + ".test.dotcms.com";
+        final String childSegment = "child-" + ts;
+        Host parentSite = null;
+        Host childSite = null;
+        try {
+            parentSite = new SiteDataGen().name(parentHostname).nextPersisted();
+
+            // Build child host with parentHost set to parent's identifier
+            final Host childHost = new Host();
+            childHost.setHostname(childSegment);
+            childHost.setDefault(false);
+            childHost.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            childHost.setProperty(Host.PARENT_HOST_KEY, parentSite.getIdentifier());
+            childHost.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            childHost.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            childHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+
+            childSite = APILocator.getHostAPI().save(childHost, systemUser, false);
+
+            final Identifier childIdentifier =
+                    APILocator.getIdentifierAPI().find(childSite.getIdentifier());
+
+            assertNotNull("Identifier must not be null for the child host", childIdentifier);
+            assertEquals("child hostId must equal parent host identifier",
+                    parentSite.getIdentifier(), childIdentifier.getHostId());
+            assertEquals("parentPath must be '/' when parent is a host",
+                    "/", childIdentifier.getParentPath());
+            assertEquals("asset_name must equal child hostname (segment label)",
+                    childSegment, childIdentifier.getAssetName());
+        } finally {
+            if (childSite != null) {
+                if (childSite.isLive()) {
+                    unpublishHost(childSite, systemUser);
+                }
+                archiveHost(childSite, systemUser);
+                deleteHost(childSite, systemUser);
+            }
+            if (parentSite != null) {
+                unpublishHost(parentSite, systemUser);
+                archiveHost(parentSite, systemUser);
+                deleteHost(parentSite, systemUser);
+            }
+        }
+    }
+
+    /**
+     * <ul>
+     *   <li><b>Method to test:</b> {@link HostAPI#save(Host, User, boolean)} – parent-host
+     *   persistence via {@code persistParentHostRelationship}</li>
+     *   <li><b>Given Scenario:</b> A child host is saved with {@link Host#PARENT_HOST_KEY} pointing
+     *   to a folder identifier that belongs to an existing parent host.</li>
+     *   <li><b>Expected Result:</b> The child host's {@link Identifier} must have
+     *   {@code hostId = folder.hostId}, {@code parentPath = folder.path}, and
+     *   {@code assetName = childHostname}.</li>
+     * </ul>
+     */
+    @Test
+    public void save_hostWithParentFolder_identifierUsesParentFolderPath() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final long ts = System.currentTimeMillis();
+        final String parentHostname = "folder-parent-" + ts + ".test.dotcms.com";
+        final String folderName = "seg-" + ts;
+        final String childSegment = "nested-" + ts;
+        Host parentSite = null;
+        Host childSite = null;
+        Folder folder = null;
+        try {
+            parentSite = new SiteDataGen().name(parentHostname).nextPersisted();
+
+            // Create a folder within the parent host
+            folder = APILocator.getFolderAPI().createFolders(
+                    "/" + folderName, parentSite, systemUser, false);
+
+            // Build child host with parentHost set to the folder's identifier
+            final Host childHost = new Host();
+            childHost.setHostname(childSegment);
+            childHost.setDefault(false);
+            childHost.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            childHost.setProperty(Host.PARENT_HOST_KEY, folder.getIdentifier());
+            childHost.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            childHost.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            childHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+
+            childSite = APILocator.getHostAPI().save(childHost, systemUser, false);
+
+            final Identifier childIdentifier =
+                    APILocator.getIdentifierAPI().find(childSite.getIdentifier());
+            final String expectedParentPath = folder.getPath();
+
+            assertNotNull("Identifier must not be null for the child host", childIdentifier);
+            assertEquals("child hostId must equal the parent folder's host identifier",
+                    parentSite.getIdentifier(), childIdentifier.getHostId());
+            assertEquals("parentPath must equal the parent folder's path",
+                    expectedParentPath, childIdentifier.getParentPath());
+            assertEquals("asset_name must equal child hostname (segment label)",
+                    childSegment, childIdentifier.getAssetName());
+        } finally {
+            if (childSite != null) {
+                if (childSite.isLive()) {
+                    unpublishHost(childSite, systemUser);
+                }
+                archiveHost(childSite, systemUser);
+                deleteHost(childSite, systemUser);
+            }
+            if (folder != null) {
+                APILocator.getFolderAPI().delete(folder, systemUser, false);
+            }
+            if (parentSite != null) {
+                unpublishHost(parentSite, systemUser);
+                archiveHost(parentSite, systemUser);
+                deleteHost(parentSite, systemUser);
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // getParentPermissionable tests (nestable hosts – AC 4)
+    // -----------------------------------------------------------------------
+
+    /**
+     * <ul>
+     *   <li><b>Method to test:</b> {@link Host#getParentPermissionable()}</li>
+     *   <li><b>Given Scenario:</b> The System Host is asked for its parent permissionable.</li>
+     *   <li><b>Expected Result:</b> {@code null} is returned (System Host has no parent).</li>
+     * </ul>
+     */
+    @Test
+    public void getParentPermissionable_systemHost_returnsNull() throws Exception {
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+        assertNull("System Host must have no parent permissionable",
+                systemHost.getParentPermissionable());
+    }
+
+    /**
+     * <ul>
+     *   <li><b>Method to test:</b> {@link Host#getParentPermissionable()}</li>
+     *   <li><b>Given Scenario:</b> A top-level host (no {@link Host#PARENT_HOST_KEY} set) is
+     *   asked for its parent permissionable.</li>
+     *   <li><b>Expected Result:</b> The System Host is returned (existing/legacy behaviour).</li>
+     * </ul>
+     */
+    @Test
+    public void getParentPermissionable_topLevelHost_returnsSystemHost() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        Host site = null;
+        try {
+            site = new SiteDataGen().nextPersisted();
+            final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+            final Permissionable parent =
+                    site.getParentPermissionable();
+
+            assertNotNull("Top-level host must have a parent permissionable", parent);
+            assertEquals("Top-level host parent permissionable must be the System Host",
+                    systemHost.getIdentifier(),
+                    ((Host) parent).getIdentifier());
+        } finally {
+            if (site != null) {
+                unpublishHost(site, systemUser);
+                archiveHost(site, systemUser);
+                deleteHost(site, systemUser);
+            }
+        }
+    }
+
+    /**
+     * <ul>
+     *   <li><b>Method to test:</b> {@link Host#getParentPermissionable()}</li>
+     *   <li><b>Given Scenario:</b> A child host is saved with {@link Host#PARENT_HOST_KEY}
+     *   pointing to an existing parent host.  The child host is then asked for its parent
+     *   permissionable.</li>
+     *   <li><b>Expected Result:</b> The parent host (not the System Host) is returned so that
+     *   permissions propagate through the nestable host hierarchy.</li>
+     * </ul>
+     */
+    @Test
+    public void getParentPermissionable_nestedHost_returnsParentHost() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final long ts = System.currentTimeMillis();
+        final String parentHostname = "perm-parent-" + ts + ".test.dotcms.com";
+        final String childSegment   = "perm-child-" + ts;
+        Host parentSite = null;
+        Host childSite  = null;
+        try {
+            parentSite = new SiteDataGen().name(parentHostname).nextPersisted();
+
+            final Host childHost = new Host();
+            childHost.setHostname(childSegment);
+            childHost.setDefault(false);
+            childHost.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            childHost.setProperty(Host.PARENT_HOST_KEY, parentSite.getIdentifier());
+            childHost.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            childHost.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            childHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+
+            childSite = APILocator.getHostAPI().save(childHost, systemUser, false);
+
+            final Permissionable parent =
+                    childSite.getParentPermissionable();
+
+            assertNotNull("Nested host must have a parent permissionable", parent);
+            assertTrue("Parent permissionable must be a Host instance", parent instanceof Host);
+            assertEquals("Parent permissionable must be the parent host, not the System Host",
+                    parentSite.getIdentifier(),
+                    ((Host) parent).getIdentifier());
+        } finally {
+            if (childSite != null) {
+                if (childSite.isLive()) {
+                    unpublishHost(childSite, systemUser);
+                }
+                archiveHost(childSite, systemUser);
+                deleteHost(childSite, systemUser);
+            }
+            if (parentSite != null) {
+                unpublishHost(parentSite, systemUser);
+                archiveHost(parentSite, systemUser);
+                deleteHost(parentSite, systemUser);
+            }
+        }
+    }
+
+    /**
+     * <ul>
+     *   <li><b>Method to test:</b> {@link HostAPI#findByName(String, User, boolean)}</li>
+     *   <li><b>Given Scenario:</b> Call {@code findByName} with a site's UUID identifier instead
+     *   of its name. This tests the fallback mechanism in {@link HostFactoryImpl#findSiteByIdIfUUID}
+     *   that checks if the provided "name" is actually a UUID and attempts to find the site by ID.</li>
+     *   <li><b>Expected Result:</b> The Site API must successfully find the site by its UUID
+     *   identifier even when using the findByName method, returning the same site as would be
+     *   returned by {@code find(id, user, false)}.</li>
      * </ul>
      */
     @Test

@@ -50,6 +50,13 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      */
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
     /**
+     * Optional host identifier used to pre-fill the field when no form value is set.
+     * Accepts either a UUID (site identifier) or a hostname string.
+     * When provided and the form control value is empty, the field will automatically
+     * select the matching site on initialization.
+     */
+    $hostId = input<string | null>(null, { alias: 'hostId' });
+    /**
      * A signal that holds the tree select.
      * It is used to display the tree select in the component.
      */
@@ -129,10 +136,12 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     /**
      * A signal that handles the change value of the field.
      * It is used to load the sites based on the current path.
+     * When the form control value is empty and a hostId input is provided,
+     * the hostId is used as the initial selection path.
      */
     readonly handleChangeValue = signalMethod<string>((currentPath) => {
         this.store.loadSites({
-            path: currentPath,
+            path: currentPath || this.$hostId() || null,
             isRequired: this.$isRequired()
         });
     });

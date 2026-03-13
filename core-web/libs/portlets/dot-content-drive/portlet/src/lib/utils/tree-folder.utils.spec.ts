@@ -182,6 +182,101 @@ describe('Sidebar Utils', () => {
             expect(result.data.path).toBe('');
         });
 
+        describe('nested-host entries (isHost=true)', () => {
+            const mockNestedHostFolder: DotFolder = {
+                id: 'nested-host-id-abc',
+                hostName: 'child.example.com',
+                path: '/',
+                addChildrenAllowed: true,
+                isHost: true
+            };
+
+            it('should set type to nested-host when isHost is true', () => {
+                const result = createTreeNode(mockNestedHostFolder);
+                expect(result.data.type).toBe('nested-host');
+            });
+
+            it('should use hostname as label (not path) for nested host nodes', () => {
+                const result = createTreeNode(mockNestedHostFolder);
+                expect(result.label).toBe('child.example.com');
+            });
+
+            it('should set path to "/" for nested host nodes', () => {
+                const result = createTreeNode(mockNestedHostFolder);
+                expect(result.data.path).toBe('/');
+            });
+
+            it('should preserve the nested host hostname in data.hostname', () => {
+                const result = createTreeNode(mockNestedHostFolder);
+                expect(result.data.hostname).toBe('child.example.com');
+            });
+
+            it('should use the host identifier as the tree node key', () => {
+                const result = createTreeNode(mockNestedHostFolder);
+                expect(result.key).toBe('nested-host-id-abc');
+            });
+
+            it('should set leaf to false for nested host nodes', () => {
+                const result = createTreeNode(mockNestedHostFolder);
+                expect(result.leaf).toBe(false);
+            });
+
+            it('should create a full nested-host node correctly', () => {
+                const result = createTreeNode(mockNestedHostFolder);
+                expect(result).toEqual({
+                    key: 'nested-host-id-abc',
+                    label: 'child.example.com',
+                    data: {
+                        id: 'nested-host-id-abc',
+                        hostname: 'child.example.com',
+                        path: '/',
+                        type: 'nested-host'
+                    },
+                    leaf: false
+                });
+            });
+
+            it('should attach parent when provided', () => {
+                const parentNode: DotFolderTreeNodeItem = {
+                    key: 'parent-site',
+                    label: '/subfolder/',
+                    data: {
+                        id: 'parent-site-id',
+                        hostname: 'parent.example.com',
+                        path: '/subfolder/',
+                        type: 'folder'
+                    },
+                    leaf: false
+                };
+
+                const result = createTreeNode(mockNestedHostFolder, parentNode);
+                expect(result.parent).toBe(parentNode);
+            });
+
+            it('should treat isHost=false the same as a regular folder', () => {
+                const regularFolderWithExplicitFlag: DotFolder = {
+                    ...mockFolder,
+                    isHost: false
+                };
+                const result = createTreeNode(regularFolderWithExplicitFlag);
+                expect(result.data.type).toBe('folder');
+                expect(result.label).toBe(mockFolder.path);
+                expect(result.data.path).toBe(mockFolder.path);
+            });
+
+            it('should treat missing isHost field as a regular folder', () => {
+                const folderWithNoFlag: DotFolder = {
+                    id: 'folder-abc',
+                    hostName: 'demo.dotcms.com',
+                    path: '/images/',
+                    addChildrenAllowed: true
+                    // isHost is intentionally absent
+                };
+                const result = createTreeNode(folderWithNoFlag);
+                expect(result.data.type).toBe('folder');
+            });
+        });
+
         it('should maintain parent reference correctly', () => {
             const parentNode: DotFolderTreeNodeItem = {
                 key: 'parent-456',

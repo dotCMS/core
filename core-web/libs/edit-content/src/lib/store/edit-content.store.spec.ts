@@ -75,7 +75,8 @@ describe('DotEditContentStore', () => {
     beforeEach(() => {
         mockActivatedRoute = {
             snapshot: {
-                params: {}
+                params: {},
+                queryParams: {}
             } as ActivatedRouteSnapshot
         };
         spectator = createService();
@@ -291,6 +292,45 @@ describe('DotEditContentStore', () => {
             expect(
                 spectator.inject(DotContentTypeService).getContentTypeWithRender
             ).toHaveBeenCalledWith('test-content-type');
+        });
+
+        it('should store hostId from query params as prefillHostId when present', () => {
+            // Arrange: override the mock snapshot to include hostId query param
+            const hostId = 'abc-123-uuid';
+            mockActivatedRoute.snapshot = {
+                params: { contentType: 'test-content-type' },
+                queryParams: { hostId }
+            } as unknown as ActivatedRouteSnapshot;
+
+            spectator
+                .inject(DotContentTypeService)
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
+            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
+
+            // Act
+            store.initializeAsPortlet();
+
+            // Assert
+            expect(store.prefillHostId()).toBe(hostId);
+        });
+
+        it('should set prefillHostId to null when hostId query param is absent', () => {
+            // Arrange: queryParams exists but has no hostId
+            mockActivatedRoute.snapshot = {
+                params: { contentType: 'test-content-type' },
+                queryParams: {}
+            } as unknown as ActivatedRouteSnapshot;
+
+            spectator
+                .inject(DotContentTypeService)
+                .getContentTypeWithRender.mockReturnValue(of({} as DotCMSContentType));
+            spectator.inject(DotWorkflowsActionsService).getDefaultActions.mockReturnValue(of([]));
+
+            // Act
+            store.initializeAsPortlet();
+
+            // Assert
+            expect(store.prefillHostId()).toBeNull();
         });
     });
 });

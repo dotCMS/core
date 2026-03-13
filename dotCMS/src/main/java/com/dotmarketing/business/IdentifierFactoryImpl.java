@@ -671,4 +671,70 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			ic.removeFromCacheByIdentifier(id.get("id"));
 		}
 	}
+
+	/**
+	 * Returns all {@link Identifier} rows for nested hosts that are direct or transitive
+	 * descendants of the given top-level host, using a {@code WITH RECURSIVE} CTE.
+	 *
+	 * <p>The query walks the {@code host_inode} chain starting from {@code topLevelHostId},
+	 * collecting every row where {@code asset_type = 'contentlet'} and
+	 * {@code asset_subtype = 'Host'}.  The starting host itself is <em>not</em> included.</p>
+	 *
+	 * @param topLevelHostId UUID of the top-level host to start from
+	 * @return list of all descendant host {@link Identifier} records; never {@code null}
+	 * @throws DotDataException if a database error occurs
+	 */
+	@Override
+	public List<Identifier> findDescendantHostIdentifiers(final String topLevelHostId)
+			throws DotDataException {
+		// WITH RECURSIVE CTE: starts from direct children of topLevelHostId and walks down
+		final String sql =
+				"WITH RECURSIVE nested_hosts AS ( "
+				+ "  SELECT i.* "
+				+ "  FROM identifier i "
+				+ "  WHERE i.host_inode = ? "
+				+ "    AND i.asset_type = 'contentlet' "
+				+ "    AND i.asset_subtype = 'Host' "
+				+ "  UNION ALL "
+				+ "  SELECT child.* "
+				+ "  FROM identifier child "
+				+ "  INNER JOIN nested_hosts parent ON child.host_inode = parent.id "
+				+ "  WHERE child.asset_type = 'contentlet' "
+				+ "    AND child.asset_subtype = 'Host' "
+				+ ") "
+				+ "SELECT * FROM nested_hosts";
+
+		final DotConnect dc = new DotConnect();
+		dc.setSQL(sql);
+		dc.addParam(topLevelHostId);
+
+		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+	}
+
+	/**
+	 * Returns the {@link com.dotmarketing.beans.Identifier} rows for all <em>direct</em> child
+	 * hosts of the given parent host — i.e. the set of identifiers where
+	 * {@code host_inode = parentHostId}, {@code asset_type = 'contentlet'}, and
+	 * {@code asset_subtype = 'Host'}.  Grandchildren and deeper descendants are not included.
+	 *
+	 * @param parentHostId UUID of the parent host; must not be {@code null}
+	 * @return list of direct-child host {@link com.dotmarketing.beans.Identifier} records; never
+	 *         {@code null}
+	 * @throws DotDataException if a database error occurs
+	 */
+	@Override
+	public List<Identifier> findDirectChildHostIdentifiers(final String parentHostId)
+			throws DotDataException {
+		final String sql =
+				"SELECT * FROM identifier "
+				+ "WHERE host_inode = ? "
+				+ "  AND asset_type = 'contentlet' "
+				+ "  AND asset_subtype = 'Host'";
+
+		final DotConnect dc = new DotConnect();
+		dc.setSQL(sql);
+		dc.addParam(parentHostId);
+
+		return TransformerLocator.createIdentifierTransformer(dc.loadObjectResults()).asList();
+	}
 }

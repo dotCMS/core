@@ -111,7 +111,7 @@ describe('DotSiteComponent', () => {
             expect(select.disabled()).toBe(false);
         });
 
-        it('should sort sites alphabetically by hostname', () => {
+        it('should sort root sites alphabetically by hostname (no parentPath)', () => {
             const unsortedSites: DotSite[] = [
                 { hostname: 'zebra.com', identifier: 'site1', archived: false, aliases: null },
                 { hostname: 'alpha.com', identifier: 'site2', archived: false, aliases: null },
@@ -132,6 +132,145 @@ describe('DotSiteComponent', () => {
             expect(sortedSites[1].hostname).toBe('beta.com');
             expect(sortedSites[2].hostname).toBe('zebra.com');
         });
+
+        it('should sort parent sites before their children (tree order)', () => {
+            // alpha.com is root; child.alpha.com is nested under alpha.com;
+            // beta.com is root and should appear after alpha's whole subtree.
+            const hierarchicalSites: DotSite[] = [
+                {
+                    hostname: 'beta.com',
+                    identifier: 'beta',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/'
+                },
+                {
+                    hostname: 'child.alpha.com',
+                    identifier: 'child-alpha',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/alpha.com/'
+                },
+                {
+                    hostname: 'alpha.com',
+                    identifier: 'alpha',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/'
+                }
+            ];
+
+            siteService.getSites.mockReturnValue(
+                of({
+                    sites: hierarchicalSites,
+                    pagination: mockPagination
+                })
+            );
+
+            spectator.detectChanges();
+
+            const sortedSites = spectator.component.$state.sites();
+            expect(sortedSites[0].hostname).toBe('alpha.com'); // root, alphabetically first
+            expect(sortedSites[1].hostname).toBe('child.alpha.com'); // child of alpha, before beta
+            expect(sortedSites[2].hostname).toBe('beta.com'); // root, alphabetically after alpha subtree
+        });
+
+        it('should sort multiple levels of nesting in correct DFS order', () => {
+            const deepHierarchy: DotSite[] = [
+                {
+                    hostname: 'grandchild.child.alpha.com',
+                    identifier: 'grandchild',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/alpha.com/child.alpha.com/'
+                },
+                {
+                    hostname: 'beta.com',
+                    identifier: 'beta',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/'
+                },
+                {
+                    hostname: 'alpha.com',
+                    identifier: 'alpha',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/'
+                },
+                {
+                    hostname: 'child.alpha.com',
+                    identifier: 'child-alpha',
+                    archived: false,
+                    aliases: null,
+                    parentPath: '/alpha.com/'
+                }
+            ];
+
+            siteService.getSites.mockReturnValue(
+                of({
+                    sites: deepHierarchy,
+                    pagination: mockPagination
+                })
+            );
+
+            spectator.detectChanges();
+
+            const sortedSites = spectator.component.$state.sites();
+            expect(sortedSites[0].hostname).toBe('alpha.com');
+            expect(sortedSites[1].hostname).toBe('child.alpha.com');
+            expect(sortedSites[2].hostname).toBe('grandchild.child.alpha.com');
+            expect(sortedSites[3].hostname).toBe('beta.com');
+        });
+    });
+
+    describe('getSiteDepth', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should return 0 for a root site with parentPath "/"', () => {
+            const site: DotSite = {
+                hostname: 'root.com',
+                identifier: 'root',
+                archived: false,
+                aliases: null,
+                parentPath: '/'
+            };
+            expect(spectator.component.getSiteDepth(site)).toBe(0);
+        });
+
+        it('should return 0 when parentPath is undefined (backward compat)', () => {
+            const site: DotSite = {
+                hostname: 'legacy.com',
+                identifier: 'legacy',
+                archived: false,
+                aliases: null
+            };
+            expect(spectator.component.getSiteDepth(site)).toBe(0);
+        });
+
+        it('should return 1 for a site nested one level deep', () => {
+            const site: DotSite = {
+                hostname: 'child.com',
+                identifier: 'child',
+                archived: false,
+                aliases: null,
+                parentPath: '/parent.com/'
+            };
+            expect(spectator.component.getSiteDepth(site)).toBe(1);
+        });
+
+        it('should return 2 for a site nested two levels deep', () => {
+            const site: DotSite = {
+                hostname: 'grandchild.com',
+                identifier: 'grandchild',
+                archived: false,
+                aliases: null,
+                parentPath: '/grandparent.com/parent.com/'
+            };
+            expect(spectator.component.getSiteDepth(site)).toBe(2);
+        });
     });
 
     describe('Lazy Loading', () => {
@@ -149,7 +288,9 @@ describe('DotSiteComponent', () => {
 
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 2,
-                per_page: 40
+                per_page: 40,
+                live: false,
+                system: true
             });
         });
 
@@ -422,6 +563,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'example'
             });
         }));
@@ -442,6 +585,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'example'
             });
 
@@ -468,6 +613,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 2,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'example'
             });
         }));
@@ -496,7 +643,9 @@ describe('DotSiteComponent', () => {
             expect(input.value).toBe('');
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
-                per_page: 40
+                per_page: 40,
+                live: false,
+                system: true
             });
         }));
 
@@ -510,6 +659,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'demo'
             });
         }));
@@ -521,6 +672,8 @@ describe('DotSiteComponent', () => {
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
                 per_page: 40,
+                live: false,
+                system: true,
                 filter: 'example'
             });
         }));
@@ -581,6 +734,30 @@ describe('DotSiteComponent', () => {
             expect(spectator.component.placeholder()).toBe('');
             expect(spectator.component.class()).toBe('w-full');
             expect(spectator.component.id()).toBe('');
+            expect(spectator.component.showSystemHost()).toBe(true);
+        });
+
+        it('should pass system: false to getSites when showSystemHost is false', () => {
+            spectator = createComponent({ detectChanges: false });
+            siteService = spectator.inject(DotSiteService, true);
+            siteService.getSites.mockReturnValue(
+                of({ sites: mockSites, pagination: mockPagination })
+            );
+
+            spectator.setInput('showSystemHost', false);
+            spectator.detectChanges();
+
+            expect(siteService.getSites).toHaveBeenCalledWith(
+                expect.objectContaining({ system: false })
+            );
+        });
+
+        it('should pass system: true to getSites when showSystemHost is true (default)', () => {
+            spectator.detectChanges();
+
+            expect(siteService.getSites).toHaveBeenCalledWith(
+                expect.objectContaining({ system: true })
+            );
         });
 
         it('should trigger ControlValueAccessor onChange when model signal changes', () => {
@@ -696,8 +873,8 @@ describe('DotSiteComponent', () => {
         });
 
         it('should show pinnedOption at the top of $options', () => {
-            const pinned = mockSites[0];
-            const loadedSites = [mockSites[1], mockSites[2]];
+            const pinned = mockSites[0]; // example.com
+            const loadedSites = [mockSites[1], mockSites[2]]; // [demo.com, test.com]
 
             patchState(spectator.component.$state, {
                 pinnedOption: pinned,
@@ -707,12 +884,13 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const options = spectator.component.$options();
+            expect(options).toHaveLength(3);
             expect(options[0]).toEqual(pinned);
         });
 
-        it('should filter out pinnedOption from loaded options to avoid duplicates', () => {
-            const pinned = mockSites[0];
-            // Loaded sites include the pinned option (duplicate)
+        it('should not duplicate pinnedOption when it is already in the loaded sites', () => {
+            const pinned = mockSites[0]; // example.com
+            // Loaded sites already include the pinned option
             const loadedSites = [mockSites[0], mockSites[1], mockSites[2]];
 
             patchState(spectator.component.$state, {
@@ -723,11 +901,11 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
-            // Should have pinned at top, then only demo.com and test.com (example.com filtered out)
+            // Pinned is at top, duplicates removed — total count stays the same
             expect(select.options[0]).toEqual(pinned);
             expect(select.options.length).toBe(3);
 
-            // Verify example.com only appears once (as pinned)
+            // Verify example.com appears only once
             const exampleCount = select.options.filter((s) => s.identifier === 'site1').length;
             expect(exampleCount).toBe(1);
         });
@@ -779,7 +957,7 @@ describe('DotSiteComponent', () => {
         }));
 
         it('should show pinnedOption when filter is cleared', fakeAsync(() => {
-            const pinned = mockSites[0];
+            const pinned = mockSites[0]; // example.com
 
             patchState(spectator.component.$state, {
                 pinnedOption: pinned,
@@ -797,6 +975,7 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
+            // Pinned is always at the top after filter is cleared
             expect(select.options[0]).toEqual(pinned);
         }));
 
@@ -818,6 +997,7 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
 
             const select = spectator.query(Select);
+            // EXAMPLE.COM matches the 'example' filter case-insensitively and is pinned at top
             expect(select.options[0]).toEqual(pinned);
         }));
     });
@@ -866,7 +1046,9 @@ describe('DotSiteComponent', () => {
             expect(spectator.component.$state.filterValue()).toBe('');
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
-                per_page: 40
+                per_page: 40,
+                live: false,
+                system: true
             });
         }));
 
@@ -950,7 +1132,9 @@ describe('DotSiteComponent', () => {
             // Should use pageSize when last is undefined
             expect(siteService.getSites).toHaveBeenCalledWith({
                 page: 1,
-                per_page: 40
+                per_page: 40,
+                live: false,
+                system: true
             });
         });
 
@@ -1072,8 +1256,8 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
     }));
 
     it('should show pinnedOption at the top of $options when writeValue is called', fakeAsync(() => {
-        const testValue = mockSites[0].identifier;
-        const loadedSites = [mockSites[1], mockSites[2]];
+        const testValue = mockSites[0].identifier; // example.com
+        const loadedSites = [mockSites[1], mockSites[2]]; // [demo.com, test.com]
 
         patchState(hostSpectator.component.$state, { sites: loadedSites });
         hostComponent.siteControl.setValue(testValue);
@@ -1082,8 +1266,8 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         hostSpectator.detectChanges();
 
         const options = hostSpectator.component.$options();
-        expect(options[0]).toEqual(mockSites[0]);
         expect(options.length).toBe(3);
+        expect(options[0]).toEqual(mockSites[0]);
     }));
 
     it('should handle null value from FormControl', fakeAsync(() => {

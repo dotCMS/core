@@ -3,15 +3,20 @@
  *
  * @interface DotFolder
  * @property {string} id - Unique identifier for the folder
- * @property {string} hostName - The hostname where the folder resides
- * @property {string} path - The path to the folder in the system
+ * @property {string} hostName - The hostname where the folder resides.  For a regular folder this
+ *   is the parent site's hostname; for a nested-host entry this is the nested host's own hostname.
+ * @property {string} path - The path to the folder in the system.  For a nested-host entry this
+ *   is always {@code "/"} (the root of the nested host).
  * @property {boolean} addChildrenAllowed - Whether new child folders can be added to this folder
+ * @property {boolean} [isHost] - When {@code true} this entry represents a nested host (sub-site)
+ *   rather than a regular folder.  The tree UI renders a host/globe icon for these nodes.
  */
 export interface DotFolder {
     id: string;
     hostName: string;
     path: string;
     addChildrenAllowed: boolean;
+    isHost?: boolean;
 }
 
 /**

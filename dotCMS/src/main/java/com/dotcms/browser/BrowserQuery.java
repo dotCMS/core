@@ -60,6 +60,7 @@ public class BrowserQuery {
     final boolean showContent;
     final boolean showShorties;
     final boolean showDefaultLangItems;
+    final boolean showSubHosts;
     final boolean useElasticsearchFiltering;
     final boolean filterFolderNames;
     final Set<Long> languageIds;
@@ -111,6 +112,7 @@ public class BrowserQuery {
                 + showArchived + ", showFolders:" + showFolders + ", showDefaultLangItems:"
                 + showDefaultLangItems + ", sortByDesc:" + sortByDesc + ", showLinks:"
                 + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties
+                + ", showSubHosts:" + showSubHosts
                 + ", luceneQuery:" + luceneQuery
                 + ", languageIds:" + StringUtils.join(languageIds)
                 + ", baseTypes:" + StringUtils.join(baseTypes)
@@ -139,6 +141,7 @@ public class BrowserQuery {
         this.showFolders = builder.showFolders;
         this.showContent = builder.showContent;
         this.showShorties = builder.showShorties;
+        this.showSubHosts = builder.showSubHosts;
         this.mimeTypes     = builder.mimeTypes;
         this.extensions    = builder.extensions;
         this.sortByDesc = UtilMethods.isEmpty(builder.sortBy) || builder.sortByDesc;
@@ -191,7 +194,10 @@ public class BrowserQuery {
         String calculatedSiteId = null;
         // Determine the appropriate Site ID based on provided data
         if (isSite) {
-            calculatedSiteId = UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder : parentId;
+            // Use identifier.getId() (not parentId) because parentId may be a contentlet inode
+            // rather than the identifier UUID. findFromInode() resolves either, but the site
+            // must be looked up by its stable identifier, not a version-specific inode.
+            calculatedSiteId = UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder : identifier.getId();
         } else {
             if (null != folderObj) {
                 calculatedSiteId = Folder.SYSTEM_FOLDER.equals(folderObj.getInode()) && UtilMethods.isSet(hostIdSystemFolder) ? hostIdSystemFolder :
@@ -199,7 +205,14 @@ public class BrowserQuery {
             }
         }
         final String siteId = calculatedSiteId;
-        final Host siteObj = Try.of(() -> APILocator.getHostAPI().find(siteId, user, respectFrontEndPermissions)).getOrNull();
+        // Always use respectFrontEndRoles=false here: getParents() is a backend admin
+        // resolution method. DWR requests set X-Requested-With which forces PageMode to LIVE
+        // (respectAnonPerms=true), which breaks lookups for unpublished nested hosts.
+        final Host siteObj = Try.of(() -> APILocator.getHostAPI().find(siteId, user, false))
+                .onFailure(e -> Logger.warn(BrowserQuery.class,
+                        String.format("Could not resolve Site '%s' for parentId '%s': %s",
+                                siteId, parentId, e.getMessage())))
+                .getOrNull();
         if (null == folderObj || UtilMethods.isEmpty(folderObj.getIdentifier()) || null == siteObj || UtilMethods.isEmpty(siteObj.getIdentifier())) {
             final String errorMsg = String.format("Parent ID '%s' [ %s ] does not match any existing Folder or Site.",
                     parentId, siteId);
@@ -251,6 +264,7 @@ public class BrowserQuery {
         private boolean showArchived = false;
         private boolean showContent = true;
         private boolean showShorties = false;
+        private boolean showSubHosts = false;
         private boolean showFolders = false;
         private boolean sortByDesc = false;
         private boolean showLinks = false;
@@ -302,6 +316,7 @@ public class BrowserQuery {
             this.extensions = browserQuery.extensions;
             this.showContent = browserQuery.showContent;
             this.showShorties = browserQuery.showShorties;
+            this.showSubHosts = browserQuery.showSubHosts;
             this.showDefaultLangItems = browserQuery.showDefaultLangItems;
         }
 
@@ -459,6 +474,19 @@ public class BrowserQuery {
          */
         public Builder showShorties(@Nonnull boolean showShorties) {
             this.showShorties = showShorties;
+            return this;
+        }
+
+        /**
+         * Determines whether sub-hosts (hosts whose {@code parentHost} field points to the
+         * currently-browsed host or folder) should be included in the browser listing response.
+         *
+         * @param showSubHosts If sub-hosts should be returned, set to {@code true}.
+         *
+         * @return The current Builder instance.
+         */
+        public Builder showSubHosts(@Nonnull boolean showSubHosts) {
+            this.showSubHosts = showSubHosts;
             return this;
         }
 

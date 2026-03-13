@@ -1,4 +1,4 @@
-import { signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
+import { patchState, signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -43,6 +43,9 @@ export interface EditContentState {
     state: ComponentStatus;
     error: string | null;
     isDialogMode: boolean;
+
+    // Pre-fill state (from URL query params)
+    prefillHostId: string | null;
 
     // Content state
     contentType: DotCMSContentType | null;
@@ -144,6 +147,9 @@ export const initialRootState: EditContentState = {
     state: ComponentStatus.INIT,
     error: null,
     isDialogMode: false,
+
+    // Pre-fill state (from URL query params)
+    prefillHostId: null,
 
     // Content state
     contentType: null,
@@ -294,6 +300,9 @@ export const DotEditContentStore = signalStore(
              * Initializes the store for route-based mode using ActivatedRoute parameters.
              * This method should be called by route-based components after the store is created.
              * It will only initialize if dialog mode is not enabled.
+             *
+             * Supports the following query parameters:
+             * - `hostId`: Pre-fills the HostFolderField with the specified host identifier.
              */
             initializeAsPortlet(): void {
                 // Skip route-based initialization if in dialog mode
@@ -302,7 +311,15 @@ export const DotEditContentStore = signalStore(
                 }
 
                 // Use the ActivatedRoute that was injected in the closure
-                const params = activatedRoute.snapshot?.params;
+                const snapshot = activatedRoute.snapshot;
+                const params = snapshot?.params;
+                const queryParams = snapshot?.queryParams;
+
+                // Read prefill values from query params
+                const prefillHostId = queryParams?.['hostId'] ?? null;
+                if (prefillHostId !== store.prefillHostId()) {
+                    patchState(store, { prefillHostId });
+                }
 
                 if (params) {
                     const contentType = params['contentType'];

@@ -137,8 +137,12 @@ export const HostFolderFiledStore = signalStore(
                         const hasPaths = path.includes('/');
 
                         if (!hasPaths) {
+                            // Match by hostname (label) OR by site identifier (id), so
+                            // that a UUID-style hostId query param selects the correct site.
                             const response: CustomTreeNode = {
-                                node: sites.find((item) => item.data.hostname === path),
+                                node: sites.find(
+                                    (item) => item.data.hostname === path || item.data.id === path
+                                ),
                                 tree: null
                             };
 

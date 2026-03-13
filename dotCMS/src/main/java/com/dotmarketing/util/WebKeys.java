@@ -677,6 +677,10 @@ public final class WebKeys {
 
 	//CMS SUB NAV VARIABLES
 	public static final String CMS_SELECTED_HOST_ID = "CMS_SELECTED_HOST_ID";
+    /** Request attribute set by {@link com.dotcms.filters.NestedHostResolutionFilter} when a
+     *  nested host is resolved from a path-segment prefix. Downstream consumers (including
+     *  {@link com.dotmarketing.business.web.HostWebAPIImpl}) check this attribute first. */
+    public static final String CMS_RESOLVED_HOST = "CMS_RESOLVED_HOST";
 	public static final String CMS_CRUMBTRAIL_OPTIONS = "CMS_CRUMBTRAIL_OPTIONS";
 	public static final String DONT_DISPLAY_SUBNAV_ALL_HOSTS = "DONT_DISPLAY_SUBNAV_ALL_HOSTS";
 	public static final String LOCK_SUBNAV_TO_ALL_HOST = "LOCK_SUBNAV_TO_ALL_HOST";

@@ -270,7 +270,7 @@ public interface HostFactory {
      */
     long count() throws DotDataException;
 
-    /** 
+    /**
      * Finds live and stopped hosts based on the provided filter criteria and returns them as a list of Host objects.
      *
      * @param siteNameFilter A string used to filter the hosts by site name.
@@ -284,4 +284,87 @@ public interface HostFactory {
     Optional<List<Host>> findLiveAndStopped(final String siteNameFilter,
                                             final int limit, final int offset, final boolean showSystemHost,
                                             final User user, boolean respectFrontendRoles);
+
+    /**
+     * Returns the number of descendant hosts (at any depth) for the given host identifier.
+     * A descendant host is one whose {@code Identifier.hostId} chain leads back to the specified
+     * host at any level of nesting.
+     *
+     * @param hostId The identifier of the parent host.
+     *
+     * @return The total number of descendant hosts.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    long countDescendantHosts(final String hostId) throws DotDataException;
+
+    /**
+     * Returns the number of folders that belong to any of the descendant hosts of the given host
+     * identifier. Only folders directly within those descendant hosts are counted (not folders in
+     * the host itself).
+     *
+     * @param hostId The identifier of the parent host.
+     *
+     * @return The total number of folders in descendant hosts.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    long countDescendantFolders(final String hostId) throws DotDataException;
+
+    /**
+     * Returns the direct child hosts whose parent in the identifier table is the given host and
+     * whose {@code parent_path} in the identifier table matches the given path.
+     *
+     * <p>Use {@code "/"} as {@code parentPath} to find nested hosts that live at the root level of
+     * a parent host.  Use a folder path such as {@code "/myFolder/"} to find nested hosts that were
+     * placed inside a specific folder within the parent host.
+     *
+     * @param parentHostId the identifier of the parent host (maps to {@code identifier.host_inode})
+     * @param parentPath   the folder path within the parent host (maps to
+     *                     {@code identifier.parent_path}); must start and end with {@code /}
+     *
+     * @return mutable, possibly-empty list of direct child {@link Host} objects
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    List<Host> findDirectChildHosts(String parentHostId, String parentPath) throws DotDataException;
+
+    /**
+     * Returns the identifiers of all descendant hosts at any depth below the given host. The list
+     * is ordered leaf-first (deepest descendants come first), which is the correct order for
+     * cascade archive operations so that child sites are archived before their parents.
+     *
+     * <p>If {@code hostId} is blank or no descendants exist, an empty list is returned.
+     *
+     * @param hostId The identifier of the ancestor host.
+     *
+     * @return An ordered list of descendant host identifiers, deepest-first.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    List<String> findAllDescendantHostIds(final String hostId) throws DotDataException;
+
+    /**
+     * Returns {@code true} if {@code potentialDescendantId} is a descendant of {@code ancestorId}
+     * at any depth in the host hierarchy.
+     *
+     * <p>This is used to detect circular parent references before they are committed: if host
+     * {@code X} is being reparented to host {@code Y}, and {@code Y} is already a descendant of
+     * {@code X}, the result would be a cycle.  This method can detect that situation by calling
+     * {@code isDescendantHost(Y, X)}.
+     *
+     * <p>The check is performed against the current state of the {@code identifier} table.
+     * For a brand-new host that has not yet been persisted, the result will always be
+     * {@code false} (no descendants possible).
+     *
+     * @param potentialDescendantId The identifier of the host that might be a descendant.
+     * @param ancestorId            The identifier of the host that might be an ancestor.
+     *
+     * @return {@code true} if {@code potentialDescendantId} is a descendant of {@code ancestorId};
+     *         {@code false} otherwise, including when either argument is blank.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    boolean isDescendantHost(final String potentialDescendantId, final String ancestorId)
+            throws DotDataException;
 }

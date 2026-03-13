@@ -349,6 +349,55 @@ describe('DotTreeFolderComponent', () => {
         });
     });
 
+    describe('Nested Host rendering', () => {
+        const nestedHostFolders: TreeNode[] = [
+            {
+                key: 'nested-host-id',
+                label: 'child.example.com',
+                data: {
+                    id: 'nested-host-id',
+                    hostname: 'child.example.com',
+                    path: '/',
+                    type: 'nested-host'
+                },
+                leaf: false
+            },
+            {
+                key: 'folder-id',
+                label: '/images/',
+                data: {
+                    id: 'folder-id',
+                    hostname: 'demo.dotcms.com',
+                    path: '/images/',
+                    type: 'folder'
+                },
+                leaf: false
+            }
+        ];
+
+        beforeEach(() => {
+            spectator.fixture.componentRef.setInput('folders', nestedHostFolders);
+            spectator.fixture.componentRef.setInput('loading', false);
+            spectator.detectChanges();
+        });
+
+        it('should render p-tree with nested-host nodes without error', () => {
+            const treeElement = spectator.query('p-tree');
+            expect(treeElement).toBeTruthy();
+        });
+
+        it('should pass nested-host nodes to p-tree value', () => {
+            const treeComponent = spectator.query(Tree);
+            expect(treeComponent.value).toEqual(nestedHostFolders);
+            expect(treeComponent.value[0].data.type).toBe('nested-host');
+        });
+
+        it('should keep regular folder nodes alongside nested-host nodes', () => {
+            const treeComponent = spectator.query(Tree);
+            expect(treeComponent.value[1].data.type).toBe('folder');
+        });
+    });
+
     describe('Constants', () => {
         it('should export SYSTEM_HOST_ID constant', () => {
             expect(SYSTEM_HOST_ID).toBe('SYSTEM_HOST');

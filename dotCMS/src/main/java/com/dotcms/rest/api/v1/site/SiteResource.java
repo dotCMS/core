@@ -21,6 +21,7 @@ import com.dotcms.util.pagination.SitePaginator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -28,6 +29,8 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostHasDescendantsException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.HostCopyOptions;
@@ -58,6 +61,7 @@ import org.quartz.SchedulerException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -595,9 +599,15 @@ public class SiteResource implements Serializable {
     /**
      * Archives a Site.
      *
+     * <p>When {@code cascade=true} is passed, the site <em>and all of its descendant hosts</em>
+     * are archived in a single operation.  The response will then include a {@code cascade} flag
+     * and a {@code descendantsArchived} count alongside the primary site view.
+     *
      * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
      * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
      * @param siteId              The identifier of the Site to be archived.
+     * @param cascade             When {@code true}, archive all descendant hosts as well.
+     *                            Defaults to {@code false}.
      *
      * @return The {@link Response} object containing the result of the operation.
      *
@@ -614,9 +624,10 @@ public class SiteResource implements Serializable {
             summary = "Archive a site",
             description = "Archives the specified site. The default site cannot be archived. " +
                     "If the site is locked, it will be unlocked before archiving. " +
+                    "When cascade=true, all descendant hosts are archived as well. " +
                     "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Site archived successfully",
+            @ApiResponse(responseCode = "200", description = "Site archived successfully. When cascade=false the entity is a SiteView; when cascade=true the entity is a map with 'site', 'cascade', and 'descendantsArchived' fields.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
             @ApiResponse(responseCode = "400", description = "Cannot archive the default site, or site does not exist"),
@@ -627,7 +638,10 @@ public class SiteResource implements Serializable {
     public Response archiveSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
                                 @Parameter(description = "Identifier of the site to archive (siteId/hostId are used interchangeably)", required = true)
-                                @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException{
+                                @PathParam("siteId")  final String siteId,
+                                @Parameter(description = "When true, archive all descendant hosts as well (cascade archive). Defaults to false.")
+                                @QueryParam("cascade") @DefaultValue("false") final boolean cascade)
+            throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -636,7 +650,7 @@ public class SiteResource implements Serializable {
                 .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
-        Logger.debug(this, "Archiving site: " + siteId);
+        Logger.debug(this, () -> "Archiving site: " + siteId + (cascade ? " (cascade)" : ""));
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host site = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
@@ -650,6 +664,9 @@ public class SiteResource implements Serializable {
             throw new DotStateException(String.format("Site '%s' is the default site. It can't be archived", site));
         }
 
+        if (cascade) {
+            return this.archiveCascade(user, pageMode, site);
+        }
         return this.archive(user, pageMode, site);
     }
 
@@ -663,15 +680,39 @@ public class SiteResource implements Serializable {
         }
 
         this.siteHelper.archive(site, user, pageMode.respectAnonPerms);
-        return Response.ok(new ResponseEntityView<>(toView(site, user))).build();
+        // Variables are not included in the archive response (consistent with cascade path).
+        return Response.ok(new ResponseEntityView<>(toView(site))).build();
+    }
+
+    @WrapInTransaction
+    private Response archiveCascade(final User user, final PageMode pageMode,
+                                    final Host site) throws DotDataException, DotSecurityException {
+
+        if (site.isLocked()) {
+            this.siteHelper.unlock(site, user, pageMode.respectAnonPerms);
+        }
+
+        final long descendantCount = this.siteHelper.cascadeArchive(site, user, pageMode.respectAnonPerms);
+
+        final Map<String, Object> result = new HashMap<>();
+        result.put("site", toView(site));
+        result.put("cascade", true);
+        result.put("descendantsArchived", descendantCount);
+        return Response.ok(new ResponseEntityView<>(result)).build();
     }
 
     /**
      * Un-archives a Site.
      *
+     * <p>When {@code cascade=true} is passed, the site <em>and all of its descendant hosts</em>
+     * are unarchived in a single operation.  The response will then include a {@code cascade} flag
+     * and a {@code descendantsUnarchived} count alongside the primary site view.
+     *
      * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
      * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
      * @param siteId              The identifier of the Site to be un-archived.
+     * @param cascade             When {@code true}, unarchive all descendant hosts as well.
+     *                            Defaults to {@code false}.
      *
      * @return The {@link Response} object containing the result of the operation.
      *
@@ -687,9 +728,10 @@ public class SiteResource implements Serializable {
     @Operation(operationId = "unarchiveSite",
             summary = "Unarchive a site",
             description = "Restores a previously archived site to its active state. " +
+                    "When cascade=true, all descendant hosts are unarchived as well. " +
                     "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Site unarchived successfully",
+            @ApiResponse(responseCode = "200", description = "Site unarchived successfully. When cascade=false the entity is a SiteView; when cascade=true the entity is a map with 'site', 'cascade', and 'descendantsUnarchived' fields.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySiteView.class))),
             @ApiResponse(responseCode = "400", description = "Site does not exist"),
@@ -699,7 +741,10 @@ public class SiteResource implements Serializable {
     public Response unarchiveSite(@Context final HttpServletRequest httpServletRequest,
                                   @Context final HttpServletResponse httpServletResponse,
                                   @Parameter(description = "Identifier of the site to unarchive (siteId/hostId are used interchangeably)", required = true)
-                                  @PathParam("siteId")  final String siteId) throws DotDataException, DotSecurityException {
+                                  @PathParam("siteId")  final String siteId,
+                                  @Parameter(description = "When true, unarchive all descendant hosts as well (cascade unarchive). Defaults to false.")
+                                  @QueryParam("cascade") @DefaultValue("false") final boolean cascade)
+            throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
@@ -708,7 +753,7 @@ public class SiteResource implements Serializable {
                 .requiredPortlet(PortletID.SITES.toString())
                 .init().getUser();
 
-        Logger.debug(this, ()-> "unarchiving site: " + siteId);
+        Logger.debug(this, () -> "Unarchiving site: " + siteId + (cascade ? " (cascade)" : ""));
 
         final PageMode      pageMode      = PageMode.get(httpServletRequest);
         final Host site = pageMode.respectAnonPerms? this.siteHelper.getSite(user, siteId):
@@ -718,8 +763,84 @@ public class SiteResource implements Serializable {
             throw new IllegalArgumentException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
         }
 
+        if (cascade) {
+            // Per the nestable-hosts spec, cascade-unarchive is a MANUAL operator action only.
+            // It must never be triggered automatically.  This code path is only reached when the
+            // operator has explicitly passed cascade=true, which constitutes affirmative
+            // confirmation.  Do not move this call to any automated or background code path.
+            final long descendantCount = this.siteHelper.cascadeUnarchive(site, user, pageMode.respectAnonPerms);
+            final Map<String, Object> result = new HashMap<>();
+            result.put("site", toView(site));
+            result.put("cascade", true);
+            result.put("descendantsUnarchived", descendantCount);
+            return Response.ok(new ResponseEntityView<>(result)).build();
+        }
+
         this.siteHelper.unarchive(site, user, pageMode.respectAnonPerms);
         return Response.ok(new ResponseEntityView<>(toView(site))).build();
+    }
+
+    /**
+     * Returns the count of descendant (nested) hosts under the specified site.
+     *
+     * <p>This lightweight endpoint is designed to support pre-archive confirmation dialogs: the
+     * caller can check whether a site has nested children before presenting a cascade-archive
+     * warning to the user.  A count of {@code 0} means the site has no nested children.
+     *
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest} object.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse} object.
+     * @param siteId              The identifier of the site whose descendants are counted.
+     *
+     * @return The {@link Response} object containing the descendant count as a {@code Long}.
+     *
+     * @throws DotDataException     An error occurred when counting descendants.
+     * @throws DotSecurityException The logged-in User does not have the required permissions to
+     *                              perform this action.
+     */
+    @GET
+    @Path("/{siteId}/descendants/count")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "countSiteDescendants",
+            summary = "Count descendant (nested) hosts",
+            description = "Returns the number of nested child hosts under the specified site. " +
+                    "Useful for presenting cascade-archive or cascade-unarchive confirmation dialogs " +
+                    "before performing the action. A result of 0 means the site has no nested children.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Descendant count returned successfully — entity is a Long",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to view sites"),
+            @ApiResponse(responseCode = "404", description = "Site not found")
+    })
+    public Response countSiteDescendants(@Context final HttpServletRequest httpServletRequest,
+                                         @Context final HttpServletResponse httpServletResponse,
+                                         @Parameter(description = "Identifier of the site (siteId/hostId are used interchangeably)", required = true)
+                                         @PathParam("siteId") final String siteId)
+            throws DotDataException, DotSecurityException {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.SITES.toString())
+                .init().getUser();
+
+        Logger.debug(this, () -> "Counting descendant hosts for site: " + siteId);
+
+        final PageMode pageMode = PageMode.get(httpServletRequest);
+        final Host site = pageMode.respectAnonPerms
+                ? this.siteHelper.getSite(user, siteId)
+                : this.siteHelper.getSiteNoFrontEndRoles(user, siteId);
+
+        if (null == site) {
+            throw new NotFoundException(String.format(SITE_DOESNT_EXIST_ERR_MSG, siteId));
+        }
+
+        final long count = APILocator.getHostAPI().countDescendantHosts(site);
+        return Response.ok(new ResponseEntityView<>(count)).build();
     }
 
     /**
@@ -743,6 +864,8 @@ public class SiteResource implements Serializable {
             summary = "Delete a site",
             description = "Deletes the specified site asynchronously. The default site cannot be deleted; " +
                     "you must first mark another site as default before deleting. " +
+                    "Deletion is also blocked when the site has descendant (nested) hosts; all descendants " +
+                    "must be removed first. " +
                     "The 'siteId' parameter is the site identifier (also known as 'hostId' or 'host' in other parts of the API).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Site deleted successfully",
@@ -750,7 +873,8 @@ public class SiteResource implements Serializable {
                             schema = @Schema(implementation = ResponseEntityBooleanView.class))),
             @ApiResponse(responseCode = "400", description = "Cannot delete the default site, or site does not exist"),
             @ApiResponse(responseCode = "401", description = "Unauthorized access"),
-            @ApiResponse(responseCode = "403", description = "User does not have permission to delete sites")
+            @ApiResponse(responseCode = "403", description = "User does not have permission to delete sites"),
+            @ApiResponse(responseCode = "409", description = "Site has descendant hosts that must be deleted first")
     })
     public void deleteSite(@Context final HttpServletRequest httpServletRequest,
                                 @Context final HttpServletResponse httpServletResponse,
@@ -780,16 +904,28 @@ public class SiteResource implements Serializable {
             throw new DotStateException(String.format("Site '%s' is the default site. It can't be deleted", site));
         }
 
-        final Future<Boolean> deleteHostResult = this.siteHelper.delete(site, user, respectFrontendRoles);
-        if (null == deleteHostResult) {
-            throw new DotStateException(String.format("Site '%s' couldn't be deleted", siteId));
-        } else {
-
-            try {
-                asyncResponse.resume(new ResponseEntityView<>(deleteHostResult.get()));
-            } catch (final Exception e) {
-                asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
+        try {
+            final Future<Boolean> deleteHostResult = this.siteHelper.delete(site, user, respectFrontendRoles);
+            if (null == deleteHostResult) {
+                throw new DotStateException(String.format("Site '%s' couldn't be deleted", siteId));
+            } else {
+                try {
+                    asyncResponse.resume(new ResponseEntityView<>(deleteHostResult.get()));
+                } catch (final Exception e) {
+                    asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
+                }
             }
+        } catch (final HostHasDescendantsException e) {
+            Logger.warn(this, e.getMessage());
+            final Map<String, Object> errorEntity = new HashMap<>();
+            errorEntity.put("message", e.getMessage());
+            errorEntity.put("siteId", e.getSiteId());
+            errorEntity.put("descendantHostCount", e.getDescendantHostCount());
+            errorEntity.put("descendantFolderCount", e.getDescendantFolderCount());
+            errorEntity.put("totalDescendantCount", e.getTotalDescendantCount());
+            asyncResponse.resume(Response.status(Response.Status.CONFLICT)
+                    .entity(new ResponseEntityView<>(errorEntity))
+                    .build());
         }
     }
 
@@ -1161,6 +1297,124 @@ public class SiteResource implements Serializable {
                 APILocator.getLanguageAPI().getDefaultLanguage().getId(): site.getLanguageId();
 
         site.setLanguageId(languageId);
+
+        // --- parentHost / nestable-hosts support ---
+        applyParentHostFromForm(siteForm, site);
+    }
+
+    /**
+     * Applies the {@code parentHost} field from the form to the {@link Host} contentlet.
+     *
+     * <p>The {@code parentHost} value may be:
+     * <ul>
+     *   <li><b>null / empty</b> — no change; the site stays at the System Host level (top-level).
+     *       For brand-new {@link Host} objects whose host property has not been set yet this will
+     *       leave the field unset, which {@code HostAPIImpl} interprets as a top-level host.</li>
+     *   <li><b>A host identifier UUID</b> — the site will be nested directly under that host.
+     *       The host must exist, must not be the same site being created/updated (no self-loop),
+     *       and must not be a descendant of the current site (no circular reference).</li>
+     *   <li><b>A folder identifier UUID</b> — the site will be nested under that folder within
+     *       its parent host.  The folder must exist, and its containing host must not be a
+     *       descendant of the current site (no circular reference).</li>
+     * </ul>
+     *
+     * <p>The method writes the resolved parent identifier into {@link Host#setParentHost(String)}
+     * so that {@code HostAPIImpl.persistParentHostRelationship} can derive the correct
+     * {@code Identifier.hostId} and {@code Identifier.parentPath} at save time.
+     *
+     * @param siteForm the REST form containing the optional {@code parentHost} value
+     * @param site     the {@link Host} contentlet being built for persistence
+     * @throws IllegalArgumentException if the parent is invalid (not found, self-reference,
+     *                                  or would create a circular reference)
+     */
+    private void applyParentHostFromForm(final SiteForm siteForm, final Host site) {
+        if (!UtilMethods.isSet(siteForm.getParentHost())) {
+            // No parentHost specified – preserve whatever is already on the object.
+            return;
+        }
+
+        final String parentHostValue = siteForm.getParentHost().trim();
+
+        // --- 1. Try as a Host ---
+        final Host parentHost = Try.of(
+                () -> APILocator.getHostAPI().find(parentHostValue, APILocator.systemUser(), false)
+        ).getOrNull();
+
+        if (parentHost != null && UtilMethods.isSet(parentHost.getIdentifier())) {
+            // Guard: a site cannot be its own parent.
+            if (parentHost.getIdentifier().equals(site.getIdentifier())) {
+                throw new IllegalArgumentException(
+                        "A site cannot be set as its own parent host.");
+            }
+            // Guard: circular reference — the proposed parent must not be a descendant of
+            // the current site (only relevant when updating an existing site).
+            validateNoCircularReference(parentHost.getIdentifier(),
+                    parentHost.getHostname(), site);
+            // Store the resolved parent identifier in the parentHost HostFolderField.
+            site.setParentHost(parentHost.getIdentifier());
+            return;
+        }
+
+        // --- 2. Try as a Folder ---
+        final Folder parentFolder = Try.of(
+                () -> APILocator.getFolderAPI().find(
+                        parentHostValue, APILocator.systemUser(), false)
+        ).getOrNull();
+
+        if (parentFolder != null && UtilMethods.isSet(parentFolder.getInode())) {
+            // Guard: the folder's containing host must not be a descendant of the current site.
+            validateNoCircularReference(parentFolder.getHostId(),
+                    "folder " + parentFolder.getPath(), site);
+            // Store the folder inode; persistParentHostRelationship resolves it to a Folder.
+            site.setParentHost(parentFolder.getInode());
+            return;
+        }
+
+        // --- 3. Neither host nor folder found ---
+        throw new IllegalArgumentException(
+                String.format("Parent host or folder '%s' was not found.", parentHostValue));
+    }
+
+    /**
+     * Validates that setting {@code proposedParentHostId} as the parent of {@code site} would not
+     * create a circular reference in the host hierarchy.
+     *
+     * <p>A circular reference would occur when the proposed parent host is already a descendant
+     * of the site being updated (for example, A → B → A).  For newly-created sites (whose
+     * {@link Host#getIdentifier()} is blank) this check is skipped because new hosts have no
+     * descendants yet.
+     *
+     * @param proposedParentHostId the identifier of the host that would become the parent (or the
+     *                             identifier of the host that owns the proposed parent folder)
+     * @param proposedParentLabel  human-readable label used in the error message
+     * @param site                 the site being created or updated
+     * @throws IllegalArgumentException if the proposed parent would create a circular reference
+     */
+    private void validateNoCircularReference(final String proposedParentHostId,
+            final String proposedParentLabel, final Host site) {
+        if (!UtilMethods.isSet(site.getIdentifier())) {
+            // Brand-new site — no existing descendants, so no cycle is possible.
+            return;
+        }
+        // Self-reference via host chain: proposedParentHostId == site.getIdentifier() means
+        // the site would be its own ancestor, which is a direct cycle.
+        if (site.getIdentifier().equals(proposedParentHostId)) {
+            throw new IllegalArgumentException(String.format(
+                    "Setting '%s' as the parent of '%s' would create a circular host reference "
+                            + "(a site cannot be its own ancestor).",
+                    proposedParentLabel, site.getHostname()));
+        }
+        // Transitive cycle: the proposed parent host is already a descendant of the current site.
+        final boolean wouldCreateCycle = Try.of(
+                () -> FactoryLocator.getHostFactory().isDescendantHost(
+                        proposedParentHostId, site.getIdentifier())
+        ).getOrElse(false);
+        if (wouldCreateCycle) {
+            throw new IllegalArgumentException(String.format(
+                    "Setting '%s' as the parent of '%s' would create a circular host reference. "
+                            + "The proposed parent is already a descendant of the current site.",
+                    proposedParentLabel, site.getHostname()));
+        }
     }
 
     /**

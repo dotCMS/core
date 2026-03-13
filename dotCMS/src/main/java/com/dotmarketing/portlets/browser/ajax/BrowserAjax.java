@@ -247,7 +247,23 @@ public class BrowserAjax {
         final Role[] roles = DwrUtil.getUserRoles(user);
         final Folder folder = APILocator.getFolderAPI().find(parentId, user, false);
 		this.getOpenFolderIds().add(parentId);
-        return this.getFoldersTree(folder, roles);
+        if (folder != null && UtilMethods.isSet(folder.getIdentifier())) {
+            return this.getFoldersTree(folder, roles);
+        }
+        // parentId may be the inode of a sub-host node rendered in the folder tree.
+        // Resolve the inode to its identifier; if it belongs to a Host, delegate to
+        // the site-level tree builder so nested hosts expand correctly.
+        final Identifier identifier =
+                Try.of(() -> APILocator.getIdentifierAPI().findFromInode(parentId)).getOrNull();
+        if (identifier != null
+                && Host.HOST_VELOCITY_VAR_NAME.equals(identifier.getAssetSubType())) {
+            final Host host =
+                    Try.of(() -> this.hostAPI.find(identifier.getId(), user, false)).getOrNull();
+            if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+                return this.getFoldersTree(host, roles);
+            }
+        }
+        return new ArrayList<>();
     }
 
 	/**
@@ -834,8 +850,77 @@ public class BrowserAjax {
 			Logger.error(this, String.format("Failed to get sub-folders for Site '%s' [%s]: %s", site,
 					site.getIdentifier(), e.getMessage()), e);
 		}
-		return this.getFoldersTree(site.getIdentifier(), subFolders, roles);
+		final List<Map> result = new ArrayList<>(this.getFoldersTree(site.getIdentifier(), subFolders, roles));
+		// Prepend direct child hosts (nested hosts) so they appear at the top of the site tree.
+		final WebContext ctx = WebContextFactory.get();
+		final User user = this.getUser(ctx.getHttpServletRequest());
+		result.addAll(0, this.getChildHostMaps(site, user, roles));
+		return result;
     }
+
+	/**
+	 * Returns folder-like map entries for every direct child host of the given site that the user
+	 * has at least READ permission on. Child hosts are shown at the root of the parent site's
+	 * folder tree so that users can navigate into them just like regular folders.
+	 *
+	 * @param site  The parent site whose direct child hosts should be retrieved.
+	 * @param user  The currently logged-in user.
+	 * @param roles The roles associated with the user.
+	 * @return Alphabetically sorted list of child-host map entries; never {@code null}.
+	 */
+	@SuppressWarnings("unchecked")
+	private List<Map> getChildHostMaps(final Host site, final User user, final Role[] roles) {
+		try {
+			final List<Identifier> childIds = APILocator.getIdentifierAPI()
+					.findDirectChildHostIdentifiers(site.getIdentifier());
+			if (childIds.isEmpty()) {
+				return List.of();
+			}
+			final List<Map> result = new ArrayList<>();
+			for (final Identifier childId : childIds) {
+				// Only include hosts whose parent path is the site root.
+				if (!"/".equals(childId.getParentPath())) {
+					continue;
+				}
+				try {
+					final Host childHost = this.hostAPI.find(childId.getId(), user, false);
+					if (childHost == null || !UtilMethods.isSet(childHost.getIdentifier())
+							|| childHost.isArchived()) {
+						continue;
+					}
+					final Optional<List<Integer>> permissionsOpt =
+							DwrUtil.getPermissions(childHost, roles, user);
+					final List<Integer> permissions =
+							permissionsOpt.isPresent() ? permissionsOpt.get() : List.of();
+					if (!permissions.contains(PermissionAPI.PERMISSION_READ)) {
+						continue;
+					}
+					final Map<String, Object> hostMap = new HashMap<>(childHost.getMap());
+					hostMap.put("type", "site");
+					hostMap.put("name", childHost.getHostname());
+					hostMap.put("title", childHost.getHostname());
+					hostMap.put("extension", "site");
+					hostMap.put("__icon__", "siteIcon");
+					hostMap.put("isSubHost", Boolean.TRUE);
+					hostMap.put("isHost", Boolean.TRUE);
+					hostMap.put("open", false);
+					hostMap.put("selected", false);
+					hostMap.put("parent", site.getIdentifier());
+					hostMap.put("permissions", permissions);
+					result.add(hostMap);
+				} catch (final Exception e) {
+					Logger.warn(this, "Could not load child host '" + childId.getId()
+							+ "': " + e.getMessage());
+				}
+			}
+			result.sort(Comparator.comparing(m -> String.valueOf(m.getOrDefault("name", ""))));
+			return result;
+		} catch (final Exception e) {
+			Logger.error(this, "Could not load child hosts for site '" + site.getIdentifier()
+					+ "': " + e.getMessage(), e);
+			return List.of();
+		}
+	}
 
     @SuppressWarnings("unchecked")
 	private List<Map> getFoldersTree (Folder parent, Role[] roles) throws DotStateException, DotDataException, DotSecurityException {
@@ -2394,7 +2479,12 @@ public class BrowserAjax {
 			if(folder != null) {
 				return folderMap(folder);
 			}else{
-				Host host = APILocator.getHostAPI().find(folderId, user, respectFrontendRoles);
+				// folderId may be a contentlet inode rather than an identifier — resolve it first
+				final Identifier hostIdentifier = Try.of(
+						() -> APILocator.getIdentifierAPI().findFromInode(folderId)).getOrNull();
+				final String resolvedHostId = (hostIdentifier != null && InodeUtils.isSet(hostIdentifier.getId()))
+						? hostIdentifier.getId() : folderId;
+				Host host = APILocator.getHostAPI().find(resolvedHostId, user, respectFrontendRoles);
 				if(host!=null && InodeUtils.isSet(host.getIdentifier())){
 					Map<String, Object> folderMap = new HashMap<>();
 					folderMap.put("type", "folder");

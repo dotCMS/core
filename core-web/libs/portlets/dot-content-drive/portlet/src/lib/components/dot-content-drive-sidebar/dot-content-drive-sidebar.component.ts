@@ -95,13 +95,31 @@ export class DotContentDriveSidebarComponent {
         this.handleSelectedNodeFromTable(this.$selectedNode);
     }
     /**
-     * Handles node selection events
+     * Handles node selection events.
+     *
+     * When the selected node represents a host — either a top-level site
+     * (`type === 'site'`) or a nested host appearing inside a parent's folder
+     * tree (`type === 'nested-host'`) — the Content Drive's local context is
+     * switched to that host: path resets to root, pagination clears, and the
+     * folder tree reloads for the new site.  Regular folder nodes continue to
+     * update only the selected node in the sidebar.
      *
      * @param {TreeNodeSelectEvent} event - The tree node select event
      */
     protected onNodeSelect(event: TreeNodeSelectEvent): void {
         const { node } = event;
 
+        if (node.data?.type === 'site') {
+            this.#store.switchToHost({
+                identifier: node.data.id,
+                hostname: node.data.hostname,
+                aliases: null
+            });
+            return;
+        }
+
+        // Nested-host nodes behave like folders — selecting one just navigates into the
+        // host's root without switching the global site context.
         this.#store.setSelectedNode(node);
     }
 

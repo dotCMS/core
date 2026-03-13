@@ -10,8 +10,10 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -29,6 +31,7 @@ import com.dotmarketing.portlets.contentlet.business.web.UpdateContainersPathsJo
 import com.dotmarketing.portlets.contentlet.business.web.UpdatePageTemplatePathJob;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.DateUtil;
@@ -437,6 +440,34 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     @Override
+    @CloseDBIfOpened
+    public List<Host> findDirectChildHosts(final String parentHostId, final String parentPath,
+            final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+        if (!UtilMethods.isSet(parentHostId) || !UtilMethods.isSet(parentPath)) {
+            return new ArrayList<>();
+        }
+        final List<Host> raw = this.getHostFactory().findDirectChildHosts(parentHostId, parentPath);
+        if (raw == null || raw.isEmpty()) {
+            return new ArrayList<>();
+        }
+        // Filter results to hosts the requesting user can actually read.
+        final List<Host> visible = new ArrayList<>(raw.size());
+        for (final Host child : raw) {
+            try {
+                this.checkSitePermission(user, respectFrontendRoles, child);
+                visible.add(child);
+            } catch (final DotSecurityException e) {
+                Logger.debug(this, String.format(
+                        "findDirectChildHosts: user '%s' has no read permission on child host"
+                                + " '%s' — omitting from results.", user.getUserId(),
+                        child.getIdentifier()));
+            }
+        }
+        return visible;
+    }
+
+    @Override
     public List<Host> findAllFromCache(final User user,
             final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Set<Host> cachedSites = hostCache.getAllSites(respectFrontendRoles);
@@ -462,8 +493,10 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
 
         Contentlet contentletHost;
+        boolean isExistingHost = false;
         try {
             contentletHost = APILocator.getContentletAPI().checkout(hostToBeSaved.getInode(), user, respectFrontendRoles);
+            isExistingHost = true;
         } catch (DotContentletStateException e) {
 
             contentletHost = new Contentlet();
@@ -476,12 +509,35 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             throw new IllegalArgumentException("Updating the hostName is a Dangerous Execution, to achieve this 'forceExecution': true property needs to be sent.");
         }
 
+        // Defense-in-depth: validate that the parentHost field does not introduce a circular
+        // reference before we commit any data.  The REST layer performs this check earlier, but
+        // any programmatic caller of save() also benefits from this guard.
+        validateParentHostNotCircular(hostToBeSaved);
+
+        // Capture parentHostId and hostname NOW from the caller-supplied host before checkin()
+        // overwrites the contentlet map. After checkin() the returned contentlet is rebuilt from
+        // the DB and dynamic field values (HostFolderField, hostName) may not be present in the
+        // in-memory map.
+        final String parentHostId = hostToBeSaved.getParentHost();
+        final String hostname = hostToBeSaved.getHostname();
+
         contentletHost.getMap().put(Contentlet.DONT_VALIDATE_ME, hostToBeSaved.getMap().get(Contentlet.DONT_VALIDATE_ME));
         APILocator.getContentletAPI().copyProperties(contentletHost, hostToBeSaved.getMap());
         contentletHost.setInode("");
         contentletHost.setIndexPolicy(hostToBeSaved.getIndexPolicy());
         contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
+
+        // Capture the top-level host ID BEFORE persistParentHostRelationship() rewrites the
+        // Identifier row.  We use this below to detect a reparent and fire HostReparentPayload.
+        // Only meaningful for existing (already-persisted) hosts; new hosts have no prior position.
+        final String preReparentTopLevelHostId = captureTopLevelHostId(
+                isExistingHost ? contentletHost : null);
+
+        // Persist parent host / folder relationship to the Identifier table.
+        // This keeps identifier.host_inode, identifier.parent_path and identifier.asset_name
+        // consistent with the parentHost HostFolderField value after every save.
+        persistParentHostRelationship(contentletHost, parentHostId, hostname, user);
 
         if (null != contentletHost.get(Host.HOST_NAME_KEY) && null != hostToBeSaved.get(Host.HOST_NAME_KEY) &&
                 !contentletHost.isNew() && !contentletHost.getTitle().equals(hostToBeSaved.get(Host.HOST_NAME_KEY))) {
@@ -501,6 +557,9 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             Logger.info(this, "Host " + hostToBeSaved.getHostname() + " is now live");
         }
         Host savedHost =  new Host(contentletHost);
+
+        // Fire HostReparentPayload if the host's top-level host changed as a result of the save.
+        scheduleReparentEventIfNeeded(savedHost, preReparentTopLevelHostId);
 
         updateDefaultHost(savedHost, user, respectFrontendRoles);
         this.flushAllCaches(savedHost);
@@ -651,9 +710,43 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             throw new DotRuntimeException(errorMsg, e);
         }
 
+        // Block deletion when descendant hosts exist at any depth
+        final long descendantHostCount;
+        final long descendantFolderCount;
+        try {
+            descendantHostCount = this.getHostFactory().countDescendantHosts(site.getIdentifier());
+            descendantFolderCount = this.getHostFactory().countDescendantFolders(site.getIdentifier());
+        } catch (final DotDataException e) {
+            throw new DotRuntimeException(
+                    String.format("Could not verify descendant hosts for site '%s': %s",
+                            site.getIdentifier(), e.getMessage()), e);
+        }
+        if (descendantHostCount > 0) {
+            throw new HostHasDescendantsException(site.getIdentifier(), descendantHostCount,
+                    descendantFolderCount);
+        }
+
         final User user = (null != deletingUser)?deletingUser:APILocator.systemUser();
         return this.getHostFactory().delete(site, user, respectFrontendRoles, runAsSeparatedThread);
     } // delete.
+
+    @Override
+    @CloseDBIfOpened
+    public long countDescendantHosts(final Host site) throws DotDataException {
+        if (null == site || UtilMethods.isNotSet(site.getIdentifier())) {
+            return 0L;
+        }
+        return this.getHostFactory().countDescendantHosts(site.getIdentifier());
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public long countDescendantFolders(final Host site) throws DotDataException {
+        if (null == site || UtilMethods.isNotSet(site.getIdentifier())) {
+            return 0L;
+        }
+        return this.getHostFactory().countDescendantFolders(site.getIdentifier());
+    }
 
     @Override
     @WrapInTransaction
@@ -706,6 +799,72 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         APILocator.getContentletAPI().unarchive(siteAsContentlet, user, respectFrontendRoles);
         this.flushAllCaches(site);
         HibernateUtil.addCommitListener(() -> this.sendUnArchiveSiteSystemEvent(siteAsContentlet), 1000);
+    }
+
+    @Override
+    @WrapInTransaction
+    public void cascadeArchive(final Host site, final User user,
+                               final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        // Archive all descendants deepest-first, then archive the root.
+        final List<String> descendantIds =
+                this.getHostFactory().findAllDescendantHostIds(site.getIdentifier());
+
+        for (final String descendantId : descendantIds) {
+            final Host descendant = DBSearch(descendantId, user, respectFrontendRoles);
+            if (descendant == null) {
+                Logger.warn(HostAPIImpl.class, String.format(
+                        "cascadeArchive: descendant host '%s' not found — skipping.",
+                        descendantId));
+                continue;
+            }
+            try {
+                archive(descendant, user, respectFrontendRoles);
+            } catch (final DotContentletStateException e) {
+                // Already archived or invalid state — log and continue so the rest of the
+                // cascade is not blocked by a single pre-archived descendant.
+                Logger.warn(HostAPIImpl.class, String.format(
+                        "cascadeArchive: skipping descendant host '%s' (%s) — %s",
+                        descendant.getHostname(), descendantId, e.getMessage()));
+            }
+        }
+
+        // Finally, archive the root site itself.
+        archive(site, user, respectFrontendRoles);
+    }
+
+    @Override
+    @WrapInTransaction
+    public void cascadeUnarchive(final Host site, final User user,
+                                 final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+
+        // Unarchive all descendants deepest-first, then unarchive the root.
+        final List<String> descendantIds =
+                this.getHostFactory().findAllDescendantHostIds(site.getIdentifier());
+
+        for (final String descendantId : descendantIds) {
+            final Host descendant = DBSearch(descendantId, user, respectFrontendRoles);
+            if (descendant == null) {
+                Logger.warn(HostAPIImpl.class, String.format(
+                        "cascadeUnarchive: descendant host '%s' not found — skipping.",
+                        descendantId));
+                continue;
+            }
+            try {
+                unarchive(descendant, user, respectFrontendRoles);
+            } catch (final DotContentletStateException e) {
+                // Not archived or invalid state — log and continue so the rest of the
+                // cascade is not blocked by a single pre-unarchived descendant.
+                Logger.warn(HostAPIImpl.class, String.format(
+                        "cascadeUnarchive: skipping descendant host '%s' (%s) — %s",
+                        descendant.getHostname(), descendantId, e.getMessage()));
+            }
+        }
+
+        // Finally, unarchive the root site itself.
+        unarchive(site, user, respectFrontendRoles);
     }
 
     private void sendUnArchiveSiteSystemEvent (final Contentlet contentlet) {
@@ -991,13 +1150,310 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
     }
 
     /**
-     * Utility method that completely clears the Site Cache Region across all nodes in your environment.
+     * Validates that the {@link Host#PARENT_HOST_KEY} field on {@code hostToBeSaved} would not
+     * introduce a circular reference in the host hierarchy.
      *
-     * @param site The {@link Host} object that was modified, which triggers a complete flush of the Site Cache Region.
+     * <p>A circular reference occurs when the proposed parent (or an ancestor of the proposed
+     * parent) is the same host that is being saved.  For example:
+     * <pre>
+     *   A → B → A   (cycle: A's parent is B, B's parent is A)
+     * </pre>
+     *
+     * <p>The check is skipped for brand-new hosts (blank identifier) because they have no
+     * descendants yet.
+     *
+     * @param hostToBeSaved the host being created or updated
+     * @throws DotDataException         if the data source cannot be queried
+     * @throws IllegalArgumentException if the proposed parent would create a circular reference
      */
-    private void flushAllCaches(final Host site) {
+    private void validateParentHostNotCircular(final Host hostToBeSaved) throws DotDataException {
+        final String siteId     = hostToBeSaved.getIdentifier();
+        final String parentHostId = hostToBeSaved.getParentHost();
+
+        if (!UtilMethods.isSet(siteId) || !UtilMethods.isSet(parentHostId)
+                || Host.SYSTEM_HOST.equals(parentHostId)) {
+            // New host, or top-level host with no parent — no cycle possible.
+            return;
+        }
+
+        // Direct self-reference (e.g. parentHost == siteId).
+        if (siteId.equals(parentHostId)) {
+            throw new IllegalArgumentException(String.format(
+                    "Host '%s' (id=%s) cannot be set as its own parent host.",
+                    hostToBeSaved.getHostname(), siteId));
+        }
+
+        // Resolve the parentHostId: it may refer to a Folder inode rather than a Host identifier.
+        // In that case, the effective parent host is the folder's host_inode in the identifier table.
+        final Folder parentFolder = resolveParentFolder(parentHostId, APILocator.systemUser());
+        final String effectiveParentHostId = (parentFolder != null)
+                ? parentFolder.getHostId()
+                : parentHostId;
+
+        // If the effective parent host is the same as the site itself, that's a direct cycle.
+        if (siteId.equals(effectiveParentHostId)) {
+            throw new IllegalArgumentException(String.format(
+                    "Setting the parent of host '%s' (id=%s) to a folder within itself "
+                            + "would create a circular host reference.",
+                    hostToBeSaved.getHostname(), siteId));
+        }
+
+        // Transitive cycle: the effective parent host is a descendant of the current site.
+        if (this.getHostFactory().isDescendantHost(effectiveParentHostId, siteId)) {
+            throw new IllegalArgumentException(String.format(
+                    "Setting the parent of host '%s' (id=%s) to host/folder '%s' would create a "
+                            + "circular host reference. The proposed parent is already a descendant "
+                            + "of the current site.",
+                    hostToBeSaved.getHostname(), siteId, parentHostId));
+        }
+    }
+
+    /**
+     * Reads the {@link Host#PARENT_HOST_KEY} field from the saved host contentlet, resolves
+     * whether the value refers to a {@link Host} or a {@link Folder}, and then updates the
+     * {@link Identifier} record so that:
+     * <ul>
+     *   <li>{@code identifier.asset_name} equals the hostname (required for URL resolution)</li>
+     *   <li>{@code identifier.host_inode} points to the immediate parent host</li>
+     *   <li>{@code identifier.parent_path} reflects the ancestor folder path within that parent host</li>
+     * </ul>
+     *
+     * <p>When no parent is set (null/empty, or equal to {@link Host#SYSTEM_HOST}), the host is
+     * treated as a top-level host and {@code host_inode} is set to {@link Host#SYSTEM_HOST}.
+     *
+     * @param savedContentlet the contentlet just returned by {@link ContentletAPI#checkin}
+     * @param user            the user performing the operation
+     * @throws DotDataException     if the identifier cannot be loaded or saved
+     * @throws DotSecurityException if the user does not have permission to read the parent folder
+     */
+    private void persistParentHostRelationship(final Contentlet savedContentlet,
+            final String parentId, final String hostnameFromCaller, final User user)
+            throws DotDataException, DotSecurityException {
+
+        // Prefer the hostname captured before checkin(); fall back to the post-checkin contentlet
+        // map in case a future caller omits it.
+        final String hostname = UtilMethods.isSet(hostnameFromCaller)
+                ? hostnameFromCaller
+                : (String) savedContentlet.get(Host.HOST_NAME_KEY);
+        if (!UtilMethods.isSet(hostname)) {
+            // Cannot set asset_name without a hostname – skip (validation should catch this earlier).
+            Logger.warn(this, "Cannot persist parent-host relationship for contentlet '"
+                    + savedContentlet.getIdentifier() + "': hostName is blank.");
+            return;
+        }
+
+        final Identifier identifier =
+                APILocator.getIdentifierAPI().find(savedContentlet.getIdentifier());
+        if (identifier == null || !UtilMethods.isSet(identifier.getId())) {
+            Logger.warn(this, "Cannot persist parent-host relationship: no Identifier found for '"
+                    + savedContentlet.getIdentifier() + "'.");
+            return;
+        }
+
+        if (!UtilMethods.isSet(parentId) || Host.SYSTEM_HOST.equals(parentId)) {
+            // Top-level host – anchor directly under the System Host.
+            identifier.setHostId(Host.SYSTEM_HOST);
+            identifier.setParentPath("/");
+        } else {
+            // Resolve whether parentId refers to a Folder or another Host.
+            final Folder parentFolder = resolveParentFolder(parentId, user);
+            if (parentFolder != null) {
+                // Parent is a real folder inside some host.
+                identifier.setHostId(parentFolder.getHostId());
+                identifier.setParentPath(parentFolder.getPath());
+            } else {
+                // Parent is a Host (no folder at that identifier).
+                identifier.setHostId(parentId);
+                identifier.setParentPath("/");
+            }
+        }
+
+        // Keep asset_name in sync with the hostname on every save.
+        identifier.setAssetName(hostname);
+
+        // NOTE: We intentionally do NOT call renameFolderChildren() here despite this being a
+        // reparent operation. folder parent_path values are stored host-relative (scoped to
+        // identifier.host_inode, which is the owning host's UUID), not relative to the top-level
+        // host. The unique constraint on identifier is (parent_path, asset_name, host_inode).
+        // Because the reparented host's own UUID never changes, all folders and content under it
+        // still carry host_inode = this host's UUID and their parent_path values remain correct
+        // without any cascade update. renameFolderChildren is only needed when a folder is
+        // RENAMED (asset_name changes) — handled by the rename_folder_assets_trigger DB trigger —
+        // not when a host is reparented.
+        APILocator.getIdentifierAPI().save(identifier);
+        Logger.debug(this, () -> String.format(
+                "Persisted parent-host relationship for host '%s' (id=%s): hostId=%s, parentPath=%s, assetName=%s",
+                hostname, identifier.getId(), identifier.getHostId(),
+                identifier.getParentPath(), identifier.getAssetName()));
+    }
+
+    /**
+     * Attempts to resolve a UUID string to a {@link Folder}.
+     *
+     * <p>Returns {@code null} when the identifier does not correspond to a real folder – for
+     * example when it is a Host identifier or when the folder cannot be found.
+     *
+     * @param folderId the candidate folder or host identifier UUID
+     * @param user     the user performing the operation
+     * @return the resolved {@link Folder}, or {@code null} when not a folder
+     */
+    private Folder resolveParentFolder(final String folderId, final User user) {
+        try {
+            final Folder folder = APILocator.getFolderAPI().find(folderId, user, false);
+            if (folder != null
+                    && UtilMethods.isSet(folder.getIdentifier())
+                    && !FolderAPI.SYSTEM_FOLDER.equals(folder.getIdentifier())) {
+                return folder;
+            }
+        } catch (final Exception e) {
+            Logger.debug(this,
+                    "Could not resolve '" + folderId + "' as a Folder (likely a Host id): "
+                            + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Utility method that completely clears the Site Cache Region across all nodes in your
+     * environment, and also invalidates the {@link NestedHostPatternCache} bucket for the affected
+     * top-level host.
+     *
+     * <p>For nested hosts the {@link NestedHostPatternCache} bucket keyed by the top-level host's
+     * UUID is dropped so that path-pattern matching rebuilds lazily on the next request.  When the
+     * top-level host cannot be determined (e.g. because the Identifier has already been deleted),
+     * the entire {@link NestedHostPatternCache} is cleared as a safe fallback.</p>
+     *
+     * @param site The {@link Host} object that was modified, which triggers a complete flush of
+     *             the Site Cache Region.
+     */
+    /**
+     * Completely clears the Site Cache Region for the given site.
+     *
+     * <p>Package-private (not {@code private}) to allow subclasses in the same package — such as
+     * test-only {@code @VisibleForTesting} subclasses — to override this method with a no-op so
+     * that pure unit tests do not need a running cache infrastructure.  Production code must
+     * never call this method externally; use the public API methods instead.
+     *
+     * @param site The site that was modified.
+     */
+    @VisibleForTesting
+    void flushAllCaches(final Host site) {
         this.hostCache.remove(site);
         this.hostCache.clearCache();
+        invalidateNestedHostPatternCache(site);
+    }
+
+    /**
+     * Invalidates the {@link NestedHostPatternCache} bucket corresponding to the top-level host
+     * that owns (or is) {@code site}.
+     *
+     * <p>If {@code site} is itself a top-level host (i.e. its {@code Identifier.hostId} is the
+     * System Host), its own UUID is used as the cache key.  If it is a nested host, the chain is
+     * walked to find the root.  If the top-level host cannot be determined (e.g. missing
+     * Identifier), all buckets are dropped as a safe fallback.</p>
+     *
+     * @param site the host whose cache bucket should be invalidated; a {@code null} value triggers
+     *             an {@link NestedHostPatternCache#invalidateAll()} as a safe fallback
+     */
+    private void invalidateNestedHostPatternCache(final Host site) {
+        final NestedHostPatternCache nestedCache = NestedHostPatternCache.getInstance();
+        if (site == null || !UtilMethods.isSet(site.getIdentifier())) {
+            nestedCache.invalidateAll();
+            return;
+        }
+        try {
+            final String topLevelHostId =
+                    APILocator.getIdentifierAPI().getTopLevelHostId(site);
+            nestedCache.invalidate(topLevelHostId);
+        } catch (final Exception e) {
+            Logger.warn(this,
+                    "Could not determine top-level host for site '" + site.getHostname()
+                            + "' (" + site.getIdentifier()
+                            + "); invalidating all NestedHostPatternCache buckets. Error: "
+                            + e.getMessage());
+            nestedCache.invalidateAll();
+        }
+    }
+
+    /**
+     * Returns the UUID of the top-level host that currently owns {@code contentlet} by consulting
+     * the live {@link Identifier} table, or {@code null} when the information cannot be retrieved.
+     *
+     * <p>This snapshot is taken <em>before</em> {@link #persistParentHostRelationship} rewrites the
+     * Identifier row so that we can compare old vs. new positions in
+     * {@link #scheduleReparentEventIfNeeded}.</p>
+     *
+     * @param contentlet the contentlet whose current top-level host is required; {@code null} is
+     *                   accepted and causes {@code null} to be returned immediately
+     * @return top-level host UUID, or {@code null} if it cannot be determined
+     */
+    private String captureTopLevelHostId(final Contentlet contentlet) {
+        if (contentlet == null || !UtilMethods.isSet(contentlet.getIdentifier())) {
+            return null;
+        }
+        return Try.of(() -> APILocator.getIdentifierAPI().getTopLevelHostId(new Host(contentlet)))
+                .getOrElse((String) null);
+    }
+
+    /**
+     * Schedules a {@link HostReparentPayload} notification via the
+     * {@link LocalSystemEventsAPI} when the top-level host that owns {@code site} is different
+     * from the one captured before the save ({@code preReparentTopLevelHostId}).
+     *
+     * <p>The notification is deferred until the current database transaction commits via
+     * {@link HibernateUtil#addCommitListenerNoThrow} so that subscribers always observe stable,
+     * fully-committed data.</p>
+     *
+     * <p>No event is fired when:
+     * <ul>
+     *   <li>{@code preReparentTopLevelHostId} is {@code null} (new host, no previous position)</li>
+     *   <li>the new top-level host equals the old one (no effective reparent occurred)</li>
+     *   <li>the new top-level host cannot be determined (logged as a warning)</li>
+     * </ul>
+     * </p>
+     *
+     * @param site                      the host that was just saved
+     * @param preReparentTopLevelHostId the top-level host UUID before the save, or {@code null}
+     */
+    private void scheduleReparentEventIfNeeded(final Host site,
+            final String preReparentTopLevelHostId) {
+
+        if (!UtilMethods.isSet(preReparentTopLevelHostId)
+                || !UtilMethods.isSet(site.getIdentifier())) {
+            // New host or missing identifier – nothing to compare against.
+            return;
+        }
+
+        final String newTopLevelHostId;
+        try {
+            newTopLevelHostId = APILocator.getIdentifierAPI().getTopLevelHostId(site);
+        } catch (final Exception e) {
+            Logger.warn(this, "scheduleReparentEventIfNeeded: could not determine new top-level "
+                    + "host for '" + site.getHostname() + "'; skipping HostReparentPayload: "
+                    + e.getMessage());
+            return;
+        }
+
+        if (preReparentTopLevelHostId.equals(newTopLevelHostId)) {
+            // Top-level host unchanged – no reparent detected.
+            return;
+        }
+
+        final HostReparentPayload payload =
+                new HostReparentPayload(preReparentTopLevelHostId, newTopLevelHostId);
+        HibernateUtil.addCommitListenerNoThrow(() -> {
+            try {
+                final LocalSystemEventsAPI localEventsAPI =
+                        APILocator.getLocalSystemEventsAPI();
+                localEventsAPI.asyncNotify(payload);
+                Logger.debug(HostAPIImpl.class,
+                        "Fired HostReparentPayload: " + payload);
+            } catch (final Exception e) {
+                Logger.warn(HostAPIImpl.class,
+                        "Could not fire HostReparentPayload " + payload + ": " + e.getMessage());
+            }
+        });
+        Logger.debug(this, () -> "Scheduled HostReparentPayload: " + payload);
     }
 
 }

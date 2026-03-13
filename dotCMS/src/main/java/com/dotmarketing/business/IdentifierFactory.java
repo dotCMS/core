@@ -278,4 +278,35 @@ public abstract class IdentifierFactory {
 	 */
 	abstract protected void updateUserReferences(final String userId, final String replacementUserId)throws DotDataException, DotSecurityException;
 
+	/**
+	 * Returns all {@link Identifier} rows for nested hosts that are direct or transitive
+	 * descendants of the given top-level host, using a {@code WITH RECURSIVE} CTE query.
+	 *
+	 * <p>Only rows where {@code asset_type = 'contentlet'} and
+	 * {@code asset_subtype = 'Host'} are returned.  The starting host's own Identifier row is
+	 * <em>not</em> included in the result — only its descendants.</p>
+	 *
+	 * <p>This method is the data source for {@link com.dotmarketing.portlets.contentlet.business.NestedHostPatternCache}
+	 * pattern-bucket construction, for delete-validation (block delete when descendants exist),
+	 * and for cascade-archive operations.</p>
+	 *
+	 * @param topLevelHostId the UUID of the top-level host to walk from
+	 * @return list of all descendant host {@link Identifier} records at every depth; never
+	 *         {@code null}, empty when no nested children exist
+	 * @throws DotDataException if a database error occurs
+	 */
+	public abstract List<Identifier> findDescendantHostIdentifiers(String topLevelHostId)
+			throws DotDataException;
+
+	/**
+	 * Returns the {@link Identifier} rows for all <em>direct</em> child hosts of the given parent
+	 * host — i.e. rows where {@code host_inode = parentHostId} and {@code asset_subtype = 'Host'}.
+	 *
+	 * @param parentHostId UUID of the parent host; must not be {@code null}
+	 * @return list of direct-child host {@link Identifier} records; never {@code null}
+	 * @throws DotDataException if a database error occurs
+	 */
+	public abstract List<Identifier> findDirectChildHostIdentifiers(String parentHostId)
+			throws DotDataException;
+
 }

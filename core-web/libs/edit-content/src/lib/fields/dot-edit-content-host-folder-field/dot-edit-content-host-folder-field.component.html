@@ -12,7 +12,8 @@
         <dot-host-folder-field
             [formControlName]="field.variable"
             [hasError]="fieldHasError"
-            [isRequired]="isRequired" />
+            [isRequired]="isRequired"
+            [hostId]="$hostId()" />
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (fieldHasError) {

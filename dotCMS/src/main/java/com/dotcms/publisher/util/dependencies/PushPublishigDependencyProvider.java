@@ -23,8 +23,10 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -181,6 +183,66 @@ public class PushPublishigDependencyProvider {
             throws DotDataException, DotSecurityException {
 
         return APILocator.getHostAPI().find(hostId, user, false);
+    }
+
+    /**
+     * Returns all ancestor hosts of the given {@code site} by walking up the
+     * {@code Identifier.hostId} chain until the System Host is reached.
+     *
+     * <p>For a top-level host (one whose {@code Identifier.hostId} already equals
+     * {@link com.dotmarketing.beans.Host#SYSTEM_HOST}) this returns an empty list.  For a nested
+     * host the list is ordered from immediate parent to the topmost non-system ancestor, e.g.
+     * {@code [parent, grandparent, great-grandparent]}.
+     *
+     * <p>A depth guard of 50 levels is applied to prevent an infinite loop if the host
+     * hierarchy is corrupted by a circular reference that somehow bypassed the save-time
+     * validation.
+     *
+     * @param site the {@link Host} whose ancestors should be collected
+     * @return an ordered {@link List} of ancestor {@link Host} objects (nearest first), never
+     *         {@code null}
+     * @throws DotDataException     if a database error occurs while resolving identifiers or hosts
+     * @throws DotSecurityException if the current user does not have permission to read a host
+     */
+    public List<Host> getAncestorHosts(final Host site)
+            throws DotDataException, DotSecurityException {
+
+        final List<Host> ancestors = new ArrayList<>();
+        if (site == null || !InodeUtils.isSet(site.getIdentifier())) {
+            return ancestors;
+        }
+
+        final int maxDepth = 50;
+        Host current = site;
+        final Set<String> visited = new HashSet<>();
+        visited.add(site.getIdentifier());
+
+        for (int depth = 0; depth < maxDepth; depth++) {
+            final Identifier identifier = APILocator.getIdentifierAPI().find(current.getIdentifier());
+            if (identifier == null
+                    || !InodeUtils.isSet(identifier.getHostId())
+                    || Host.SYSTEM_HOST.equals(identifier.getHostId())) {
+                break; // reached a top-level host
+            }
+
+            final String parentId = identifier.getHostId();
+            if (visited.contains(parentId)) {
+                Logger.warn(this, "Cycle detected in host ancestor chain at identifier '" + parentId
+                        + "'; stopping ancestor traversal.");
+                break;
+            }
+            visited.add(parentId);
+
+            final Host parentHost = APILocator.getHostAPI().find(parentId, user, false);
+            if (parentHost == null || !InodeUtils.isSet(parentHost.getIdentifier())) {
+                break; // dangling reference — stop gracefully
+            }
+
+            ancestors.add(parentHost);
+            current = parentHost;
+        }
+
+        return ancestors;
     }
 
     public List<Contentlet> getContentletsByLink(final String linkId)

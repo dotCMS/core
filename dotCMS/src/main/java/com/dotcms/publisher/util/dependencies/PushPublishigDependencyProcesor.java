@@ -165,6 +165,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      * Collects the different dependent objects that are required for pushing
      * {@link Host} objects. The required dependencies of a site are:
      * <ul>
+     * <li>Ancestor hosts (for nested hosts — ensures the full hierarchy is on the receiver).</li>
      * <li>Templates.</li>
      * <li>Containers.</li>
      * <li>Contentlets.</li>
@@ -175,6 +176,12 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      */
     private void proccessSiteDependency(final Host site) {
         try {
+            // Ancestor host dependencies — for nested hosts we must ensure every ancestor exists
+            // on the receiving environment before the nested host can be imported.  We add them
+            // "silently" (without pulling in their full content graph) because the caller may only
+            // want to push the nested host itself, not all content of the parent hosts.
+            addAncestorHostsSilently(site);
+
             // Template dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.TEMPLATE,
                     pushPublishigDependencyProvider.getTemplatesByHost(site),
@@ -218,6 +225,31 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     /**
+     * Walks the ancestor-host chain for the given {@code site} (via {@code Identifier.hostId})
+     * and silently adds each ancestor to the bundle without re-processing its full content graph.
+     *
+     * <p>This guarantees that when a nested host is pushed, every ancestor host object arrives on
+     * the receiving server <em>before</em> the nested host is imported, preventing referential
+     * integrity failures.
+     *
+     * @param site the site whose ancestors should be added to the bundle
+     */
+    private void addAncestorHostsSilently(final Host site) {
+        try {
+            final List<Host> ancestors =
+                    pushPublishigDependencyProvider.getAncestorHosts(site);
+            for (final Host ancestor : ancestors) {
+                tryToAddSilently(PusheableAsset.SITE, ancestor,
+                        ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(site));
+            }
+        } catch (final DotSecurityException | DotDataException e) {
+            Logger.warn(this, String.format(
+                    "Could not resolve ancestor hosts for Site '%s' [%s]: %s",
+                    site.getHostname(), site.getIdentifier(), e.getMessage()));
+        }
+    }
+
+    /**
      * For given Folders adds its dependencies:
      * <ul>
      * <li>Hosts</li>
@@ -237,9 +269,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                         ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(folder));
             }
 
-            tryToAddSilently(PusheableAsset.SITE,
-                    pushPublishigDependencyProvider.getHostById(folder.getHostId()),
+            final Host folderHost = pushPublishigDependencyProvider.getHostById(folder.getHostId());
+            tryToAddSilently(PusheableAsset.SITE, folderHost,
                     ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(folder));
+
+            // For folders inside a nested host, ensure the full ancestor host chain is included
+            // in the bundle so the receiving environment can resolve the host hierarchy.
+            if (folderHost != null) {
+                addAncestorHostsSilently(folderHost);
+            }
 
             // Content dependencies
             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,

@@ -79,6 +79,31 @@ describe('HostFolderFiledStore', () => {
                 expect(service.getCurrentSiteAsTreeNodeItem).not.toHaveBeenCalled();
                 expect(store.nodeSelected().key).toBe(node.key);
             });
+
+            it('should select a node by site identifier (UUID) when path matches data.id', () => {
+                // Simulate sites whose data.id is a UUID (as returned by the real API)
+                const siteWithUuidId: TreeNodeItem = {
+                    key: 'uuid-abc-123',
+                    label: 'example.dotcms.com',
+                    data: {
+                        id: 'uuid-abc-123',
+                        hostname: 'example.dotcms.com',
+                        path: '',
+                        type: 'site'
+                    },
+                    expandedIcon: 'pi pi-folder-open',
+                    collapsedIcon: 'pi pi-folder'
+                };
+                service.getSitesTreePath.mockReturnValue(
+                    of([...TREE_SELECT_SITES_MOCK, siteWithUuidId])
+                );
+
+                // Pass the UUID as path — simulates prefillHostId set from ?hostId=uuid-abc-123
+                store.loadSites({ path: 'uuid-abc-123', isRequired: false });
+
+                expect(store.nodeSelected().key).toBe('uuid-abc-123');
+                expect(store.nodeSelected().label).toBe('example.dotcms.com');
+            });
         });
 
         describe('when path is empty', () => {

@@ -14,7 +14,7 @@ public class BrowserQueryForm {
 
     private final String hostFolderId, filter, sortBy;
     private final int offset, maxResults;
-    private final boolean showWorking, showArchived, showFolders, showFiles, showPages,sortByDesc, showLinks, showDotAssets;
+    private final boolean showWorking, showArchived, showFolders, showFiles, showPages,sortByDesc, showLinks, showDotAssets, showSubHosts;
     private final long languageId;
     private final List<String> extensions, mimeTypes;
 
@@ -35,6 +35,7 @@ public class BrowserQueryForm {
         this.showLinks     = builder.showLinks;
         this.showPages     = builder.showPages;
         this.showDotAssets = builder.showDotAssets;
+        this.showSubHosts  = builder.showSubHosts;
         this.languageId    = builder.languageId;
     }
 
@@ -90,6 +91,16 @@ public class BrowserQueryForm {
         return showDotAssets;
     }
 
+    /**
+     * Returns whether sub-hosts (hosts nested under the browsed host or folder) should be
+     * included in the browser listing response.
+     *
+     * @return {@code true} if sub-hosts should be returned; {@code false} by default.
+     */
+    public boolean isShowSubHosts() {
+        return showSubHosts;
+    }
+
     public long getLanguageId() {
         return languageId;
     }
@@ -118,6 +129,7 @@ public class BrowserQueryForm {
                 ", sortByDesc=" + sortByDesc +
                 ", showLinks=" + showLinks +
                 ", showDotAssets=" + showDotAssets +
+                ", showSubHosts=" + showSubHosts +
                 ", languageId=" + languageId +
                 ", extensions=" + extensions +
                 ", mimeTypes=" + mimeTypes +
@@ -170,6 +182,9 @@ public class BrowserQueryForm {
 
         @JsonProperty
         private boolean showDotAssets = false;
+
+        @JsonProperty
+        private boolean showSubHosts  = false;
 
         @JsonProperty
         private long languageId       = 0;
@@ -248,6 +263,11 @@ public class BrowserQueryForm {
 
         public BrowserQueryForm.Builder showDotAssets(final boolean showDotAssets) {
             this.showDotAssets = showDotAssets;
+            return this;
+        }
+
+        public BrowserQueryForm.Builder showSubHosts(final boolean showSubHosts) {
+            this.showSubHosts = showSubHosts;
             return this;
         }
 

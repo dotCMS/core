@@ -24,3 +24,9 @@
 #hostTemplateWrapper {
 	text-align: center;
 }
+
+/* Archived host row: dimmed to provide visual distinction from live/stopped hosts */
+tr.host-list__row--archived td {
+	opacity: 0.6;
+	font-style: italic;
+}

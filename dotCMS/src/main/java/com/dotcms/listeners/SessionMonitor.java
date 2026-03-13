@@ -12,6 +12,9 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.WebKeys;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.Map;
@@ -68,7 +71,12 @@ public class SessionMonitor implements ServletRequestListener,
 
     @Override
     public void attributeAdded(HttpSessionBindingEvent event) {
-        // Not implemented
+        if(WebKeys.USER.equals(event.getName()) && event.getValue() instanceof User) {
+            HttpSession session = event.getSession();
+            User user = (User) event.getValue();
+            session.setAttribute(WebKeys.USER_ID, user.getUserId());
+            session.setAttribute(DOT_CLUSTER_SESSION, true);
+        }
     }
 
     /**
@@ -105,7 +113,9 @@ public class SessionMonitor implements ServletRequestListener,
         if (session == null) {
             return;
         }
-        final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+
+
+        final String userId = PortalUtil.getUserId(session);
         if (userId == null) {
             return;
         }
@@ -117,9 +127,8 @@ public class SessionMonitor implements ServletRequestListener,
 
         Logger.debug(this, "Triggering a session destroyed event");
 
-        final boolean isLogout =
-                session.getAttribute(LOG_OUT_ATTRIBUTE) != null && Boolean.parseBoolean(
-                        session.getAttribute(LOG_OUT_ATTRIBUTE).toString());
+        final boolean isLogout = Try.of(()->Boolean.parseBoolean((String) session.getAttribute(LOG_OUT_ATTRIBUTE))).getOrElse(false);
+
 
         if (isLogout) {
             Try.run(() -> this.systemEventsAPI.push(new SystemEvent
@@ -159,8 +168,8 @@ public class SessionMonitor implements ServletRequestListener,
     public void requestInitialized(final ServletRequestEvent event) {
         final HttpSession session = ((HttpServletRequest) event.getServletRequest())
                 .getSession(false);
-        if (session != null && session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null) {
-            final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+        final String userId = PortalUtil.getUserId(session);
+        if (session!= null && userId != null) {
             session.setAttribute(USER_REMOTE_ADDR, event.getServletRequest().getRemoteAddr());
             final String id = session.getId();
             userSessions.put(id, session);

@@ -106,7 +106,10 @@ export function withSidebar() {
              */
             setSelectedNode: (selectedNode: DotFolderTreeNodeItem) => {
                 patchState(store, {
-                    selectedNode
+                    selectedNode,
+                    // Keep browseHostname in sync so drive/search uses the correct host
+                    // regardless of whether this node is inside a nested host.
+                    browseHostname: selectedNode?.data?.hostname
                 });
             },
 

@@ -138,7 +138,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             throws DotSecurityException, DotDataException {
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
-        final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
+        final PageContext resolvedContext = resolveContextForNestedHost(context, request);
+        final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(resolvedContext, host, request);
 
         fireRulesOnPage(htmlPageUrl.getHTMLPage(), request, response);
 
@@ -164,7 +165,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     public HTMLPageUrl getHtmlPageAsset(final PageContext context,
             final HttpServletRequest request) throws DotSecurityException, DotDataException {
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
-        return getHtmlPageAsset(context, host, request);
+        return getHtmlPageAsset(resolveContextForNestedHost(context, request), host, request);
     }
 
     @Override
@@ -198,9 +199,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         PageMode.setPageMode(request, mode, false);
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
-        final HTMLPageUrl htmlPageUrl = context.getPage() != null
-                ? new HTMLPageUrl(context.getPage())
-                : getHtmlPageAsset(context, host, request);
+        final PageContext resolvedContext = resolveContextForNestedHost(context, request);
+        final HTMLPageUrl htmlPageUrl = resolvedContext.getPage() != null
+                ? new HTMLPageUrl(resolvedContext.getPage())
+                : getHtmlPageAsset(resolvedContext, host, request);
 
         fireRulesOnPage(htmlPageUrl.getHTMLPage(), request, response);
 
@@ -212,8 +214,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setSite(host)
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
-                .setParseJSON(context.isParseJSON())
-                .setVanityUrl(context.getVanityUrl());
+                .setParseJSON(resolvedContext.isParseJSON())
+                .setVanityUrl(resolvedContext.getVanityUrl());
         if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
             APILocator.getExperimentsAPI()
                     .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
@@ -250,11 +252,14 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final User systemUser = userAPI.getSystemUser();
 
             final Host host = this.hostWebAPI.getCurrentHost(request, systemUser);
+            final String resolvedPageUri = (String) request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
+            final String effectivePageUri = (resolvedPageUri != null && !resolvedPageUri.equals(pageUri))
+                    ? resolvedPageUri : pageUri;
 
             final IHTMLPage htmlPageAsset = this.getHtmlPageAsset(
                     PageContextBuilder.builder()
                             .setPageMode(PageMode.PREVIEW_MODE)
-                            .setPageUri(pageUri)
+                            .setPageUri(effectivePageUri)
                             .setUser(systemUser)
                             .build(),
                     host,
@@ -299,7 +304,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml Host object retrieved from the request is: " + host.getIdentifier());
-        final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
+        final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(resolveContextForNestedHost(context, request), host, request);
         final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
         Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_getPageHtml HTMLPageUrl: " + htmlPageUrl.toString());
 
@@ -347,6 +352,42 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         } else {
             return JsCode + "\n" + pageHTML;
         }
+    }
+
+    /**
+     * If nested-host resolution has set a stripped URI on the request via
+     * {@link Constants#CMS_FILTER_URI_OVERRIDE}, return a new {@link PageContext} with that
+     * shorter URI so that the page lookup targets the correct path inside the nested host.
+     * Otherwise, return the original context unchanged.
+     *
+     * <p>This must be called <em>after</em> {@link HostWebAPI#getCurrentHost} and <em>before</em>
+     * {@link #getHtmlPageAsset(PageContext, Host, HttpServletRequest)}, because
+     * {@code getCurrentHost} is what sets {@code CMS_FILTER_URI_OVERRIDE} when a nested host is
+     * matched.</p>
+     *
+     * @param context the original page context
+     * @param request the current HTTP request
+     * @return a page context whose URI reflects the nested-host-stripped path, or {@code context}
+     *         if no stripping was performed
+     */
+    private PageContext resolveContextForNestedHost(final PageContext context,
+            final HttpServletRequest request) {
+        final String strippedUri = (String) request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE);
+        if (strippedUri != null && !strippedUri.equals(context.getPageUri())) {
+            Logger.debug(this, "HTMLPageAssetRenderedAPIImpl_resolveContextForNestedHost "
+                    + "Rewriting page URI from '" + context.getPageUri()
+                    + "' to nested-host-stripped URI '" + strippedUri + "'");
+            return PageContextBuilder.builder()
+                    .setUser(context.getUser())
+                    .setPageUri(strippedUri)
+                    .setPageMode(context.getPageMode())
+                    .setPage(context.getPage())
+                    .setParseJSON(context.isParseJSON())
+                    .setGraphQL(context.isGraphQL())
+                    .setVanityUrl(context.getVanityUrl())
+                    .build();
+        }
+        return context;
     }
 
     /**

@@ -6,8 +6,10 @@
         <div class="flex gap-1 items-center">
             <div class="px-2">
                 <dot-site
-                    [value]="$currentSite()?.identifier"
+                    [value]="globalStore.siteDetails()?.identifier"
+                    [reload]="globalStore.siteListVersion()"
                     [placeholder]="'Select a site'"
+                    [showSystemHost]="false"
                     class="w-64"
                     (onChange)="siteChange($event)"
                     (onShow)="iframeOverlayService.show()"

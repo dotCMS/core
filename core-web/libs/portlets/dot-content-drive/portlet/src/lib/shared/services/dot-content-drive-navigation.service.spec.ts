@@ -68,7 +68,8 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/test-page',
-                language_id: 1
+                language_id: 1,
+                host_id: 'test'
             });
         });
 
@@ -83,7 +84,8 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/test-page-url',
-                language_id: 2
+                language_id: 2,
+                host_id: 'test'
             });
         });
 
@@ -212,7 +214,8 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/about-us',
-                language_id: 1
+                language_id: 1,
+                host_id: 'test'
             });
         });
 
@@ -227,7 +230,8 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/contact',
-                language_id: 2
+                language_id: 2,
+                host_id: 'test'
             });
         });
 
@@ -243,7 +247,8 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/primary-url',
-                language_id: 3
+                language_id: 3,
+                host_id: 'test'
             });
         });
 
@@ -259,7 +264,8 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/home',
-                language_id: 1
+                language_id: 1,
+                host_id: 'test'
             });
         });
 
@@ -275,7 +281,8 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/services',
-                language_id: 4
+                language_id: 4,
+                host_id: 'test'
             });
         });
 
@@ -290,7 +297,41 @@ describe('DotContentDriveNavigationService', () => {
 
             expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
                 url: '/blog-post',
-                language_id: 5
+                language_id: 5,
+                host_id: 'test'
+            });
+        });
+
+        it('should include host_id for pages in a nested host', () => {
+            const mockContentlet = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                urlMap: '/testing/subpage',
+                languageId: 1,
+                host: '286d13e9a93d6ab5a413ba34c4c23735'
+            });
+
+            service.editPage(mockContentlet);
+
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/testing/subpage',
+                language_id: 1,
+                host_id: '286d13e9a93d6ab5a413ba34c4c23735'
+            });
+        });
+
+        it('should not include host_id when host is empty', () => {
+            const mockContentlet = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                urlMap: '/home',
+                languageId: 1,
+                host: ''
+            });
+
+            service.editPage(mockContentlet);
+
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/home',
+                language_id: 1
             });
         });
     });

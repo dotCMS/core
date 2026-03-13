@@ -1148,4 +1148,248 @@ public class HostFactoryImpl implements HostFactory {
         this.siteCache.clearCache();
     }
 
+    /**
+     * Returns the SQL statement that counts all descendant hosts for the given host ID using a
+     * recursive CTE. The CTE walks the {@code identifier} table following the {@code host_inode}
+     * parent reference to discover every nested host at any depth.
+     * <p>
+     * PostgreSQL requires the {@code RECURSIVE} keyword; SQL Server uses the same CTE syntax
+     * without it.
+     * </p>
+     *
+     * @return Database-appropriate recursive count SQL.
+     */
+    private String buildCountDescendantHostsSql() {
+        if (DbConnectionFactory.isPostgres()) {
+            return "WITH RECURSIVE descendants(id) AS ("
+                    + " SELECT id FROM identifier"
+                    + "  WHERE host_inode = ? AND asset_type = 'contentlet' AND asset_subtype = 'Host'"
+                    + " UNION ALL"
+                    + " SELECT i.id FROM identifier i"
+                    + "  INNER JOIN descendants d ON i.host_inode = d.id"
+                    + "  WHERE i.asset_type = 'contentlet' AND i.asset_subtype = 'Host'"
+                    + ") SELECT COUNT(*) AS host_count FROM descendants";
+        } else {
+            // SQL Server — same syntax without RECURSIVE keyword
+            return "WITH descendants(id) AS ("
+                    + " SELECT id FROM identifier"
+                    + "  WHERE host_inode = ? AND asset_type = 'contentlet' AND asset_subtype = 'Host'"
+                    + " UNION ALL"
+                    + " SELECT i.id FROM identifier i"
+                    + "  INNER JOIN descendants d ON i.host_inode = d.id"
+                    + "  WHERE i.asset_type = 'contentlet' AND i.asset_subtype = 'Host'"
+                    + ") SELECT COUNT(*) AS host_count FROM descendants";
+        }
+    }
+
+    /**
+     * Returns the SQL that counts all folders whose {@code host_inode} belongs to any descendant
+     * host of the given host ID.
+     */
+    private String buildCountDescendantFoldersSql() {
+        if (DbConnectionFactory.isPostgres()) {
+            return "WITH RECURSIVE descendants(id) AS ("
+                    + " SELECT id FROM identifier"
+                    + "  WHERE host_inode = ? AND asset_type = 'contentlet' AND asset_subtype = 'Host'"
+                    + " UNION ALL"
+                    + " SELECT i.id FROM identifier i"
+                    + "  INNER JOIN descendants d ON i.host_inode = d.id"
+                    + "  WHERE i.asset_type = 'contentlet' AND i.asset_subtype = 'Host'"
+                    + ") SELECT COUNT(*) AS folder_count"
+                    + " FROM identifier f"
+                    + " WHERE f.host_inode IN (SELECT id FROM descendants)"
+                    + " AND f.asset_type = 'folder'";
+        } else {
+            return "WITH descendants(id) AS ("
+                    + " SELECT id FROM identifier"
+                    + "  WHERE host_inode = ? AND asset_type = 'contentlet' AND asset_subtype = 'Host'"
+                    + " UNION ALL"
+                    + " SELECT i.id FROM identifier i"
+                    + "  INNER JOIN descendants d ON i.host_inode = d.id"
+                    + "  WHERE i.asset_type = 'contentlet' AND i.asset_subtype = 'Host'"
+                    + ") SELECT COUNT(*) AS folder_count"
+                    + " FROM identifier f"
+                    + " WHERE f.host_inode IN (SELECT id FROM descendants)"
+                    + " AND f.asset_type = 'folder'";
+        }
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public long countDescendantHosts(final String hostId) throws DotDataException {
+        if (UtilMethods.isNotSet(hostId)) {
+            return 0L;
+        }
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(buildCountDescendantHostsSql());
+        dc.addParam(hostId);
+        final List<Map<String, String>> results = dc.loadResults();
+        if (results.isEmpty()) {
+            return 0L;
+        }
+        final String countValue = results.get(0).get("host_count");
+        return UtilMethods.isSet(countValue) ? Long.parseLong(countValue) : 0L;
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public long countDescendantFolders(final String hostId) throws DotDataException {
+        if (UtilMethods.isNotSet(hostId)) {
+            return 0L;
+        }
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(buildCountDescendantFoldersSql());
+        dc.addParam(hostId);
+        final List<Map<String, String>> results = dc.loadResults();
+        if (results.isEmpty()) {
+            return 0L;
+        }
+        final String countValue = results.get(0).get("folder_count");
+        return UtilMethods.isSet(countValue) ? Long.parseLong(countValue) : 0L;
+    }
+
+    /**
+     * Returns the database-appropriate SQL that retrieves all descendant host IDs for the given
+     * ancestor host, ordered deepest-first (highest depth value first). Deepest-first ordering
+     * ensures that cascade-archive operations process leaves before their parents, preserving
+     * referential integrity.
+     *
+     * <p>The CTE tracks a {@code depth} column so that the ORDER BY can place the deepest
+     * descendants at the front of the result set.  PostgreSQL requires the {@code RECURSIVE}
+     * keyword; SQL Server uses the same syntax without it.
+     *
+     * @return Database-appropriate SQL for fetching all descendant host IDs, deepest-first.
+     */
+    private String buildFindAllDescendantHostIdsSql() {
+        if (DbConnectionFactory.isPostgres()) {
+            return "WITH RECURSIVE descendants(id, depth) AS ("
+                    + " SELECT id, 1 AS depth FROM identifier"
+                    + "  WHERE host_inode = ? AND asset_type = 'contentlet' AND asset_subtype = 'Host'"
+                    + " UNION ALL"
+                    + " SELECT i.id, d.depth + 1 FROM identifier i"
+                    + "  INNER JOIN descendants d ON i.host_inode = d.id"
+                    + "  WHERE i.asset_type = 'contentlet' AND i.asset_subtype = 'Host'"
+                    + ") SELECT id FROM descendants ORDER BY depth DESC";
+        } else {
+            // SQL Server — same CTE syntax without RECURSIVE keyword
+            return "WITH descendants(id, depth) AS ("
+                    + " SELECT id, 1 AS depth FROM identifier"
+                    + "  WHERE host_inode = ? AND asset_type = 'contentlet' AND asset_subtype = 'Host'"
+                    + " UNION ALL"
+                    + " SELECT i.id, d.depth + 1 FROM identifier i"
+                    + "  INNER JOIN descendants d ON i.host_inode = d.id"
+                    + "  WHERE i.asset_type = 'contentlet' AND i.asset_subtype = 'Host'"
+                    + ") SELECT id FROM descendants ORDER BY depth DESC";
+        }
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public List<String> findAllDescendantHostIds(final String hostId) throws DotDataException {
+        if (UtilMethods.isNotSet(hostId)) {
+            return new ArrayList<>();
+        }
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(buildFindAllDescendantHostIdsSql());
+        dc.addParam(hostId);
+        final List<Map<String, String>> results = dc.loadResults();
+        final List<String> ids = new ArrayList<>(results.size());
+        for (final Map<String, String> row : results) {
+            final String id = row.get("id");
+            if (UtilMethods.isSet(id)) {
+                ids.add(id);
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Returns the database-appropriate SQL that checks whether a specific host ID exists in the
+     * set of descendants of a given ancestor host.
+     *
+     * <p>The query uses a recursive CTE (Common Table Expression) to traverse the
+     * {@code identifier} table, following {@code host_inode} links for hosts.  The result column
+     * {@code match_count} will be 1 when {@code potentialDescendantId} is a descendant of
+     * {@code ancestorId}, and 0 otherwise.
+     *
+     * @return Database-appropriate recursive existence-check SQL.
+     */
+    private String buildIsDescendantHostSql() {
+        if (DbConnectionFactory.isPostgres()) {
+            return "WITH RECURSIVE descendants(id) AS ("
+                    + " SELECT id FROM identifier"
+                    + "  WHERE host_inode = ? AND asset_type = 'contentlet' AND asset_subtype = 'Host'"
+                    + " UNION ALL"
+                    + " SELECT i.id FROM identifier i"
+                    + "  INNER JOIN descendants d ON i.host_inode = d.id"
+                    + "  WHERE i.asset_type = 'contentlet' AND i.asset_subtype = 'Host'"
+                    + ") SELECT COUNT(*) AS match_count FROM descendants WHERE id = ?";
+        } else {
+            // SQL Server — same syntax without RECURSIVE keyword
+            return "WITH descendants(id) AS ("
+                    + " SELECT id FROM identifier"
+                    + "  WHERE host_inode = ? AND asset_type = 'contentlet' AND asset_subtype = 'Host'"
+                    + " UNION ALL"
+                    + " SELECT i.id FROM identifier i"
+                    + "  INNER JOIN descendants d ON i.host_inode = d.id"
+                    + "  WHERE i.asset_type = 'contentlet' AND i.asset_subtype = 'Host'"
+                    + ") SELECT COUNT(*) AS match_count FROM descendants WHERE id = ?";
+        }
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public List<Host> findDirectChildHosts(final String parentHostId, final String parentPath)
+            throws DotDataException {
+        if (UtilMethods.isNotSet(parentHostId) || UtilMethods.isNotSet(parentPath)) {
+            return new ArrayList<>();
+        }
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT id FROM identifier"
+                + " WHERE host_inode = ?"
+                + "   AND parent_path = ?"
+                + "   AND asset_type = 'contentlet'"
+                + "   AND asset_subtype = '" + Host.HOST_VELOCITY_VAR_NAME + "'");
+        dc.addParam(parentHostId);
+        dc.addParam(parentPath);
+        final List<Map<String, String>> rows = dc.loadResults();
+        final List<Host> children = new ArrayList<>(rows.size());
+        for (final Map<String, String> row : rows) {
+            final String id = row.get("id");
+            if (UtilMethods.isNotSet(id)) {
+                continue;
+            }
+            try {
+                final Host child = DBSearch(id, false);
+                if (child != null && UtilMethods.isSet(child.getIdentifier())) {
+                    children.add(child);
+                }
+            } catch (final DotSecurityException e) {
+                Logger.warn(HostFactoryImpl.class,
+                        "findDirectChildHosts: skipping child host '" + id + "': " + e.getMessage());
+            }
+        }
+        return children;
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public boolean isDescendantHost(final String potentialDescendantId, final String ancestorId)
+            throws DotDataException {
+        if (UtilMethods.isNotSet(potentialDescendantId) || UtilMethods.isNotSet(ancestorId)) {
+            return false;
+        }
+        final DotConnect dc = new DotConnect();
+        dc.setSQL(buildIsDescendantHostSql());
+        // First param is the ancestor (starting point for the CTE), second is the specific descendant to find
+        dc.addParam(ancestorId);
+        dc.addParam(potentialDescendantId);
+        final List<Map<String, String>> results = dc.loadResults();
+        if (results.isEmpty()) {
+            return false;
+        }
+        final String countValue = results.get(0).get("match_count");
+        return UtilMethods.isSet(countValue) && Long.parseLong(countValue) > 0;
+    }
+
 }

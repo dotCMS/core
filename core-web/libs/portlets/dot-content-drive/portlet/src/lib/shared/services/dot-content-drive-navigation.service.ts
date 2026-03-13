@@ -42,8 +42,13 @@ export class DotContentDriveNavigationService {
      */
     editPage(contentlet: DotCMSContentlet) {
         const url = contentlet.urlMap || contentlet.url;
+        const params: Record<string, string | number> = { url, language_id: contentlet.languageId };
 
-        this.#dotRouterService.goToEditPage({ url, language_id: contentlet.languageId });
+        if (contentlet.host) {
+            params['host_id'] = contentlet.host;
+        }
+
+        this.#dotRouterService.goToEditPage(params);
     }
 
     /**
