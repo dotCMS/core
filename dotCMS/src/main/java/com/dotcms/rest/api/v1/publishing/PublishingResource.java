@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -73,6 +74,7 @@ public class PublishingResource {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_PER_PAGE = 50;
     private static final int MAX_PER_PAGE = 500;
+    private static final Pattern BUNDLE_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
     private final WebResource webResource;
     private final Lazy<PublishAuditAPI> publishAuditAPI;
@@ -347,14 +349,7 @@ public class PublishingResource {
                 .init();
 
         // Validate bundleId
-        if (!UtilMethods.isSet(bundleId)) {
-            throw new BadRequestException("Bundle ID is required");
-        }
-        
-        // Validate bundleId format (prevent XSS and invalid characters)
-        if (!bundleId.matches("^[a-zA-Z0-9\\-_]+$")) {
-            throw new BadRequestException("Invalid bundle ID format. Only alphanumeric characters, hyphens, and underscores are allowed.");
-        }
+        validateBundleId(bundleId);
 
         // Retrieve audit status
         final PublishAuditStatus auditStatus = publishAuditAPI.get()
@@ -461,15 +456,8 @@ public class PublishingResource {
 
         final User user = initData.getUser();
 
-        // Validate bundleId is provided
-        if (!UtilMethods.isSet(bundleId)) {
-            throw new BadRequestException("Bundle ID is required");
-        }
-        
-        // Validate bundleId format (prevent XSS and invalid characters)
-        if (!bundleId.matches("^[a-zA-Z0-9\\-_]+$")) {
-            throw new BadRequestException("Invalid bundle ID format. Only alphanumeric characters, hyphens, and underscores are allowed.");
-        }
+        // Validate bundleId
+        validateBundleId(bundleId);
 
         // Check if bundle exists (either in bundle table or audit table)
         final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
@@ -743,14 +731,7 @@ public class PublishingResource {
         final User user = initData.getUser();
 
         // 2. Validate bundleId
-        if (!UtilMethods.isSet(bundleId)) {
-            throw new BadRequestException("Bundle ID is required");
-        }
-        
-        // Validate bundleId format (prevent XSS and invalid characters)
-        if (!bundleId.matches("^[a-zA-Z0-9\\-_]+$")) {
-            throw new BadRequestException("Invalid bundle ID format. Only alphanumeric characters, hyphens, and underscores are allowed.");
-        }
+        validateBundleId(bundleId);
 
         // 3. Validate form inputs
         if (form == null) {
@@ -773,6 +754,8 @@ public class PublishingResource {
                 publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
                 expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
                 break;
+            default:
+                break; // checkValid() already validated operation
         }
 
         // 5. Get and validate bundle exists
@@ -1046,6 +1029,22 @@ public class PublishingResource {
 
         } catch (Exception ex) {
             Logger.error(this, "Error sending purge error message", ex);
+        }
+    }
+
+    /**
+     * Validates that a bundle ID is present and contains only safe characters.
+     *
+     * @param bundleId The bundle ID to validate
+     * @throws BadRequestException if the bundle ID is missing or contains invalid characters
+     */
+    private static void validateBundleId(final String bundleId) {
+        if (!UtilMethods.isSet(bundleId)) {
+            throw new BadRequestException("Bundle ID is required");
+        }
+        if (!BUNDLE_ID_PATTERN.matcher(bundleId).matches()) {
+            throw new BadRequestException(
+                    "Invalid bundle ID format. Only alphanumeric characters, hyphens, and underscores are allowed.");
         }
     }
 }
