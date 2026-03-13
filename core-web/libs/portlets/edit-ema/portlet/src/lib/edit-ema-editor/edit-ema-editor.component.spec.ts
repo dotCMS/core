@@ -3176,8 +3176,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('DOM', () => {
-                // Skipped: storeRef.$editorProps().progressBar stays true after patch in this describe (fake timers or CD). Re-enable when root cause fixed.
-                it.skip('should not show a loader when client is ready and UVE is not loading', () => {
+                it('should not show a loader when client is ready and UVE is not loading', () => {
                     const storeRef = (
                         spectator.component as unknown as {
                             uveStore: InstanceType<typeof UVEStore>;
