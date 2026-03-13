@@ -134,10 +134,6 @@ jobs:
     if: |
       needs.security-check.outputs.authorized == 'true' &&
       github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      pull-requests: write
-      issues: write
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
     with:
       trigger_mode: automatic
