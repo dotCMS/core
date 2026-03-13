@@ -258,8 +258,8 @@ cd core/core-web
 # Install dependencies
 yarn install
 
-# Build the server
-yarn nx build mcp-server
+# Build the server (pass the OpenAPI spec URL or local file path)
+yarn nx build mcp-server --specUrl=https://demo.dotcms.com/api/openapi.json
 ```
 
 > [!NOTE]
@@ -361,8 +361,8 @@ mcp-server/
 ### Development Commands
 
 ```bash
-# Build for production
-yarn nx build mcp-server
+# Build for production (pass the OpenAPI spec URL or local file path)
+yarn nx build mcp-server --specUrl=https://demo.dotcms.com/api/openapi.json
 
 # Development mode (with hot reload)
 yarn nx serve mcp-server
@@ -379,8 +379,8 @@ yarn nx test mcp-server
 # Run tests in watch mode
 yarn nx test mcp-server --watch
 
-# Regenerate the spec from openapi.json
-yarn nx generate-spec mcp-server
+# Regenerate the spec only (URL or local file path)
+yarn nx generate-spec mcp-server -- https://demo.dotcms.com/api/openapi.json
 ```
 
 ### Contributing Guidelines

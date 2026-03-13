@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Development Commands
 ```bash
-# Build the MCP server for prod
-yarn nx build mcp-server
+# Build the MCP server for prod (requires a URL or local file path for the OpenAPI spec)
+yarn nx build mcp-server --specUrl=https://demo.dotcms.com/api/openapi.json
 
 # Development mode with hot reload
 yarn nx serve mcp-server
 
-# Regenerate spec (requires a URL or local file path)
+# Regenerate spec only (requires a URL or local file path)
 yarn nx generate-spec mcp-server -- https://demo.dotcms.com/api/openapi.json
 
 # Run tests

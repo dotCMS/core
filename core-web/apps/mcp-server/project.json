@@ -14,10 +14,10 @@
         },
         "build": {
             "executor": "nx:run-commands",
-            "dependsOn": ["generate-spec"],
             "outputs": ["{workspaceRoot}/dist/apps/mcp-server"],
             "options": {
                 "commands": [
+                    "npx tsx scripts/generate-spec.ts {args.specUrl}",
                     "npx xmcp build",
                     "cp package.json ../../dist/apps/mcp-server/",
                     "cp README.md ../../dist/apps/mcp-server/"
