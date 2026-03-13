@@ -115,6 +115,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // Use getMappingAPI() for lazy initialization at first use.
     }
 
+    /**
+     * Lazy initializer avoids circular reference Stackoverflow error
+     * @return ContentIndexMappingAPI
+     */
     private ContentIndexMappingAPI getMappingAPI() {
         if (mappingAPI == null) {
             mappingAPI = APILocator.getContentMappingAPI();
@@ -149,8 +153,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @VisibleForTesting
     @CloseDBIfOpened
     public synchronized boolean indexReady() throws DotDataException {
-        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        return indexReadyES();
+    }
 
+    private boolean indexReadyES() throws DotDataException {
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         final boolean hasWorking  = Try.of(()->APILocator.getESIndexAPI().indexExists(info.getWorking()))
                 .getOrElse(false);

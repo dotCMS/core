@@ -45,12 +45,10 @@ import org.opensearch.client.opensearch.core.bulk.IndexOperation;
  */
 public class ContentletIndexOperationsOS implements ContentletIndexOperations {
 
-    // Resolved lazily to avoid calling CDI.current() during APILocator startup,
-    // before the Weld container is fully initialized.
-    private OSClientProvider clientProvider;
+    private final OSClientProvider clientProvider;
 
     public ContentletIndexOperationsOS() {
-        // intentionally empty — clientProvider resolved on first use via getClientProvider()
+        this(CDIUtils.getBeanThrows(OSClientProvider.class));
     }
 
     /** Package-private constructor for testing. */
@@ -59,9 +57,6 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     }
 
     private OSClientProvider getClientProvider() {
-        if (clientProvider == null) {
-            clientProvider = CDIUtils.getBeanThrows(OSClientProvider.class);
-        }
         return clientProvider;
     }
 
