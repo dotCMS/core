@@ -1,4 +1,3 @@
-<p-toast position="top-left" [life]="3000" />
 <div
     class="flex flex-col h-full min-h-0 relative"
     (dragenter)="onDragEnter($event)"
@@ -21,16 +20,6 @@
     }
     <p-toolbar class="gap-1 px-3 justify-start border-none! flex-shrink-0">
         <div class="flex w-full items-center gap-2 py-3">
-            <label class="flex items-center gap-2">
-                <input
-                    type="checkbox"
-                    [ngModel]="!store.ignoreSystemBundles()"
-                    (ngModelChange)="store.setIgnoreSystemBundles(!$event)"
-                    data-testid="plugins-show-system-checkbox"
-                    [attr.aria-label]="'plugins.show-system-bundles' | dm" />
-                <span>{{ 'plugins.show-system-bundles' | dm }}</span>
-            </label>
-
             @if (store.availableJars().length > 0) {
                 <span class="text-color-secondary">{{ 'plugins.available-bundles' | dm }}</span>
                 <p-select
@@ -52,6 +41,15 @@
             }
 
             <div class="flex gap-2 ml-auto">
+                <label class="flex items-center gap-2 me-4">
+                    <input
+                        type="checkbox"
+                        [ngModel]="!store.ignoreSystemBundles()"
+                        (ngModelChange)="store.setIgnoreSystemBundles(!$event)"
+                        data-testid="plugins-show-system-checkbox"
+                        [attr.aria-label]="'plugins.show-system-bundles' | dm" />
+                    <span>{{ 'plugins.show-system-bundles' | dm }}</span>
+                </label>
                 <p-button
                     [label]="'plugins.upload' | dm"
                     icon="pi pi-upload"
@@ -112,23 +110,27 @@
                     <td data-testid="plugin-state">{{ getStateLabel(bundle.state) | dm }}</td>
                     <td data-testid="plugin-jar">{{ bundle.jarFile }}</td>
                     <td data-testid="plugin-actions">
-                        <div class="flex items-center gap-1">
-                            @if (bundle.state === BUNDLE_STATE.ACTIVE) {
-                                <p-button
-                                    [label]="'plugins.stop' | dm"
-                                    text
-                                    size="small"
-                                    (onClick)="store.stop(bundle.jarFile)"
-                                    data-testid="plugin-stop-btn" />
-                            } @else {
-                                <p-button
-                                    [label]="'plugins.start' | dm"
-                                    text
-                                    size="small"
-                                    (onClick)="store.start(bundle.jarFile)"
-                                    data-testid="plugin-start-btn" />
-                            }
-                            @if (!bundle.isSystem) {
+                        @if (bundle.isSystem) {
+                            <span class="text-color-secondary" data-testid="plugin-actions-none">
+                                -
+                            </span>
+                        } @else {
+                            <div class="flex items-center gap-1">
+                                @if (bundle.state === BUNDLE_STATE.ACTIVE) {
+                                    <p-button
+                                        [label]="'plugins.stop' | dm"
+                                        text
+                                        size="small"
+                                        (onClick)="store.stop(bundle.jarFile)"
+                                        data-testid="plugin-stop-btn" />
+                                } @else {
+                                    <p-button
+                                        [label]="'plugins.start' | dm"
+                                        text
+                                        size="small"
+                                        (onClick)="store.start(bundle.jarFile)"
+                                        data-testid="plugin-start-btn" />
+                                }
                                 <span
                                     class="border-l border-surface-300 h-4 mx-1 inline-block"
                                     aria-hidden="true"></span>
@@ -147,8 +149,8 @@
                                     size="small"
                                     (onClick)="store.processExports(bundle.symbolicName)"
                                     data-testid="plugin-process-exports-btn" />
-                            }
-                        </div>
+                            </div>
+                        }
                     </td>
                 </tr>
             </ng-template>

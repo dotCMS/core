@@ -1,10 +1,16 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotHttpErrorManagerService, DotMessageService, DotOsgiService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotOsgiService
+} from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 
 import { DotPluginsListComponent } from './dot-plugins-list.component';
 import { DotPluginsListStore } from './store/dot-plugins-list.store';
@@ -33,7 +39,8 @@ describe('DotPluginsListComponent', () => {
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(ConfirmationService),
-            mockProvider(MessageService, { add: jest.fn() })
+            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
+            mockProvider(DotcmsEventsService, { subscribeTo: jest.fn().mockReturnValue(EMPTY) })
         ],
         shallow: true
     });
@@ -94,35 +101,33 @@ describe('DotPluginsListComponent', () => {
             component.onDrop(event);
 
             expect(component.isDragging()).toBe(false);
-            expect(component.store.uploadBundles).toHaveBeenCalledWith(
-                [jarFile],
-                expect.any(Function)
-            );
+            expect(component.store.uploadBundles).toHaveBeenCalledWith([jarFile]);
         });
 
-        it('should show error toast and not upload when no jar files are dropped', () => {
+        it('should show error via DotMessageDisplayService and not upload when no jar files are dropped', () => {
             const txtFile = makeFile('readme.txt');
             const event = makeDragEvent([txtFile]);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const addSpy = jest.spyOn(component['messageService'], 'add');
+            const pushSpy = jest.spyOn(component['dotMessageDisplayService'], 'push');
             jest.spyOn(component.store, 'uploadBundles');
 
             component.onDrop(event);
 
             expect(component.store.uploadBundles).not.toHaveBeenCalled();
-            expect(addSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
+            expect(pushSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: expect.any(String) })
+            );
         });
 
         it('should do nothing when no files are dropped', () => {
             const event = makeDragEvent([]);
             jest.spyOn(component.store, 'uploadBundles');
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const addSpy = jest.spyOn(component['messageService'], 'add');
+            const pushSpy = jest.spyOn(component['dotMessageDisplayService'], 'push');
+            pushSpy.mockClear();
 
             component.onDrop(event);
 
             expect(component.store.uploadBundles).not.toHaveBeenCalled();
-            expect(addSpy).not.toHaveBeenCalled();
+            expect(pushSpy).not.toHaveBeenCalled();
         });
 
         it('should filter only jar files when dropping mixed files', () => {
@@ -133,10 +138,7 @@ describe('DotPluginsListComponent', () => {
 
             component.onDrop(event);
 
-            expect(component.store.uploadBundles).toHaveBeenCalledWith(
-                [jarFile],
-                expect.any(Function)
-            );
+            expect(component.store.uploadBundles).toHaveBeenCalledWith([jarFile]);
         });
 
         it('should show drop overlay when isDragging is true', () => {

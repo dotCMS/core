@@ -1,13 +1,15 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 import { EMPTY, Observable } from 'rxjs';
 
-import { effect, inject, untracked } from '@angular/core';
+import { DestroyRef, effect, inject, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, debounceTime, take } from 'rxjs/operators';
 
 import { BundleMap, DotHttpErrorManagerService, DotOsgiService } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 
-type DotPluginsListStatus = 'init' | 'loading' | 'loaded' | 'error';
+type DotPluginsListStatus = 'init' | 'loading' | 'loaded' | 'error' | 'restarting';
 
 interface DotPluginsListState {
     bundles: BundleMap[];
@@ -123,6 +125,9 @@ export const DotPluginsListStore = signalStore(
     }),
     withHooks((store) => ({
         onInit() {
+            const dotcmsEventsService = inject(DotcmsEventsService);
+            const destroyRef = inject(DestroyRef);
+
             effect(() => {
                 store.ignoreSystemBundles();
                 untracked(() => {
@@ -130,6 +135,19 @@ export const DotPluginsListStore = signalStore(
                     store.loadAvailablePlugins();
                 });
             });
+
+            dotcmsEventsService
+                .subscribeTo('OSGI_FRAMEWORK_RESTART')
+                .pipe(takeUntilDestroyed(destroyRef))
+                .subscribe(() => patchState(store, { status: 'restarting' }));
+
+            dotcmsEventsService
+                .subscribeTo('OSGI_BUNDLES_LOADED')
+                .pipe(debounceTime(4000), takeUntilDestroyed(destroyRef))
+                .subscribe(() => {
+                    store.loadBundles();
+                    store.loadAvailablePlugins();
+                });
         }
     }))
 );

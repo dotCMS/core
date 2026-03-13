@@ -1,18 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
-import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
 
-import { BUNDLE_STATE, BundleMap, DotMessageService } from '@dotcms/data-access';
+import {
+    BUNDLE_STATE,
+    BundleMap,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPluginsListStore } from './store/dot-plugins-list.store';
@@ -38,12 +43,11 @@ const BUNDLE_STATE_LABELS: Record<number, string> = {
         ButtonModule,
         SelectModule,
         ConfirmDialogModule,
-        ToastModule,
         ToolbarModule,
         DotMessagePipe
     ],
     templateUrl: './dot-plugins-list.component.html',
-    providers: [DotPluginsListStore, DialogService, ConfirmationService, MessageService],
+    providers: [DotPluginsListStore, DialogService, ConfirmationService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
@@ -74,7 +78,7 @@ export class DotPluginsListComponent {
     private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
-    private readonly messageService = inject(MessageService);
+    private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
 
     getStateLabel(state: number): string {
         return BUNDLE_STATE_LABELS[state] ?? 'plugins.state.unknown';
@@ -158,23 +162,16 @@ export class DotPluginsListComponent {
         const jarFiles = allFiles.filter((f) => f.name.toLowerCase().endsWith('.jar'));
 
         if (jarFiles.length === 0) {
-            this.messageService.add({
-                severity: 'error',
-                summary: this.dotMessageService.get('plugins.drag-and-drop.invalid-files.title'),
-                detail: this.dotMessageService.get('plugins.drag-and-drop.invalid-files.detail'),
-                life: 5000
+            this.dotMessageDisplayService.push({
+                life: 5000,
+                message: this.dotMessageService.get('plugins.drag-and-drop.invalid-files.detail'),
+                severity: DotMessageSeverity.ERROR,
+                type: DotMessageType.SIMPLE_MESSAGE
             });
             return;
         }
 
-        this.store.uploadBundles(jarFiles, () => {
-            this.messageService.add({
-                severity: 'success',
-                summary: this.dotMessageService.get('plugins.upload.title'),
-                detail: this.dotMessageService.get('plugins.upload.success'),
-                life: 3000
-            });
-        });
+        this.store.uploadBundles(jarFiles);
     }
 
     confirmRestart(): void {
@@ -186,15 +183,7 @@ export class DotPluginsListComponent {
             defaultFocus: 'reject',
             closable: true,
             closeOnEscape: true,
-            accept: () =>
-                this.store.restart(() => {
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: this.dotMessageService.get('plugins.restart'),
-                        detail: this.dotMessageService.get('plugins.restart.success'),
-                        life: 3000
-                    });
-                })
+            accept: () => this.store.restart()
         });
     }
 }

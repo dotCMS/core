@@ -1,7 +1,13 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
-import { DotHttpErrorManagerService, DotOsgiService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
+    DotOsgiService
+} from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 
 import { DotPluginsListStore } from './dot-plugins-list.store';
 
@@ -21,6 +27,9 @@ describe('DotPluginsListStore', () => {
     let osgiService: DotOsgiService;
     let httpErrorManager: DotHttpErrorManagerService;
 
+    const osgiFrameworkRestartSubject = new Subject<void>();
+    const osgiBundlesLoadedSubject = new Subject<void>();
+
     const createService = createServiceFactory({
         service: DotPluginsListStore,
         providers: [
@@ -35,7 +44,18 @@ describe('DotPluginsListStore', () => {
                 processExports: jest.fn().mockReturnValue(of({})),
                 restart: jest.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
+            mockProvider(DotMessageService, { get: (key: string) => key }),
+            mockProvider(DotcmsEventsService, {
+                subscribeTo: jest.fn().mockImplementation((event: string) => {
+                    if (event === 'OSGI_FRAMEWORK_RESTART')
+                        return osgiFrameworkRestartSubject.asObservable();
+                    if (event === 'OSGI_BUNDLES_LOADED')
+                        return osgiBundlesLoadedSubject.asObservable();
+                    return of();
+                })
+            })
         ]
     });
 
@@ -175,6 +195,47 @@ describe('DotPluginsListStore', () => {
             jest.spyOn(osgiService, 'processExports').mockReturnValue(throwError(error));
             store.processExports('test-bundle');
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+        });
+    });
+
+    describe('WebSocket events', () => {
+        beforeEach(() => {
+            jest.useFakeTimers();
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+        });
+
+        it('should set status to restarting on OSGI_FRAMEWORK_RESTART', () => {
+            osgiFrameworkRestartSubject.next();
+            expect(store.status()).toBe('restarting');
+        });
+
+        it('should reload bundles after OSGI_BUNDLES_LOADED with 4s debounce', () => {
+            const getInstalledBundlesSpy = jest
+                .spyOn(osgiService, 'getInstalledBundles')
+                .mockReturnValue(of({ entity: [] }));
+            const getAvailablePluginsSpy = jest
+                .spyOn(osgiService, 'getAvailablePlugins')
+                .mockReturnValue(of({ entity: [] }));
+
+            osgiBundlesLoadedSubject.next();
+            jest.advanceTimersByTime(4000);
+
+            expect(getInstalledBundlesSpy).toHaveBeenCalled();
+            expect(getAvailablePluginsSpy).toHaveBeenCalled();
+        });
+
+        it('should debounce OSGI_BUNDLES_LOADED — no reload before 4s', () => {
+            const initialCalls = (osgiService.getInstalledBundles as jest.Mock).mock.calls.length;
+
+            osgiBundlesLoadedSubject.next();
+            jest.advanceTimersByTime(3999);
+
+            expect((osgiService.getInstalledBundles as jest.Mock).mock.calls.length).toBe(
+                initialCalls
+            );
         });
     });
 
