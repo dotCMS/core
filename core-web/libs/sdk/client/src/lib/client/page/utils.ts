@@ -104,6 +104,7 @@ export const buildPageQuery = ({
     runningExperimentId
     lockedBy
     lockedByName
+    numberContents
     urlContentMap {
       _map
     }
