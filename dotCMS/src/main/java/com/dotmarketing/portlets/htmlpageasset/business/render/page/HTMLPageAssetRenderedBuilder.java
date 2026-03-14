@@ -71,6 +71,8 @@ public class HTMLPageAssetRenderedBuilder {
     private Experiment runningExperiment;
     private VanityURLView vanityUrl;
 
+    public static final String SDK_EDITOR_SCRIPT_SOURCE = "<script src=\"/ext/uve/dot-uve.js\"></script>";
+
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
      */
@@ -361,12 +363,11 @@ public class HTMLPageAssetRenderedBuilder {
         if (!UtilMethods.isSet(html)) {
             return html;
         }
-        final String script = "<script src=\"/ext/uve/dot-uve.js\"></script>";
         final int closingBodyIndex = html.lastIndexOf("</body>");
         if (closingBodyIndex != -1) {
-            return html.substring(0, closingBodyIndex) + script + html.substring(closingBodyIndex);
+            return html.substring(0, closingBodyIndex) + SDK_EDITOR_SCRIPT_SOURCE + html.substring(closingBodyIndex);
         }
-        return html + script;
+        return html + SDK_EDITOR_SCRIPT_SOURCE;
     }
 
 }

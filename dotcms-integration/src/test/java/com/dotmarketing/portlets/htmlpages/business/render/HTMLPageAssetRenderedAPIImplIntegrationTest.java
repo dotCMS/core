@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.htmlpages.business.render;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -3122,11 +3123,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 mockRequest, mockResponse, systemUser, page.getURI(), PageMode.ADMIN_MODE);
 
         final String html = ((HTMLPageAssetRendered) pageView).getHtml();
-        final String expectedScript = "<script src=\"/ext/uve/dot-uve.js\"></script>";
 
-        assertTrue("UVE script tag should be present in rendered HTML", html.contains(expectedScript));
+        assertTrue("UVE script tag should be present in rendered HTML", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
         assertTrue("UVE script tag should appear before </body>",
-                html.indexOf(expectedScript) < html.indexOf("</body>"));
+                html.indexOf(SDK_EDITOR_SCRIPT_SOURCE) < html.indexOf("</body>"));
     }
 
     /**
@@ -3166,10 +3166,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 mockRequest, mockResponse, systemUser, page.getURI(), PageMode.ADMIN_MODE);
 
         final String html = ((HTMLPageAssetRendered) pageView).getHtml();
-        final String expectedScript = "<script src=\"/ext/uve/dot-uve.js\"></script>";
 
-        assertTrue("UVE script tag should be present in rendered HTML", html.contains(expectedScript));
+        assertTrue("UVE script tag should be present in rendered HTML", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
         assertTrue("UVE script tag should be appended at the end when no </body> tag exists",
-                html.endsWith(expectedScript));
+                html.endsWith(SDK_EDITOR_SCRIPT_SOURCE));
     }
 }
