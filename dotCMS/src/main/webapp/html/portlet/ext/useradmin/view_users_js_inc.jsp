@@ -4,6 +4,7 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.portal.util.PropsUtil"%>
 
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/RoleAjax.js"></script>
@@ -90,11 +91,36 @@
 		dwr.util.useLoadingMessage("<%=LanguageUtil.get(pageContext, "Loading")%>....");
 	});
 
+<%
+    // Extract the character class [...]  from the RegExpToolkit pattern so it can
+    // be used in JS as a per-character filter — the same role as PasswordGenerator._pattern.
+    // Falls back to null when a non-RegExpToolkit is configured or
+    // when the pattern uses complex lookaheads with no extractable class.
+    String _pwdToolkit = PropsUtil.get(PropsUtil.PASSWORDS_TOOLKIT);
+    String _rawPwdPattern = PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN);
+    boolean _isRegExpToolkit = "com.liferay.portal.pwd.RegExpToolkit".equals(_pwdToolkit);
+    String _jsPwdCharPattern = "null";
+    if (_isRegExpToolkit && _rawPwdPattern != null && !_rawPwdPattern.trim().isEmpty()) {
+        // Match simple /^[CharClass]{n,}$/ patterns and capture the [CharClass] part.
+        // The inner (?:[^\]\\]|\\.)* handles escaped chars like \[ and \] inside the class.
+        java.util.regex.Matcher _m = java.util.regex.Pattern.compile(
+            "^/\\^(\\[(?:[^\\]\\\\]|\\\\.)*\\])\\{\\d+,\\}\\$/$"
+        ).matcher(_rawPwdPattern.trim());
+        if (_m.matches()) {
+            _jsPwdCharPattern = "/" + _m.group(1) + "/";
+        }
+    }
+%>
     // Random Password Generator Fn
     var PasswordGenerator = {
 
-        // Based on https://www.grc.com/ppp.htm
+        // Based on https://www.grc.com/ppp.htm — fallback when no server pattern is available.
         _pattern: /[!#%+23456789:=?@ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnopqrstuvwxyz]/,
+
+        // Character class extracted server-side from RegExpToolkit's pattern.
+        // When present it replaces _pattern as the per-character filter, keeping
+        // generation in sync with the backend policy.
+        _serverValidation: <%= _jsPwdCharPattern %>,
 
         _getRandomByte: function() {
         if(window.crypto && window.crypto.getRandomValues)
@@ -116,6 +142,7 @@
         },
 
         get: function(length) {
+        var charFilter = this._serverValidation || this._pattern;
         return Array.apply(null, {'length': length})
             .map(function()
             {
@@ -123,7 +150,7 @@
             while(true)
             {
                 result = String.fromCharCode(this._getRandomByte());
-                if(this._pattern.test(result))
+                if(charFilter.test(result))
                 {
                 return result;
                 }
