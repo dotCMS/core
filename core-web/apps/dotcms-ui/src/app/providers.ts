@@ -5,7 +5,6 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     CanDeactivateGuardService,
-    DOT_EVENTS_SOCKET_URL,
     DotAlertConfirmService,
     DotAppsService,
     DotContentletService,
@@ -72,11 +71,6 @@ import { DotLoginPageStateService } from './view/components/login/shared/service
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
-const dotEventSocketURLFactory = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}/api/ws/v1/system/events`;
-};
-
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
     EmaAppConfigurationService,
@@ -126,7 +120,6 @@ const PROVIDERS: Provider[] = [
     DotcmsEventsService,
     LoggerService,
     LoginService,
-    { provide: DOT_EVENTS_SOCKET_URL, useFactory: dotEventSocketURLFactory },
     DotEventsSocket,
     StringUtils,
     UserModel,

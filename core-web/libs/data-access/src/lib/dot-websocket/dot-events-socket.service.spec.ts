@@ -1,6 +1,5 @@
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { DOT_EVENTS_SOCKET_URL } from './dot-events-socket-url';
 import { DotEventsSocket, WebSocketStatus } from './dot-events-socket.service';
 
 // ---------------------------------------------------------------------------
@@ -44,9 +43,9 @@ class MockWebSocket {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-const WS_URL = 'ws://localhost:8080/api/ws/v1/system/events';
 
-const mockSocketURL = WS_URL;
+// Jest's jsdom sets window.location to http://localhost/, so the service builds:
+const WS_URL = 'ws://localhost/api/ws/v1/system/events';
 
 function latestSocket(): MockWebSocket {
     return MockWebSocket.instances[MockWebSocket.instances.length - 1];
@@ -60,8 +59,7 @@ describe('DotEventsSocket', () => {
     let service: DotEventsSocket;
 
     const createService = createServiceFactory({
-        service: DotEventsSocket,
-        providers: [{ provide: DOT_EVENTS_SOCKET_URL, useValue: mockSocketURL }]
+        service: DotEventsSocket
     });
 
     beforeEach(() => {

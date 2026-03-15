@@ -1,11 +1,10 @@
 import { BehaviorSubject, Observable, Subject, Subscription, timer } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 
 import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import { DotEventMessage } from './dot-event-message.model';
-import { DOT_EVENTS_SOCKET_URL } from './dot-events-socket-url';
 
 export type WebSocketStatus = 'connecting' | 'reconnecting' | 'connected' | 'closed';
 
@@ -20,7 +19,10 @@ export type WebSocketStatus = 'connecting' | 'reconnecting' | 'connected' | 'clo
  */
 @Injectable({ providedIn: 'root' })
 export class DotEventsSocket {
-    private readonly socketURL = inject(DOT_EVENTS_SOCKET_URL);
+    private readonly socketURL = (() => {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${protocol}//${window.location.host}/api/ws/v1/system/events`;
+    })();
 
     private socket: WebSocket | null = null;
     private status: WebSocketStatus = 'connecting';
