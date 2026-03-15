@@ -6,7 +6,7 @@ import {
     SpectatorHost,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -17,7 +17,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
 
-import { DotThemesService } from '@dotcms/data-access';
+import { DotEventsSocket, DotThemesService } from '@dotcms/data-access';
 import { DotPagination, DotTheme } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -88,6 +88,7 @@ describe('DotThemeComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -349,6 +350,7 @@ describe('DotThemeComponent - ControlValueAccessor writeValue', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -456,6 +458,7 @@ describe('DotThemeComponent - ControlValueAccessor Integration', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {

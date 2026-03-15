@@ -7,7 +7,7 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -17,7 +17,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { Select, SelectLazyLoadEvent } from 'primeng/select';
 
-import { DotSiteService } from '@dotcms/data-access';
+import { DotEventsSocket, DotSiteService } from '@dotcms/data-access';
 import { DotPagination, DotSite } from '@dotcms/dotcms-models';
 
 import { DotSiteComponent } from './dot-site.component';
@@ -65,7 +65,12 @@ describe('DotSiteComponent', () => {
     const createComponent = createComponentFactory({
         component: DotSiteComponent,
         imports: [ReactiveFormsModule],
-        providers: [mockProvider(DotSiteService), provideHttpClient(), provideHttpClientTesting()]
+        providers: [
+            mockProvider(DotSiteService),
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
     });
 
     beforeEach(() => {
@@ -1009,6 +1014,144 @@ describe('DotSiteComponent', () => {
             expect(options.find((s) => s.identifier === 'site99')).toBeTruthy();
         }));
     });
+
+    describe('WebSocket site events', () => {
+        let eventsSocket: SpyObject<DotEventsSocket>;
+        let siteEventSubjects: Record<string, Subject<{ identifier: string }>>;
+
+        beforeEach(() => {
+            eventsSocket = spectator.inject(DotEventsSocket, true);
+            siteEventSubjects = {};
+
+            eventsSocket.on.mockImplementation((eventType: string) => {
+                siteEventSubjects[eventType] = new Subject<{ identifier: string }>();
+                return siteEventSubjects[eventType].asObservable();
+            });
+
+            spectator.detectChanges();
+        });
+
+        it('should call resetFilter after debounce when any site event fires', fakeAsync(() => {
+            jest.clearAllMocks();
+            siteEventSubjects['PUBLISH_SITE'].next({ identifier: 'site1' });
+            tick(299);
+            expect(siteService.getSites).not.toHaveBeenCalled();
+
+            tick(1);
+            expect(siteService.getSites).toHaveBeenCalled();
+        }));
+
+        it('should debounce multiple rapid events into a single resetFilter call', fakeAsync(() => {
+            jest.clearAllMocks();
+            siteEventSubjects['SAVE_SITE'].next({ identifier: 'site1' });
+            siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site2' });
+            siteEventSubjects['PUBLISH_SITE'].next({ identifier: 'site3' });
+            tick(300);
+
+            expect(siteService.getSites).toHaveBeenCalledTimes(1);
+        }));
+
+        it('should re-fetch the selected site when a non-unavailable event fires for it', fakeAsync(() => {
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.getSiteById.mockReturnValue(of(mockSites[0]));
+            jest.clearAllMocks();
+
+            siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site1' });
+
+            expect(siteService.getSiteById).toHaveBeenCalledWith('site1');
+            tick(300);
+        }));
+
+        it('should NOT re-fetch when the event is for a different site', fakeAsync(() => {
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            jest.clearAllMocks();
+
+            siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site2' });
+            tick(300);
+
+            expect(siteService.getSiteById).not.toHaveBeenCalled();
+        }));
+
+        it('should switch to default site when ARCHIVE_SITE fires for the selected site', fakeAsync(() => {
+            const defaultSite: DotSite = {
+                hostname: 'default.com',
+                identifier: 'default',
+                archived: false,
+                aliases: null
+            };
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.switchSite = jest.fn().mockReturnValue(of(defaultSite));
+            jest.clearAllMocks();
+
+            siteEventSubjects['ARCHIVE_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(siteService.switchSite).toHaveBeenCalledWith(null);
+            expect(spectator.component.$state.pinnedOption()).toEqual(defaultSite);
+        }));
+
+        it('should switch to default site when UN_PUBLISH_SITE fires for the selected site', fakeAsync(() => {
+            const defaultSite: DotSite = {
+                hostname: 'default.com',
+                identifier: 'default',
+                archived: false,
+                aliases: null
+            };
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.switchSite = jest.fn().mockReturnValue(of(defaultSite));
+
+            siteEventSubjects['UN_PUBLISH_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(siteService.switchSite).toHaveBeenCalledWith(null);
+            expect(spectator.component.value()).toBe('default');
+        }));
+
+        it('should switch to default site when DELETE_SITE fires for the selected site', fakeAsync(() => {
+            const defaultSite: DotSite = {
+                hostname: 'default.com',
+                identifier: 'default',
+                archived: false,
+                aliases: null
+            };
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.switchSite = jest.fn().mockReturnValue(of(defaultSite));
+
+            siteEventSubjects['DELETE_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(siteService.switchSite).toHaveBeenCalledWith(null);
+        }));
+
+        it('should set pinnedOption to null when switchSite fails', fakeAsync(() => {
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.switchSite = jest
+                .fn()
+                .mockReturnValue(throwError(() => new Error('switchSite failed')));
+
+            siteEventSubjects['ARCHIVE_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(spectator.component.$state.pinnedOption()).toBeNull();
+        }));
+
+        it('should set pinnedOption to null when getSiteById fails on re-fetch', fakeAsync(() => {
+            patchState(spectator.component.$state, { pinnedOption: mockSites[0] });
+            siteService.getSiteById.mockReturnValue(throwError(() => new Error('not found')));
+
+            siteEventSubjects['UPDATE_SITE'].next({ identifier: 'site1' });
+            tick(300);
+
+            expect(spectator.component.$state.pinnedOption()).toBeNull();
+        }));
+
+        it('should unsubscribe from site events on destroy', () => {
+            const sub = spectator.component['siteEventsSub'];
+            const unsubscribeSpy = jest.spyOn(sub, 'unsubscribe');
+            spectator.component.ngOnDestroy();
+            expect(unsubscribeSpy).toHaveBeenCalled();
+        });
+    });
 });
 
 describe('DotSiteComponent - ControlValueAccessor Integration', () => {
@@ -1016,7 +1159,12 @@ describe('DotSiteComponent - ControlValueAccessor Integration', () => {
         component: DotSiteComponent,
         host: FormHostComponent,
         imports: [ReactiveFormsModule],
-        providers: [mockProvider(DotSiteService), provideHttpClient(), provideHttpClientTesting()],
+        providers: [
+            mockProvider(DotSiteService),
+            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
         detectChanges: false
     });
 
