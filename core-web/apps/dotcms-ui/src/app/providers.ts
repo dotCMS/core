@@ -73,8 +73,8 @@ import { DotLoginPageStateService } from './view/components/login/shared/service
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
 const dotEventSocketURLFactory = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    return `${protocol}://${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/api/ws/v1/system/events`;
 };
 
 const PROVIDERS: Provider[] = [
