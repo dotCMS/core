@@ -18,7 +18,6 @@ import {
     DotRouterService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { DotSite } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotCurrentUserServiceMock, MockDotRouterService, mockSites } from '@dotcms/utils-testing';
 
@@ -28,6 +27,7 @@ import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolb
 import { DotToolbarComponent } from './dot-toolbar.component';
 
 import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotSiteNavigationEffect } from '../../../api/services/dot-site-navigation/dot-site-navigation.effect';
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';
@@ -68,7 +68,6 @@ describe('DotToolbarComponent', () => {
     let globalStore: SpyObject<InstanceType<typeof GlobalStore>>;
 
     const siteMock = mockSites[0];
-    const switchSiteSubject = new Subject<DotSite>();
 
     const createComponent = createComponentFactory({
         component: DotToolbarComponent,
@@ -89,8 +88,9 @@ describe('DotToolbarComponent', () => {
             mockProvider(GlobalStore, {
                 siteDetails: signal(siteMock),
                 switchCurrentSite: jest.fn(),
-                switchSiteEvent$: jest.fn().mockReturnValue(switchSiteSubject.asObservable())
+                switchSiteEvent$: jest.fn().mockReturnValue(new Subject())
             }),
+            mockProvider(DotSiteNavigationEffect),
             mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             {
@@ -171,22 +171,6 @@ describe('DotToolbarComponent', () => {
             expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock.identifier);
             expect(globalStore.switchCurrentSite).toHaveBeenCalledWith(siteMock.identifier);
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-        });
-    });
-
-    describe('SWITCH_SITE WebSocket event', () => {
-        it('should navigate to site browser when SWITCH_SITE fires on edit page', () => {
-            jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
-            spectator.detectChanges();
-            switchSiteSubject.next(mockSites[1]);
-            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-        });
-
-        it('should NOT navigate to site browser when SWITCH_SITE fires on non-edit page', () => {
-            jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
-            spectator.detectChanges();
-            switchSiteSubject.next(mockSites[1]);
-            expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
         });
     });
 

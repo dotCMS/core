@@ -1,5 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
@@ -33,27 +32,14 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
         FormsModule
     ]
 })
-export class DotToolbarComponent implements OnInit {
+export class DotToolbarComponent {
     readonly #globalStore = inject(GlobalStore);
     readonly #dotRouterService = inject(DotRouterService);
-    readonly #destroyRef = inject(DestroyRef);
     iframeOverlayService = inject(IframeOverlayService);
 
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
 
     $currentSite = this.#globalStore.siteDetails;
-
-    ngOnInit(): void {
-        // Navigate away from edit page when another user/tab switches the site
-        this.#globalStore
-            .switchSiteEvent$()
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => {
-                if (this.#dotRouterService.isEditPage()) {
-                    this.#dotRouterService.goToSiteBrowser();
-                }
-            });
-    }
 
     siteChange(identifier: string | null): void {
         if (identifier) {
