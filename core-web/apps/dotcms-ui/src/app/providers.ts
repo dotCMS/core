@@ -5,6 +5,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     CanDeactivateGuardService,
+    DOT_EVENTS_SOCKET_URL,
     DotAlertConfirmService,
     DotAppsService,
     DotContentletService,
@@ -13,6 +14,8 @@ import {
     DotCrudService,
     DotCurrentUserService,
     DotEventsService,
+    DotEventsSocket,
+    DotEventsSocketURL,
     DotFormatDateService,
     DotGenerateSecurePasswordService,
     DotGlobalMessageService,
@@ -39,8 +42,6 @@ import {
     CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -78,6 +79,7 @@ const dotEventSocketURLFactory = () => {
         window.location.protocol === 'https:'
     );
 };
+
 
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
@@ -128,7 +130,7 @@ const PROVIDERS: Provider[] = [
     DotcmsEventsService,
     LoggerService,
     LoginService,
-    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+    { provide: DOT_EVENTS_SOCKET_URL, useFactory: dotEventSocketURLFactory },
     DotEventsSocket,
     StringUtils,
     UserModel,

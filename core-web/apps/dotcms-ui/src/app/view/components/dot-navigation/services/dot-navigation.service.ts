@@ -7,7 +7,7 @@ import { Event, NavigationEnd, Router } from '@angular/router';
 import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotIframeService, DotRouterService } from '@dotcms/data-access';
-import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { Auth, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -19,7 +19,6 @@ export class DotNavigationService {
     private dotIframeService = inject(DotIframeService);
     private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
-    private dotcmsEventsService = inject(DotcmsEventsService);
     private dynamicRouteService = inject(DynamicRouteService);
     private loginService = inject(LoginService);
     private router = inject(Router);
@@ -79,24 +78,24 @@ export class DotNavigationService {
             )
             .subscribe();
 
-        // Handle portlet layout updates
-        this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
-            this.dotMenuService
-                .reloadMenu()
-                .pipe(take(1))
-                .subscribe((menus: DotMenu[]) => {
-                    this.registerDynamicRoutes(menus);
-                    this.#globalStore.loadMenu(menus);
+        // Handle portlet layout updates from the global store WebSocket feature
+        this.#globalStore
+            .portletLayoutUpdated$()
+            .pipe(
+                switchMap(() => this.dotMenuService.reloadMenu().pipe(take(1)))
+            )
+            .subscribe((menus: DotMenu[]) => {
+                this.registerDynamicRoutes(menus);
+                this.#globalStore.loadMenu(menus);
 
-                    if (this.dotRouterService.currentPortlet.id) {
-                        this.#globalStore.setActiveMenu({
-                            portletId: this.dotRouterService.currentPortlet.id,
-                            shortParentMenuId: this.dotRouterService.queryParams['mId'],
-                            breadcrumbs: this.#globalStore.breadcrumbs()
-                        });
-                    }
-                });
-        });
+                if (this.dotRouterService.currentPortlet.id) {
+                    this.#globalStore.setActiveMenu({
+                        portletId: this.dotRouterService.currentPortlet.id,
+                        shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                        breadcrumbs: this.#globalStore.breadcrumbs()
+                    });
+                }
+            });
 
         // Handle login/auth changes
         this.loginService.auth$

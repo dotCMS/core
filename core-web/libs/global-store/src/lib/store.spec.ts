@@ -1,7 +1,12 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
-import { DotCurrentUserService, DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotEventsSocket,
+    DotSiteService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 
 import { GlobalStore } from './store';
 import { mockSiteEntity } from './store.mock';
@@ -15,7 +20,12 @@ describe('GlobalStore', () => {
         providers: [
             mockProvider(DotCurrentUserService),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService)
+            mockProvider(DotSystemConfigService),
+            mockProvider(DotEventsSocket, {
+                connect: () => of({}),
+                status$: () => new Subject(),
+                on: () => new Subject()
+            })
         ]
     });
 

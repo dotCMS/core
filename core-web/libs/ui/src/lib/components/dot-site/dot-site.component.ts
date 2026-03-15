@@ -1,4 +1,5 @@
 import { signalState, patchState } from '@ngrx/signals';
+import { merge, Subject, Subscription } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -24,7 +25,9 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
 
-import { DotSiteService } from '@dotcms/data-access';
+import { debounceTime, map } from 'rxjs/operators';
+
+import { DotEventsSocket, DotSiteService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
 
 interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
@@ -64,6 +67,9 @@ interface DotSiteState {
     filterValue: string;
 }
 
+/** Events that mean the site is no longer accessible — switch to default when selected. */
+const SITE_UNAVAILABLE_EVENTS = new Set(['ARCHIVE_SITE', 'UN_PUBLISH_SITE', 'DELETE_SITE']);
+
 @Component({
     selector: 'dot-site',
     imports: [
@@ -93,6 +99,9 @@ interface DotSiteState {
 })
 export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy {
     private siteService = inject(DotSiteService);
+    private eventsSocket = inject(DotEventsSocket);
+    private siteEventsSub: Subscription | null = null;
+    private readonly siteListRefresh$ = new Subject<void>();
 
     @HostListener('focus')
     onHostFocus(): void {
@@ -268,6 +277,31 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         if (this.$state.sites().length === 0) {
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
+
+        // Debounce list refresh so rapid bursts of site events only trigger one reload
+        this.siteEventsSub = this.siteListRefresh$
+            .pipe(debounceTime(300))
+            .subscribe(() => this.resetFilter());
+
+        const tagEvent = (event: string) =>
+            this.eventsSocket.on<{ identifier: string }>(event).pipe(
+                map((data) => ({ ...data, event }))
+            );
+
+        this.siteEventsSub.add(
+            merge(
+                tagEvent('SAVE_SITE'),
+                tagEvent('PUBLISH_SITE'),
+                tagEvent('UPDATE_SITE'),
+                tagEvent('ARCHIVE_SITE'),
+                tagEvent('UN_ARCHIVE_SITE'),
+                tagEvent('UN_PUBLISH_SITE'),
+                tagEvent('DELETE_SITE')
+            ).subscribe((siteData) => {
+                this.siteListRefresh$.next();
+                this.refreshSelectedSite(siteData);
+            })
+        );
     }
 
     ngOnDestroy(): void {
@@ -275,6 +309,9 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             clearTimeout(this.filterDebounceTimeout);
             this.filterDebounceTimeout = null;
         }
+
+        this.siteEventsSub?.unsubscribe();
+        this.siteListRefresh$.complete();
     }
 
     // ControlValueAccessor callback functions
@@ -626,5 +663,33 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
                     patchState(this.$state, { loading: false });
                 }
             });
+    }
+
+    /**
+     * Refreshes the selected (pinned) site when a site event fires.
+     * - Archive/un-archive: skips the GET (site is inaccessible) and switches to default.
+     * - Other events: re-fetches the site to reflect any name/property changes.
+     *
+     * @private
+     * @param siteData The payload from the site WebSocket event
+     */
+    private refreshSelectedSite(siteData: { identifier: string; event?: string } | undefined): void {
+        const pinned = this.$state.pinnedOption();
+        if (!pinned || siteData?.identifier !== pinned.identifier) {
+            return;
+        }
+
+        if (SITE_UNAVAILABLE_EVENTS.has(siteData.event ?? '')) {
+            this.siteService.switchSite(null).subscribe({
+                next: (defaultSite) => this.onSiteChange(defaultSite),
+                error: () => patchState(this.$state, { pinnedOption: null })
+            });
+            return;
+        }
+
+        this.siteService.getSiteById(pinned.identifier).subscribe({
+            next: (site) => patchState(this.$state, { pinnedOption: site }),
+            error: () => patchState(this.$state, { pinnedOption: null })
+        });
     }
 }

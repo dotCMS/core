@@ -22,6 +22,7 @@ import { withBreadcrumbs } from './features/breadcrumb/breadcrumb.feature';
 import { withMenu } from './features/menu/with-menu.feature';
 import { withSystem } from './features/with-system/with-system.feature';
 import { withUser } from './features/with-user/with-user.feature';
+import { withWebSocket } from './features/with-websocket/with-websocket.feature';
 
 /**
  * Represents the global application state.
@@ -85,6 +86,7 @@ export const GlobalStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withSystem(),
+    withWebSocket(),
     withComputed(({ siteDetails }) => ({
         /**
          * Computed signal that returns the current site identifier.
