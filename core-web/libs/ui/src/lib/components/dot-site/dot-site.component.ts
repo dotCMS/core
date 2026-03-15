@@ -1,5 +1,5 @@
 import { signalState, patchState } from '@ngrx/signals';
-import { merge, Subject, Subscription } from 'rxjs';
+import { merge, Subscription } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -25,7 +25,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
 
-import { debounceTime, map } from 'rxjs/operators';
+import { debounceTime, map, tap } from 'rxjs/operators';
 
 import { DotEventsSocket, DotSiteService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
@@ -101,7 +101,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     private siteService = inject(DotSiteService);
     private eventsSocket = inject(DotEventsSocket);
     private siteEventsSub: Subscription | null = null;
-    private readonly siteListRefresh$ = new Subject<void>();
 
     @HostListener('focus')
     onHostFocus(): void {
@@ -278,30 +277,27 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             this.onLazyLoad({ first: 0, last: this.pageSize - 1 });
         }
 
-        // Debounce list refresh so rapid bursts of site events only trigger one reload
-        this.siteEventsSub = this.siteListRefresh$
-            .pipe(debounceTime(300))
-            .subscribe(() => this.resetFilter());
-
         const tagEvent = (event: string) =>
             this.eventsSocket
                 .on<{ identifier: string }>(event)
                 .pipe(map((data) => ({ ...data, event })));
 
-        this.siteEventsSub.add(
-            merge(
-                tagEvent('SAVE_SITE'),
-                tagEvent('PUBLISH_SITE'),
-                tagEvent('UPDATE_SITE'),
-                tagEvent('ARCHIVE_SITE'),
-                tagEvent('UN_ARCHIVE_SITE'),
-                tagEvent('UN_PUBLISH_SITE'),
-                tagEvent('DELETE_SITE')
-            ).subscribe((siteData) => {
-                this.siteListRefresh$.next();
-                this.refreshSelectedSite(siteData);
-            })
-        );
+        // Each event immediately refreshes the selected site; list reload is debounced
+        // to coalesce rapid bursts into a single resetFilter() call.
+        this.siteEventsSub = merge(
+            tagEvent('SAVE_SITE'),
+            tagEvent('PUBLISH_SITE'),
+            tagEvent('UPDATE_SITE'),
+            tagEvent('ARCHIVE_SITE'),
+            tagEvent('UN_ARCHIVE_SITE'),
+            tagEvent('UN_PUBLISH_SITE'),
+            tagEvent('DELETE_SITE')
+        )
+            .pipe(
+                tap((siteData) => this.refreshSelectedSite(siteData)),
+                debounceTime(300)
+            )
+            .subscribe(() => this.resetFilter());
     }
 
     ngOnDestroy(): void {
@@ -311,7 +307,6 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         }
 
         this.siteEventsSub?.unsubscribe();
-        this.siteListRefresh$.complete();
     }
 
     // ControlValueAccessor callback functions
