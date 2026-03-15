@@ -7,6 +7,7 @@ import { inject } from '@angular/core';
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotEventsSocket, WebSocketStatus } from '@dotcms/data-access';
+import { DotSite } from '@dotcms/dotcms-models';
 
 export interface WebSocketState {
     wsStatus: WebSocketStatus;
@@ -60,7 +61,14 @@ export function withWebSocket() {
                     eventsSocket.on<void>('ARCHIVE_SITE'),
                     eventsSocket.on<void>('UN_ARCHIVE_SITE'),
                     eventsSocket.on<void>('DELETE_SITE')
-                )
+                ),
+
+            /**
+             * Observable that emits the new site when another user/tab switches
+             * the current site (SWITCH_SITE event). The payload contains the full
+             * DotSite object — no extra HTTP call needed.
+             */
+            switchSiteEvent$: (): Observable<DotSite> => eventsSocket.on<DotSite>('SWITCH_SITE')
         })),
         withHooks({
             onInit(store) {

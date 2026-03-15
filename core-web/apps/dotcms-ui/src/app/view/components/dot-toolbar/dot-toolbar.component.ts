@@ -1,14 +1,13 @@
-import { Component, DestroyRef, OnInit, Signal, inject } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { map, switchMap, take } from 'rxjs/operators';
+import { switchMap, take } from 'rxjs/operators';
 
 import { DotRouterService, DotSiteService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotSite, FeaturedFlags } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotSiteComponent } from '@dotcms/ui';
@@ -39,32 +38,23 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
 export class DotToolbarComponent implements OnInit {
     #globalStore = inject(GlobalStore);
     readonly #dotRouterService = inject(DotRouterService);
-    readonly #dotcmsEventsService = inject(DotcmsEventsService);
     readonly #siteService = inject(DotSiteService);
     readonly #destroyRef = inject(DestroyRef);
     iframeOverlayService = inject(IframeOverlayService);
 
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
 
-    $currentSite: Signal<DotSite | null> = toSignal(this.#siteService.getCurrentSite());
+    $currentSite = this.#globalStore.siteDetails;
 
     ngOnInit(): void {
-        this.#dotcmsEventsService
-            .subscribeTo<DotSite>('ARCHIVE_SITE')
-            .pipe(
-                switchMap((data: DotSite) =>
-                    this.#siteService.getCurrentSite().pipe(
-                        take(1),
-                        map((currentSite: DotSite) => ({ data, currentSite }))
-                    )
-                ),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe(({ data, currentSite }) => {
-                if (data.hostname === currentSite.hostname && data.archived) {
-                    this.#siteService.switchSite(null).subscribe((defaultSite: DotSite) => {
-                        this.siteChange(defaultSite.identifier);
-                    });
+        // When another user/tab switches the site, update the store and navigate away from edit page
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((site: DotSite) => {
+                this.#globalStore.setCurrentSite(site);
+                if (this.#dotRouterService.isEditPage()) {
+                    this.#dotRouterService.goToSiteBrowser();
                 }
             });
     }
@@ -79,8 +69,6 @@ export class DotToolbarComponent implements OnInit {
                     takeUntilDestroyed(this.#destroyRef)
                 )
                 .subscribe((site: DotSite) => {
-                    // wait for the site to be switched
-                    // before redirecting to the site browser
                     if (this.#dotRouterService.isEditPage()) {
                         this.#dotRouterService.goToSiteBrowser();
                     }
