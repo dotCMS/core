@@ -30,15 +30,13 @@ export function withWebSocket() {
     return signalStoreFeature(
         withState(initialWebSocketState),
         withMethods((store, eventsSocket = inject(DotEventsSocket)) => ({
-            startConnection: rxMethod<void>(
-                pipe(switchMap(() => eventsSocket.connect()))
-            ),
+            startConnection: rxMethod<void>(pipe(switchMap(() => eventsSocket.connect()))),
             trackStatus: rxMethod<void>(
                 pipe(
                     switchMap(() =>
-                        eventsSocket.status$().pipe(
-                            tap((wsStatus) => patchState(store, { wsStatus }))
-                        )
+                        eventsSocket
+                            .status$()
+                            .pipe(tap((wsStatus) => patchState(store, { wsStatus })))
                     )
                 )
             ),

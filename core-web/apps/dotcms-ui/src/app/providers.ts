@@ -80,7 +80,6 @@ const dotEventSocketURLFactory = () => {
     );
 };
 
-
 const PROVIDERS: Provider[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
     EmaAppConfigurationService,

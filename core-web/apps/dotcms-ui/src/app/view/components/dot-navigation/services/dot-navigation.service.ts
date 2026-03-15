@@ -81,9 +81,7 @@ export class DotNavigationService {
         // Handle portlet layout updates from the global store WebSocket feature
         this.#globalStore
             .portletLayoutUpdated$()
-            .pipe(
-                switchMap(() => this.dotMenuService.reloadMenu().pipe(take(1)))
-            )
+            .pipe(switchMap(() => this.dotMenuService.reloadMenu().pipe(take(1))))
             .subscribe((menus: DotMenu[]) => {
                 this.registerDynamicRoutes(menus);
                 this.#globalStore.loadMenu(menus);
