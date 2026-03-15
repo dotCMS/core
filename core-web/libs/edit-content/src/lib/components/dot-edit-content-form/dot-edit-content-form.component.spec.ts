@@ -101,7 +101,6 @@ describe('DotFormComponent', () => {
             mockProvider(DotVersionableService),
             mockProvider(GlobalStore, {
                 loadCurrentSite: jest.fn(),
-                setCurrentSite: jest.fn(),
                 siteDetails: jest.fn().mockReturnValue(null),
                 addNewBreadcrumb: jest.fn()
             }),

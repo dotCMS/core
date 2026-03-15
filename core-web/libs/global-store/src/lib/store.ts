@@ -13,7 +13,7 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { switchMap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import { DotSiteService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
@@ -128,9 +128,7 @@ export const GlobalStore = signalStore(
                         siteService.getCurrentSite().pipe(
                             tapResponse({
                                 next: (siteDetails) => {
-                                    patchState(store, {
-                                        siteDetails
-                                    });
+                                    patchState(store, { siteDetails });
                                 },
                                 error: (error) => {
                                     // TODO: Define a better error handling strategy for global store
@@ -143,36 +141,34 @@ export const GlobalStore = signalStore(
             ),
 
             /**
-             * Sets the current site in the global store.
+             * Switches the active site and updates the global store.
              *
-             * This method updates the siteDetails property in the global state
-             * with the provided DotSite.
-             *
-             * @param site - The DotSite to set as the current site
-             *
+             * Calls DotSiteService.switchSite(), then fetches the now-current site
+             * and stores it. Use this when the user explicitly picks a site in the UI.
              */
-            setCurrentSite: (site: DotSite) => {
-                patchState(store, {
-                    siteDetails: site
-                });
-            }
+            switchCurrentSite: rxMethod<string>(
+                pipe(
+                    switchMap((identifier) =>
+                        siteService.switchSite(identifier).pipe(
+                            switchMap(() => siteService.getCurrentSite()),
+                            tap((siteDetails) => patchState(store, { siteDetails }))
+                        )
+                    )
+                )
+            )
         };
     }),
     withUser(),
     withMenu(),
     withFeature(({ menuItemsEntities }) => withBreadcrumbs(menuItemsEntities)),
     withHooks({
-        /**
-         * Automatically loads the current site when the store is initialized.
-         *
-         * The system configuration is automatically loaded by the withSystem feature.
-         * This ensures the currentSiteId is available immediately after injecting
-         * the store in any component.
-         */
         onInit(store) {
-            // Load current site on store initialization
-            // System configuration is automatically loaded by withSystem feature
             store.loadCurrentSite();
+            // Keep siteDetails in sync when another user/tab switches the site
+            store
+                .switchSiteEvent$()
+                .pipe(tap((site) => patchState(store, { siteDetails: site })))
+                .subscribe();
         }
     })
 );

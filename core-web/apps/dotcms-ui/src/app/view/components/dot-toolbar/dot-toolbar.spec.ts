@@ -16,7 +16,6 @@ import {
     DotEventsSocket,
     DotPropertiesService,
     DotRouterService,
-    DotSiteService,
     DotSystemConfigService
 } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
@@ -66,7 +65,6 @@ describe('DotToolbarComponent', () => {
     let dotRouterService: SpyObject<DotRouterService>;
     let dotPropertiesService: SpyObject<DotPropertiesService>;
     let iframeOverlayService: IframeOverlayService;
-    let dotSiteService: SpyObject<DotSiteService>;
     let globalStore: SpyObject<InstanceType<typeof GlobalStore>>;
 
     const siteMock = mockSites[0];
@@ -88,28 +86,9 @@ describe('DotToolbarComponent', () => {
             mockProvider(DotPropertiesService, {
                 getFeatureFlag: jest.fn().mockImplementation(() => of(true))
             }),
-            mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(siteMock)),
-                switchSite: jest.fn().mockReturnValue(of({ hostSwitched: true })),
-                getSites: jest.fn().mockReturnValue(
-                    of({
-                        sites: mockSites,
-                        pagination: {
-                            currentPage: 1,
-                            perPage: 10,
-                            totalRecords: mockSites.length
-                        }
-                    })
-                ),
-                getSiteById: jest
-                    .fn()
-                    .mockImplementation((id: string) =>
-                        of(mockSites.find((s) => s.identifier === id) || siteMock)
-                    )
-            }),
             mockProvider(GlobalStore, {
                 siteDetails: signal(siteMock),
-                setCurrentSite: jest.fn(),
+                switchCurrentSite: jest.fn(),
                 switchSiteEvent$: jest.fn().mockReturnValue(switchSiteSubject.asObservable())
             }),
             mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(new Subject()) }),
@@ -139,7 +118,6 @@ describe('DotToolbarComponent', () => {
         dotRouterService = spectator.inject(DotRouterService);
         dotPropertiesService = spectator.inject(DotPropertiesService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
-        dotSiteService = spectator.inject(DotSiteService);
         globalStore = spectator.inject(GlobalStore);
         jest.spyOn(spectator.component, 'siteChange');
         jest.spyOn(iframeOverlayService, 'show');
@@ -174,50 +152,29 @@ describe('DotToolbarComponent', () => {
         expect(spectator.query('dot-toolbar-announcements')).toBeNull();
     });
 
-    it(`should NOT go to site browser when site change in any portlet but edit page`, () => {
-        jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
-        spectator.detectChanges();
-        spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
-        expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
-        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock.identifier);
-        expect(dotSiteService.switchSite).toHaveBeenCalledWith(siteMock.identifier);
-        expect(dotSiteService.getCurrentSite).toHaveBeenCalled();
-        expect(globalStore.setCurrentSite).toHaveBeenCalledWith(siteMock);
-    });
+    describe('siteChange()', () => {
+        it(`should call switchCurrentSite and NOT navigate when not on edit page`, () => {
+            jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
+            spectator.detectChanges();
+            spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
 
-    it(`should go to site-browser when site change on edit page url`, () => {
-        jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
-        spectator.detectChanges();
-        spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
+            expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock.identifier);
+            expect(globalStore.switchCurrentSite).toHaveBeenCalledWith(siteMock.identifier);
+            expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
+        });
 
-        expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
-        expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock.identifier);
-        expect(dotSiteService.switchSite).toHaveBeenCalledWith(siteMock.identifier);
-        expect(dotSiteService.getCurrentSite).toHaveBeenCalled();
-        expect(globalStore.setCurrentSite).toHaveBeenCalledWith(siteMock);
-    });
+        it(`should call switchCurrentSite and navigate when on edit page`, () => {
+            jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
+            spectator.detectChanges();
+            spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
 
-    it(`should call switchSite then getCurrentSite and setCurrentSite when site changes`, () => {
-        spectator.detectChanges();
-        dotSiteService.switchSite.mockClear();
-        dotSiteService.getCurrentSite.mockClear();
-        (globalStore.setCurrentSite as jest.Mock).mockClear();
-
-        spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
-
-        expect(dotSiteService.switchSite).toHaveBeenCalledWith(siteMock.identifier);
-        expect(dotSiteService.getCurrentSite).toHaveBeenCalled();
-        expect(globalStore.setCurrentSite).toHaveBeenCalledWith(siteMock);
+            expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock.identifier);
+            expect(globalStore.switchCurrentSite).toHaveBeenCalledWith(siteMock.identifier);
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
+        });
     });
 
     describe('SWITCH_SITE WebSocket event', () => {
-        it('should update the store when SWITCH_SITE fires', () => {
-            spectator.detectChanges();
-            const newSite = mockSites[1];
-            switchSiteSubject.next(newSite);
-            expect(globalStore.setCurrentSite).toHaveBeenCalledWith(newSite);
-        });
-
         it('should navigate to site browser when SWITCH_SITE fires on edit page', () => {
             jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
             spectator.detectChanges();
