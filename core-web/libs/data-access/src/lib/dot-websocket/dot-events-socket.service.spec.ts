@@ -1,6 +1,6 @@
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
-import { DOT_EVENTS_SOCKET_URL, DotEventsSocketURL } from './dot-events-socket-url';
+import { DOT_EVENTS_SOCKET_URL } from './dot-events-socket-url';
 import { DotEventsSocket, WebSocketStatus } from './dot-events-socket.service';
 
 // ---------------------------------------------------------------------------
@@ -46,9 +46,7 @@ class MockWebSocket {
 // ---------------------------------------------------------------------------
 const WS_URL = 'ws://localhost:8080/api/ws/v1/system/events';
 
-const mockSocketURL = {
-    getWebSocketURL: () => WS_URL
-} as DotEventsSocketURL;
+const mockSocketURL = WS_URL;
 
 function latestSocket(): MockWebSocket {
     return MockWebSocket.instances[MockWebSocket.instances.length - 1];

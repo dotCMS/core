@@ -89,7 +89,7 @@ export class DotEventsSocket {
         this.setStatus(this.retryCount === 0 ? 'connecting' : 'reconnecting');
 
         try {
-            this.socket = new WebSocket(this.socketURL.getWebSocketURL());
+            this.socket = new WebSocket(this.socketURL);
         } catch {
             this.scheduleReconnect();
             return;
