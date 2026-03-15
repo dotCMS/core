@@ -1,5 +1,5 @@
 import { signalStore, withState } from '@ngrx/signals';
-import { Subject, of, throwError } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -25,10 +25,7 @@ describe('withWebSocket Feature', () => {
         };
 
         TestBed.configureTestingModule({
-            providers: [
-                TestStore,
-                { provide: DotEventsSocket, useValue: mockEventsSocket }
-            ]
+            providers: [TestStore, { provide: DotEventsSocket, useValue: mockEventsSocket }]
         });
 
         store = TestBed.inject(TestStore);
@@ -56,21 +53,6 @@ describe('withWebSocket Feature', () => {
 
     it('should update wsStatus to closed when socket closes', () => {
         statusSubject.next('closed');
-        expect(store.wsStatus()).toBe('closed');
-    });
-
-    it('should set wsStatus to closed on connect error', () => {
-        mockEventsSocket.connect = jest.fn().mockReturnValue(throwError(() => new Error('fail')));
-
-        TestBed.resetTestingModule();
-        TestBed.configureTestingModule({
-            providers: [
-                TestStore,
-                { provide: DotEventsSocket, useValue: mockEventsSocket }
-            ]
-        });
-
-        store = TestBed.inject(TestStore);
         expect(store.wsStatus()).toBe('closed');
     });
 

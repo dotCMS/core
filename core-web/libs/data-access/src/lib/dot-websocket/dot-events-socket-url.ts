@@ -13,10 +13,6 @@ export class DotEventsSocketURL {
     getWebSocketURL(): string {
         return `${this.useSSL ? 'wss' : 'ws'}://${this.url}`;
     }
-
-    getLongPollingURL(): string {
-        return `${this.useSSL ? 'https' : 'http'}://${this.url}`;
-    }
 }
 
 export const DOT_EVENTS_SOCKET_URL = new InjectionToken<DotEventsSocketURL>('DotEventsSocketURL');

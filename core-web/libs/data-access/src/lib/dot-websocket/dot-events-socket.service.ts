@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, Subject, timer } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, Subscription, timer } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
@@ -26,6 +26,7 @@ export class DotEventsSocket {
     private status: WebSocketStatus = 'connecting';
     private retryCount = 0;
     private destroyed = false;
+    private reconnectTimer: Subscription | null = null;
 
     private readonly _message = new Subject<DotEventMessage>();
     private readonly _status = new BehaviorSubject<WebSocketStatus>('connecting');
@@ -51,6 +52,8 @@ export class DotEventsSocket {
     /** Closes the connection permanently (e.g. on logout). */
     destroy(): void {
         this.destroyed = true;
+        this.reconnectTimer?.unsubscribe();
+        this.reconnectTimer = null;
         this.setStatus('closed');
         this.socket?.close();
         this.socket = null;
@@ -79,7 +82,7 @@ export class DotEventsSocket {
     }
 
     private openSocket(): void {
-        if (this.destroyed) {
+        if (this.destroyed || this.socket?.readyState === WebSocket.CONNECTING) {
             return;
         }
 
@@ -129,7 +132,9 @@ export class DotEventsSocket {
         this.retryCount++;
         this.setStatus('reconnecting');
 
-        timer(this.calculateDelay()).subscribe(() => {
+        this.reconnectTimer?.unsubscribe();
+        this.reconnectTimer = timer(this.calculateDelay()).subscribe(() => {
+            this.reconnectTimer = null;
             if (!this.destroyed) {
                 this.openSocket();
             }

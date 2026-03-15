@@ -284,9 +284,9 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
             .subscribe(() => this.resetFilter());
 
         const tagEvent = (event: string) =>
-            this.eventsSocket.on<{ identifier: string }>(event).pipe(
-                map((data) => ({ ...data, event }))
-            );
+            this.eventsSocket
+                .on<{ identifier: string }>(event)
+                .pipe(map((data) => ({ ...data, event })));
 
         this.siteEventsSub.add(
             merge(
@@ -667,13 +667,15 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
 
     /**
      * Refreshes the selected (pinned) site when a site event fires.
-     * - Archive/un-archive: skips the GET (site is inaccessible) and switches to default.
+     * - Unavailable events (archive, stop, delete): switches to the default site.
      * - Other events: re-fetches the site to reflect any name/property changes.
      *
      * @private
      * @param siteData The payload from the site WebSocket event
      */
-    private refreshSelectedSite(siteData: { identifier: string; event?: string } | undefined): void {
+    private refreshSelectedSite(
+        siteData: { identifier: string; event?: string } | undefined
+    ): void {
         const pinned = this.$state.pinnedOption();
         if (!pinned || siteData?.identifier !== pinned.identifier) {
             return;
