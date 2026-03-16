@@ -10,7 +10,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Returns the total number of contentlets placed across all containers in the requested page.
@@ -39,21 +38,19 @@ public class NumberContentsDataFetcher extends RedirectAwareDataFetcher<Integer>
                 return 0;
             }
 
-            // Step 2: count only those contentlets that exist in the requested language (one Lucene query)
+            // Step 2: count unique contentlets that exist in the requested language (cache-backed)
             final String languageIdParam = (String) context.getParam("languageId");
             final long langId = UtilMethods.isSet(languageIdParam)
                     ? Long.parseLong(languageIdParam)
                     : APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
-            final String identifierClause = multiTrees.stream()
-                    .map(MultiTree::getChild)
+            return (int) multiTrees.stream()
+                    .map(MultiTree::getContentlet)
                     .distinct()
-                    .collect(Collectors.joining(" ", "(", ")"));
-
-            final String luceneQuery = "+languageId:" + langId + " +identifier:" + identifierClause;
-
-            return (int) APILocator.getContentletAPI()
-                    .indexCount(luceneQuery, context.getUser(), false);
+                    .filter(id -> APILocator.getVersionableAPI()
+                            .getContentletVersionInfo(id, langId)
+                            .isPresent())
+                    .count();
 
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
