@@ -29,3 +29,4 @@ Release-25.07.10 LTS
 23. https://github.com/dotCMS/core/issues/34278 : [DEFECT] PublisherQueueJob (StatefulJob) updates Elasticsearch index but fails to commit DB changes when processing large batches #34278
 24. https://github.com/dotCMS/core/issues/33434 : [DEFECT] #editContentlet macro doesn't properly escape apostrophes #33434 
 25. https://github.com/dotCMS/core/issues/34163 : Fix Apache Tika XXE CVE-2025-66516 #34163
+26. https://github.com/dotCMS/core/issues/34954 : security: upgrade Apache Tomcat to 9.0.113+ to fix CVE-2025-66614 #34954
