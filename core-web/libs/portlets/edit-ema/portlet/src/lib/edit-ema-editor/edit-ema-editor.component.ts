@@ -448,21 +448,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     /**
-     * Reset activeContentlet when page is unlocked
-     *
-     * Business Rule: When a page is unlocked (isLocked === false), any active contentlet
-     * selection should be cleared to prevent editing conflicts.
-     */
-    readonly $resetActiveContentletOnUnlockEffect = effect(() => {
-        // const toggleLockOptions = this.$lockOptions();
-        // const activeContentlet = this.uveStore.editorActiveContentlet();
-        // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
-        // if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
-        //     this.uveStore.resetActiveContentlet();
-        // }
-    });
-
-    /**
      * Handle right sidebar tab changes
      */
     protected handleRightSidebarTabChange(index: string | number | undefined): void {
@@ -956,8 +941,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                         },
                         this.host
                     );
-                    // TODO: Looks like we don't need this anymore
-                    // this.iframeMessenger.reloadPage();
                 }
 
                 const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
@@ -1041,8 +1024,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     },
                     this.host
                 );
-                // TODO: Looks like we don't need this anymore
-                // this.iframeMessenger.reloadPage();
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({

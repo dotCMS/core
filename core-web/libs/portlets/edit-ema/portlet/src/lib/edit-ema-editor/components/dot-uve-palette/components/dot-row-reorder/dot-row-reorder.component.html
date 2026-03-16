@@ -11,7 +11,10 @@
                 data-testid="row-item"
                 [cdkDragDisabled]="isColumnDragging()">
                 <div class="flex items-center gap-3 min-w-0 cursor-pointer">
-                    <div class="flex items-center text-(--text-color-secondary) cursor-grab select-none active:cursor-grabbing" cdkDragHandle (click)="$event.stopPropagation()">
+                    <div
+                        class="flex items-center text-(--text-color-secondary) cursor-grab select-none active:cursor-grabbing"
+                        cdkDragHandle
+                        (click)="$event.stopPropagation()">
                         <i class="pi pi-bars"></i>
                     </div>
                     <div
@@ -54,7 +57,9 @@
                                     class="flex items-center gap-2 text-xs text-(--text-color) bg-(--surface-card) rounded p-2 px-3 row-column"
                                     (cdkDragStarted)="setColumnDragging(true)"
                                     (cdkDragEnded)="setColumnDragging(false)">
-                                    <div class="inline-flex items-center justify-center text-(--text-color-secondary) cursor-grab select-none active:cursor-grabbing" cdkDragHandle>
+                                    <div
+                                        class="inline-flex items-center justify-center text-(--text-color-secondary) cursor-grab select-none active:cursor-grabbing"
+                                        cdkDragHandle>
                                         <i class="pi pi-bars"></i>
                                     </div>
                                     <div
@@ -76,7 +81,9 @@
         }
     </div>
 } @else {
-    <div class="flex justify-center items-center p-8 text-(--text-color-secondary)" data-testid="empty-state">
+    <div
+        class="flex justify-center items-center p-8 text-(--text-color-secondary)"
+        data-testid="empty-state">
         <span>No rows available</span>
     </div>
 }

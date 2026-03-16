@@ -5,7 +5,7 @@
     <form
         [formGroup]="$contentletForm()!"
         (ngSubmit)="handleSubmit()"
-        class="p-fluid w-full"
+        class="w-full"
         (keydown.escape)="handleCancel()"
         [attr.inert]="loading() ? '' : null"
         tabindex="0">

@@ -36,11 +36,19 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
         ButtonModule
     ],
     templateUrl: './dot-row-reorder.component.html',
-    styles: [`
-        .cdk-drag-animating { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
-        .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) { transition: transform 250ms cubic-bezier(0, 0, 0.2, 1); }
-        .cdk-drag-placeholder { opacity: 0.4; }
-    `],
+    styles: [
+        `
+            .cdk-drag-animating {
+                transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+            }
+            .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+                transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+            }
+            .cdk-drag-placeholder {
+                opacity: 0.4;
+            }
+        `
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotRowReorderComponent {
