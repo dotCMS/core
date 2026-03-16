@@ -14,7 +14,8 @@ export interface EngagementSparklineData {
 
 export interface EngagementKPI {
     value: number | string;
-    trend: number;
+    /** Trend percentage. Undefined when no prior data exists for comparison. */
+    trend?: number;
     label: string;
     /** Optional subtitle text */
     subtitle?: string;

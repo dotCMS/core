@@ -118,10 +118,14 @@
                                 "></i>
                             {{ trendData.prefix }}{{ trendData.value }}%
                         </span>
-                    }
-                    @if (hasComparisonLabel) {
-                        <span class="metric-comparison" data-testid="metric-comparison">
-                            {{ comparisonLabel }}
+                        @if (hasComparisonLabel) {
+                            <span class="metric-comparison" data-testid="metric-comparison">
+                                {{ comparisonLabel }}
+                            </span>
+                        }
+                    } @else if (hasComparisonLabel) {
+                        <span class="metric-no-prior" data-testid="metric-no-prior">
+                            {{ 'analytics.metrics.no-prior-data' | dm }}
                         </span>
                     }
                     @if (hasSubtitle) {

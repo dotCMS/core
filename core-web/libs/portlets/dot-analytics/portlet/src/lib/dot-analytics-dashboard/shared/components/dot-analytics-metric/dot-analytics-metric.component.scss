@@ -99,6 +99,12 @@
     color: $color-palette-gray-500;
 }
 
+.metric-no-prior {
+    font-size: $font-size-sm;
+    color: $color-palette-gray-400;
+    font-style: italic;
+}
+
 .metric-projected-content {
     display: flex;
     flex-direction: column;

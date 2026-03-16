@@ -72,7 +72,6 @@ export function toEngagementKPIs(
         return null;
     }
 
-    const totalSessionsPrev = parseNum(previous['EngagementDaily.totalSessions']);
     const engagedSessionsCur = parseNum(current['EngagementDaily.engagedSessions']);
     const engagementRateCur = parseNum(current['EngagementDaily.engagementRate']);
     const conversionRateCur = parseNum(current['EngagementDaily.conversionRate']);
@@ -81,21 +80,32 @@ export function toEngagementKPIs(
     );
     const avgSessionTimeCur = parseNum(current['EngagementDaily.avgSessionTimeSeconds']);
 
-    const engagementRatePrev = parseNum(previous['EngagementDaily.engagementRate']);
-    const conversionRatePrev = parseNum(previous['EngagementDaily.conversionRate']);
-    const avgInteractionsPrev = parseNum(
-        previous['EngagementDaily.avgInteractionsPerEngagedSession']
-    );
-    const avgSessionTimePrev = parseNum(previous['EngagementDaily.avgSessionTimeSeconds']);
-
-    const engagementRateTrend = computeTrendPercent(engagementRateCur, engagementRatePrev);
-    const totalSessionsTrend = computeTrendPercent(totalSessionsCur, totalSessionsPrev);
-    const conversionRateTrend = computeTrendPercent(conversionRateCur, conversionRatePrev);
-    const avgInteractionsTrend = computeTrendPercent(avgInteractionsCur, avgInteractionsPrev);
-    const avgSessionTimeTrend = computeTrendPercent(avgSessionTimeCur, avgSessionTimePrev);
-
     const engagementRateValue = Math.round(engagementRateCur * 10000) / 100;
     const conversionRateValue = `${Math.round(conversionRateCur * 1000) / 10}%`;
+
+    // When there is no previous period data, trends are undefined ("No prior data")
+    const hasPriorData = previousRow != null;
+    let engagementRateTrend: number | undefined;
+    let totalSessionsTrend: number | undefined;
+    let conversionRateTrend: number | undefined;
+    let avgInteractionsTrend: number | undefined;
+    let avgSessionTimeTrend: number | undefined;
+
+    if (hasPriorData) {
+        const totalSessionsPrev = parseNum(previous['EngagementDaily.totalSessions']);
+        const engagementRatePrev = parseNum(previous['EngagementDaily.engagementRate']);
+        const conversionRatePrev = parseNum(previous['EngagementDaily.conversionRate']);
+        const avgInteractionsPrev = parseNum(
+            previous['EngagementDaily.avgInteractionsPerEngagedSession']
+        );
+        const avgSessionTimePrev = parseNum(previous['EngagementDaily.avgSessionTimeSeconds']);
+
+        engagementRateTrend = computeTrendPercent(engagementRateCur, engagementRatePrev);
+        totalSessionsTrend = computeTrendPercent(totalSessionsCur, totalSessionsPrev);
+        conversionRateTrend = computeTrendPercent(conversionRateCur, conversionRatePrev);
+        avgInteractionsTrend = computeTrendPercent(avgInteractionsCur, avgInteractionsPrev);
+        avgSessionTimeTrend = computeTrendPercent(avgSessionTimeCur, avgSessionTimePrev);
+    }
 
     return {
         totalSessions: {
