@@ -1,15 +1,16 @@
 package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.rendering.velocity.services.PageRenderUtil;
-import com.dotmarketing.beans.Host;
+import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.liferay.portal.model.User;
+import com.dotmarketing.util.UtilMethods;
 import graphql.schema.DataFetchingEnvironment;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Returns the total number of contentlets placed across all containers in the requested page.
@@ -23,22 +24,37 @@ public class NumberContentsDataFetcher extends RedirectAwareDataFetcher<Integer>
             final Contentlet page = environment.getSource();
             Logger.debug(this, () -> "Fetching numberContents for page: " + page.getIdentifier());
 
-            PageRenderUtil pageRenderUtil = (PageRenderUtil) context.getParam("pageRenderUtil");
+            // Step 1: get placements for the requested personalization + default variant (one SQL query)
+            final String personalization = WebAPILocator.getPersonalizationWebAPI()
+                    .getContainerPersonalization(context.getHttpServletRequest());
 
-            if (pageRenderUtil == null) {
-                final User user = context.getUser();
-                final String pageModeAsString = (String) context.getParam("pageMode");
-                final String languageId = (String) context.getParam("languageId");
-                final PageMode mode = PageMode.get(pageModeAsString);
-                final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(page);
-                final Host site = APILocator.getHostAPI().find(page.getHost(), user, true);
-                pageRenderUtil = new PageRenderUtil(pageAsset, user, mode, Long.parseLong(languageId), site);
+            final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                    .getMultiTreesByPersonalizedPage(
+                            page.getIdentifier(),
+                            personalization,
+                            VariantAPI.DEFAULT_VARIANT.name()
+                    );
+
+            if (multiTrees.isEmpty()) {
+                return 0;
             }
 
-            return pageRenderUtil.getContainersRaw().stream()
-                    .flatMap(containerRaw -> containerRaw.getContentlets().values().stream())
-                    .mapToInt(java.util.List::size)
-                    .sum();
+            // Step 2: count only those contentlets that exist in the requested language (one Lucene query)
+            final String languageIdParam = (String) context.getParam("languageId");
+            final long langId = UtilMethods.isSet(languageIdParam)
+                    ? Long.parseLong(languageIdParam)
+                    : APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+            final String identifierClause = multiTrees.stream()
+                    .map(MultiTree::getChild)
+                    .distinct()
+                    .collect(Collectors.joining(" ", "(", ")"));
+
+            final String luceneQuery = "+languageId:" + langId + " +identifier:" + identifierClause;
+
+            return (int) APILocator.getContentletAPI()
+                    .indexCount(luceneQuery, context.getUser(), false);
+
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw e;

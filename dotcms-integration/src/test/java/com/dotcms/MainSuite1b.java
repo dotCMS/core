@@ -60,6 +60,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotGraphQLHttpServletTest.class,
         com.dotcms.graphql.datafetcher.page.VanityURLFetcherTest.class,
         com.dotcms.graphql.datafetcher.page.RunningExperimentFetcherTest.class,
+        com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.CategoryFieldDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.FolderCollectionDataFetcherTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,

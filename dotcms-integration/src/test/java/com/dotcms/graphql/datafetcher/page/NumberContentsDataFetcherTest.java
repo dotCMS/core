@@ -10,7 +10,6 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.graphql.DotGraphQLContext;
-import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -21,7 +20,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import graphql.schema.DataFetchingEnvironment;
 import org.junit.BeforeClass;
@@ -67,7 +65,6 @@ public class NumberContentsDataFetcherTest {
         final DotGraphQLContext context = DotGraphQLContext.createServletContext()
                 .with(user)
                 .build();
-        context.addParam("pageMode", PageMode.PREVIEW_MODE.name());
         context.addParam("languageId", String.valueOf(defaultLanguage.getId()));
 
         Mockito.when(environment.getContext()).thenReturn(context);
@@ -128,7 +125,6 @@ public class NumberContentsDataFetcherTest {
         final DotGraphQLContext context = DotGraphQLContext.createServletContext()
                 .with(user)
                 .build();
-        context.addParam("pageMode", PageMode.PREVIEW_MODE.name());
         context.addParam("languageId", String.valueOf(defaultLanguage.getId()));
 
         Mockito.when(environment.getContext()).thenReturn(context);
@@ -136,63 +132,5 @@ public class NumberContentsDataFetcherTest {
 
         final Integer result = fetcher.get(environment);
         assertEquals(Integer.valueOf(3), result);
-    }
-
-    /**
-     * MethodToTest: {@link NumberContentsDataFetcher#get(DataFetchingEnvironment)}
-     * Given Scenario: A {@link PageRenderUtil} is already cached in the context (as populated by
-     * {@link ContainersDataFetcher}). The {@code pageMode} and {@code languageId} params are
-     * intentionally absent — if the fetcher tried to build a new {@link PageRenderUtil} it would
-     * throw a NullPointerException, proving the cached instance is used.
-     * Expected Result: Returns the correct count from the pre-built PageRenderUtil.
-     */
-    @Test
-    public void testGet_WithCachedPageRenderUtil() throws Exception {
-        final ContentType contentType = APILocator.getContentTypeAPI(user)
-                .findByType(BaseContentType.CONTENT)
-                .stream()
-                .filter(ct -> !ct.system())
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("No non-system CONTENT type found"));
-
-        final Container container = new ContainerDataGen()
-                .withContentType(contentType, "")
-                .nextPersisted();
-        final Template template = new TemplateDataGen()
-                .withContainer(container.getIdentifier(), "1")
-                .nextPersisted();
-        final Folder folder = new FolderDataGen().site(defaultHost).nextPersisted();
-        final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
-                .languageId(defaultLanguage.getId())
-                .nextPersisted();
-
-        final Contentlet c1 = new ContentletDataGen(contentType)
-                .host(defaultHost).languageId(defaultLanguage.getId()).nextPersisted();
-        final Contentlet c2 = new ContentletDataGen(contentType)
-                .host(defaultHost).languageId(defaultLanguage.getId()).nextPersisted();
-
-        APILocator.getMultiTreeAPI().saveMultiTree(
-                new MultiTree(page.getIdentifier(), container.getIdentifier(), c1.getIdentifier(), "1", 0));
-        APILocator.getMultiTreeAPI().saveMultiTree(
-                new MultiTree(page.getIdentifier(), container.getIdentifier(), c2.getIdentifier(), "1", 1));
-
-        // Pre-build the PageRenderUtil and cache it in the context
-        final PageRenderUtil pageRenderUtil = new PageRenderUtil(
-                page, user, PageMode.PREVIEW_MODE, defaultLanguage.getId(), defaultHost);
-
-        final var fetcher = new NumberContentsDataFetcher();
-        final var environment = Mockito.mock(DataFetchingEnvironment.class);
-
-        final DotGraphQLContext context = DotGraphQLContext.createServletContext()
-                .with(user)
-                .build();
-        // Intentionally omit "pageMode" and "languageId" — a NPE would occur if cache were bypassed
-        context.addParam("pageRenderUtil", pageRenderUtil);
-
-        Mockito.when(environment.getContext()).thenReturn(context);
-        Mockito.when(environment.getSource()).thenReturn(page);
-
-        final Integer result = fetcher.get(environment);
-        assertEquals(Integer.valueOf(2), result);
     }
 }
