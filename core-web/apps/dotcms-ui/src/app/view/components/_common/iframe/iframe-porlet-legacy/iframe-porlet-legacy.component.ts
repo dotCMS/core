@@ -7,8 +7,9 @@ import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 import { map, mergeMap, pluck, takeUntil, withLatestFrom } from 'rxjs/operators';
 
 import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoggerService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotNotLicenseComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
@@ -30,7 +31,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
     loggerService = inject(LoggerService);
-    siteService = inject(SiteService);
+    readonly #globalStore = inject(GlobalStore);
     private dotcmsEventsService = inject(DotcmsEventsService);
     private dotIframeService = inject(DotIframeService);
 
@@ -46,15 +47,14 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                 this.reloadIframePortlet(portletId);
             }
         });
-        /**
-         *  skip first - to avoid subscription when page loads due login user subscription:
-         *  https://github.com/dotCMS/core-web/blob/main/projects/dotcms-js/src/lib/core/site.service.ts#L58
-         */
-        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            if (this.url.getValue() !== '') {
-                this.reloadIframePortlet();
-            }
-        });
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                if (this.url.getValue() !== '') {
+                    this.reloadIframePortlet();
+                }
+            });
 
         this.route.data
             .pipe(pluck('canAccessPortlet'), takeUntil(this.destroy$))

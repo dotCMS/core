@@ -34,7 +34,7 @@ import {
     DotSiteBrowserService,
     PushPublishService
 } from '@dotcms/data-access';
-import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
     DotActionMenuItem,
@@ -44,6 +44,7 @@ import {
     DotMessageType,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
     DotContentletStatusChipComponent,
@@ -107,7 +108,7 @@ export class DotTemplateListComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
     private dotRouterService = inject(DotRouterService);
-    private dotSiteService = inject(SiteService);
+    readonly #globalStore = inject(GlobalStore);
     private dotTemplatesService = inject(DotTemplatesService);
     private pushPublishService = inject(PushPublishService);
     private destroyRef = inject(DestroyRef);
@@ -170,10 +171,12 @@ export class DotTemplateListComponent implements OnInit {
         // Load initial templates
         this.loadTemplates();
 
-        // Listen for site changes using SiteService
-        this.dotSiteService.switchSite$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-            this.dotRouterService.gotoPortlet('templates');
-        });
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+                this.dotRouterService.gotoPortlet('templates');
+            });
     }
 
     /**
