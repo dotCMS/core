@@ -58,9 +58,11 @@ public interface AbstractRetryBundlesForm {
      */
     @Schema(
             description = "Which endpoints to retry: ALL_ENDPOINTS sends to all, " +
-                    "FAILED_ENDPOINTS sends only to previously failed endpoints",
-            example = "FAILED_ENDPOINTS"
+                    "FAILED_ENDPOINTS sends only to previously failed endpoints. Case-sensitive.",
+            example = "FAILED_ENDPOINTS",
+            allowableValues = {"ALL_ENDPOINTS", "FAILED_ENDPOINTS"}
     )
+    @JsonDeserialize(using = DeliveryStrategyDeserializer.class)
     @Value.Default
     default DeliveryStrategy deliveryStrategy() {
         return DeliveryStrategy.ALL_ENDPOINTS;
