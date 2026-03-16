@@ -565,14 +565,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
-     * Inject the editor page script and styles to the VTL content
+     * Inject the editor page styles to the VTL content
      *
      * @private
      * @param {string} html
      * @return {*}  {string}
      * @memberof EditEmaEditorComponent
      */
-    private inyectCodeToVTL(html: string): string {
+    private injectCodeToVTL(html: string): string {
         const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
         const origin = this.window.location.origin;
         const fileWithBase = injectBaseTag({ html, url, origin });
@@ -745,9 +745,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
+     * Sets up the iframe content for traditional (VTL) pages.
      *
-     * Sets the content of the iframe with the provided code.
-     * @param code - The code to be added to the iframe.
+     * NOTE: The `dot-uve.js` editor script is intentionally NOT injected here.
+     * It is now included by the backend directly in `entity.page.rendered`
+     * (see PR #34927). Do not re-add script injection on the frontend.
+     *
      * @memberof EditEmaEditorComponent
      */
     #insertPageContent(): void {
@@ -762,7 +765,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const enableInlineEdit = this.uveStore.$enableInlineEdit();
         const pageRender = this.uveStore.$pageRender();
 
-        const newDoc = this.inyectCodeToVTL(pageRender);
+        const newDoc = this.injectCodeToVTL(pageRender);
 
         if (!doc) {
             return;
