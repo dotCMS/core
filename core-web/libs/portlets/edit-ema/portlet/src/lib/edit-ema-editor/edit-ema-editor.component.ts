@@ -729,9 +729,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
+     * Sets up the iframe content for traditional (VTL) pages.
      *
-     * Sets the content of the iframe with the provided code.
-     * @param code - The code to be added to the iframe.
+     * NOTE: The `dot-uve.js` editor script is intentionally NOT injected here.
+     * It is now included by the backend directly in `entity.page.rendered`
+     * (see PR #34927). Do not re-add script injection on the frontend.
+     *
      * @memberof EditEmaEditorComponent
      */
     #insertPageContent(): void {
