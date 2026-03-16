@@ -108,17 +108,22 @@ export interface SparklineDataset {
                     </div>
                 }
             </div>
-            @if ($legendItems().length > 1) {
-                <div class="sparkline-legend" data-testid="sparkline-legend">
+            @if ($legendItems().length) {
+                <div class="sparkline-legend pb-0" data-testid="sparkline-legend">
                     @for (item of $legendItems(); track item.label) {
                         <div class="sparkline-legend__item">
-                            <span
-                                class="sparkline-legend__line"
-                                [class.sparkline-legend__line--dashed]="item.dashed"
-                                [style.background]="item.dashed ? 'transparent' : item.color"
-                                [style.border-color]="
-                                    item.dashed ? item.color : 'transparent'
-                                "></span>
+                            @if (item.dashed) {
+                                <svg class="sparkline-legend__svg" viewBox="0 0 20 2">
+                                    <line x1="0" y1="1" x2="20" y2="1"
+                                        [attr.stroke]="item.color"
+                                        stroke-width="2"
+                                        stroke-dasharray="4,3" />
+                                </svg>
+                            } @else {
+                                <span
+                                    class="sparkline-legend__line"
+                                    [style.background]="item.color"></span>
+                            }
                             <span class="sparkline-legend__label">{{ item.label }}</span>
                         </div>
                     }
@@ -203,9 +208,11 @@ export interface SparklineDataset {
             display: flex;
             align-items: center;
             gap: 1.5rem;
-            padding: 0.75rem 0;
-            margin-top: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem -1rem -1rem;
             border-top: 1px solid var(--p-gray-200, #e5e7eb);
+            background: var(--p-gray-50, #f9fafb);
+            border-radius: 0 0 var(--p-card-border-radius, 0.375rem) var(--p-card-border-radius, 0.375rem);
         }
 
         .sparkline-legend__item {
@@ -221,9 +228,10 @@ export interface SparklineDataset {
             border-radius: 1px;
         }
 
-        .sparkline-legend__line--dashed {
-            background: transparent !important;
-            border-top: 2px dashed;
+        .sparkline-legend__svg {
+            width: 1.25rem;
+            height: 2px;
+            flex-shrink: 0;
         }
 
         .sparkline-legend__label {
