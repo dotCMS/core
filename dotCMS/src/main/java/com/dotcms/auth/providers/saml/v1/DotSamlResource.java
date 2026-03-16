@@ -17,6 +17,7 @@ import com.dotcms.util.RedirectUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -501,12 +502,19 @@ public class DotSamlResource implements Serializable {
 
 	/*
 	 * Builds the base url from the initiating Servlet Request.
+	 * Prefers the configured sPEndpointHostname (DOT_SAML_SERVICE_PROVIDER_HOST_NAME) over
+	 * the raw request server name, so deployments behind a CDN can use the public hostname
+	 * instead of leaking the origin server hostname.
 	 */
 	private String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
 
-		final String uri = httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":"
-				+ httpServletRequest.getServerPort() + "/dotAdmin/show-logout";
+		final String configuredHost = Config.getStringProperty(
+				SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), null);
+		final String host = UtilMethods.isSet(configuredHost)
+				? configuredHost
+				: httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":"
+						+ httpServletRequest.getServerPort();
 
-		return uri;
+		return host + "/dotAdmin/show-logout";
 	}
 }
