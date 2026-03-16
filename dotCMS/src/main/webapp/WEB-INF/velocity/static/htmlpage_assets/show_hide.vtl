@@ -1,0 +1,46 @@
+<script>
+  DotCustomFieldApi.ready(() => {
+    const mediaField = DotCustomFieldApi.getField("media");
+    const mediaFileField = DotCustomFieldApi.getField("mediafile");
+
+    const currentValue = mediaField.getValue() || "external";
+    const initialRadio = document.querySelector('input[name="mediaLocation"][value="' + currentValue + '"]');
+    if (initialRadio) {
+      initialRadio.checked = true;
+    }
+
+    if (currentValue === "upload") {
+      mediaFileField.show();
+    } else {
+      mediaFileField.hide();
+    }
+
+    const radios = document.querySelectorAll('input[name="mediaLocation"]');
+    radios.forEach((radio) => {
+      radio.addEventListener("change", (e) => {
+        const value = e.target.value;
+        mediaField.setValue(value);
+
+        if (value === "upload") {
+          mediaFileField.show();
+        } else {
+          mediaFileField.hide();
+        }
+      });
+    });
+  });
+</script>
+
+<fieldset class="fieldset">
+  <legend class="fieldset-legend">Media Location</legend>
+  <div class="flex gap-4">
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="radio" name="mediaLocation" value="upload" class="radio radio-primary" />
+      <span>Upload File</span>
+    </label>
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="radio" name="mediaLocation" value="external" class="radio radio-primary" checked />
+      <span>Link to External File</span>
+    </label>
+  </div>
+</fieldset>

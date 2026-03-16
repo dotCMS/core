@@ -30,11 +30,20 @@ export class AngularFormBridge implements FormBridge {
     private fieldSubscriptions: Map<string, FieldSubscription> = new Map();
     #dialogRef: DynamicDialogRef | null = null;
 
+    /**
+     * Optional callback invoked when a field's visibility changes via show()/hide().
+     * Injected by the consumer (e.g. NativeFieldComponent) to decouple the bridge from the store.
+     */
+    private onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void;
+
     private constructor(
         private form: FormGroup,
         private zone: NgZone,
-        private dialogService: DialogService
-    ) {}
+        private dialogService: DialogService,
+        onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void
+    ) {
+        this.onFieldVisibilityChange = onFieldVisibilityChange;
+    }
 
     /**
      * Gets the singleton instance of AngularFormBridge.
@@ -43,15 +52,22 @@ export class AngularFormBridge implements FormBridge {
      * @param form - The Angular FormGroup to bridge
      * @param zone - The NgZone for change detection
      * @param dialogService - The PrimeNG DialogService for opening dialogs
+     * @param onFieldVisibilityChange - Optional callback to handle field visibility changes from show()/hide()
      * @returns The singleton instance of AngularFormBridge
      */
     static getInstance(
         form: FormGroup,
         zone: NgZone,
-        dialogService: DialogService
+        dialogService: DialogService,
+        onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void
     ): AngularFormBridge {
         if (!AngularFormBridge.instance) {
-            AngularFormBridge.instance = new AngularFormBridge(form, zone, dialogService);
+            AngularFormBridge.instance = new AngularFormBridge(
+                form,
+                zone,
+                dialogService,
+                onFieldVisibilityChange
+            );
         } else if (
             AngularFormBridge.instance.form !== form ||
             AngularFormBridge.instance.zone !== zone
@@ -229,6 +245,18 @@ export class AngularFormBridge implements FormBridge {
                     if (control) {
                         control.disable({ emitEvent: true });
                     }
+                });
+            },
+
+            show: (): void => {
+                this.zone.run(() => {
+                    this.onFieldVisibilityChange?.(fieldId, true);
+                });
+            },
+
+            hide: (): void => {
+                this.zone.run(() => {
+                    this.onFieldVisibilityChange?.(fieldId, false);
                 });
             }
         };

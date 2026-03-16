@@ -19,6 +19,7 @@ import {
 
 import { withActivities } from './features/activities/activities.feature';
 import { withContent, DialogInitializationOptions } from './features/content/content.feature';
+import { withFieldVisibility } from './features/field-visibility/field-visibility.feature';
 import { withForm } from './features/form/form.feature';
 import { withHistory } from './features/history/history.feature';
 import { withInformation } from './features/information/information.feature';
@@ -137,6 +138,12 @@ export interface EditContentState {
     isViewingHistoricalVersion: boolean;
     historicalVersionInode: string | null;
     originalContentlet: DotCMSContentlet | null;
+
+    /**
+     * Set of field variable names currently hidden via the BridgeAPI show()/hide() methods.
+     * Fields in this set are hidden in the form template using Tailwind's `hidden` class.
+     */
+    hiddenFields: Set<string>;
 }
 
 export const initialRootState: EditContentState = {
@@ -228,7 +235,10 @@ export const initialRootState: EditContentState = {
     // Historical version viewing state
     isViewingHistoricalVersion: false,
     historicalVersionInode: null,
-    originalContentlet: null
+    originalContentlet: null,
+
+    // Field visibility state (controlled by BridgeAPI)
+    hiddenFields: new Set<string>()
 };
 
 /**
@@ -246,6 +256,7 @@ export const DotEditContentStore = signalStore(
     withInformation(),
     withLock(),
     withForm(),
+    withFieldVisibility(),
     withLocales(),
     withActivities(),
     withHistory(),

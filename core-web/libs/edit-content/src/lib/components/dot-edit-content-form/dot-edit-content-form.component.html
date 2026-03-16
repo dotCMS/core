@@ -59,7 +59,7 @@
             <div class="p-4">
                 @for (row of tab.layout; track row) {
                     <div
-                        class="grid grid-flow-col auto-cols-[minmax(0,1fr)] gap-4 mb-4 last:mb-0"
+                        class="grid grid-flow-col auto-cols-fr gap-4 mb-4 last:mb-0"
                         data-testId="row">
                         @for (column of row.columns; track column) {
                             <div class="flex flex-col gap-4" data-testId="column">
@@ -68,6 +68,7 @@
                                         [contentType]="contentType"
                                         [contentlet]="contentlet"
                                         [field]="field"
+                                        [class.hidden]="$store.isFieldHidden(field.variable)"
                                         (disabledWYSIWYGChange)="onDisabledWYSIWYGChange($event)"
                                         data-testId="field" />
                                 }
