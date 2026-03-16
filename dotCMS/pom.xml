@@ -32,6 +32,9 @@
         <war.output.file>${project.build.directory}/${project.build.finalName}-war.war</war.output.file>
         <docker.base.image>tomcat:${tomcat.version}-jdk11</docker.base.image>
         <docker.skip.push>true</docker.skip.push>
+        <!-- Stop all managed containers (app + sidecars) when docker-stop profile runs.
+             dotcms is skipped gracefully when not running (e.g. IDE/Tomcat mode). -->
+        <docker.filter>dotcms,database,opensearch,opensearch-upgrade</docker.filter>
         <!-- By default the dev instance started here we want to persist the data -->
         <docker.skip.clean.before>true</docker.skip.clean.before>
         <docker.skip.clean.after>true</docker.skip.clean.after>

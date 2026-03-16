@@ -1,18 +1,19 @@
 # Mise configuration for dotCMS development
 # https://mise.jdx.dev/
 #
-# To activate mise in your shell, add to your ~/.zshrc or ~/.bashrc:
-#   eval "$(mise activate zsh)"  # for zsh
-#   eval "$(mise activate bash)" # for bash
-#
-# Or run in current shell:
-#   eval "$(mise activate $(basename $SHELL))"
-#
-# Then reload: source ~/.zshrc (or restart terminal)
-#
-# Verify installation: mise doctor
+# First time? Run: just setup
+# Already have mise? Run: mise install
 
 [tools]
+# Git hooks manager — replaces husky + lint-staged
+lefthook = "latest"
+
+# Command runner for build/dev tasks
+just = "latest"
+
+# Git worktree manager for parallel AI agent sessions
+"github:max-sixty/worktrunk" = "latest"
+
 # GitHub CLI for issue/PR management
 gh = "latest"
 
@@ -29,9 +30,25 @@ shellcheck = "latest"
 # Python virtual environment location
 _.python.venv = { path = ".venv", create = true }
 
+# Load per-developer secrets and overrides (gitignored)
+_.file = ".env.local"
+
+[tasks.setup]
+description = "Configure development environment"
+run = "just setup"
+
 [settings]
 # Experimental features
 experimental = true
 
 # Automatically install missing tools
 auto_install = true
+
+# Enable reading legacy version files (.nvmrc, .sdkmanrc, etc.)
+# This allows mise to automatically detect Node.js and Java versions
+# from existing version files without explicit configuration in .mise.toml
+legacy_version_file = true
+
+# Enable idiomatic version file detection for Java and Node
+# Required for mise to read .java-version, .sdkmanrc, and .nvmrc files
+idiomatic_version_file_enable_tools = ["java", "node"]

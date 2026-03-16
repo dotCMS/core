@@ -1,7 +1,9 @@
 ---
-description: "Testing with Spectator, Jest, data-testid, integration tests. Use when writing or editing *.spec.ts, *Test.java, or test files."
-globs: **/*.spec.ts, **/*.test.ts, **/test/**/*, **/*Test.java
-alwaysApply: false
+paths:
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "**/test/**/*"
+  - "**/*Test.java"
 ---
 
 # Testing Context
@@ -21,7 +23,8 @@ alwaysApply: false
 
 ## Commands
 ```bash
-# Backend integration tests (from repo root) — MUST include skip=false or tests silently skip
+# Backend (from repo root)
+just test-integration class=MyTestClass    # if alias exists, else:
 ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Dit.test=MyTestClass
 
 # Frontend (Nx, from repo root)
@@ -31,6 +34,6 @@ cd core-web && yarn nx run <project>:test -t MyComponent
 Replace `<project>` with the Nx project (e.g. `dotcms-ui`, `sdk-angular`, `edit-content`).
 
 ## On-demand
-- `@docs/frontend/TESTING_FRONTEND.md`
-- `@docs/testing/BACKEND_UNIT_TESTS.md`
-- `@docs/testing/INTEGRATION_TESTS.md`
+- `docs/frontend/TESTING_FRONTEND.md`
+- `docs/testing/BACKEND_UNIT_TESTS.md`
+- `docs/testing/INTEGRATION_TESTS.md`

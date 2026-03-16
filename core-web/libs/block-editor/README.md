@@ -95,5 +95,5 @@ The `SharedModule` is where any shared `components`, pipes/filters and services 
 Run Storybook with the proxy to the backend sending the environment var `USE_MIDDLEWARE=true` when you run it the command:
 
 ```
-USE_MIDDLEWARE=true npx nx run dotcms-ui:storybook
+USE_MIDDLEWARE=true yarn nx run dotcms-ui:storybook
 ```

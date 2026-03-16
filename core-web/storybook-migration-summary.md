@@ -34,11 +34,11 @@ You can make sure everything is working as expected by trying
 to build or serve your Storybook as you normally would.
 
 ```bash
-npx nx build-storybook project-name
+yarn nx build-storybook project-name
 ```
 
 ```bash
-npx nx storybook project-name
+yarn nx storybook project-name
 ```
 
 Please read the [Storybook 9.0.0 migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md)

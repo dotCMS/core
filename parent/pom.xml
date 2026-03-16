@@ -184,8 +184,6 @@
         <docker.data.shared.volume.internal>/data/shared</docker.data.shared.volume.internal>
         <docker.container.name.pattern>${docker.run.context}_%a</docker.container.name.pattern>
         <user.dotcms.folder>${user.home}/.dotcms</user.dotcms.folder>
-        <license.user.path>${user.dotcms.folder}/license/license.dat</license.user.path>
-        <license.use>false</license.use>
         <cert.folder.path>${user.dotcms.folder}/certs</cert.folder.path>
         <cert.prefix>localhost</cert.prefix>
         <cert.name>${cert.prefix}.pem</cert.name>
@@ -194,13 +192,21 @@
         <cert.key.file.path>${cert.folder.path}/${cert.key.name}</cert.key.file.path>
         <docker.cert.volume.internal>/certs</docker.cert.volume.internal>
         <dotcms.startup.timeout>300000</dotcms.startup.timeout>
-        <docker.license.volume.internal>/data/local/dotsecure/license/license.dat</docker.license.volume.internal>
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
         <docker.db.volume>${docker.run.context}_db</docker.db.volume>
         <docker.es.volume>${docker.run.context}_es</docker.es.volume>
         <docker.os.upgrade.volume>${docker.run.context}_os-upgrade</docker.os.upgrade.volume>
         <docker.skip.clean.before>false</docker.skip.clean.before>
         <docker.skip.clean.after>false</docker.skip.clean.after>
+        <!-- Service endpoints — overridable via -D or shared-services profile -->
+        <dot.db.host>db</dot.db.host>
+        <dot.db.port>5432</dot.db.port>
+        <dot.db.name>dotcms</dot.db.name>
+        <dot.es.host>es</dot.es.host>
+        <dot.es.upgrade.host>localhost</dot.es.upgrade.host>
+        <!--suppress UnresolvedMavenProperty -->
+        <dot.es.upgrade.port>${os.upgrade.port}</dot.es.upgrade.port>
+        <dot.cluster.id/>
         <debug.suspend.flag>n</debug.suspend.flag>
         <debug.port>5005</debug.port>
 
@@ -435,17 +441,20 @@
                                         <CMS_JAVA_OPTS>${docker.debug.args}</CMS_JAVA_OPTS>
                                         <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
                                         <DOT_DB_DRIVER>org.postgresql.Driver</DOT_DB_DRIVER>
-                                        <DOT_DB_BASE_URL>jdbc:postgresql://db:5432/dotcms?autosave=conservative</DOT_DB_BASE_URL>
-                                        <!-- Why is this without DOT_ -->
-                                        <DB_BASE_URL>jdbc:postgresql://db:5432/dotcms?autosave=conservative</DB_BASE_URL>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <DOT_DB_BASE_URL>jdbc:postgresql://${dot.db.host}:${dot.db.port}/${dot.db.name}?autosave=conservative</DOT_DB_BASE_URL>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <DB_BASE_URL>jdbc:postgresql://${dot.db.host}:${dot.db.port}/${dot.db.name}?autosave=conservative</DB_BASE_URL>
                                         <DB_USERNAME>postgres</DB_USERNAME>
                                         <DB_PASSWORD>postgres</DB_PASSWORD>
                                         <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
                                         <DOT_STARTER_DATA_LOAD>${docker.starter.volume.internal}/starter.zip</DOT_STARTER_DATA_LOAD>
                                         <file.encoding>UTF-8</file.encoding>
-                                        <DOT_ES_ENDPOINTS>http://es:9200</DOT_ES_ENDPOINTS>
-                                        <DOT_ES_ENDPOINTS_UPGRADE>http://localhost:${os.upgrade.port}</DOT_ES_ENDPOINTS_UPGRADE>
-                                        <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <DOT_ES_ENDPOINTS>http://${dot.es.host}:9200</DOT_ES_ENDPOINTS>
+                                        <!--suppress UnresolvedMavenProperty -->
+                                        <DOT_ES_ENDPOINTS_UPGRADE>http://${dot.es.upgrade.host}:${dot.es.upgrade.port}</DOT_ES_ENDPOINTS_UPGRADE>
+                                        <DOT_DOTCMS_CLUSTER_ID>${dot.cluster.id}</DOT_DOTCMS_CLUSTER_ID>
                                         <DOT_ANALYTICS_IDP_URL>http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/token</DOT_ANALYTICS_IDP_URL>
                                         <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
                                         <DOT_FEATURE_FLAG_EXPERIMENTS>true</DOT_FEATURE_FLAG_EXPERIMENTS>
@@ -1290,36 +1299,6 @@
             </build>
         </profile>
         <profile>
-            <id>use-license</id>
-            <activation>
-                <file>
-                    <exists>${license.user.path}</exists>
-                </file>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <version>${version.docker-maven.plugin}</version>
-                        <configuration>
-                            <imagesMap>
-                                <dotcms>
-                                    <run>
-                                        <volumes>
-                                            <bind combine.children="append">
-                                                <volume>${license.user.path}:${docker.license.volume.internal}</volume>
-                                            </bind>
-                                        </volumes>
-                                    </run>
-                                </dotcms>
-                            </imagesMap>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>use-cert</id>
             <activation>
                 <file>
@@ -1681,6 +1660,46 @@
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Shared services mode: connects app to pre-running shared DB + OpenSearch containers.
+             Skips sidecar startup, uses the dotcms-shared Docker network, and overrides
+             service endpoints. Activate with: -Pdocker-start,shared-services
+             The DB name and cluster ID should be passed via -D to match the justfile namespace. -->
+        <profile>
+            <id>shared-services</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <docker.filter>dotcms</docker.filter>
+                <dot.db.host>dotcms-shared-db</dot.db.host>
+                <dot.es.host>dotcms-shared-es</dot.es.host>
+                <dot.es.upgrade.host>dotcms-shared-os-upgrade</dot.es.upgrade.host>
+                <dot.es.upgrade.port>9200</dot.es.upgrade.port>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <filter>dotcms</filter>
+                            <imagesMap>
+                                <dotcms>
+                                    <run>
+                                        <network>
+                                            <mode>custom</mode>
+                                            <name>dotcms-shared</name>
+                                        </network>
+                                        <links combine.self="override"/>
+                                    </run>
+                                </dotcms>
+                            </imagesMap>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

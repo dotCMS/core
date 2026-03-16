@@ -1,0 +1,37 @@
+# Worktrunk project config for dotCMS
+# Lifecycle hooks that run when creating/removing worktrees.
+# See: wt hook --help
+
+[post-create]
+# Copy build caches from the source worktree (not the stale primary).
+# Scoped by .worktreeinclude — Nx/Angular caches only, NOT node_modules.
+# Uses copy-on-write (reflink) on APFS/btrfs: near-zero disk cost.
+copy = "wt step copy-ignored --from {{ base }}"
+
+# Install tools, deps, build Stencil webcomponents, wire git hooks.
+# Delegates to justfile to keep logic in one place.
+init = "just worktree-init"
+
+# Re-tag source worktree's Docker image for the new branch so dev-run works immediately.
+image = """
+docker tag "dotcms/dotcms-test:{{ base | sanitize }}" "dotcms/dotcms-test:{{ branch | sanitize }}" 2>/dev/null || \
+docker tag "dotcms/dotcms-test:1.0.0-SNAPSHOT" "dotcms/dotcms-test:{{ branch | sanitize }}" 2>/dev/null || true
+"""
+
+# Persist a deterministic port for this worktree (10000-19999 range, stable per branch name).
+# `just dev-run` reads this file so you never need to specify a port manually.
+port = "echo {{ branch | hash_port }} > {{ worktree_path }}/.dev-port"
+
+[pre-remove]
+# Stop this worktree's dev containers before removal (safe no-op if not running).
+stop = """
+cd {{ worktree_path }} && just dev-stop 2>/dev/null || true
+"""
+
+[post-remove]
+# Clean up leftover container for the removed worktree.
+cleanup = """
+SLUG=$(echo "{{ branch }}" | sed 's|[/\\]|-|g')
+CONTAINER="dotbuild_dotcms-core_${SLUG}_dotcms"
+docker stop "$CONTAINER" 2>/dev/null; docker rm "$CONTAINER" 2>/dev/null || true
+"""
