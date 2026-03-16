@@ -16,11 +16,12 @@ import {
     DotMessageService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebService, DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import {
     containersMock,
     CoreWebServiceMock,
+    DotcmsEventsServiceMock,
     DotContainersServiceMock,
     DotCurrentUserServiceMock,
     LoginServiceMock,
@@ -102,6 +103,10 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: GlobalStore,
                 useValue: { currentSiteId: () => null }
+            },
+            {
+                provide: DotcmsEventsService,
+                useClass: DotcmsEventsServiceMock
             },
             DotEventsService
         ]

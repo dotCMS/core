@@ -92,19 +92,22 @@ public class InterceptorHandlerTest extends IntegrationTestBase {
     public void externalizeTransaction_uses_separate_connection() throws Exception {
         DbConnectionFactory.closeSilently();
 
-        // Start a parent connection
-        final String parentConn = DbConnectionFactory.getConnection().toString();
+        // Start a parent connection — getConnection() returns a ManagedConnection wrapper
+        // each time, so capture the Connection object for identity/equals comparison.
+        final java.sql.Connection parentConn = DbConnectionFactory.getConnection();
 
-        final String innerConn = ExternalTransactionHandler.externalizeTransaction(() ->
-                DbConnectionFactory.getConnection().toString()
+        final java.sql.Connection innerConn = ExternalTransactionHandler.externalizeTransaction(() ->
+                DbConnectionFactory.getConnection()
         );
 
         assertNotEquals("External transaction should use a different connection",
                 parentConn, innerConn);
 
-        // Parent connection should be restored
+        // Parent connection should be restored — equals() compares the underlying
+        // delegate connections, so a different ManagedConnection wrapper with the
+        // same delegate (but owns=false after restore) will still match.
         assertEquals("Parent connection should be restored",
-                parentConn, DbConnectionFactory.getConnection().toString());
+                parentConn, DbConnectionFactory.getConnection());
 
         DbConnectionFactory.closeSilently();
     }
