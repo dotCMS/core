@@ -114,7 +114,11 @@ export interface SparklineDataset {
                         <div class="sparkline-legend__item">
                             @if (item.dashed) {
                                 <svg class="sparkline-legend__svg" viewBox="0 0 20 2">
-                                    <line x1="0" y1="1" x2="20" y2="1"
+                                    <line
+                                        x1="0"
+                                        y1="1"
+                                        x2="20"
+                                        y2="1"
                                         [attr.stroke]="item.color"
                                         stroke-width="2"
                                         stroke-dasharray="4,3" />
@@ -212,7 +216,8 @@ export interface SparklineDataset {
             margin: 0.5rem -1rem -1rem;
             border-top: 1px solid var(--p-gray-200, #e5e7eb);
             background: var(--p-gray-50, #f9fafb);
-            border-radius: 0 0 var(--p-card-border-radius, 0.375rem) var(--p-card-border-radius, 0.375rem);
+            border-radius: 0 0 var(--p-card-border-radius, 0.375rem)
+                var(--p-card-border-radius, 0.375rem);
         }
 
         .sparkline-legend__item {

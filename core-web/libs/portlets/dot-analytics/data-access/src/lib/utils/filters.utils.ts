@@ -63,5 +63,5 @@ export function getComparisonLabel(timeRange: TimeRangeInput): string {
 
     const days = TIME_RANGE_DAYS_MAP[timeRange];
 
-    return days ? `from previous ${days} days` : 'from previous range';
+    return days !== undefined ? `from previous ${days} days` : 'from previous range';
 }

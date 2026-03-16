@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -29,7 +28,6 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
 @Component({
     selector: 'dot-analytics-engagement-report',
     imports: [
-        CommonModule,
         ButtonModule,
         DialogModule,
         DotMessagePipe,
