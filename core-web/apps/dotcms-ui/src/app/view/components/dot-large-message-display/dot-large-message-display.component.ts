@@ -14,7 +14,7 @@ import { DialogModule, Dialog } from 'primeng/dialog';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotEventsSocket } from '@dotcms/data-access';
 
 import { DotParseHtmlService } from '../../../api/services/dot-parse-html/dot-parse-html.service';
 
@@ -38,7 +38,7 @@ interface DotLargeMessageDisplayParams {
     providers: [DotParseHtmlService]
 })
 export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, AfterViewInit {
-    private dotcmsEventsService = inject(DotcmsEventsService);
+    private dotEventsSocket = inject(DotEventsSocket);
     private dotParseHtmlService = inject(DotParseHtmlService);
 
     @ViewChildren(Dialog) dialogs: QueryList<Dialog>;
@@ -114,8 +114,8 @@ export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, After
     }
 
     private getMessages(): Observable<DotLargeMessageDisplayParams> {
-        return this.dotcmsEventsService
-            .subscribeTo<DotLargeMessageDisplayParams>('LARGE_MESSAGE')
+        return this.dotEventsSocket
+            .on<DotLargeMessageDisplayParams>('LARGE_MESSAGE')
             .pipe(filter((data: DotLargeMessageDisplayParams) => !!data));
     }
 }

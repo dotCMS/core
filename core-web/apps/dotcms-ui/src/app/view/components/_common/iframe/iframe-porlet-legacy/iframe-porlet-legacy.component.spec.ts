@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
@@ -16,6 +16,7 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotEventsSocket as DotEventsSocketDataAccess,
     DotFormatDateService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
@@ -34,7 +35,6 @@ import {
     CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
-    DotEventsSocket,
     DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
@@ -126,7 +126,10 @@ xdescribe('IframePortletLegacyComponent', () => {
                 DotCurrentUserService,
                 DotMessageDisplayService,
                 DotcmsEventsService,
-                DotEventsSocket,
+                {
+                    provide: DotEventsSocketDataAccess,
+                    useValue: { on: jest.fn().mockReturnValue(EMPTY) }
+                },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 DotFormatDateService,

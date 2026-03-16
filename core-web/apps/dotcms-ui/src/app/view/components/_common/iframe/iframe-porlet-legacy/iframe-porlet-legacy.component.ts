@@ -6,8 +6,13 @@ import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
 import { map, mergeMap, pluck, takeUntil, withLatestFrom } from 'rxjs/operators';
 
-import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService } from '@dotcms/dotcms-js';
+import {
+    DotContentTypeService,
+    DotEventsSocket,
+    DotIframeService,
+    DotRouterService
+} from '@dotcms/data-access';
+import { LoggerService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotNotLicenseComponent } from '@dotcms/ui';
@@ -32,7 +37,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
     loggerService = inject(LoggerService);
     readonly #globalStore = inject(GlobalStore);
-    private dotcmsEventsService = inject(DotcmsEventsService);
+    private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
 
     canAccessPortlet: boolean;
@@ -165,8 +170,8 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         with the function refreshFakeJax defined in view_contentlets_js_inc.jsp.
      */
     private subscribeToAIGeneration(): void {
-        this.dotcmsEventsService
-            .subscribeTo('AI_CONTENT_PROMPT')
+        this.dotEventsSocket
+            .on<void>('AI_CONTENT_PROMPT')
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
                 this.dotIframeService.run({ name: 'refreshFakeJax' });
