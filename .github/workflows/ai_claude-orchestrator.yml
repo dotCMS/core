@@ -134,10 +134,15 @@ jobs:
     if: |
       needs.security-check.outputs.authorized == 'true' &&
       github.event_name == 'pull_request'
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+      issues: write
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
     with:
       trigger_mode: automatic
-      direct_prompt: |
+      prompt: |
         You are a dotCMS rollback-safety analyst. Determine whether the changes in this PR are safe to roll back to the previous release.
 
         STEP 1 — Read the rollback-unsafe categories reference:
@@ -171,12 +176,7 @@ jobs:
           No comment needed.
 
         Be specific: quote actual file names and code lines, not generic descriptions.
-      allowed_tools: |
-        Bash(git diff*)
-        Bash(git log*)
-        Bash(cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md)
-        Bash(gh pr comment*)
-        Bash(gh pr edit*)
+      claude_args: '--allowedTools "Bash(git diff*),Bash(git log*),Bash(cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md),Bash(gh pr comment*),Bash(gh pr edit*)"'
       timeout_minutes: 15
       runner: ubuntu-latest
       enable_mention_detection: false
