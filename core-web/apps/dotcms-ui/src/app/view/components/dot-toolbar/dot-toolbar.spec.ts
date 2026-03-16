@@ -163,14 +163,13 @@ describe('DotToolbarComponent', () => {
             expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
         });
 
-        it(`should call switchCurrentSite and navigate when on edit page`, () => {
+        it(`should call switchCurrentSite when on edit page (navigation handled by DotSiteNavigationEffect)`, () => {
             jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
             spectator.detectChanges();
             spectator.triggerEventHandler('dot-site', 'onChange', siteMock.identifier);
 
             expect<any>(spectator.component.siteChange).toHaveBeenCalledWith(siteMock.identifier);
             expect(globalStore.switchCurrentSite).toHaveBeenCalledWith(siteMock.identifier);
-            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
         });
     });
 

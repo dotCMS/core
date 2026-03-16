@@ -17,35 +17,32 @@ describe('GlobalStore', () => {
     let store: InstanceType<typeof GlobalStore>;
     let switchSiteSubject: Subject<DotSite>;
 
-    const createService = createServiceFactory({
-        service: GlobalStore,
-        providers: [
-            mockProvider(DotCurrentUserService),
-            mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(null)),
-                switchSite: jest.fn().mockReturnValue(of({}))
-            }),
-            mockProvider(DotSystemConfigService),
-            mockProvider(DotEventsSocket, {
-                connect: () => of({}),
-                status$: () => new Subject(),
-                on: jest.fn().mockReturnValue(new Subject())
-            })
-        ]
-    });
-
     beforeEach(() => {
         switchSiteSubject = new Subject<DotSite>();
+
+        const createService = createServiceFactory({
+            service: GlobalStore,
+            providers: [
+                mockProvider(DotCurrentUserService),
+                mockProvider(DotSiteService, {
+                    getCurrentSite: jest.fn().mockReturnValue(of(null)),
+                    switchSite: jest.fn().mockReturnValue(of({}))
+                }),
+                mockProvider(DotSystemConfigService),
+                mockProvider(DotEventsSocket, {
+                    connect: () => of({}),
+                    status$: () => new Subject(),
+                    on: jest.fn().mockImplementation((event: string) => {
+                        if (event === 'SWITCH_SITE') return switchSiteSubject.asObservable();
+
+                        return new Subject();
+                    })
+                })
+            ]
+        });
+
         spectator = createService();
         store = spectator.service;
-
-        // Wire up switchSiteSubject for SWITCH_SITE tests
-        const eventsSocket = spectator.inject(DotEventsSocket);
-        (eventsSocket.on as jest.Mock).mockImplementation((event: string) => {
-            if (event === 'SWITCH_SITE') return switchSiteSubject.asObservable();
-
-            return new Subject();
-        });
     });
 
     describe('Initial State', () => {
@@ -85,17 +82,6 @@ describe('GlobalStore', () => {
 
     describe('SWITCH_SITE WebSocket event', () => {
         it('should update siteDetails when SWITCH_SITE event fires', () => {
-            // Re-create service after wiring up the mock so onInit picks up the subject
-            spectator = createService();
-            store = spectator.service;
-            const eventsSocket = spectator.inject(DotEventsSocket);
-            (eventsSocket.on as jest.Mock).mockImplementation((event: string) => {
-                if (event === 'SWITCH_SITE') return switchSiteSubject.asObservable();
-
-                return new Subject();
-            });
-
-            // Trigger the event
             switchSiteSubject.next(mockSiteEntity);
 
             expect(store.siteDetails()).toEqual(mockSiteEntity);

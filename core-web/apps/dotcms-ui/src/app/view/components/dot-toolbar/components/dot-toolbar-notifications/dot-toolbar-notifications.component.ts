@@ -99,7 +99,7 @@ export class DotToolbarNotificationsComponent implements OnInit {
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((data: INotification) => {
                 this.$notifications.update((state) => ({
-                    data: [data, ...state.data],
+                    data: [data, ...state.data].slice(0, 25),
                     unreadCount: state.unreadCount + 1,
                     hasMore: false
                 }));

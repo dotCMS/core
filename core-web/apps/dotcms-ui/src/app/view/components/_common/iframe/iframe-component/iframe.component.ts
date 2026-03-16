@@ -23,7 +23,7 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { LoggerService } from '@dotcms/dotcms-js';
+import { DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
@@ -186,7 +186,9 @@ export class IframeComponent implements OnInit, OnDestroy {
             ...events.map((eventType) =>
                 this.dotEventsSocket
                     .on<unknown>(eventType)
-                    .pipe(map((data) => ({ data, name: eventType })))
+                    .pipe(
+                        map((data) => ({ data, name: eventType }) as DotEventTypeWrapper<unknown>)
+                    )
             )
         ).pipe(takeUntil(this.destroy$));
 

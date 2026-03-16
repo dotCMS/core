@@ -112,8 +112,9 @@ export class DotEventsSocket {
 
         this.socket.onclose = (ev: CloseEvent) => {
             if (!this.destroyed) {
-                // 1000 = normal closure (server-initiated clean close) — still reconnect
-                // since dotCMS may restart
+                // 1001 = "going away" (browser tab/window closing) — don't reconnect.
+                // All other codes, including 1000 (normal server-side close), still reconnect
+                // since dotCMS may restart.
                 if (ev.code !== 1001) {
                     this.scheduleReconnect();
                 }

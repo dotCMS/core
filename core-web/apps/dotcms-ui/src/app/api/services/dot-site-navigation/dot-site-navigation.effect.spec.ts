@@ -18,26 +18,21 @@ describe('DotSiteNavigationEffect', () => {
     let dotRouterService: SpyObject<DotRouterService>;
     let switchSiteSubject: Subject<DotSite>;
 
-    const createService = createServiceFactory({
-        service: DotSiteNavigationEffect,
-        providers: [
-            { provide: DotRouterService, useClass: MockDotRouterService },
-            mockProvider(GlobalStore, {
-                switchSiteEvent$: jest.fn()
-            })
-        ]
-    });
-
     beforeEach(() => {
         switchSiteSubject = new Subject<DotSite>();
 
+        const createService = createServiceFactory({
+            service: DotSiteNavigationEffect,
+            providers: [
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                mockProvider(GlobalStore, {
+                    switchSiteEvent$: jest.fn().mockReturnValue(switchSiteSubject.asObservable())
+                })
+            ]
+        });
+
         spectator = createService();
         dotRouterService = spectator.inject(DotRouterService);
-
-        const globalStore = spectator.inject(GlobalStore);
-        (globalStore.switchSiteEvent$ as jest.Mock).mockReturnValue(
-            switchSiteSubject.asObservable()
-        );
     });
 
     it('should navigate to site browser when SWITCH_SITE fires on edit page', () => {

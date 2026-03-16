@@ -45,7 +45,7 @@ describe('IframeComponent', () => {
     let dotUiColorsService: DotUiColorsService;
     let dotRouterService: DotRouterService;
 
-    const eventSubjects: Record<string, Subject<unknown>> = {};
+    let eventSubjects: Record<string, Subject<unknown>> = {};
     const mockDotEventsSocket = {
         on: jest.fn((eventType: string) => {
             if (!eventSubjects[eventType]) {
@@ -54,6 +54,11 @@ describe('IframeComponent', () => {
             return eventSubjects[eventType].asObservable();
         })
     };
+
+    beforeEach(() => {
+        eventSubjects = {};
+        mockDotEventsSocket.on.mockClear();
+    });
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
