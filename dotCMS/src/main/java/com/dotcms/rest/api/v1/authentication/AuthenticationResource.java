@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -118,6 +119,7 @@ public class AuthenticationResource implements Serializable {
                                 "If the user is found and authenticated, a session is created.\n\n" +
                                 "Otherwise the system will return an 'authentication failed' message.\n\n",
                 tags = {"Authentication"},
+                security = {},
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User authentication successful",
                         content = @Content(mediaType = "application/json",
@@ -224,6 +226,7 @@ public class AuthenticationResource implements Serializable {
                 description = "Provides information about any users that are currently in a session.\n\n" +
                                 "This retrieved data will be formatted into a JSON response body.\n\n",
                 tags = {"Authentication"},
+                security = {},
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User data successfully collected",
                                 content = @Content(
