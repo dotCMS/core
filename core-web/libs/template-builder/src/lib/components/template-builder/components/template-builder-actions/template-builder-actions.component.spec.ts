@@ -8,9 +8,10 @@ import {
     DotMessageService,
     DotSystemConfigService
 } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock, DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderActionsComponent } from './template-builder-actions.component';
 
@@ -40,6 +41,10 @@ describe('TemplateBuilderActionsComponent', () => {
             {
                 provide: GlobalStore,
                 useValue: mockGlobalStore
+            },
+            {
+                provide: DotcmsEventsService,
+                useClass: DotcmsEventsServiceMock
             },
             DotTemplateBuilderStore
         ],
