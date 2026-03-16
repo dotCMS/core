@@ -111,7 +111,10 @@
             @if (hasSubtitle || trendData || hasComparisonLabel) {
                 <div class="metric-fade-in metric-subtitle" data-testid="metric-subtitle">
                     @if (trendData) {
-                        <span class="metric-trend" [class]="trendData.class">
+                        <span
+                            class="metric-trend"
+                            [class.metric-trend--positive]="trendData.isPositive"
+                            [class.metric-trend--negative]="!trendData.isPositive">
                             <i
                                 [class]="
                                     trendData.isPositive ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
