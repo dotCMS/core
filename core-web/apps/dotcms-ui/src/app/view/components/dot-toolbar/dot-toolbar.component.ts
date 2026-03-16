@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { DividerModule } from 'primeng/divider';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotRouterService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotSiteComponent } from '@dotcms/ui';
@@ -34,7 +33,6 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
 })
 export class DotToolbarComponent {
     readonly #globalStore = inject(GlobalStore);
-    readonly #dotRouterService = inject(DotRouterService);
     iframeOverlayService = inject(IframeOverlayService);
 
     featureFlagAnnouncements = FeaturedFlags.FEATURE_FLAG_ANNOUNCEMENTS;
@@ -44,9 +42,6 @@ export class DotToolbarComponent {
     siteChange(identifier: string | null): void {
         if (identifier) {
             this.#globalStore.switchCurrentSite(identifier);
-            if (this.#dotRouterService.isEditPage()) {
-                this.#dotRouterService.goToSiteBrowser();
-            }
         }
     }
 }
