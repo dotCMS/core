@@ -64,7 +64,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
      * The edit-content store, used to propagate field visibility changes
      * from the BridgeAPI (show/hide) into Angular state.
      */
-    #store = inject(DotEditContentStore);
+    readonly #store = inject(DotEditContentStore);
     /**
      * The field to render.
      */
@@ -90,7 +90,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
     /**
      * The form bridge to communicate with the custom field.
      */
-    #formBridge: FormBridge = null;
+    #formBridge: FormBridge | null = null;
     /**
      * The zone to run the code in.
      */

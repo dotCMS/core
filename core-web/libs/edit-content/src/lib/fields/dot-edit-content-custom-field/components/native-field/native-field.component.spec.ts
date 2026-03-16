@@ -265,6 +265,26 @@ describe('NativeFieldComponent', () => {
 
             expect(destroySpy).toHaveBeenCalled();
         });
+
+        it('should call store.setFieldVisibility(variable, true) when bridge show() is called', () => {
+            const store = spectator.inject(DotEditContentStore);
+            const api = window['DotCustomFieldApi'];
+            const targetVariable = 'someField';
+
+            api.getField(targetVariable).show();
+
+            expect(store.setFieldVisibility).toHaveBeenCalledWith(targetVariable, true);
+        });
+
+        it('should call store.setFieldVisibility(variable, false) when bridge hide() is called', () => {
+            const store = spectator.inject(DotEditContentStore);
+            const api = window['DotCustomFieldApi'];
+            const targetVariable = 'anotherField';
+
+            api.getField(targetVariable).hide();
+
+            expect(store.setFieldVisibility).toHaveBeenCalledWith(targetVariable, false);
+        });
     });
 
     describe('Template Code Validation', () => {

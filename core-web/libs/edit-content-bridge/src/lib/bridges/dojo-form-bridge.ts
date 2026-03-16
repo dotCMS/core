@@ -254,8 +254,8 @@ export class DojoFormBridge implements FormBridge {
             show: (): void => {
                 try {
                     const element = document.getElementById(fieldId);
-                    const container = element?.closest('.field') as HTMLElement;
-                    if (container) {
+                    const container = element?.closest('.field');
+                    if (container instanceof HTMLElement) {
                         container.style.display = '';
                     }
                 } catch (error) {
@@ -266,8 +266,8 @@ export class DojoFormBridge implements FormBridge {
             hide: (): void => {
                 try {
                     const element = document.getElementById(fieldId);
-                    const container = element?.closest('.field') as HTMLElement;
-                    if (container) {
+                    const container = element?.closest('.field');
+                    if (container instanceof HTMLElement) {
                         container.style.display = 'none';
                     }
                 } catch (error) {

@@ -452,6 +452,15 @@ describe('AngularFormBridge', () => {
         });
 
         describe('show/hide', () => {
+            beforeEach(() => {
+                AngularFormBridge.resetInstance();
+                bridge = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any
+                );
+            });
+
             it('should call onFieldVisibilityChange with true when show is called', () => {
                 const onFieldVisibilityChange = jest.fn();
                 AngularFormBridge.resetInstance();

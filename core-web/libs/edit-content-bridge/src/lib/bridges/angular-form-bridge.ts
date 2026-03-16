@@ -27,7 +27,10 @@ import {
  */
 export class AngularFormBridge implements FormBridge {
     private static instance: AngularFormBridge | null = null;
-    private fieldSubscriptions: Map<string, FieldSubscription> = new Map();
+    #fieldSubscriptions: Map<string, FieldSubscription> = new Map();
+    #form: FormGroup;
+    #zone: NgZone;
+    #dialogService: DialogService;
     #dialogRef: DynamicDialogRef | null = null;
     #visibilityWarningEmitted = false;
 
@@ -35,15 +38,18 @@ export class AngularFormBridge implements FormBridge {
      * Optional callback invoked when a field's visibility changes via show()/hide().
      * Injected by the consumer (e.g. NativeFieldComponent) to decouple the bridge from the store.
      */
-    private onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void;
+    #onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void;
 
     private constructor(
-        private form: FormGroup,
-        private zone: NgZone,
-        private dialogService: DialogService,
+        form: FormGroup,
+        zone: NgZone,
+        dialogService: DialogService,
         onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void
     ) {
-        this.onFieldVisibilityChange = onFieldVisibilityChange;
+        this.#form = form;
+        this.#zone = zone;
+        this.#dialogService = dialogService;
+        this.#onFieldVisibilityChange = onFieldVisibilityChange;
     }
 
     /**
@@ -71,8 +77,8 @@ export class AngularFormBridge implements FormBridge {
             );
         } else {
             if (
-                AngularFormBridge.instance.form !== form ||
-                AngularFormBridge.instance.zone !== zone
+                AngularFormBridge.instance.#form !== form ||
+                AngularFormBridge.instance.#zone !== zone
             ) {
                 console.warn(
                     'AngularFormBridge: Attempted to get instance with different form or zone. ' +
@@ -80,8 +86,8 @@ export class AngularFormBridge implements FormBridge {
                 );
             }
 
-            AngularFormBridge.instance.onFieldVisibilityChange = onFieldVisibilityChange;
-            AngularFormBridge.instance.dialogService = dialogService;
+            AngularFormBridge.instance.#onFieldVisibilityChange = onFieldVisibilityChange;
+            AngularFormBridge.instance.#dialogService = dialogService;
         }
 
         return AngularFormBridge.instance;
@@ -105,7 +111,7 @@ export class AngularFormBridge implements FormBridge {
      * @returns The value of the field, or null if the field is not found.
      */
     get(fieldId: string): FormFieldValue {
-        return this.form.get(fieldId)?.value;
+        return this.#form.get(fieldId)?.value;
     }
 
     /**
@@ -115,8 +121,8 @@ export class AngularFormBridge implements FormBridge {
      * @param value - The value to set for the field.
      */
     set(fieldId: string, value: FormFieldValue): void {
-        this.zone.run(() => {
-            const control = this.form.get(fieldId);
+        this.#zone.run(() => {
+            const control = this.#form.get(fieldId);
             if (control && control.value !== value) {
                 control.setValue(value, { emitEvent: true });
                 control.markAsTouched();
@@ -135,7 +141,7 @@ export class AngularFormBridge implements FormBridge {
      * @returns A function to unsubscribe this specific callback.
      */
     onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): () => void {
-        const control = this.form.get(fieldId);
+        const control = this.#form.get(fieldId);
         if (!control) {
             console.warn(`Field '${fieldId}' not found in form`);
 
@@ -146,16 +152,16 @@ export class AngularFormBridge implements FormBridge {
         const callbackId = Symbol('fieldCallback');
         const fieldCallback: FieldCallback = { id: callbackId, callback };
 
-        let fieldSubscription = this.fieldSubscriptions.get(fieldId);
+        let fieldSubscription = this.#fieldSubscriptions.get(fieldId);
 
         if (!fieldSubscription) {
             // Create new subscription for this field
             const subscription = control.valueChanges.subscribe((value) => {
-                const currentFieldSubscription = this.fieldSubscriptions.get(fieldId);
+                const currentFieldSubscription = this.#fieldSubscriptions.get(fieldId);
                 if (currentFieldSubscription) {
                     // Execute all callbacks for this field
                     currentFieldSubscription.callbacks.forEach(({ callback: cb }) => {
-                        this.zone.run(() => cb(value));
+                        this.#zone.run(() => cb(value));
                     });
                 }
             });
@@ -164,7 +170,7 @@ export class AngularFormBridge implements FormBridge {
                 subscription,
                 callbacks: [fieldCallback]
             };
-            this.fieldSubscriptions.set(fieldId, fieldSubscription);
+            this.#fieldSubscriptions.set(fieldId, fieldSubscription);
         } else {
             // Add callback to existing subscription
             fieldSubscription.callbacks.push(fieldCallback);
@@ -181,7 +187,7 @@ export class AngularFormBridge implements FormBridge {
      * @param callbackId - The ID of the callback to remove.
      */
     private unsubscribeCallback(fieldId: string, callbackId: symbol): void {
-        const fieldSubscription = this.fieldSubscriptions.get(fieldId);
+        const fieldSubscription = this.#fieldSubscriptions.get(fieldId);
         if (!fieldSubscription) return;
 
         // Remove the specific callback
@@ -192,7 +198,7 @@ export class AngularFormBridge implements FormBridge {
         // If no more callbacks, clean up the subscription
         if (fieldSubscription.callbacks.length === 0) {
             fieldSubscription.subscription.unsubscribe();
-            this.fieldSubscriptions.delete(fieldId);
+            this.#fieldSubscriptions.delete(fieldId);
         }
     }
 
@@ -201,7 +207,7 @@ export class AngularFormBridge implements FormBridge {
      * but no onFieldVisibilityChange callback was provided.
      */
     private warnIfNoVisibilityCallback(fieldId: string, method: 'show' | 'hide'): void {
-        if (!this.onFieldVisibilityChange && !this.#visibilityWarningEmitted) {
+        if (!this.#onFieldVisibilityChange && !this.#visibilityWarningEmitted) {
             this.#visibilityWarningEmitted = true;
             console.warn(
                 `AngularFormBridge: ${method}() called on field '${fieldId}' but no onFieldVisibilityChange callback is configured. ` +
@@ -216,10 +222,10 @@ export class AngularFormBridge implements FormBridge {
      * Also resets the singleton instance and closes any open dialogs.
      */
     destroy(): void {
-        this.fieldSubscriptions.forEach((fieldSubscription) => {
+        this.#fieldSubscriptions.forEach((fieldSubscription) => {
             fieldSubscription.subscription.unsubscribe();
         });
-        this.fieldSubscriptions.clear();
+        this.#fieldSubscriptions.clear();
 
         // Close any open dialog
         this.#dialogRef?.close();
@@ -253,8 +259,8 @@ export class AngularFormBridge implements FormBridge {
             },
 
             enable: (): void => {
-                this.zone.run(() => {
-                    const control = this.form.get(fieldId);
+                this.#zone.run(() => {
+                    const control = this.#form.get(fieldId);
                     if (control) {
                         control.enable({ emitEvent: true });
                     }
@@ -262,8 +268,8 @@ export class AngularFormBridge implements FormBridge {
             },
 
             disable: (): void => {
-                this.zone.run(() => {
-                    const control = this.form.get(fieldId);
+                this.#zone.run(() => {
+                    const control = this.#form.get(fieldId);
                     if (control) {
                         control.disable({ emitEvent: true });
                     }
@@ -271,16 +277,16 @@ export class AngularFormBridge implements FormBridge {
             },
 
             show: (): void => {
-                this.zone.run(() => {
+                this.#zone.run(() => {
                     this.warnIfNoVisibilityCallback(fieldId, 'show');
-                    this.onFieldVisibilityChange?.(fieldId, true);
+                    this.#onFieldVisibilityChange?.(fieldId, true);
                 });
             },
 
             hide: (): void => {
-                this.zone.run(() => {
+                this.#zone.run(() => {
                     this.warnIfNoVisibilityCallback(fieldId, 'hide');
-                    this.onFieldVisibilityChange?.(fieldId, false);
+                    this.#onFieldVisibilityChange?.(fieldId, false);
                 });
             }
         };
@@ -355,8 +361,8 @@ export class AngularFormBridge implements FormBridge {
     openBrowserModal(options: BrowserSelectorOptions): BrowserSelectorController {
         const header = options.header ?? 'Select Content';
 
-        this.zone.run(() => {
-            this.#dialogRef = this.dialogService.open(DotBrowserSelectorComponent, {
+        this.#zone.run(() => {
+            this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
                 header,
                 appendTo: 'body',
                 closable: true,
