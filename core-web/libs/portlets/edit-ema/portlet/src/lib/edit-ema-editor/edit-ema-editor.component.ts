@@ -744,13 +744,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        const doc = iframeElement.contentDocument;
-
         const enableInlineEdit = this.uveStore.$enableInlineEdit();
-
-        if (!doc) {
-            return;
-        }
 
         this.handleInlineScripts(enableInlineEdit);
     }

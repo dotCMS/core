@@ -3442,7 +3442,7 @@ describe('EditEmaEditorComponent', () => {
                             });
                         });
 
-                        it('should add script and styles to iframe', () => {
+                        it('should add styles to iframe', () => {
                             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
                             const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
                             iframe.dispatchEvent(new Event('load'));
@@ -3469,11 +3469,12 @@ describe('EditEmaEditorComponent', () => {
                             store.loadPageAsset({ url: 'index', clientHost: null });
                         });
 
-                        it('should add script and styles to iframe for advance templates', () => {
+                        it('should add styles to iframe for advance templates', () => {
                             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
                             const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
 
                             iframe.dispatchEvent(new Event('load'));
+                            spectator.detectChanges();
 
                             expect(spyWrite).toHaveBeenCalledWith(
                                 expect.stringContaining('[data-dot-object="container"]:empty')
