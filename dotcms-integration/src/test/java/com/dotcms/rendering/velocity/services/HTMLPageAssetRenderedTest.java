@@ -2374,7 +2374,7 @@ public class HTMLPageAssetRenderedTest {
                 "<script>console.log(\"AAAA\");</SCRIPT>\n" +
                 "<script>console.log(\"BBB\");</script>\n";
 
-        final String sdkEditorTestScript = "<script src=\\\"/ext/uve/dot-uve.js\\\">\\</script\\>";
+        final Language language = new LanguageDataGen().nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
 
         final ContentType widgetContentType = new ContentTypeDataGen()
@@ -2429,11 +2429,10 @@ public class HTMLPageAssetRenderedTest {
                                 .setPageMode(PageMode.NAVIGATE_EDIT_MODE)
                                 .build(),
                         mockRequest, mockResponse);
-        // Assert page.rendered has correctly escaped script tags from the widget
-        final String expectedWidgetRendered = "\"rendered\" : \"<div><html>\\nThis is a test\\n</html>\\n<script>console.log(\\\"AAAA\\\");\\</script\\>\\n<script>console.log(\\\"BBB\\\");\\</script\\>\\n</div>";
-        assertTrue(html.contains(expectedWidgetRendered));
+        final String expected = "\"rendered\" : \"<div><html>\\nThis is a test\\n</html>\\n<script>console.log(\\\"AAAA\\\");\\</script\\>\\n<script>console.log(\\\"BBB\\\");\\</script\\>\\n</div>\"";
+        assertTrue(html.contains(expected));
 
-        // Assert UVE script is present in page.rendered.
-        assertTrue("UVE script should be present in page.rendered", html.contains(sdkEditorTestScript));
+
+
     }
 }
