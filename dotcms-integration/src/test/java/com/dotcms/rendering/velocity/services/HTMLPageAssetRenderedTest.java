@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotF
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -2374,7 +2375,10 @@ public class HTMLPageAssetRenderedTest {
                 "<script>console.log(\"AAAA\");</SCRIPT>\n" +
                 "<script>console.log(\"BBB\");</script>\n";
 
-        final String sdkEditorTestScript = "<script src=\\\"/ext/uve/dot-uve.js\\\">\\</script\\>";
+        // JSON-escaped form of SDK_EDITOR_SCRIPT_SOURCE: quotes become \" and </script> becomes \</script\>
+        final String sdkEditorTestScript = HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE
+                .replace("\"", "\\\"")
+                .replace("</script>", "\\</script\\>");
         final Host host = new SiteDataGen().nextPersisted();
 
         final ContentType widgetContentType = new ContentTypeDataGen()

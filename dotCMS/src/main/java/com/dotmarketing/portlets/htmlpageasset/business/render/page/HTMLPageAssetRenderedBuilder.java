@@ -194,7 +194,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = injectUVEScript(this.getPageHTML(mode));
+            final String pageHTML = mode.isAdmin
+                    ? injectUVEScript(this.getPageHTML(mode))
+                    : this.getPageHTML(mode);
 
             transformLegacyContainerUUIDs(layout);
 
@@ -363,7 +365,7 @@ public class HTMLPageAssetRenderedBuilder {
         if (!UtilMethods.isSet(html)) {
             return html;
         }
-        final int closingBodyIndex = html.lastIndexOf("</body>");
+        final int closingBodyIndex = html.toLowerCase().lastIndexOf("</body>");
         if (closingBodyIndex != -1) {
             return html.substring(0, closingBodyIndex) + SDK_EDITOR_SCRIPT_SOURCE + html.substring(closingBodyIndex);
         }
