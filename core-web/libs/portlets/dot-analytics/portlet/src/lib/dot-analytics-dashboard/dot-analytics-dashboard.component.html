@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <div class="dashboard-content px-4">
+    <div class="px-4">
         <!-- Tabs -->
         <p-tabs [lazy]="true" [value]="store.currentTab()" (valueChange)="onTabChange($event)">
             <p-tablist>
@@ -38,7 +38,7 @@
                     <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
                 }
             </p-tablist>
-            <p-tabpanels>
+            <p-tabpanels class="dashboard-panels">
                 @for (tab of tabs; track tab.id) {
                     <p-tabpanel [value]="tab.id">
                         <ng-template #content>
