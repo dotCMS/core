@@ -68,7 +68,7 @@ Each breadcrumb is a PrimeNG [MenuItem](https://primeng.org/api/menuitem):
 
 - **Menu / router built the base trail**: The store listens to `NavigationEnd` and builds breadcrumbs from the menu and special route handlers. You usually **do not** call `setBreadcrumbs` yourself for standard menu routes.  
 - **Adding a sub-level (e.g. template edit, content edit, app config)**: Use **`addNewBreadcrumb`** so the same URL or same `id` does not duplicate on reload or re-entry.  
-- **Tabs or label-only levels (e.g. Analytics: Engagement, Pageview, Conversions)**: Use **`addNewBreadcrumb`** with a stable **`id`** (and optional `url`) so reload does not append the same tab again.  
+- **Tabs or label-only levels (e.g. Analytics: Engagement, Pageview, Conversions)**: Use **`addNewBreadcrumb`** with a stable **`id`** prefixed by the feature namespace (e.g. `analytics-engagement`). The store automatically replaces the last tab crumb when both the incoming and last item share the same prefix pattern, so tab switches never accumulate.  
 - **Replacing the last crumb** (e.g. switching content in the same route): Use **`setLastBreadcrumb`** or rely on `addNewBreadcrumb` (it replaces last for content-edit–style URLs when applicable).  
 - **Truncating when navigating back**: Handled internally via `_processUrl` when the target URL is already in the trail. You can call **`truncateBreadcrumbs(index)`** only if you need to truncate programmatically (e.g. custom back behavior).
 
@@ -121,7 +121,7 @@ this.#globalStore.addNewBreadcrumb({
 
 // GOOD: Same tab on reload is detected by id and not appended again
 this.#globalStore.addNewBreadcrumb({
-  id: 'engagement',
+  id: 'analytics-engagement',  // use a stable, feature-namespaced id
   label: this.#messageService.get('analytics.dashboard.tabs.engagement')
 });
 ```
@@ -130,16 +130,39 @@ this.#globalStore.addNewBreadcrumb({
 
 Let the store derive the base trail from the router and menu. Only call `setBreadcrumbs` for custom flows (e.g. wizards, non-menu portlets).
 
+## How `addNewBreadcrumb` decides to replace vs. append
+
+`addNewBreadcrumb` delegates the replace-vs-append decision to `shouldReplaceLastCrumb` in `breadcrumb.utils.ts`. That function checks a registry called `REPLACE_LAST_CRUMB_RULES` — a `Record<string, { test(item, last): boolean }>` — and returns `true` if any rule matches both the incoming item and the current last crumb.
+
+**Current rules:**
+
+| Key | Condition | Example |
+|-----|-----------|----------|
+| `contentEdit` | Both `url` (after stripping `#`) match `/\/content[/?].+/` | `/content/abc-123` → `/content/xyz-456` |
+| `analyticsTab` | Both `id` match `/^analytics-/` | `analytics-engagement` → `analytics-conversions` |
+
+**To add a new feature with "last-replaces" behavior**, add an entry to `REPLACE_LAST_CRUMB_RULES` in `breadcrumb.utils.ts`:
+
+```typescript
+myFeatureTab: {
+    test: (item, last) => {
+        const regex = /^my-feature-/;
+        return regex.test(item.id ?? '') && regex.test(last.id ?? '');
+    }
+}
+```
+
 ## Persistence and router
 
 - **Session storage**: The store persists `breadcrumbs` to `sessionStorage` on every change and restores them on init via `loadBreadcrumbs()`.  
 - **Router**: On `NavigationEnd`, the store runs `_processUrl(url)` to sync the trail (menu match, special routes, or truncate when navigating back to an existing URL).  
-- **Special routes**: Handlers in `breadcrumb.utils.ts` (e.g. templates edit, content filter) can set or append breadcrumbs; see `ROUTE_HANDLERS` and `processSpecialRoute`.
+- **Special routes**: Handlers in `breadcrumb.utils.ts` (e.g. templates edit, content filter) can set or append breadcrumbs; see `ROUTE_HANDLERS` and `processSpecialRoute`.  
+- **Reload with pending tab crumbs**: If a child component calls `addNewBreadcrumb` with a tab `id` before the menu finishes loading (common on hard reload), the store detects those crumbs (items with `id` but no `url`) and re-appends them after the menu effect resets the base trail. No extra work is needed in components — just always provide a stable `id`.
 
 ## Summary
 
-- Use **`addNewBreadcrumb`** for sub-levels and tabs; provide **`url`** or **`id`** to avoid duplicates on reload.  
-- Use **`setBreadcrumbs`** only when you need to replace the whole trail (e.g. custom flows).  
+- Use **`addNewBreadcrumb`** for sub-levels and tabs; provide **`url`** or **`id`** to avoid duplicates on reload.  - For tabs, use a **feature-namespaced `id`** (e.g. `analytics-engagement`) so `REPLACE_LAST_CRUMB_RULES` can swap them without accumulating.  
+- To register a new tab group with replace behavior, add a rule to `REPLACE_LAST_CRUMB_RULES` in `breadcrumb.utils.ts`.  - Use **`setBreadcrumbs`** only when you need to replace the whole trail (e.g. custom flows).  
 - Use **`truncateBreadcrumbs(index)`** only when you need programmatic truncation; normal “back to existing URL” truncation is handled by the store.  
 - Breadcrumb items are PrimeNG `MenuItem`; use `/dotAdmin/#/...` for admin URLs.  
 - The crumb trail UI reads `globalStore.breadcrumbs()`; do not manage a separate local breadcrumb state in components.
