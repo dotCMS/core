@@ -89,4 +89,5 @@ This maintenance release includes the following code fixes:
 83. https://github.com/dotCMS/core/issues/33434 : [DEFECT] #editContentlet macro doesn't properly escape apostrophes #33434
 84. https://github.com/dotCMS/core/issues/34131 : Log Files view does not display log files from subdirectories #34131
 85. https://github.com/dotCMS/core/issues/34163 : Fix Apache Tika XXE CVE-2025-66516 #34163
+86. https://github.com/dotCMS/core/issues/34954 : security: upgrade Apache Tomcat to 9.0.113+ to fix CVE-2025-66614 #34954
 
