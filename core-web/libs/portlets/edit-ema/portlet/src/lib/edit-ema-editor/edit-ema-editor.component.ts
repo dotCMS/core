@@ -765,11 +765,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const enableInlineEdit = this.uveStore.$enableInlineEdit();
         const pageRender = this.uveStore.$pageRender();
 
-        const newDoc = this.injectCodeToVTL(pageRender);
-
-        if (!doc) {
+        if (!doc || pageRender === undefined) {
             return;
         }
+
+        const newDoc = this.injectCodeToVTL(pageRender);
 
         doc.open();
         doc.write(newDoc);

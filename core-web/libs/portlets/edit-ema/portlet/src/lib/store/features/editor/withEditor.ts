@@ -148,7 +148,7 @@ export function withEditor() {
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
-                $pageRender: computed<string>(() => {
+                $pageRender: computed<string | undefined>(() => {
                     return store.pageAPIResponse()?.page?.rendered;
                 }),
                 $enableInlineEdit: computed<boolean>(() => {
