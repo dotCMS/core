@@ -6,6 +6,11 @@
 }
 
 .dashboard-panels {
+    width: 100%;
     max-width: 1600px;
     margin: 0 auto;
+
+    :host ::ng-deep .p-tabpanel {
+        width: 100%;
+    }
 }
