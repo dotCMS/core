@@ -76,19 +76,21 @@
   });
 </script>
 
-<div class="flex gap-2 align-items-center">
+<div class="flex gap-2 items-center">
   <div class="relative flex-1">
     <input
       type="text"
       id="redirectURLBox"
       name="redirectURLBox"
-      class="w-full pr-7"
+      class="input input-bordered w-full pr-7"
+      data-testid="redirect-url-input"
     />
-    <div class="absolute right-0 top-0 bottom-0 flex align-items-center pr-2">
+    <div class="absolute right-0 top-0 bottom-0 flex items-center">
       <button
         id="clearRedirectButton"
         type="button"
-        class="p-2 border-none bg-transparent cursor-pointer text-500 hidden custom-button"
+        class="btn hidden"
+        data-testid="redirect-clear"
         title="Clear"
         aria-label="Clear redirect URL"
       >
@@ -96,5 +98,12 @@
       </button>
     </div>
   </div>
-  <button id="selectLinkButton" type="button">$text.get("select-link")</button>
+  <button
+    id="selectLinkButton"
+    type="button"
+    class="btn btn-outline"
+    data-testid="redirect-select-link"
+  >
+    $text.get("select-link")
+  </button>
 </div>
