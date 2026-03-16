@@ -247,6 +247,89 @@ describe('DojoFormBridge', () => {
         });
     });
 
+    describe('getField show/hide', () => {
+        let fieldContainer: HTMLDivElement;
+        let fieldInput: HTMLInputElement;
+
+        beforeEach(() => {
+            fieldContainer = document.createElement('div');
+            fieldContainer.classList.add('field');
+            fieldInput = document.createElement('input');
+            fieldInput.id = 'visibilityField';
+            fieldContainer.appendChild(fieldInput);
+            document.body.appendChild(fieldContainer);
+        });
+
+        afterEach(() => {
+            document.body.removeChild(fieldContainer);
+        });
+
+        it('should hide the .field container when hide is called', () => {
+            const fieldAPI = bridge.getField('visibilityField');
+            fieldAPI.hide();
+            expect(fieldContainer.style.display).toBe('none');
+        });
+
+        it('should show the .field container when show is called after hide', () => {
+            const fieldAPI = bridge.getField('visibilityField');
+            fieldAPI.hide();
+            expect(fieldContainer.style.display).toBe('none');
+
+            fieldAPI.show();
+            expect(fieldContainer.style.display).toBe('');
+        });
+
+        it('should not throw when show is called on non-existent element', () => {
+            const fieldAPI = bridge.getField('nonExistentField');
+            expect(() => fieldAPI.show()).not.toThrow();
+        });
+
+        it('should not throw when hide is called on non-existent element', () => {
+            const fieldAPI = bridge.getField('nonExistentField');
+            expect(() => fieldAPI.hide()).not.toThrow();
+        });
+
+        it('should not throw when element has no .field ancestor', () => {
+            const orphanInput = document.createElement('input');
+            orphanInput.id = 'orphanField';
+            document.body.appendChild(orphanInput);
+
+            const fieldAPI = bridge.getField('orphanField');
+            expect(() => fieldAPI.hide()).not.toThrow();
+            expect(() => fieldAPI.show()).not.toThrow();
+
+            document.body.removeChild(orphanInput);
+        });
+
+        it('should handle errors gracefully in hide', () => {
+            const consoleSpy = jest.spyOn(console, 'warn');
+            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+                throw new Error('Test error');
+            });
+
+            const fieldAPI = bridge.getField('visibilityField');
+            fieldAPI.hide();
+
+            expect(consoleSpy).toHaveBeenCalledWith('Error hiding field:', expect.any(Error));
+
+            getSpy.mockRestore();
+        });
+
+        it('should handle errors gracefully in show', () => {
+            const consoleSpy = jest.spyOn(console, 'warn');
+            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+                throw new Error('Test error');
+            });
+
+            const fieldAPI = bridge.getField('visibilityField');
+            fieldAPI.show();
+
+            expect(consoleSpy).toHaveBeenCalledWith('Error showing field:', expect.any(Error));
+
+            getSpy.mockRestore();
+        });
+    });
+
     describe('ready', () => {
         it('should execute callback when loaded', (done) => {
             bridge.ready((api) => {

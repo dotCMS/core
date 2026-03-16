@@ -7,6 +7,8 @@ import { createFakeContentlet, createFakeCustomField } from '@dotcms/utils-testi
 
 import { NativeFieldComponent } from './native-field.component';
 
+import { DotEditContentStore } from '../../../../store/edit-content.store';
+
 const MOCK_INODE = 'test-inode';
 
 describe('NativeFieldComponent', () => {
@@ -20,6 +22,12 @@ describe('NativeFieldComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            {
+                provide: DotEditContentStore,
+                useValue: {
+                    setFieldVisibility: jest.fn()
+                }
             }
         ]
     });

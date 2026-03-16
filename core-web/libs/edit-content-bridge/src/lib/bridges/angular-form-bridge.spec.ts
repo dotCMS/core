@@ -368,7 +368,7 @@ describe('AngularFormBridge', () => {
     });
 
     describe('getField', () => {
-        it('should return FormFieldAPI object', () => {
+        it('should return FormFieldAPI object with all methods', () => {
             const fieldAPI = bridge.getField('testField');
             expect(fieldAPI).toBeDefined();
             expect(typeof fieldAPI.getValue).toBe('function');
@@ -376,6 +376,8 @@ describe('AngularFormBridge', () => {
             expect(typeof fieldAPI.onChange).toBe('function');
             expect(typeof fieldAPI.enable).toBe('function');
             expect(typeof fieldAPI.disable).toBe('function');
+            expect(typeof fieldAPI.show).toBe('function');
+            expect(typeof fieldAPI.hide).toBe('function');
         });
 
         it('should get value using getValue', () => {
@@ -447,6 +449,84 @@ describe('AngularFormBridge', () => {
             const fieldAPI = bridge.getField('testField');
             fieldAPI.disable();
             expect(zoneRunSpy).toHaveBeenCalled();
+        });
+
+        describe('show/hide', () => {
+            it('should call onFieldVisibilityChange with true when show is called', () => {
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+
+                const fieldAPI = bridgeWithCallback.getField('myField');
+                fieldAPI.show();
+
+                expect(onFieldVisibilityChange).toHaveBeenCalledWith('myField', true);
+            });
+
+            it('should call onFieldVisibilityChange with false when hide is called', () => {
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+
+                const fieldAPI = bridgeWithCallback.getField('myField');
+                fieldAPI.hide();
+
+                expect(onFieldVisibilityChange).toHaveBeenCalledWith('myField', false);
+            });
+
+            it('should not throw when show is called without callback', () => {
+                const fieldAPI = bridge.getField('testField');
+                expect(() => fieldAPI.show()).not.toThrow();
+            });
+
+            it('should not throw when hide is called without callback', () => {
+                const fieldAPI = bridge.getField('testField');
+                expect(() => fieldAPI.hide()).not.toThrow();
+            });
+
+            it('should run show inside NgZone', () => {
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+
+                const fieldAPI = bridgeWithCallback.getField('testField');
+                fieldAPI.show();
+
+                expect(zoneRunSpy).toHaveBeenCalled();
+            });
+
+            it('should run hide inside NgZone', () => {
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+
+                const fieldAPI = bridgeWithCallback.getField('testField');
+                fieldAPI.hide();
+
+                expect(zoneRunSpy).toHaveBeenCalled();
+            });
         });
     });
 
