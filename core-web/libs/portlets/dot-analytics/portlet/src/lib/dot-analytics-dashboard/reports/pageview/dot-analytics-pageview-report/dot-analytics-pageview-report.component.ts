@@ -7,7 +7,6 @@ import {
     extractPageViews,
     extractSessions,
     extractTopPageValue,
-    getComparisonLabel,
     MetricData,
     transformDeviceBrowsersData,
     transformPageViewTimeLineData
@@ -42,11 +41,6 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
 export default class DotAnalyticsPageviewReportComponent {
     /** Analytics dashboard store providing pageview data and actions */
     readonly store = inject(DotAnalyticsDashboardStore);
-
-    /** Comparison label derived from the current time range */
-    protected readonly $comparisonLabel = computed(() =>
-        getComparisonLabel(this.store.timeRange())
-    );
 
     /** Total page views metric data from store */
     protected readonly $totalPageViews = this.store.totalPageViews;
