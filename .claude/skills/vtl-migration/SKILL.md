@@ -6,9 +6,9 @@ description: >
 
 # VTL Migration: Legacy API → DotCustomFieldApi
 
-You are migrating DotCMS VTL custom field templates from Dojo/Dijit-era APIs to the modern `DotCustomFieldApi`. The goal is **identical functionality with modern, clean code**.
+You are migrating DotCMS VTL custom field templates from Dojo/Dijit-era APIs to the modern `DotCustomFieldApi`. The goal is **identical functionality with modern, clean code** and **semantic styling with DaisyUI**.
 
-For the full migration rules, all code examples, and the step-by-step checklist, read `references/migration-guide.md`.
+For the full migration rules, all code examples, the DaisyUI styling section, and the step-by-step checklist, read `references/migration-guide.md`.
 
 ## The Core API Swap (Quick Reference)
 
@@ -20,9 +20,10 @@ For the full migration rules, all code examples, and the step-by-step checklist,
 | `dojo.ready(fn)` | `DotCustomFieldApi.ready(fn)` |
 | `dojo.byId('el')` | `document.getElementById('el')` |
 | `dijit.byId('id')` | `DotCustomFieldApi.getField('id')` |
-| `dijit.form.*` widgets | Native HTML elements |
-| `dojoType="..."` attribute | Remove; use semantic HTML |
-| `class="dijit*"` classes | Remove dijit classes entirely |
+| `dijit.form.*` widgets | Native HTML + **DaisyUI** classes (`input`, `btn`, `select`, etc.) |
+| `dojoType="..."` attribute | Remove; use semantic HTML + DaisyUI components |
+| `class="dijit*"` classes | Remove; use **DaisyUI** component classes instead |
+| Inline styles / ad-hoc CSS | **DaisyUI** component classes + Tailwind utilities (see guide) |
 | `onclick="fn()"` inline handlers | `addEventListener('click', fn)` |
 
 ## Process
@@ -32,8 +33,9 @@ For the full migration rules, all code examples, and the step-by-step checklist,
 3. **Wrap everything in `DotCustomFieldApi.ready()`** — all field access must live inside this callback.
 4. **Store field references once** — call `getField()` once per field at the top of `ready()`, then reuse the reference.
 5. **Migrate each pattern** — follow the migration rules in `references/migration-guide.md`.
-6. **Preserve VTL variables** — `${fieldId}`, `$maxChar`, `$variableName` are server-side; never change them.
-7. **Output three files** — see the File Output Pattern below.
+6. **Apply DaisyUI for styling** — use DaisyUI component classes (`btn`, `input`, `select`, `modal`, `link`, etc.) and Tailwind utilities instead of inline styles or ad-hoc CSS; see “Styling with DaisyUI” in the guide.
+7. **Preserve VTL variables** — `${fieldId}`, `$maxChar`, `$variableName` are server-side; never change them.
+8. **Output three files** — see the File Output Pattern below.
 
 ## File Output Pattern
 
@@ -77,8 +79,9 @@ This pattern lets both legacy and new edit modes coexist safely — old editor u
 - All `getField()` calls must be inside `DotCustomFieldApi.ready()`
 - Never use `DotCustomFieldApi.get()` or `DotCustomFieldApi.set()` (the old short forms)
 - VTL variables stay exactly as-is
-- Business logic stays exactly as-is — only the API calls change
-- Dijit CSS classes (any `class="dijit*"`) must be removed; custom CSS classes must be kept
+- Business logic stays exactly as-is — only the API calls and styling approach change
+- Dijit CSS classes (any `class="dijit*"`) must be removed
+- **Styling:** Prefer DaisyUI component classes + Tailwind utilities; keep custom CSS only when the guide says so
 - Translate non-English comments to English
 
 ## Key Patterns to Know
@@ -113,17 +116,30 @@ titleField.onChange((value) => {
 });
 ```
 
-**Native dialog** (replaces `dojoType="dijit.Dialog"`):
+**Native dialog with DaisyUI modal** (replaces `dojoType="dijit.Dialog"`):
 ```html
-<dialog id="myDialog">...</dialog>
+<button type="button" id="openModalButton" class="btn btn-primary">Open modal</button>
+<dialog id="myDialog" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg">Hello!</h3>
+    <p class="py-4">Press ESC key or click the button below to close</p>
+    <div class="modal-action">
+      <form method="dialog">
+        <button type="submit" class="btn">Close</button>
+      </form>
+    </div>
+  </div>
+</dialog>
 <script>
-  DotCustomFieldApi.ready(() => {
-    document.getElementById('openBtn').addEventListener('click', () => {
-      document.getElementById('myDialog').showModal();
-    });
+  const myDialog = document.getElementById('myDialog');
+  const openModalButton = document.getElementById('openModalButton');
+  openModalButton?.addEventListener('click', () => {
+    myDialog?.showModal();
   });
 </script>
 ```
+
+**Styling (DaisyUI):** Buttons → `btn`, `btn-primary`, `btn-ghost`, `btn-sm`. Inputs → `input input-bordered`. Selects → `select select-bordered`. Links → `link link-primary`. Use Tailwind for layout (`flex`, `gap`, `w-full`). Full reference in `references/migration-guide.md` → “Styling with DaisyUI”.
 
 ## Before Outputting
 
@@ -139,9 +155,10 @@ Verify the migration passes this checklist (details in `references/migration-gui
 - [ ] No `dojo.*` or `dijit.*` references remaining
 - [ ] No `dojoType` attributes remaining
 - [ ] No `dijit*` CSS classes remaining
+- [ ] Styling uses DaisyUI components where applicable (buttons, inputs, selects, modals, links) and Tailwind for layout; no inline styles unless necessary
 - [ ] All field access inside `DotCustomFieldApi.ready()`
 - [ ] All `getField()` calls stored in variables and reused
 - [ ] VTL variables unchanged
 - [ ] Business logic unchanged
 
-For complete rules, all migration examples (character counter, title field, slug generator, dialogs, file browser), and edge cases → read `references/migration-guide.md`.
+For complete rules, **DaisyUI styling section**, all migration examples (character counter, title field, slug generator, dialogs, file browser), and edge cases → read `references/migration-guide.md`.
