@@ -235,7 +235,8 @@ pre-push:
         cd core-web
         # Safety net: verify formatting on all pushed frontend files.
         # Catches anything that bypassed pre-commit (merges, cherry-picks, --no-verify).
-        files=$(git diff --name-only "$(git merge-base HEAD origin/main)" HEAD -- 'core-web/**/*.ts' 'core-web/**/*.js' 'core-web/**/*.tsx' 'core-web/**/*.jsx' 'core-web/**/*.json' 'core-web/**/*.html' 'core-web/**/*.css' 'core-web/**/*.scss' 2>/dev/null \
+        base_branch=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo "origin/main")
+        files=$(git diff --name-only "$(git merge-base HEAD "$base_branch")" HEAD -- 'core-web/**/*.ts' 'core-web/**/*.js' 'core-web/**/*.tsx' 'core-web/**/*.jsx' 'core-web/**/*.json' 'core-web/**/*.html' 'core-web/**/*.css' 'core-web/**/*.scss' 2>/dev/null \
           | sed 's|^core-web/||' | paste -sd, -)
         [ -z "$files" ] && exit 0
         # Dry-run format check — list files that would change

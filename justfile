@@ -101,6 +101,14 @@ worktree-init:
     echo "Installing frontend dependencies..."
     cd core-web && yarn install && cd ..
 
+    # Warn if yarn.lock drifted (cross-branch cache can cause this)
+    if ! git diff --quiet -- core-web/yarn.lock 2>/dev/null; then
+        echo ""
+        echo "WARNING: yarn.lock changed after install (cross-branch cache drift)."
+        echo "Review before committing: git diff core-web/yarn.lock"
+        echo ""
+    fi
+
     # 3. Stencil webcomponents — the only non-Angular library that needs pre-building.
     #    nx serve dotcms-ui imports @dotcms/dotcms-webcomponents/loader which is a build artifact.
     echo "Building dotcms-webcomponents (Stencil)..."
@@ -444,16 +452,18 @@ dev-stop-frontend:
         fi
         rm -f "$PID_FILE"
     else
-        # lsof is macOS/common Linux; fall back to ss (Linux) or fuser if unavailable
-        PID=$(lsof -ti :4200 2>/dev/null \
-              || ss -Htlnp 'sport = :4200' 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' \
-              || fuser 4200/tcp 2>/dev/null \
-              || true)
-        if [ -n "$PID" ]; then
-            kill "$PID" && echo "Stopped frontend dev server (PID=$PID)"
-        else
-            echo "No frontend dev server running on :4200"
-        fi
+        # No PID file — try to find the process by scanning common frontend ports
+        for port in 4200 4201 4202 4203 4204; do
+            PID=$(lsof -ti :"$port" 2>/dev/null \
+                  || ss -Htlnp "sport = :$port" 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' \
+                  || fuser "$port/tcp" 2>/dev/null \
+                  || true)
+            if [ -n "$PID" ]; then
+                kill "$PID" && echo "Stopped frontend dev server on :$port (PID=$PID)"
+                exit 0
+            fi
+        done
+        echo "No frontend dev server found on ports 4200-4204"
     fi
 
 # Tail the Angular frontend dev server log (blocking — Ctrl-C to exit)
@@ -610,7 +620,7 @@ dev-stop-all:
     #!/usr/bin/env bash
     CONTAINERS=$(docker ps --filter "name=dotbuild_" -q)
     [ -z "$CONTAINERS" ] && echo "No dotCMS containers running" && exit 0
-    docker stop $CONTAINERS && docker rm $CONTAINERS
+    echo "$CONTAINERS" | xargs docker stop && echo "$CONTAINERS" | xargs docker rm
     echo "Stopped all dotCMS dev containers"
 
 # Starts the dotCMS application in a Tomcat container on port 8087, running in the foreground
@@ -650,6 +660,9 @@ dev-shared-start:
     @echo "  OS Upgrade → localhost:19201"
     @echo ""
     @echo "Now run 'just dev-run <port>' in any worktree."
+    @echo ""
+    @echo "NOTE: These containers auto-restart on boot (~3GB RAM)."
+    @echo "Run 'just dev-shared-stop' when you no longer need them."
 
 # Stops shared services (does not remove volumes)
 dev-shared-stop:

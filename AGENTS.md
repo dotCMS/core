@@ -75,4 +75,5 @@ New worktrees start warm — `.config/wt.toml` hooks run `just worktree-init`, r
 - **`build-quicker` shares `.m2` across worktrees** — `just build-quicker` uses the frontend WAR last installed by any worktree's `just build`. The recipe detects and warns when the WAR is from a different branch. Use `nx serve` for frontend dev, or `just build` for a consistent image.
 - **Docker image build fails with stale SHA** — run `docker builder prune -f` then retry
 - **Tests are silently skipped** — integration, postman, karate, and E2E tests all require explicit `-Dskip=false` flags or nothing runs
+- **Pre-push hook may auto-commit and exit 2** — if REST API Java files changed, the `openapi-freshness` hook regenerates the OpenAPI spec, auto-commits it, and exits 2 (not 1) to signal "retry needed". Agents must re-push after this; the second push will succeed.
 - **Cross-platform scripts** — all justfile recipes and shell commands must work on both macOS and Linux. See `.claude/rules/shell-cross-platform.md` for the pitfall table.
