@@ -1,12 +1,15 @@
 package com.dotmarketing.util;
 
 import com.google.common.base.Preconditions;
+import com.liferay.portal.util.PropsUtil;
 import java.nio.Buffer;
 import java.nio.CharBuffer;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 /**
@@ -160,6 +163,101 @@ public class PasswordGenerator {
         public Builder withDefaultValues() {
             return charset(SPECIAL_CHARS, 1).charset(UPPER_CASE_LETTERS_CHARS, 1)
                     .charset(LOWER_CASE_LETTERS_CHARS, 1).charset(NUMBER_CHARS, 1);
+        }
+
+        /**
+         * Builds the generator using the allowed character set derived from the
+         * {@code passwords.regexptoolkit.pattern} property, but only when
+         * {@code RegExpToolkit} is the active password toolkit.
+         *
+         * <p>The character class {@code [...]} is extracted from the pattern (which must
+         * follow the simple {@code /^[CharClass]{n,}$/} shape) and every printable ASCII
+         * character (32–126) is probed against it to produce the final charset string.
+         * The generated password will therefore contain only characters that the backend
+         * validator accepts, keeping generation and validation permanently in sync.</p>
+         *
+         * <p>Falls back to {@link #withDefaultValues()} when:</p>
+         * <ul>
+         *   <li>The active toolkit is not {@code RegExpToolkit}.</li>
+         *   <li>The pattern uses complex lookaheads with no extractable character class.</li>
+         * </ul>
+         *
+         * @return this builder
+         */
+        public Builder withRegExpToolkitValues() {
+            final String configuredToolkit = PropsUtil.get(PropsUtil.PASSWORDS_TOOLKIT);
+            if ("com.liferay.portal.pwd.RegExpToolkit".equals(configuredToolkit)) {
+                final String rawPattern = PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN);
+                final String allowedChars = extractCharset(rawPattern);
+                if (allowedChars != null) {
+                    // Honour the minimum length from the pattern's {n,} quantifier.
+                    // We keep the current length if it already exceeds the pattern minimum,
+                    // ensuring we never generate passwords shorter than the validator requires.
+                    this.length = Math.max(this.length, extractMinLength(rawPattern));
+                    return charset(allowedChars, 0);
+                }
+            }
+            return withDefaultValues();
+        }
+
+        /**
+         * Extracts the set of allowed characters from a simple {@code /^[CharClass]{n,}$/}
+         * pattern by testing every printable ASCII character (32–126) against the extracted
+         * character class.
+         *
+         * <p>Returns {@code null} when the pattern is {@code null}, empty, or does not match
+         * the expected simple character-class shape (e.g. lookahead-based patterns).</p>
+         *
+         * @param rawPattern the raw Perl5 pattern string as stored in {@code portal.properties}
+         * @return a string of all allowed characters, or {@code null} if extraction fails
+         */
+        static String extractCharset(final String rawPattern) {
+            if (rawPattern == null || rawPattern.trim().isEmpty()) {
+                return null;
+            }
+            // Captures the [CharClass] from patterns shaped like /^[CharClass]{n,}$/
+            // The inner (?:[^\]\\]|\\.)* handles escaped chars such as \[ and \] inside the class.
+            final java.util.regex.Matcher m = Pattern.compile(
+                    "^/\\^(\\[(?:[^\\]\\\\]|\\\\.)*\\])\\{\\d+,\\}\\$/$"
+            ).matcher(rawPattern.trim());
+            if (!m.matches()) {
+                return null;
+            }
+            final String charClass = m.group(1);
+            final Pattern charFilter;
+            try {
+                charFilter = Pattern.compile(charClass);
+            } catch (PatternSyntaxException e) {
+                return null;
+            }
+            // Collect every printable ASCII character accepted by the character class
+            final StringBuilder allowed = new StringBuilder();
+            for (char c = 32; c < 127; c++) {
+                if (charFilter.matcher(String.valueOf(c)).matches()) {
+                    allowed.append(c);
+                }
+            }
+            return allowed.length() > 0 ? allowed.toString() : null;
+        }
+
+        /**
+         * Extracts the minimum password length from a pattern's {@code {n,}} or {@code {n,m}}
+         * quantifier (e.g. returns {@code 8} for {@code /^[...]{8,}$/}).
+         *
+         * <p>Returns {@code 0} when the pattern is {@code null}, empty, or contains no
+         * recognisable quantifier, leaving the caller's current length unchanged.</p>
+         *
+         * @param rawPattern the raw Perl5 pattern string as stored in {@code portal.properties}
+         * @return the minimum length declared by the quantifier, or {@code 0} if not found
+         */
+        static int extractMinLength(final String rawPattern) {
+            if (rawPattern == null || rawPattern.trim().isEmpty()) {
+                return 0;
+            }
+            // Matches {n,} or {n,m} — group 1 is the minimum
+            final java.util.regex.Matcher m = Pattern.compile("\\{(\\d+),\\d*}")
+                    .matcher(rawPattern.trim());
+            return m.find() ? Integer.parseInt(m.group(1)) : 0;
         }
 
         static final String SPECIAL_CHARS = "!#%+:=?@";
