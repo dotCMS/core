@@ -3,6 +3,9 @@ paths:
   - "**/*.mdc"
   - "CLAUDE.md"
   - "AGENTS.md"
+  - ".claude/rules/*"
+  - ".cursor/rules/*"
+  - ".github/copilot-instructions.md"
   - "docs/**/*"
 ---
 

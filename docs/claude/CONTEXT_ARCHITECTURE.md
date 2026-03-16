@@ -281,15 +281,37 @@ The concepts above map to different file names, directories, and frontmatter acr
 
 ### File Discovery
 
-| Concept | Claude Code | Cursor | Codex | Aider |
-|---|---|---|---|---|
-| Root instructions | `CLAUDE.md` | `AGENTS.md` | `AGENTS.md` | `AGENTS.md` |
-| Path-scoped rules | `.claude/rules/*.md` | `.cursor/rules/*.mdc` | -- | -- |
-| Directory instructions | Sub-dir `CLAUDE.md` | Sub-dir `AGENTS.md` | Sub-dir `AGENTS.md` | -- |
-| Skills / workflows | `.claude/skills/*/SKILL.md` | -- | -- | -- |
-| Inline imports | `@path` in CLAUDE.md | -- | -- | -- |
+| Concept | Claude Code | Cursor | Codex | Aider | Copilot |
+|---|---|---|---|---|---|
+| Root instructions | `CLAUDE.md` | `AGENTS.md` | `AGENTS.md` | `AGENTS.md` | `.github/copilot-instructions.md` |
+| Path-scoped rules | `.claude/rules/*.md` | `.cursor/rules/*.mdc` | -- | -- | -- |
+| Directory instructions | Sub-dir `CLAUDE.md` | Sub-dir `AGENTS.md` | Sub-dir `AGENTS.md` | -- | -- |
+| Skills / workflows | `.claude/skills/*/SKILL.md` | -- | -- | -- | -- |
+| Inline imports | `@path` in CLAUDE.md | -- | -- | -- | -- |
 
 **Cross-agent compatibility** at the root level requires either symlinks (`CLAUDE.md -> AGENTS.md`) or maintaining both files. Sub-directory files need separate `CLAUDE.md` and `AGENTS.md` for full cross-agent coverage.
+
+### Tools with Single-File Constraints (Copilot)
+
+GitHub Copilot coding agents read `.github/copilot-instructions.md` — a single flat file with no conditional loading, no path-scoping, no skills, and no directory-scoped overrides. Every token in this file is loaded into every conversation.
+
+This means the decision framework collapses to **Step 1 only**: does every conversation need this? If not, it shouldn't be in the file.
+
+> **Scope note:** The existing `.github/copilot-instructions.md` and `.devcontainer/` configuration predate this architecture and have not yet been updated to align with these guidelines. Bringing them into alignment is future work — tracked separately from this document.
+
+**Guidelines for single-file tools:**
+
+1. **Prioritize ruthlessly.** Without conditional loading, you can't afford domain-specific content (Java patterns, Angular conventions, test patterns). Keep the file focused on universal essentials.
+2. **Lean heavily on aliases — but provide fallbacks.** `just build-quicker` saves tokens and stays correct, but Copilot coding agents may run in devcontainers or Codespaces where `just` (and `mise`) aren't installed. Include the raw Maven/Nx fallback commands for essential operations (build, test) alongside the aliases. Point to the `justfile` as the source of truth for what each alias does.
+3. **Accept the gap.** A single-file tool cannot match the context quality of a layered tool. Don't try to compensate by making the file enormous — a 200-line file with high signal-to-noise ratio outperforms an 800-line file where critical rules get lost.
+4. **Point to discoverable resources.** `just --list` (when available), `docs/README.md`, and directory-level `AGENTS.md` files can be read on demand by the agent. Mention they exist; don't duplicate their content.
+5. **Don't duplicate content from layered files.** The Copilot file will drift from `.claude/rules/`, `.cursor/rules/`, and `AGENTS.md`. Keep it as a lean complement, not a copy.
+6. **Account for the execution environment.** Copilot coding agents run in GitHub-hosted containers, not developer machines. The devcontainer configuration (`.devcontainer/`) determines what tools are available. If the devcontainer doesn't install `just` or `mise`, the agent can't use alias commands — document the raw commands as fallbacks for essential operations.
+
+**Key observations about the current state** (for future alignment work):
+- `.github/copilot-instructions.md` is ~885 lines — well beyond the recommended ceiling for a single-file tool. It duplicates Java patterns, Angular conventions, security rules, and Maven commands that exist in `.claude/rules/`, `.cursor/rules/`, and domain-specific `AGENTS.md` files.
+- `.devcontainer/devcontainer.json` does not install `mise` or `just`, and pins Node 20 instead of the project's required Node 22 (from `.nvmrc`). Copilot coding agents running in this container cannot use `just` aliases.
+- The Copilot file documents raw Maven commands (e.g., `./mvnw install -pl :dotcms-core --am -DskipTests`) rather than referencing `just` aliases, which is the opposite of the alias-first approach recommended here — but is currently necessary given the devcontainer gap.
 
 ### Rule Frontmatter
 
@@ -352,6 +374,8 @@ How these concepts are applied in this monorepo.
 /                               # Root
   AGENTS.md                     # Root instructions (Cursor, Codex, Aider)
   CLAUDE.md -> AGENTS.md        # Symlink for Claude Code
+  .github/
+    copilot-instructions.md     # Copilot coding agent (single-file, no layering)
   .claude/
     rules/                      # Claude Code path-scoped rules (8 files)
     skills/                     # Claude Code skills
