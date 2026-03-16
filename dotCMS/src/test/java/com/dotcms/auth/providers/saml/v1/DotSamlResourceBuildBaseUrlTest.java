@@ -33,7 +33,7 @@ public class DotSamlResourceBuildBaseUrlTest extends UnitTestBase {
 
     @After
     public void cleanup() {
-        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), null);
+        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.getPropertyName(), null);
     }
 
     private DotSamlResource buildResource() {
@@ -62,7 +62,7 @@ public class DotSamlResourceBuildBaseUrlTest extends UnitTestBase {
      */
     @Test
     public void testBuildBaseUrl_usesConfiguredHostname_whenSet() {
-        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), CONFIGURED_HOST);
+        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.getPropertyName(), CONFIGURED_HOST);
 
         final String result = buildResource().buildBaseUrlFromRequest(mockRequest());
 
@@ -76,7 +76,7 @@ public class DotSamlResourceBuildBaseUrlTest extends UnitTestBase {
      */
     @Test
     public void testBuildBaseUrl_fallsBackToRequestHostname_whenNotConfigured() {
-        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), null);
+        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.getPropertyName(), null);
 
         final String result = buildResource().buildBaseUrlFromRequest(mockRequest());
 
@@ -91,7 +91,7 @@ public class DotSamlResourceBuildBaseUrlTest extends UnitTestBase {
      */
     @Test
     public void testBuildBaseUrl_fallsBackToRequestHostname_whenConfiguredHostIsEmpty() {
-        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), "");
+        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.getPropertyName(), "");
 
         final String result = buildResource().buildBaseUrlFromRequest(mockRequest());
 
@@ -106,7 +106,7 @@ public class DotSamlResourceBuildBaseUrlTest extends UnitTestBase {
      */
     @Test
     public void testBuildBaseUrl_alwaysEndsWithLogoutPath() {
-        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), CONFIGURED_HOST);
+        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.getPropertyName(), CONFIGURED_HOST);
 
         final String result = buildResource().buildBaseUrlFromRequest(mockRequest());
 
@@ -120,7 +120,7 @@ public class DotSamlResourceBuildBaseUrlTest extends UnitTestBase {
      */
     @Test
     public void testBuildBaseUrl_doesNotLeakOriginHostname_whenConfigured() {
-        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), CONFIGURED_HOST);
+        Config.setProperty(SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.getPropertyName(), CONFIGURED_HOST);
 
         final String result = buildResource().buildBaseUrlFromRequest(mockRequest());
 

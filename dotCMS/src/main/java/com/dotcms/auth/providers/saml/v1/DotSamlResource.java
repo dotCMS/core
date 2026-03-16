@@ -510,7 +510,7 @@ public class DotSamlResource implements Serializable {
 	String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
 
 		final String configuredHost = Config.getStringProperty(
-				SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), null);
+				SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.getPropertyName(), null);
 		final String host = UtilMethods.isSet(configuredHost)
 				? configuredHost
 				: httpServletRequest.getScheme() + "://" + httpServletRequest.getServerName() + ":"
