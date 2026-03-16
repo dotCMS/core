@@ -6,7 +6,7 @@
 
 [tools]
 # Git hooks manager — replaces husky + lint-staged
-lefthook = "latest"
+lefthook = "~1"
 
 # Command runner for build/dev tasks
 just = "latest"

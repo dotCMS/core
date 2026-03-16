@@ -219,9 +219,10 @@ pre-push:
               git commit -m "chore: regenerate OpenAPI spec"
               echo ""
               echo "OpenAPI spec committed. Push aborted — run 'git push' again to include it."
-              # Exit 1 because git already resolved the push refs before this hook ran.
+              # Exit non-zero because git already resolved the push refs before this hook ran.
               # The new commit isn't in the current push payload. A second push picks it up.
-              exit 1
+              # Use exit 2 so agents can distinguish "retry needed" from a real failure.
+              exit 2
               ;;
           esac
         fi
@@ -229,6 +230,7 @@ pre-push:
         echo "OpenAPI spec is up to date"
 
     frontend-format-verify:
+      glob: "core-web/**/*.{ts,js,tsx,jsx,json,html,css,scss}"
       run: |
         cd core-web
         # Safety net: verify formatting on all pushed frontend files.
@@ -255,9 +257,11 @@ pre-push:
         fi
         cd ..
 
-        # Clean up generated package.json
+        # Clean up generated package.json only if it's untracked (build artifact)
         pkg_json="dotCMS/src/main/webapp/ext/uve/package.json"
-        [ -f "$pkg_json" ] && rm "$pkg_json"
+        if [ -f "$pkg_json" ] && ! git ls-files --error-unmatch "$pkg_json" >/dev/null 2>&1; then
+          rm "$pkg_json"
+        fi
 
         # Check if dot-uve.js changed but wasn't committed
         uve_js="dotCMS/src/main/webapp/ext/uve/dot-uve.js"

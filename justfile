@@ -389,7 +389,6 @@ dev-restart port="" image="" mode="":
     just dev-run {{ port }} {{ image }} {{ mode }}
 
 # Starts the Angular frontend dev server on :4200. Discovers backend port from Docker; falls back to :8080.
-# Starts the Angular frontend dev server. Discovers backend port from Docker; falls back to :8080.
 # port=""  → 4200 (default). Use a different port for parallel worktrees (e.g., 4201, 4202).
 dev-start-frontend port="4200":
     #!/usr/bin/env bash

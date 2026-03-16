@@ -31,7 +31,7 @@ cd {{ worktree_path }} && just dev-stop 2>/dev/null || true
 [post-remove]
 # Clean up leftover container for the removed worktree.
 cleanup = """
-SLUG=$(echo "{{ branch }}" | sed 's|[/\\]|-|g')
+SLUG=$(echo "{{ branch }}" | sed 's/[^a-zA-Z0-9._-]/-/g; s/^[.-]*//' | cut -c1-64)
 CONTAINER="dotbuild_dotcms-core_${SLUG}_dotcms"
 docker stop "$CONTAINER" 2>/dev/null; docker rm "$CONTAINER" 2>/dev/null || true
 """

@@ -36,7 +36,7 @@ services:
     ports:
       - "19200:9200"
     volumes:
-      - shared-es-data:/usr/share/elasticsearch/data
+      - shared-es-data:/usr/share/opensearch/data
     networks:
       - dotcms-shared
     ulimits:
@@ -61,7 +61,7 @@ services:
     ports:
       - "19201:9200"
     volumes:
-      - shared-os-upgrade-data:/usr/share/opensearch-upgrade/data
+      - shared-os-upgrade-data:/usr/share/opensearch/data
     networks:
       - dotcms-shared
     ulimits:
