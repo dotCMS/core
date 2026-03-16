@@ -506,7 +506,8 @@ public class DotSamlResource implements Serializable {
 	 * the raw request server name, so deployments behind a CDN can use the public hostname
 	 * instead of leaking the origin server hostname.
 	 */
-	private String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
+	@VisibleForTesting
+	String buildBaseUrlFromRequest(final HttpServletRequest httpServletRequest) {
 
 		final String configuredHost = Config.getStringProperty(
 				SamlName.DOT_SAML_SERVICE_PROVIDER_HOST_NAME.propName(), null);
