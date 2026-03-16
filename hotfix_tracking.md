@@ -31,3 +31,4 @@ Release-25.07.10 LTS
 25. https://github.com/dotCMS/core/issues/34163 : Fix Apache Tika XXE CVE-2025-66516 #34163
 26. https://github.com/dotCMS/core/issues/34954 : security: upgrade Apache Tomcat to 9.0.113+ to fix CVE-2025-66614 #34954
 27. https://github.com/dotCMS/core/issues/34749 : Publishing queue: clicking pending bundle redirects to Users/first tab instead of bundle details #34749
+28. https://github.com/dotCMS/core/issues/34130 : [DEFECT] Incorrect and repeated titles for Site Search results [Url Mapped Content] #34130
