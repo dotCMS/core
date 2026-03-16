@@ -128,14 +128,14 @@ export interface SparklineDataset {
     `,
     styles: `
         :host {
-            display: block;
+            display: flex;
+            flex-direction: column;
             width: 100%;
-            height: var(--sparkline-height, 6rem);
         }
 
         .sparkline-skeleton {
             width: 100%;
-            height: 100%;
+            height: var(--sparkline-height, 6rem);
 
             ::ng-deep .p-skeleton {
                 border-radius: 0.5rem;
@@ -144,7 +144,7 @@ export interface SparklineDataset {
 
         .sparkline-empty {
             width: 100%;
-            height: 100%;
+            height: var(--sparkline-height, 6rem);
             display: flex;
             align-items: center;
         }
@@ -157,7 +157,7 @@ export interface SparklineDataset {
         .sparkline-container {
             position: relative;
             width: 100%;
-            height: 100%;
+            height: var(--sparkline-height, 6rem);
             overflow: visible;
         }
 
@@ -202,8 +202,10 @@ export interface SparklineDataset {
         .sparkline-legend {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            padding-top: 0.5rem;
+            gap: 1.5rem;
+            padding: 0.75rem 0;
+            margin-top: 0.5rem;
+            border-top: 1px solid var(--p-gray-200, #e5e7eb);
         }
 
         .sparkline-legend__item {
