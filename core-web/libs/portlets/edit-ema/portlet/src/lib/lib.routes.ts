@@ -1,3 +1,4 @@
+import { inject } from '@angular/core';
 import { Route } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -93,6 +94,22 @@ export const dotEmaRoutes: Route[] = [
             },
             {
                 path: 'experiments',
+                resolve: {
+                    content: () => {
+                        const uveStore = inject(UVEStore);
+                        const pageAsset = uveStore.pageAsset();
+                        const lockOptions = uveStore.$lockOptions();
+
+                        return {
+                            page: pageAsset?.page,
+                            state: {
+                                lockedByAnotherUser: !!(
+                                    lockOptions?.isLocked && !lockOptions?.isLockedByCurrentUser
+                                )
+                            }
+                        };
+                    }
+                },
                 providers: [
                     DotEnterpriseLicenseResolver,
                     DotExperimentExperimentResolver,

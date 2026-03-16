@@ -87,7 +87,7 @@ const EXPECTED_INITIAL_STATE: DotExperimentsConfigurationState = {
     hasEnterpriseLicense: ActivatedRouteMock.parent.snapshot.data.isEnterprise,
     addToBundleContentId: null,
     pushPublishEnvironments: ActivatedRouteMock.parent.snapshot.data.pushPublishEnvironments,
-    dotPageRenderState: ActivatedRouteMock.parent.parent.parent.snapshot.data.content
+    dotPageRenderState: ActivatedRouteMock.parent.parent.snapshot.data.content
 };
 
 const messageServiceMock = new MockDotMessageService({
@@ -896,7 +896,7 @@ describe('DotExperimentsConfigurationStore', () => {
                 of({ ...EXPERIMENT_MOCK_2, status: DotExperimentStatus.RUNNING })
             );
 
-            ActivatedRouteMock.parent.parent.parent.snapshot.data.content.state.lockedByAnotherUser =
+            ActivatedRouteMock.parent.parent.snapshot.data.content.state.lockedByAnotherUser =
                 true;
 
             spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
@@ -925,7 +925,7 @@ describe('DotExperimentsConfigurationStore', () => {
         it('should set EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED when page is locked by other user', (done) => {
             dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK_2));
 
-            ActivatedRouteMock.parent.parent.parent.snapshot.data.content.state.lockedByAnotherUser =
+            ActivatedRouteMock.parent.parent.snapshot.data.content.state.lockedByAnotherUser =
                 true;
 
             spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
