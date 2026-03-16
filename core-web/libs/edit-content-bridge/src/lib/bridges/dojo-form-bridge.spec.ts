@@ -60,6 +60,7 @@ describe('DojoFormBridge', () => {
             );
 
             getSpy.mockRestore();
+            consoleSpy.mockRestore();
         });
     });
 
@@ -102,6 +103,7 @@ describe('DojoFormBridge', () => {
             );
 
             getSpy.mockRestore();
+            consoleSpy.mockRestore();
         });
     });
 
@@ -183,6 +185,7 @@ describe('DojoFormBridge', () => {
             expect(consoleSpy).toHaveBeenCalledWith('Error watching field:', expect.any(Error));
 
             getSpy.mockRestore();
+            consoleSpy.mockRestore();
         });
     });
 
@@ -313,6 +316,7 @@ describe('DojoFormBridge', () => {
             expect(consoleSpy).toHaveBeenCalledWith('Error hiding field:', expect.any(Error));
 
             getSpy.mockRestore();
+            consoleSpy.mockRestore();
         });
 
         it('should handle errors gracefully in show', () => {
@@ -327,6 +331,7 @@ describe('DojoFormBridge', () => {
             expect(consoleSpy).toHaveBeenCalledWith('Error showing field:', expect.any(Error));
 
             getSpy.mockRestore();
+            consoleSpy.mockRestore();
         });
     });
 

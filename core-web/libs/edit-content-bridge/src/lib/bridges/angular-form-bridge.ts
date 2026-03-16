@@ -29,6 +29,7 @@ export class AngularFormBridge implements FormBridge {
     private static instance: AngularFormBridge | null = null;
     private fieldSubscriptions: Map<string, FieldSubscription> = new Map();
     #dialogRef: DynamicDialogRef | null = null;
+    #visibilityWarningEmitted = false;
 
     /**
      * Optional callback invoked when a field's visibility changes via show()/hide().
@@ -68,15 +69,21 @@ export class AngularFormBridge implements FormBridge {
                 dialogService,
                 onFieldVisibilityChange
             );
-        } else if (
-            AngularFormBridge.instance.form !== form ||
-            AngularFormBridge.instance.zone !== zone
-        ) {
-            console.warn(
-                'AngularFormBridge: Attempted to get instance with different form or zone. ' +
-                    'Returning existing instance. Consider calling resetInstance() first if you need a new instance.'
-            );
+        } else {
+            if (
+                AngularFormBridge.instance.form !== form ||
+                AngularFormBridge.instance.zone !== zone
+            ) {
+                console.warn(
+                    'AngularFormBridge: Attempted to get instance with different form or zone. ' +
+                        'Returning existing instance. Consider calling resetInstance() first if you need a new instance.'
+                );
+            }
+
+            AngularFormBridge.instance.onFieldVisibilityChange = onFieldVisibilityChange;
+            AngularFormBridge.instance.dialogService = dialogService;
         }
+
         return AngularFormBridge.instance;
     }
 
@@ -190,6 +197,21 @@ export class AngularFormBridge implements FormBridge {
     }
 
     /**
+     * Emits a one-time console warning when show()/hide() is called
+     * but no onFieldVisibilityChange callback was provided.
+     */
+    private warnIfNoVisibilityCallback(fieldId: string, method: 'show' | 'hide'): void {
+        if (!this.onFieldVisibilityChange && !this.#visibilityWarningEmitted) {
+            this.#visibilityWarningEmitted = true;
+            console.warn(
+                `AngularFormBridge: ${method}() called on field '${fieldId}' but no onFieldVisibilityChange callback is configured. ` +
+                    'Field visibility changes will have no effect. ' +
+                    'Pass onFieldVisibilityChange when creating the bridge to enable show()/hide() support.'
+            );
+        }
+    }
+
+    /**
      * Cleans up all subscriptions when the bridge is destroyed.
      * Also resets the singleton instance and closes any open dialogs.
      */
@@ -250,12 +272,14 @@ export class AngularFormBridge implements FormBridge {
 
             show: (): void => {
                 this.zone.run(() => {
+                    this.warnIfNoVisibilityCallback(fieldId, 'show');
                     this.onFieldVisibilityChange?.(fieldId, true);
                 });
             },
 
             hide: (): void => {
                 this.zone.run(() => {
+                    this.warnIfNoVisibilityCallback(fieldId, 'hide');
                     this.onFieldVisibilityChange?.(fieldId, false);
                 });
             }

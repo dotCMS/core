@@ -17,12 +17,21 @@ export function withFieldVisibility() {
              * @param visible - Whether the field should be visible (`true`) or hidden (`false`).
              */
             setFieldVisibility(fieldVariable: string, visible: boolean): void {
-                const current = new Set(store.hiddenFields());
-                if (visible) {
-                    current.delete(fieldVariable);
-                } else {
-                    current.add(fieldVariable);
+                const hiddenFields = store.hiddenFields();
+                const isCurrentlyHidden = hiddenFields.has(fieldVariable);
+                const shouldBeHidden = !visible;
+
+                if (isCurrentlyHidden === shouldBeHidden) {
+                    return;
                 }
+
+                const current = new Set(hiddenFields);
+                if (shouldBeHidden) {
+                    current.add(fieldVariable);
+                } else {
+                    current.delete(fieldVariable);
+                }
+
                 patchState(store, { hiddenFields: current });
             },
 

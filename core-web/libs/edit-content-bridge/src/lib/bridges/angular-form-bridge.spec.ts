@@ -494,6 +494,61 @@ describe('AngularFormBridge', () => {
                 expect(() => fieldAPI.hide()).not.toThrow();
             });
 
+            it('should warn once when show is called without callback', () => {
+                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const fieldAPI = bridge.getField('testField');
+
+                fieldAPI.show();
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    expect.stringContaining(
+                        "show() called on field 'testField' but no onFieldVisibilityChange callback is configured"
+                    )
+                );
+
+                consoleSpy.mockClear();
+                fieldAPI.show();
+                expect(consoleSpy).not.toHaveBeenCalled();
+
+                consoleSpy.mockRestore();
+            });
+
+            it('should warn once when hide is called without callback', () => {
+                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const fieldAPI = bridge.getField('testField');
+
+                fieldAPI.hide();
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    expect.stringContaining(
+                        "hide() called on field 'testField' but no onFieldVisibilityChange callback is configured"
+                    )
+                );
+
+                consoleSpy.mockClear();
+                fieldAPI.hide();
+                expect(consoleSpy).not.toHaveBeenCalled();
+
+                consoleSpy.mockRestore();
+            });
+
+            it('should not warn when callback is provided', () => {
+                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const onFieldVisibilityChange = jest.fn();
+                AngularFormBridge.resetInstance();
+                const bridgeWithCallback = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any,
+                    onFieldVisibilityChange
+                );
+
+                const fieldAPI = bridgeWithCallback.getField('testField');
+                fieldAPI.show();
+                fieldAPI.hide();
+
+                expect(consoleSpy).not.toHaveBeenCalled();
+                consoleSpy.mockRestore();
+            });
+
             it('should run show inside NgZone', () => {
                 const onFieldVisibilityChange = jest.fn();
                 AngularFormBridge.resetInstance();

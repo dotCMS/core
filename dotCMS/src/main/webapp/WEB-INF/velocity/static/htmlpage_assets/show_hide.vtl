@@ -4,7 +4,9 @@
     const mediaFileField = DotCustomFieldApi.getField("mediafile");
 
     const currentValue = mediaField.getValue() || "external";
-    const initialRadio = document.querySelector('input[name="mediaLocation"][value="' + currentValue + '"]');
+    const radios = document.querySelectorAll('input[name="mediaLocation"]');
+
+    const initialRadio = Array.from(radios).find((radio) => radio.value === currentValue);
     if (initialRadio) {
       initialRadio.checked = true;
     }
@@ -14,8 +16,6 @@
     } else {
       mediaFileField.hide();
     }
-
-    const radios = document.querySelectorAll('input[name="mediaLocation"]');
     radios.forEach((radio) => {
       radio.addEventListener("change", (e) => {
         const value = e.target.value;
