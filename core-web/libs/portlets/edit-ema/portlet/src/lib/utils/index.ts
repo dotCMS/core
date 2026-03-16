@@ -35,6 +35,8 @@ import {
 } from '../shared/models';
 import { Orientation } from '../store/models';
 
+export const SDK_EDITOR_SCRIPT_SOURCE = '/ext/uve/dot-uve.js';
+
 /**
  * Builds a `<base>` href from a page URI.
  *

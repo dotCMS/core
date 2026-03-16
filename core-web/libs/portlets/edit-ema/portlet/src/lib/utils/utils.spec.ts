@@ -13,6 +13,7 @@ import {
     sanitizeURL,
     getPersonalization,
     getFullPageURL,
+    SDK_EDITOR_SCRIPT_SOURCE,
     getBaseHrefFromPageURI,
     injectBaseTag,
     isPageLockedByOtherUser,
@@ -57,6 +58,12 @@ describe('utils functions', () => {
 
         return withoutCommentsAndCdata.match(/<base\b/gi)?.length ?? 0;
     };
+
+    describe('SDK Editor Script Source', () => {
+        it('should return the correct script source', () => {
+            expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/ext/uve/dot-uve.js');
+        });
+    });
 
     describe('base tag helpers', () => {
         it('should build base href from pageURI', () => {

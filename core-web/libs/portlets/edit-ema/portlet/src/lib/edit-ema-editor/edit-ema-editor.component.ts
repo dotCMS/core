@@ -102,6 +102,7 @@ import {
 import { UVEStore } from '../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../store/features/editor/models';
 import {
+    SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
     areContainersEquals,
     compareUrlPaths,
@@ -522,6 +523,29 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
+     * Add the editor page script to VTL pages
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addEditorPageScript(rendered = ''): string {
+        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
+        const bodyExists = rendered.includes('</body>');
+
+        /*
+         * For advance template case. It might not include `body` tag.
+         */
+        if (!bodyExists) {
+            return rendered + scriptString;
+        }
+
+        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
+
+        return updatedRendered;
+    }
+
+    /**
      * Add custom styles to the rendered content
      *
      * @param {string} rendered
@@ -562,6 +586,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * Inject the editor page script and styles to the VTL content
+     *
+     * @private
+     * @param {string} html
+     * @return {*}  {string}
+     * @memberof EditEmaEditorComponent
+     */
+    private inyectCodeToVTL(html: string): string {
+        const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
+        const origin = this.window.location.origin;
+        const fileWithBase = injectBaseTag({ html, url, origin });
+        const fileWithScript = this.addEditorPageScript(fileWithBase);
+        const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
+
+        return fileWithStylesAndScript;
     }
 
     ngOnDestroy(): void {
@@ -745,10 +787,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const doc = iframeElement.contentDocument;
 
         const enableInlineEdit = this.uveStore.$enableInlineEdit();
+        const pageRender = this.uveStore.$pageRender();
+
+        const newDoc = this.inyectCodeToVTL(pageRender);
 
         if (!doc) {
             return;
         }
+
+        doc.open();
+        doc.write(newDoc);
+        doc.close();
 
         this.handleInlineScripts(enableInlineEdit);
     }
