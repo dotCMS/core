@@ -6,6 +6,7 @@ import {
     ContentConversionRow,
     ConversionsOverviewEntity,
     DotAnalyticsDashboardStore,
+    getComparisonLabel,
     MetricData,
     transformContentConversionsData,
     transformConversionTrendData,
@@ -51,6 +52,11 @@ export default class DotAnalyticsConversionsReportComponent {
     /** Analytics dashboard store providing conversions data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #messageService = inject(DotMessageService);
+
+    /** Comparison label derived from the current time range */
+    protected readonly $comparisonLabel = computed(() =>
+        getComparisonLabel(this.store.timeRange())
+    );
 
     /** Dynamic chart title including the active time range label */
     protected readonly $trafficVsConversionsTitle = computed(() => {

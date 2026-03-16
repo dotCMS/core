@@ -1,6 +1,11 @@
 import { Params } from '@angular/router';
 
-import { DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
+import {
+    DASHBOARD_TABS,
+    DashboardTab,
+    TIME_RANGE_DAYS_MAP,
+    TIME_RANGE_OPTIONS
+} from '../constants';
 import { TimeRange, TimeRangeInput } from '../types';
 
 const VALID_TIME_RANGE_VALUES: readonly string[] = Object.values(TIME_RANGE_OPTIONS);
@@ -43,4 +48,20 @@ export function paramsToTimeRange(params: Params | null | undefined): TimeRangeI
     }
 
     return TIME_RANGE_OPTIONS.last7days;
+}
+
+/**
+ * Returns a comparison label string based on the current time range.
+ *
+ * @param timeRange - The current time range input
+ * @returns A label like "from previous 7 days" or "from previous range" for custom ranges
+ */
+export function getComparisonLabel(timeRange: TimeRangeInput): string {
+    if (Array.isArray(timeRange)) {
+        return 'from previous range';
+    }
+
+    const days = TIME_RANGE_DAYS_MAP[timeRange];
+
+    return days ? `from previous ${days} days` : 'from previous range';
 }

@@ -1,6 +1,6 @@
 import { Params } from '@angular/router';
 
-import { isValidTab, paramsToTimeRange } from './filters.utils';
+import { getComparisonLabel, isValidTab, paramsToTimeRange } from './filters.utils';
 
 import { DASHBOARD_TABS, TIME_RANGE_OPTIONS } from '../constants';
 
@@ -96,6 +96,24 @@ describe('Filters Utils', () => {
             const result = paramsToTimeRange(params);
 
             expect(result).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+    });
+
+    describe('getComparisonLabel', () => {
+        it('should return "from previous 7 days" for last7days range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.last7days)).toBe('from previous 7 days');
+        });
+
+        it('should return "from previous 30 days" for last30days range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.last30days)).toBe('from previous 30 days');
+        });
+
+        it('should return "from previous range" for custom date range array', () => {
+            expect(getComparisonLabel(['2024-01-01', '2024-01-31'])).toBe('from previous range');
+        });
+
+        it('should return "from previous range" for custom string range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.custom)).toBe('from previous range');
         });
     });
 });

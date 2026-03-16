@@ -1,5 +1,6 @@
 @let metricIcon = $icon();
 @let metricSubtitle = $subtitle();
+@let comparisonLabel = $comparisonLabel();
 @let metricTitle = $title();
 @let isLoadingState = $isLoading();
 @let isErrorState = $isError();
@@ -7,6 +8,7 @@
 @let hasIcon = !!metricIcon;
 @let hasTitle = !!metricTitle;
 @let hasSubtitle = !!metricSubtitle;
+@let hasComparisonLabel = !!comparisonLabel;
 @let formattedValue = $formattedValue();
 @let iconClasses = $iconClasses();
 @let trendData = $trendData();
@@ -106,18 +108,25 @@
             </div>
 
             <!-- Subtítulo -->
-            @if (hasSubtitle || trendData) {
+            @if (hasSubtitle || trendData || hasComparisonLabel) {
                 <div class="metric-fade-in metric-subtitle" data-testid="metric-subtitle">
                     @if (trendData) {
-                        <span [class]="trendData.class">
-                            {{ trendData.prefix }}{{ trendData.value }}%
+                        <span class="metric-trend" [class]="trendData.class">
                             <i
                                 [class]="
                                     trendData.isPositive ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
                                 "></i>
+                            {{ trendData.prefix }}{{ trendData.value }}%
                         </span>
                     }
-                    {{ metricSubtitle | dm }}
+                    @if (hasComparisonLabel) {
+                        <span class="metric-comparison" data-testid="metric-comparison">
+                            {{ comparisonLabel }}
+                        </span>
+                    }
+                    @if (hasSubtitle) {
+                        {{ metricSubtitle | dm }}
+                    }
                 </div>
             }
         </div>

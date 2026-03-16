@@ -57,6 +57,9 @@
 }
 
 .metric-subtitle {
+    display: flex;
+    align-items: center;
+    gap: $spacing-1;
     font-size: $font-size-md;
     color: $color-palette-gray-600;
     margin: 0;
@@ -67,27 +70,33 @@
 }
 
 .metric-trend {
-    &--positive,
-    &--negative {
-        display: inline-flex;
-        align-items: center;
-        gap: $spacing-1;
-        font-size: $font-size-md;
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-0;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semi-bold;
+    padding: $spacing-0 $spacing-1;
+    border-radius: $border-radius-md;
 
-        i {
-            font-size: $font-size-sm;
-            // Override the global .pi width (20px box) that pushes layout
-            width: 1rem;
-        }
+    i {
+        font-size: $font-size-sm;
+        width: 1rem;
     }
 
     &--positive {
-        color: $color-palette-green;
+        color: $color-palette-green-shade;
+        background-color: $color-palette-green-op-10;
     }
 
     &--negative {
-        color: $color-palette-red;
+        color: $color-palette-red-shade;
+        background-color: $color-palette-red-op-10;
     }
+}
+
+.metric-comparison {
+    font-size: $font-size-sm;
+    color: $color-palette-gray-500;
 }
 
 .metric-projected-content {

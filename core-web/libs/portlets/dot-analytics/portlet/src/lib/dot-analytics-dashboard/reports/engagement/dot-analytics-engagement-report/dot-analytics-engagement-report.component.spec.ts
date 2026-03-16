@@ -101,7 +101,8 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                     engagementKpis: mockKpis,
                     engagementBreakdown: mockBreakdown,
                     engagementPlatforms: mockPlatforms,
-                    engagementSparkline: mockSparkline
+                    engagementSparkline: mockSparkline,
+                    timeRange: signal('last7days')
                 }
             },
             mockProvider(DotMessageService, {

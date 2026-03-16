@@ -4,3 +4,8 @@
     background: $color-palette-gray-100;
     border-bottom: $field-border-size solid $color-palette-gray-300;
 }
+
+.dashboard-content {
+    max-width: 1600px;
+    margin: 0 auto;
+}

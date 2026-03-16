@@ -8,7 +8,8 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     AnalyticsChartColors,
-    DotAnalyticsDashboardStore
+    DotAnalyticsDashboardStore,
+    getComparisonLabel
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -52,6 +53,9 @@ export default class DotAnalyticsEngagementReportComponent {
     /** Controls visibility of the "How it's calculated" dialog */
     readonly $showCalculationDialog = signal(false);
 
+    /** Comparison label derived from the current time range (e.g., "from previous 7 days") */
+    readonly $comparisonLabel = computed(() => getComparisonLabel(this.store.timeRange()));
+
     /** KPIs slice: data and status for the metric cards */
     readonly $kpis = computed(() => this.store.engagementKpis().data);
     readonly $kpisStatus = computed(
@@ -94,7 +98,7 @@ export default class DotAnalyticsEngagementReportComponent {
                     this.#messageService.get('analytics.engagement.sparkline.period-previous') ??
                     'Previous period',
                 color: AnalyticsChartColors.neutralDark.line,
-                dashed: false,
+                dashed: true,
                 borderWidth: 1,
                 fillOpacity: 0.35
             };

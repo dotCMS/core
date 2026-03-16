@@ -1,23 +1,21 @@
 <div class="flex flex-col portlet-wrapper" data-testid="analytics-dashboard">
-    <div class="header-container p-4 py-6">
-        @if ($showMessage()) {
-            <div class="pb-3">
-                <p-message
-                    severity="info"
-                    [closable]="true"
-                    (onClose)="onCloseMessage()"
-                    data-testid="analytics-message">
-                    <div class="flex items-center gap-2">
-                        <i class="pi pi-info-circle"></i>
-                        <span data-testid="message-content">
-                            {{ 'analytics.feature.state' | dm }}
-                            <b>{{ 'development' | dm }}</b>
-                        </span>
-                    </div>
-                </p-message>
+    @if ($showMessage()) {
+        <p-message
+            severity="info"
+            [closable]="true"
+            (onClose)="onCloseMessage()"
+            data-testid="analytics-message">
+            <div class="flex items-center gap-2">
+                <i class="pi pi-info-circle"></i>
+                <span data-testid="message-content">
+                    {{ 'analytics.feature.state' | dm }}
+                    <b>{{ 'development' | dm }}</b>
+                </span>
             </div>
-        }
+        </p-message>
+    }
 
+    <div class="header-container p-4 py-6">
         <div class="flex justify-between items-center">
             <dot-analytics-filters
                 [timeRange]="store.timeRange()"
@@ -32,7 +30,7 @@
         </div>
     </div>
 
-    <div class="px-4">
+    <div class="dashboard-content px-4">
         <!-- Tabs -->
         <p-tabs [lazy]="true" [value]="store.currentTab()" (valueChange)="onTabChange($event)">
             <p-tablist>

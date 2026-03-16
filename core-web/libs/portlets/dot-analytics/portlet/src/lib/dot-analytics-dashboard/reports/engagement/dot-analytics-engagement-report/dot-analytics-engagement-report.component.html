@@ -1,6 +1,7 @@
 <div class="engagement-dashboard flex flex-col gap-10">
     @let kpis = $kpis();
     @let kpisStatus = $kpisStatus();
+    @let comparisonLabel = $comparisonLabel();
 
     <div class="engagement-dashboard__top-row">
         <dot-analytics-metric
@@ -9,6 +10,7 @@
             [value]="(kpis?.engagementRate?.value ?? '') + (kpis?.engagementRate?.value ? '%' : '')"
             [trend]="kpis?.engagementRate?.trend ?? 0"
             [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
+            [comparisonLabel]="comparisonLabel"
             [status]="kpisStatus">
             <i
                 titleAction
@@ -28,18 +30,21 @@
             [title]="'analytics.engagement.metrics.avg-interactions'"
             [value]="kpis?.avgInteractions?.value ?? ''"
             [trend]="kpis?.avgInteractions?.trend ?? 0"
+            [comparisonLabel]="comparisonLabel"
             icon="pi-bullseye"
             [status]="kpisStatus" />
         <dot-analytics-metric
             [title]="'analytics.engagement.metrics.avg-session-time'"
             [value]="kpis?.avgSessionTime?.value ?? ''"
             [trend]="kpis?.avgSessionTime?.trend ?? 0"
+            [comparisonLabel]="comparisonLabel"
             icon="pi-clock"
             [status]="kpisStatus" />
         <dot-analytics-metric
             [title]="'analytics.engagement.metrics.total-sessions'"
             [value]="kpis?.totalSessions?.value ?? ''"
             [trend]="kpis?.totalSessions?.trend ?? 0"
+            [comparisonLabel]="comparisonLabel"
             icon="pi-bullseye"
             [status]="kpisStatus" />
     </div>

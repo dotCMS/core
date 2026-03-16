@@ -108,6 +108,22 @@ export interface SparklineDataset {
                     </div>
                 }
             </div>
+            @if ($legendItems().length > 1) {
+                <div class="sparkline-legend" data-testid="sparkline-legend">
+                    @for (item of $legendItems(); track item.label) {
+                        <div class="sparkline-legend__item">
+                            <span
+                                class="sparkline-legend__line"
+                                [class.sparkline-legend__line--dashed]="item.dashed"
+                                [style.background]="item.dashed ? 'transparent' : item.color"
+                                [style.border-color]="
+                                    item.dashed ? item.color : 'transparent'
+                                "></span>
+                            <span class="sparkline-legend__label">{{ item.label }}</span>
+                        </div>
+                    }
+                </div>
+            }
         }
     `,
     styles: `
@@ -182,6 +198,36 @@ export interface SparklineDataset {
             border-radius: 50%;
             flex-shrink: 0;
         }
+
+        .sparkline-legend {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding-top: 0.5rem;
+        }
+
+        .sparkline-legend__item {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .sparkline-legend__line {
+            display: inline-block;
+            width: 1.25rem;
+            height: 2px;
+            border-radius: 1px;
+        }
+
+        .sparkline-legend__line--dashed {
+            background: transparent !important;
+            border-top: 2px dashed;
+        }
+
+        .sparkline-legend__label {
+            font-size: 0.75rem;
+            color: var(--p-gray-500, #6b7280);
+        }
     `
 })
 export class DotAnalyticsSparklineComponent {
@@ -233,6 +279,20 @@ export class DotAnalyticsSparklineComponent {
     protected readonly $isLoading = computed(() => {
         const status = this.$status();
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Legend items derived from datasets (label, color, dashed) */
+    protected readonly $legendItems = computed(() => {
+        const datasets = this.$datasets();
+        if (!datasets?.length) return [];
+
+        return datasets
+            .filter((ds) => !!ds.label)
+            .map((ds) => ({
+                label: ds.label ?? '',
+                color: ds.color ?? this.$color(),
+                dashed: ds.dashed ?? false
+            }));
     });
 
     /** Whether there is no data to display */

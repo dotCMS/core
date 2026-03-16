@@ -46,6 +46,9 @@ export class DotAnalyticsMetricComponent {
     /** Trend value (percentage) for the metric */
     readonly $trend = input<number | undefined>(undefined, { alias: 'trend' });
 
+    /** Comparison label displayed next to the trend (e.g., "from previous 7 days") */
+    readonly $comparisonLabel = input<string>('', { alias: 'comparisonLabel' });
+
     /** Component status for loading/error states */
     readonly $status = input<keyof typeof ComponentStatus>(ComponentStatus.INIT, {
         alias: 'status'
