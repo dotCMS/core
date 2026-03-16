@@ -510,7 +510,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.#insertPageContent();
+        if (this.iframe?.nativeElement) {
+            this.handleInlineScripts(this.uveStore.$enableInlineEdit());
+        }
+
         this.#setSeoData();
 
         if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
@@ -726,27 +729,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 this.uveStore.savePage(pageContainers);
             }
         });
-    }
-
-    /**
-     * Sets up the iframe content for traditional (VTL) pages.
-     *
-     * NOTE: The `dot-uve.js` editor script is intentionally NOT injected here.
-     * It is now included by the backend directly in `entity.page.rendered`
-     * (see PR #34927). Do not re-add script injection on the frontend.
-     *
-     * @memberof EditEmaEditorComponent
-     */
-    #insertPageContent(): void {
-        const iframeElement = this.iframe?.nativeElement;
-
-        if (!iframeElement) {
-            return;
-        }
-
-        const enableInlineEdit = this.uveStore.$enableInlineEdit();
-
-        this.handleInlineScripts(enableInlineEdit);
     }
 
     /**
