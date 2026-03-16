@@ -80,12 +80,10 @@ jobs:
           )
         )
       )
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
     with:
       trigger_mode: interactive
-      allowed_tools: |
-        Bash(git status)
-        Bash(git diff)
+      claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
       timeout_minutes: 15
       runner: ubuntu-latest
       enable_mention_detection: true  # Uses built-in @claude mention detection
@@ -110,14 +108,12 @@ jobs:
       !contains(github.event.pull_request.body, '@claude') &&
       !contains(github.event.pull_request.body, '@Claude') &&
       !contains(github.event.pull_request.body, '@CLAUDE')
-    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
     with:
       trigger_mode: automatic
-      direct_prompt: |
+      prompt: |
         Review this PR. Flag anything that looks wrong, risky, or worth a second look: bad assumptions, missing edge cases, design problems, security issues. Skip praise. If it is clean, say so in one line.
-      allowed_tools: |
-        Bash(git status)
-        Bash(git diff)
+      claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
       timeout_minutes: 15
       runner: ubuntu-latest
       enable_mention_detection: false

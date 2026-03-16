@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -24,7 +24,7 @@ import {
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebService, DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona, DotSystemConfig } from '@dotcms/dotcms-models';
 import {
     cleanUpDialog,
@@ -152,7 +152,11 @@ describe('DotPersonaSelectorComponent', () => {
             DotWorkflowActionsFireService,
             ConfirmationService,
             DotAlertConfirmService,
-            DotEventsService
+            DotEventsService,
+            {
+                provide: DotcmsEventsService,
+                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
+            }
         ],
         detectChanges: false
     });
