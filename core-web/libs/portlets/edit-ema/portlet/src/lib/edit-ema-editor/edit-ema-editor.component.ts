@@ -111,7 +111,6 @@ import {
     getDragItemData,
     getHrefFromClickTarget,
     getTargetUrl,
-    injectBaseTag,
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
