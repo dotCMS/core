@@ -771,35 +771,17 @@ public class DbConnectionFactory {
      * @param <T> the return type of the operation
      * @return the result of the operation
      * @throws DotDataException if a database error occurs
-     * @see com.dotmarketing.db.CloseDBIfOpened
+     * @see com.dotcms.business.CloseDBIfOpened
      * @see com.dotmarketing.db.LocalTransaction#wrapReturn
      */
     public static <T> T wrapConnection(final com.dotcms.util.ReturnableDelegate<T> delegate) throws DotDataException {
-        final boolean isNewConnection = !connectionExists();
-
         try {
-            return delegate.execute();
-        } catch (final Throwable e) {
-            if (e instanceof DotDataException) {
-                throw (DotDataException) e;
-            }
+            return com.dotcms.business.interceptor.CloseDBIfOpenedHandler
+                    .wrapConnection(delegate::execute);
+        } catch (DotDataException e) {
+            throw e;
+        } catch (Exception e) {
             throw new DotDataException("Error executing operation with connection", e);
-        } finally {
-            if (isNewConnection && connectionExists()) {
-                // Preserve interrupted status but ensure connection cleanup completes
-                // This prevents orphaned connections when timeout fires during cleanup
-                final boolean wasInterrupted = Thread.interrupted();
-                try {
-                    Logger.debug(DbConnectionFactory.class,
-                        "Closing connection opened by wrapConnection()");
-                    closeSilently();
-                } finally {
-                    // Restore interrupted flag after cleanup
-                    if (wasInterrupted) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-            }
         }
     }
 
