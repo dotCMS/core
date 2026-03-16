@@ -111,6 +111,7 @@ import {
     getDragItemData,
     getHrefFromClickTarget,
     getTargetUrl,
+    injectBaseTag,
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
@@ -510,10 +511,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        if (this.iframe?.nativeElement) {
-            this.handleInlineScripts(this.uveStore.$enableInlineEdit());
-        }
-
+        this.#insertPageContent();
         this.#setSeoData();
 
         if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
@@ -564,6 +562,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * Inject the editor page script and styles to the VTL content
+     *
+     * @private
+     * @param {string} html
+     * @return {*}  {string}
+     * @memberof EditEmaEditorComponent
+     */
+    private inyectCodeToVTL(html: string): string {
+        const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
+        const origin = this.window.location.origin;
+        const fileWithBase = injectBaseTag({ html, url, origin });
+        return this.addCustomStyles(fileWithBase);
     }
 
     ngOnDestroy(): void {
@@ -729,6 +742,37 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 this.uveStore.savePage(pageContainers);
             }
         });
+    }
+
+    /**
+     *
+     * Sets the content of the iframe with the provided code.
+     * @param code - The code to be added to the iframe.
+     * @memberof EditEmaEditorComponent
+     */
+    #insertPageContent(): void {
+        const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement) {
+            return;
+        }
+
+        const doc = iframeElement.contentDocument;
+
+        const enableInlineEdit = this.uveStore.$enableInlineEdit();
+        const pageRender = this.uveStore.$pageRender();
+
+        const newDoc = this.inyectCodeToVTL(pageRender);
+
+        if (!doc) {
+            return;
+        }
+
+        doc.open();
+        doc.write(newDoc);
+        doc.close();
+
+        this.handleInlineScripts(enableInlineEdit);
     }
 
     /**
