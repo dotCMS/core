@@ -215,8 +215,8 @@ export class DotRelationshipFieldComponent
 
         const contentType = this.store.contentType();
 
-        // Don't open dialog if contentTypeId is null (invalid field data)
-        if (!contentType.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data)
+        if (!contentType?.id) {
             return;
         }
 

@@ -385,6 +385,8 @@ describe('RelationshipFieldStore', () => {
 });
 
 describe('RelationshipFieldStore - Instance Isolation', () => {
+    afterEach(() => TestBed.resetTestingModule());
+
     const mockContentType = {
         id: 'test-content-type',
         name: 'Test Content Type',
