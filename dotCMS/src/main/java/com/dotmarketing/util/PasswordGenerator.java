@@ -91,7 +91,7 @@ public class PasswordGenerator {
      */
     String combineCharsets(final List<Charset> charsets) {
         return String.join("",
-                charsets.stream().map(charset -> charset.chars).collect(Collectors.toSet()));
+                charsets.stream().map(charset -> charset.chars).collect(Collectors.toList()));
     }
 
     /**
