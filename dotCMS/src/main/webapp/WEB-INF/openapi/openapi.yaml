@@ -721,7 +721,7 @@ paths:
         \ lock status and lock owner details. Parameters are passed as semicolon-delimited\
         \ path segments (e.g., id:abc123/language:1). This endpoint is deprecated\
         \ - use the v1 ContentResource canLockContent endpoint instead."
-      operationId: canLockContent
+      operationId: canLockContentLegacy
       parameters:
       - description: "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)"
         in: path
@@ -880,7 +880,7 @@ paths:
         \ concurrent edits. Parameters are passed as semicolon-delimited path segments\
         \ (e.g., id:abc123/language:1). This endpoint is deprecated - use the v1 ContentResource\
         \ lockContent endpoint instead."
-      operationId: lockContent
+      operationId: lockContentLegacy
       parameters:
       - description: "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)"
         in: path
@@ -919,7 +919,7 @@ paths:
         \ identifier. Parameters are passed as semicolon-delimited path segments (e.g.,\
         \ id:abc123/language:1). This endpoint is deprecated - use the v1 ContentResource\
         \ unlockContent endpoint instead."
-      operationId: unlockContent
+      operationId: unlockContentLegacy
       parameters:
       - description: "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)"
         in: path
@@ -962,7 +962,7 @@ paths:
         \ identifiers, 1 returns full related content objects, 2 returns related content\
         \ with their related identifiers, 3 returns related content with their fully\
         \ hydrated related content."
-      operationId: getContent
+      operationId: getContentLegacy
       parameters:
       - description: "Slash-delimited key:value parameters (e.g., inode:abc123/live:true/language:1)"
         in: path
@@ -5619,7 +5619,7 @@ paths:
     get:
       description: Checks if the contentlet specified by its inode or identifier can
         be locked by the current user.
-      operationId: canLockContent_1
+      operationId: canLockContent
       parameters:
       - description: Contentlet inode or identifier
         in: path
@@ -6255,7 +6255,7 @@ paths:
     put:
       description: "If the user is allowed to lock the contentlet specified by its\
         \ inode or identifier, the contentlet will be locked."
-      operationId: lockContent_1
+      operationId: lockContent
       parameters:
       - description: Contentlet inode or identifier
         in: path
@@ -6385,7 +6385,7 @@ paths:
     put:
       description: "If the user is allowed to unlock the contentlet specified by its\
         \ inode or identifier, the contentlet will be unlocked."
-      operationId: unlockContent_1
+      operationId: unlockContent
       parameters:
       - description: Contentlet inode or identifier
         in: path
@@ -6918,7 +6918,7 @@ paths:
       description: "Returns a single contentlet based on its identifier or inode.\
         \ This is the primary endpoint for fetching content data with support for\
         \ language, variants, and relationship depth."
-      operationId: getContent_2
+      operationId: getContent_1
       parameters:
       - description: Contentlet identifier or inode
         in: path
@@ -7008,7 +7008,7 @@ paths:
       description: "Retrieves content with relationships based on query parameters,\
         \ identifier, or inode. This endpoint is deprecated - use /v1/content with\
         \ depth parameter instead."
-      operationId: getContent_1
+      operationId: getContent
       parameters:
       - description: "Query parameters, identifier, or inode for content lookup"
         in: path

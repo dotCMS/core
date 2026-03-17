@@ -408,7 +408,7 @@ public class ContentResource {
      * @throws JSONException
      */
     @Operation(
-            operationId = "lockContent",
+            operationId = "lockContentLegacy",
             summary = "Lock a contentlet (deprecated)",
             description = "Locks a contentlet identified by inode or identifier to prevent concurrent edits. " +
                     "Parameters are passed as semicolon-delimited path segments (e.g., id:abc123/language:1). " +
@@ -515,7 +515,7 @@ public class ContentResource {
      * @throws JSONException
      */
     @Operation(
-            operationId = "canLockContent",
+            operationId = "canLockContentLegacy",
             summary = "Check if a contentlet can be locked (deprecated)",
             description = "Checks whether the current user can lock a contentlet identified by inode or identifier. " +
                     "Returns lock capability information including current lock status and lock owner details. " +
@@ -639,7 +639,7 @@ public class ContentResource {
      * @throws JSONException
      */
     @Operation(
-            operationId = "unlockContent",
+            operationId = "unlockContentLegacy",
             summary = "Unlock a contentlet (deprecated)",
             description = "Unlocks a previously locked contentlet identified by inode or identifier. " +
                     "Parameters are passed as semicolon-delimited path segments (e.g., id:abc123/language:1). " +
@@ -748,7 +748,7 @@ public class ContentResource {
      *         null --> Relationships will not be sent in the response
      */
     @Operation(
-            operationId = "getContent",
+            operationId = "getContentLegacy",
             summary = "Retrieve content by ID, inode, query, or related content",
             description = "Retrieves contentlets using various lookup strategies. Parameters use a " +
                     "slash-delimited key:value format in the URL path (e.g., " +
