@@ -29,7 +29,7 @@ export const DEFAULT_IFRAME_DOC_HEIGHT = 800;
 
 export const DEFAULT_IFRAME_DOC_WIDTH = 1520;
 
-export const DEFAULT_VIEW_ZOOM_LEVEL = 1;
+export const DEFAULT_VIEW_ZOOM_LEVEL = 100;
 
 export const COMMON_ERRORS: CommonErrorsInfo = {
     [CommonErrors.NOT_FOUND]: {

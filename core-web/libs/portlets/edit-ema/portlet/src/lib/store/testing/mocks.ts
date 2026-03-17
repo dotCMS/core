@@ -31,7 +31,7 @@ export const BASE_UVE_STATE: UVEState = {
     viewSocialMedia: null,
     viewParams: null,
     viewOgTagsResults: null,
-    viewZoomLevel: 1,
+    viewZoomLevel: 100,
     viewZoomIframeDocHeight: 0
 };
 

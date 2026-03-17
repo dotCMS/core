@@ -118,15 +118,16 @@ export function withView() {
                 return isEditMode && isDefaultVariant;
             }),
 
-            // Zoom state accessors
-            $viewZoomLevel: computed(() => store.viewZoomLevel()),
+            // Zoom state accessors — viewZoomLevel is stored as integer percentage (10–300);
+            // $viewZoomLevel exposes the CSS scale factor (0.1–3.0) for transforms.
+            $viewZoomLevel: computed(() => store.viewZoomLevel() / 100),
             $viewIframeDocHeight: computed(
                 () => store.viewZoomIframeDocHeight() || DEFAULT_IFRAME_DOC_HEIGHT
             ),
 
             // Canvas styles for zoom transform
             $viewCanvasOuterStyles: computed(() => {
-                const zoom = store.viewZoomLevel();
+                const zoom = store.viewZoomLevel() / 100;
                 const height = store.viewZoomIframeDocHeight();
                 return {
                     width: `${DEFAULT_IFRAME_DOC_WIDTH * zoom}px`,
@@ -134,7 +135,7 @@ export function withView() {
                 };
             }),
             $viewCanvasInnerStyles: computed(() => {
-                const zoom = store.viewZoomLevel();
+                const zoom = store.viewZoomLevel() / 100;
                 const height = store.viewZoomIframeDocHeight();
                 return {
                     width: `${DEFAULT_IFRAME_DOC_WIDTH}px`,
@@ -206,42 +207,40 @@ export function withView() {
 
             // Zoom methods
             /**
-             * Increase zoom level by 0.1 (max 3.0)
+             * Increase zoom level by 10% (max 300%)
              */
             viewZoomIn(): void {
-                const currentZoom = store.viewZoomLevel();
-                const newZoom = Math.max(0.1, Math.min(3, currentZoom + 0.1));
+                const newZoom = Math.max(10, Math.min(300, store.viewZoomLevel() + 10));
                 patchState(store, { viewZoomLevel: newZoom });
             },
 
             /**
-             * Decrease zoom level by 0.1 (min 0.1)
+             * Decrease zoom level by 10% (min 10%)
              */
             viewZoomOut(): void {
-                const currentZoom = store.viewZoomLevel();
-                const newZoom = Math.max(0.1, Math.min(3, currentZoom - 0.1));
+                const newZoom = Math.max(10, Math.min(300, store.viewZoomLevel() - 10));
                 patchState(store, { viewZoomLevel: newZoom });
             },
 
             /**
-             * Reset zoom level to 1.0 (100%)
+             * Reset zoom level to 100%
              */
             viewZoomReset(): void {
-                patchState(store, { viewZoomLevel: 1 });
+                patchState(store, { viewZoomLevel: 100 });
             },
 
             /**
              * Get formatted zoom label for display (e.g., "150%")
              */
             viewZoomLabel(): string {
-                return `${Math.round(store.viewZoomLevel() * 100)}%`;
+                return `${store.viewZoomLevel()}%`;
             },
 
             /**
-             * Set zoom level directly (clamped between 0.1 and 3.0)
+             * Set zoom level directly as integer percentage (clamped between 10 and 300)
              */
             viewZoomSetLevel(viewZoomLevel: number): void {
-                const clampedZoom = Math.max(0.1, Math.min(3, viewZoomLevel));
+                const clampedZoom = Math.max(10, Math.min(300, viewZoomLevel));
                 patchState(store, { viewZoomLevel: clampedZoom });
             },
 
