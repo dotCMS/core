@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
@@ -20,6 +21,13 @@ public class NumberContentsDataFetcher extends RedirectAwareDataFetcher<Integer>
     @Override
     public Integer safeGet(final DataFetchingEnvironment environment, final DotGraphQLContext context) throws Exception {
         try {
+            final String pageModeAsString = (String) context.getParam("pageMode");
+            final PageMode pageMode = PageMode.get(pageModeAsString);
+
+            if (pageMode != PageMode.EDIT_MODE) {
+                return null;
+            }
+
             final Contentlet page = environment.getSource();
             Logger.debug(this, () -> "Fetching numberContents for page: " + page.getIdentifier());
 
@@ -38,15 +46,23 @@ public class NumberContentsDataFetcher extends RedirectAwareDataFetcher<Integer>
                 return 0;
             }
 
-            // Step 2: count unique contentlets that exist in the requested language (cache-backed)
+            // Step 2: count placements that exist in the requested language (cache-backed).
+            // No deduplication — mirrors PageView.getContentsNumber() which counts each placement
+            // independently (same contentlet in two containers = 2).
             final String languageIdParam = (String) context.getParam("languageId");
-            final long langId = UtilMethods.isSet(languageIdParam)
-                    ? Long.parseLong(languageIdParam)
-                    : APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            long resolvedLangId;
+            try {
+                resolvedLangId = UtilMethods.isSet(languageIdParam)
+                        ? Long.parseLong(languageIdParam)
+                        : APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            } catch (final NumberFormatException e) {
+                Logger.warn(this, "Invalid languageId param '" + languageIdParam + "' — using default language");
+                resolvedLangId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            }
+            final long langId = resolvedLangId;
 
             return (int) multiTrees.stream()
                     .map(MultiTree::getContentlet)
-                    .distinct()
                     .filter(id -> APILocator.getVersionableAPI()
                             .getContentletVersionInfo(id, langId)
                             .isPresent())
