@@ -188,9 +188,7 @@ export function withWorkflow() {
                         return pageRequest.pipe(
                             switchMap((response) => {
                                 const pageResponse =
-                                    'pageAsset' in response
-                                        ? response
-                                        : { pageAsset: response };
+                                    'pageAsset' in response ? response : { pageAsset: response };
 
                                 const content =
                                     'content' in pageResponse
