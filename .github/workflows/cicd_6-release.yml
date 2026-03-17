@@ -75,9 +75,6 @@ jobs:
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
-    # Release builds everything - no change detection needed
-    with:
-      change-detection: 'disabled'
 
   # Release Prepare - validates version, creates release branch, sets version
   release-prepare:
