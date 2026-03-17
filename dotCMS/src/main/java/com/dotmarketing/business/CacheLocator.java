@@ -9,6 +9,7 @@ import com.dotcms.cache.KeyValueCacheImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.content.index.opensearch.OSQueryCache;
 import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
@@ -307,6 +308,10 @@ public class CacheLocator extends Locator<CacheIndex>{
         return (ESQueryCache) getInstance(CacheIndex.ESQueryCache);
     }
 
+    public static OSQueryCache getOSQueryCache() {
+        return (OSQueryCache) getInstance(CacheIndex.OSQueryCache);
+    }
+
 	public static GraphQLCache getGraphQLCache() {
 		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
 	}
@@ -486,6 +491,7 @@ enum CacheIndex
 	ApiTokenCache("ApiTokenCache"),
 	PortletCache("PortletCache"),
 	ESQueryCache("ESQueryCache"),
+    OSQueryCache("OSQueryCache"),
 	KeyValueCache("Key/Value Cache"),
 	AppsCache("Apps"),
 	GraphQLSchemaCache("GraphQLSchemaCache"),
@@ -546,6 +552,7 @@ enum CacheIndex
 	      	case PortletCache : return new PortletCache();
 			case AppsCache: return new AppsCacheImpl();
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
+            case OSQueryCache: return new OSQueryCache();
 	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
 			case Metadata: return new MetadataCacheImpl();
 			case GraphQLCache: return new GraphQLCache();

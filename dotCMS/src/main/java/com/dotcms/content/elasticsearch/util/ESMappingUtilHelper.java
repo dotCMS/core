@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
 public class ESMappingUtilHelper {
 
     private ContentTypeAPI contentTypeAPI;
-    private ContentIndexMappingAPI esMappingAPI;
+    private ContentIndexMappingAPI mappingAPI;
     private RelationshipAPI relationshipAPI;
 
     private static class SingletonHolder {
@@ -81,7 +81,7 @@ public class ESMappingUtilHelper {
 
     private ESMappingUtilHelper() {
         contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-        esMappingAPI = APILocator.getContentMappingAPI();
+        mappingAPI = APILocator.getContentMappingAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
     }
 
@@ -160,7 +160,7 @@ public class ESMappingUtilHelper {
                     final String message =
                             "Error updating index mapping for relationship " + relationshipName
                                     + ". This custom mapping will be ignored for index(es) "
-                                    + Arrays.stream(indexes).collect(Collectors.joining(","));
+                                    + String.join(",", indexes);
                     Logger.warn(ESMappingUtilHelper.class, message, e);
                 }
             }
@@ -183,7 +183,7 @@ public class ESMappingUtilHelper {
                                 + "\"type\":  \"keyword\",\n"
                                 + "\"ignore_above\": 8191\n"
                                 + "}")));
-        esMappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString());
+        mappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString());
     }
 
     /**
@@ -455,7 +455,7 @@ public class ESMappingUtilHelper {
                         .put("properties", mappingForFields));
 
         properties.put("properties", jsonObject);
-        esMappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString());
+        mappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString());
     }
 
 

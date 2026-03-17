@@ -1,7 +1,10 @@
 package com.dotcms.content.index.opensearch;
 
 import com.dotcms.cdi.CDIUtils;
+import com.dotcms.content.elasticsearch.business.ContentletIndexOperationsES;
 import com.dotcms.content.index.ContentletIndexOperations;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.ImmutableIndexBulkItemResult;
 import com.dotcms.content.index.domain.IndexBulkItemResult;
@@ -43,12 +46,18 @@ import org.opensearch.client.opensearch.core.bulk.IndexOperation;
  * @author Fabrizio Araya
  * @see ContentletIndexOperationsES
  */
+@ApplicationScoped
 public class ContentletIndexOperationsOS implements ContentletIndexOperations {
 
-    private final OSClientProvider clientProvider;
+    @Inject
+    private OSClientProvider clientProvider;
 
+    /**
+     * No-arg constructor required by CDI for proxy creation.
+     * {@code clientProvider} is injected via field injection after construction.
+     */
     public ContentletIndexOperationsOS() {
-        this(CDIUtils.getBeanThrows(OSClientProvider.class));
+        // CDI no-arg constructor
     }
 
     /** Package-private constructor for testing. */
