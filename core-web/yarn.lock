@@ -11525,6 +11525,11 @@ dagre-d3-es@7.0.13:
     d3 "^7.9.0"
     lodash-es "^4.17.21"
 
+daisyui@5.5.19:
+  version "5.5.19"
+  resolved "https://registry.npmjs.org/daisyui/-/daisyui-5.5.19.tgz#9aa962243c32c39d8e8f3eb187e48092bcd186fc"
+  integrity sha512-pbFAkl1VCEh/MPCeclKL61I/MqRIFFhNU7yiXoDDRapXN4/qNCoMxeCCswyxEEhqL5eiTTfwHvucFtOE71C9sA==
+
 damerau-levenshtein@^1.0.4, damerau-levenshtein@^1.0.8:
   version "1.0.8"
   resolved "https://registry.npmjs.org/damerau-levenshtein/-/damerau-levenshtein-1.0.8.tgz#b43d286ccbd36bc5b2f7ed41caf2d0aba1f8a6e7"
