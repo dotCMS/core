@@ -3487,6 +3487,30 @@ describe('EditEmaEditorComponent', () => {
                         });
                     });
                 });
+
+                describe('when pageRender is undefined', () => {
+                    beforeEach(() => {
+                        jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                            of({
+                                ...MOCK_RESPONSE_VTL,
+                                page: { ...MOCK_RESPONSE_VTL.page, rendered: undefined }
+                            })
+                        );
+                        store.loadPageAsset({ url: 'index', clientHost: null });
+                    });
+
+                    it('should not write to the iframe document', () => {
+                        spectator.detectChanges();
+
+                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
+
+                        iframe.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
+                        expect(spyWrite).not.toHaveBeenCalled();
+                    });
+                });
             });
 
             describe('inline editing', () => {
