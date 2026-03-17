@@ -97,31 +97,83 @@ public class PasswordGeneratorTest {
     }
 
     /**
-     * A generator built with extractCharset + extractMinLength from the default pattern must
-     * produce passwords whose length is at least the pattern minimum and that contain only
-     * characters accepted by the backend validation pattern.
+     * extractCharClass should return the raw [CharClass] token from the default pattern.
      */
     @Test
-    public void Test_Generate_Password_With_RegExp_Pattern_Only_Contains_Allowed_Chars() {
+    public void Test_ExtractCharClass_Returns_Char_Class_For_Default_Pattern() {
+        final String charClass = PasswordGenerator.Builder.extractCharClass(DEFAULT_REGEXP_PATTERN);
+        assertNotNull(charClass);
+        assertTrue("Char class must start with '['", charClass.startsWith("["));
+        assertTrue("Char class must end with ']'", charClass.endsWith("]"));
+        // '?' must survive extraction — it was the root cause of issue #34616
+        assertTrue("'?' must be in the char class", charClass.contains("?"));
+    }
+
+    /**
+     * extractCharClass should return null for null, empty, or complex lookahead patterns.
+     */
+    @Test
+    public void Test_ExtractCharClass_Returns_Null_For_Invalid_Or_Complex_Patterns() {
+        assertNull(PasswordGenerator.Builder.extractCharClass(null));
+        assertNull(PasswordGenerator.Builder.extractCharClass(""));
+        assertNull(PasswordGenerator.Builder.extractCharClass(
+                "/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/"));
+    }
+
+    /**
+     * withFilteredValues() must produce passwords that:
+     * - contain at least one character from each default group (special, upper, lower, digit)
+     * - contain ONLY characters from the allowed set
+     * - are 16 characters long (default length)
+     */
+    @Test
+    public void Test_WithFilteredValues_Produces_Strong_Passwords_Within_Allowed_Set() {
         final String allowedChars = PasswordGenerator.Builder.extractCharset(DEFAULT_REGEXP_PATTERN);
         assertNotNull(allowedChars);
 
-        final int minLength = PasswordGenerator.Builder.extractMinLength(DEFAULT_REGEXP_PATTERN);
-        assertEquals("Default pattern minimum length should be 8", 8, minLength);
-
-        // Simulate withRegExpToolkitValues(): honour the minimum length from the pattern
-        final int effectiveLength = Math.max(16, minLength);
         final PasswordGenerator generator = new PasswordGenerator.Builder()
-                .charset(allowedChars, 0).build();
+                .withFilteredValues(allowedChars).build();
 
+        // Backend validator: only chars from the default pattern are allowed
         final Pattern validator = Pattern.compile(
                 "^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$");
 
+        // Per-group patterns — filtered defaults must still land at least one char per group
+        final Pattern hasSpecial   = Pattern.compile("[" + SPECIAL_CHARS + "]");
+        final Pattern hasUpper     = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasLower     = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasDigit     = Pattern.compile("[" + NUMBER_CHARS + "]");
+
         for (int i = 0; i < 100; i++) {
             final String password = generator.nextPassword();
-            assertEquals(effectiveLength, password.length());
-            assertTrue("Password must match the backend pattern: " + password,
+            assertEquals("Password must be 16 chars", 16, password.length());
+            assertTrue("Password must match backend pattern: " + password,
                     validator.matcher(password).matches());
+            assertTrue("Password must contain at least one special char", hasSpecial.matcher(password).find());
+            assertTrue("Password must contain at least one uppercase letter", hasUpper.matcher(password).find());
+            assertTrue("Password must contain at least one lowercase letter", hasLower.matcher(password).find());
+            assertTrue("Password must contain at least one digit", hasDigit.matcher(password).find());
+        }
+    }
+
+    /**
+     * withFilteredValues() must remove characters not permitted by the allowed set.
+     * When the allowed set excludes all of a group's chars the group is simply omitted
+     * rather than causing an error.
+     */
+    @Test
+    public void Test_WithFilteredValues_Removes_Disallowed_Chars() {
+        // Allow only lowercase letters — special chars, uppercase and digits are excluded
+        final String onlyLower = LOWER_CASE_LETTERS_CHARS;
+
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withFilteredValues(onlyLower).build();
+
+        final Pattern onlyLowerPattern = Pattern.compile("^[a-z]+$");
+        for (int i = 0; i < 50; i++) {
+            final String password = generator.nextPassword();
+            assertTrue("Password must contain only lowercase letters: " + password,
+                    onlyLowerPattern.matcher(password).matches());
         }
     }
 
