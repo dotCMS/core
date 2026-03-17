@@ -29,6 +29,7 @@ import {
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { monacoMock } from '@dotcms/utils-testing';
 
@@ -182,23 +183,25 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     },
     [FIELD_TYPES.JSON]: {
         component: DotEditContentJsonFieldComponent,
-        imports: [ReactiveFormsModule, MonacoEditorModule],
+        imports: [
+            ReactiveFormsModule,
+            MonacoEditorModule,
+            MockComponent(DotLanguageVariableSelectorComponent),
+            MockComponent(DotEditContentMonacoEditorControlComponent)
+        ],
         providers: [
             mockProvider(DotMessageDisplayService),
             { provide: MonacoEditorLoaderService, useValue: { isMonacoLoaded$: of(true) } }
-        ],
-        declarations: [
-            MockComponent(DotLanguageVariableSelectorComponent),
-            MockComponent(DotEditContentMonacoEditorControlComponent)
         ]
     },
     [FIELD_TYPES.KEY_VALUE]: {
         component: DotEditContentKeyValueComponent,
-        declarations: [MockComponent(DotKeyValueComponent)],
+        imports: [MockComponent(DotKeyValueComponent)],
         providers: [mockProvider(DotMessageDisplayService)]
     },
     [FIELD_TYPES.WYSIWYG]: {
         component: DotEditContentWYSIWYGFieldComponent,
+        imports: [MockComponent(EditorComponent)],
         providers: [
             {
                 provide: DotFileFieldUploadService,
@@ -214,8 +217,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                     showSidebar: signal(false)
                 }
             }
-        ],
-        declarations: [MockComponent(EditorComponent)]
+        ]
     },
     [FIELD_TYPES.CATEGORY]: {
         component: DotEditContentCategoryFieldComponent
@@ -253,7 +255,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     let spectator: Spectator<DotEditContentFieldComponent>;
 
     const createComponent = createComponentFactory({
-        imports: [...(fieldTestBed?.imports || [])],
+        imports: [DotEditContentFieldComponent, ...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
         providers: [
@@ -261,6 +263,15 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             provideHttpClient(),
             provideHttpClientTesting(),
             ...(fieldTestBed?.providers || []),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -298,10 +309,12 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     });
 
     beforeEach(async () => {
+        const extraProps = fieldTestBed?.props;
+        const propsObject = Array.isArray(extraProps) ? (extraProps[0] ?? {}) : (extraProps ?? {});
         spectator = createComponent({
             props: {
                 field: fieldMock,
-                ...(fieldTestBed?.props || {})
+                ...propsObject
             },
             providers: [
                 ...(fieldTestBed?.providers || []),
@@ -330,7 +343,8 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
         if (
             fieldMock.fieldType !== FIELD_TYPES.DATE &&
             fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
-            fieldMock.fieldType !== FIELD_TYPES.TIME
+            fieldMock.fieldType !== FIELD_TYPES.TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.BLOCK_EDITOR
         ) {
             it('should render the hint if present', () => {
                 spectator.detectChanges();
@@ -357,9 +371,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -509,9 +533,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -576,9 +610,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -642,9 +686,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -706,9 +760,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(

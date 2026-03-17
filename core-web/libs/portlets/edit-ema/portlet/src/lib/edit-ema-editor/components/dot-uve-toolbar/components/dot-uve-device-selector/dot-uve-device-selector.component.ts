@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit } f
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -24,12 +24,18 @@ import { Orientation } from '../../../../../store/models';
     selector: 'dot-uve-device-selector',
     imports: [ButtonModule, TooltipModule, DotMessagePipe, NgClass, MenuModule],
     templateUrl: './dot-uve-device-selector.component.html',
-    styleUrl: './dot-uve-device-selector.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex items-center gap-1 p-0'
+    }
 })
 export class DotUveDeviceSelectorComponent implements OnInit {
     #store = inject(UVEStore);
     #messageService = inject(DotMessageService);
+
+    /** Expose enum to template for explicit orientation checks. */
+    protected readonly Orientation = Orientation;
+
     $devices = input<DotDeviceListItem[]>([], {
         alias: 'devices'
     });
@@ -151,6 +157,20 @@ export class DotUveDeviceSelectorComponent implements OnInit {
                 ? Orientation.PORTRAIT
                 : Orientation.LANDSCAPE
         );
+    }
+
+    /**
+     * Menu items are actions (MenuItem.command), not navigations, so we render them as buttons.
+     * We also close the menu after executing the command.
+     */
+    onMoreMenuItemClick(event: MouseEvent, item: MenuItem, menu: Menu): void {
+        if (item.disabled || item.separator) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        item.command?.({ originalEvent: event, item });
+        menu.hide();
     }
 
     /**

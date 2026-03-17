@@ -327,4 +327,9 @@
 		<scope>request</scope>
 		<class>com.dotcms.analytics.viewtool.AnalyticsTool</class>
 	</tool>
+	<tool>
+		<key>googleAnalytics</key>
+		<scope>request</scope>
+		<class>com.dotcms.analytics.viewtool.GoogleAnalyticsTool</class>
+	</tool>
 </toolbox>

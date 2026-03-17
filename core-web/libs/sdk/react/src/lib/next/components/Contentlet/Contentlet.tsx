@@ -1,4 +1,4 @@
-import { useContext, useRef, useMemo } from 'react';
+import { useContext, useMemo, useRef } from 'react';
 
 import { DotCMSBasicContentlet } from '@dotcms/types';
 import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
@@ -7,6 +7,11 @@ import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
+
+/**
+ * CSS class name for contentlet elements
+ */
+export const CONTENTLET_CLASS = 'dotcms-contentlet';
 
 /**
  * @internal
@@ -56,13 +61,20 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
         () => (isDevMode ? { minHeight: haveContent ? undefined : '4rem' } : {}),
         [isDevMode, haveContent]
     );
+
+    // UVE attributes - always applied
     const dotAttributes = useMemo(
-        () => (isDevMode ? getDotContentletAttributes(contentlet, container) : {}),
-        [isDevMode, contentlet, container]
+        () => getDotContentletAttributes(contentlet, container),
+        [contentlet, container]
     );
 
     return (
-        <div {...dotAttributes} data-dot-object="contentlet" ref={ref} style={style}>
+        <div
+            {...dotAttributes}
+            data-dot-object="contentlet"
+            className={CONTENTLET_CLASS}
+            ref={ref}
+            style={style}>
             <CustomComponent contentlet={contentlet} />
         </div>
     );

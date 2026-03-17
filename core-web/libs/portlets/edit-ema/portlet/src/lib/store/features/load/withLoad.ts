@@ -3,7 +3,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
@@ -15,7 +15,7 @@ import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams } from '../../../shared/models';
-import { computeCanEditPage, computePageIsLocked, isForwardOrPage } from '../../../utils';
+import { isForwardOrPage } from '../../../utils';
 import { UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 import { withWorkflow } from '../workflow/withWorkflow';
@@ -64,12 +64,14 @@ export function withLoad() {
                 loadPageAsset: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
-                            if (!store.pageParams()) {
+                            const currentParams = untracked(() => store.pageParams());
+
+                            if (!currentParams) {
                                 return params as DotPageAssetParams;
                             }
 
                             return {
-                                ...store.pageParams(),
+                                ...currentParams,
                                 ...params
                             };
                         }),
@@ -148,17 +150,9 @@ export function withLoad() {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
-                                            const canEditPage = computeCanEditPage(
-                                                pageAsset?.page,
-                                                currentUser,
-                                                experiment
-                                            );
-
-                                            const pageIsLocked = computePageIsLocked(
-                                                pageAsset?.page,
-                                                currentUser
-                                            );
                                             const isTraditionalPage = !pageParams.clientHost;
+
+                                            store.addHistory({ pageAsset });
 
                                             patchState(store, {
                                                 pageAPIResponse: pageAsset,
@@ -166,8 +160,6 @@ export function withLoad() {
                                                 currentUser,
                                                 experiment,
                                                 languages,
-                                                canEditPage,
-                                                pageIsLocked,
                                                 isClientReady: isTraditionalPage,
                                                 isTraditionalPage,
                                                 status: UVE_STATUS.LOADED
@@ -198,12 +190,15 @@ export function withLoad() {
                             }
                         }),
                         switchMap(() => {
-                            const pageRequest = !store.graphql()
-                                ? dotPageApiService.get(store.pageParams())
-                                : dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
-                                      tap((response) => store.setGraphqlResponse(response)),
-                                      map((response) => response.pageAsset)
-                                  );
+                            const graphql = untracked(() => store.graphql());
+                            const pageRequest = !graphql
+                                ? dotPageApiService.get(untracked(() => store.pageParams()))
+                                : dotPageApiService
+                                      .getGraphQLPage(untracked(() => store.$graphqlWithParams()))
+                                      .pipe(
+                                          tap((response) => store.setGraphqlResponse(response)),
+                                          map((response) => response.pageAsset)
+                                      );
 
                             return pageRequest.pipe(
                                 tap((pageAPIResponse) => {

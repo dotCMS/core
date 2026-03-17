@@ -1,7 +1,9 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
+import { By } from '@angular/platform-browser';
+
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
 
 import { DotToolbarBtnOverlayComponent } from './dot-toolbar-btn-overlay.component';
 
@@ -11,7 +13,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotToolbarBtnOverlayComponent,
-        imports: [OverlayPanelModule, ButtonModule],
+        imports: [PopoverModule, ButtonModule],
         detectChanges: false
     });
 
@@ -77,7 +79,9 @@ describe('DotToolbarBtnOverlayComponent', () => {
 
             expect(button).toBeTruthy();
             expect(button).toHaveClass('overlay-btn');
-            expect(button?.getAttribute('ng-reflect-icon')).toBe('pi pi-bell');
+
+            // Verify the icon is set by checking the component's input signal
+            expect(component.$icon()).toBe('pi pi-bell');
         });
 
         it('should not show mask initially', () => {
@@ -94,7 +98,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should not show badge initially', () => {
-            const badge = spectator.query('.dot-toolbar__badge');
+            const badge = spectator.query(byTestId('overlay-badge'));
             expect(badge).not.toExist();
         });
 
@@ -102,23 +106,32 @@ describe('DotToolbarBtnOverlayComponent', () => {
             spectator.setInput('showBadge', true);
             spectator.detectChanges();
 
-            const badge = spectator.query('.dot-toolbar__badge');
+            const badge = spectator.query(byTestId('overlay-badge'));
             expect(badge).toExist();
         });
 
-        it('should apply isActive class when mask is shown', () => {
+        it('should apply p-highlight class when mask is shown', () => {
             component.$showMask.set(true);
             spectator.detectChanges();
 
             const button = spectator.query(byTestId('btn-overlay'));
-            expect(button).toHaveClass('isActive');
+            expect(button).toHaveClass('p-highlight');
         });
 
         it('should render overlay panel with correct attributes', () => {
-            const overlayPanel = spectator.query('p-overlaypanel');
+            const overlayPanel = spectator.query('p-popover');
 
             expect(overlayPanel).toBeTruthy();
-            expect(overlayPanel?.getAttribute('ng-reflect-append-to')).toBe('body');
+
+            // Access PrimeNG Popover component instance to verify appendTo property
+            const overlayPanelDebugElement = spectator.debugElement.query(By.css('p-popover'));
+            const overlayPanelComponent = overlayPanelDebugElement?.componentInstance as Popover;
+            const appendToValue =
+                typeof overlayPanelComponent?.appendTo === 'function'
+                    ? overlayPanelComponent.appendTo()
+                    : overlayPanelComponent?.appendTo;
+
+            expect(appendToValue).toBe('body');
         });
 
         it('should apply custom style class to overlay panel', () => {
@@ -130,8 +143,15 @@ describe('DotToolbarBtnOverlayComponent', () => {
             spectatorWithClass.setInput('overlayStyleClass', customClass);
             spectatorWithClass.detectChanges();
 
-            const overlayPanel = spectatorWithClass.query('p-overlaypanel');
-            expect(overlayPanel?.getAttribute('ng-reflect-style-class')).toBe(customClass);
+            const overlayPanel = spectatorWithClass.query('p-popover');
+            expect(overlayPanel).toBeTruthy();
+
+            // Access PrimeNG Popover component instance to verify styleClass property
+            const overlayPanelDebugElement = spectatorWithClass.debugElement.query(
+                By.css('p-popover')
+            );
+            const overlayPanelComponent = overlayPanelDebugElement?.componentInstance as Popover;
+            expect(overlayPanelComponent?.styleClass).toBe(customClass);
         });
     });
 
@@ -253,7 +273,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         it('should call handlerShow when overlay panel shows', () => {
             jest.spyOn(component, 'handlerShow');
 
-            spectator.triggerEventHandler(OverlayPanel, 'onShow', {});
+            spectator.triggerEventHandler(Popover, 'onShow', {});
 
             expect(component.handlerShow).toHaveBeenCalled();
         });
@@ -261,7 +281,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         it('should call handlerHide when overlay panel hides', () => {
             jest.spyOn(component, 'handlerHide');
 
-            spectator.triggerEventHandler(OverlayPanel, 'onHide', {});
+            spectator.triggerEventHandler(Popover, 'onHide', {});
 
             expect(component.handlerHide).toHaveBeenCalled();
         });

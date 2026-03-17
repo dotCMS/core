@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.*;
@@ -45,7 +46,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -70,7 +70,6 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static org.hamcrest.Matchers.*;
@@ -93,7 +92,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     private static ContentletAPI contentletAPI;
     private static ContentletIndexAPI indexAPI;
 
-    private static ESIndexAPI esIndexAPI;
+    private static IndexAPI esIndexAPI;
     private static ContentTypeAPI contentTypeAPI;
 
     private static FieldAPI fieldAPI;
@@ -203,8 +202,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         generateTestContentlets();
 
-        final List<Contentlet> contentlets = contentletAPI.findAllContent(0, 100)
-                .stream().filter(Objects::nonNull).collect(Collectors.toList());
+        final List<Contentlet> contentlets = ContentletDataGen.findAllContent(0, 100);
 
         assertNotNull(contentlets);
         assertTrue("The number of contentlet returned is: " + contentlets.size(),

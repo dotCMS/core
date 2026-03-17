@@ -1,0 +1,180 @@
+name: Claude AI Orchestrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode for debugging'
+        required: false
+        type: boolean
+        default: false
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  # Security gate: Check if user is dotCMS organization member
+  #
+  # REQUIREMENTS FOR CLAUDE ACCESS:
+  # 1. Must be a member of the dotCMS organization
+  # 2. Membership must be set to PUBLIC visibility
+  #
+  # TROUBLESHOOTING: If blocked, visit https://github.com/orgs/dotCMS/people
+  # and ensure your membership is public (click "Make public" if needed)
+  security-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read           # Allow repository checkout
+      # Note: Organization membership checking uses fine-grained token
+      # so no additional GITHUB_TOKEN permissions needed for that API
+    outputs:
+      authorized: ${{ steps.membership-check.outputs.is_member }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check organization membership
+        id: membership-check
+        uses: ./.github/actions/security/org-membership-check
+        with:
+          username: ${{ github.event.comment.user.login || github.actor }}
+
+      - name: Log security decision
+        run: |
+          if [ "${{ steps.membership-check.outputs.is_member }}" = "true" ]; then
+            echo "✅ Access granted: User is a dotCMS organization member"
+          else
+            echo "❌ Access denied: User failed dotCMS organization membership check"
+            echo ""
+            echo "📋 TROUBLESHOOTING: If you are a dotCMS team member:"
+            echo "   1. Visit https://github.com/orgs/dotCMS/people"
+            echo "   2. Ensure your membership is set to 'Public'"
+            echo "   3. If you're not listed, contact an organization owner"
+            echo ""
+            echo "::warning::Unauthorized user attempted to trigger Claude workflow: ${{ github.event.comment.user.login || github.actor }}"
+          fi
+
+  # Interactive Claude mentions (simplified using centralized logic)
+  claude-interactive:
+    needs: security-check
+    # Never cancel in-progress interactive sessions — a user may be mid-conversation
+    concurrency:
+      group: claude-interactive-${{ github.event.pull_request.number || github.event.issue.number || 'manual' }}
+      cancel-in-progress: false
+    if: |
+      needs.security-check.outputs.authorized == 'true' &&
+      (
+        github.event_name == 'issue_comment' ||
+        github.event_name == 'pull_request_review_comment' ||
+        (
+          github.event_name == 'pull_request' && (
+            contains(github.event.pull_request.title, '@claude') ||
+            contains(github.event.pull_request.title, '@Claude') ||
+            contains(github.event.pull_request.title, '@CLAUDE') ||
+            contains(github.event.pull_request.body, '@claude') ||
+            contains(github.event.pull_request.body, '@Claude') ||
+            contains(github.event.pull_request.body, '@CLAUDE')
+          )
+        )
+      )
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
+    with:
+      trigger_mode: interactive
+      claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: true  # Uses built-in @claude mention detection
+      # custom_trigger_condition: |    # Optional: Override default mention detection
+      #   your custom condition here
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # Automatic PR reviews (no @claude mention)
+  claude-automatic-review:
+    needs: security-check
+    # Cancel in-progress automatic reviews when a new push arrives — always review latest state
+    concurrency:
+      group: claude-automatic-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    if: |
+      needs.security-check.outputs.authorized == 'true' &&
+      github.event_name == 'pull_request' &&
+      !contains(github.event.pull_request.title, '@claude') &&
+      !contains(github.event.pull_request.title, '@Claude') &&
+      !contains(github.event.pull_request.title, '@CLAUDE') &&
+      !contains(github.event.pull_request.body, '@claude') &&
+      !contains(github.event.pull_request.body, '@Claude') &&
+      !contains(github.event.pull_request.body, '@CLAUDE')
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
+    with:
+      trigger_mode: automatic
+      prompt: |
+        Review this PR. Flag anything that looks wrong, risky, or worth a second look: bad assumptions, missing edge cases, design problems, security issues. Skip praise. If it is clean, say so in one line.
+      claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: false
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # Rollback safety analysis — runs on every PR push
+  claude-rollback-safety-check:
+    needs: security-check
+    # Cancel in-progress check when a new push arrives — always analyze latest state
+    concurrency:
+      group: claude-rollback-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    if: |
+      needs.security-check.outputs.authorized == 'true' &&
+      github.event_name == 'pull_request'
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+      issues: write
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
+    with:
+      trigger_mode: automatic
+      prompt: |
+        You are a dotCMS rollback-safety analyst. Determine whether the changes in this PR are safe to roll back to the previous release.
+
+        STEP 1 — Read the rollback-unsafe categories reference:
+          cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md
+
+        STEP 2 — Get the full PR diff:
+          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+        STEP 3 — Analyze the diff against EVERY category in the reference document.
+          Focus on: database migrations (runonce tasks), Elasticsearch mapping changes,
+          data model changes, API contract changes, and any structural storage changes.
+          Ignore pure UI, test-only, or documentation changes unless they touch an unsafe category.
+
+        STEP 4a — If the changes match one or more unsafe categories, post this comment on the PR
+        using: gh pr comment ${{ github.event.pull_request.number }} --body "..."
+
+          Format:
+          Pull Request Unsafe to Rollback!!!
+          - Category: <category ID and name, e.g. "C-1 — Structural Data Model Change">
+          - Risk Level: <🔴 CRITICAL / 🟠 HIGH / 🟡 MEDIUM / 🟢 LOW>
+          - Why it's unsafe: <specific explanation tied to the actual code changed>
+          - Code that makes it unsafe: <file path(s) and the specific lines or block>
+          - Alternative (if possible): <the safer alternative from the reference, adapted to this change>
+
+          If multiple categories match, repeat the block for each one.
+
+          Then add the label: gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Not Safe To Rollback"
+
+        STEP 4b — If the changes do NOT match any unsafe category:
+          Only add the label: gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Safe To Rollback"
+          No comment needed.
+
+        Be specific: quote actual file names and code lines, not generic descriptions.
+      claude_args: '--allowedTools "Bash(git diff*),Bash(git log*),Bash(cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md),Bash(gh pr comment*),Bash(gh pr edit*)"'
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: false
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

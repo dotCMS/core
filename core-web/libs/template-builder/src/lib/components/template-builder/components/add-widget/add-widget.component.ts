@@ -14,8 +14,7 @@ import {
 @Component({
     selector: 'dotcms-add-widget',
     templateUrl: './add-widget.component.html',
-    styleUrls: ['./add-widget.component.scss'],
-    standalone: true,
+    styleUrls: ['./add-widget.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddWidgetComponent implements AfterViewInit {

@@ -22,18 +22,14 @@ describe('TemplateContainersCacheService', () => {
                 type: 'type',
                 source: CONTAINER_SOURCE.FILE,
                 path: '/containers/path',
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             },
             '2': {
                 identifier: '2',
                 name: 'container 2',
                 type: 'type',
                 source: CONTAINER_SOURCE.DB,
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             }
         };
     });

@@ -16,11 +16,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { InputTextModule } from 'primeng/inputtext';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { InputText } from 'primeng/inputtext';
 
 import { debounceTime, skip, throttleTime } from 'rxjs/operators';
 
-import { DotContentSearchService, DotLanguagesService } from '@dotcms/data-access';
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 // services
@@ -32,8 +33,8 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
     selector: 'dot-asset-search',
     templateUrl: './dot-asset-search.component.html',
     styleUrls: ['./dot-asset-search.component.scss'],
-    providers: [DotAssetSearchStore, DotContentSearchService, DotLanguagesService],
-    imports: [DotAssetCardListComponent, DotAssetCardListComponent, InputTextModule, CommonModule],
+    providers: [DotAssetSearchStore],
+    imports: [DotAssetCardListComponent, InputText, IconField, InputIcon, CommonModule],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetSearchComponent implements OnInit, AfterViewInit {
@@ -73,7 +74,8 @@ export class DotAssetSearchComponent implements OnInit, AfterViewInit {
     ngAfterViewInit() {
         fromEvent(this.input.nativeElement, 'input')
             .pipe(takeUntilDestroyed(this.destroyRef), debounceTime(450))
-            .subscribe(({ target }) => {
+            .subscribe((event: Event) => {
+                const target = event.target as HTMLInputElement;
                 const value = (target as HTMLInputElement).value;
                 this.currentSearch = value;
                 this.store.searchContentlet({

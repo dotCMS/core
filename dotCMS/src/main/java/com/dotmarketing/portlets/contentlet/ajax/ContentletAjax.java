@@ -2320,6 +2320,19 @@ public class ContentletAjax {
 				clearBinary = false;
 			}
 
+			if (ve.hasCharLimitErrors()) {
+				final List<Field> reqs = ve.getNotValidFields()
+						.get(DotContentletValidationException.VALIDATION_FAILED_CHAR_LIMIT);
+				final Map<String, Integer> charLimitMaxByFieldVar = ve.getCharLimitMaxByFieldVar();
+				for (final Field field : reqs) {
+					final Integer maxLimit = charLimitMaxByFieldVar.get(field.getVelocityVarName());
+					String errorString = LanguageUtil.get(user, "dot.edit.content.form.field.charLimitExceeded",
+							maxLimit != null ? maxLimit : 0);
+					saveContentErrors.add(errorString);
+				}
+				clearBinary = false;
+			}
+
 			if (ve.hasRelationshipErrors()) {
 				StringBuilder sb = new StringBuilder("<br>");
 				final Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = ve

@@ -9,6 +9,7 @@ import {
 import { DDElementHost } from 'gridstack/dist/dd-element';
 import { Observable, Subject, combineLatest } from 'rxjs';
 
+import { AsyncPipe, NgClass, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -28,7 +29,9 @@ import {
     inject
 } from '@angular/core';
 
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DividerModule } from 'primeng/divider';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
 
@@ -38,16 +41,19 @@ import {
     DotLayout,
     DotLayoutBody,
     DotTemplateDesigner,
-    DotTheme,
     DotContainerMap,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { colIcon, rowIcon } from './assets/icons';
 import { AddStyleClassesDialogComponent } from './components/add-style-classes-dialog/add-style-classes-dialog.component';
 import { AddWidgetComponent } from './components/add-widget/add-widget.component';
+import { TemplateBuilderActionsComponent } from './components/template-builder-actions/template-builder-actions.component';
+import { TemplateBuilderBoxComponent } from './components/template-builder-box/template-builder-box.component';
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
-import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
+import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
+import { TemplateBuilderSidebarComponent } from './components/template-builder-sidebar/template-builder-sidebar.component';
 import {
     BOX_WIDTH,
     DotGridStackNode,
@@ -73,10 +79,24 @@ import {
 @Component({
     selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
-    styleUrls: ['./template-builder.component.scss'],
+    styleUrls: ['./template-builder.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore],
-    standalone: false
+    imports: [
+        AsyncPipe,
+        NgClass,
+        NgStyle,
+        DotMessagePipe,
+        DynamicDialogModule,
+        ToolbarModule,
+        DividerModule,
+        AddWidgetComponent,
+        TemplateBuilderActionsComponent,
+        TemplateBuilderSectionComponent,
+        TemplateBuilderSidebarComponent,
+        TemplateBuilderRowComponent,
+        TemplateBuilderBoxComponent
+    ]
 })
 export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     private store = inject(DotTemplateBuilderStore);
@@ -152,7 +172,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         };
     }
 
-    @HostListener('window:mousemove', ['$event'])
+    @HostListener('window:mousemove')
     onMouseMove() {
         if (this.draggingElement) {
             const containerRect = this.templateContaniner.getBoundingClientRect();
@@ -333,7 +353,20 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         });
 
         this.addWidget.toArray().forEach(({ nativeElement }) => {
-            nativeElement.ddElement
+            type DDElementHostWithOn = DDElementHost & {
+                on: (eventName: string, cb: (...args: unknown[]) => void) => DDElementHostWithOn;
+            };
+
+            const ddElement = (nativeElement as unknown as { ddElement?: DDElementHostWithOn })
+                ?.ddElement;
+
+            // In unit tests (and some non-browser environments) `ddElement` may not be initialized.
+            // Guard so grid setup doesn't crash; runtime behavior is unchanged when ddElement exists.
+            if (!ddElement?.on) {
+                return;
+            }
+
+            ddElement
                 .on('dragstart', ({ target }) => {
                     const helper = (target as DDElementHost).ddElement.ddDraggable?.helper;
                     this.draggingElement = (helper || target) as HTMLElement;
@@ -355,13 +388,21 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     /**
      * @description This method is used to identify items by id
      *
-     * @param {number} _
+     * @param {number} index
      * @param {GridStackWidget} w
      * @return {*}
      * @memberof TemplateBuilderComponent
      */
-    identify(_: number, w: GridStackWidget): string {
-        return w.id as string;
+    identify(index: number, w: GridStackWidget): string {
+        // Ensure we always return a unique string
+        // Combine ID with index to prevent Angular 20 NG0955 errors about duplicate keys
+        // This handles cases where the same ID might appear in different rows
+        const id = w?.id;
+        if (id != null && id !== '') {
+            return `${String(id)}-${index}`;
+        }
+        // Fallback to index if ID is not available
+        return `item-${index}`;
     }
 
     /**
@@ -378,7 +419,11 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     ): void {
         // The gridstack model is polutted with the subgrid data
         // So we need to delete the node from the GridStack Model
-        this.grid.engine.nodes.find((node) => node.id === rowID).subGrid?.removeWidget(element);
+        if (this.grid?.engine) {
+            this.grid.engine.nodes
+                .find((node) => node.id === rowID)
+                ?.subGrid?.removeWidget(element);
+        }
 
         this.store.removeColumn({ ...column, parentId: rowID as string });
     }
@@ -419,6 +464,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      */
     editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
         const ref = this.dialogService.open(AddStyleClassesDialogComponent, {
+            closeOnEscape: true,
+            closable: true,
             header: this.dotMessage.get('dot.template.builder.classes.dialog.header.label'),
             data: {
                 selectedClasses: box.styleClass || []
@@ -445,35 +492,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      *
      * @memberof TemplateBuilderComponent
      */
-    openThemeSelectorDynamicDialog(): void {
-        let ref: DynamicDialogRef;
-
-        this.themeId$.pipe(take(1)).subscribe((themeId) => {
-            ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
-                header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
-                resizable: false,
-                width: '80%',
-                closeOnEscape: true,
-                data: {
-                    themeId
-                }
-            });
-        });
-
-        ref.onClose
-            .pipe(
-                take(1),
-                filter((theme: DotTheme) => !!theme)
-            )
-            .subscribe(
-                (theme: DotTheme) => {
-                    this.store.updateThemeId(theme.identifier);
-                },
-                () => {
-                    /* */
-                },
-                () => ref.destroy() // Destroy the dialog when it's closed
-            );
+    updateTheme(themeId: string): void {
+        this.store.updateThemeId(themeId);
     }
 
     /**
@@ -516,7 +536,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
             })
             .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
-                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
+                this.store.setResizingRowID(String(el.gridstackNode.grid.parentGridItem.id));
             })
             .on('resizestop', () => {
                 this.store.setResizingRowID(null);

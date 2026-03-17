@@ -1,8 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { SelectChangeEvent, SelectModule } from 'primeng/select';
 
 import { map, take } from 'rxjs/operators';
 
@@ -13,7 +16,7 @@ import { StructureTypeView } from '@dotcms/dotcms-models';
     selector: 'dot-base-type-selector',
     templateUrl: './dot-base-type-selector.component.html',
     styleUrls: ['./dot-base-type-selector.component.scss'],
-    standalone: false
+    imports: [CommonModule, SelectModule, FormsModule]
 })
 export class DotBaseTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);
@@ -31,8 +34,8 @@ export class DotBaseTypeSelectorComponent implements OnInit {
         );
     }
 
-    change(item: SelectItem) {
-        this.selected.emit(item.value);
+    change(event: SelectChangeEvent) {
+        this.selected.emit(event.value);
     }
 
     setOptions(baseTypes: StructureTypeView[]): SelectItem[] {

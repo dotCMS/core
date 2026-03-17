@@ -4,13 +4,15 @@
     "projectType": "library",
     "sourceRoot": "libs/template-builder/src",
     "prefix": "dotcms",
+    "tags": [],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "libs/template-builder/jest.config.ts",
-                "passWithNoTests": false
+                "passWithNoTests": false,
+                "tsConfig": "libs/template-builder/tsconfig.spec.json"
             }
         },
         "lint": {
@@ -31,8 +33,6 @@
                     "libs/dotcms-scss/angular/styles.scss",
                     "apps/dotcms-ui/src/assets/material-icons.css",
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ]
             },
@@ -55,9 +55,7 @@
                 },
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
                     "apps/dotcms-ui/src/assets/material-icons.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ]
@@ -68,6 +66,5 @@
                 }
             }
         }
-    },
-    "tags": []
+    }
 }

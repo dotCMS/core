@@ -1,12 +1,22 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    effect,
+    inject,
+    OnInit
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+
+import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
 
 import { DEBOUNCE_TIME } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
@@ -14,15 +24,27 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 @Component({
     selector: 'dot-content-drive-search-input',
     templateUrl: './dot-content-drive-search-input.component.html',
-    styleUrl: './dot-content-drive-search-input.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [IconFieldModule, InputIconModule, InputTextModule, ReactiveFormsModule]
+    imports: [IconField, InputIcon, InputTextModule, ReactiveFormsModule],
+    host: { class: 'w-full' }
 })
 export class DotContentDriveSearchInputComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #destroyRef = inject(DestroyRef);
 
     readonly searchControl = new FormControl('');
+
+    readonly cleanTextEffect = effect(() => {
+        const searchValue = this.#store.getFilterValue('title') || '';
+
+        if (searchValue !== this.searchControl.value) {
+            this.searchControl.setValue(searchValue as string, { emitEvent: false });
+        }
+    });
+
+    readonly $title = computed(() => this.#store.getFilterValue('title') || '', {
+        equal: (a, b) => a === b
+    });
 
     // We need to use ngOnInit to retrieve the filter value from the store
     ngOnInit() {
@@ -41,6 +63,7 @@ export class DotContentDriveSearchInputComponent implements OnInit {
             .subscribe((value) => {
                 const searchValue = (value as string)?.trim() || '';
                 this.#store.setGlobalSearch(searchValue);
+                this.#store.setSelectedNode(ALL_FOLDER);
             });
     }
 }

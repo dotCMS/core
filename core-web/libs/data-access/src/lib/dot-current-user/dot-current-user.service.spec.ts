@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
@@ -13,7 +13,6 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotCurrentUserService } from './dot-current-user.service';
 
 describe('DotCurrentUserService', () => {
-    let injector: TestBed;
     let dotCurrentUserService: DotCurrentUserService;
     let httpMock: HttpTestingController;
 
@@ -25,9 +24,8 @@ describe('DotCurrentUserService', () => {
                 DotCurrentUserService
             ]
         });
-        injector = getTestBed();
-        dotCurrentUserService = injector.get(DotCurrentUserService);
-        httpMock = injector.get(HttpTestingController);
+        dotCurrentUserService = TestBed.inject(DotCurrentUserService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get logged user', () => {
@@ -42,7 +40,7 @@ describe('DotCurrentUserService', () => {
             expect(user).toEqual(mockCurrentUserResponse);
         });
 
-        const req = httpMock.expectOne('v1/users/current/');
+        const req = httpMock.expectOne('/api/v1/users/current/');
         expect(req.request.method).toBe('GET');
         req.flush(mockCurrentUserResponse);
     });
@@ -53,7 +51,7 @@ describe('DotCurrentUserService', () => {
             expect(hasAccess).toEqual(true);
         });
 
-        const req = httpMock.expectOne(`v1/portlet/${portlet}/_doesuserhaveaccess`);
+        const req = httpMock.expectOne(`/api/v1/portlet/${portlet}/_doesuserhaveaccess`);
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: {
@@ -76,7 +74,7 @@ describe('DotCurrentUserService', () => {
                 expect(permissions).toEqual(response);
             });
 
-        const req = httpMock.expectOne(`v1/permissions/_bypermissiontype?userid=${userId}`);
+        const req = httpMock.expectOne(`/api/v1/permissions/_bypermissiontype?userid=${userId}`);
         expect(req.request.method).toBe('GET');
         req.flush({
             entity: response
@@ -90,7 +88,7 @@ describe('DotCurrentUserService', () => {
             .subscribe();
 
         const req = httpMock.expectOne(
-            `v1/permissions/_bypermissiontype?userid=${userId}&permission=${UserPermissions.WRITE}&permissiontype=${PermissionsType.HTMLPAGES}`
+            `/api/v1/permissions/_bypermissiontype?userid=${userId}&permission=${UserPermissions.WRITE}&permissiontype=${PermissionsType.HTMLPAGES}`
         );
         expect(req.request.method).toBe('GET');
         req.flush({});

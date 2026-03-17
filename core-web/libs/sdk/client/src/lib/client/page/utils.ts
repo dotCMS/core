@@ -1,6 +1,6 @@
 import { consola } from 'consola';
 
-import { DotHttpClient, DotGraphQLApiResponse } from '@dotcms/types';
+import { DotGraphQLApiResponse, DotHttpClient } from '@dotcms/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -102,6 +102,8 @@ export const buildPageQuery = ({
     canLock
     canRead
     runningExperimentId
+    lockedBy
+    lockedByName
     urlContentMap {
       _map
     }
@@ -167,6 +169,7 @@ export const buildPageQuery = ({
       }
     }
     viewAs {
+      variantId
       visitor {
         persona {
           modDate

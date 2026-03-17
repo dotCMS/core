@@ -5,7 +5,6 @@ import { DotClipboardUtil } from './ClipboardUtil';
 
 describe('DotClipboardUtil', () => {
     let service: DotClipboardUtil;
-    let injector;
     let originalExecCommand: any;
 
     beforeEach(() => {
@@ -16,11 +15,11 @@ describe('DotClipboardUtil', () => {
             document.execCommand = jest.fn();
         }
 
-        injector = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             providers: [DotClipboardUtil]
         });
 
-        service = injector.get(DotClipboardUtil);
+        service = TestBed.inject(DotClipboardUtil);
     });
 
     afterEach(() => {

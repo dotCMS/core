@@ -11,6 +11,14 @@ export interface DotContentletLockResponse {
     inode: string;
     message: string;
 }
+
+/**
+ * Service to lock and unlock contentlets.
+ *
+ * @export
+ * @class DotContentletLockerService
+ * @deprecated Use DotContentletService.lockContent and DotContentletService.unlockContent instead.
+ */
 @Injectable()
 export class DotContentletLockerService {
     private coreWebService = inject(CoreWebService);

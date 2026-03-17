@@ -834,7 +834,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 var assetFullName = name;
 
                 //processing asset description and name to avoid long words that break the column width
-                name = shortenLongWords(name, 30)
                 var title = shortenString(asset.title, 30);
                 var modUserName = shortenString(asset.modUserName, 20);
                 //Show Language Icon for Contents (Pages, Files)

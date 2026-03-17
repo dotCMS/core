@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotPageContainer } from '@dotcms/dotcms-models';
@@ -10,7 +10,6 @@ import { DotEditPageService } from './dot-edit-page.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 describe('DotEditPageService', () => {
-    let injector: TestBed;
     let dotEditPageService: DotEditPageService;
     let httpMock: HttpTestingController;
 
@@ -23,9 +22,8 @@ describe('DotEditPageService', () => {
                 DotSessionStorageService
             ]
         });
-        injector = getTestBed();
-        dotEditPageService = injector.get(DotEditPageService);
-        httpMock = injector.get(HttpTestingController);
+        dotEditPageService = TestBed.inject(DotEditPageService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should do a request for save content', () => {

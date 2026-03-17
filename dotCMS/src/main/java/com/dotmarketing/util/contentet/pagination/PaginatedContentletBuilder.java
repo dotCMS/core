@@ -18,6 +18,7 @@ public class PaginatedContentletBuilder {
     private boolean respectFrontendRoles;
     private ContentletAPI contentletAPI;
     private int perPage = -1;
+    private int scrollApiThreshold = -1;
     private Lazy<Integer> perPageDefaultValue = Lazy.of(() -> Config.getIntProperty("CONTENTLET_PER_PAGE", 1000));
 
     public PaginatedContentletBuilder setLuceneQuery(String luceneQuery) {
@@ -46,6 +47,12 @@ public class PaginatedContentletBuilder {
         return this;
     }
 
+    @VisibleForTesting
+    public PaginatedContentletBuilder setScrollApiThreshold(int scrollApiThreshold) {
+        this.scrollApiThreshold = scrollApiThreshold;
+        return this;
+    }
+
     public PaginatedContentlets build(){
         if (!UtilMethods.isSet(contentletAPI)) {
             contentletAPI = APILocator.getContentletAPI();
@@ -55,6 +62,6 @@ public class PaginatedContentletBuilder {
             perPage = perPageDefaultValue.get();
         }
 
-        return new PaginatedContentlets(luceneQuery, user, respectFrontendRoles, perPage, contentletAPI);
+        return new PaginatedContentlets(luceneQuery, user, respectFrontendRoles, perPage, contentletAPI, scrollApiThreshold);
     }
 }

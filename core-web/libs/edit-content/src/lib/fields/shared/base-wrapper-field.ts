@@ -1,10 +1,12 @@
-import { computed, DestroyRef, inject, InputSignal } from '@angular/core';
+import { merge } from 'rxjs';
+
+import { afterNextRender, computed, DestroyRef, inject, InputSignal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, Validators, TouchedChangeEvent, ControlContainer } from '@angular/forms';
+import { ControlContainer, FormControl, TouchedChangeEvent, Validators } from '@angular/forms';
 
 import { filter } from 'rxjs/operators';
 
-import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 /**
  * Base class for all wrapper field components that provides common functionality
@@ -18,6 +20,32 @@ export abstract class BaseWrapperField {
     abstract $field: InputSignal<DotCMSContentTypeField>;
     abstract $contentlet: InputSignal<DotCMSContentlet>;
 
+    /**
+     * A signal that holds the error state of the field.
+     * It is used to display the error state in the field component.
+     */
+    $hasError = signal(false);
+
+    constructor() {
+        afterNextRender(() => {
+            const control = this.formControl;
+            if (!control) return;
+
+            const updateState = () => {
+                this.$hasError.set(!!(control.invalid && control.touched));
+            };
+
+            // Initial state
+            updateState();
+
+            merge(control.valueChanges, control.statusChanges, control.events)
+                .pipe(takeUntilDestroyed(this.destroyRef))
+                .subscribe(() => {
+                    updateState();
+                });
+        });
+    }
+
     $showLabel = computed(() => {
         const field = this.$field();
         if (!field) return true;
@@ -25,19 +53,19 @@ export abstract class BaseWrapperField {
         return field.fieldVariables.find(({ key }) => key === 'hideLabel')?.value !== 'true';
     });
 
-    get hasError(): boolean {
-        const control = this.formControl;
-        if (!control) {
-            return false;
-        }
-        return !!(control.invalid && control.touched);
-    }
-
     get isRequired(): boolean {
+        // First check the field definition (source of truth)
+        const field = this.$field();
+        if (field?.required) {
+            return true;
+        }
+
+        // Fallback to checking the validator (for fields using standard Validators.required)
         const control = this.formControl;
         if (!control) {
             return false;
         }
+
         return control.hasValidator(Validators.required);
     }
 

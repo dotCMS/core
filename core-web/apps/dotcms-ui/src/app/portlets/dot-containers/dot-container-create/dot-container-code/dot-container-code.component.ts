@@ -2,15 +2,22 @@ import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 
 import { trigger, transition, style, animate } from '@angular/animations';
 import { Component, Input, OnChanges, OnInit, SimpleChanges, inject } from '@angular/core';
-import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
-import { DialogService } from 'primeng/dynamicdialog';
+import { ButtonModule } from 'primeng/button';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { MenuModule } from 'primeng/menu';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
+
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 
 interface DotContainerContent extends DotCMSContentType {
     code: string;
@@ -28,8 +35,19 @@ interface DotContainerContent extends DotCMSContentType {
     ],
     selector: 'dot-container-code',
     templateUrl: './dot-container-code.component.html',
-    styleUrls: ['./dot-container-code.component.scss'],
-    standalone: false
+    imports: [
+        ReactiveFormsModule,
+        TabsModule,
+        MenuModule,
+        DotTextareaContentComponent,
+        DotMessagePipe,
+        ButtonModule,
+        DynamicDialogModule,
+
+        SkeletonModule,
+        DotFieldRequiredDirective
+    ],
+    providers: [DialogService]
 })
 export class DotContentEditorComponent implements OnInit, OnChanges {
     private dialogService = inject(DialogService);
@@ -44,22 +62,25 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     contentTypeNamesById = {};
 
     ngOnInit() {
-        this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
-            this.contentTypeNamesById[id] = name;
-        });
+        if (this.contentTypes && this.contentTypes.length > 0) {
+            this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
+                this.contentTypeNamesById[id] = name;
+            });
+        }
 
         this.init();
         this.updateActiveTabIndex(this.getcontainerStructures.length);
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        changes.contentTypes.currentValue.map(({ id, name }: DotCMSContentType) => {
-            this.contentTypeNamesById[id] = name;
-        });
+        if (changes.contentTypes?.currentValue?.length > 0) {
+            changes.contentTypes.currentValue.forEach(({ id, name }: DotCMSContentType) => {
+                this.contentTypeNamesById[id] = name;
+            });
 
-        this.init();
-        this.updateActiveTabIndex(this.getcontainerStructures.length);
-        if (changes.contentTypes.currentValue.length > 0) {
+            this.init();
+            this.updateActiveTabIndex(this.getcontainerStructures.length);
+
             Object.keys(this.monacoEditors).forEach((editorId) => {
                 this.monacoEditors[editorId].updateOptions({ readOnly: false });
             });
@@ -77,17 +98,29 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     /**
+     * Handles tab change from p-tabs valueChange event
+     * @param {number} value - The new tab index value
+     * @memberof DotContentEditorComponent
+     */
+    public handleTabChange(value: number): void {
+        if (value !== 0) {
+            this.updateActiveTabIndex(value);
+            this.focusCurrentEditor(value);
+        }
+    }
+
+    /**
      * If the index is null or 0, prevent the default action and stop propagation. Otherwise, update the active tab index
      * and push the container content
-     * @param {MouseEvent} e - MouseEvent - The event object that was triggered by the click.
+     * @param event - The click event (MouseEvent)
      * @param {number} [index=null] - number = null
      * @returns false
      */
-    public handleTabClick(e: MouseEvent, index: number = null): boolean {
-        if (index === null || index === 0) {
-            e.preventDefault();
-            e.stopPropagation();
-        } else {
+    public handleTabClick(event: MouseEvent, index: number = null): boolean {
+        if (index === 0) {
+            event.preventDefault();
+            event.stopPropagation();
+        } else if (index !== null) {
             this.updateActiveTabIndex(index);
             this.focusCurrentEditor(index);
         }
@@ -193,10 +226,10 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     private init(): void {
-        this.menuItems = this.getMenuItems(this.contentTypes);
+        this.menuItems = this.getMenuItems(this.contentTypes || []);
 
         // default content type if content type does not exist
-        if (this.getcontainerStructures.length === 0) {
+        if (this.getcontainerStructures.length === 0 && this.contentTypes?.length > 0) {
             this.getcontainerStructures.push(
                 new FormGroup({
                     code: new FormControl(''),

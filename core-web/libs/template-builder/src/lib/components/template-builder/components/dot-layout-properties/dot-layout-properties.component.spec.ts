@@ -5,14 +5,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotLayoutPropertiesItemModule } from './dot-layout-properties-item/dot-layout-properties-item.module';
+import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item/dot-layout-properties-item.component';
 import { DotLayoutPropertiesComponent } from './dot-layout-properties.component';
-import { DotLayoutSidebarModule } from './dot-layout-property-sidebar/dot-layout-property-sidebar.module';
+import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar/dot-layout-property-sidebar.component';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -48,11 +48,12 @@ describe('DotLayoutPropertiesComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLayoutPropertiesComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
-                DotLayoutPropertiesItemModule,
-                DotLayoutSidebarModule,
-                OverlayPanelModule,
+                DotLayoutPropertiesComponent,
+                DotLayoutPropertiesItemComponent,
+                DotLayoutSidebarComponent,
+                PopoverModule,
                 ButtonModule,
                 ReactiveFormsModule
             ],

@@ -1,4 +1,3 @@
-import { NgForOf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
     AbstractControl,
@@ -8,8 +7,8 @@ import {
     Validators
 } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -17,7 +16,6 @@ import { GOAL_OPERATORS, GoalsConditionsOperatorsListByType } from '@dotcms/dotc
 import {
     DotAutofocusDirective,
     DotDropdownDirective,
-    DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
@@ -29,15 +27,12 @@ const PARAMETER_QUERY_PARAMETER = 'queryParameter';
 @Component({
     selector: 'dot-experiments-goal-configuration-url-parameter-component',
     templateUrl: './dot-experiments-goal-configuration-url-parameter-component.component.html',
-    styleUrls: ['./dot-experiments-goal-configuration-url-parameter-component.component.scss'],
     imports: [
         ReactiveFormsModule,
-        NgForOf,
         DotDropdownDirective,
         DotFieldValidationMessageComponent,
         DotMessagePipe,
-        DropdownModule,
-        DotFieldRequiredDirective,
+        SelectModule,
         DotAutofocusDirective,
         InputTextModule
     ],
@@ -67,7 +62,7 @@ export class DotExperimentsGoalConfigurationUrlParameterComponentComponent
 
     /**
      * When the `operator` control value is EXIST
-     * `value` control not needed
+     * `value` control not neededπ
      * @private
      */
     private listenOperatorChanges(): void {

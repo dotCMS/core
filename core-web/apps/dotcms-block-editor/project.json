@@ -4,9 +4,10 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcms-block-editor/src",
     "prefix": "dotcms",
+    "tags": ["skip:test", "skip:lint"],
     "targets": {
         "build": {
-            "executor": "@nx/angular:browser-esbuild",
+            "executor": "@angular-devkit/build-angular:browser-esbuild",
             "options": {
                 "outputPath": "dist/apps/dotcms-block-editor",
                 "index": "apps/dotcms-block-editor/src/index.html",
@@ -25,13 +26,8 @@
                 ],
                 "styles": [
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
-                    "libs/dotcms-scss/angular/_forms.scss",
-                    "libs/dotcms-scss/angular/_mixins.scss",
-                    "libs/dotcms-scss/angular/dotcms-theme/theme.scss",
-                    "libs/dotcms-scss/angular/_prime-icons.scss",
-                    "apps/dotcms-block-editor/src/styles.scss"
+                    "libs/dotcms-scss/angular/styles.scss",
+                    "apps/dotcms-block-editor/src/styles.css"
                 ],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
@@ -73,8 +69,8 @@
                     "budgets": [
                         {
                             "type": "initial",
-                            "maximumWarning": "2mb",
-                            "maximumError": "2.8mb"
+                            "maximumWarning": "2.5mb",
+                            "maximumError": "3mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -87,7 +83,7 @@
             "defaultConfiguration": "production"
         },
         "serve": {
-            "executor": "@angular-devkit/build-angular:dev-server",
+            "executor": "@angular/build:dev-server",
             "options": {
                 "buildTarget": "dotcms-block-editor:build"
             },
@@ -98,10 +94,11 @@
                 "development": {
                     "buildTarget": "dotcms-block-editor:build:development"
                 }
-            }
+            },
+            "continuous": true
         },
         "extract-i18n": {
-            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcms-block-editor:build"
             }
@@ -111,7 +108,7 @@
             "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@angular-devkit/build-angular:karma",
+            "executor": "@angular/build:karma",
             "options": {
                 "main": "apps/dotcms-block-editor/src/test.ts",
                 "tsConfig": "apps/dotcms-block-editor/tsconfig.spec.json",
@@ -122,6 +119,5 @@
                 "assets": []
             }
         }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    }
 }

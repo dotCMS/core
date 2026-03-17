@@ -1,20 +1,46 @@
 import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
+import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import {
+    FormArray,
+    FormBuilder,
+    FormControl,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
-import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
+import { SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { InplaceModule } from 'primeng/inplace';
+import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
+import { TabsModule } from 'primeng/tabs';
+
+import { debounceTime, pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
+import {
+    DotApiLinkComponent,
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import {
     DotContainerPropertiesState,
     DotContainerPropertiesStore
 } from './store/dot-container-properties.store';
 
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 import { MonacoEditor } from '../../../../shared/models/monaco-editor/monaco-editor.model';
+import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
+import { DotContentEditorComponent } from '../dot-container-code/dot-container-code.component';
+import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.component';
 
 @Component({
     animations: [
@@ -24,9 +50,25 @@ import { MonacoEditor } from '../../../../shared/models/monaco-editor/monaco-edi
     ],
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
-    styleUrls: ['./dot-container-properties.component.scss'],
-    providers: [DotContainerPropertiesStore],
-    standalone: false
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        InplaceModule,
+        SharedModule,
+        InputTextModule,
+        CardModule,
+        DotTextareaContentComponent,
+        TabsModule,
+        MenuModule,
+        DotMessagePipe,
+        DotLoopEditorComponent,
+        DotContentEditorComponent,
+        DotApiLinkComponent,
+        DotAutofocusDirective,
+        DotFieldRequiredDirective,
+        ButtonModule
+    ],
+    providers: [DotContainerPropertiesStore, DotContainersService]
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     private dotMessageService = inject(DotMessageService);
@@ -74,7 +116,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             });
 
         this.form.valueChanges
-            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
+            .pipe(
+                takeUntil(this.destroy$),
+                startWith(this.form.value),
+                pairwise(),
+                debounceTime(100)
+            )
             .subscribe(([prevValue, currValue]) => {
                 this.#store.updateFormStatus({
                     invalidForm: !this.form.valid,

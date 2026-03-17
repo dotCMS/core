@@ -1,10 +1,14 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DotSystemConfigService } from '@dotcms/data-access';
 import { DotMenu } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
 
@@ -24,44 +28,99 @@ const data: DotMenu = {
 };
 
 describe('DotSubNavComponent', () => {
-    let component: DotSubNavComponent;
-    let fixture: ComponentFixture<DotSubNavComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotSubNavComponent>;
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [DotSubNavComponent],
-            imports: [RouterTestingModule, BrowserAnimationsModule]
-        }).compileComponents();
-    }));
+    const createComponent = createComponentFactory({
+        component: DotSubNavComponent,
+        detectChanges: false,
+        imports: [RouterTestingModule, BrowserAnimationsModule],
+        providers: [
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+            },
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
+    });
 
     beforeEach(() => {
-        fixture = TestBed.createComponent(DotSubNavComponent);
-        de = fixture.debugElement;
-        component = fixture.componentInstance;
-        component.data = data;
-        fixture.detectChanges();
+        spectator = createComponent();
+        spectator.component.data = data;
     });
 
-    it('should have two menu links', () => {
-        expect(de.queryAll(By.css('.dot-nav-sub li')).length).toBe(2);
+    it('should have two menu links when expanded', () => {
+        spectator.component.collapsed = false;
+        spectator.detectChanges();
+        expect(spectator.debugElement.queryAll(By.css('.dot-nav-sub li')).length).toBe(2);
     });
 
-    it('should set <li> correctly', () => {
-        const items: DebugElement[] = de.queryAll(By.css('.dot-nav-sub li'));
+    it('should have three list items when collapsed (group header + 2 menu items)', () => {
+        spectator.component.collapsed = true;
+        spectator.detectChanges();
+        expect(spectator.debugElement.queryAll(By.css('.dot-nav-sub li')).length).toBe(3);
+    });
 
-        items.forEach((item: DebugElement) => {
+    it('should NOT show group name when expanded', () => {
+        spectator.component.collapsed = false;
+        spectator.detectChanges();
+        const groupName = spectator.debugElement.query(
+            By.css('[data-testid="nav-sub-group-name"]')
+        );
+        expect(groupName).toBeNull();
+    });
+
+    it('should show group name when collapsed', () => {
+        spectator.component.collapsed = true;
+        spectator.detectChanges();
+        const groupName = spectator.debugElement.query(
+            By.css('[data-testid="nav-sub-group-name"]')
+        );
+        expect(groupName).not.toBeNull();
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
+    });
+
+    it('should have group name element with proper styling when collapsed', () => {
+        spectator.component.collapsed = true;
+        spectator.detectChanges();
+        const groupName = spectator.debugElement.query(
+            By.css('[data-testid="nav-sub-group-name"]')
+        );
+        expect(groupName).not.toBeNull();
+        expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
+        expect(groupName.nativeElement.tagName.toLowerCase()).toBe('span');
+    });
+
+    it('should set <li> correctly when expanded', () => {
+        spectator.component.collapsed = false;
+        spectator.detectChanges();
+        const items = spectator.debugElement.queryAll(By.css('.dot-nav-sub li'));
+
+        items.forEach((item) => {
             expect(item.nativeElement.classList.contains('dot-nav-sub__item')).toBe(true);
         });
     });
 
-    it('should set <a> correctly', () => {
-        const links: DebugElement[] = de.queryAll(By.css('.dot-nav-sub li a'));
+    it('should have group header when collapsed', () => {
+        spectator.component.collapsed = true;
+        spectator.detectChanges();
+        const items = spectator.debugElement.queryAll(By.css('.dot-nav-sub li'));
+        const groupHeader = items.find((item) =>
+            item.nativeElement.classList.contains('dot-nav-sub__group-header')
+        );
+        expect(groupHeader).not.toBeNull();
+    });
 
-        links.forEach((link: DebugElement, index) => {
+    it('should set <a> correctly', () => {
+        spectator.component.collapsed = false;
+        spectator.detectChanges();
+        const links = spectator.debugElement.queryAll(By.css('.dot-nav-sub li a'));
+
+        links.forEach((link, index) => {
             expect(link.nativeElement.classList.contains('dot-nav-sub__link')).toBe(true);
             expect(link.nativeElement.textContent.trim()).toBe(`Label ${index + 1}`);
-            expect(link.properties.href).toContain(`/url/link${index + 1}`);
+            expect(link.properties['href']).toContain(`/url/${index === 0 ? 'one' : 'two'}`);
 
             if (index === 1) {
                 expect(link.nativeElement.classList.contains('dot-nav-sub__link--active')).toBe(
@@ -72,9 +131,11 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should emit event on link click', () => {
-        const link: DebugElement = de.query(By.css('.dot-nav-sub li a'));
+        spectator.component.collapsed = false;
+        spectator.detectChanges();
+        const link = spectator.debugElement.query(By.css('.dot-nav-sub li a'));
 
-        component.itemClick.subscribe((event) => {
+        spectator.component.itemClick.subscribe((event) => {
             expect(event).toEqual({
                 originalEvent: { hello: 'world' } as unknown as MouseEvent,
                 data: data.menuItems[0]
@@ -85,66 +146,77 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should NOT have collapsed class', () => {
-        expect(de.query(By.css('.dot-nav-sub__collapsed'))).toBeNull();
+        spectator.component.collapsed = false;
+        spectator.detectChanges();
+        expect(spectator.debugElement.query(By.css('.dot-nav-sub__collapsed'))).toBeNull();
     });
 
     describe('dot-sub-nav', () => {
         describe('is Open', () => {
             beforeEach(() => {
-                component.data.isOpen = true;
+                spectator.component.data = { ...data, isOpen: true };
             });
 
             describe('menu collapsed', () => {
                 beforeEach(() => {
-                    component.collapsed = true;
-                    fixture.detectChanges();
+                    spectator.component.collapsed = true;
+                    spectator.detectChanges();
                 });
 
                 it('should set expandAnimation collapsed', () => {
-                    expect(component.getAnimation).toEqual('collapsed');
+                    expect(spectator.component.getAnimation).toEqual('collapsed');
                 });
 
                 it('should have collapsed class', () => {
-                    expect(de.query(By.css('.dot-nav-sub__collapsed'))).not.toBeNull();
+                    const el = spectator.debugElement.query(By.css('.dot-nav-sub__collapsed'));
+                    expect(el).not.toBeNull();
+                });
+
+                it('should show group name when collapsed', () => {
+                    const groupName = spectator.debugElement.query(
+                        By.css('.dot-nav-sub__group-name')
+                    );
+                    expect(groupName).not.toBeNull();
+                    expect(groupName.nativeElement.textContent.trim()).toBe(data.label);
                 });
             });
 
             describe('menu expanded', () => {
                 beforeEach(() => {
-                    component.collapsed = false;
-                    fixture.detectChanges();
+                    spectator.component.collapsed = false;
+                    spectator.detectChanges();
                 });
 
                 it('should set expandAnimation expanded', () => {
-                    expect(component.getAnimation).toEqual('expanded');
+                    expect(spectator.component.getAnimation).toEqual('expanded');
                 });
             });
         });
 
         describe('is Close', () => {
             beforeEach(() => {
-                component.data.isOpen = false;
+                spectator.component.data = { ...data, isOpen: false };
             });
 
             describe('menu collapsed', () => {
                 beforeEach(() => {
-                    component.collapsed = true;
-                    fixture.detectChanges();
+                    spectator.component.collapsed = true;
+                    spectator.detectChanges();
                 });
 
                 it('should set expandAnimation collapsed', () => {
-                    expect(component.getAnimation).toEqual('collapsed');
+                    expect(spectator.component.getAnimation).toEqual('collapsed');
                 });
             });
 
             describe('menu expanded', () => {
                 beforeEach(() => {
-                    component.collapsed = false;
-                    fixture.detectChanges();
+                    spectator.component.collapsed = false;
+                    spectator.detectChanges();
                 });
 
                 it('should set expandAnimation expanded', () => {
-                    expect(component.getAnimation).toEqual('collapsed');
+                    expect(spectator.component.getAnimation).toEqual('collapsed');
                 });
             });
         });

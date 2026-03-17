@@ -1,15 +1,20 @@
-import { KeyValuePipe, NgClass, NgForOf, NgIf, NgTemplateOutlet } from '@angular/common';
+import { KeyValuePipe, NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     ContentChild,
-    Input,
+    input,
     TemplateRef
 } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { ComponentStatus, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotExperimentVariantDetail,
+    ReachPageGoalCondition,
+    UrlParameterGoalCondition
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
 
 /**
@@ -25,9 +30,7 @@ import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
 @Component({
     selector: 'dot-experiments-details-table',
     imports: [
-        NgIf,
         NgTemplateOutlet,
-        NgForOf,
         NgClass,
         KeyValuePipe,
         SkeletonModule,
@@ -35,22 +38,18 @@ import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-details-table.component.html',
-    styleUrls: ['./dot-experiments-details-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsDetailsTableComponent {
-    @Input()
-    title!: string | TemplateRef<unknown>;
+    $title = input<string | TemplateRef<unknown>>('', { alias: 'title' });
 
     //** List of data to display, without templates, use the index of the objet as a header */
-    @Input()
-    data!: DotExperimentVariantDetail[];
+    $data = input.required<
+        DotExperimentVariantDetail[] | Array<UrlParameterGoalCondition | ReachPageGoalCondition>
+    >({ alias: 'data' });
 
-    @Input()
-    isLoading = false;
-
-    @Input()
-    isEmpty = false;
+    $isLoading = input(false, { alias: 'isLoading' });
+    $isEmpty = input(false, { alias: 'isEmpty' });
 
     //** Template to display the headers */
     @ContentChild('headers', { static: true }) headers!: TemplateRef<unknown>;

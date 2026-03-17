@@ -1,12 +1,5 @@
-import { LowerCasePipe, NgForOf, NgIf, UpperCasePipe } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    inject,
-    Input,
-    Output
-} from '@angular/core';
+import { LowerCasePipe, UpperCasePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -27,13 +20,9 @@ import {
 @Component({
     selector: 'dot-experiments-list-table',
     imports: [
-        NgIf,
         LowerCasePipe,
         UpperCasePipe,
-        NgForOf,
-        // dotCMS
         DotMessagePipe,
-        // PrimeNG
         ConfirmPopupModule,
         TableModule,
         ButtonModule,
@@ -43,15 +32,15 @@ import {
         DotTimestampToDatePipe
     ],
     templateUrl: './dot-experiments-list-table.component.html',
-    styleUrls: ['./dot-experiments-list-table.component.scss'],
     providers: [MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListTableComponent {
-    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] = [];
+    $experimentGroupedByStatus = input<GroupedExperimentByStatus[]>([], {
+        alias: 'experimentGroupedByStatus'
+    });
 
-    @Output()
-    goToContainer = new EventEmitter<DotExperiment>();
+    $goToContainer = output<DotExperiment>({ alias: 'goToContainer' });
 
     private dotMessageService: DotMessageService = inject(DotMessageService);
     protected readonly emptyConfiguration: PrincipalConfiguration = {

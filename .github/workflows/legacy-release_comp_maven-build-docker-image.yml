@@ -1,4 +1,36 @@
-name: Maven Build Docker Image
+#
+# ⚠️ DEPRECATED WORKFLOW COMPONENT ⚠️
+#
+# This reusable workflow component is deprecated and is only kept to support
+# other legacy workflows during the migration period.
+#
+# Migration Path:
+# → Use: .github/workflows/cicd_comp_build-phase.yml
+#       + .github/workflows/cicd_comp_deployment-phase.yml
+#
+# This workflow component is called by:
+# - legacy-release_publish-dotcms-docker-image.yml (deprecated)
+# - legacy-release_maven-release-process.yml (deprecated)
+# - legacy-release_publish-docker-image-on-release.yml (deprecated)
+# - legacy-release_release-candidate.yml (deprecated)
+#
+# Once all dependent workflows are removed or migrated, this component will be deleted.
+#
+# The new modular phases provide:
+# - Better separation of build and deployment concerns
+# - Artifact caching and reuse across phases
+# - Java version override support
+# - Consistent artifact naming with suffix support
+# - Better error handling and observability
+#
+# Deprecation Timeline:
+# - Deprecated: February 2026
+# - Removal: After all dependent legacy workflows are removed
+#
+# Status: Internal component - do not use for new workflows
+#
+
+name: Maven Build Docker Image [DEPRECATED]
 on:
   workflow_call:
     inputs:
@@ -25,6 +57,10 @@ on:
         required: false
         type: boolean
         default: false
+      custom_tag:
+        description: 'Custom Docker Image Tag'
+        required: false
+        type: string
     secrets:
       docker_io_username:
         description: 'Docker.io username'
@@ -248,6 +284,7 @@ jobs:
             type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release }}
             type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest }}
             type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_custom }}
+            type=raw,value=${{ inputs.custom_tag }},enable=${{ inputs.custom_tag != '' }}
         if: success()
 
       - name: Debug Docker Metadata

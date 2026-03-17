@@ -13,10 +13,12 @@ import {
 } from '@angular/core';
 
 import { TreeNode } from 'primeng/api';
-import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
+import { TreeModule } from 'primeng/tree';
+import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
+import { ALL_FOLDER } from '../shared/constants';
 import {
     DotFolderTreeNodeData,
     DotContentDriveUploadFiles,
@@ -28,7 +30,8 @@ import {
     imports: [TreeModule, FolderNamePipe, DotMessagePipe, JsonPipe],
     templateUrl: './dot-tree-folder.component.html',
     styleUrls: ['./dot-tree-folder.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'w-full h-full min-h-0 block' }
 })
 export class DotTreeFolderComponent {
     /**
@@ -123,6 +126,8 @@ export class DotTreeFolderComponent {
     readonly treeStyleClasses = computed(
         () => `w-full h-full ${this.$showFolderIconOnFirstOnly() ? 'first-only' : 'folder-all'}`
     );
+
+    protected readonly ALL_FOLDER_KEY = ALL_FOLDER.key;
 
     /**
      * @description Set the dropzone as active when the drag enters the dropzone

@@ -1,61 +1,6 @@
-import { DEFAULT_SESSION_TIMEOUT_MINUTES, SESSION_UTM_KEY } from '../../shared/constants';
-import { safeSessionStorage } from '../../shared/dot-content-analytics.utils';
+import { SESSION_UTM_KEY } from '../../shared/constants';
 import { DotCMSEventUtmData } from '../../shared/models';
-
-// Activity tracking state
-let lastActivityTime = Date.now();
-let inactivityTimer: number | null = null;
-
-/**
- * Updates activity timestamp
- */
-export const updateActivityTime = (): void => {
-    lastActivityTime = Date.now();
-
-    if (inactivityTimer) {
-        clearTimeout(inactivityTimer);
-    }
-
-    inactivityTimer = setTimeout(
-        () => {
-            // User became inactive
-        },
-        DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000
-    ) as unknown as number;
-};
-
-/**
- * Checks if user has been inactive
- */
-export const isUserInactive = (): boolean => {
-    const timeoutMs = DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000;
-
-    return Date.now() - lastActivityTime > timeoutMs;
-};
-
-/**
- * Checks if a new day has started since session creation
- */
-export const hasPassedMidnight = (sessionStartTime: number): boolean => {
-    const sessionStart = new Date(sessionStartTime);
-    const now = new Date();
-
-    const sessionStartUTC = new Date(
-        sessionStart.getUTCFullYear(),
-        sessionStart.getUTCMonth(),
-        sessionStart.getUTCDate()
-    );
-    const nowUTC = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-
-    return sessionStartUTC.getTime() !== nowUTC.getTime();
-};
-
-/**
- * Gets the last activity time
- */
-export const getLastActivityTime = (): number => {
-    return lastActivityTime;
-};
+import { safeSessionStorage } from '../../shared/utils/dot-analytics.utils';
 
 /**
  * Compares UTM parameters to detect campaign changes.

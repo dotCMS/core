@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
+import { Component, DebugElement, forwardRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
     ControlValueAccessor,
@@ -10,31 +10,20 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotThemeComponent
 } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
-
-@Component({
-    selector: 'dot-form-dialog',
-    template: '<ng-content></ng-content>',
-    styleUrls: [],
-    standalone: false
-})
-export class DotFormDialogMockComponent {
-    @Input() saveButtonDisabled: boolean;
-
-    @Output() save = new EventEmitter();
-
-    @Output() cancel = new EventEmitter();
-}
+import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
 
 @Component({
     selector: 'dot-template-thumbnail-field',
@@ -45,8 +34,7 @@ export class DotFormDialogMockComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTemplateThumbnailFieldMockComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotTemplateThumbnailFieldMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
@@ -67,18 +55,17 @@ export class DotTemplateThumbnailFieldMockComponent implements ControlValueAcces
 }
 
 @Component({
-    selector: 'dot-theme-selector-dropdown',
+    selector: 'dot-theme',
     template: '',
     providers: [
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotThemeSelectorDropdownMockComponent)
+            useExisting: forwardRef(() => DotThemeMockComponent)
         }
-    ],
-    standalone: false
+    ]
 })
-export class DotThemeSelectorDropdownMockComponent implements ControlValueAccessor {
+export class DotThemeMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
         //
     };
@@ -112,19 +99,16 @@ describe('DotTemplatePropsComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                DotTemplatePropsComponent,
-
-                DotFormDialogMockComponent,
-                DotTemplateThumbnailFieldMockComponent,
-                DotThemeSelectorDropdownMockComponent
-            ],
             imports: [
                 DotMessagePipe,
+                DotTemplatePropsComponent,
                 FormsModule,
                 ReactiveFormsModule,
                 DotFieldValidationMessageComponent,
-                DotFieldRequiredDirective
+                DotFieldRequiredDirective,
+                DotTemplateThumbnailFieldMockComponent,
+                DotThemeMockComponent,
+                ButtonModule
             ],
             providers: [
                 {
@@ -153,7 +137,16 @@ describe('DotTemplatePropsComponent', () => {
                     }
                 }
             ]
-        }).compileComponents();
+        })
+            .overrideComponent(DotTemplatePropsComponent, {
+                remove: {
+                    imports: [DotTemplateThumbnailFieldComponent, DotThemeComponent]
+                },
+                add: {
+                    imports: [DotTemplateThumbnailFieldMockComponent, DotThemeMockComponent]
+                }
+            })
+            .compileComponents();
     });
 
     beforeEach(() => {
@@ -169,7 +162,7 @@ describe('DotTemplatePropsComponent', () => {
     describe('HTML', () => {
         it('should setup <form> class', () => {
             const form = de.query(By.css('[data-testId="form"]'));
-            expect(form.classes['p-fluid']).toBe(true);
+            expect(form.classes['form']).toBe(true);
         });
 
         describe('fields', () => {
@@ -196,7 +189,7 @@ describe('DotTemplatePropsComponent', () => {
             it('should setup theme', () => {
                 const field = de.query(By.css('[data-testId="themeField"]'));
                 const label = field.query(By.css('label'));
-                const selector = field.query(By.css('dot-theme-selector-dropdown'));
+                const selector = field.query(By.css('dot-theme'));
 
                 expect(field.classes['field']).toBe(true);
 
@@ -237,7 +230,7 @@ describe('DotTemplatePropsComponent', () => {
     });
 
     describe('form', () => {
-        it('should get valut from config', () => {
+        it('should get value from config', () => {
             expect(component.form.value).toEqual({
                 title: '',
                 friendlyName: '',
@@ -263,32 +256,32 @@ describe('DotTemplatePropsComponent', () => {
         });
     });
 
-    describe('dot-form-dialog', () => {
-        it('should handle button disabled attr on form change', () => {
-            const dialog = de.query(By.css('[data-testId="dialogForm"]'));
-            expect(dialog.componentInstance.saveButtonDisabled).toBe(true);
+    describe('buttons', () => {
+        it('should handle save button disabled state on form change', () => {
+            const saveButton = de.query(By.css('[data-testid="dotFormDialogSave"]'));
+            expect(saveButton.componentInstance.disabled).toBe(true);
 
             component.form.get('title').setValue('Hello World');
             fixture.detectChanges();
-            expect(dialog.componentInstance.saveButtonDisabled).toBe(false);
+            expect(saveButton.componentInstance.disabled).toBe(false);
 
             component.form.get('title').setValue(''); // back to original value
             fixture.detectChanges();
-            expect(dialog.componentInstance.saveButtonDisabled).toBe(true);
+            expect(saveButton.componentInstance.disabled).toBe(true);
         });
 
-        it('should call save from config', () => {
-            const dialog = de.query(By.css('[data-testId="dialogForm"]'));
-            dialog.triggerEventHandler('save', {});
+        it('should call save from config when save button is clicked', () => {
+            const saveButton = de.query(By.css('[data-testid="dotFormDialogSave"]'));
+            saveButton.nativeElement.click();
 
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
             expect(dialogRef.close).toHaveBeenCalledWith(false);
             expect(dialogRef.close).toHaveBeenCalledTimes(1);
         });
 
-        it('should call cancel from config', () => {
-            const dialog = de.query(By.css('[data-testId="dialogForm"]'));
-            dialog.triggerEventHandler('cancel', {});
+        it('should call cancel from config when cancel button is clicked', () => {
+            const cancelButton = de.query(By.css('[data-testid="dotFormDialogCancel"]'));
+            cancelButton.nativeElement.click();
             expect(dialogRef.close).toHaveBeenCalledWith(true);
             expect(dialogRef.close).toHaveBeenCalledTimes(1);
         });

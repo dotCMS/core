@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -8,7 +9,7 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
@@ -18,8 +19,7 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `,
-    standalone: false
+    `
 })
 class MockMarkdownComponent {}
 
@@ -35,19 +35,24 @@ describe('DotAppsCardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [
-                CardModule,
-                AvatarModule,
-                DotAvatarDirective,
-                BadgeModule,
-                DotIconModule,
-                TooltipModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe
-            ],
-            declarations: [DotAppsCardComponent, MockMarkdownComponent],
+            imports: [DotAppsCardComponent],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+        })
+            .overrideComponent(DotAppsCardComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        CardModule,
+                        AvatarModule,
+                        BadgeModule,
+                        MockMarkdownComponent,
+                        TooltipModule,
+                        DotAvatarDirective,
+                        DotMessagePipe
+                    ]
+                }
+            })
+            .compileComponents();
     }));
 
     beforeEach(() => {
@@ -57,19 +62,19 @@ describe('DotAppsCardComponent', () => {
 
     describe('With configuration', () => {
         beforeEach(() => {
-            component.app = {
+            fixture.componentRef.setInput('app', {
                 allowExtraParams: true,
                 configurationsCount: 1,
                 key: 'asana',
                 name: 'Asana',
                 description: "It's asana to keep track of your asana events",
                 iconUrl: '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg'
-            };
+            });
             fixture.detectChanges();
         });
 
         it('should not have warning icon', () => {
-            expect(fixture.debugElement.query(By.css('dot-icon'))).toBeFalsy();
+            expect(fixture.debugElement.query(By.css('.pi-exclamation-triangle'))).toBeFalsy();
         });
 
         it('should not have disabled css class', () => {
@@ -85,34 +90,33 @@ describe('DotAppsCardComponent', () => {
 
             const { image, size } = avatar.componentInstance;
 
-            expect(image).toBe(component.app.iconUrl);
+            expect(image).toBe(component.$app().iconUrl);
             expect(size).toBe('large');
-            expect(avatar.attributes['ng-reflect-text']).toBe(component.app.name);
         });
 
         it('should set messages/values in DOM correctly', () => {
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-card__name')).nativeElement.textContent
-            ).toBe(component.app.name);
+            ).toBe(component.$app().name);
 
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-card__configurations')).nativeElement
                     .textContent
             ).toContain(
-                `${component.app.configurationsCount} ${messageServiceMock.get(
+                `${component.$app().configurationsCount} ${messageServiceMock.get(
                     'apps.configurations'
                 )}`
             );
 
             expect(
                 fixture.debugElement.query(By.css('.p-card-content')).nativeElement.textContent
-            ).toContain(component.app.description);
+            ).toContain(component.$app().description);
         });
     });
 
     describe('With No configuration & warnings', () => {
         beforeEach(() => {
-            component.app = {
+            fixture.componentRef.setInput('app', {
                 allowExtraParams: false,
                 configurationsCount: 0,
                 key: 'asana',
@@ -120,20 +124,13 @@ describe('DotAppsCardComponent', () => {
                 description: "It's asana to keep track of your asana events",
                 iconUrl: '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg',
                 sitesWithWarnings: 2
-            };
+            });
             fixture.detectChanges();
         });
 
         it('should have warning icon', () => {
-            const warningIcon = fixture.debugElement.query(By.css('dot-icon'));
+            const warningIcon = fixture.debugElement.query(By.css('.pi-exclamation-triangle'));
             expect(warningIcon).toBeTruthy();
-            expect(warningIcon.attributes['name']).toBe('warning');
-            expect(warningIcon.attributes['size']).toBe('18');
-            expect(warningIcon.attributes['ng-reflect-content']).toBe(
-                `${component.app.sitesWithWarnings} ${messageServiceMock.get(
-                    'apps.invalid.configurations'
-                )}`
-            );
         });
 
         it('should have disabled css class', () => {

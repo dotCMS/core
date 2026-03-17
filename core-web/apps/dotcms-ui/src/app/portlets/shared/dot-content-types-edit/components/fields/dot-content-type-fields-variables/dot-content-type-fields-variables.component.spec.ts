@@ -45,8 +45,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotContentTypeFieldsVariablesComponent],
-            imports: [DotKeyValueComponent],
+            declarations: [TestHostComponent],
+            imports: [DotKeyValueComponent, DotContentTypeFieldsVariablesComponent],
             providers: [
                 { provide: LoginService, useClass: LoginServiceMock },
                 {
@@ -111,12 +111,15 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     it('should delete a variable from the server', () => {
         const variableToDelete = mockFieldVariables[0];
-        jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'delete').mockReturnValue(
-            of([])
-        );
+
+        // Set up load spy to return mock data before detectChanges
+        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+        jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(of(variableToDelete));
+
         const deletedCollection = mockFieldVariables.filter(
             (item: DotFieldVariable) => variableToDelete.key !== item.key
         );
+
         fixtureHost.detectChanges();
 
         const dotKeyValue = de.query(By.css('dot-key-value-ng'));
@@ -130,7 +133,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     describe('Block Editor Field', () => {
         const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
             ...EMPTY_FIELD,
-            clazz: DotCMSClazzes.BLOCK_EDITOR
+            clazz: DotCMSClazzes.BLOCK_EDITOR,
+            contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
+            id: mockFieldVariables[0].fieldId
         };
 
         beforeEach(() => {
@@ -138,15 +143,13 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should set variable correctly', () => {
-            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
-                of(mockFieldVariables)
-            );
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
             expect(comp.fieldVariables.length).toBe(mockFieldVariables.length);
         });
 
         it('should not set allowedBlocks variable', () => {
-            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',

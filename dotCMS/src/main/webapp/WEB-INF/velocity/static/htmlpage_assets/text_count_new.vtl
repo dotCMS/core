@@ -1,0 +1,29 @@
+<div class="${fieldId}_countWrapper flex justify-between flex-wrap text-base-content/70 text-sm leading-none m-0">
+  <div id="${fieldId}-counter-text">
+    <span id="charactersRemaining-${fieldId}">$maxChar</span> characters
+  </div>
+  <div class="px-[5px]">Recommended Max $maxChar characters</div>
+</div>
+
+<script type="module">
+  function updateCharacterCount(textEntered) {
+    const counter = textEntered.length;
+    const countRemaining = document.getElementById(
+      "charactersRemaining-${fieldId}",
+    );
+    console.log(countRemaining);
+    console.log(textEntered);
+    const counterText = document.getElementById("${fieldId}-counter-text");
+
+    countRemaining.textContent = counter;
+    counterText.className = counter <= $maxChar ? "text-base-content/70" : "text-error";
+  }
+
+  DotCustomFieldApi.ready(() => {
+    const field = DotCustomFieldApi.getField("${fieldId}");
+    field.onChange((value) => {
+      updateCharacterCount(value);
+    });
+    updateCharacterCount(field.getValue() || "");
+  });
+</script>

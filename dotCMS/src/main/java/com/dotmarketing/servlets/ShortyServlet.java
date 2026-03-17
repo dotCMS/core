@@ -66,9 +66,9 @@ public class ShortyServlet extends HttpServlet {
   private final ShortyIdAPI    shortyIdAPI    = APILocator.getShortyAPI();
   private final WebResource    webResource    = new WebResource();
 
-  private static final String  JPEG                        = ".jpeg";
-  private static final String  JPEGP                       = ".jpegp";
-  private static final String  WEBP                        = ".webp";
+  private static final String  JPEG                        = "/jpeg";
+  private static final String  JPEGP                       = "/jpegp";
+  private static final String  WEBP                        = "/webp";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
   private static final Pattern widthPattern                = Pattern.compile("/(\\d+)w\\b");

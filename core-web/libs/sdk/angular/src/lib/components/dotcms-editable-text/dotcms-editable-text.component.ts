@@ -1,5 +1,4 @@
 import { EditorComponent, TINYMCE_SCRIPT_SRC } from '@tinymce/tinymce-angular';
-import { EventObj } from '@tinymce/tinymce-angular/editor/Events';
 
 import {
     Component,
@@ -21,6 +20,15 @@ import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
 import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
+
+/** Minimal TinyMCE editor API used by this component (avoids non-portable reference to nested tinymce types). */
+interface DotEditableTextEditor {
+    getContent(options?: { format?: string }): string;
+    isDirty(): boolean;
+    setContent(content: string, options?: { format?: string }): void;
+    focus(): void;
+    hasFocus(): boolean;
+}
 
 /**
  * Dot editable text component.
@@ -109,8 +117,8 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
      * @readonly
      * @memberof DotCMSEditableTextComponent
      */
-    get editor() {
-        return this.editorComponent?.editor;
+    get editor(): DotEditableTextEditor | undefined {
+        return this.editorComponent?.editor as DotEditableTextEditor | undefined;
     }
 
     /**
@@ -189,11 +197,11 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
     /**
      * Handle mouse down event
      *
-     * @param {EventObj<MouseEvent>} { event }
+     * @param {{ event: MouseEvent }} { event }
      * @return {*}
      * @memberof DotCMSEditableTextComponent
      */
-    onMouseDown({ event }: EventObj<MouseEvent>) {
+    onMouseDown({ event }: { event: MouseEvent }) {
         if (Number(this.onNumberOfPages) <= 1 || this.editorComponent.editor.hasFocus()) {
             return;
         }
@@ -225,9 +233,13 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
      * @memberof DotCMSEditableTextComponent
      */
     onFocusOut() {
-        const content = this.editor.getContent({ format: this.format });
+        const editor = this.editor;
+        if (!editor) {
+            return;
+        }
+        const content = editor.getContent({ format: this.format });
 
-        if (!this.editor.isDirty() || !this.didContentChange(content)) {
+        if (!editor.isDirty() || !this.didContentChange(content)) {
             return;
         }
 

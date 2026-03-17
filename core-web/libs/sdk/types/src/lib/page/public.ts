@@ -3,6 +3,15 @@
 import { DotHttpError } from '../client/public';
 
 /**
+ * Represents a map of style property keys and their corresponding values
+ * for use in the style editor.
+ *
+ * Key is a string representing the property name,
+ * value can be any type, allowing flexibility for different style values.
+ */
+export type StyleEditorProperties = Record<string, unknown>;
+
+/**
  * Represents a map of container identifiers to their container objects
  *
  * @interface DotCMSPageAssetContainers
@@ -378,6 +387,7 @@ export interface DotCMSBasicContentlet {
     widgetTitle?: string;
     onNumberOfPages?: string;
     __icon__?: string;
+    dotStyleProperties?: Record<string, unknown>;
     _map?: Record<string, unknown>;
 }
 

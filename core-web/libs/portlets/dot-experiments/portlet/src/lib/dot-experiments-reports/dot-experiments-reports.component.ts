@@ -1,13 +1,13 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -29,7 +29,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     selector: 'dot-experiments-reports',
     imports: [
         AsyncPipe,
-        NgIf,
         DotExperimentsUiHeaderComponent,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsReportsSkeletonComponent,
@@ -40,12 +39,14 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         TagModule,
         ButtonModule,
         ConfirmPopupModule,
-        TabViewModule
+        TabsModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
-    styleUrls: ['./dot-experiments-reports.component.scss'],
     providers: [DotExperimentsReportsStore],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col w-full h-full'
+    }
 })
 export class DotExperimentsReportsComponent implements OnInit {
     private readonly store = inject(DotExperimentsReportsStore);

@@ -1,0 +1,62 @@
+<script type="application/javascript">
+	function _camelizeMe(str) {
+		return str.replace(/[^a-z0-9 ]/ig, '')  // Replace everything but letters, numbers and spaces.
+		.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, // Find non-words, uppercase letters, leading-word letters, and multiple spaces.
+		function(match, index) {
+			return +match === 0 ? "" : match[index === 0 ? 'toUpperCase' : 'toUpperCase']();
+		});
+	}
+
+	function _keyTagUpdate() {
+		var keyTagStr=_camelizeMe(dijit.byId('name').get('value'));
+		dojo.byId("showKeyTag").value =keyTagStr;
+		dojo.byId("keyTag").value=keyTagStr;
+	}
+	
+	
+	function _makeKeyTagEditable(){
+		dojo.style(dojo.byId("keyTagWrapper"), "background", "#ffffff");
+		dojo.removeAttr(dojo.byId("showKeyTag"), "readonly");
+		document.getElementById('showKeyTag').focus();
+		
+	}
+	
+	function _finalizeEdit(){
+		var myKeyTag= dojo.byId("showKeyTag").value;
+		var keyTagStr=_camelizeMe(myKeyTag);
+		dojo.style(dojo.byId("keyTagWrapper"), "background", "#eeeeee");
+		dojo.attr(dojo.byId("showKeyTag"), "readonly", "true");
+		dojo.byId("showKeyTag").value =keyTagStr;
+		dojo.byId("keyTag").value=keyTagStr;
+	}
+	 
+	dojo.ready(function(){
+		dojo.connect(dojo.byId("name"), 'onblur', null, function(e){
+			var myKeyTag= dojo.byId("keyTag").value;
+
+			if(myKeyTag!=undefined && myKeyTag.trim().length > 0){
+				return;
+			}
+
+			 _keyTagUpdate();
+		});
+	
+		dojo.byId("showKeyTag").value =dojo.byId("keyTag").value;
+	});
+</script>
+
+<table>
+	<tr>
+		<td>
+			<div id="keyTagWrapper" style="background:#eeeeee;border-radius:7px;border:1px #dddddd solid;padding:5px 10px; 5px; 10px ;min-width: 250px;min-height:17px;font-weight: bold; white-space: nowrap;">
+
+					<input type="text" id="showKeyTag" readonly="true" onblur="_finalizeEdit()" style="width:97%;border:0px;background: transparent;">
+			</div>
+		</td>
+		<td>&nbsp;
+			<button dojoType="dijit.form.Button" iconClass="editIcon" onclick="_makeKeyTagEditable()">
+				$text.get("Edit")
+			</button>
+		</td>
+	</tr>
+</table>

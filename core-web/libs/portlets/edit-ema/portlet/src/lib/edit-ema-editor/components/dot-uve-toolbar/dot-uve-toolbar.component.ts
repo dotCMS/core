@@ -1,7 +1,6 @@
-import { tapResponse } from '@ngrx/operators';
-
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -18,67 +17,65 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
 import { ChipModule } from 'primeng/chip';
+import { DatePickerModule } from 'primeng/datepicker';
+import { PopoverModule } from 'primeng/popover';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { map } from 'rxjs/operators';
 
-import {
-    DotContentletLockerService,
-    DotDevicesService,
-    DotMessageService,
-    DotPersonalizeService
-} from '@dotcms/data-access';
+import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotLanguageSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { convertLocalTimeToUTC } from '../../../utils';
+import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
     imports: [
         NgClass,
+        FormsModule,
+        ReactiveFormsModule,
         ButtonModule,
+        DatePickerModule,
+        ChipModule,
+        ClipboardModule,
+        PopoverModule,
         ToolbarModule,
+        TooltipModule,
+        SplitButtonModule,
+        DotMessagePipe,
+        DotEditorModeSelectorComponent,
         DotEmaBookmarksComponent,
         DotEmaInfoDisplayComponent,
         DotEmaRunningExperimentComponent,
-        ClipboardModule,
-        CalendarModule,
-        SplitButtonModule,
-        FormsModule,
-        ReactiveFormsModule,
-        EditEmaPersonaSelectorComponent,
-        EditEmaLanguageSelectorComponent,
-        ClipboardModule,
+        DotToggleLockButtonComponent,
         DotUveDeviceSelectorComponent,
-        DotMessagePipe,
         DotUveWorkflowActionsComponent,
-        ChipModule,
-        DotEditorModeSelectorComponent
+        EditEmaPersonaSelectorComponent,
+        DotLanguageSelectorComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
-    styleUrl: './dot-uve-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
-    $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
+    $languageSelector = viewChild<DotLanguageSelectorComponent>('languageSelector');
 
     @Output() translatePage = new EventEmitter<{ page: DotCMSPage; newLanguage: number }>();
     @Output() editUrlContentMap = new EventEmitter<DotCMSURLContentMap>();
@@ -89,10 +86,10 @@ export class DotUveToolbarComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
-    readonly #dotContentletLockerService = inject(DotContentletLockerService);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
+    readonly $isEditMode = this.#store.$isEditMode;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
     readonly $isLiveMode = this.#store.$isLiveMode;
     readonly $apiURL = this.#store.$apiURL;
@@ -101,6 +98,17 @@ export class DotUveToolbarComponent {
     readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.socialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
+    readonly $isPaletteOpen = this.#store.palette.open;
+    readonly $canEditPage = this.#store.$canEditPage;
+
+    /**
+     * Popover passthrough styles for the "Copy URLs" popover.
+     * Keeps the popover compact and prevents long URLs from stretching the overlay.
+     */
+    readonly copyUrlPopoverPt = {
+        root: { class: 'w-full max-w-[25rem]' },
+        content: { class: '!p-3' }
+    };
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -112,10 +120,37 @@ export class DotUveToolbarComponent {
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
         const publishDate = this.$pageParams().publishDate;
-
-        const previewDate = publishDate ? new Date(publishDate) : new Date();
+        const previewDate = publishDate ? convertUTCToLocalTime(new Date(publishDate)) : new Date();
 
         return previewDate;
+    });
+
+    protected readonly $showDeviceSelector = computed(() => {
+        const isEditMode = this.$pageParams().mode === UVE_MODE.EDIT;
+        return !isEditMode && this.$devices()?.length > 0;
+    });
+
+    protected readonly $showUrlContentMap = computed(() => {
+        const isEditMode = this.$pageParams().mode === UVE_MODE.EDIT;
+        return isEditMode && this.$urlContentMap();
+    });
+
+    readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
+        const params = this.$pageParams();
+        const siteId = this.#store.pageAPIResponse()?.site?.identifier;
+        const host = params.clientHost || window.location.origin;
+        const path = params.url?.replace(/\/index(\.html)?$/, '') || '/';
+
+        return [
+            {
+                label: 'uve.toolbar.page.live.url',
+                value: new URL(path, host).toString()
+            },
+            {
+                label: 'uve.toolbar.page.current.view.url',
+                value: createFullURL(params, siteId)
+            }
+        ];
     });
 
     readonly $pageInode = computed(() => {
@@ -125,8 +160,8 @@ export class DotUveToolbarComponent {
     readonly $actions = this.#store.workflowLoading;
     readonly $workflowLoding = this.#store.workflowLoading;
 
-    defaultDevices = DEFAULT_DEVICES;
-    $MIN_DATE = signal(this.#getMinDate());
+    protected defaultDevices = DEFAULT_DEVICES;
+    protected $MIN_DATE = signal(this.#getMinDate());
 
     /**
      * Fetch the page on a given date
@@ -142,6 +177,10 @@ export class DotUveToolbarComponent {
             mode: UVE_MODE.LIVE,
             publishDate: publishDateUTC
         });
+    }
+
+    protected togglePalette(): void {
+        this.#store.setPaletteOpen(!this.$isPaletteOpen());
     }
 
     /**
@@ -217,13 +256,17 @@ export class DotUveToolbarComponent {
                         this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
                         this.$personaSelector().fetchPersonas();
                     },
-                    error: () => {
+                    error: (err: unknown) => {
+                        const detail =
+                            (err instanceof HttpErrorResponse
+                                ? this.#getPersonalizeErrorDetail(err)
+                                : null) ??
+                            this.#dotMessageService.get('uve.personalize.empty.page.error');
                         this.#messageService.add({
                             severity: 'error',
                             summary: this.#dotMessageService.get('error'),
-                            detail: this.#dotMessageService.get('uve.personalize.empty.page.error')
+                            detail
                         });
-
                         this.$personaSelector().resetValue();
                     }
                 });
@@ -293,7 +336,7 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
+                this.$languageSelector()?.value.set(this.$toolbar().currentLanguage);
             }
         });
     }
@@ -317,38 +360,23 @@ export class DotUveToolbarComponent {
     }
 
     /**
-     * Unlocks a page with the specified inode.
-     *
-     * @param {string} inode
-     * @memberof EditEmaToolbarComponent
+     * Extracts a user- and support-friendly error detail from the personalization API error.
+     * Uses backend message when available (header or body); returns null for generic i18n fallback.
      */
-    unlockPage(inode: string) {
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-            detail: this.#dotMessageService.get('edit.ema.page.is.being.unlocked')
-        });
-
-        this.#dotContentletLockerService
-            .unlock(inode)
-            .pipe(
-                tapResponse({
-                    next: () => {
-                        this.#messageService.add({
-                            severity: 'success',
-                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-                            detail: this.#dotMessageService.get('edit.ema.page.unlock.success')
-                        });
-                    },
-                    error: () => {
-                        this.#messageService.add({
-                            severity: 'error',
-                            summary: this.#dotMessageService.get('edit.ema.page.unlock'),
-                            detail: this.#dotMessageService.get('edit.ema.page.unlock.error')
-                        });
-                    }
-                })
-            )
-            .subscribe(() => this.#store.reloadCurrentPage());
+    #getPersonalizeErrorDetail(err: HttpErrorResponse): string | null {
+        const headerMessage = err.headers?.get('error-message')?.trim();
+        if (headerMessage) {
+            return headerMessage;
+        }
+        const bodyError = err.error?.error;
+        if (typeof bodyError === 'string') {
+            const afterColon = bodyError.indexOf(': ');
+            const trimmed =
+                afterColon >= 0 ? bodyError.slice(afterColon + 2).trim() : bodyError.trim();
+            if (trimmed) {
+                return trimmed;
+            }
+        }
+        return null;
     }
 }

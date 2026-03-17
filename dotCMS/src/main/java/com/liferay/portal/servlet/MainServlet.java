@@ -22,7 +22,7 @@ package com.liferay.portal.servlet;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -110,7 +110,7 @@ public class MainServlet extends ActionServlet {
       }
       
       // Make sure elasticseach is up
-      new ESIndexAPI().waitUtilIndexReady();
+      APILocator.getESIndexAPI().waitUtilIndexReady();
       
       
 

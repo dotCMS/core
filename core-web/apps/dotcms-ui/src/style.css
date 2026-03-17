@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+@import './daisyui-theme.css';
+
+:root {
+    --experiment-nav-size: 80px;
+}
+
+a {
+    @apply text-primary-500 underline;
+}
+
+a:hover {
+    @apply text-primary-600 no-underline;
+}
+
+a:active {
+    @apply text-primary-700;
+}
+
+a:visited {
+    @apply text-primary-800;
+}
+
+/* The .form > div is because the app form uses a div to wrap the fields. */
+.form {
+    @apply w-full space-y-5;
+}
+
+/* This class is added by the dotFieldRequired directive */
+.p-label-input-required::after {
+    @apply text-red-500;
+    content: '*';
+    margin-left: 2px;
+    vertical-align: middle;
+}
+
+/*
+ * With space-y-5, we need to hide empty fields.
+ * This selector needs work; we don't want to specify every single component that shouldn't be hidden.
+ * TODO: (migration) check all forms for "hint" or "error" messages when empty — they add extra space between fields.
+ */
+/* .form
+    *:not(
+        .p-checkbox-box,
+        .p-radiobutton-icon,
+        .p-select-loading-icon,
+        .p-toggleswitch-handle,
+        button,
+        img,
+        input,
+        path,
+        textarea
+    ):empty {
+    @apply hidden;
+} */
+
+.form .field {
+    @apply flex flex-col gap-1;
+}
+
+.form .field label {
+    @apply text-sm font-medium;
+}
+
+.form .checkbox,
+.form .radio {
+    @apply flex flex-row gap-2 items-center;
+}
+
+.form .checkbox label,
+.form .radio label {
+    @apply text-sm font-normal;
+}
+
+.form .p-field-hint {
+    @apply text-sm text-gray-500;
+}
+
+.form .p-field-error {
+    @apply text-sm text-red-500;
+}

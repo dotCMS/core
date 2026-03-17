@@ -13,6 +13,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 
 import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.priv.util.SearchSourceBuilderUtil;
@@ -56,7 +57,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexResponse;
+import com.dotcms.content.index.domain.CreateIndexStatus;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -71,14 +72,14 @@ import org.quartz.SchedulerException;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
-    private final ESIndexAPI indexApi;
+    private final IndexAPI indexApi;
     private final ESMappingAPIImpl mappingAPI;
     private final IndiciesAPI indiciesAPI;
     private ArrayList<Object> list;
     private int indexPosition;
 
     @VisibleForTesting
-    public ESSiteSearchAPI(final ESIndexAPI indexApi,
+    public ESSiteSearchAPI(final IndexAPI indexApi,
             final ESMappingAPIImpl mappingAPI,
             final IndiciesAPI indiciesAPI) {
         this.indexApi = indexApi;
@@ -367,9 +368,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
 
         //create index
-        CreateIndexResponse cir = indexApi.createIndex(indexName, settings, shards);
+        CreateIndexStatus cir = indexApi.createIndex(indexName, settings, shards);
         int i = 0;
-        while(!cir.isAcknowledged()){
+        while(!cir.acknowledged()){
 
             try {
                 Thread.sleep(100);

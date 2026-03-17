@@ -12,8 +12,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotLayoutPropertiesItemComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
@@ -28,7 +27,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
         /**/
     };
 
-    @HostListener('click', ['$event'])
+    @HostListener('click')
     onClick() {
         this.value = !this.value;
         this.propagateChange(this.value);

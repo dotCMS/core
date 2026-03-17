@@ -6,7 +6,8 @@ import {
     ViewChild,
     ElementRef,
     Input,
-    ChangeDetectorRef
+    ChangeDetectorRef,
+    inject
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -22,7 +23,7 @@ const regexYoutube = /(youtube\.com\/watch\?v=.*)|(youtu\.be\/.*)/;
 @Component({
     selector: 'dot-external-asset',
     templateUrl: './dot-external-asset.component.html',
-    styleUrls: ['./dot-external-asset.component.scss'],
+    styleUrls: ['./dot-external-asset.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })
@@ -48,10 +49,10 @@ export class DotExternalAssetComponent {
         return this.form.controls.url?.invalid;
     }
 
-    constructor(
-        private fb: FormBuilder,
-        private cd: ChangeDetectorRef
-    ) {
+    private readonly fb = inject(FormBuilder);
+    private readonly cd = inject(ChangeDetectorRef);
+
+    constructor() {
         this.form = this.fb.group({
             url: ['', [Validators.required, Validators.pattern(regexURL)]]
         });

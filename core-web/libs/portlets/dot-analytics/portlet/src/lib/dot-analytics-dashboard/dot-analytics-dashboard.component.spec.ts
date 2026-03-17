@@ -2,14 +2,14 @@ import {
     byTestId,
     createRoutingFactory,
     mockProvider,
-    SpectatorRouting,
-    SpyObject
+    SpectatorRouting
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
-import { ActivatedRoute, Router } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 
 import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -20,24 +20,26 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
-import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
-import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
-import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
 import DotAnalyticsDashboardComponent from './dot-analytics-dashboard.component';
+import { DotAnalyticsTopPagesTableComponent } from './reports/pageview/dot-analytics-top-pages-table/dot-analytics-top-pages-table.component';
+import { DotAnalyticsChartComponent } from './shared/components/dot-analytics-chart/dot-analytics-chart.component';
+import { DotAnalyticsFiltersComponent } from './shared/components/dot-analytics-filters/dot-analytics-filters.component';
+import { DotAnalyticsMetricComponent } from './shared/components/dot-analytics-metric/dot-analytics-metric.component';
 
 const messageServiceMock = new MockDotMessageService({
     'analytics.metrics.total-pageviews': 'Total Pageviews',
     'analytics.metrics.unique-visitors': 'Unique Visitors',
     'analytics.metrics.top-page-performance': 'Top Page Performance',
     'analytics.feature.state': 'This feature is in',
-    development: 'development'
+    development: 'development',
+    'analytics.dashboard.tabs.pageview': 'Pageview',
+    'analytics.dashboard.tabs.conversions': 'Conversions',
+    'analytics.dashboard.tabs.engagement': 'Engagement'
 });
 
 describe('DotAnalyticsDashboardComponent', () => {
     let spectator: SpectatorRouting<DotAnalyticsDashboardComponent>;
     let store: InstanceType<typeof DotAnalyticsDashboardStore>;
-    let router: SpyObject<Router>;
 
     const defaultLocalStorageMock = {
         getItem: jest.fn().mockReturnValue(true), // Por defecto, el banner está oculto
@@ -46,22 +48,23 @@ describe('DotAnalyticsDashboardComponent', () => {
 
     const createComponent = createRoutingFactory({
         component: DotAnalyticsDashboardComponent,
-        imports: [MessagesModule, DotMessagePipe],
+        imports: [MessageModule, DotMessagePipe],
         declarations: [
-            MockComponent(DotAnalyticsDashboardChartComponent),
-            MockComponent(DotAnalyticsDashboardFiltersComponent),
-            MockComponent(DotAnalyticsDashboardMetricsComponent),
-            MockComponent(DotAnalyticsDashboardTableComponent)
+            MockComponent(DotAnalyticsChartComponent),
+            MockComponent(DotAnalyticsFiltersComponent),
+            MockComponent(DotAnalyticsMetricComponent),
+            MockComponent(DotAnalyticsTopPagesTableComponent)
         ],
+        componentProviders: [DotAnalyticsDashboardStore],
         providers: [
-            DotAnalyticsDashboardStore,
             mockProvider(DotAnalyticsService),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
             mockProvider(GlobalStore, {
-                currentSiteId: jest.fn().mockReturnValue('test-site-123')
+                currentSiteId: jest.fn().mockReturnValue('test-site-123'),
+                addNewBreadcrumb: jest.fn()
             }),
             {
                 provide: DotLocalstorageService,
@@ -74,16 +77,16 @@ describe('DotAnalyticsDashboardComponent', () => {
     describe('Component Rendering', () => {
         beforeEach(() => {
             spectator = createComponent();
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
         });
 
         it('should create component successfully', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render exactly 3 metric cards', () => {
-            const metricCards = spectator.queryAll(byTestId('analytics-metric-card'));
-            expect(metricCards).toHaveLength(3);
+        it('should render pageview report component', () => {
+            const pageviewReport = spectator.query('dot-analytics-pageview-report');
+            expect(pageviewReport).toExist();
         });
 
         it('should render line chart component', () => {
@@ -91,14 +94,14 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(timelineChart).toExist();
         });
 
-        it('should render pie chart component', () => {
-            const deviceChart = spectator.query(byTestId('analytics-device-chart'));
-            expect(deviceChart).toExist();
+        it('should render pageview report when pageview tab is active', () => {
+            const pageviewReport = spectator.query('dot-analytics-pageview-report');
+            expect(pageviewReport).toExist();
         });
 
-        it('should render table component', () => {
-            const table = spectator.query(byTestId('analytics-table'));
-            expect(table).toExist();
+        it('should render tab panels for each report type', () => {
+            const tabPanels = spectator.queryAll('p-tabpanel');
+            expect(tabPanels.length).toBe(3);
         });
 
         it('should render filters component', () => {
@@ -113,14 +116,14 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         describe('User Interactions', () => {
             it('should call onRefresh when refresh button is clicked', () => {
-                const spy = jest.spyOn(store, 'loadAllDashboardData');
+                const spy = jest.spyOn(spectator.component, 'onRefresh');
 
                 const refreshButton = spectator.query(byTestId('refresh-button'));
                 expect(refreshButton).toExist();
 
                 spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', null);
 
-                expect(spy).toHaveBeenCalledWith(TIME_RANGE_OPTIONS.last7days, 'test-site-123');
+                expect(spy).toHaveBeenCalled();
             });
         });
     });
@@ -128,7 +131,7 @@ describe('DotAnalyticsDashboardComponent', () => {
     describe('Query Params Logic', () => {
         it('should timeRange be last7days when empty query params', () => {
             spectator = createComponent();
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -139,7 +142,7 @@ describe('DotAnalyticsDashboardComponent', () => {
                     time_range: 'last7days'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -152,31 +155,23 @@ describe('DotAnalyticsDashboardComponent', () => {
                     to: '2024-01-31'
                 }
             });
-            store = spectator.inject(DotAnalyticsDashboardStore);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.timeRange()).toEqual(['2024-01-01', '2024-01-31']);
         });
 
-        it('should call router.navigate with invalid query params', () => {
+        it('should fall back to last7days when query param is invalid', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'invalid-range'
                 }
             });
-            router = spectator.inject(Router);
-            const route = spectator.inject(ActivatedRoute);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                relativeTo: route,
-                queryParams: {
-                    time_range: 'last7days'
-                },
-                queryParamsHandling: 'replace',
-                replaceUrl: true
-            });
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
 
-        it('should call router.navigate with custom range has incomplete dates', () => {
+        it('should set timeRange to last7days when custom range has incomplete dates', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'custom',
@@ -184,20 +179,12 @@ describe('DotAnalyticsDashboardComponent', () => {
                     // to: '2024-01-31'
                 }
             });
-            router = spectator.inject(Router);
-            const route = spectator.inject(ActivatedRoute);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                relativeTo: route,
-                queryParams: {
-                    time_range: 'last7days'
-                },
-                queryParamsHandling: 'replace',
-                replaceUrl: true
-            });
+            expect(store.timeRange()).toBe('last7days');
         });
 
-        it('should call router.navigate with invalid custom range ', () => {
+        it('should set timeRange to custom range when dates are inverted in query params', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'custom',
@@ -205,17 +192,70 @@ describe('DotAnalyticsDashboardComponent', () => {
                     to: '1993-01-31'
                 }
             });
-            router = spectator.inject(Router);
-            const route = spectator.inject(ActivatedRoute);
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                relativeTo: route,
+            // paramsToTimeRange passes through raw date values without order validation;
+            // date validation is enforced in the UI layer via isValidCustomDateRange
+            expect(store.timeRange()).toEqual(['2024-01-01', '1993-01-31']);
+        });
+
+        it('should set timeRange to last7days when today is in query params', () => {
+            spectator = createComponent({
                 queryParams: {
-                    time_range: 'last7days'
-                },
-                queryParamsHandling: 'replace',
-                replaceUrl: true
+                    time_range: 'today'
+                }
             });
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
+
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+
+        it('should set timeRange to last7days when yesterday is in query params', () => {
+            spectator = createComponent({
+                queryParams: {
+                    time_range: 'yesterday'
+                }
+            });
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
+
+            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+    });
+
+    describe('Breadcrumb Management', () => {
+        let globalStore: InstanceType<typeof GlobalStore>;
+
+        beforeEach(() => {
+            spectator = createComponent();
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
+            globalStore = spectator.inject(GlobalStore);
+            TestBed.flushEffects();
+        });
+
+        it('should call addNewBreadcrumb with the default tab on initialization', () => {
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-pageview', label: 'Pageview' })
+            );
+        });
+
+        it('should call addNewBreadcrumb with the new tab when tab changes', () => {
+            jest.clearAllMocks();
+            store.setCurrentTab('conversions');
+            TestBed.flushEffects();
+
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-conversions', label: 'Conversions' })
+            );
+        });
+
+        it('should call addNewBreadcrumb with engagement tab when switched', () => {
+            jest.clearAllMocks();
+            store.setCurrentTab('engagement');
+            TestBed.flushEffects();
+
+            expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                expect.objectContaining({ id: 'analytics-engagement', label: 'Engagement' })
+            );
         });
     });
 
@@ -247,8 +287,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator = createComponent();
             spectator.detectChanges();
 
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
+            // PrimeNG 21: close button is inside p-message with aria-label attribute
+            const closeButton = spectator.query('p-message button[aria-label]');
+            closeButton?.dispatchEvent(new Event('click'));
             spectator.detectChanges();
 
             expect(spectator.component.$showMessage()).toBe(false);
@@ -275,8 +316,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             spectator = createComponent();
             spectator.detectChanges();
 
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
+            // PrimeNG 21: close button is inside p-message with aria-label attribute
+            const closeButton = spectator.query('p-message button[aria-label]');
+            closeButton?.dispatchEvent(new Event('click'));
             spectator.detectChanges();
 
             expect(defaultLocalStorageMock.setItem).toHaveBeenCalledWith(

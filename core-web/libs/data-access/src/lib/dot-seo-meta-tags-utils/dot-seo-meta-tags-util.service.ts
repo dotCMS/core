@@ -36,7 +36,7 @@ export class DotSeoMetaTagsUtilService {
         const metaTags = pageDocument.getElementsByTagName('meta');
         const metaTagsObject = {};
 
-        for (const metaTag of metaTags) {
+        for (const metaTag of Array.from(metaTags)) {
             const name = metaTag.getAttribute('name');
             const property = metaTag.getAttribute('property');
             const content = metaTag.getAttribute('content');

@@ -69,7 +69,8 @@ describe('DotExperimentsReportsChartComponent', () => {
 
     it('should show the loading state', () => {
         spectator.setInput({
-            isLoading: true
+            isLoading: true,
+            data: DAILY_CHARTJS_DATA_MOCK_WITH_DATA
         });
         expect(spectator.query(byTestId('loading-skeleton'))).toExist();
     });

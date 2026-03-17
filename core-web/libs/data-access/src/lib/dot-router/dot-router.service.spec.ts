@@ -40,9 +40,11 @@ class RouterMock {
         return this._events.asObservable();
     }
 
-    getCurrentNavigation() {
+    getCurrentNavigation(): { finalUrl: { queryParams: { [key: string]: string } } } | null {
         return {
-            finalUrl: {}
+            finalUrl: {
+                queryParams: {}
+            }
         };
     }
 
@@ -61,7 +63,7 @@ class ActivatedRouteMock {
 
 describe('DotRouterService', () => {
     let service: DotRouterService;
-    let router;
+    let router: InstanceType<typeof RouterMock>;
 
     beforeEach(waitForAsync(() => {
         const testbed = TestBed.configureTestingModule({
@@ -84,7 +86,7 @@ describe('DotRouterService', () => {
         });
 
         service = testbed.inject(DotRouterService);
-        router = testbed.inject(Router);
+        router = testbed.inject(Router) as unknown as InstanceType<typeof RouterMock>;
     }));
 
     it('should set current url value', () => {
@@ -170,20 +172,14 @@ describe('DotRouterService', () => {
     it('should go to edit page', () => {
         service.goToEditPage({ url: 'abc/def' });
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-            queryParams: { url: 'abc/def' },
-            state: {
-                menuId: 'edit-page'
-            }
+            queryParams: { url: 'abc/def', mId: 'edit' }
         });
     });
 
     it('should go to edit page with language_id', () => {
         service.goToEditPage({ url: 'abc/def', language_id: '1' });
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
-            queryParams: { url: 'abc/def', language_id: '1' },
-            state: {
-                menuId: 'edit-page'
-            }
+            queryParams: { url: 'abc/def', language_id: '1', mId: 'edit' }
         });
     });
 
@@ -228,6 +224,7 @@ describe('DotRouterService', () => {
 
     it('should return true if edit page url', () => {
         router.routerState.snapshot.url = 'edit-page';
+        expect(service.currentPortlet.id).toBe('site-browser');
         expect(service.isEditPage()).toBe(true);
     });
 
@@ -250,8 +247,11 @@ describe('DotRouterService', () => {
 
     it('should got to porlet by URL', () => {
         service.gotoPortlet('/c/test');
-        expect(router.createUrlTree).toHaveBeenCalledWith(['/c/test'], { queryParamsHandling: '' });
-        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test'], { replaceUrl: false });
+        expect(router.createUrlTree).toHaveBeenCalledWith(['/c/test'], {
+            queryParamsHandling: '',
+            queryParams: {}
+        });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(expect.anything(), { replaceUrl: false });
     });
 
     it('should go to porlet by URL and keep the queryParams', () => {
@@ -260,11 +260,30 @@ describe('DotRouterService', () => {
             replaceUrl: false
         });
         expect(router.createUrlTree).toHaveBeenCalledWith(['/c/test?filter="Blog"'], {
-            queryParamsHandling: 'preserve'
+            queryParamsHandling: 'preserve',
+            queryParams: {}
         });
-        expect(router.navigateByUrl).toHaveBeenCalledWith(['/c/test?filter="Blog"'], {
-            replaceUrl: false
+        expect(router.navigateByUrl).toHaveBeenCalledWith(expect.anything(), { replaceUrl: false });
+    });
+
+    it('should go to porlet by URL with queryParams', () => {
+        const queryParams = {
+            folderId: '123',
+            path: '/images'
+        };
+
+        service.gotoPortlet('/c/content-drive', {
+            queryParams
         });
+
+        expect(router.createUrlTree).toHaveBeenCalledWith(['/c/content-drive'], {
+            queryParamsHandling: '',
+            queryParams: {
+                folderId: '123',
+                path: '/images'
+            }
+        });
+        expect(router.navigateByUrl).toHaveBeenCalledWith(expect.anything(), { replaceUrl: false });
     });
 
     it('should return the correct  Portlet Id', () => {
@@ -275,6 +294,38 @@ describe('DotRouterService', () => {
                 'c/content%3Ffilter%3DProducts/19d3aecc-5b68-4d98-ba1b-297d5859403c'
             )
         ).toBe('content');
+    });
+
+    it('should return correct Portlet Id using custom resolver for analytics', () => {
+        expect(service.getPortletId('/c/analytics/dashboard')).toBe('analytics-dashboard');
+        expect(service.getPortletId('/c/analytics/reports?test=value')).toBe('analytics-reports');
+        expect(service.getPortletId('#/c/analytics/overview')).toBe('analytics-overview');
+    });
+
+    it('should handle analytics without second segment gracefully', () => {
+        // Edge case: /analytics accessed without a second segment should return 'analytics'
+        // instead of 'analytics-undefined'
+        expect(service.getPortletId('/#/analytics')).toBe('analytics');
+        expect(service.getPortletId('/#/analytics?test=value')).toBe('analytics');
+    });
+
+    it('should fallback to default behavior when no custom resolver exists', () => {
+        expect(service.getPortletId('/c/sites')).toBe('sites');
+        expect(service.getPortletId('/c/content-types/edit')).toBe('content-types');
+    });
+
+    it('should handle empty URL segments gracefully', () => {
+        // Edge case: URLs that result in empty segments after filtering
+        expect(service.getPortletId('/')).toBe('');
+        expect(service.getPortletId('/c/')).toBe('');
+        expect(service.getPortletId('/#/')).toBe('');
+    });
+
+    it('should resolve legacy portlet IDs using custom resolver', () => {
+        // Test legacy ID 'edit-page' maps to 'site-browser'
+        expect(service.getPortletId('/c/edit-page')).toBe('site-browser');
+        expect(service.getPortletId('/c/edit-page/content')).toBe('site-browser');
+        expect(service.getPortletId('#/c/edit-page?url=test')).toBe('site-browser');
     });
 
     it('should navigate replacing URL params', () => {

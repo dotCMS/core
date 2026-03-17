@@ -55,6 +55,7 @@ RUN apt update && \
         libmimalloc2.0 \
         openssl \
         libapr1 \
+        libarchive-tools \
         libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
@@ -63,7 +64,7 @@ RUN apt update && \
     apt install -y --no-install-recommends postgresql-common && \
     /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
     apt update && \
-    apt install -y --no-install-recommends postgresql-client-16 && \
+    apt install -y --no-install-recommends postgresql-client-18 && \
     /usr/bin/pg_dump --version || exit 1 && \
     apt purge -y postgresql-common && \
     rm -rf /var/lib/apt/lists/*

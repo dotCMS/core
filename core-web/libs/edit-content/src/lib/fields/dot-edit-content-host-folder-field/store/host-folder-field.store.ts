@@ -1,19 +1,19 @@
 import { tapResponse } from '@ngrx/operators';
-import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { of, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { tap, exhaustMap, switchMap, map, filter } from 'rxjs/operators';
-
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { exhaustMap, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import {
+    ComponentStatus,
+    CustomTreeNode,
     TreeNodeItem,
     TreeNodeSelectItem
-} from '../../../models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '../../../services/dot-edit-content.service';
+} from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 
 export const PEER_PAGE_LIMIT = 7000;
 
@@ -60,7 +60,7 @@ export const HostFolderFiledStore = signalStore(
         })
     })),
     withMethods((store) => {
-        const dotEditContentService = inject(DotEditContentService);
+        const dotBrowsingService = inject(DotBrowsingService);
 
         return {
             /**
@@ -70,7 +70,7 @@ export const HostFolderFiledStore = signalStore(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(({ path, isRequired }) => {
-                        return dotEditContentService
+                        return dotBrowsingService
                             .getSitesTreePath({
                                 perPage: PEER_PAGE_LIMIT,
                                 filter: '*',
@@ -111,7 +111,7 @@ export const HostFolderFiledStore = signalStore(
                         }
 
                         if (isRequired) {
-                            return dotEditContentService.getCurrentSiteAsTreeNodeItem().pipe(
+                            return dotBrowsingService.getCurrentSiteAsTreeNodeItem().pipe(
                                 switchMap((currentSite) => {
                                     const node = sites.find(
                                         (item) => item.label === currentSite.label
@@ -137,7 +137,7 @@ export const HostFolderFiledStore = signalStore(
                         const hasPaths = path.includes('/');
 
                         if (!hasPaths) {
-                            const response = {
+                            const response: CustomTreeNode = {
                                 node: sites.find((item) => item.data.hostname === path),
                                 tree: null
                             };
@@ -145,9 +145,9 @@ export const HostFolderFiledStore = signalStore(
                             return of(response);
                         }
 
-                        return dotEditContentService.buildTreeByPaths(path);
+                        return dotBrowsingService.buildTreeByPaths(path);
                     }),
-                    tap(({ node, tree }) => {
+                    tap(({ node, tree }: CustomTreeNode) => {
                         const changes: Partial<HostFolderFiledState> = {};
                         if (node) {
                             changes.nodeSelected = node;
@@ -157,7 +157,7 @@ export const HostFolderFiledStore = signalStore(
                             const currentTree = store.tree();
 
                             const newTree = currentTree.map((item) => {
-                                if (item.data.hostname === tree.parent.hostName) {
+                                if (item.data?.hostname === tree?.parent?.hostName) {
                                     return {
                                         ...item,
                                         children: [...tree.folders]
@@ -174,17 +174,31 @@ export const HostFolderFiledStore = signalStore(
                 )
             ),
             /**
-             *  Load children of a node
+             * Load children of a node.
+             * Skips the request when the node is already a leaf or has a non-empty children array
+             * (e.g. from buildTreeByPaths or a previous expand) to avoid overwriting the tree and
+             * losing items like the parent injected for pagination. Nodes with children: [] are
+             * still loaded so expandable placeholders get real data.
              */
             loadChildren: rxMethod<TreeNodeSelectItem>(
                 pipe(
+                    filter((event: TreeNodeSelectItem) => {
+                        const { node } = event;
+                        const hasChildrenArray = Array.isArray(node.children);
+                        const hasLoadedChildren =
+                            hasChildrenArray && (node.children as TreeNodeItem[]).length > 0;
+                        const isLeaf = node.leaf === true;
+                        // Only load children when the node is not already a leaf
+                        // and either has no children array or the array is empty.
+                        return !isLeaf && (!hasChildrenArray || !hasLoadedChildren);
+                    }),
                     exhaustMap((event: TreeNodeSelectItem) => {
                         const { node } = event;
                         const { hostname, path } = node.data;
 
                         const fullPath = `${hostname}/${path}`;
 
-                        return dotEditContentService.getFoldersTreeNode(fullPath).pipe(
+                        return dotBrowsingService.getFoldersTreeNode(fullPath).pipe(
                             tap(({ folders }) => {
                                 node.leaf = true;
                                 node.icon = 'pi pi-folder-open';

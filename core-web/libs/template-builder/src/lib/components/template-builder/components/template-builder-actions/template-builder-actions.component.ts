@@ -10,23 +10,31 @@ import {
     Output,
     inject
 } from '@angular/core';
-import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { FormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotThemeComponent } from '@dotcms/ui';
 
 import { DotTemplateLayoutProperties } from '../../models/models';
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
-import { DotLayoutPropertiesModule } from '../dot-layout-properties/dot-layout-properties.module';
+import { DotLayoutPropertiesComponent } from '../dot-layout-properties/dot-layout-properties.component';
 
 @Component({
     selector: 'dotcms-template-builder-actions',
-    imports: [ButtonModule, DotLayoutPropertiesModule, DotMessagePipe],
+    host: {
+        class: 'flex gap-2'
+    },
+    imports: [
+        ButtonModule,
+        FormsModule,
+        DotLayoutPropertiesComponent,
+        DotMessagePipe,
+        DotThemeComponent
+    ],
     templateUrl: './template-builder-actions.component.html',
-    styleUrls: ['./template-builder-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
@@ -43,9 +51,15 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
         this._layoutProperties = { ...layoutProperties };
     }
 
+    @Input() set themeId(themeId: string | null) {
+        this.selectedThemeId = themeId;
+    }
+
+    selectedThemeId: string | null = null;
+
     private _layoutProperties: DotTemplateLayoutProperties;
 
-    @Output() selectTheme: EventEmitter<void> = new EventEmitter();
+    @Output() selectTheme: EventEmitter<string> = new EventEmitter();
 
     @Output() layoutPropertiesChange: EventEmitter<DotTemplateLayoutProperties> =
         new EventEmitter();
@@ -53,6 +67,14 @@ export class TemplateBuilderActionsComponent implements OnInit, OnDestroy {
     group: UntypedFormGroup;
 
     destroy$: Subject<boolean> = new Subject<boolean>();
+
+    onThemeChange(themeId: string | null): void {
+        this.selectedThemeId = themeId;
+        // Parent expects `string` (see TemplateBuilderComponent.updateTheme), so ignore clears.
+        if (themeId) {
+            this.selectTheme.emit(themeId);
+        }
+    }
 
     ngOnInit(): void {
         this.group = new UntypedFormGroup({

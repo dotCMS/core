@@ -1,11 +1,7 @@
 <form [formGroup]="form" class="p-fluid">
     <div class="field">
         <label dotFieldRequired for="content-type-form-host">{{ 'modes.persona.host' | dm }}</label>
-        <dot-site-selector-field
-            [system]="true"
-            id="content-type-form-host"
-            width="100%"
-            formControlName="hostFolder"></dot-site-selector-field>
+        <dot-site id="content-type-form-host" formControlName="hostFolder"></dot-site>
     </div>
 
     <div class="field">
@@ -20,7 +16,7 @@
             pInputText />
         <dot-field-validation-message
             [message]="'modes.persona.name.error.required' | dm"
-            [field]="form.get('name')"></dot-field-validation-message>
+            [field]="form.get('name')" />
     </div>
 
     <div class="field">
@@ -39,7 +35,7 @@
                 url="/api/v1/temp"
                 accept="image/*,.webp"
                 auto="true"
-                mode="basic"></p-fileUpload>
+                mode="basic" />
         }
         @if (tempUploadedFile) {
             <div class="form__file-detail">
@@ -58,6 +54,6 @@
         <dot-autocomplete-tags
             [placeholder]="'modes.persona.select.tags.placeholder' | dm"
             id="persona-other-tags"
-            formControlName="tags"></dot-autocomplete-tags>
+            formControlName="tags" />
     </div>
 </form>

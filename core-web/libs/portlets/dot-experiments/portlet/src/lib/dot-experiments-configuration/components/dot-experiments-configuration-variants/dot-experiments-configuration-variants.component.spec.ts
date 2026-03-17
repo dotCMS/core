@@ -124,7 +124,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('a DEFAULT variant', () => {
             expect(spectator.queryAll(byTestId('variant-name-original')).length).toBe(1);
             expect(spectator.query(byTestId('variants-card-header'))).toHaveClass(
-                'p-label-input-required'
+                "after:content-['*']"
             );
 
             expect(spectator.query(byTestId('variant-weight'))).toHaveText(
@@ -132,7 +132,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             );
             expect(spectator.query(byTestId('variant-preview-button'))).toExist();
 
-            expect(spectator.query(byTestId('variant-title-step-done'))).not.toHaveClass('isDone');
+            expect(spectator.query(byTestId('variant-title-step-done'))).toHaveClass(
+                'text-gray-500'
+            );
         });
 
         it('should load the variant(s)', () => {
@@ -149,7 +151,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             loadExperiment(EXPERIMENT_MOCK, variants);
 
-            expect(spectator.query(byTestId('variant-title-step-done'))).toHaveClass('isDone');
+            expect(spectator.query(byTestId('variant-title-step-done'))).toHaveClass(
+                'text-green-600'
+            );
             expect(spectator.queryAll(Card).length).toBe(4);
 
             expect(spectator.query(byTestId('variant-name-original'))).toContainText(
@@ -180,19 +184,29 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(variantsEditButton.length).toBe(2);
             expect(variantsEditButton[0]).toContainText('edit');
 
-            const variantsDeleteButton = spectator.queryAll(
+            const variantsDeleteButtonWrappers = spectator.queryAll(
                 byTestId('variant-delete-button')
-            ) as HTMLButtonElement[];
-            expect(variantsDeleteButton.length).toBe(3);
-            expect(variantsDeleteButton[0]).toContainText('delete');
-            expect(variantsDeleteButton[0].disabled).toBe(true);
-            expect(variantsDeleteButton[1].disabled).toBe(false);
-            expect(variantsDeleteButton[2].disabled).toBe(false);
+            );
+            expect(variantsDeleteButtonWrappers.length).toBe(3);
+            expect(variantsDeleteButtonWrappers[0]).toContainText('delete');
 
-            const addVariantButton = spectator.query(
-                byTestId('variant-add-button')
-            ) as HTMLButtonElement;
-            expect(addVariantButton.disabled).toBe(true);
+            const deleteButton0 =
+                variantsDeleteButtonWrappers[0].querySelector('button') ||
+                variantsDeleteButtonWrappers[0];
+            const deleteButton1 =
+                variantsDeleteButtonWrappers[1].querySelector('button') ||
+                variantsDeleteButtonWrappers[1];
+            const deleteButton2 =
+                variantsDeleteButtonWrappers[2].querySelector('button') ||
+                variantsDeleteButtonWrappers[2];
+            expect(deleteButton0.hasAttribute('disabled')).toBe(true);
+            expect(deleteButton1.hasAttribute('disabled')).toBe(false);
+            expect(deleteButton2.hasAttribute('disabled')).toBe(false);
+
+            const addVariantButtonWrapper = spectator.query(byTestId('variant-add-button'));
+            const addVariantButton =
+                addVariantButtonWrapper.querySelector('button') || addVariantButtonWrapper;
+            expect(addVariantButton.hasAttribute('disabled')).toBe(true);
         });
     });
 
@@ -228,20 +242,30 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 }
             ]);
             jest.spyOn(store, 'openSidebar');
-            spectator.click(byTestId('variant-add-button'));
+
+            const addButtonWrapper = spectator.query(byTestId('variant-add-button'));
+            const addButton = addButtonWrapper.querySelector('button') || addButtonWrapper;
+            spectator.click(addButton);
 
             expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.VARIANTS);
         });
 
         it('should open sideBar to edit the variant weight ', () => {
             jest.spyOn(store, 'openSidebar');
-            spectator.click(byTestId('variant-weight'));
+
+            const variantWeightWrapper = spectator.query(byTestId('variant-weight'));
+            const variantWeightButton =
+                variantWeightWrapper.querySelector('button') || variantWeightWrapper;
+            spectator.click(variantWeightButton);
 
             expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.TRAFFICS_SPLIT);
         });
 
         it('should goToEditPage emit a variant and mode(preview) when View button is clicked', () => {
-            spectator.click(byTestId('variant-preview-button'));
+            const previewButtonWrapper = spectator.query(byTestId('variant-preview-button'));
+            const previewButton =
+                previewButtonWrapper.querySelector('button') || previewButtonWrapper;
+            spectator.click(previewButton);
 
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                 queryParams: {
@@ -254,7 +278,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should goToEditPage emit a variant and mode(edit) when edit button is clicked', () => {
-            spectator.click(byTestId('variant-edit-button'));
+            const editButtonWrapper = spectator.query(byTestId('variant-edit-button'));
+            const editButton = editButtonWrapper.querySelector('button') || editButtonWrapper;
+            spectator.click(editButton);
 
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                 queryParams: {
@@ -274,7 +300,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             jest.spyOn(store, 'deleteVariant');
             jest.spyOn(confirmationService, 'confirm');
 
-            const button = spectator.queryLast(byTestId('variant-delete-button'));
+            const buttonWrapper = spectator.queryLast(byTestId('variant-delete-button'));
+            const button = buttonWrapper.querySelector('button') || buttonWrapper;
 
             spectator.click(button);
 
@@ -303,11 +330,24 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             store.loadExperiment(EXPERIMENT_MOCK_2.id);
             spectator.detectChanges();
 
-            expect(spectator.queryAll(byTestId('variant-weight'))).toHaveAttribute('disabled');
-            expect(spectator.queryAll(byTestId('variant-delete-button'))).toHaveAttribute(
-                'disabled'
-            );
-            expect(spectator.query(byTestId('variant-add-button'))).toHaveAttribute('disabled');
+            // Check variant weight buttons are disabled
+            const variantWeights = spectator.queryAll(byTestId('variant-weight'));
+            variantWeights.forEach((weight) => {
+                const button = weight.querySelector('button') || weight;
+                expect(button.hasAttribute('disabled')).toBe(true);
+            });
+
+            // Check variant delete buttons are disabled
+            const deleteButtonWrappers = spectator.queryAll(byTestId('variant-delete-button'));
+            deleteButtonWrappers.forEach((wrapper) => {
+                const button = wrapper.querySelector('button') || wrapper;
+                expect(button.hasAttribute('disabled')).toBe(true);
+            });
+
+            // Check add variant button is disabled
+            const addButtonWrapper = spectator.query(byTestId('variant-add-button'));
+            const addButton = addButtonWrapper.querySelector('button') || addButtonWrapper;
+            expect(addButton.hasAttribute('disabled')).toBe(true);
 
             const enableTooltips = spectator
                 .queryAll(Tooltip)

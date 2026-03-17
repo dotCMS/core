@@ -1910,4 +1910,58 @@ public class HostAPITest extends IntegrationTestBase  {
                 siteByKey.get().getIdentifier(), defaultSiteId);
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test: </b>{@link HostAPI#findByName(String, User, boolean)}</li>
+     *     <li><b>Given Scenario: </b>Call {@code findByName} with a site's UUID identifier instead
+     *     of its name. This tests the fallback mechanism in {@link HostFactoryImpl#findSiteByIdIfUUID}
+     *     that checks if the provided "name" is actually a UUID and attempts to find the site by ID.</li>
+     *     <li><b>Expected Result: </b>The Site API must successfully find the site by its UUID
+     *     identifier even when using the findByName method, returning the same site as would be
+     *     returned by {@code find(id, user, false)}.</li>
+     * </ul>
+     */
+    @Test
+    public void testFindByName_whenPassingUUID_shouldReturnSiteById() throws Exception {
+        // Initialization
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        final User systemUser = APILocator.systemUser();
+        Host testSite = null;
+
+        try {
+            // Test data generation - create a new site
+            testSite = new SiteDataGen().nextPersisted();
+            final String siteId = testSite.getIdentifier();
+            final String siteName = testSite.getHostname();
+
+            // Call findByName with the site's name (normal scenario)
+            final Host siteFoundByName = hostAPI.findByName(siteName, systemUser, false);
+            assertNotNull("Site should be found by name", siteFoundByName);
+            assertEquals("Site found by name should match original site",
+                    siteId, siteFoundByName.getIdentifier());
+
+            // Call findByName with the site's UUID identifier (new scenario being tested)
+            final Host siteFoundByUUID = hostAPI.findByName(siteId, systemUser, false);
+            assertNotNull("Site should be found when passing UUID to findByName", siteFoundByUUID);
+            assertEquals("Site found by UUID should match original site",
+                    siteId, siteFoundByUUID.getIdentifier());
+            assertEquals("Site found by UUID should be the same as site found by name",
+                    siteFoundByName.getIdentifier(), siteFoundByUUID.getIdentifier());
+
+            // Verify that the fallback mechanism in findSiteByIdIfUUID was used
+            // by confirming both methods return the same site
+            final Host siteFoundById = hostAPI.find(siteId, systemUser, false);
+            assertNotNull("Site should be found by ID", siteFoundById);
+            assertEquals("Site found by UUID in findByName should match site found by find(id)",
+                    siteFoundById.getIdentifier(), siteFoundByUUID.getIdentifier());
+        } finally {
+            // Cleanup
+            if (testSite != null) {
+                unpublishHost(testSite, systemUser);
+                archiveHost(testSite, systemUser);
+                deleteHost(testSite, systemUser);
+            }
+        }
+    }
+
 }

@@ -1,7 +1,7 @@
 version: '3'
 services:
   postgres:
-    image: postgres:15
+    image: pgvector/pgvector:pg18
     ports:
       - "5432:5432"
     environment:
@@ -10,7 +10,7 @@ services:
       - POSTGRES_DB=dotcms
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
     networks:
       - dotcms-net
 
@@ -22,7 +22,7 @@ services:
       - discovery.type=single-node
       - cluster.name=elastic-cluster
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx1g"
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx1g -XX:-UseContainerSupport"
       - plugins.security.disabled=true
     ulimits:
       memlock:
@@ -55,9 +55,6 @@ services:
       - postgres
     volumes:
       - dotcms-shared:/data/shared
-      - type: bind
-        source: ${DOTCMS_LICENSE_FILE}
-        target: /data/local/dotsecure/license/license.dat
     networks:
       - dotcms-net
     ports:

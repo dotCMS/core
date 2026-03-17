@@ -1,0 +1,188 @@
+@if (userData$ | async; as user) {
+    <div
+        class="block h-full overflow-auto bg-white text-sm"
+        style="
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #faf5ff 100%);
+            position: relative;
+        ">
+        <div class="max-w-[77.42rem] mx-auto px-5 py-8">
+            <p-button
+                link
+                icon="pi pi-refresh"
+                label="Not a marketer?"
+                iconPos="left"
+                icon="pi pi-refresh"
+                class="button-link absolute top-5 right-5"
+                (click)="resetUserProfile()"></p-button>
+
+            <div class="col-12 dot-starter-header mt-4">
+                <div>
+                    <h3 class="p-0 m-0 text-2xl">Create Your First dotCMS Content Experience</h3>
+                    <p
+                        [innerHTML]="'starter.description' | dm: [user.username]"
+                        class="mt-6 ml-2 mb-4"></p>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mb-12">
+                @if (user.showCreateDataModelLink) {
+                    <a
+                        class="bg-white rounded-md shadow-lg flex flex-col flex-1 p-6 border-b border-gray-300 transition-colors duration-150 hover:bg-(--primary-100) no-underline"
+                        style="text-decoration: none"
+                        data-testId="starter.main.link.data.model"
+                        routerLink="/content-types-angular/create/content">
+                        <div class="self-center mb-4">
+                            <span
+                                class="inline-flex items-center justify-center text-(--primary-500) text-5xl font-bold h-16 w-16">
+                                1
+                            </span>
+                        </div>
+                        <div class="self-center grow text-center">
+                            <h4
+                                class="text-black text-base font-semibold m-0 mb-2"
+                                style="text-decoration: none">
+                                {{ 'starter.main.link.data.model.title' | dm }}
+                            </h4>
+                            <p class="text-gray-700 m-0 text-sm">
+                                {{ 'starter.main.link.data.model.description' | dm }}
+                            </p>
+                        </div>
+                    </a>
+                }
+                @if (user.showCreateContentLink) {
+                    <a
+                        class="bg-white rounded-md shadow-lg flex flex-col flex-1 p-6 border-b border-gray-300 transition-colors duration-150 hover:bg-(--primary-100) no-underline"
+                        style="text-decoration: none"
+                        data-testId="starter.main.link.content"
+                        routerLink="/c/content/new/webPageContent">
+                        <div class="self-center mb-4">
+                            <span
+                                class="inline-flex items-center justify-center text-(--primary-500) text-5xl font-bold h-16 w-16">
+                                2
+                            </span>
+                        </div>
+                        <div class="self-center grow text-center">
+                            <h4
+                                class="text-black text-base font-semibold m-0 mb-2"
+                                style="text-decoration: none">
+                                {{ 'starter.main.link.add.content.title' | dm }}
+                            </h4>
+                            <p class="text-gray-700 m-0 text-sm">
+                                {{ 'starter.main.link.add.content.description' | dm }}
+                            </p>
+                        </div>
+                    </a>
+                }
+                @if (user.showCreateTemplateLink) {
+                    <a
+                        class="bg-white rounded-md shadow-lg flex flex-col flex-1 p-6 border-b border-gray-300 transition-colors duration-150 hover:bg-(--primary-100) no-underline"
+                        style="text-decoration: none"
+                        data-testId="starter.main.link.design.layout"
+                        routerLink="/templates/new/designer">
+                        <div class="self-center mb-4">
+                            <span
+                                class="inline-flex items-center justify-center text-(--primary-500) text-5xl font-bold h-16 w-16">
+                                3
+                            </span>
+                        </div>
+                        <div class="self-center grow text-center">
+                            <h4
+                                class="text-black text-base font-semibold m-0 mb-2"
+                                style="text-decoration: none">
+                                {{ 'starter.main.link.design.layout.title' | dm }}
+                            </h4>
+                            <p class="text-gray-700 m-0 text-sm">
+                                {{ 'starter.main.link.design.layout.description' | dm }}
+                            </p>
+                        </div>
+                    </a>
+                }
+                @if (user.showCreatePageLink) {
+                    <a
+                        class="bg-white rounded-md shadow-lg flex flex-col flex-1 p-6 border-b border-gray-300 transition-colors duration-150 hover:bg-(--primary-100) no-underline"
+                        style="text-decoration: none"
+                        data-testId="starter.main.link.create.page"
+                        routerLink="/c/content/new/htmlpageasset">
+                        <div class="self-center mb-4">
+                            <span
+                                class="inline-flex items-center justify-center text-(--primary-500) text-5xl font-bold h-16 w-16">
+                                4
+                            </span>
+                        </div>
+                        <div class="self-center grow text-center">
+                            <h4
+                                class="text-black text-base font-semibold m-0 mb-2"
+                                style="text-decoration: none">
+                                {{ 'starter.main.link.create.page.title' | dm }}
+                            </h4>
+                            <p class="text-gray-700 m-0 text-sm">
+                                {{ 'starter.main.link.create.page.description' | dm }}
+                            </p>
+                        </div>
+                    </a>
+                }
+            </div>
+
+            <div class="mb-8">
+                <h5
+                    class="text-base font-semibold m-0 border-b border-gray-300 pb-3 mb-6"
+                    data-testId="dot-side-title">
+                    {{ 'starter.side.title' | dm }}
+                </h5>
+                <div class="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                    @for (api of apiAndServices; track api.dataTestId) {
+                        <a
+                            class="block no-underline decoration-none mb-8"
+                            style="text-decoration: none"
+                            [href]="api.link"
+                            [attr.data-testId]="api.dataTestId"
+                            target="_blank"
+                            rel="noopener">
+                            <h4
+                                class="text-primary-500 text-base font-bold m-0 no-underline mb-2"
+                                style="text-decoration: none">
+                                {{ api.title | dm }}
+                            </h4>
+                            <p class="text-gray-700 m-0">
+                                {{ api.description | dm }}
+                            </p>
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <div>
+                <h3
+                    class="text-base font-semibold m-0 border-b border-gray-300 pb-3 mb-6"
+                    data-test="dot-resources-title">
+                    {{ 'starter.side.resources.title' | dm }}
+                </h3>
+                <div class="grid lg:grid-cols-3 md:grid-cols-2 gap-4">
+                    @for (resource of resources; track resource.dataTestId) {
+                        <a
+                            [href]="resource.link"
+                            [attr.data-testId]="resource.dataTestId"
+                            target="_blank"
+                            rel="noopener"
+                            class="bg-white border-b border-gray-300 shadow-md grid grid-cols-[min-content_1fr] grid-rows-2 h-full overflow-hidden transition-colors duration-150 rounded-md gap-x-3 p-4 hover:bg-(--primary-100) no-underline"
+                            style="text-decoration: none">
+                            <i
+                                [class]="
+                                    `${resource.icon} text-(--primary-500) text-xl row-start-1 col-start-1 flex justify-center self-center`
+                                "></i>
+                            <h4
+                                class="text-black text-base font-semibold m-0 row-start-1 col-start-2 justify-start self-center"
+                                style="text-decoration: none">
+                                {{ resource.title | dm }}
+                            </h4>
+
+                            <p class="text-gray-700 m-0 text-sm row-start-2 col-start-2">
+                                {{ resource.description | dm }}
+                            </p>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

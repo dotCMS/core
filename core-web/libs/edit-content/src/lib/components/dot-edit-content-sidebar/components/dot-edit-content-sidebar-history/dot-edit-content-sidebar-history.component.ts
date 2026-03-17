@@ -1,8 +1,10 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
 
-import { ScrollerModule, ScrollerLazyLoadEvent } from 'primeng/scroller';
+import { ButtonModule } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
@@ -14,8 +16,12 @@ import {
 } from '@dotcms/ui';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
+import { DotPushpublishTimelineItemComponent } from './components/dot-pushpublish-timeline-item/dot-pushpublish-timeline-item.component';
 
-import { DotHistoryTimelineItemAction } from '../../../../models/dot-edit-content.model';
+import {
+    DotHistoryTimelineItemAction,
+    DotPushPublishHistoryItem
+} from '../../../../models/dot-edit-content.model';
 
 /**
  * Component that displays content version history in the sidebar.
@@ -24,20 +30,25 @@ import { DotHistoryTimelineItemAction } from '../../../../models/dot-edit-conten
 @Component({
     selector: 'dot-edit-content-sidebar-history',
     imports: [
-        CommonModule,
-        ScrollerModule,
         SkeletonModule,
+        TimelineModule,
         TooltipModule,
+        ButtonModule,
+        MenuModule,
         DotEmptyContainerComponent,
         DotMessagePipe,
         DotSidebarAccordionComponent,
         DotSidebarAccordionTabComponent,
-        DotHistoryTimelineItemComponent
+        DotHistoryTimelineItemComponent,
+        DotPushpublishTimelineItemComponent
     ],
     providers: [DatePipe, DotMessagePipe],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
     styleUrls: ['./dot-edit-content-sidebar-history.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col h-full min-h-0'
+    }
 })
 export class DotEditContentSidebarHistoryComponent {
     private readonly dotMessagePipe = inject(DotMessagePipe);
@@ -65,7 +76,15 @@ export class DotEditContentSidebarHistoryComponent {
      * Pagination data for history items
      * @readonly
      */
-    $pagination = input<DotPagination | null>(null, { alias: 'pagination' });
+    $historypagination = input<DotPagination | null>(null, { alias: 'historyPagination' });
+
+    /**
+     * Pagination data for push publish history items
+     * @readonly
+     */
+    $pushPublishHistoryPagination = input<DotPagination | null>(null, {
+        alias: 'pushPublishHistoryPagination'
+    });
 
     /**
      * Current historical version inode being viewed
@@ -74,14 +93,32 @@ export class DotEditContentSidebarHistoryComponent {
     $historicalVersionInode = input<string | null>(null, { alias: 'historicalVersionInode' });
 
     /**
-     * Event emitted when page changes
+     * List of push publish history items to display (accumulated items from store)
+     * @readonly
      */
-    pageChange = output<number>();
+    $pushPublishHistoryItems = input<DotPushPublishHistoryItem[]>([], {
+        alias: 'pushPublishHistoryItems'
+    });
+
+    /**
+     * Event emitted when history page changes
+     */
+    historyPageChange = output<number>();
+
+    /**
+     * Event emitted when push publish history page changes
+     */
+    pushPublishPageChange = output<number>();
 
     /**
      * Event emitted when a timeline item action is triggered
      */
     timelineItemAction = output<DotHistoryTimelineItemAction>();
+
+    /**
+     * Event emitted when delete all push publish history is requested
+     */
+    deletePushPublishHistory = output<void>();
 
     /**
      * Determines if the history is in a loading state
@@ -97,47 +134,107 @@ export class DotEditContentSidebarHistoryComponent {
      * Determines if there are more items to load for infinite scroll
      */
     readonly $hasMoreItems = computed(() => {
-        const pagination = this.$pagination();
+        const pagination = this.$historypagination();
         return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
     });
 
     /**
-     * Handle infinite scroll when user scrolls near the end
+     * Determines if there are push publish history items to display
      */
-    onScrollIndexChange(event: ScrollerLazyLoadEvent): void {
-        if (this.shouldLoadMore(event) && !this.$isLoading()) {
-            this.loadNextPage();
-        }
-    }
+    readonly $hasPushPublishHistoryItems = computed(
+        () => this.$pushPublishHistoryItems().length > 0
+    );
 
     /**
-     * Determine if we should load more items based on scroll position
+     * Determines if there are more push publish history items to load for infinite scroll
      */
-    private shouldLoadMore(event: ScrollerLazyLoadEvent): boolean {
-        const { last } = event;
-        const totalItems = this.$historyItems().length;
-        const threshold = 5; // Load when 5 items remaining
-
-        return totalItems - last <= threshold && this.$hasMoreItems();
-    }
+    readonly $hasMorePushPublishItems = computed(() => {
+        const pagination = this.$pushPublishHistoryPagination();
+        return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
+    });
 
     /**
      * Load the next page of history items
      */
     private loadNextPage(): void {
-        const pagination = this.$pagination();
+        const pagination = this.$historypagination();
         if (pagination && this.$hasMoreItems()) {
-            this.pageChange.emit(pagination.currentPage + 1);
+            this.historyPageChange.emit(pagination.currentPage + 1);
+        }
+    }
+
+    /**
+     * Load the next page of push publish history items
+     */
+    private loadNextPushPublishPage(): void {
+        const pagination = this.$pushPublishHistoryPagination();
+        if (pagination && this.$hasMorePushPublishItems()) {
+            this.pushPublishPageChange.emit(pagination.currentPage + 1);
         }
     }
 
     /**
      * Get the real index of an item in the history array
-     * This is needed because p-scroller's template index is virtual
      */
     getRealIndex(item: DotCMSContentletVersion): number {
         return this.$historyItems().indexOf(item);
     }
+
+    /**
+     * Get the index of a push publish item in the list.
+     */
+    getPushPublishIndex(item: DotPushPublishHistoryItem): number {
+        return this.$pushPublishHistoryItems().indexOf(item);
+    }
+
+    /**
+     * Get modifier class for the timeline marker (halo/glow by state).
+     * Live: green + green glow, draft: yellow + yellow glow, default: gray + gray glow.
+     */
+    getTimelineMarkerClass(item: DotCMSContentletVersion): string {
+        if (item.live) return 'timeline-marker--live';
+        if (item.working) return 'timeline-marker--draft';
+        return 'timeline-marker--default';
+    }
+
+    /**
+     * Handle scroll on timeline content to load more items when near bottom
+     */
+    onTimelineScroll(event: Event): void {
+        const el = event.target as HTMLElement;
+        if (!el) return;
+        const threshold = 100;
+        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+        if (nearBottom && this.$hasMoreItems() && !this.$isLoading()) {
+            this.loadNextPage();
+        }
+    }
+
+    /**
+     * Handle scroll on push publish timeline content to load more when near bottom
+     */
+    onPushPublishTimelineScroll(event: Event): void {
+        const el = event.target as HTMLElement;
+        if (!el) return;
+        const threshold = 100;
+        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+        if (nearBottom && this.$hasMorePushPublishItems() && !this.$isLoading()) {
+            this.loadNextPushPublishPage();
+        }
+    }
+
+    /**
+     * Menu items for push publish actions
+     */
+    readonly $menuItems = computed(() => [
+        {
+            label: this.dotMessagePipe.transform(
+                'edit.content.sidebar.history.push.publish.delete.all'
+            ),
+            icon: 'pi pi-trash',
+            command: () => this.deletePushPublishHistory.emit()
+        }
+    ]);
 
     /**
      * Handle accordion tab change

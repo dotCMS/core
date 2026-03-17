@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -10,34 +11,74 @@ import {
     ViewChildren
 } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService } from 'primeng/dynamicdialog';
-import { Menu } from 'primeng/menu';
+import { InputTextModule } from 'primeng/inputtext';
+import { Menu, MenuModule } from 'primeng/menu';
+import { TableModule } from 'primeng/table';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotMessageDisplayService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
+    CONTAINER_SOURCE,
     DotActionBulkResult,
+    DotActionMenuItem,
     DotBulkFailItem,
     DotContainer,
     DotContentState,
-    CONTAINER_SOURCE,
     DotMessageSeverity,
-    DotMessageType,
-    DotActionMenuItem
+    DotMessageType
 } from '@dotcms/dotcms-models';
+import {
+    DotActionMenuButtonComponent,
+    DotAddToBundleComponent,
+    DotContentletStatusChipComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
+import { DotContainerListResolver } from './dot-container-list-resolver.service';
 import { DotContainerListStore } from './store/dot-container-list.store';
 
+import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
+import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
-    styleUrls: ['./container-list.component.scss'],
-    providers: [DotContainerListStore],
-    standalone: false
+    imports: [
+        CommonModule,
+        DotPortletBaseComponent,
+        TableModule,
+        DotContentTypeSelectorComponent,
+        DotMessagePipe,
+        ButtonModule,
+        CheckboxModule,
+        MenuModule,
+        DotAddToBundleComponent,
+        DotActionMenuButtonComponent,
+        DotRelativeDatePipe,
+        ActionHeaderComponent,
+        InputTextModule,
+        DotContentletStatusChipComponent
+    ],
+    providers: [
+        DotContainerListStore,
+        DotContainerListResolver,
+        DotSiteBrowserService,
+        DotContainersService,
+        DialogService
+    ]
 })
 export class ContainerListComponent implements OnDestroy {
     private dotMessageService = inject(DotMessageService);
@@ -157,6 +198,10 @@ export class ContainerListComponent implements OnDestroy {
         this.actionsMenu.toggle(event);
     }
 
+    handleSelectionChange(): void {
+        this.updateSelectedContainers();
+    }
+
     /**
      * Focus first row if key arrow down on input
      *
@@ -214,6 +259,7 @@ export class ContainerListComponent implements OnDestroy {
 
     private showErrorDialog(result: DotActionBulkResult): void {
         this.dialogService.open(DotBulkInformationComponent, {
+            closable: true,
             header: this.dotMessageService.get('Results'),
             width: '40rem',
             contentStyle: { 'max-height': '500px', overflow: 'auto' },

@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
@@ -10,7 +10,6 @@ import {
 } from './dot-push-publish-filters.service';
 
 describe('DotPushPublishFiltersService', () => {
-    let injector: TestBed;
     let dotPushPublishFiltersService: DotPushPublishFiltersService;
     let httpMock: HttpTestingController;
 
@@ -22,9 +21,8 @@ describe('DotPushPublishFiltersService', () => {
                 DotPushPublishFiltersService
             ]
         });
-        injector = getTestBed();
-        dotPushPublishFiltersService = injector.get(DotPushPublishFiltersService);
-        httpMock = injector.get(HttpTestingController);
+        dotPushPublishFiltersService = TestBed.inject(DotPushPublishFiltersService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get hit pp filters url', () => {

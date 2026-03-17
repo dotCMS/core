@@ -12,8 +12,8 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
-import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
+import { SelectModule } from 'primeng/select';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -21,13 +21,14 @@ import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
+import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import {
-    DotWorkflowState,
-    DotHistoryTimelineItemAction
+    DotHistoryTimelineItemAction,
+    DotWorkflowState
 } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 
@@ -38,25 +39,29 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 @Component({
     selector: 'dot-edit-content-sidebar',
     templateUrl: './dot-edit-content-sidebar.component.html',
-    styleUrls: ['./dot-edit-content-sidebar.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [ConfirmationService],
     imports: [
         DotMessagePipe,
         DotEditContentSidebarInformationComponent,
         DotEditContentSidebarWorkflowComponent,
-        TabViewModule,
+        TabsModule,
         TabViewInsertDirective,
         DotEditContentSidebarSectionComponent,
         DotCopyButtonComponent,
         ConfirmDialogModule,
         DialogModule,
-        DropdownModule,
+        SelectModule,
         ButtonModule,
         DotEditContentSidebarLocalesComponent,
         DotEditContentSidebarActivitiesComponent,
-        DotEditContentSidebarHistoryComponent
-    ]
+        DotEditContentSidebarHistoryComponent,
+        DotEditContentSidebarPermissionsComponent
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        // bg-[var(--gray-100)]
+        class: 'flex w-[350px] h-full flex-col items-start border-l border-[var(--gray-400)]  shadow-md relative min-w-0 max-w-full overflow-x-hidden'
+    }
 })
 export class DotEditContentSidebarComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
@@ -74,6 +79,11 @@ export class DotEditContentSidebarComponent {
     readonly $versionsItems = this.$store.versions; // All accumulated versions for infinite scroll
     readonly $versionsPagination = this.$store.versionsPagination;
     readonly $historyStatus = computed(() => this.$store.versionsStatus().status);
+    readonly $pushPublishHistoryItems = this.$store.pushPublishHistory; // All accumulated push publish history items
+    readonly $pushPublishHistoryPagination = this.$store.pushPublishHistoryPagination;
+    readonly $pushPublishHistoryStatus = computed(
+        () => this.$store.pushPublishHistoryStatus().status
+    );
 
     /**
      * Computed property that returns the workflow state of the content.
@@ -134,11 +144,14 @@ export class DotEditContentSidebarComponent {
 
     /**
      * Handles the active index change event from the sidebar tabs.
-     * @param $event - The event object containing the active index.
+     * @param value - The index of the active tab
      */
-    onActiveIndexChange($event: TabViewChangeEvent) {
-        const { index } = $event;
-        this.$store.setActiveSidebarTab(index);
+    onActiveIndexChange(value: number | string) {
+        const numberValue = Number(value);
+        if (isNaN(numberValue)) {
+            return;
+        }
+        this.$store.setActiveSidebarTab(numberValue);
     }
 
     /**
@@ -165,10 +178,56 @@ export class DotEditContentSidebarComponent {
     }
 
     /**
+     * Handles pagination navigation for push publish history (automatically detects initial vs accumulation)
+     * @param page - The page number to navigate to
+     */
+    onPushPublishPageChange(page: number) {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.loadPushPublishHistory({ identifier, page });
+        }
+    }
+
+    /**
      * Handles timeline item actions from history component
      * @param action - The action object containing type and item data
      */
     onTimelineItemAction(action: DotHistoryTimelineItemAction) {
         this.$store.handleHistoryAction(action);
     }
+
+    /**
+     * Handles delete all push publish history action
+     * Calls the store method to delete push publish history with confirmation
+     */
+    onDeletePushPublishHistory() {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.deletePushPublishHistory(identifier);
+        }
+    }
+
+    /**
+     * Tabs passthrough (pt) configuration for PrimeNG v21 styling.
+     * Allows styling PrimeNG's internal elements with Tailwind classes.
+     */
+    readonly tabsPt = {
+        root: { class: 'h-full flex flex-col' },
+        navContainer: {
+            class: 'sticky top-0 z-[2] bg-[var(--gray-100)] p-0 border-b border-[var(--gray-300)]'
+        },
+        nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
+        navContent: { class: 'flex items-center w-full gap-3 overflow-visible justify-between' },
+        panels: {
+            class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'
+        },
+        panel: { class: 'h-full' }
+    };
+
+    /**
+     * Button passthrough (pt) configuration for the toggle sidebar button.
+     */
+    readonly toggleButtonPt = {
+        root: { class: 'text-[var(--primary-color)]' }
+    };
 }

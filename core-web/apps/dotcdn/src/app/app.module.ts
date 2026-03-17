@@ -7,11 +7,11 @@ import { RouterModule } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
+import { TextareaModule } from 'primeng/textarea';
 
 import {
     CoreWebService,
@@ -24,7 +24,7 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
+import { DotIconComponent, DotSpinnerComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
 import { DotCDNStore } from './dotcdn.component.store';
@@ -41,18 +41,18 @@ const dotEventSocketURLFactory = () => {
     imports: [
         BrowserModule,
         InputTextModule,
-        DropdownModule,
+        SelectModule,
         BrowserAnimationsModule,
         HttpClientModule,
         RouterModule.forRoot([]),
-        TabViewModule,
+        TabsModule,
         ChartModule,
-        InputTextareaModule,
+        TextareaModule,
         ButtonModule,
-        DotIconModule,
+        DotIconComponent,
         FormsModule,
         SkeletonModule,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         ReactiveFormsModule
     ],
     providers: [

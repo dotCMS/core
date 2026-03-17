@@ -1,15 +1,15 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSAPIResponse, DotCMSContentType } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotPageTypesService {
-    private coreWebService = inject(CoreWebService);
+    readonly #http = inject(HttpClient);
 
     /**
      * Returns Content Type data of type page and urlMap
@@ -18,11 +18,9 @@ export class DotPageTypesService {
      * @returns {Observable<DotCMSContentType[]>}
      * @memberof DotPageTypesService
      */
-    getPages(keyword = ''): Observable<DotCMSContentType[]> {
-        return this.coreWebService
-            .requestView({
-                url: `/api/v1/page/types?filter=${keyword}`
-            })
-            .pipe(take(1), pluck('entity'));
+    getPageContentTypes(keyword = ''): Observable<DotCMSContentType[]> {
+        return this.#http
+            .get<DotCMSAPIResponse<DotCMSContentType[]>>(`/api/v1/page/types?filter=${keyword}`)
+            .pipe(map(({ entity }) => entity));
     }
 }

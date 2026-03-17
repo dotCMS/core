@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentletBuilder;
 import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
@@ -25,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 public class PaginatedContentletsIntegrationTest {
@@ -250,6 +252,10 @@ public class PaginatedContentletsIntegrationTest {
         final ContentletAPI contentletAPIMock = mock(ContentletAPI.class);
         final String luceneQuery = "+conHost:" + host.getIdentifier();
 
+        // Mock indexCount to return total results (used to determine pagination strategy)
+        when(contentletAPIMock.indexCount(luceneQuery, APILocator.systemUser(), false))
+                .thenReturn(4L);
+
         when(contentletAPIMock.searchIndex(luceneQuery, 2, 0, "title asc",
                         APILocator.systemUser(), false))
                 .thenReturn(expectedFirstCall);
@@ -328,5 +334,143 @@ public class PaginatedContentletsIntegrationTest {
 
         assertEquals("Should not return any Contentlets", 0, paginatedContentlets.size());
 
+    }
+
+    /**
+     * Method to test: {@link PaginatedContentlets} with Scroll API enabled
+     * When:
+     * - Create 3 contentlets in the same Host
+     * - Set scroll threshold to 1 to force scroll API usage
+     * - Create PaginatedContentlets with the query
+     * Should:
+     * - Use Scroll API (isUsingScrollApi() should return true)
+     * - Return all 3 contentlets correctly
+     * - Maintain proper order
+     */
+    @Test
+    public void testScrollApiWithForcedThreshold() {
+        // Create test data
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final long currentTimeMillis = System.currentTimeMillis();
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "ScrollTest_A_" + currentTimeMillis)
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "ScrollTest_B_" + currentTimeMillis)
+                .nextPersisted();
+
+        final Contentlet contentlet3 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "ScrollTest_C_" + currentTimeMillis)
+                .nextPersisted();
+
+        final List<Contentlet> expected = list(contentlet1, contentlet2, contentlet3);
+
+        // Create PaginatedContentlets with try-with-resources to ensure cleanup
+        // Set lower threshold to force scroll API usage
+        try (final PaginatedContentlets paginatedContentlets = new PaginatedContentletBuilder()
+                .setLuceneQuery("+conHost:" + host.getIdentifier())
+                .setUser(APILocator.systemUser())
+                .setRespectFrontendRoles(false)
+                .setScrollApiThreshold(1)
+                .build()) {
+
+            // Verify that Scroll API is being used
+            assertTrue("Scroll API should be used when threshold is exceeded",
+                    paginatedContentlets.isUsingScrollApi());
+
+            // Verify total count
+            assertEquals("Should return all 3 contentlets", expected.size(),
+                    paginatedContentlets.size());
+
+            // Verify all contentlets are returned in correct order
+            int i = 0;
+            for (Contentlet contentlet : paginatedContentlets) {
+                final Contentlet contentletExpected = expected.get(i++);
+
+                assertEquals("Contentlet identifiers should match in order",
+                        contentletExpected.getIdentifier(), contentlet.getIdentifier());
+                assertEquals("Contentlet titles should match in order",
+                        contentletExpected.getTitle(), contentlet.getTitle());
+            }
+
+            // Verify we iterated through all contentlets
+            assertEquals("Should have iterated through all contentlets", expected.size(), i);
+        }
+    }
+
+    /**
+     * Method to test: {@link PaginatedContentlets} with Scroll API and pagination
+     * When:
+     * - Create 3 contentlets in the same Host
+     * - Temporarily set ES_SCROLL_API_THRESHOLD to 1 to force scroll API usage
+     * - Set perPage to 2 to force multiple batches
+     * Should:
+     * - Use Scroll API
+     * - Return all 3 contentlets correctly across multiple batches
+     * - Maintain proper order
+     */
+    @Test
+    public void testScrollApiWithMultipleBatches() {
+        // Create test data
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final long currentTimeMillis = System.currentTimeMillis();
+        final Contentlet contentlet1 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "ScrollBatch_A_" + currentTimeMillis)
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "ScrollBatch_B_" + currentTimeMillis)
+                .nextPersisted();
+
+        final Contentlet contentlet3 = new ContentletDataGen(contentType)
+                .host(host)
+                .setProperty("title", "ScrollBatch_C_" + currentTimeMillis)
+                .nextPersisted();
+
+        final List<Contentlet> expected = list(contentlet1, contentlet2, contentlet3);
+
+        // Create PaginatedContentlets with small batch size to test pagination
+        // Force scroll API usage with low threshold
+        try (final PaginatedContentlets paginatedContentlets = new PaginatedContentletBuilder()
+                .setLuceneQuery("+conHost:" + host.getIdentifier())
+                .setUser(APILocator.systemUser())
+                .setRespectFrontendRoles(false)
+                .setScrollApiThreshold(1)
+                .setPerPage(2) // Small batch size to force multiple scroll batches
+                .build()) {
+
+            // Verify that Scroll API is being used
+            assertTrue("Scroll API should be used when threshold is exceeded",
+                    paginatedContentlets.isUsingScrollApi());
+
+            // Verify total count
+            assertEquals("Should return all 3 contentlets", expected.size(),
+                    paginatedContentlets.size());
+
+            // Verify all contentlets are returned correctly across batches
+            int i = 0;
+            for (Contentlet contentlet : paginatedContentlets) {
+                final Contentlet contentletExpected = expected.get(i++);
+
+                assertEquals("Contentlet identifiers should match in order (batch " + ((i-1)/2 + 1) + ")",
+                        contentletExpected.getIdentifier(), contentlet.getIdentifier());
+                assertEquals("Contentlet titles should match in order (batch " + ((i-1)/2 + 1) + ")",
+                        contentletExpected.getTitle(), contentlet.getTitle());
+            }
+
+            // Verify we iterated through all contentlets
+            assertEquals("Should have iterated through all contentlets across batches",
+                    expected.size(), i);
+        }
     }
 }

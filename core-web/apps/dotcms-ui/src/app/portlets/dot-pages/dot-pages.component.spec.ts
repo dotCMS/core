@@ -1,450 +1,358 @@
-import { Observable, throwError } from 'rxjs';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { MockComponent, MockInstance, MockProvider } from 'ng-mocks';
+import { of, Subject } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
-import { MenuModule } from 'primeng/menu';
+import { LazyLoadEvent, MenuItem } from 'primeng/api';
 
-import { of } from 'rxjs/internal/observable/of';
-
+import { DotEventsService, DotMessageDisplayService, DotRouterService } from '@dotcms/data-access';
 import {
-    DotAlertConfirmService,
-    DotEventsService,
-    DotFormatDateService,
-    DotHttpErrorManagerService,
-    DotIframeService,
-    DotMessageDisplayService,
-    DotPageRenderService,
-    DotRouterService,
-    DotSessionStorageService,
-    DotUiColorsService
-} from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsEventsService,
-    HttpCode,
-    LoggerService,
-    LoginService,
-    mockSites,
-    SiteService,
-    StringUtils
-} from '@dotcms/dotcms-js';
-import { ComponentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
-import {
-    dotcmsContentletMock,
-    dotcmsContentTypeBasicMock,
-    DotcmsEventsServiceMock,
-    DotMessageDisplayServiceMock,
-    LoginServiceMock,
-    MockDotHttpErrorManagerService,
-    MockDotRouterService,
-    mockResponseView,
-    SiteServiceMock
-} from '@dotcms/utils-testing';
+    DotCMSContentlet,
+    DotEvent,
+    DotMessageSeverity,
+    DotMessageType
+} from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotAddToBundleComponent } from '@dotcms/ui';
 
-import { DotPageStore } from './dot-pages-store/dot-pages.store';
+import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
+import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
+import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.component';
 import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
+import { DotPageActionsService } from './services/dot-page-actions.service';
+import { DotCMSPagesStore } from './store/store';
 
-import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-
+/* eslint-disable @angular-eslint/component-selector */
 @Component({
-    selector: 'dot-pages-favorite-panel',
-    template: '',
-    standalone: false
+    selector: 'p-tieredmenu',
+    standalone: true,
+    template: ''
 })
-class MockDotPagesFavoritePanelComponent {
-    @Output() goToUrl = new EventEmitter<string>();
-    @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
-}
+class TieredMenuStubComponent {
+    @Input() model: MenuItem[] = [];
+    @Input() popup = true;
+    @Input() appendTo: unknown;
 
-@Component({
-    selector: 'dot-pages-listing-panel',
-    template: '',
-    standalone: false
-})
-class MockDotPagesListingPanelComponent {
-    @Output() goToUrl = new EventEmitter<string>();
-    @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
-}
+    @Output() onHide = new EventEmitter<void>();
 
-@Component({
-    selector: 'dot-add-to-bundle',
-    template: '',
-    standalone: false
-})
-class MockDotAddToBundleComponent {
-    @Input() assetIdentifier: string;
-    @Output() cancel = new EventEmitter<boolean>();
-}
+    visible = false;
 
-export const favoritePagesInitialTestData = [
-    {
-        ...dotcmsContentletMock,
-        live: true,
-        baseType: 'CONTENT',
-        identifier: '123',
-        modDate: '2020-09-02 16:45:15.569',
-        title: 'preview1',
-        screenshot: 'test1',
-        url: '/index1?host_id=A&language_id=1&device_inode=123',
-        owner: 'admin'
-    },
-    {
-        ...dotcmsContentletMock,
-        title: 'preview2',
-        modDate: '2020-09-02 16:45:15.569',
-        identifier: '456',
-        screenshot: 'test2',
-        url: '/index2',
-        owner: 'admin2'
+    hide(): void {
+        if (!this.visible) {
+            return;
+        }
+        this.visible = false;
+        this.onHide.emit();
     }
-];
 
-const storeMock = {
-    get actionMenuDomId$() {
-        return of('');
-    },
-    get languageOptions$() {
-        return of([]);
-    },
-    get languageLabels$() {
-        return of({});
-    },
-    get pageTypes$() {
-        return of([{ ...dotcmsContentTypeBasicMock }]);
-    },
-    clearMenuActions: jest.fn(),
-    getFavoritePages: jest.fn(),
-    getPages: jest.fn(),
-    getPageTypes: jest.fn(),
-    showActionsMenu: jest.fn(),
-    setInitialStateData: jest.fn(),
-    limitFavoritePages: jest.fn(),
-    setPortletStatus: jest.fn(),
-    updateSinglePageData: jest.fn(),
-    vm$: of({
-        favoritePages: {
-            items: [],
-            showLoadMoreButton: false,
-            total: 0
-        },
-        isEnterprise: true,
-        environments: true,
-        languages: [],
-        loggedUser: {
-            id: 'admin',
-            canRead: { contentlets: true, htmlPages: true },
-            canWrite: { contentlets: true, htmlPages: true }
-        },
-        pages: {
-            actionMenuDomId: '',
-            items: [],
-            addToBundleCTId: 'test1'
-        },
-        pageTypes: [],
-        portletStatus: ComponentStatus.LOADED
-    })
+    show(_event: unknown): void {
+        this.visible = true;
+    }
+}
+/* eslint-enable @angular-eslint/component-selector */
+
+type SavePageEventData = {
+    payload?: {
+        identifier?: string;
+        contentletIdentifier?: string;
+        contentType?: string;
+        contentletType?: string;
+    };
+    value?: string;
 };
 
-class DotContentletEditorServiceMock {
-    get createUrl$(): Observable<unknown> {
-        return of(undefined);
-    }
-}
+const mockContentlet = (partial: Partial<DotCMSContentlet>): DotCMSContentlet =>
+    partial as unknown as DotCMSContentlet;
 
 describe('DotPagesComponent', () => {
-    let fixture: ComponentFixture<DotPagesComponent>;
-    let component: DotPagesComponent;
-    let de: DebugElement;
-    let store: DotPageStore;
-    let dotRouterService: DotRouterService;
-    let dotMessageDisplayService: DotMessageDisplayService;
-    let dotPageRenderService: DotPageRenderService;
-    let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let spectator: Spectator<DotPagesComponent>;
+    let store: {
+        favoritePages: ReturnType<typeof signal<DotCMSContentlet[]>>;
+        $isFavoritePagesLoading: ReturnType<typeof signal<boolean>>;
+        pages: ReturnType<typeof signal<DotCMSContentlet[]>>;
+        $isPagesLoading: ReturnType<typeof signal<boolean>>;
+        $totalRecords: ReturnType<typeof signal<number>>;
+        $showBundleDialog: ReturnType<typeof signal<boolean>>;
+        $assetIdentifier: ReturnType<typeof signal<string>>;
+        searchPages: jest.Mock;
+        filterByLanguage: jest.Mock;
+        filterByArchived: jest.Mock;
+        onLazyLoad: jest.Mock;
+        hideBundleDialog: jest.Mock;
+        updateFavoritePageNode: jest.Mock;
+        updatePageNode: jest.Mock;
+    };
+    let events$: Subject<DotEvent<SavePageEventData>>;
+    let mockDotRouterService: jest.Mocked<Pick<DotRouterService, 'goToEditPage'>>;
+    let mockDotMessageDisplayService: jest.Mocked<Pick<DotMessageDisplayService, 'push'>>;
+    let mockDotEventsService: jest.Mocked<Pick<DotEventsService, 'listen'>>;
+    let mockDotPageActionsService: jest.Mocked<Pick<DotPageActionsService, 'getItems'>>;
+    let mockGlobalStore: {
+        systemConfig: ReturnType<typeof signal<{ languages: unknown[] } | null>>;
+    };
 
-    const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
-        new DotContentletEditorServiceMock();
+    const createComponent = createComponentFactory({
+        component: DotPagesComponent,
+        imports: [DotPagesComponent],
+        detectChanges: false
+    });
 
-    const siteServiceMock = new SiteServiceMock();
+    MockInstance.scope();
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            declarations: [
-                MockDotPagesFavoritePanelComponent,
-                MockDotPagesListingPanelComponent,
-                MockDotAddToBundleComponent,
-                DotPagesComponent
-            ],
-            imports: [MenuModule],
+        // MockComponent(DotPagesTableComponent) uses viewChild(signal); provide contextMenu so the mock instance has a valid signal (ng-mocks #8634).
+        MockInstance(DotPagesTableComponent, () => ({
+            contextMenu: signal(undefined)
+        }));
+
+        // Replace heavy child components with mocks/stubs. Use TieredMenuStubComponent because
+        // the template uses p-tieredmenu #menu; the stub must have hide() for closeMenu().
+        TestBed.overrideComponent(DotPagesComponent, {
+            set: {
+                imports: [
+                    CommonModule,
+                    TieredMenuStubComponent,
+                    MockComponent(DotPageFavoritesPanelComponent),
+                    MockComponent(DotPagesTableComponent),
+                    MockComponent(DotCreatePageDialogComponent),
+                    MockComponent(DotAddToBundleComponent)
+                ]
+            }
+        });
+
+        // Signal-backed store mock (matches how the template calls them: $pages(), $totalRecords(), etc).
+        store = {
+            favoritePages: signal<DotCMSContentlet[]>([]),
+            $isFavoritePagesLoading: signal<boolean>(false),
+            pages: signal<DotCMSContentlet[]>([]),
+            $isPagesLoading: signal<boolean>(false),
+            $totalRecords: signal<number>(0),
+            $showBundleDialog: signal<boolean>(false),
+            $assetIdentifier: signal<string>(''),
+
+            searchPages: jest.fn(),
+            filterByLanguage: jest.fn(),
+            filterByArchived: jest.fn(),
+            onLazyLoad: jest.fn(),
+            hideBundleDialog: jest.fn(),
+            updateFavoritePageNode: jest.fn(),
+            updatePageNode: jest.fn()
+        };
+
+        events$ = new Subject<DotEvent<SavePageEventData>>();
+
+        mockDotRouterService = { goToEditPage: jest.fn() };
+        mockDotMessageDisplayService = { push: jest.fn() };
+        mockDotEventsService = { listen: jest.fn().mockReturnValue(events$.asObservable()) };
+        mockDotPageActionsService = { getItems: jest.fn().mockReturnValue(of([])) };
+        mockGlobalStore = { systemConfig: signal({ languages: [] }) };
+
+        spectator = createComponent({
             providers: [
-                DotSessionStorageService,
-                DotEventsService,
-                HttpClient,
-                HttpHandler,
-                DotPageRenderService,
-                DotIframeService,
-                DotFormatDateService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                DotUiColorsService,
-                IframeOverlayService,
-                LoggerService,
-                StringUtils,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotHttpErrorManagerService,
-                    useClass: MockDotHttpErrorManagerService
-                },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                {
-                    provide: DotMessageDisplayService,
-                    useClass: DotMessageDisplayServiceMock
-                },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                {
-                    provide: DotContentletEditorService,
-                    useValue: dotContentletEditorServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotcmsEventsService,
-                    useClass: DotcmsEventsServiceMock
-                },
-                {
-                    provide: ActivatedRoute,
-                    useValue: {
-                        get data() {
-                            return of({ url: undefined });
-                        }
-                    }
-                },
-                {
-                    provide: SiteService,
-                    useValue: siteServiceMock
-                }
+                { provide: DotCMSPagesStore, useValue: store },
+                MockProvider(DotRouterService, mockDotRouterService),
+                MockProvider(DotMessageDisplayService, mockDotMessageDisplayService),
+                MockProvider(DotEventsService, mockDotEventsService),
+                MockProvider(DotPageActionsService, mockDotPageActionsService),
+                { provide: GlobalStore, useValue: mockGlobalStore }
             ]
-        }).compileComponents();
-    });
-
-    beforeEach(() => {
-        TestBed.overrideProvider(DotPageStore, {
-            useValue: storeMock
         });
-        store = TestBed.inject(DotPageStore);
-        dotRouterService = TestBed.inject(DotRouterService);
-        dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
-        dotPageRenderService = TestBed.inject(DotPageRenderService);
-        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-        fixture = TestBed.createComponent(DotPagesComponent);
-        de = fixture.debugElement;
-        component = fixture.componentInstance;
 
-        fixture.detectChanges();
-        jest.spyOn(component.menu, 'hide');
-        jest.spyOn(component, 'scrollToTop');
-        jest.spyOn(dotMessageDisplayService, 'push');
-        jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        spectator.detectChanges();
     });
 
-    it('should init store', () => {
-        expect(store.setInitialStateData).toHaveBeenCalledWith(500);
-        expect(store.setInitialStateData).toHaveBeenCalledTimes(1);
+    afterEach(() => {
+        jest.clearAllMocks();
+        events$.complete();
     });
 
-    it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
-        expect(de.query(By.css('dot-pages-favorite-panel'))).toBeTruthy();
-        expect(de.query(By.css('p-menu'))).toBeTruthy();
-        expect(de.query(By.css('dot-pages-listing-panel'))).toBeTruthy();
-        expect(de.query(By.css('dot-add-to-bundle'))).toBeTruthy();
+    it('should create', () => {
+        expect(spectator.component).toBeTruthy();
     });
 
-    it('should call goToUrl method from DotPagesFavoritePanel', () => {
-        const elem = de.query(By.css('dot-pages-favorite-panel'));
-        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+    describe('navigateToPage', () => {
+        it('should parse query params and call router.goToEditPage when dot-pages-table emits navigateToPage', () => {
+            spectator.triggerEventHandler(
+                'dot-pages-table',
+                'navigateToPage',
+                '/home?host_id=1&language_id=2'
+            );
 
-        expect(dotPageRenderService.checkPermission).toHaveBeenCalledWith({
-            lang: '1',
-            url: '/page/1'
-        });
-        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
-            lang: '1',
-            url: '/page/1'
+            expect(mockDotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/home',
+                host_id: '1',
+                language_id: '2'
+            });
         });
     });
 
-    it('should call goToUrl method from DotPagesFavoritePanel and throw User permission error', () => {
-        dotPageRenderService.checkPermission = jest.fn().mockReturnValue(of(false));
+    describe('store delegates', () => {
+        it('should call store.searchPages when dot-pages-table emits search', () => {
+            spectator.triggerEventHandler('dot-pages-table', 'search', 'hello');
 
-        const elem = de.query(By.css('dot-pages-favorite-panel'));
-        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+            expect(store.searchPages).toHaveBeenCalledWith('hello');
+        });
 
-        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
-        // setPortletStatus is called multiple times during the flow
-        expect(store.setPortletStatus).toHaveBeenCalledTimes(3);
-        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-            new HttpErrorResponse(
-                new HttpResponse({
-                    body: null,
-                    status: HttpCode.FORBIDDEN,
-                    headers: null,
-                    url: ''
+        it('should call store.filterByLanguage when dot-pages-table emits languageChange', () => {
+            spectator.triggerEventHandler('dot-pages-table', 'languageChange', 2);
+
+            expect(store.filterByLanguage).toHaveBeenCalledWith(2);
+        });
+
+        it('should call store.filterByArchived when dot-pages-table emits archivedChange', () => {
+            spectator.triggerEventHandler('dot-pages-table', 'archivedChange', true);
+
+            expect(store.filterByArchived).toHaveBeenCalledWith(true);
+        });
+
+        it('should call store.onLazyLoad when dot-pages-table emits lazyLoad', () => {
+            const event = { first: 0 } as LazyLoadEvent;
+            spectator.triggerEventHandler('dot-pages-table', 'lazyLoad', event);
+
+            expect(store.onLazyLoad).toHaveBeenCalledWith(event);
+        });
+
+        it('onCloseBundleDialog should call store.hideBundleDialog', () => {
+            spectator.component['onCloseBundleDialog']();
+            expect(store.hideBundleDialog).toHaveBeenCalled();
+        });
+    });
+
+    describe('menu behavior', () => {
+        it('should clear menuItems when p-tieredmenu emits onHide', () => {
+            spectator.component.menuItems.set([{ label: 'x' }]);
+            spectator.triggerEventHandler('p-tieredmenu', 'onHide', null);
+
+            expect(spectator.component.menuItems()).toEqual([]);
+        });
+
+        it('toggleMenu should close when already visible (triggered by dot-pages-table openMenu)', () => {
+            const menu = spectator.component.menu() as unknown as MenuStubComponent;
+            menu.visible = true;
+            const closeSpy = jest.spyOn(spectator.component, 'closeMenu');
+
+            spectator.triggerEventHandler('dot-pages-table', 'openMenu', {
+                originalEvent: { stopPropagation: jest.fn() } as unknown as MouseEvent,
+                data: mockContentlet({ identifier: 'p1' })
+            } satisfies DotActionsMenuEventParams);
+
+            expect(closeSpy).toHaveBeenCalled();
+        });
+
+        it('toggleMenu should load items and show menu anchored to the click target (triggered by favorites panel openMenu)', () => {
+            const menu = spectator.component.menu() as unknown as MenuStubComponent;
+            menu.visible = false;
+
+            const showSpy = jest.spyOn(menu, 'show');
+            const stopPropagation = jest.fn();
+            const anchor = document.createElement('button');
+            const items: MenuItem[] = [{ label: 'Edit' }];
+            mockDotPageActionsService.getItems.mockReturnValueOnce(of(items));
+
+            const eventParams: DotActionsMenuEventParams = {
+                originalEvent: {
+                    stopPropagation,
+                    currentTarget: anchor,
+                    target: anchor
+                } as unknown as MouseEvent,
+                data: mockContentlet({ identifier: 'p1' })
+            };
+
+            spectator.triggerEventHandler('dot-page-favorites-panel', 'openMenu', eventParams);
+
+            expect(stopPropagation).toHaveBeenCalled();
+            expect(mockDotPageActionsService.getItems).toHaveBeenCalledWith(eventParams.data);
+            expect(showSpy).toHaveBeenCalled();
+            expect(spectator.component.menuItems()).toEqual(items);
+        });
+    });
+
+    describe('template wiring', () => {
+        it('should call scrollToTop when dot-pages-table emits pageChange', () => {
+            const spy = jest.spyOn(spectator.component, 'scrollToTop').mockImplementation(() => {
+                // We only care that the output is wired to the handler, not DOM scrolling support in jsdom.
+            });
+            spectator.triggerEventHandler('dot-pages-table', 'pageChange', null);
+            expect(spy).toHaveBeenCalled();
+        });
+
+        it('should call navigateToPage when favorites panel emits navigateToPage', () => {
+            spectator.triggerEventHandler(
+                'dot-page-favorites-panel',
+                'navigateToPage',
+                '/about?x=1'
+            );
+            expect(mockDotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/about',
+                x: '1'
+            });
+        });
+    });
+
+    describe('bundle dialog rendering', () => {
+        it('should render dot-add-to-bundle when $showBundleDialog is true and pass assetIdentifier', () => {
+            store.$showBundleDialog.set(true);
+            store.$assetIdentifier.set('asset-1');
+            spectator.detectChanges();
+
+            const addToBundleDe = spectator.debugElement.query(By.css('dot-add-to-bundle'));
+            expect(addToBundleDe).toBeTruthy();
+            expect(
+                (addToBundleDe.componentInstance as { assetIdentifier: string }).assetIdentifier
+            ).toBe('asset-1');
+        });
+
+        it('should close bundle dialog when dot-add-to-bundle emits cancel', () => {
+            store.$showBundleDialog.set(true);
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('dot-add-to-bundle', 'cancel', null);
+
+            expect(store.hideBundleDialog).toHaveBeenCalled();
+        });
+    });
+
+    describe('save-page event integration', () => {
+        it('should call updateFavoritePageNode when saved item is a dotFavoritePage and show success message', () => {
+            events$.next({
+                data: {
+                    value: 'Saved',
+                    payload: { contentType: 'dotFavoritePage', identifier: 'fav-1' }
+                }
+            } as DotEvent<SavePageEventData>);
+
+            expect(store.updateFavoritePageNode).toHaveBeenCalledWith('fav-1');
+            expect(store.updatePageNode).not.toHaveBeenCalled();
+            expect(mockDotMessageDisplayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    message: 'Saved',
+                    severity: DotMessageSeverity.SUCCESS,
+                    type: DotMessageType.SIMPLE_MESSAGE
                 })
-            )
-        );
-    });
-
-    it('should throw error dialog when call GoTo and url does not match with existing page', () => {
-        const error404 = mockResponseView(404);
-        dotPageRenderService.checkPermission = jest.fn().mockReturnValue(throwError(error404));
-
-        const elem = de.query(By.css('dot-pages-favorite-panel'));
-        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
-
-        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
-        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADED);
-        // setPortletStatus is called multiple times during the flow
-        expect(store.setPortletStatus).toHaveBeenCalledTimes(5);
-    });
-
-    it('should call showActionsMenu method from DotPagesFavoritePanel', () => {
-        const eventMock = new MouseEvent('click');
-        Object.defineProperty(eventMock, 'currentTarget', {
-            value: { id: 'test' },
-            enumerable: true
+            );
         });
 
-        const actionMenuParam = {
-            event: eventMock,
-            actionMenuDomId: 'test1',
-            item: dotcmsContentletMock
-        };
+        it('should call updatePageNode when saved item is a page and show success message', () => {
+            events$.next({
+                data: {
+                    value: 'Saved',
+                    payload: { contentType: 'htmlpage', contentletIdentifier: 'page-1' }
+                }
+            } as DotEvent<SavePageEventData>);
 
-        const elem = de.query(By.css('dot-pages-favorite-panel'));
-        elem.triggerEventHandler('showActionsMenu', actionMenuParam);
-
-        expect(component.menu.hide).toHaveBeenCalledTimes(1);
-        expect(store.showActionsMenu).toHaveBeenCalledWith({
-            item: dotcmsContentletMock,
-            actionMenuDomId: 'test1'
+            expect(store.updatePageNode).toHaveBeenCalledWith('page-1');
+            expect(store.updateFavoritePageNode).not.toHaveBeenCalled();
+            expect(mockDotMessageDisplayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    message: 'Saved',
+                    severity: DotMessageSeverity.SUCCESS,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                })
+            );
         });
-    });
-
-    it('should call goToUrl method from DotPagesListingPanel', () => {
-        const elem = de.query(By.css('dot-pages-listing-panel'));
-        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
-
-        expect(store.setPortletStatus).toHaveBeenCalledWith(ComponentStatus.LOADING);
-        // setPortletStatus is called multiple times during the flow
-        expect(store.setPortletStatus).toHaveBeenCalledTimes(6);
-        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
-            lang: '1',
-            url: '/page/1'
-        });
-    });
-
-    it('should call showActionsMenu method from DotPagesListingPanel', () => {
-        const eventMock = new MouseEvent('click');
-        Object.defineProperty(eventMock, 'currentTarget', {
-            value: { id: 'test' },
-            enumerable: true
-        });
-
-        const actionMenuParam = {
-            event: eventMock,
-            actionMenuDomId: 'test1',
-            item: dotcmsContentletMock
-        };
-
-        const elem = de.query(By.css('dot-pages-listing-panel'));
-        elem.triggerEventHandler('showActionsMenu', actionMenuParam);
-
-        expect(component.menu.hide).toHaveBeenCalledTimes(1);
-        expect(store.showActionsMenu).toHaveBeenCalledWith({
-            item: dotcmsContentletMock,
-            actionMenuDomId: 'test1'
-        });
-    });
-
-    it('should call scrollToTop method from DotPagesListingPanel', () => {
-        const elem = de.query(By.css('[data-testId="pages-listing-panel"]'));
-        elem.triggerEventHandler('pageChange');
-
-        expect(component.scrollToTop).toHaveBeenCalled();
-    });
-
-    it('should call closedActionsMenu method from p-menu', () => {
-        const elem = de.query(By.css('p-menu'));
-
-        component.closedActionsMenu = jest.fn();
-        elem.triggerEventHandler('onHide', {});
-
-        expect(component.closedActionsMenu).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call push method in dotMessageDisplayService once a save-page is received for a non favorite page', () => {
-        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
-
-        dotEventsService.notify('save-page', {
-            payload: { identifier: '123' },
-            value: 'test3'
-        });
-
-        expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
-            life: 3000,
-            message: 'test3',
-            severity: DotMessageSeverity.SUCCESS,
-            type: DotMessageType.SIMPLE_MESSAGE
-        });
-        expect(store.updateSinglePageData).toHaveBeenCalledWith({
-            identifier: '123',
-            isFavoritePage: false
-        });
-    });
-
-    it('should update a single page once a save-page is received for a favorite page', () => {
-        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
-
-        dotEventsService.notify('save-page', {
-            payload: { contentType: 'dotFavoritePage', identifier: '123' },
-            value: 'test3'
-        });
-
-        expect(store.updateSinglePageData).toHaveBeenCalledWith({
-            identifier: '123',
-            isFavoritePage: true
-        });
-    });
-
-    it('should trigger getPages when deactivating the router-outlet', () => {
-        const routerOutlet = de.query(By.css('router-outlet'));
-
-        routerOutlet.triggerEventHandler('activate');
-        fixture.detectChanges();
-        routerOutlet.triggerEventHandler('deactivate');
-        fixture.detectChanges();
-
-        expect(store.getPages).toHaveBeenCalled();
-    });
-
-    it('should reload portlet only when the site change', () => {
-        siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
-        // getPages is called multiple times during initialization and site changes
-        expect(store.getPages).toHaveBeenCalledTimes(2);
-        expect(component.scrollToTop).toHaveBeenCalled();
     });
 });

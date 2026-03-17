@@ -1,14 +1,10 @@
 import { MonacoEditorComponent, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
-import { MockComponent } from 'ng-mocks';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { MockModule } from 'ng-mocks';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
 
@@ -59,13 +55,14 @@ describe('DotBinaryFieldEditorComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotBinaryFieldEditorComponent,
-        declarations: [MockComponent(MonacoEditorComponent)],
-        imports: [
-            MonacoEditorModule,
-            InputTextModule,
-            ButtonModule,
-            DotMessagePipe,
-            DotFieldValidationMessageComponent
+        overrideComponents: [
+            [
+                DotBinaryFieldEditorComponent,
+                {
+                    remove: { imports: [MonacoEditorModule] },
+                    add: { imports: [MockModule(MonacoEditorModule)] }
+                }
+            ]
         ],
         providers: [
             DotBinaryFieldValidatorService,

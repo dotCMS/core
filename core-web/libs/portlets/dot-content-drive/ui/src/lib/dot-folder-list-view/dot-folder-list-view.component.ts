@@ -1,3 +1,6 @@
+import { patchState, signalState } from '@ngrx/signals';
+
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -6,19 +9,34 @@ import {
     effect,
     inject,
     input,
+    OnInit,
     output,
     Renderer2,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 
-import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotContentletStatusPipe, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { take } from 'rxjs/operators';
+
+import { DotLanguagesService } from '@dotcms/data-access';
+import {
+    ContextMenuData,
+    DotContentDriveItem,
+    DotContentDrivePaginateEvent,
+    DotLanguage
+} from '@dotcms/dotcms-models';
+import {
+    DotContentletStatusChipComponent,
+    DotLocaleTagPipe,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
 import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
 
@@ -27,32 +45,136 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     imports: [
         ButtonModule,
         ChipModule,
-        DotContentletStatusPipe,
+        DotContentletStatusChipComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
-        TableModule
+        TableModule,
+        DotLocaleTagPipe,
+        NgTemplateOutlet
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
-    styleUrl: './dot-folder-list-view.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-folder-list-view.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'w-full h-full min-h-0 block' }
 })
-export class DotFolderListViewComponent {
+export class DotFolderListViewComponent implements OnInit {
     private readonly renderer = inject(Renderer2);
+    private readonly dotLanguagesService = inject(DotLanguagesService);
 
+    dataTable = viewChild<Table>('dataTable');
+
+    /**
+     * A signal that takes an array of DotContentDriveItem objects.
+     *
+     * @type {InputSignal<DotContentDriveItem[]>}
+     * @alias items
+     */
     $items = input<DotContentDriveItem[]>([], { alias: 'items' });
+
+    /**
+     * A signal that takes the total number of items.
+     *
+     * @type {InputSignal<number>}
+     * @alias totalItems
+     */
     $totalItems = input<number>(0, { alias: 'totalItems' });
+
+    /**
+     * A signal that takes the loading state.
+     *
+     * @type {InputSignal<boolean>}
+     * @alias loading
+     */
     $loading = input<boolean>(false, { alias: 'loading' });
 
+    /**
+     * A signal that takes the offset.
+     *
+     * @type {InputSignal<number>}
+     * @alias offset
+     */
+    $offset = input<number>(0, { alias: 'offset' });
+
+    /**
+     * An output that emits the selected items.
+     *
+     * @type {Output<DotContentDriveItem[]>}
+     * @alias selectionChange
+     */
     selectionChange = output<DotContentDriveItem[]>();
-    paginate = output<LazyLoadEvent>();
+
+    /**
+     * An output that emits the pagination event.
+     *
+     * @type {Output<LazyLoadEvent>}
+     * @alias paginate
+     */
+    paginate = output<DotContentDrivePaginateEvent>();
+
+    /**
+     * An output that emits the sort event.
+     *
+     * @type {Output<SortEvent>}
+     * @alias sort
+     */
     sort = output<SortEvent>();
+
+    /**
+     * An output that emits the right click event.
+     *
+     * @type {Output<ContextMenuData>}
+     * @alias rightClick
+     */
     rightClick = output<ContextMenuData>();
+
+    /**
+     * An output that emits the double click event.
+     *
+     * @type {Output<DotContentDriveItem>}
+     * @alias doubleClick
+     */
     doubleClick = output<DotContentDriveItem>();
+
+    /**
+     * An output that emits the drag start event.
+     *
+     * @type {Output<DotContentDriveItem[]>}
+     * @alias dragStart
+     */
     dragStart = output<DotContentDriveItem[]>();
+
+    /**
+     * An output that emits the drag end event.
+     *
+     * @type {Output<void>}
+     * @alias dragEnd
+     */
     dragEnd = output<void>();
 
+    /**
+     * An output that emits the drop event.
+     *
+     * @type {Output<DotContentDriveItem>} the target value
+     * @alias drop
+     */
+    drop = output<DotContentDriveItem>();
+
+    /**
+     * An output that emits the scroll event.
+     *
+     * @type {Output<Event>}
+     * @alias scroll
+     */
+    scroll = output<Event>();
+
+    /**
+     * An array of selected items.
+     *
+     * @type {DotContentDriveItem[]}
+     * @alias selectedItems
+     */
     selectedItems = [];
 
     readonly MIN_ROWS_PER_PAGE = 20;
@@ -62,24 +184,28 @@ export class DotFolderListViewComponent {
     protected readonly $showPagination = computed(
         () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
     );
-    protected readonly $styleClass = computed(() =>
-        this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
-    );
+
+    readonly $loadingRows = signal<number[]>(Array.from({ length: this.MIN_ROWS_PER_PAGE }));
 
     /**
-     * Index of the first row to be displayed in the current page.
-     * Used by PrimeNG Table for pagination state management.
+     * Computed pass-through configuration for empty table.
      */
-    protected readonly $currentPageFirstRowIndex = signal<number>(0);
-
-    /**
-     * Effect that handles pagination state management
-     */
-    protected readonly firstEffect = effect(() => {
-        const showPagination = this.$showPagination();
-        if (showPagination) {
-            this.$currentPageFirstRowIndex.set(0);
+    readonly $ptConfig = computed(() => ({
+        table: {
+            style: {
+                'table-layout': 'fixed',
+                ...(this.$items().length === 0 && { height: '100%', width: '100%' })
+            }
         }
+    }));
+
+    /**
+     * State of the component.
+     */
+    readonly state = signalState({
+        isDragging: false,
+        languagesMap: new Map<number, DotLanguage>(),
+        dragOverRowId: null as string | null
     });
 
     /**
@@ -89,6 +215,64 @@ export class DotFolderListViewComponent {
         this.$items();
         this.selectedItems = [];
     });
+
+    /**
+     * Bound scroll handler to ensure the same reference is used for add/remove event listener
+     */
+    private readonly boundScrollHandler = this.scrollHandler.bind(this);
+
+    ngOnInit(): void {
+        // We should be getting this from the Global Store
+        // But it gets out of scope for the ticket.
+        this.dotLanguagesService
+            .get()
+            .pipe(take(1))
+            .subscribe((languages) => {
+                const languagesMap = new Map<number, DotLanguage>();
+                languages.forEach((language) => {
+                    languagesMap.set(language.id, language);
+                });
+
+                patchState(this.state, { languagesMap });
+            });
+    }
+
+    /**
+     * Initializes the component after the view has been initialized
+     */
+    ngAfterViewInit(): void {
+        const tableBody = this.getTableBody();
+
+        if (tableBody) {
+            tableBody.addEventListener('scroll', this.boundScrollHandler);
+        }
+    }
+
+    /**
+     * Destroys the component
+     */
+    ngOnDestroy(): void {
+        const tableBody = this.getTableBody();
+        if (tableBody) {
+            tableBody.removeEventListener('scroll', this.boundScrollHandler);
+        }
+    }
+
+    /**
+     * Gets the table body element
+     * @returns The table body element
+     */
+    private getTableBody(): HTMLElement | null {
+        return this.dataTable()?.el.nativeElement.querySelector('.p-datatable-table-container');
+    }
+
+    /**
+     * Handles scroll events from the table body
+     * @param event The scroll event
+     */
+    private scrollHandler(event: Event) {
+        this.scroll.emit(event);
+    }
 
     /**
      * Handles right click on a content item to show context menu
@@ -105,8 +289,9 @@ export class DotFolderListViewComponent {
      * @param event The lazy load event containing pagination info
      */
     onPage(event: LazyLoadEvent) {
-        this.$currentPageFirstRowIndex.set(event.first);
-        this.paginate.emit(event);
+        const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
+        this.paginate.emit({ ...event, page });
+        this.$loadingRows.set([...Array(event.rows)]);
     }
 
     /**
@@ -142,6 +327,9 @@ export class DotFolderListViewComponent {
 
         event.stopPropagation();
 
+        // Set dragging state to true
+        patchState(this.state, { isDragging: true });
+
         // Check if the dragged item is in the current selection
         const selected = this.selectedItems;
         const isDraggingSelectedItem = selected.some(
@@ -165,7 +353,55 @@ export class DotFolderListViewComponent {
     }
 
     /**
+     * Handles drag over a content item to show hover effect
+     * @param event The drag over event
+     * @param targetItem The content item being dragged over
+     */
+    onDragOver(event: DragEvent, targetItem: DotContentDriveItem) {
+        // Only handle internal drags (item to item)
+        const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
+        if (isInternalDrag) {
+            event.preventDefault();
+            patchState(this.state, { dragOverRowId: targetItem.identifier });
+        }
+    }
+
+    /**
+     * Handles drop on a content item
+     * Only handles internal drags (item to item). External file drops are allowed to bubble up to the dropzone.
+     * @param event The drop event
+     * @param targetItem The content item that was dropped
+     */
+    onDrop(event: DragEvent, targetItem: DotContentDriveItem) {
+        // If this is an external file drop, let it bubble up to the dropzone
+        const hasFiles = event.dataTransfer?.files && event.dataTransfer.files.length > 0;
+        const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
+
+        // Only handle internal drags (item to item), not file drops
+        if (hasFiles || !isInternalDrag) {
+            return; // Let the event bubble up to the dropzone
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        patchState(this.state, { dragOverRowId: null });
+        this.drop.emit(targetItem);
+    }
+
+    /**
+     * Handles drag end on a content item
+     */
+    onDragEnd() {
+        // Reset dragging state to false and clear drag over
+        patchState(this.state, { isDragging: false, dragOverRowId: null });
+        this.dragEnd.emit();
+    }
+
+    /**
      * Creates drag image from actual rendered thumbnails (img/icon elements)
+     * @param items The items to create the drag image from
+     * @param totalCount The total number of items
+     * @returns The drag image element
      */
     private createDragImage(items: DotContentDriveItem[], totalCount: number): HTMLElement | null {
         const container = this.renderer.createElement('div');
@@ -180,7 +416,7 @@ export class DotFolderListViewComponent {
             // Note: Using querySelector here as Renderer2 doesn't provide query methods
             // This is acceptable since drag operations are client-side only
             const thumbnail = document.querySelector(
-                `[data-id="${item.identifier}"]`
+                `[data-table-id="${item.identifier}"]`
             ) as HTMLElement;
 
             if (!thumbnail) {
@@ -191,8 +427,8 @@ export class DotFolderListViewComponent {
             this.renderer.addClass(wrapper, 'drag-image-item');
             this.renderer.addClass(wrapper, `drag-image-item-${idx}`);
 
-            // Check if first child is an img - if so, copy its HTML
-            const firstChild = thumbnail.firstElementChild;
+            // Check if the thumbnail is an icon or an image - if so, copy its HTML
+            const firstChild = thumbnail.tagName === 'I' ? thumbnail : thumbnail.firstElementChild;
 
             if (!firstChild) {
                 return;
@@ -231,9 +467,19 @@ export class DotFolderListViewComponent {
     }
 
     /**
-     * Handles drag end on a content item
+     * Handles first change event from the PrimeNG Table
+     * Basically primeNG Table handles the change of the first on every OnChange
+     * Making it lose the reference if you do a sort and do not handle this manually
+     *
+     * Check this issue to know if we are able to remove this function
+     * since its a legacy issue that they are basically ignoring.
+     * https://github.com/primefaces/primeng/issues/11898#issuecomment-1831076132
      */
-    onDragEnd() {
-        this.dragEnd.emit();
+    protected onFirstChange() {
+        const dataTable = this.dataTable();
+
+        if (dataTable) {
+            dataTable.first = this.$offset();
+        }
     }
 }

@@ -1,10 +1,21 @@
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject, output } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { DatePickerModule } from 'primeng/datepicker';
+import { DialogModule } from 'primeng/dialog';
+import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { takeUntil } from 'rxjs/operators';
 
-import { DotMessageService, PushPublishService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotPushPublishFiltersService,
+    PushPublishService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
@@ -13,16 +24,28 @@ import {
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
 
+import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-push-publish-form.component';
+
 @Component({
     selector: 'dot-push-publish-dialog',
-    styleUrls: ['./dot-push-publish-dialog.component.scss'],
     templateUrl: 'dot-push-publish-dialog.component.html',
-    standalone: false
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        DatePickerModule,
+        DialogModule,
+        SelectModule,
+        SelectButtonModule,
+        ButtonModule,
+        DotPushPublishFormComponent
+    ],
+    providers: [DotPushPublishFiltersService]
 })
 export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private pushPublishService = inject(PushPublishService);
     private dotMessageService = inject(DotMessageService);
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private cdr = inject(ChangeDetectorRef);
 
     dialogActions: DotDialogActions;
     dialogShow = false;
@@ -30,8 +53,9 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     formData: DotPushPublishData;
     formValid = false;
     errorMessage = null;
+    isSaving = false;
 
-    @Output() cancel = new EventEmitter<boolean>();
+    cancel = output<boolean>();
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -57,6 +81,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
         this.dialogShow = false;
         this.eventData = null;
         this.errorMessage = null;
+        this.isSaving = false;
     }
 
     /**
@@ -66,6 +91,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
      */
     submitPushAction(): void {
         if (this.formValid) {
+            this.isSaving = true;
             this.pushPublishService
                 .pushPublishContent(
                     this.eventData.assetIdentifier,
@@ -74,11 +100,13 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                 )
                 .pipe(takeUntil(this.destroy$))
                 .subscribe((result: DotAjaxActionResponseView) => {
+                    this.isSaving = false;
                     if (!result?.errors) {
                         this.close();
                     } else {
                         this.errorMessage = result.errors;
                     }
+                    this.cdr.detectChanges();
                 });
         }
     }

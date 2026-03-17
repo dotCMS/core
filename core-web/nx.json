@@ -4,7 +4,7 @@
             "runner": "nx/tasks-runners/default",
             "options": {
                 "cacheableOperations": ["build", "lint", "test", "e2e", "build-storybook"],
-                "parallel": 1
+                "parallel": 3
             }
         }
     },
@@ -25,7 +25,8 @@
         },
         "@nx/angular:component": {
             "style": "scss",
-            "changeDetection": "OnPush"
+            "changeDetection": "OnPush",
+            "type": "component"
         },
         "@nx/angular": {
             "application": {
@@ -36,12 +37,63 @@
             },
             "storybook-configuration": {
                 "linter": "eslint"
+            },
+            "directive": {
+                "type": "directive"
+            },
+            "service": {
+                "type": "service"
+            },
+            "scam": {
+                "type": "component"
+            },
+            "scam-directive": {
+                "type": "directive"
+            },
+            "guard": {
+                "typeSeparator": "."
+            },
+            "interceptor": {
+                "typeSeparator": "."
+            },
+            "module": {
+                "typeSeparator": "."
+            },
+            "pipe": {
+                "typeSeparator": "."
+            },
+            "resolver": {
+                "typeSeparator": "."
             }
         },
         "@nx/react": {
             "library": {
                 "unitTestRunner": "jest"
             }
+        },
+        "@schematics/angular:component": {
+            "type": "component"
+        },
+        "@schematics/angular:directive": {
+            "type": "directive"
+        },
+        "@schematics/angular:service": {
+            "type": "service"
+        },
+        "@schematics/angular:guard": {
+            "typeSeparator": "."
+        },
+        "@schematics/angular:interceptor": {
+            "typeSeparator": "."
+        },
+        "@schematics/angular:module": {
+            "typeSeparator": "."
+        },
+        "@schematics/angular:pipe": {
+            "typeSeparator": "."
+        },
+        "@schematics/angular:resolver": {
+            "typeSeparator": "."
         }
     },
     "$schema": "./node_modules/nx/schemas/nx-schema.json",
@@ -49,6 +101,9 @@
         "build": {
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
+        },
+        "serve": {
+            "dependsOn": []
         },
         "test": {
             "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"]
@@ -105,7 +160,7 @@
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
         },
-        "@angular-devkit/build-angular:application": {
+        "@angular/build:application": {
             "cache": true,
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
@@ -124,7 +179,6 @@
         "sharedGlobals": [
             "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
-            "{workspaceRoot}/tslint.json",
             "{workspaceRoot}/nx.json",
             "{workspaceRoot}/babel.config.json"
         ],
@@ -154,7 +208,6 @@
             "options": {
                 "buildTargetName": "build",
                 "previewTargetName": "preview",
-                "testTargetName": "test",
                 "serveTargetName": "serve",
                 "serveStaticTargetName": "serve-static"
             }
@@ -170,6 +223,12 @@
             "options": {
                 "targetName": "e2e"
             }
+        },
+        {
+            "plugin": "@nx/vitest",
+            "options": {
+                "testTargetName": "test"
+            }
         }
     ],
     "defaultBase": "main",
@@ -183,5 +242,7 @@
             "preVersionCommand": "yarn nx run-many -t build"
         }
     },
-    "useLegacyCache": true
+    "serve": {
+        "dependsOn": []
+    }
 }

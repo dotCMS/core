@@ -1,5 +1,6 @@
 package com.dotcms.browser;
 
+import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -272,12 +273,13 @@ public interface BrowserAPI {
      *
      * @param browserQuery the query parameters defining parent, pagination, and flags for which
      *                     elements (content, folders, links) to include
-     * @return a {@code Map<String, Object>} containing the retrieved contentlets and,
-     *         if requested, folders and/or links
-     * @throws DotSecurityException if the user does not have permission to access the parent or contents
-     * @throws DotDataException if a data retrieval error occurs at the database level
+     * @return a {@code Map<String, Object>} containing the retrieved contentlets and, if requested,
+     * quested, folders and/or links
+     * @throws DotSecurityException if the user does not have permission to access the parent or
+     *                              contents
+     * @throws DotDataException     if a data retrieval error occurs at the database level
      */
-    Map<String, Object> getPaginatedFolderContents(final BrowserQuery browserQuery)
+    PaginatedContents getPaginatedContents(final BrowserQuery browserQuery)
             throws DotSecurityException, DotDataException;
 
 	/**

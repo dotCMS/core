@@ -1,380 +1,188 @@
-import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { patchState, signalStore, withHooks, withMethods } from '@ngrx/signals';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { Location } from '@angular/common';
 import { effect, inject } from '@angular/core';
-
-import { switchMap, tap } from 'rxjs/operators';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
-import {
-    PageViewDeviceBrowsersEntity,
-    PageViewTimeLineEntity,
-    RequestState,
-    TimeRangeInput,
-    TopPagePerformanceEntity,
-    TopPerformaceTableEntity,
-    TotalPageViewsEntity,
-    UniqueVisitorsEntity
-} from '../../index';
-import { TIME_RANGE_OPTIONS } from '../constants';
-import { DotAnalyticsService } from '../services/dot-analytics.service';
+import { withConversions } from './features/with-conversions.feature';
+import { withEngagement } from './features/with-engagement.feature';
+import { withFilters } from './features/with-filters.feature';
+import { withPageview } from './features/with-pageview.feature';
+
+import { DASHBOARD_TAB_LIST, DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
+import { TimeRangeInput } from '../types';
+import { isValidTab, paramsToTimeRange } from '../utils/filters.utils';
+import { silentNavigate } from '../utils/router.utils';
+
+const TAB_CONFIG_MAP = new Map(DASHBOARD_TAB_LIST.map((tab) => [tab.id, tab]));
 
 /**
- * Main dashboard store state
+ * Analytics Dashboard Store
+ *
+ * Composed signal store for the analytics dashboard.
+ * Uses signal store features for modular state management:
+ *
+ * - withFilters: Shared filter state (timeRange, currentTab)
+ * - withPageview: Pageview report data
+ * - withConversions: Conversions report data
+ *
+ * Data loading strategy:
+ * - Automatically loads data for the active tab when tab, timeRange, or siteId changes
+ * - Pageview data is loaded when the pageview tab is active
+ * - Conversions data is loaded lazily when the conversions tab is first activated
  */
-export interface DotAnalyticsDashboardState {
-    timeRange: TimeRangeInput;
-
-    // Individual request states
-    totalPageViews: RequestState<TotalPageViewsEntity>;
-    uniqueVisitors: RequestState<UniqueVisitorsEntity>;
-    topPagePerformance: RequestState<TopPagePerformanceEntity>;
-    pageViewTimeLine: RequestState<PageViewTimeLineEntity[]>;
-    pageViewDeviceBrowsers: RequestState<PageViewDeviceBrowsersEntity[]>;
-    topPagesTable: RequestState<TopPerformaceTableEntity[]>;
-}
-
-/**
- * Initial store state
- */
-const initialState: DotAnalyticsDashboardState = {
-    timeRange: TIME_RANGE_OPTIONS.last7days,
-    totalPageViews: { status: ComponentStatus.INIT, data: null, error: null },
-    uniqueVisitors: { status: ComponentStatus.INIT, data: null, error: null },
-    topPagePerformance: { status: ComponentStatus.INIT, data: null, error: null },
-    pageViewTimeLine: { status: ComponentStatus.INIT, data: null, error: null },
-    pageViewDeviceBrowsers: { status: ComponentStatus.INIT, data: null, error: null },
-    topPagesTable: { status: ComponentStatus.INIT, data: null, error: null }
-};
-
 export const DotAnalyticsDashboardStore = signalStore(
-    withState(initialState),
+    withFilters(),
+    withPageview(),
+    withConversions(),
+    withEngagement(),
+    // Coordinator methods that work across features
     withMethods(
         (
             store,
-            analyticsService = inject(DotAnalyticsService),
-            dotMessageService = inject(DotMessageService)
-        ) => {
-            return {
-                setTimeRange: (timeRange: TimeRangeInput) => {
-                    patchState(store, { timeRange });
-                },
+            route = inject(ActivatedRoute),
+            router = inject(Router),
+            location = inject(Location)
+        ) => ({
+            /**
+             * Sets current tab and syncs URL without triggering Angular router navigation.
+             */
+            setCurrentTabAndNavigate(tab: DashboardTab): void {
+                store.setCurrentTab(tab);
+                silentNavigate(router, location, route, { tab });
+            },
 
-                // Total Page Views
-                loadTotalPageViews: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
-                    pipe(
-                        tap(() =>
-                            patchState(store, {
-                                totalPageViews: {
-                                    status: ComponentStatus.LOADING,
-                                    data: null,
-                                    error: null
-                                }
-                            })
-                        ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            return analyticsService.totalPageViews(timeRange, currentSiteId).pipe(
-                                tapResponse(
-                                    (data: TotalPageViewsEntity) => {
-                                        patchState(store, {
-                                            totalPageViews: {
-                                                status: ComponentStatus.LOADED,
-                                                data,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    (error: HttpErrorResponse) => {
-                                        const errorMessage =
-                                            error.message ||
-                                            dotMessageService.get(
-                                                'analytics.error.loading.total-pageviews'
-                                            );
-                                        patchState(store, {
-                                            totalPageViews: {
-                                                status: ComponentStatus.ERROR,
-                                                data: null,
-                                                error: errorMessage
-                                            }
-                                        });
-                                    }
-                                )
-                            );
-                        })
-                    )
-                ),
+            /**
+             * Refreshes all currently loaded data based on the current tab.
+             */
+            refreshAllData(): void {
+                const currentTab = store.currentTab();
 
-                // Unique Visitors
-                loadUniqueVisitors: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
-                    pipe(
-                        tap(() =>
-                            patchState(store, {
-                                uniqueVisitors: {
-                                    status: ComponentStatus.LOADING,
-                                    data: null,
-                                    error: null
-                                }
-                            })
-                        ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            return analyticsService.uniqueVisitors(timeRange, currentSiteId).pipe(
-                                tapResponse(
-                                    (data: UniqueVisitorsEntity) => {
-                                        patchState(store, {
-                                            uniqueVisitors: {
-                                                status: ComponentStatus.LOADED,
-                                                data,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    (error: HttpErrorResponse) => {
-                                        const errorMessage =
-                                            error.message ||
-                                            dotMessageService.get(
-                                                'analytics.error.loading.unique-visitors'
-                                            );
-                                        patchState(store, {
-                                            uniqueVisitors: {
-                                                status: ComponentStatus.ERROR,
-                                                data: null,
-                                                error: errorMessage
-                                            }
-                                        });
-                                    }
-                                )
-                            );
-                        })
-                    )
-                ),
+                switch (currentTab) {
+                    case DASHBOARD_TABS.pageview:
+                        store.loadAllPageviewData();
+                        break;
+                    case DASHBOARD_TABS.engagement:
+                        store.loadEngagementData();
+                        break;
+                    case DASHBOARD_TABS.conversions:
+                        store.loadConversionsData();
+                        break;
+                }
+            },
 
-                // Top Page Performance
-                loadTopPagePerformance: rxMethod<{
-                    timeRange: TimeRangeInput;
-                    currentSiteId: string;
-                }>(
-                    pipe(
-                        tap(() =>
-                            patchState(store, {
-                                topPagePerformance: {
-                                    status: ComponentStatus.LOADING,
-                                    data: null,
-                                    error: null
-                                }
-                            })
-                        ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            return analyticsService
-                                .topPagePerformance(timeRange, currentSiteId)
-                                .pipe(
-                                    tapResponse(
-                                        (data: TopPagePerformanceEntity) => {
-                                            patchState(store, {
-                                                topPagePerformance: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.top-page-performance'
-                                                );
-                                            patchState(store, {
-                                                topPagePerformance: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: errorMessage
-                                                }
-                                            });
-                                        }
-                                    )
-                                );
-                        })
-                    )
-                ),
+            /**
+             * Updates time range and syncs URL with query params.
+             *
+             * Uses `location.replaceState` (same as `setCurrentTabAndNavigate`) to avoid
+             * triggering router events that would reset component state.
+             *
+             * When `timeRange` is the bare `'custom'` string (dropdown selected but no
+             * dates chosen yet), only the URL is updated — store state is left unchanged
+             * so no data reload is triggered until a full date range is confirmed.
+             */
+            updateTimeRange(timeRange: TimeRangeInput): void {
+                const queryParams: Params = {};
 
-                // Page View Timeline
-                loadPageViewTimeLine: rxMethod<{
-                    timeRange: TimeRangeInput;
-                    currentSiteId: string;
-                }>(
-                    pipe(
-                        tap(() =>
-                            patchState(store, {
-                                pageViewTimeLine: {
-                                    status: ComponentStatus.LOADING,
-                                    data: null,
-                                    error: null
-                                }
-                            })
-                        ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            return analyticsService.pageViewTimeLine(timeRange, currentSiteId).pipe(
-                                tapResponse(
-                                    (data: PageViewTimeLineEntity[]) => {
-                                        patchState(store, {
-                                            pageViewTimeLine: {
-                                                status: ComponentStatus.LOADED,
-                                                data,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    (error: HttpErrorResponse) => {
-                                        const errorMessage =
-                                            error.message ||
-                                            dotMessageService.get(
-                                                'analytics.error.loading.pageviews-timeline'
-                                            );
-                                        patchState(store, {
-                                            pageViewTimeLine: {
-                                                status: ComponentStatus.ERROR,
-                                                data: null,
-                                                error: errorMessage
-                                            }
-                                        });
-                                    }
-                                )
-                            );
-                        })
-                    )
-                ),
+                if (Array.isArray(timeRange)) {
+                    // Complete custom date range — update state and URL
+                    store.setTimeRange(timeRange);
+                    queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
+                    queryParams['from'] = timeRange[0];
+                    queryParams['to'] = timeRange[1];
+                } else {
+                    // Predefined range OR bare 'custom' (no dates yet)
+                    // Only update state for predefined ranges, not for bare 'custom'
+                    if (timeRange !== TIME_RANGE_OPTIONS.custom) {
+                        store.setTimeRange(timeRange);
+                    }
 
-                // Page View Device Browsers
-                loadPageViewDeviceBrowsers: rxMethod<{
-                    timeRange: TimeRangeInput;
-                    currentSiteId: string;
-                }>(
-                    pipe(
-                        tap(() =>
-                            patchState(store, {
-                                pageViewDeviceBrowsers: {
-                                    status: ComponentStatus.LOADING,
-                                    data: null,
-                                    error: null
-                                }
-                            })
-                        ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            return analyticsService
-                                .pageViewDeviceBrowsers(timeRange, currentSiteId)
-                                .pipe(
-                                    tapResponse(
-                                        (data: PageViewDeviceBrowsersEntity[]) => {
-                                            patchState(store, {
-                                                pageViewDeviceBrowsers: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.device-breakdown'
-                                                );
-                                            patchState(store, {
-                                                pageViewDeviceBrowsers: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: errorMessage
-                                                }
-                                            });
-                                        }
-                                    )
-                                );
-                        })
-                    )
-                ),
+                    queryParams['time_range'] = timeRange;
+                    // Null out from/to to remove them from the URL when switching away from custom
+                    queryParams['from'] = null;
+                    queryParams['to'] = null;
+                }
 
-                // Top Pages Table
-                loadTopPagesTable: rxMethod<{ timeRange: TimeRangeInput; currentSiteId: string }>(
-                    pipe(
-                        tap(() =>
-                            patchState(store, {
-                                topPagesTable: {
-                                    status: ComponentStatus.LOADING,
-                                    data: null,
-                                    error: null
-                                }
-                            })
-                        ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            return analyticsService
-                                .getTopPagePerformanceTable(timeRange, currentSiteId)
-                                .pipe(
-                                    tapResponse(
-                                        (data: TopPerformaceTableEntity[]) => {
-                                            patchState(store, {
-                                                topPagesTable: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.top-pages-table'
-                                                );
-                                            patchState(store, {
-                                                topPagesTable: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: errorMessage
-                                                }
-                                            });
-                                        }
-                                    )
-                                );
-                        })
-                    )
-                )
-            };
-        }
+                silentNavigate(router, location, route, queryParams);
+            }
+        })
     ),
-
-    withMethods((store) => ({
-        /**
-         * Coordinated method to load all dashboard data.
-         * Calls all individual load methods while maintaining their independent states.
-         */
-        loadAllDashboardData: (timeRange: TimeRangeInput, currentSiteId: string) => {
-            store.loadTotalPageViews({ timeRange, currentSiteId });
-            store.loadUniqueVisitors({ timeRange, currentSiteId });
-            store.loadTopPagePerformance({ timeRange, currentSiteId });
-            store.loadPageViewTimeLine({ timeRange, currentSiteId });
-            store.loadPageViewDeviceBrowsers({ timeRange, currentSiteId });
-            store.loadTopPagesTable({ timeRange, currentSiteId });
-        }
-    })),
-
     withHooks({
-        onInit: (store, globalStore = inject(GlobalStore)) => {
-            // Auto-load data when both timeRange and currentSiteId are available
+        onInit(store) {
+            const route = inject(ActivatedRoute);
+            const globalStore = inject(GlobalStore);
+            const messageService = inject(DotMessageService);
+            const params = route.snapshot.queryParams;
+
+            // Set initial state from query params
+            patchState(store, setTabFromQueryParams(params), setTimeRangeFromQueryParams(params));
+
+            // Update breadcrumb when currentTab changes
             effect(() => {
-                const timeRange = store.timeRange();
+                const currentTab = store.currentTab();
+                const tabConfig = TAB_CONFIG_MAP.get(currentTab);
+
+                if (tabConfig) {
+                    globalStore.addNewBreadcrumb({
+                        id: `analytics-${currentTab}`,
+                        label: messageService.get(tabConfig.label)
+                    });
+                }
+            });
+
+            // Auto-load data when currentTab, timeRange, or currentSiteId changes
+            effect(() => {
+                const currentTab = store.currentTab();
+                store.timeRange(); // Read to establish reactivity
                 const currentSiteId = globalStore.currentSiteId();
 
-                // Only load data if we have a valid site ID
-                if (currentSiteId) {
-                    store.loadAllDashboardData(timeRange, currentSiteId);
+                // Only load if we have a site ID
+                if (!currentSiteId) {
+                    return;
+                }
+
+                // Load data based on active tab
+                switch (currentTab) {
+                    case DASHBOARD_TABS.pageview:
+                        store.loadAllPageviewData();
+                        break;
+                    case DASHBOARD_TABS.conversions:
+                        store.loadConversionsData();
+                        break;
+                    case DASHBOARD_TABS.engagement:
+                        store.loadEngagementData();
+                        break;
                 }
             });
         }
     })
 );
+
+/**
+ * Sets the time range from the query params.
+ * @param params - The query params.
+ * @returns The time range.
+ */
+const setTimeRangeFromQueryParams = (params: Params) => {
+    const timeRange = paramsToTimeRange(params || {});
+
+    return { timeRange };
+};
+
+/**
+ * Sets the tab from the query params.
+ * @param params - The query params.
+ * @returns The tab.
+ */
+const setTabFromQueryParams = (params: Params) => {
+    const currentTab = params?.['tab'];
+
+    if (currentTab && isValidTab(currentTab)) {
+        return { currentTab };
+    }
+
+    return {};
+};

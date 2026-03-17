@@ -12,7 +12,11 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
 
-
+/**
+ * IMPORTANT: This Is marked Deprecated and will be removed once we complete migration to OpenSearch 3.x
+ * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPIImpl} instead.
+ */
+@Deprecated(forRemoval = true)
 public class IndiciesAPIImpl implements IndiciesAPI {
 
     protected final IndiciesFactory ifac;

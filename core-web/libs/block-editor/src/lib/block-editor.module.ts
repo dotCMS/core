@@ -6,19 +6,20 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
 import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
-import { DynamicDialogModule } from 'primeng/dynamicdialog';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { PaginatorModule } from 'primeng/paginator';
+import { Button } from 'primeng/button';
+import { Card } from 'primeng/card';
+import { Checkbox } from 'primeng/checkbox';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
+import { DynamicDialog } from 'primeng/dynamicdialog';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
 
 import {
     DotContentSearchService,
     DotLanguagesService,
     DotMessageService,
     DotPropertiesService,
-    DotUploadFileService,
-    DotAiService,
     DotWorkflowActionsFireService,
     DotContentTypeService
 } from '@dotcms/data-access';
@@ -27,7 +28,8 @@ import {
     DotAssetSearchComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
-    DotSpinnerModule
+    DotSpinnerComponent,
+    DotContentletStatusChipComponent
 } from '@dotcms/ui';
 
 //Editor
@@ -45,7 +47,6 @@ import {
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared';
-import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 
 const initTranslations = (dotMessageService: DotMessageService) => {
@@ -58,23 +59,26 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         FormsModule,
         ReactiveFormsModule,
         SharedModule,
-        PrimengModule,
-        DynamicDialogModule,
+        DynamicDialog,
         AssetFormModule,
         DotFieldRequiredDirective,
         UploadPlaceholderComponent,
         DotMessagePipe,
-        ConfirmDialogModule,
+        ConfirmDialog,
         DotAssetSearchComponent,
-        DialogModule,
-        InputTextareaModule,
-        PaginatorModule,
-        DotSpinnerModule,
+        Dialog,
+        Textarea,
+        Card,
+        Checkbox,
+        InputText,
+        Button,
+        DotSpinnerComponent,
         DotBubbleMenuComponent,
         TiptapBubbleMenuDirective,
         DragHandleDirective,
         DotContextMenuComponent,
-        DotAddButtonComponent
+        DotAddButtonComponent,
+        DotContentletStatusChipComponent
     ],
     declarations: [
         EditorDirective,
@@ -85,10 +89,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         FloatingButtonComponent
     ],
     providers: [
-        DotUploadFileService,
         LoggerService,
         StringUtils,
-        DotAiService,
         ConfirmationService,
         DotPropertiesService,
         DotContentSearchService,
@@ -107,7 +109,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         DragHandleDirective
     ]
 })

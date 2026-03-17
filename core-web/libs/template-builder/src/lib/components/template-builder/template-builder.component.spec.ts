@@ -1,28 +1,33 @@
 import { expect, it } from '@jest/globals';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
-import { AsyncPipe, NgClass, NgFor, NgIf, NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
-import { DividerModule } from 'primeng/divider';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { ToolbarModule } from 'primeng/toolbar';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotContainersService, DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContainersService,
+    DotCurrentUserService,
+    DotEventsService,
+    DotMessageService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
+import { CoreWebService, DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import {
     containersMock,
     CoreWebServiceMock,
+    DotcmsEventsServiceMock,
     DotContainersServiceMock,
+    DotCurrentUserServiceMock,
     LoginServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
-import { TemplateBuilderComponentsModule } from './components/template-builder-components.module';
 import { DotGridStackWidget, SCROLL_DIRECTION } from './models/models';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
 import { TemplateBuilderComponent } from './template-builder.component';
@@ -62,23 +67,15 @@ describe('TemplateBuilderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
-        imports: [
-            NgFor,
-            NgIf,
-            AsyncPipe,
-            DotMessagePipe,
-            DynamicDialogModule,
-            NgStyle,
-            NgClass,
-            ToolbarModule,
-            DividerModule,
-            TemplateBuilderComponentsModule,
-            HttpClientTestingModule
-        ],
+        imports: [HttpClientTestingModule],
         providers: [
             DotTemplateBuilderStore,
             DialogService,
             DynamicDialogRef,
+            {
+                provide: DotCurrentUserService,
+                useClass: DotCurrentUserServiceMock
+            },
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
@@ -98,6 +95,18 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: LoginService,
                 useClass: LoginServiceMock
+            },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
+            },
+            {
+                provide: GlobalStore,
+                useValue: { currentSiteId: () => null }
+            },
+            {
+                provide: DotcmsEventsService,
+                useClass: DotcmsEventsServiceMock
             },
             DotEventsService
         ]
@@ -310,7 +319,8 @@ describe('TemplateBuilderComponent', () => {
             '[data-testId="delete-section-button"]'
         );
 
-        spectator.click(deleteSectionButton);
+        // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
+        spectator.click(deleteSectionButton.querySelector('button'));
 
         expect(deleteSectionMock).toHaveBeenCalledWith('header');
     });
@@ -322,27 +332,17 @@ describe('TemplateBuilderComponent', () => {
             '[data-testId="delete-section-button"]'
         );
 
-        spectator.click(deleteSectionButton);
+        // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
+        spectator.click(deleteSectionButton.querySelector('button'));
 
         expect(deleteSectionMock).toHaveBeenCalledWith('footer');
     });
 
     it("should emit changes with a not null layout when the theme is changed and layoutProperties or rows weren't touched", () => {
-        const templateBuilderActions = spectator.query(byTestId('template-builder-actions'));
         const layoutChangeMock = jest.spyOn(spectator.component.templateChange, 'emit');
 
-        spectator.dispatchFakeEvent(templateBuilderActions, 'selectTheme');
-
-        // This queries from the body
-        const templateBuilderThemeSelector = spectator.fixture.debugElement.parent.query(
-            By.css('dotcms-template-builder-theme-selector')
-        ).componentInstance;
-
-        templateBuilderThemeSelector.currentTheme = {
-            identifier: 'test-123'
-        };
-
-        templateBuilderThemeSelector.apply();
+        // Theme changes are routed through TemplateBuilderActions -> TemplateBuilderComponent.updateTheme()
+        spectator.component.updateTheme('test-123');
 
         expect(layoutChangeMock).toHaveBeenCalledWith({
             layout: {

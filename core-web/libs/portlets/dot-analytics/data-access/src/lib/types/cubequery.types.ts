@@ -3,6 +3,24 @@
  */
 
 /**
+ * Cube prefix types for different analytics data sources.
+ * - 'request': Pageview and request analytics
+ * - 'EventSummary': Conversion and event analytics
+ * - 'ContentAttribution': Content attribution for conversions
+ * - 'Conversion': Conversions overview data
+ * - 'EngagementDaily' and SessionsBy*: Engagement dashboard cubes
+ */
+export type CubePrefix =
+    | 'request'
+    | 'EventSummary'
+    | 'ContentAttribution'
+    | 'Conversion'
+    | 'EngagementDaily'
+    | 'SessionsByDeviceDaily'
+    | 'SessionsByBrowserDaily'
+    | 'SessionsByLanguageDaily';
+
+/**
  * Sort direction options for ordering queries.
  * Using const assertion for sort direction management.
  */
@@ -17,7 +35,7 @@ export type SortDirection = (typeof SortDirection)[keyof typeof SortDirection];
  * Granularity options for time-based queries.
  * Using const assertion for granularity management.
  */
-const Granularity = {
+export const Granularity = {
     HOUR: 'hour',
     DAY: 'day',
     WEEK: 'week',
@@ -25,6 +43,8 @@ const Granularity = {
 } as const;
 
 export type Granularity = (typeof Granularity)[keyof typeof Granularity];
+
+export const DEFAULT_GRANULARITY = Granularity.DAY;
 
 /**
  * CubeJS time dimension configuration
@@ -54,7 +74,19 @@ const DimensionField = {
     PAGE_TITLE: 'pageTitle',
     USER_AGENT: 'userAgent',
     CREATED_AT: 'createdAt',
-    EVENT_TYPE: 'eventType'
+    EVENT_TYPE: 'eventType',
+    DAY: 'day',
+    IDENTIFIER: 'identifier',
+    TITLE: 'title',
+    CONVERSIONS: 'conversions',
+    EVENTS: 'events',
+    CONVERSION_NAME: 'conversionName',
+    TOTAL_CONVERSION: 'totalConversion',
+    CONV_RATE: 'convRate',
+    TOP_ATTRIBUTED_CONTENT: 'topAttributedContent',
+    DEVICE_CATEGORY: 'deviceCategory',
+    BROWSER_FAMILY: 'browserFamily',
+    LOCALE_ID: 'localeId'
 } as const;
 
 export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField];
@@ -66,7 +98,10 @@ export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField
 const MeasureField = {
     TOTAL_REQUEST: 'totalRequest',
     TOTAL_SESSIONS: 'totalSessions',
-    TOTAL_USERS: 'totalUsers'
+    TOTAL_USERS: 'totalUsers',
+    TOTAL_EVENTS: 'totalEvents',
+    UNIQUE_VISITORS: 'uniqueVisitors',
+    UNIQUE_CONVERTING_VISITORS: 'uniqueConvertingVisitors'
 } as const;
 
 export type MeasureField = (typeof MeasureField)[keyof typeof MeasureField];

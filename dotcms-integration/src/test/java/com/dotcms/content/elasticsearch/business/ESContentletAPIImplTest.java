@@ -14,12 +14,16 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.contenttype.business.DotAssetValidationException;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.DotAssetDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FieldRelationshipDataGen;
@@ -31,10 +35,12 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VanityUrlDataGen;
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -91,6 +97,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
+import java.net.URISyntaxException;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -187,7 +194,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         //TODO: Remove this when the whole change is done
         try {
             new DotConnect().setSQL("CREATE TABLE IF NOT EXISTS unique_fields (" +
-                    "unique_key_val VARCHAR(64) PRIMARY KEY," +
+                    "unique_key_val VARCHAR PRIMARY KEY," +
                     "supporting_values JSONB" +
                     " )").loadObjectResults();
         } catch (DotDataException e) {
@@ -4778,6 +4785,220 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             ContentletDataGen.remove(contentlet);
         }
 
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * Given Scenario: Create a DotAsset in a folder that restricts the asset's file extension
+     * Expected Result: Should throw a DotAssetValidationException indicating the folder doesn't accept the file extension
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void test_checkin_DotAsset_FolderWithRestrictedExtension_ShouldThrowException()
+            throws Exception {
+
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        // Create a folder that only accepts .txt files (restricts .png files)
+        final Folder restrictedFolder = new FolderDataGen()
+                .site(host)
+                .name("restrictedFolder")
+                .fileMasks("*.txt") // Only allow .txt files
+                .nextPersisted();
+        try {
+            // Create a test PNG file
+            final File testPngFile = TestDataUtils.nextBinaryFile(TestFile.PNG);
+            // Try to create a DotAsset with .png extension in a folder that only accepts .txt
+            try {
+                new DotAssetDataGen(host, restrictedFolder, testPngFile).nextPersisted();
+                Assert.fail("Should have thrown an exception!");
+            }catch (Exception e) {
+                Assert.assertTrue("Should have thrown a DotAssetValidationException ",  ExceptionUtil.causedBy(e, DotAssetValidationException.class));
+            }
+        } finally {
+            // Clean up the folder
+            FolderDataGen.remove(restrictedFolder);
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#find(String, User, boolean)}
+     * Given Scenario: Create an HTML Page Content Type with a default value for the URL field,
+     *                 then create a page with a specific URL
+     * Expected Result: When calling find() on the HTML Page, the URL should be 
+     *                  correctly populated from identifier.asset_name, not from 
+     *                  the Content Type's defaultValue
+     * @see <a href="https://github.com/dotCMS/core/issues/33893">GitHub Issue #33893</a>
+     */
+    @Test
+    public void test_find_HTMLPage_URL_ShouldBePopulatedFromIdentifier() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final String defaultUrlValue = "default-url-value";
+        final long time = System.currentTimeMillis();
+        
+        ContentType pageContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.HTMLPAGE)
+                .host(host)
+                .name("TestPageType_" + time)
+                .velocityVarName("testPageType" + time)
+                .nextPersisted();
+        
+        Contentlet pageContentlet = null;
+        try {
+            final Field urlField = pageContentType.fieldMap().get(HTMLPageAssetAPI.URL_FIELD);
+            assertNotNull("URL field should exist in Page Content Type", urlField);
+            
+            final Field updatedUrlField = FieldBuilder.builder(urlField)
+                    .defaultValue(defaultUrlValue)
+                    .build();
+            APILocator.getContentTypeFieldAPI().save(updatedUrlField, APILocator.systemUser());
+            
+            CacheLocator.getContentTypeCache().remove(pageContentType);
+            
+            pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find(pageContentType.id());
+            
+            final String expectedUrl = "actual-page-url-" + time;
+            pageContentlet = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, expectedUrl)
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page " + time)
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+            
+            assertNotNull(pageContentlet.getInode());
+            
+            CacheLocator.getContentletCache().remove(pageContentlet.getInode());
+            
+            final Contentlet foundContentlet = APILocator.getContentletAPI()
+                    .find(pageContentlet.getInode(), APILocator.systemUser(), false);
+            
+            assertNotNull(foundContentlet);
+            
+            final String actualUrl = foundContentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertNotEquals("URL should NOT be the default value", defaultUrlValue, actualUrl);
+            assertEquals("URL should be populated from identifier.asset_name", expectedUrl, actualUrl);
+            
+            final Identifier identifier = APILocator.getIdentifierAPI().find(foundContentlet);
+            assertEquals("URL should match identifier.asset_name", identifier.getAssetName(), actualUrl);
+            
+        } finally {
+            if (pageContentlet != null && UtilMethods.isSet(pageContentlet.getInode())) {
+                ContentletDataGen.remove(pageContentlet);
+            }
+            if (pageContentType != null) {
+                ContentTypeDataGen.remove(pageContentType);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean)}
+     * Given Scenario: Create HTML Pages with URLs containing path separators (e.g., "/index", "/act/index", "/a/v/page")
+     * Expected Result: The URL field should only contain the last part after the final "/" (e.g., "index", "index", "page")
+     *                  Simple URLs without "/" should remain unchanged (e.g., "index" stays "index")
+     */
+    @Test
+    public void test_HTMLPage_URL_ShouldExtractLastPartAfterSlash() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final long time = System.currentTimeMillis();
+
+        ContentType pageContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.HTMLPAGE)
+                .host(host)
+                .name("TestPageTypeUrlExtract_" + time)
+                .velocityVarName("testPageTypeUrlExtract" + time)
+                .nextPersisted();
+
+        // Test case 1: Simple URL without slash
+        Contentlet page1 = null;
+        // Test case 2: URL with leading slash
+        Contentlet page2 = null;
+        // Test case 3: URL with multiple path segments
+        Contentlet page3 = null;
+        // Test case 4: URL with deep path
+        Contentlet page4 = null;
+
+        try {
+            // Test case 1: Simple URL without slash - should remain unchanged
+            page1 = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, "index")
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page 1")
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page 1")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+
+            String url1 = contentletAPI.checkout(page1.getInode(), user, false).getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertEquals("Simple URL without slash should remain 'index'", "index", url1);
+
+            // Test case 2: URL with leading slash - should extract last part
+            page2 = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .folder(APILocator.getFolderAPI().createFolders("/testfolder" + time, host, APILocator.systemUser(), false))
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, "/index2")
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page 2")
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page 2")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+
+            String url2 = contentletAPI.checkout(page2.getInode(), user, false).getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertEquals("URL '/index2' should be extracted to 'index2'", "index2", url2);
+
+            // Test case 3: URL with multiple path segments - should extract last part
+            page3 = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .folder(APILocator.getFolderAPI().createFolders("/testfolder2" + time, host, APILocator.systemUser(), false))
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, "/act/index3")
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page 3")
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page 3")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+
+            String url3 = contentletAPI.checkout(page3.getInode(), user, false).getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertEquals("URL '/act/index3' should be extracted to 'index3'", "index3", url3);
+
+            // Test case 4: URL with deep path - should extract last part
+            page4 = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .folder(APILocator.getFolderAPI().createFolders("/testfolder3" + time, host, APILocator.systemUser(), false))
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, "/a/v/page4")
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page 4")
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page 4")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+
+            String url4 = contentletAPI.checkout(page4.getInode(), user, false).getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertEquals("URL '/a/v/page4' should be extracted to 'page4'", "page4", url4);
+
+        } finally {
+            // Clean up
+            if (page1 != null && UtilMethods.isSet(page1.getInode())) {
+                ContentletDataGen.remove(page1);
+            }
+            if (page2 != null && UtilMethods.isSet(page2.getInode())) {
+                ContentletDataGen.remove(page2);
+            }
+            if (page3 != null && UtilMethods.isSet(page3.getInode())) {
+                ContentletDataGen.remove(page3);
+            }
+            if (page4 != null && UtilMethods.isSet(page4.getInode())) {
+                ContentletDataGen.remove(page4);
+            }
+            if (pageContentType != null) {
+                ContentTypeDataGen.remove(pageContentType);
+            }
+        }
     }
 
 }

@@ -1,46 +1,50 @@
 package com.dotcms.rendering.velocity.viewtools;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.PageMode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.vavr.control.Try;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
-import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.form.business.FormAPI;
-
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ *
+ *
+ * @author root
+ * @since Mar 22nd, 2012
+ */
 public class StructuresWebAPI implements ViewTool {
 
 	private final ObjectMapper MAPPER = new ObjectMapper();
@@ -53,7 +57,6 @@ public class StructuresWebAPI implements ViewTool {
 	private WidgetAPI wAPI;
 	private FormAPI fAPI;
 
-	// private HttpServletRequest request;
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest();
@@ -296,4 +299,30 @@ public class StructuresWebAPI implements ViewTool {
 			throw new DotRuntimeException(e);
 		}
 	}
+
+	/**
+	 * Determines whether the Content Type whose ID is present in the HTTP Request data has the new
+	 * edit mode enabled or not. Such an ID must be available either as a request attribute or
+	 * parameter, and must be called {@code "contentTypeId"}.
+	 *
+	 * @return If the new edit mode is enabled in the present Content Type, returns {@code true}.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException The {@link User} calling this method does not have the required
+	 *                              permissions to perform this action.
+	 */
+	public boolean isNewEditModeEnabled() throws DotDataException,
+			DotSecurityException {
+		final String contentTypeId = HttpRequestDataUtil
+				.getFromRequest(request, "contentTypeId", null);
+		if (UtilMethods.isNotSet(contentTypeId)) {
+			return false;
+		}
+		final ContentType contentType =
+				APILocator.getContentTypeAPI(user, true).find(contentTypeId);
+		return Objects.nonNull(contentType) && Objects.nonNull(contentType.metadata())
+				&& contentType.metadata().containsKey(Constants.CONTENT_EDITOR2_ENABLED)
+				&& contentType.metadata().get(Constants.CONTENT_EDITOR2_ENABLED).equals(Boolean.TRUE);
+	}
+
 }

@@ -12,11 +12,9 @@ import { FormControl, ReactiveFormsModule, FormsModule, NG_VALUE_ACCESSOR } from
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '../../../../models/dot-edit-content-host-folder-field.interface';
-import { TruncatePathPipe } from '../../../../pipes/truncate-path.pipe';
+import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { DotTruncatePathPipe } from '@dotcms/ui';
+
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { HostFolderFiledStore } from '../../store/host-folder-field.store';
 
@@ -28,7 +26,7 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
  */
 @Component({
     selector: 'dot-host-folder-field',
-    imports: [TreeSelectModule, ReactiveFormsModule, TruncatePathPipe, FormsModule],
+    imports: [TreeSelectModule, ReactiveFormsModule, DotTruncatePathPipe, FormsModule],
     templateUrl: './host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [

@@ -38,6 +38,12 @@ export class BlogPostComponent implements OnChanges {
     Activity: import('./customRenderers/activity/activity.component').then(
       (c) => c.ActivityComponent,
     ),
+    Product: import('./customRenderers/product/product.component').then(
+      (c) => c.ProductComponent,
+    ),
+    Destination: import('./customRenderers/destination/destination.component').then(
+      (c) => c.DestinationComponent,
+    )
   };
 
   editPost() {

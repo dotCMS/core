@@ -7,18 +7,12 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { TreeSelectModule } from 'primeng/treeselect';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotTruncatePathPipe, DotBrowsingService } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SiteFieldComponent } from './site-field.component';
 import { SiteFieldStore } from './site-field.store';
-
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '../../../../../../../../models/dot-edit-content-host-folder-field.interface';
-import { TruncatePathPipe } from '../../../../../../../../pipes/truncate-path.pipe';
-import { DotEditContentService } from '../../../../../../../../services/dot-edit-content.service';
 
 describe('SiteFieldComponent', () => {
     let spectator: Spectator<SiteFieldComponent>;
@@ -69,11 +63,11 @@ describe('SiteFieldComponent', () => {
 
     const createComponent = createComponentFactory({
         component: SiteFieldComponent,
-        imports: [ReactiveFormsModule, TreeSelectModule, TruncatePathPipe, DotMessagePipe],
+        imports: [ReactiveFormsModule, TreeSelectModule, DotTruncatePathPipe, DotMessagePipe],
         componentProviders: [SiteFieldStore],
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
-            mockProvider(DotEditContentService, {
+            mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
                 getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
             })

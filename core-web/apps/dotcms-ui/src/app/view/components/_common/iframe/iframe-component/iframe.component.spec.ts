@@ -19,7 +19,7 @@ import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
 
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { DotOverlayMaskModule } from '../../dot-overlay-mask/dot-overlay-mask.module';
+import { DotOverlayMaskComponent } from '../../dot-overlay-mask/dot-overlay-mask.component';
 import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
 
 const fakeHtmlEl = {
@@ -45,10 +45,11 @@ describe('IframeComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
+            declarations: [MockDotLoadingIndicatorComponent],
             imports: [
+                IframeComponent,
                 RouterTestingModule,
-                DotOverlayMaskModule,
+                DotOverlayMaskComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotSafeUrlPipe
@@ -77,7 +78,7 @@ describe('IframeComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         jest.spyOn(dotUiColorsService, 'setColors');
 
-        comp.isLoading = false;
+        fixture.componentRef.setInput('isLoading', false);
         comp.src = 'etc/etc?hello=world';
         fixture.detectChanges();
         iframeEl = de.query(By.css('iframe'));
@@ -265,25 +266,27 @@ describe('IframeComponent', () => {
         it('should not be present onload', () => {
             expect(de.query(By.css('dot-overlay-mask'))).toBeNull();
         });
-        it('should show when the service emit true', () => {
+        it('should show when the service emit true', fakeAsync(() => {
             iframeOverlayService.$overlay.next(true);
+            tick(0);
             fixture.detectChanges();
             const dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             expect(dotOverlayMask).toBeDefined();
-        });
+        }));
 
-        it('should hide on click and call hide event', () => {
+        it('should hide on click and call hide event', fakeAsync(() => {
             comp.showOverlay = true;
             jest.spyOn(iframeOverlayService, 'hide');
             fixture.detectChanges();
             let dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             dotOverlayMask.triggerEventHandler('click', {});
+            tick(0);
             fixture.detectChanges();
 
             dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             expect(dotOverlayMask).toBeNull();
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
-        });
+        }));
     });
 
     it('should refresh OSGI Plugis list on OSGI_BUNDLES_LOADED websocket event', fakeAsync(() => {

@@ -1,10 +1,10 @@
 import {
+    patchState,
     signalStoreFeature,
-    withMethods,
-    withComputed,
-    withState,
     type,
-    patchState
+    withComputed,
+    withMethods,
+    withState
 } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
@@ -14,16 +14,16 @@ import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
 import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
-import { InfoOptions, UnlockOptions } from '../../../../shared/models';
+import { InfoOptions, ToggleLockOptions, UnlockOptions } from '../../../../shared/models';
 import {
-    computePageIsLocked,
+    computeIsPageLocked,
     createFavoritePagesURL,
-    createFullURL,
     getFullPageURL,
     getIsDefaultVariant,
     getOrientation
 } from '../../../../utils';
 import { Orientation, UVEState } from '../../../models';
+import { WithFlagsState } from '../../flags/models';
 import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
 
 /**
@@ -47,7 +47,7 @@ const initialState: EditorToolbarState = {
 export function withUVEToolbar() {
     return signalStoreFeature(
         {
-            state: type<UVEState>()
+            state: type<UVEState & WithFlagsState>()
         },
         withState<EditorToolbarState>(initialState),
         withComputed((store) => ({
@@ -69,7 +69,7 @@ export function withUVEToolbar() {
                     siteId: pageAPIResponse?.site?.identifier
                 });
 
-                const isPageLocked = computePageIsLocked(
+                const isPageLocked = computeIsPageLocked(
                     pageAPIResponse?.page,
                     store.currentUser()
                 );
@@ -81,7 +81,6 @@ export function withUVEToolbar() {
                     loading: store.status() === UVE_STATUS.LOADING
                 };
 
-                const siteId = pageAPIResponse?.site?.identifier;
                 const clientHost = `${params?.clientHost ?? window.location.origin}`;
 
                 const isPreview = params?.mode === UVE_MODE.PREVIEW;
@@ -97,7 +96,6 @@ export function withUVEToolbar() {
                 return {
                     editor: {
                         bookmarksUrl,
-                        copyUrl: createFullURL(params, siteId),
                         apiUrl: pageAPI
                     },
                     preview: prevewItem,
@@ -110,12 +108,21 @@ export function withUVEToolbar() {
                 };
             }),
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
-                return store.pageAPIResponse()?.urlContentMap;
+                const urlContentMap = store.pageAPIResponse()?.urlContentMap;
+                // Due to GQL it can be an empty object or undefined, so we need to check if it has any keys
+                return Object.keys(urlContentMap ?? {}).length ? urlContentMap : undefined;
             }),
             $unlockButton: computed<UnlockOptions | null>(() => {
+                const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
+
+                if (isToggleUnlockEnabled) {
+                    return null;
+                }
+
                 const pageAPIResponse = store.pageAPIResponse();
                 const currentUser = store.currentUser();
-                const isLocked = computePageIsLocked(pageAPIResponse.page, currentUser);
+
+                const isLocked = computeIsPageLocked(pageAPIResponse.page, currentUser);
                 const info = {
                     message: pageAPIResponse.page.canLock
                         ? 'editpage.toolbar.page.release.lock.locked.by.user'
@@ -133,6 +140,38 @@ export function withUVEToolbar() {
                           disabled
                       }
                     : null;
+            }),
+            $toggleLockOptions: computed<ToggleLockOptions | null>(() => {
+                const pageAPIResponse = store.pageAPIResponse();
+                const page = pageAPIResponse.page;
+                const currentUser = store.currentUser();
+
+                // Only show lock controls when feature flag is enabled AND in edit mode
+                const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
+                const isDraftMode = store.pageParams()?.mode === UVE_MODE.EDIT;
+
+                if (!isToggleUnlockEnabled || !isDraftMode) {
+                    return null;
+                }
+
+                const isLocked = !!page.locked;
+                const isLockedByCurrentUser = page.lockedBy === currentUser?.userId;
+
+                // Show overlay when page is unlocked or locked by another user
+                const showOverlay = !isLocked || !isLockedByCurrentUser;
+
+                // Show banner when page is locked by another user
+                const showBanner = isLocked && !isLockedByCurrentUser;
+
+                return {
+                    inode: page.inode,
+                    isLocked,
+                    lockedBy: page.lockedByName,
+                    canLock: page.canLock ?? false,
+                    isLockedByCurrentUser,
+                    showBanner: showBanner,
+                    showOverlay
+                };
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
                 const pageAPIResponse = store.pageAPIResponse();

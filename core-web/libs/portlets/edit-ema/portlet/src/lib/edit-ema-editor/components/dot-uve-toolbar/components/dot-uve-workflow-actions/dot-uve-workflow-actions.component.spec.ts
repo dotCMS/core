@@ -35,6 +35,20 @@ import {
 import { DotUveWorkflowActionsComponent } from './dot-uve-workflow-actions.component';
 
 import { MOCK_RESPONSE_VTL } from '../../../../../shared/mocks';
+// Mock window.matchMedia for PrimeNG components
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const DOT_WORKFLOW_PAYLOAD_MOCK: DotWorkflowPayload = {
@@ -90,7 +104,7 @@ const uveStoreMock = {
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     workflowActions: signal([]),
     workflowLoading: signal(false),
-    canEditPage: signal(true),
+    $canEditPage: signal(true),
     pageParams: signal(pageParams),
     loadPageAsset: jest.fn(),
     reloadCurrentPage: jest.fn(),
@@ -157,7 +171,7 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it("should be disabled if user can't edit", () => {
-            uveStoreMock.canEditPage.set(false);
+            uveStoreMock.$canEditPage.set(false);
             spectator.detectChanges();
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
@@ -168,7 +182,7 @@ describe('DotUveWorkflowActionsComponent', () => {
     describe('With Workflow Actions', () => {
         beforeEach(() => {
             uveStoreMock.workflowLoading.set(false);
-            uveStoreMock.canEditPage.set(true);
+            uveStoreMock.$canEditPage.set(true);
             uveStoreMock.workflowActions.set(mockWorkflowsActions);
             spectator.detectChanges();
         });

@@ -4609,6 +4609,8 @@
 .dijitTabPaneWrapper .dijitContentPane {
   padding: 1.5rem;
   overflow: visible;
+  max-height: 100%;
+  overflow-y: auto;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
   background-color: var(--color-palette-primary-200);
@@ -4742,6 +4744,9 @@
   height: calc(100% - 42px);
   border-top: none;
   overflow: auto;
+}
+.dijitTabContainerTopChildWrapper {
+  height: 100%;
 }
 .dijitTabContainerBottom-container {
   border-bottom: none;
@@ -8782,6 +8787,7 @@ Styles for commons fields along the backend
   border: solid 1px var(--gray-500);
   width: 100%;
 }
+.fileAjaxUploader input[type=file]::file-selector-button,
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button {
   background-color: var(--color-palette-primary-500);
   height: 36px;
@@ -8790,6 +8796,7 @@ Styles for commons fields along the backend
   cursor: pointer;
   padding: 0 1rem;
 }
+.fileAjaxUploader input[type=file]::file-selector-button:hover,
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button:hover {
   background-color: var(--color-palette-primary-400);
 }
@@ -9766,7 +9773,6 @@ a.category_higlighted, a.tag_higlighted {
   height: 100%;
   margin: 0px 300px 0 0;
   position: relative;
-  padding-top: 1rem;
   width: auto;
   z-index: 1;
 }

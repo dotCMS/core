@@ -11,6 +11,7 @@ describe('EmptyContainerComponent', () => {
 
     const createComponent = createComponentFactory({
         component: EmptyContainerComponent,
+        detectChanges: false,
         providers: [
             {
                 provide: DotCMSStore,
@@ -44,15 +45,14 @@ describe('EmptyContainerComponent', () => {
     });
 
     it('should not display anything in production mode', () => {
-        jest.spyOn(dotcmsContextService, '$isDevMode').mockReturnValue(false);
+        dotcmsContextService.$isDevMode.mockReturnValue(false);
         spectator.detectChanges();
         const element = spectator.query(byTestId('empty-container'));
         expect(element).toBeFalsy();
     });
 
     it('should apply empty container styles', () => {
-        jest.spyOn(dotcmsContextService, '$isDevMode').mockReturnValue(true);
-
+        dotcmsContextService.$isDevMode.mockReturnValue(true);
         spectator.detectChanges();
         const containerDiv = spectator.query(byTestId('empty-container'));
         expect(containerDiv).toHaveStyle(EMPTY_CONTAINER_STYLE_ANGULAR);

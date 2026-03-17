@@ -114,6 +114,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
      * @memberof DotBinaryFieldEditorComponent
      */
     @HostListener('document:keydown.escape', ['$event']) onEscape(event) {
+        // TODO: The 'emit' function requires a mandatory void argument
         this.cancel.emit();
         event.preventDefault();
         event.stopPropagation();
@@ -230,7 +231,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
 
     private getLanguage(fileExtension: string) {
         // Global Object Defined by Monaco Editor
-        return monaco.languages
+        return window.monaco.languages
             .getLanguages()
             .find((language) => language.extensions?.includes(`.${fileExtension}`));
     }

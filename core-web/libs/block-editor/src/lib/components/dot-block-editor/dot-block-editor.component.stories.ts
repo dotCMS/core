@@ -4,13 +4,12 @@ import { of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ListboxModule } from 'primeng/listbox';
-import { MenuModule } from 'primeng/menu';
-import { OrderListModule } from 'primeng/orderlist';
+import { Listbox } from 'primeng/listbox';
+import { Menu } from 'primeng/menu';
+import { OrderList } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotAiService,
     DotContentSearchService,
@@ -19,8 +18,11 @@ import {
     DotUploadFileService,
     FileStatus
 } from '@dotcms/data-access';
-import { DotSpinnerModule } from '@dotcms/ui';
+import { DotSpinnerComponent } from '@dotcms/ui';
 
+import { DotBlockEditorComponent } from './dot-block-editor.component';
+
+import { BlockEditorModule } from '../../block-editor.module';
 import {
     AssetFormComponent,
     BubbleLinkFormComponent,
@@ -47,13 +49,13 @@ export const Primary = () => ({
     decorators: [
         moduleMetadata({
             imports: [
-                MenuModule,
+                Menu,
                 CommonModule,
                 FormsModule,
                 BlockEditorModule,
-                OrderListModule,
-                ListboxModule,
-                DotSpinnerModule
+                OrderList,
+                Listbox,
+                DotSpinnerComponent
             ],
             providers: [
                 {

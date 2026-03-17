@@ -2,12 +2,11 @@ package com.dotcms.rest.api.v1.system.monitor;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
-import com.dotcms.content.elasticsearch.business.ClusterStats;
+import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.jitsu.EventLogRunnable;
-import com.dotcms.telemetry.util.JsonUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
@@ -29,8 +28,9 @@ import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
@@ -89,7 +89,10 @@ class MonitorHelper {
      */
     boolean isAccessGranted(final HttpServletRequest request){
         try {
-            if(IPV6_LOCALHOST.equals(request.getRemoteAddr()) || ACLS_IPS == null || ACLS_IPS.length == 0){
+            final String remoteAddr = request.getRemoteAddr();
+            
+            // Check if localhost using proper InetAddress API (handles all IPv4 and IPv6 localhost forms)
+            if (isLocalhostAddress(remoteAddr) || ACLS_IPS == null || ACLS_IPS.length == 0){
                 return true;
             }
 
@@ -104,6 +107,28 @@ class MonitorHelper {
             Logger.warnEveryAndDebug(this.getClass(), e, 60000);
         }
         return false;
+    }
+
+    /**
+     * Checks if the given address is a localhost address (IPv4 or IPv6).
+     * Properly handles all valid IPv6 representations per RFC 5952, including
+     * collapsed forms like "::1" and expanded forms like "0:0:0:0:0:0:0:1".
+     * 
+     * @param addr The IP address string from request.getRemoteAddr()
+     * @return true if address is localhost (127.0.0.1, ::1, or any loopback address)
+     */
+    boolean isLocalhostAddress(final String addr) {
+        if (!UtilMethods.isSet(addr)) {
+            return false;
+        }
+        
+        try {
+            final InetAddress inetAddr = InetAddress.getByName(addr);
+            return inetAddr.isLoopbackAddress();
+        } catch (final UnknownHostException e) {
+            Logger.debug(this, "Unable to parse address for localhost check: " + addr);
+            return false;
+        }
     }
 
     /**
@@ -214,7 +239,7 @@ class MonitorHelper {
     boolean canConnectToES() {
         try {
             final ClusterStats stats = APILocator.getESIndexAPI().getClusterStats();
-            return stats != null && stats.getClusterName() != null;
+            return stats != null && stats.clusterName() != null;
         } catch (final Exception e) {
             Logger.warnAndDebug(this.getClass(),
                     "Unable to connect to ES: " + ExceptionUtil.getErrorMessage(e), e);

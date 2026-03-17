@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol';
-import { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types';
+import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import { ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
 
 import { getContextStore } from './context-store';
 import { Logger } from './logger';
@@ -55,9 +55,8 @@ export function createContextCheckingServer(server: McpServer): McpServer {
     return new Proxy(server, {
         get(target, prop) {
             if (prop === 'registerTool') {
-                return function (this: McpServer, ...args: Parameters<McpServer['registerTool']>) {
-                    const [name, config, callback] = args;
-
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                return function (this: McpServer, name: string, config: any, callback: any) {
                     logger.debug(`Registering tool with context checking: ${name}`);
 
                     const wrappedCallback = async (
@@ -70,7 +69,8 @@ export function createContextCheckingServer(server: McpServer): McpServer {
                         return callback(args as { [x: string]: any }, extra);
                     };
 
-                    return originalRegisterTool.call(this, name, config, wrappedCallback);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    return (originalRegisterTool as any).call(this, name, config, wrappedCallback);
                 };
             }
 

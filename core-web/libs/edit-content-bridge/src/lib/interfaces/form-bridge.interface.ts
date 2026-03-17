@@ -1,4 +1,5 @@
-import { Subscription } from 'rxjs';
+import { BrowserSelectorController, BrowserSelectorOptions } from './browser-selector.interface';
+import { FormFieldAPI, FormFieldValue } from './form-field.interface';
 
 /**
  * Interface for bridging form functionality between different frameworks.
@@ -29,6 +30,14 @@ export interface FormBridge {
     onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): () => void;
 
     /**
+     * Gets a field API object for a specific field, providing a convenient interface
+     * to interact with the field (get/set value, onChange, enable/disable, show/hide).
+     * @param fieldId - The unique identifier of the form field
+     * @returns A FormFieldAPI object for the specified field
+     */
+    getField(fieldId: string): FormFieldAPI;
+
+    /**
      * Optional method to handle bridge initialization.
      * @param callback - Function to execute when the bridge is ready
      */
@@ -38,30 +47,41 @@ export interface FormBridge {
      * Cleans up resources and event listeners when the bridge is destroyed.
      */
     destroy(): void;
+
+    /**
+     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
+     * The content type can be filtered using the mimeTypes option.
+     *
+     * @param options - Configuration options for the browser selector
+     * @returns A controller object to manage the dialog
+     *
+     * @example
+     * // Select a page
+     * bridge.openBrowserModal({
+     *   header: 'Select a Page',
+     *   mimeTypes: ['application/dotpage'],
+     *   onClose: (result) => console.log(result)
+     * });
+     *
+     * @example
+     * // Select an image
+     * bridge.openBrowserModal({
+     *   header: 'Select an Image',
+     *   mimeTypes: ['image'],
+     *   onClose: (result) => console.log(result)
+     * });
+     *
+     * @example
+     * // Select any file
+     * bridge.openBrowserModal({
+     *   header: 'Select a File',
+     *   includeDotAssets: true,
+     *   onClose: (result) => console.log(result)
+     * });
+     */
+    openBrowserModal(options: BrowserSelectorOptions): BrowserSelectorController;
 }
 
-/**
- * Valid types for form field values.
- */
-export type FormFieldValue = string | number | boolean | null;
-
-/**
- * A callback function that is executed when the value of a form field changes.
- *
- * @param {FormFieldValue} value - The new value of the field.
- */
-export interface FieldCallback {
-    id: symbol;
-    callback: (value: FormFieldValue) => void;
-}
-
-/**
- * A subscription to a form field.
- *
- * @param {Subscription} subscription - The subscription to the field.
- * @param {FieldCallback[]} callbacks - The callbacks to execute when the field value changes.
- */
-export interface FieldSubscription {
-    subscription: Subscription;
-    callbacks: FieldCallback[];
-}
+// Re-export all interfaces for backwards compatibility
+export * from './browser-selector.interface';
+export * from './form-field.interface';

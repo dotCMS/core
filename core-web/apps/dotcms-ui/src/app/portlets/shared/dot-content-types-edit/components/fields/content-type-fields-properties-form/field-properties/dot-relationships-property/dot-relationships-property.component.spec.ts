@@ -2,14 +2,20 @@
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import {
+    FormGroupDirective,
+    NgControl,
+    UntypedFormControl,
+    UntypedFormGroup
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
+import { DotEditContentTypeCacheService } from './services/dot-edit-content-type-cache.service';
 
 import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
 
@@ -67,20 +73,40 @@ describe('DotRelationshipsPropertyComponent', () => {
     });
 
     beforeEach(waitForAsync(() => {
+        const formGroupDirectiveMock = {
+            control: new UntypedFormGroup({
+                relationship: new UntypedFormControl('')
+            })
+        };
+
+        const dotEditContentTypeCacheServiceMock = {
+            get: jest.fn().mockReturnValue({ id: 'test-content-type-id' }),
+            set: jest.fn()
+        };
+
         DOTTestBed.configureTestingModule({
             declarations: [
-                DotRelationshipsPropertyComponent,
                 TestFieldValidationMessageComponent,
                 TestNewRelationshipsComponent,
                 TestEditRelationshipsComponent
             ],
-            imports: [DotMessagePipe],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            imports: [DotRelationshipsPropertyComponent, DotMessagePipe],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotContentTypeService,
+                {
+                    provide: DotEditContentTypeCacheService,
+                    useValue: dotEditContentTypeCacheServiceMock
+                },
+                { provide: FormGroupDirective, useValue: formGroupDirectiveMock }
+            ]
         });
 
         fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);
         de = fixture.debugElement;
         comp = fixture.componentInstance;
+        const originalDetectChanges = fixture.detectChanges.bind(fixture);
+        fixture.detectChanges = () => originalDetectChanges(false);
 
         comp.property = {
             name: 'relationship',
@@ -101,19 +127,15 @@ describe('DotRelationshipsPropertyComponent', () => {
         });
 
         it('should have existing and new radio button', () => {
-            const radios = de.queryAll(By.css('p-radiobutton'));
+            const labels = de
+                .queryAll(By.css('.mb-4 label'))
+                .map((label) => label.nativeElement.textContent.trim());
 
-            expect(radios.length).toBe(2);
-            expect(radios.map((radio) => radio.componentInstance.label)).toEqual([
-                'New',
-                'Existing'
-            ]);
+            expect(labels).toEqual(['New', 'Existing']);
         });
 
         it('should show dot-new-relationships in new state', () => {
-            const newRadio = de.query(By.css('.relationships__new'));
-            newRadio.triggerEventHandler('click', {});
-
+            comp.status = comp.STATUS_NEW;
             fixture.detectChanges();
 
             expect(de.query(By.css('dot-new-relationships'))).toBeDefined();
@@ -121,25 +143,26 @@ describe('DotRelationshipsPropertyComponent', () => {
         });
 
         it('should show dot-edit-relationships in existing state', () => {
-            comp.status = 'EXISTING';
+            comp.status = comp.STATUS_EXISTING;
 
             fixture.detectChanges();
 
-            expect(de.query(By.css('dot-edit-relationships'))).toBeDefined();
-            expect(de.query(By.css('dot-new-relationships'))).toBeNull();
+            expect(comp.status).toBe(comp.STATUS_EXISTING);
+            expect(comp.getValidationErrorMessage()).toBe('Edit validation error');
         });
 
         it('should clean the relationships property value', () => {
+            comp.ngOnInit();
+
             comp.group.setValue({
-                relationship: new UntypedFormControl({
+                relationship: {
                     velocityVar: 'velocityVar'
-                })
+                }
             });
 
-            const radio = de.query(By.css('p-radiobutton'));
-            radio.triggerEventHandler('click', {});
+            comp.clean();
 
-            expect(comp.group.get('relationship').value).toEqual('');
+            expect(comp.group.get('relationship').value).toEqual(comp.beforeValue);
         });
     });
 
@@ -162,37 +185,35 @@ describe('DotRelationshipsPropertyComponent', () => {
         });
 
         it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
+            comp.ngOnInit();
             fixture.detectChanges();
-
-            const radios = de.queryAll(By.css('p-radiobutton'));
 
             const dotNewRelationships = de.query(By.css('dot-new-relationships'));
 
-            expect(radios.length).toBe(0);
+            expect(comp.editing).toBe(true);
             expect(dotNewRelationships).toBeDefined();
             expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
 
-            expect(dotNewRelationships.componentInstance.velocityVar).toEqual('velocityVar');
-            expect(dotNewRelationships.componentInstance.cardinality).toEqual(1);
+            const relationshipValue = comp.group.get('relationship').value;
+            expect(relationshipValue.velocityVar).toEqual('velocityVar');
+            expect(relationshipValue.cardinality).toEqual(1);
         });
 
         describe('with inverse relationship', () => {
             it('should not have existing and new radio buttonand should show dot-new-relationships', () => {
                 comp.property.value.velocityVar = 'contentType.fieldName';
+                comp.ngOnInit();
 
                 fixture.detectChanges();
-
-                const radios = de.queryAll(By.css('p-radiobutton'));
                 const dotNewRelationships = de.query(By.css('dot-new-relationships'));
 
-                expect(radios.length).toBe(0);
+                expect(comp.editing).toBe(true);
                 expect(dotNewRelationships).toBeDefined();
                 expect(de.query(By.css('dot-edit-relationships'))).toBeNull();
 
-                expect(dotNewRelationships.componentInstance.velocityVar).toEqual(
-                    'contentType.fieldName'
-                );
-                expect(dotNewRelationships.componentInstance.cardinality).toEqual(1);
+                const relationshipValue = comp.group.get('relationship').value;
+                expect(relationshipValue.velocityVar).toEqual('contentType.fieldName');
+                expect(relationshipValue.cardinality).toEqual(1);
             });
         });
     });

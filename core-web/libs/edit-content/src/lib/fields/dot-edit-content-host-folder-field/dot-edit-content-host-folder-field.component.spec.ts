@@ -7,13 +7,13 @@ import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 import { createFakeContentlet, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { DotHostFolderFieldComponent } from './components/host-folder-field/host-folder-field.component';
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK, HOST_FOLDER_TEXT_MOCK } from '../../utils/mocks';
 
 @Component({
@@ -31,7 +31,7 @@ export class MockFormComponent {
 describe('DotEditContentHostFolderFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentHostFolderFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof HostFolderFiledStore>;
-    let service: SpyObject<DotEditContentService>;
+    let service: SpyObject<DotBrowsingService>;
     let hostFormControl: FormControl;
     let field: DotHostFolderFieldComponent;
 
@@ -41,7 +41,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             HostFolderFiledStore,
-            mockProvider(DotEditContentService, {
+            mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
                 getCurrentSiteAsTreeNodeItem: jest.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
                 buildTreeByPaths: jest.fn(() => of({ node: TREE_SELECT_SITES_MOCK[0], tree: null }))
@@ -69,7 +69,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         );
         field = spectator.query(DotHostFolderFieldComponent);
         store = field.store;
-        service = spectator.inject(DotEditContentService);
+        service = spectator.inject(DotBrowsingService);
         hostFormControl = spectator.hostComponent.formGroup.get(
             HOST_FOLDER_TEXT_MOCK.variable
         ) as FormControl;
@@ -89,19 +89,20 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         expect(field.$treeSelect().options).toBe(TREE_SELECT_SITES_MOCK);
     });
 
-    it('should tree selection height and virtual scroll height be the same', async () => {
+    it('should have virtual scroll configured with consistent height', async () => {
         spectator.detectChanges();
 
-        const triggerElement = spectator.query('.p-treeselect-trigger');
+        const triggerElement = spectator.query('.p-treeselect-dropdown');
+        expect(triggerElement).toBeTruthy();
         spectator.click(triggerElement);
 
         await spectator.fixture.whenStable();
 
         const field = spectator.query(DotHostFolderFieldComponent);
-        const treeSelectHeight = field.$treeSelect().scrollHeight;
-        const treeVirtualScrollHeight = field.$treeSelect().virtualScrollOptions.style['height'];
-
-        expect(treeSelectHeight).toBe(treeVirtualScrollHeight);
+        const treeSelect = field.$treeSelect();
+        expect(treeSelect.scrollHeight).toBe('100%');
+        expect(treeSelect.virtualScrollOptions.style['height']).toBe('450px');
+        expect(treeSelect.virtualScrollOptions.style['minHeight']).toBe('450px');
     });
 
     describe('The init value with the root path', () => {

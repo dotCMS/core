@@ -12,6 +12,7 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import static java.util.Collections.emptyMap;
 
+import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
@@ -308,31 +309,60 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     @Override
-    public void saveSecrets(final AppSecrets secrets, final String hostIdentifier, final User user)
+    public void saveSecrets(final AppSecrets secretsIn, final String hostIdentifier, final User user)
             throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret update attempt on `%s` performed by user with id `%s` and host `%s` ",
-                    secrets.getKey(), user.getUserId(), hostIdentifier));
-        } else {
-            final String internalKey = internalKey(secrets.getKey(), hostIdentifier);
-            if (secrets.getSecrets().isEmpty()) {
-                //if everything has been removed from the json entry we need to kick it off from cache.
-                secretsStore.deleteValue(internalKey);
-            } else {
+                    secretsIn.getKey(), user.getUserId(), hostIdentifier));
+        }
+
+        final String internalKey = internalKey(secretsIn.getKey(), hostIdentifier);
+        Host host = APILocator.getHostAPI().find(hostIdentifier, user, true);
+        Optional<AppSecrets> existingAppSecrets = getSecrets(secretsIn.getKey(), false, host, user);
+        AppSecrets secretsToSave = maintainHiddenValues(secretsIn, existingAppSecrets);
+        secretsStore.deleteValue(internalKey);
+        if (!secretsToSave.getSecrets().isEmpty()) {
                 char[] chars = null;
                 try {
-                    chars = toJsonAsChars(secrets);
+                    chars = toJsonAsChars(secretsToSave);
                     secretsStore.saveValue(internalKey, chars);
-                    notifySaveEventAndDestroySecret(secrets, hostIdentifier, user);
+
                 } finally {
                     if (null != chars) {
                         Arrays.fill(chars, (char) 0);
                     }
                 }
             }
-        }
+        notifySaveEventAndDestroySecret(secretsToSave, hostIdentifier, user);
+
     }
+
+    AppSecrets maintainHiddenValues(final AppSecrets secretsToSave, Optional<AppSecrets> existingAppSecrets)
+            throws DotDataException, DotSecurityException {
+
+        if (existingAppSecrets.isEmpty()) {
+            return secretsToSave;
+        }
+
+        Map<String, Secret> existingSecrets = existingAppSecrets.get().getSecrets();
+        AppSecrets.Builder builder = new AppSecrets.Builder().withKey(secretsToSave.getKey());
+
+        Map<String, Secret> secretsOut = new HashMap<>();
+        for (Map.Entry<String, Secret> entry : secretsToSave.getSecrets().entrySet()) {
+            if (entry.getValue().getHidden() && SecretViewSerializer.HIDDEN_SECRET_MASK.equals(
+                    entry.getValue().getString()) && existingSecrets.get(entry.getKey()) != null) {
+                secretsOut.put(entry.getKey(), existingSecrets.get(entry.getKey()));
+            } else {
+                secretsOut.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return builder.withSecrets(secretsOut).build();
+
+
+    }
+
+
 
     /***
      * This will broadcast an async AppSecretSavedEvent

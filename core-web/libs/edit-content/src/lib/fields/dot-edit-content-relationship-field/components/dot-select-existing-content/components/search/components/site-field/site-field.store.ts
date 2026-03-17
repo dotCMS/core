@@ -7,13 +7,8 @@ import { computed, inject } from '@angular/core';
 
 import { tap, exhaustMap, switchMap } from 'rxjs/operators';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
-
-import {
-    TreeNodeItem,
-    TreeNodeSelectItem
-} from '../../../../../../../../models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '../../../../../../../../services/dot-edit-content.service';
+import { ComponentStatus, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 
 /** Maximum number of items to fetch per page */
 export const PEER_PAGE_LIMIT = 7000;
@@ -62,7 +57,7 @@ export const SiteFieldStore = signalStore(
         })
     })),
     withMethods((store) => {
-        const dotEditContentService = inject(DotEditContentService);
+        const dotBrowsingService = inject(DotBrowsingService);
 
         return {
             /**
@@ -74,7 +69,7 @@ export const SiteFieldStore = signalStore(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(() => {
-                        return dotEditContentService
+                        return dotBrowsingService
                             .getSitesTreePath({
                                 perPage: PEER_PAGE_LIMIT,
                                 filter: '*',
@@ -110,7 +105,7 @@ export const SiteFieldStore = signalStore(
 
                         const fullPath = `${hostname}/${path}`;
 
-                        return dotEditContentService.getFoldersTreeNode(fullPath).pipe(
+                        return dotBrowsingService.getFoldersTreeNode(fullPath).pipe(
                             tap(({ folders }) => {
                                 node.leaf = true;
                                 node.icon = 'pi pi-folder-open';

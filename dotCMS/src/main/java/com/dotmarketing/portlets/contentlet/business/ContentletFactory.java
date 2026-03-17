@@ -1,7 +1,12 @@
-package com.dotmarketing.portlets.contentlet.business; 
+package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.transform.TransformerLocator;
@@ -20,9 +25,6 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.SearchHits;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -40,14 +42,15 @@ import java.util.Set;
  * @since Mar 22, 2012
  *
  */
-public abstract class ContentletFactory {
+@IndexLibraryIndependent
+public interface ContentletFactory {
 
 	/**
 	 * Use to get all contentlets live/working contentlets
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract List<Contentlet> findAllCurrent() throws DotDataException;
+	List<Contentlet> findAllCurrent() throws DotDataException;
 	
 	/**
 	 * Use to get all contentlets live/working contentlets
@@ -56,9 +59,19 @@ public abstract class ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract List<Contentlet> findAllCurrent(int offset, int limit) throws DotDataException;
+	List<Contentlet> findAllCurrent(int offset, int limit) throws DotDataException;
 
-    public Optional<Contentlet> findInDb(final String inode, final String variant) {
+    /**
+     * Retrieves a contentlet from the database based on the given inode and variant.
+     * Performs a SQL query to fetch the contentlet associated with the provided inode and filters the result
+     * based on the variant ID.
+     *
+     * @param inode the unique identifier of the contentlet to retrieve from the database
+     * @param variant the variant ID to filter the contentlet from the database results
+     * @return an {@code Optional<Contentlet>} containing the contentlet if found, or an empty {@code Optional} if not found
+     */
+    @RequestCost(Price.CONTENT_FROM_DB)
+    default Optional<Contentlet> findInDb(final String inode, final String variant) {
         try {
             if (inode != null) {
                 final DotConnect dotConnect = new DotConnect();
@@ -90,7 +103,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract Contentlet find(String inode) throws DotDataException, DotSecurityException;
+	Contentlet find(String inode) throws DotDataException, DotSecurityException;
 
 	/**
 	 * This method gets a Contentlet object given the inode and variant name
@@ -100,7 +113,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	protected abstract Contentlet find(String inode, String variant) throws DotDataException, DotSecurityException;
+	Contentlet find(String inode, String variant) throws DotDataException, DotSecurityException;
 
     /**
      * Retrieves a contentlet from the database by its identifier and the working version.
@@ -111,10 +124,20 @@ public abstract class ContentletFactory {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier,
+    Contentlet findContentletByIdentifierAnyLanguage(String identifier,
             boolean includeDeleted) throws DotDataException, DotSecurityException;
 
-	protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier,
+    /**
+     * Finds a contentlet by its identifier in any language.
+     *
+     * @param identifier the unique identifier of the contentlet
+     * @param variant the variant of the contentlet to retrieve
+     * @param includeDeleted flag indicating whether to include deleted contentlets in the search
+     * @return the contentlet that matches the given identifier and variant, or null if no contentlet is found
+     * @throws DotDataException if a data access error occurs during the operation
+     * @throws DotSecurityException if there is a security violation while accessing the contentlet
+     */
+	Contentlet findContentletByIdentifierAnyLanguage(String identifier,
 			String variant, boolean includeDeleted) throws DotDataException, DotSecurityException;
 
     /**
@@ -125,7 +148,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException;
+	Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException;
 
     /**
 	 * Retrieves a contentlet from the database based on its identifier
@@ -135,7 +158,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException 
 	 * @throws DotSecurityException 
 	 */
-	protected abstract Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
+	Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
@@ -145,7 +168,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	protected abstract Contentlet findContentletByIdentifier(final String identifier,
+	Contentlet findContentletByIdentifier(final String identifier,
 			final Boolean live, final Long languageId, final String variantId) throws DotDataException, DotSecurityException;
 
 
@@ -158,7 +181,7 @@ public abstract class ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final Date timeMachineDate)
+	Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final Date timeMachineDate)
 			throws DotDataException;
 
 	/**
@@ -168,7 +191,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException;
+	Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves a contentlet from the database based on its identifier, working version and variant
@@ -178,7 +201,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier, String variant) throws DotDataException, DotSecurityException;
+	Contentlet findContentletByIdentifierAnyLanguage(String identifier, String variant) throws DotDataException, DotSecurityException;
 
 
 	/**
@@ -189,7 +212,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException 
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
+	List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Gets a list of Contentlets from a passed in list of inodes.  
@@ -197,7 +220,7 @@ public abstract class ContentletFactory {
 	 * @return
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotSecurityException;
+	List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Returns all Contentlets for a specific structure using pagination
@@ -206,7 +229,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	protected abstract List<Contentlet> findByStructure(String structureInode, int limit, int offset) throws DotDataException, DotSecurityException;
+	List<Contentlet> findByStructure(String structureInode, int limit, int offset) throws DotDataException, DotSecurityException;
 
     /**
      * Returns all Contentlets for a specific structure (whose modDate is less than or equals to maxDate) using pagination
@@ -219,7 +242,7 @@ public abstract class ContentletFactory {
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    protected abstract List<Contentlet> findByStructure(String structureInode, Date maxDate,
+    List<Contentlet> findByStructure(String structureInode, Date maxDate,
             int limit, int offset) throws DotDataException, DotStateException, DotSecurityException;
 
 	/**
@@ -229,7 +252,7 @@ public abstract class ContentletFactory {
 	 * @param includeAllVersion when true all inode-versions versions are counted too
 	 * @return
 	 */
-	public abstract int countByType(ContentType contentType, boolean includeAllVersion);
+	int countByType(ContentType contentType, boolean includeAllVersion);
 
 	/**
 	 * Saves a Contentlet
@@ -238,7 +261,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	public abstract Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
+	Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Saves a Contentlet
@@ -249,7 +272,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	protected abstract Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotSecurityException;
+	Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * The search here takes a lucene query and pulls Contentlets for you.  You can pass sortBy as null if you do not 
@@ -262,7 +285,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy) throws DotDataException, DotSecurityException;
+	List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy) throws DotDataException, DotSecurityException;
 
 	/**
 	 * The search here takes a lucene query and pulls LuceneHits for you.  You can pass sortBy as null if you do not 
@@ -275,7 +298,7 @@ public abstract class ContentletFactory {
 	 * @param sortBy
 	 * @return
 	 */
-	protected abstract SearchHits indexSearch(String luceneQuery, int limit, int offset, String sortBy);
+	SearchHits indexSearch(String luceneQuery, int limit, int offset, String sortBy);
 	
 	/**
 	 * Returns the contentlets on a given page.  You can pass -1 for languageId if you don't want to query to pull based
@@ -289,7 +312,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> findPageContentlets(String HTMLPageIdentifier,String containerIdentifier, String orderby, boolean working, long languageId)	throws  DotDataException, DotSecurityException;
+	List<Contentlet> findPageContentlets(String HTMLPageIdentifier,String containerIdentifier, String orderby, boolean working, long languageId) throws  DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves all contentlets from the database based on its identifier (including multilingual versions)
@@ -299,7 +322,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException 
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> getContentletsByIdentifier(String identifier, Boolean live) throws DotDataException, DotSecurityException;
+	List<Contentlet> getContentletsByIdentifier(String identifier, Boolean live) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a file with a specific relationship type to the passed in contentlet
@@ -308,7 +331,7 @@ public abstract class ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException;
+	Identifier getRelatedIdentifier(Contentlet contentlet, String relationshipType) throws DotDataException;
 	
 	/**
 	 * Gets all related links
@@ -316,14 +339,14 @@ public abstract class ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract List<Link> getRelatedLinks(Contentlet contentlet) throws DotDataException;
+	List<Link> getRelatedLinks(Contentlet contentlet) throws DotDataException;
 
 	/**
 	 * deletes all passed in contentlets.  This is not an archive.  it is permanent 
 	 * @param contentlets
 	 * @throws DotDataException
 	 */
-	protected abstract void delete(List<Contentlet> contentlets)throws DotDataException;
+	void delete(List<Contentlet> contentlets)throws DotDataException;
 	
 	/**
 	 * Deletes all the specified in contentlets. This method allows users to
@@ -340,7 +363,7 @@ public abstract class ContentletFactory {
 	 *             An error occurred when deleting the information from the
 	 *             database.
 	 */
-	protected abstract void delete(List<Contentlet> contentlets, boolean deleteIdentifier) throws DotDataException;
+	void delete(List<Contentlet> contentlets, boolean deleteIdentifier) throws DotDataException;
 
 	/**
 	 * Retrieves all contentlets from the database based on its identifier (including multilingual versions)
@@ -349,7 +372,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException 
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> getContentletsByIdentifier(String identifier) throws DotDataException, DotSecurityException;
+	List<Contentlet> getContentletsByIdentifier(String identifier) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves all versions for a contentlet identifier checked in by a real user meaning not the system user
@@ -358,7 +381,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> findAllUserVersions(Identifier identifier) throws DotDataException, DotSecurityException;
+	List<Contentlet> findAllUserVersions(Identifier identifier) throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Retrieves all versions for a contentlet identifier
@@ -367,7 +390,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotSecurityException;
+	List<Contentlet> findAllVersions(Identifier identifier) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves all versions for a contentlet identifier.
@@ -378,7 +401,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	protected abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotSecurityException;
+	List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Retrieves all versions for a {@link Contentlet} identifier inside a {@link Variant}.
@@ -389,7 +412,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	protected abstract List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
+	List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
 			throws DotDataException;
 
     /**
@@ -401,7 +424,7 @@ public abstract class ContentletFactory {
      * @return
      * @throws DotDataException
      */
-    public abstract List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Integer maxResults) throws DotDataException;
+    List<Contentlet> findAllVersions(Identifier identifier, boolean bringOldVersions, final Integer maxResults) throws DotDataException;
 
     /**
      * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
@@ -419,7 +442,7 @@ public abstract class ContentletFactory {
      *
      * @throws DotDataException An error occurred when retrieving the versions from the database.
      */
-    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset) throws DotDataException;
+    List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset) throws DotDataException;
 
     /**
      * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
@@ -438,7 +461,7 @@ public abstract class ContentletFactory {
      *
      * @throws DotDataException An error occurred when retrieving the versions from the database.
      */
-    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset, final OrderDirection orderDirection) throws DotDataException;
+    List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset, final OrderDirection orderDirection) throws DotDataException;
 
     /**
      * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
@@ -459,7 +482,7 @@ public abstract class ContentletFactory {
      *
      * @throws DotDataException An error occurred when retrieving the versions from the database.
      */
-    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final long languageId, final boolean bringOldVersions, final int limit, final int offset, final OrderDirection orderDirection) throws DotDataException;
+    List<Contentlet> findAllVersions(final Identifier identifier, final long languageId, final boolean bringOldVersions, final int limit, final int offset, final OrderDirection orderDirection) throws DotDataException;
 
     /**
      * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
@@ -479,7 +502,7 @@ public abstract class ContentletFactory {
      *
      * @throws DotDataException An error occurred when retrieving the versions from the database.
      */
-    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset, final String orderBy, final OrderDirection orderDirection) throws DotDataException;
+    List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions, final int limit, final int offset, final String orderBy, final OrderDirection orderDirection) throws DotDataException;
 
     /**
      * Retrieves all versions for a given Contentlet Identifier. It's highly recommended to use the
@@ -501,7 +524,7 @@ public abstract class ContentletFactory {
      *
      * @throws DotDataException An error occurred when retrieving the versions from the database.
      */
-    public abstract List<Contentlet> findAllVersions(final Identifier identifier, final long languageId, final boolean bringOldVersions, final int limit, final int offset, final String orderBy, final OrderDirection orderDirection) throws DotDataException;
+    List<Contentlet> findAllVersions(final Identifier identifier, final long languageId, final boolean bringOldVersions, final int limit, final int offset, final String orderBy, final OrderDirection orderDirection) throws DotDataException;
 
 	/**
 	 * Retrieves all versions for a list of contentlet identifiers
@@ -510,7 +533,7 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public abstract List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers)
+	List<Contentlet> findLiveOrWorkingVersions(final Set<String> identifiers)
 			throws DotDataException, DotSecurityException;
 
 	/**
@@ -521,7 +544,7 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException 
 	 * @throws DotStateException 
 	 */
-	protected abstract void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException;
+	void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException;
 	
 	/**
 	 * 
@@ -529,7 +552,7 @@ public abstract class ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract int deleteOldContent(Date deleteFrom) throws DotDataException;
+	int deleteOldContent(Date deleteFrom) throws DotDataException;
 	
 	/**
 	 * 
@@ -538,21 +561,21 @@ public abstract class ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract List<Contentlet> findContentletsWithFieldValue(String structureInode, Field field) throws DotDataException;
+	List<Contentlet> findContentletsWithFieldValue(String structureInode, Field field) throws DotDataException;
 	
 	/**
 	 * gets the number of contentlets in the system. This number includes all versions not distinct identifiers
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract long contentletCount() throws DotDataException;
+	long contentletCount() throws DotDataException;
 	
 	/**
 	 * gets the number of contentlet identifiers in the system. This number includes all versions not distinct identifiers
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract long contentletIdentifierCount() throws DotDataException;
+	long contentletIdentifierCount() throws DotDataException;
 
 	/**
 	 * 
@@ -563,16 +586,16 @@ public abstract class ContentletFactory {
 	 * @throws ValidationException
 	 * @throws DotDataException
 	 */
-	protected abstract List<Map<String, Serializable>> DBSearch(Query query, List<Field> fields, String structureInode) throws ValidationException,DotDataException;
+	List<Map<String, Serializable>> DBSearch(Query query, List<Field> fields, String structureInode) throws ValidationException,DotDataException;
 	
-	protected abstract void UpdateContentWithSystemHost(String hostIdentifier) throws DotDataException, DotSecurityException;
+	void UpdateContentWithSystemHost(String hostIdentifier) throws DotDataException, DotSecurityException;
 	/**
 	 * Method will remove User References of the given userId in Contentlet 
 	 * with the system user id
 	 * @param userId User Id to change
 	 * @throws DotSecurityException 
 	 */	
-	protected abstract void removeUserReferences(String userId)throws DotDataException, DotSecurityException;
+	void removeUserReferences(String userId)throws DotDataException, DotSecurityException;
 	
 	/**
 	 * Method will replace user references of the given userId in Contentlets
@@ -583,9 +606,9 @@ public abstract class ContentletFactory {
 	 * @exception DotDataException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */	
-	protected abstract void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException;
+	void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, DotSecurityException;
 
-	protected abstract void deleteVersion(Contentlet contentlet)throws DotDataException;
+	void deleteVersion(Contentlet contentlet)throws DotDataException;
 	
 	/**
 	 * Will update contents that reference the given folder to point to it's parent folder, if it's a top folder it will set folder to be SYSTEM_FOLDER
@@ -593,9 +616,9 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
-	protected abstract void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException;
+	void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException;
 
-    protected abstract Object loadField(String inode, String fieldContentlet) throws DotDataException;
+    Object loadField(String inode, String fieldContentlet) throws DotDataException;
 
 	/**
 	 * Gives direct access to the fields states on the CT Structure
@@ -605,10 +628,10 @@ public abstract class ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract Object loadJsonField(String inode,
+	Object loadJsonField(String inode,
 			com.dotcms.contenttype.model.field.Field field) throws DotDataException;
 
-    protected abstract long indexCount(String query);
+    long indexCount(String query);
 
     /**
      * Gets the top viewed contents identifier and numberOfViews for a particular structure for a specified date interval
@@ -620,13 +643,7 @@ public abstract class ContentletFactory {
      * @return
      * @throws DotDataException 
      */
-	public abstract List<Map<String, String>> getMostViewedContent(String structureInode,Date startDate, Date endDate, User user) throws DotDataException;
-
-    protected List<Contentlet> findPageContentlets(String HTMLPageIdentifier, String containerId, String uniqueId, String orderby,
-            boolean working, long languageId) throws DotDataException, DotStateException, DotSecurityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
+	List<Map<String, String>> getMostViewedContent(String structureInode,Date startDate, Date endDate, User user) throws DotDataException;
 
 	/**
 	 * Updates all the content associated with the specified inodes
@@ -635,11 +652,54 @@ public abstract class ContentletFactory {
 	 * @return number of rows affected
 	 * @throws DotDataException
 	 */
-	public abstract int updateModDate(final Set<String> inodes, User user) throws DotDataException;
+	int updateModDate(final Set<String> inodes, User user) throws DotDataException;
 
-    public abstract Optional<Contentlet> findInDb(String inode) ;
+    Optional<Contentlet> findInDb(String inode) ;
 
-	public static void rebuildRestHighLevelClientIfNeeded(final Exception e) {
+	/**
+	 * Creates an ESContentletScroll instance for scroll-based queries.
+	 * <p>
+	 * The Scroll API is designed for efficiently retrieving large result sets that exceed
+	 * ElasticSearch's max_result_window limit. Use this when you need to iterate through
+	 * thousands of results without hitting deep pagination limits.
+	 * </p>
+	 * <p>
+	 * <strong>IMPORTANT:</strong> Always use try-with-resources to ensure scroll contexts
+	 * are properly cleaned up:
+	 * </p>
+	 * <pre>
+	 * try (ESContentletScroll scroll = factory.createScrollQuery(query, user, false, 100, "title asc")) {
+	 *     List&lt;ContentletSearch&gt; batch = scroll.initialize();
+	 *     while (!batch.isEmpty()) {
+	 *         // process batch
+	 *         batch = scroll.nextBatch();
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param luceneQuery Lucene query string to search for contentlets
+	 * @param user User for permission checking
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize Number of results to retrieve per batch (page size)
+	 * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
+	 * @return ESContentletScroll instance for iterating through results
+	 */
+	IndexContentletScroll createScrollQuery(
+			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy);
+
+	/**
+	 * Creates an ESContentletScroll instance with default sort by "title asc".
+	 *
+	 * @param luceneQuery Lucene query string to search for contentlets
+	 * @param user User for permission checking
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize Number of results to retrieve per batch (page size)
+	 * @return ESContentletScroll instance for iterating through results
+	 */
+	IndexContentletScroll createScrollQuery(
+			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize);
+
+    static void rebuildRestHighLevelClientIfNeeded(final Exception e) {
 		if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
 			RestHighLevelClientProvider.getInstance().rebuildClient();
 		}

@@ -1,7 +1,7 @@
 import { Directive, Input, inject } from '@angular/core';
 
-import { Dropdown } from 'primeng/dropdown';
 import { MultiSelect } from 'primeng/multiselect';
+import { Select } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotDropdownSelectOption } from '@dotcms/dotcms-models';
@@ -18,16 +18,15 @@ const DEFAULT_VALUE_NAME_INDEX = 'value';
  * @class DotDropdownDirective
  */
 @Directive({
-    standalone: true,
     selector: '[dotDropdown]',
     providers: [DotMessagePipe]
 })
 export class DotDropdownDirective {
-    private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });
+    private readonly primeDropdown = inject(Select, { optional: true, self: true });
     private readonly primeMultiSelect = inject(MultiSelect, { optional: true, self: true });
     private readonly dotMessageService = inject(DotMessageService);
 
-    control: Dropdown | MultiSelect;
+    control: Select | MultiSelect;
 
     constructor() {
         this.control = this.primeDropdown ? this.primeDropdown : this.primeMultiSelect;
@@ -35,7 +34,7 @@ export class DotDropdownDirective {
         if (this.control) {
             this.control.optionLabel = DEFAULT_LABEL_NAME_INDEX;
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
-            this.control.showClear = this.control instanceof Dropdown ? true : false;
+            this.control.showClear = this.control instanceof Select ? true : false;
         } else {
             console.warn('DotDropdownDirective is for use with PrimeNg Dropdown or MultiSelect');
         }

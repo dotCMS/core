@@ -1,10 +1,12 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
     ElementRef,
     EventEmitter,
     inject,
+    input,
     Input,
     NgZone,
     OnDestroy,
@@ -20,13 +22,25 @@ import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
+import { DotOverlayMaskComponent } from '../../dot-overlay-mask/dot-overlay-mask.component';
+import { DotLoadingIndicatorComponent } from '../dot-loading-indicator/dot-loading-indicator.component';
+import { DotSafeUrlPipe } from '../pipes/dot-safe-url/dot-safe-url.pipe';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-iframe',
-    styleUrls: ['./iframe.component.scss'],
     templateUrl: 'iframe.component.html',
-    standalone: false
+    styles: [
+        `
+            :host {
+                display: block;
+                height: 100%;
+                position: relative;
+                overflow: hidden;
+            }
+        `
+    ],
+    imports: [DotLoadingIndicatorComponent, DotOverlayMaskComponent, DotSafeUrlPipe]
 })
 export class IframeComponent implements OnInit, OnDestroy {
     private dotIframeService = inject(DotIframeService);
@@ -34,6 +48,7 @@ export class IframeComponent implements OnInit, OnDestroy {
     private dotUiColorsService = inject(DotUiColorsService);
     private dotcmsEventsService = inject(DotcmsEventsService);
     private ngZone = inject(NgZone);
+    private cdr = inject(ChangeDetectorRef);
     dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
     iframeOverlayService = inject(IframeOverlayService);
     loggerService = inject(LoggerService);
@@ -42,7 +57,7 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     @Input() src: string;
 
-    @Input() isLoading = false;
+    $isLoading = input(false, { alias: 'isLoading' });
 
     @Output() charge: EventEmitter<unknown> = new EventEmitter();
 
@@ -57,7 +72,12 @@ export class IframeComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.iframeOverlayService.overlay
             .pipe(takeUntil(this.destroy$))
-            .subscribe((val: boolean) => (this.showOverlay = val));
+            .subscribe((val: boolean) => {
+                queueMicrotask(() => {
+                    this.showOverlay = val;
+                    this.cdr.markForCheck();
+                });
+            });
 
         this.dotIframeService
             .reloaded()
@@ -252,10 +272,8 @@ export class IframeComponent implements OnInit, OnDestroy {
     }
 
     private isIframeHaveContent(): boolean {
-        return (
-            this.iframeElement &&
-            this.iframeElement.nativeElement.contentWindow.document.body.innerHTML.length
-        );
+        return !!this.iframeElement?.nativeElement?.contentWindow?.document?.body?.innerHTML
+            ?.length;
     }
 
     private setArgs(args: unknown[]): unknown[] {

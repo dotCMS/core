@@ -4,8 +4,9 @@
 @let showTimezoneInfo = $showTimezoneInfo();
 @let hasTimezone = showTimezoneInfo && systemTimezone;
 @let hasHint = field.hint;
+@let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="hasError">
+<dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
         <dot-card-field-label
             [variableName]="field.variable"
@@ -17,41 +18,38 @@
     <dot-card-field-content>
         <dot-calendar-field
             [field]="field"
-            [hasError]="hasError"
+            [hasError]="fieldHasError"
             [formControlName]="field.variable"
             [utcTimezone]="systemTimezone"
             [contentType]="$contentType()" />
     </dot-card-field-content>
     <dot-card-field-footer>
-        <div class="flex justify-content-between align-items-center">
-            <div class="flex-grow-1">
-                @if (hasError) {
-                    <div class="error-message">
-                        @if (isRequired) {
-                            <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
-                        }
-                    </div>
+        <div class="flex justify-between items-center">
+            <div class="grow">
+                @if (fieldHasError) {
+                    @if (isRequired) {
+                        <small class="p-field-error">
+                            {{ 'dot.edit.content.form.field.required' | dm }}
+                        </small>
+                    }
                 }
 
-                @if (!hasError && !hasTimezone && hasHint) {
-                    <div class="hint-message" data-testid="calendar-field-hints">
-                        <small
-                            [attr.data-testId]="'hint-' + field.variable"
-                            data-testid="calendar-field-hint">
-                            {{ field.hint }}
-                        </small>
-                    </div>
+                @if (!fieldHasError && !hasTimezone && hasHint) {
+                    <small
+                        class="p-field-hint"
+                        [attr.data-testId]="'hint-' + field.variable"
+                        data-testid="calendar-field-hint">
+                        {{ field.hint }}
+                    </small>
                 }
-                @if (!hasError && hasTimezone && hasHint) {
-                    <div class="hint-message">
-                        <small
-                            data-testid="calendar-field-timezone"
-                            class="text-gray-700"
-                            role="status"
-                            aria-live="polite">
-                            {{ systemTimezone.label }}
-                        </small>
-                    </div>
+                @if (!fieldHasError && hasTimezone && hasHint) {
+                    <small
+                        data-testid="calendar-field-timezone"
+                        class="p-field-hint"
+                        role="status"
+                        aria-live="polite">
+                        {{ systemTimezone.label }}
+                    </small>
                 }
             </div>
         </div>

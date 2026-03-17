@@ -4,7 +4,8 @@ import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spect
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 
@@ -14,11 +15,14 @@ import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { withWorkflow } from './workflow.feature';
 
@@ -73,8 +77,12 @@ describe('WorkflowFeature', () => {
             MessageService,
             Router,
             DotWorkflowService,
-            DotContentTypeService
-        ]
+            DotContentTypeService,
+            DotSiteService,
+            DotSystemConfigService,
+            GlobalStore
+        ],
+        providers: [provideHttpClient(), provideHttpClientTesting()]
     });
 
     beforeEach(() => {

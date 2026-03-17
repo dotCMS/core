@@ -1,10 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
 import {
-    Spectator,
-    SpyObject,
     byTestId,
     createComponentFactory,
-    mockProvider
+    mockProvider,
+    Spectator,
+    SpyObject
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
@@ -18,6 +18,7 @@ import { Dialog } from 'primeng/dialog';
 
 import {
     DotAlertConfirmService,
+    DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotIframeService,
@@ -92,7 +93,8 @@ describe('DotEmaDialogComponent', () => {
                 useValue: {
                     pageParams: signal({
                         variantName: 'DEFAULT' // Is the only thing we need to test the component
-                    })
+                    }),
+                    $variantId: signal('DEFAULT')
                 }
             },
             {
@@ -139,6 +141,7 @@ describe('DotEmaDialogComponent', () => {
                 useValue: new MockDotMessageService({})
             },
             mockProvider(DotContentTypeService),
+            mockProvider(DotContentletService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotAlertConfirmService),
             mockProvider(DotIframeService),
@@ -167,13 +170,15 @@ describe('DotEmaDialogComponent', () => {
         it("should make the form selector visible when it's a form", () => {
             component.addForm(PAYLOAD_MOCK);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('form-selector'))).not.toBeNull();
+            // Dialog appends to body, so we need to query the document
+            expect(document.querySelector('[data-testId="form-selector"]')).not.toBeNull();
         });
 
         it("should make the iframe visible when it's not a form", () => {
             component.addContentlet(PAYLOAD_MOCK);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('dialog-iframe'))).not.toBeNull();
+            // Dialog appends to body, so we need to query the document
+            expect(document.querySelector('[data-testId="dialog-iframe"]')).not.toBeNull();
         });
     });
 
@@ -587,7 +592,9 @@ describe('DotEmaDialogComponent', () => {
 
             renderCompareDialog();
 
-            spectator.triggerEventHandler(DotContentCompareComponent, 'letMeBringBack', {
+            const compareComponent = spectator.query(DotContentCompareComponent);
+            expect(compareComponent).toBeDefined();
+            compareComponent.letMeBringBack.emit({
                 name: 'getVersionBack',
                 args: ['123']
             });

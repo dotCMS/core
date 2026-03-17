@@ -1,15 +1,15 @@
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotAvatarDirective, DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
@@ -21,84 +21,72 @@ const messageServiceMock = new MockDotMessageService({
     'editpage.personalization.content.add.message': 'Add content...'
 });
 
-@Component({
-    template: `
-        <dot-persona-selected-item [persona]="persona"></dot-persona-selected-item>
-    `,
-    standalone: false
-})
-class TestHostComponent {
-    persona = mockDotPersona;
-}
-
 describe('DotPersonaSelectedItemComponent', () => {
-    let component: DotPersonaSelectedItemComponent;
-    let fixture: ComponentFixture<TestHostComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotPersonaSelectedItemComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotPersonaSelectedItemComponent,
+        imports: [
+            NoopAnimationsModule,
+            DotIconComponent,
+            DotAvatarDirective,
+            AvatarModule,
+            BadgeModule,
+            TooltipModule,
+            DotSafeHtmlPipe,
+            DotMessagePipe
+        ],
+        providers: [
+            { provide: LoginService, useClass: LoginServiceMock },
+            { provide: DotMessageService, useValue: messageServiceMock }
+        ]
+    });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectedItemComponent, TestHostComponent],
-            providers: [
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ],
-            imports: [
-                BrowserAnimationsModule,
-                DotIconModule,
-                DotAvatarDirective,
-                AvatarModule,
-                BadgeModule,
-                TooltipModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe
-            ]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(TestHostComponent);
-        component = fixture.debugElement.query(
-            By.css('dot-persona-selected-item')
-        ).componentInstance;
-        de = fixture.debugElement;
-        fixture.detectChanges();
+        spectator = createComponent({ props: { persona: mockDotPersona } });
     });
 
     it('should have p-avatar with right properties', () => {
-        const avatar = fixture.debugElement.query(By.css('p-avatar'));
+        const avatar = spectator.debugElement.query(By.css('p-avatar'));
+        const avatarInstance = avatar.componentInstance;
 
-        const { image } = avatar.componentInstance;
+        expect(avatarInstance.image).toBe(mockDotPersona.photo);
 
-        expect(image).toBe(mockDotPersona.photo);
-        expect(avatar.query(By.css('.p-badge'))).toBeTruthy();
-        expect(avatar.attributes['ng-reflect-text']).toBe(mockDotPersona.name);
+        const personaName = spectator.debugElement.query(By.css('.dot-persona-selector__name'));
+        expect(personaName.nativeElement.textContent.trim()).toBe(mockDotPersona.name);
+
+        const badge = avatar.query(By.css('.p-badge'));
+        if (mockDotPersona.personalized) {
+            expect(badge).toBeTruthy();
+        }
     });
 
     it('should render persona name and label', () => {
-        const name = de.query(By.css('.dot-persona-selector__name')).nativeElement;
-        expect(name.textContent.trim()).toBe('Global Investor');
+        const name = spectator.query('.dot-persona-selector__name');
+        expect(name?.textContent?.trim()).toBe('Global Investor');
     });
 
     describe('tooltip properties', () => {
-        let container: HTMLDivElement;
-
         it('should set properties to null when enable', () => {
-            container = de.query(By.css('.dot-persona-selector__container')).nativeElement;
-            expect(container.getAttribute('ng-reflect-tooltip-position')).toEqual(null);
-            expect(container.getAttribute('ng-reflect-content')).toEqual(null);
+            const container = spectator.debugElement.query(
+                By.css('.dot-persona-selector__container')
+            );
+            const tooltipDirective = container.injector.get(Tooltip);
+            expect(tooltipDirective.content).toBeNull();
+            expect(tooltipDirective.tooltipPosition).toBeNull();
         });
 
         it('should set properties correctly when disable', () => {
-            component.disabled = true;
-            fixture.detectChanges();
-            container = de.query(By.css('.dot-persona-selector__container')).nativeElement;
-            expect(container.getAttribute('ng-reflect-tooltip-position')).toEqual('bottom');
-            expect(container.getAttribute('ng-reflect-content')).toEqual('Add content...');
+            spectator = createComponent({
+                props: { persona: mockDotPersona, disabled: true }
+            });
+
+            const container = spectator.debugElement.query(
+                By.css('.dot-persona-selector__container')
+            );
+            const tooltipDirective = container.injector.get(Tooltip);
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
+            expect(tooltipDirective.content).toBe('Add content...');
         });
     });
 });

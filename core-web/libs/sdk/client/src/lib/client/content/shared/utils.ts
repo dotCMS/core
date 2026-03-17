@@ -1,4 +1,4 @@
-import { CONTENT_TYPE_MAIN_FIELDS } from './const';
+import { CONTENT_TYPE_MAIN_FIELDS, SYSTEM_HOST } from './const';
 
 /**
  * @description
@@ -20,7 +20,9 @@ import { CONTENT_TYPE_MAIN_FIELDS } from './const';
  * @returns {string} The sanitized query string.
  */
 export function sanitizeQueryForContentType(query: string, contentType: string): string {
-    return query.replace(/\+([^+:]*?):/g, (original, field) => {
+    // Match field names that start with letter/underscore, followed by alphanumeric/underscore/dot
+    // This excludes Lucene grouping operators like +(...)
+    return query.replace(/\+([a-zA-Z_][a-zA-Z0-9_.]*):/g, (original, field) => {
         return !CONTENT_TYPE_MAIN_FIELDS.includes(field) // Fields that are not content type fields
             ? `+${contentType}.${field}:` // Should have this format: +contentTypeVar.field:
             : original; // Return the field if it is a content type field
@@ -84,4 +86,74 @@ export function shouldAddSiteIdConstraint(
     }
 
     return true;
+}
+
+/**
+ * @description
+ * Collects all positive `+conhost:` values from a fully assembled Lucene query,
+ * removes them from their original positions, adds SYSTEM_HOST to the set,
+ * and rebuilds a single grouped constraint at the end of the query.
+ *
+ * This function is designed to be called on the final assembled query string
+ * (after raw query has been appended) so that conhosts from all sources —
+ * auto-injected siteId, builder-path conhost, and raw-path conhost — are
+ * all visible and handled uniformly.
+ *
+ * @example
+ * ```ts
+ * // Single siteId + SYSTEM_HOST
+ * buildConhostWithSystemHost('+contentType:Blog +languageId:1 +live:true +conhost:site-123')
+ * // → '+contentType:Blog +languageId:1 +live:true +(conhost:site-123 conhost:SYSTEM_HOST)'
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Multiple conhosts (multisite) + SYSTEM_HOST
+ * buildConhostWithSystemHost('+contentType:Blog +live:true +conhost:site-a +conhost:site-b')
+ * // → '+contentType:Blog +live:true +(conhost:site-a conhost:site-b conhost:SYSTEM_HOST)'
+ * ```
+ *
+ * @example
+ * ```ts
+ * // No conhost in query (no siteId configured)
+ * buildConhostWithSystemHost('+contentType:Blog +languageId:1 +live:true')
+ * // → '+contentType:Blog +languageId:1 +live:true +conhost:SYSTEM_HOST'
+ * ```
+ *
+ * @export
+ * @param {string} query - The fully assembled Lucene query string to process.
+ * @returns {string} The query with all positive conhost constraints replaced by a single grouped constraint.
+ */
+export function buildConhostWithSystemHost(query: string): string {
+    // Collect all unique positive conhost values, excluding SYSTEM_HOST (we'll add it explicitly)
+    const conhostRegex = /\+conhost:([^\s)]+)/gi;
+    const values: string[] = [];
+    let match: RegExpExecArray | null;
+
+    while ((match = conhostRegex.exec(query)) !== null) {
+        const value = match[1];
+
+        if (value.toUpperCase() !== SYSTEM_HOST && !values.includes(value)) {
+            values.push(value);
+        }
+    }
+
+    // Always include SYSTEM_HOST at the end
+    values.push(SYSTEM_HOST);
+
+    // Remove all existing +conhost: constraints from the query
+    const queryWithoutConhost = query
+        .replace(/\s*\+conhost:[^\s)]+/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    // Build the final constraint:
+    // - Single value (only SYSTEM_HOST, no other conhost was present): simple form
+    // - Multiple values: grouped form so dotCMS treats them as OR
+    const conhostConstraint =
+        values.length === 1
+            ? `+conhost:${values[0]}`
+            : `+(${values.map((v) => `conhost:${v}`).join(' ')})`;
+
+    return `${queryWithoutConhost} ${conhostConstraint}`.trim();
 }

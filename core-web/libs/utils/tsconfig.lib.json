@@ -7,7 +7,7 @@
         "declarationMap": true,
         "inlineSources": true,
         "types": [],
-        "lib": ["dom", "es2018"]
+        "lib": ["dom", "dom.iterable", "es2022"]
     },
     "angularCompilerOptions": {
         "skipTemplateCodegen": true,

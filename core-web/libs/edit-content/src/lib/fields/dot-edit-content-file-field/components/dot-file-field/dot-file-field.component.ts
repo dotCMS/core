@@ -1,5 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,9 +31,10 @@ import {
     DotDropZoneComponent,
     DotMessagePipe,
     DotAIImagePromptComponent,
-    DotSpinnerModule,
+    DotSpinnerComponent,
     DropZoneFileEvent,
-    DropZoneFileValidity
+    DropZoneFileValidity,
+    DotBrowserSelectorComponent
 } from '@dotcms/ui';
 
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
@@ -42,7 +44,6 @@ import { DotFileFieldPreviewComponent } from './../dot-file-field-preview/dot-fi
 import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { DotFormFileEditorComponent } from './../dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './../dot-form-import-url/dot-form-import-url.component';
-import { DotSelectExistingFileComponent } from './../dot-select-existing-file/dot-select-existing-file.component';
 
 import {
     INPUT_TYPE,
@@ -54,14 +55,14 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
 @Component({
     selector: 'dot-file-field',
     imports: [
+        CommonModule,
         ButtonModule,
         DotMessagePipe,
         DotDropZoneComponent,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        TooltipModule,
-        DotMessagePipe
+        TooltipModule
     ],
     providers: [
         DotFileFieldUploadService,
@@ -272,6 +273,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotFormImportUrlComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -317,6 +319,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -366,6 +369,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -415,10 +419,12 @@ export class DotFileFieldComponent
 
         const header = this.#dotMessageService.get(title);
 
-        this.#dialogRef = this.#dialogService.open(DotSelectExistingFileComponent, {
+        this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
             header,
             appendTo: 'body',
-            closeOnEscape: false,
+            closeOnEscape: true,
+            closable: true,
+            dismissableMask: true,
             draggable: false,
             keepInViewport: false,
             maskStyleClass: 'p-dialog-mask-dynamic',
@@ -426,8 +432,17 @@ export class DotFileFieldComponent
             modal: true,
             width: '90%',
             style: { 'max-width': '1040px' },
+            contentStyle: { overflow: 'auto', 'min-height': '45rem' },
             data: {
-                mimeTypes
+                mimeTypes,
+                showLinks: false,
+                showDotAssets: true,
+                showPages: false,
+                showFiles: true,
+                showFolders: false,
+                showWorking: true,
+                showArchived: false,
+                sortByDesc: true
             }
         });
 

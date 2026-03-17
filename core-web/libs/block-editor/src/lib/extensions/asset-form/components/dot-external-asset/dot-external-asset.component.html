@@ -1,4 +1,4 @@
-<form (ngSubmit)="onSubmit(form.value)" [formGroup]="form" class="wrapper">
+<form (ngSubmit)="onSubmit(form.value)" [formGroup]="form">
     <div class="form-control">
         <label dotFieldRequired for="url">Insert {{ type }} URL</label>
         <input
@@ -15,6 +15,6 @@
             [innerHTML]="error || 'Enter a valid url'"
             [class.hide]="!isInvalid || form.pristine"
             class="error-message"></span>
-        <button [disabled]="form.invalid || disableAction" type="submit" pButton>Insert</button>
+        <p-button [disabled]="form.invalid || disableAction" label="Insert" type="submit" />
     </div>
 </form>

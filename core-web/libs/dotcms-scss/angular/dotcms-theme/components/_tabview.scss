@@ -1,14 +1,19 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 @use "dotcms-theme/utils/theme-variables" as *;
 
 .p-tabview .p-tabview-nav {
-    border: solid $color-palette-black-op-10;
+    border: solid colors.$color-palette-black-op-10;
     border-width: 0 0 1px 0;
     position: relative;
 }
 
 .p-tabview .p-tabview-nav li {
     margin-right: 0;
+    flex: 1;
 }
 
 .p-tabview-title {
@@ -18,12 +23,13 @@
 .p-tabview .p-tabview-nav li .p-tabview-nav-link {
     border: none;
     border-radius: 0;
-    color: $black;
-    padding: $spacing-3 $spacing-4;
+    color: colors.$black;
+    padding: spacing.$spacing-3 spacing.$spacing-4;
     transition: none;
     margin: 0;
     white-space: nowrap;
     height: 100%;
+    justify-content: center;
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link:not(.p-disabled):focus {
@@ -40,26 +46,32 @@
 }
 
 .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-    border-bottom: $tabview-item-border-height solid $color-palette-primary;
+    border-bottom: $tabview-item-border-height solid colors.$color-palette-primary;
 }
 
 .p-tabview .p-tabview-left-icon {
-    margin-right: $spacing-1;
+    margin-right: spacing.$spacing-1;
 }
 
 .p-tabview .p-tabview-right-icon {
-    margin-left: $spacing-1;
+    margin-left: spacing.$spacing-1;
 }
 
 .p-tabview .p-tabview-close {
-    margin-left: $spacing-1;
+    margin-left: spacing.$spacing-1;
 }
 
 .p-tabview .p-tabview-panels {
     border: 0 none;
-    color: $black;
-    border-bottom-right-radius: $border-radius-xs;
-    border-bottom-left-radius: $border-radius-xs;
+    color: colors.$black;
+    border-bottom-right-radius: common.$border-radius-xs;
+    border-bottom-left-radius: common.$border-radius-xs;
+
+    p-tabpanel {
+        .p-tabview-panel {
+            height: 100%;
+        }
+    }
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link > .p-ink {
@@ -81,10 +93,10 @@
 
 .p-tabview-nav-next.p-link {
     border-left: none;
-    background: $color-palette-gray-200;
+    background: colors.$color-palette-gray-200;
 }
 
 .p-tabview-nav-prev.p-link {
     border-right: none;
-    background: $color-palette-gray-200;
+    background: colors.$color-palette-gray-200;
 }

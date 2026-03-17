@@ -1,15 +1,6 @@
 import { Observable } from 'rxjs';
 
-import {
-    AsyncPipe,
-    NgClass,
-    NgFor,
-    NgIf,
-    NgSwitch,
-    NgSwitchCase,
-    NgSwitchDefault,
-    TitleCasePipe
-} from '@angular/common';
+import { AsyncPipe, NgClass, TitleCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -41,12 +32,7 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
     imports: [
         NgClass,
         CardModule,
-        NgFor,
         TitleCasePipe,
-        NgIf,
-        NgSwitch,
-        NgSwitchCase,
-        NgSwitchDefault,
         AsyncPipe,
         DotSafeHtmlPipe,
         DotMessagePipe,

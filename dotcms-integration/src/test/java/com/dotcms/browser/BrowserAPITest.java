@@ -1,12 +1,36 @@
 package com.dotcms.browser;
 
+import static org.awaitility.Awaitility.await;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.DotAssetDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -25,6 +49,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableSet;
@@ -33,23 +58,22 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple3;
 import io.vavr.control.Try;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Created by Oscar Arrieta on 6/8/17.
@@ -124,10 +148,10 @@ public class BrowserAPITest extends IntegrationTestBase {
     @Test()
     public void Test_GetFolderContent_Multiple_Langs() throws DotDataException, DotSecurityException, IOException {
 
-        final SiteDataGen   siteDataGen   = new SiteDataGen();
-        final FolderDataGen folderDataGen = new FolderDataGen();
-        final Host          host          = siteDataGen.nextPersisted();
-        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+        final Host host = testHost;
+        final Folder folder = new FolderDataGen().site(host)
+                .name("multilang-" + System.currentTimeMillis())
+                .nextPersisted();
 
         final File file = FileUtil.createTemporaryFile("test", ".txt", "this is a test!");
 
@@ -141,7 +165,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         List<Long> languages = new ArrayList<>();
         languages.add(persisted.getLanguageId());
-        languages.add(new LanguageDataGen().nextPersisted().getId());
+        languages.add(testLanguage.getId());
         languages.add(new LanguageDataGen().nextPersisted().getId());
 
         for (Long lang:languages) {
@@ -188,10 +212,10 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         // create a folder
         // create a 10 files
-        final SiteDataGen   siteDataGen   = new SiteDataGen();
-        final FolderDataGen folderDataGen = new FolderDataGen();
-        final Host          host          = siteDataGen.nextPersisted();
-        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+        final Host host = testHost;
+        final Folder folder = new FolderDataGen().site(host)
+                .name("pagination-" + System.currentTimeMillis())
+                .nextPersisted();
 
         for (int i = 0; i < 10; ++i) {
 
@@ -1324,7 +1348,7 @@ public class BrowserAPITest extends IntegrationTestBase {
     public void test_buildBaseESQuery_edgeCases() {
         final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
 
-        // Test very long filter string
+        // Test a very long filter string
         final String longFilter = "a".repeat(1000);
         BrowserQuery longQuery = BrowserQuery.builder()
                 .withFilter(longFilter)
@@ -1372,7 +1396,8 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_SmartPaginationPage1_25Folders1Contentlet() throws Exception {
-        // Create test environment
+        final User owner = new UserDataGen().nextPersisted();
+        // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
@@ -1382,12 +1407,13 @@ public class BrowserAPITest extends IntegrationTestBase {
             final Folder subFolder = new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
+                    .owner(owner)
                     .nextPersisted();
             subFolders.add(subFolder);
         }
 
-        // Create 100 contentlets
-        for (int i = 0; i < 100; i++) {
+        // Create 30 contentlets
+        for (int i = 0; i < 30; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1407,18 +1433,17 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .maxResults(26)
                 .build();
 
-        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+        final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
 
         // Verify results
-        assertNotNull("Result should not be null", result);
+        assertNotNull("Result should not be null", paginatedContents);
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+        final List<Map<String, Object>> list = paginatedContents.list;
 
         assertEquals("Should return exactly 26 items (25 folders + 1 contentlet)", 26, list.size());
-        assertEquals("Folder count should be 25", 25, result.get("folderCount"));
-        assertEquals("Content count should be 1", 1, result.get("contentCount"));
-        assertEquals("Content total count should be 100", 100, result.get("contentTotalCount"));
+        assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
+        assertEquals("Content count should be 1", 1, paginatedContents.contentCount);
 
         // Verify first 25 items are folders
         for (int i = 0; i < 25; i++) {
@@ -1426,9 +1451,11 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertNotNull("Item should have name", item.get("name"));
             assertTrue("First 25 items should be folders",
                 item.get("name").toString().startsWith("folder_"));
+            assertEquals("Owner should be the same as parent folder",
+                owner.getFullName(), item.get("owner"));
         }
 
-        // Verify last item is a contentlet
+        // Verify the last item is a contentlet
         final Map<String, Object> lastItem = list.get(25);
         assertNotNull("Last item should have extension", lastItem.get("extension"));
         assertEquals("Last item should be a file", "txt", lastItem.get("extension"));
@@ -1439,7 +1466,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      * Expected: 11 contentlets (all folders were shown on page 1)
      */
     @Test
-    public void test_SmartPaginationPage2_10Contentlets() throws Exception {
+    public void test_SmartPaginationPage2_15Contentlets() throws Exception {
         // Create test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
@@ -1452,7 +1479,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Create 100 contentlets
+        // Create 25 contentlets
         for (int i = 0; i < 25; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
@@ -1468,28 +1495,24 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showFiles(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .offset(11) // Second page
+                .folderCursor(10) // Second page
+                .contentCursor(10)
                 .maxResults(20)
                 .build();
 
-        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+        final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
 
         // Verify results
-        assertNotNull("Result should not be null", result);
+        assertNotNull("Result should not be null", paginatedContents);
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+        final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 20 items (20 contentlets, no folders)", 20, list.size());
-        assertEquals("Folder count should be 10", 10, result.get("folderCount"));
-        assertEquals("Content count should be 20", 20, result.get("contentCount"));
-        assertEquals("Content total count should be 25", 25, result.get("contentTotalCount"));
-
-        // Verify all items are contentlets
-        for (Map<String, Object> item : list) {
-            assertNotNull("Item should have extension", item.get("extension"));
-            assertEquals("All items should be files", "txt", item.get("extension"));
-        }
+        assertEquals("Should return exactly 15 items (15 contentlets, no folders)", 15, list.size());
+        assertEquals("Folder count should be 0 the 10 folders where in the first page", 0, paginatedContents.folderCount);
+        assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
+        assertEquals("Content count should be 15", 15, paginatedContents.contentCount);
+        assertFalse("Should indicate NO more content available", paginatedContents.hasMoreContent);
     }
 
     /**
@@ -1497,21 +1520,21 @@ public class BrowserAPITest extends IntegrationTestBase {
      * Expected: 26 more contentlets
      */
     @Test
-    public void test_SmartPaginationPage3_26MoreContentlets() throws Exception {
-        // Create test environment
+    public void test_SmartPaginationPage3_16MoreContentlets() throws Exception {
+        // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
-        // Create 25 folders
-        for (int i = 0; i < 25; i++) {
+        // Create 15 folders
+        for (int i = 0; i < 15; i++) {
             new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
                     .nextPersisted();
         }
 
-        // Create 100 contentlets
-        for (int i = 0; i < 100; i++) {
+        // Create 50 contentlets
+        for (int i = 0; i < 50; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1527,28 +1550,24 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showDotAssets(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .offset(52) // Third page (26*2)
-                .maxResults(26)
+                .folderCursor(15)
+                .contentCursor(17)  // Third page (16*2) = 32 (15 folders and 17 contents)
+                .maxResults(16)
                 .build();
 
-        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+        final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
 
         // Verify results
-        assertNotNull("Result should not be null", result);
+        assertNotNull("Result should not be null", paginatedContents);
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+        final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 26 items (26 contentlets)", 26, list.size());
-        assertEquals("Folder count should be 25", 25, result.get("folderCount"));
-        assertEquals("Content count should be 26", 26, result.get("contentCount"));
-        assertEquals("Content total count should be 100", 100, result.get("contentTotalCount"));
-
-        // Verify all items are contentlets
-        for (Map<String, Object> item : list) {
-            assertNotNull("Item should have extension", item.get("extension"));
-            assertEquals("All items should be files", "txt", item.get("extension"));
-        }
+        assertEquals("Should return exactly 16 items (16 contentlets)", 16, list.size());
+        assertEquals("Folder count should be 0", 0, paginatedContents.folderCount);
+        assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
+        assertEquals("Content count should be 16", 16, paginatedContents.contentCount);
+        assertTrue("Should indicate more content available", paginatedContents.hasMoreContent);
     }
 
     /**
@@ -1557,7 +1576,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_SmartPaginationOnlyFolders() throws Exception {
-        // Create test environment
+        // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
@@ -1581,18 +1600,16 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .maxResults(10)
                 .build();
 
-        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
-
+        final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
         // Verify results
-        assertNotNull("Result should not be null", result);
+        assertNotNull("Result should not be null", paginatedContents);
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
+        final List<Map<String, Object>> list = paginatedContents.list;
 
         assertEquals("Should return exactly 10 folders", 10, list.size());
-        assertEquals("Folder count should be 15", 15, result.get("folderCount"));
-        assertNull("Content count should be null", result.get("contentCount"));
-        assertNull("Content total count should null", result.get("contentTotalCount"));
+        assertEquals("Folder count should be 10", 10, paginatedContents.folderCount);
+        assertTrue("Should indicate more folders available", paginatedContents.hasMoreFolders);
 
         // Verify all items are folders
         for (Map<String, Object> item : list) {
@@ -1603,36 +1620,390 @@ public class BrowserAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Test Case: Smart Pagination with Links
-     * Tests pagination with folders, links, and contentlets together
+     * Test Case: Text filtering with custom ContentType - contentTotalCount validation
+     *
+     * Tests that getBrowserAPI.getPaginatedContents() correctly returns contentTotalCount
+     * when using text search filters with a custom content type containing a title field.
+     *
+     * Expected behavior:
+     * - Creates 3 custom content instances with different titles
+     * - Filter matching one title returns contentTotalCount = 1
+     * - Filter matching multiple titles returns contentTotalCount = 2
      */
     @Test
-    public void test_SmartPaginationWithLinks() throws Exception {
-        // Create test environment
+    public void test_getPaginatedContents_textFilter_contentTotalCount() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create custom ContentType with title field
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        // Create 3 contentlet instances with specific titles
+        final Contentlet contentlet1 = new ContentletDataGen(customContentType)
+                .setProperty("title", "SearchableItem Alpha")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(customContentType)
+                .setProperty("title", "SearchableItem Beta")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final Contentlet contentlet3 = new ContentletDataGen(customContentType)
+                .setProperty("title", "DifferentContent Gamma")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Test Case 1: Filter matching one item - expect contentTotalCount = 1
+        final BrowserQuery queryMatchingOne = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Alpha")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsOne = browserAPI.getPaginatedContents(queryMatchingOne);
+
+        assertNotNull("Results should not be null", resultsOne);
+        assertEquals("Should return 1 content item", 1, resultsOne.contentCount);
+
+        // Verify the correct content was found
+        assertEquals("Should return exactly 1 item in list", 1, resultsOne.list.size());
+        final Map<String, Object> foundItem = resultsOne.list.get(0);
+        assertEquals("Found item should be contentlet1", contentlet1.getInode(), foundItem.get("inode"));
+
+        // Test Case 2: Filter matching multiple items - expect contentTotalCount = 2
+        final BrowserQuery queryMatchingTwo = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("SearchableItem")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsTwo = browserAPI.getPaginatedContents(queryMatchingTwo);
+
+        assertNotNull("Results should not be null", resultsTwo);
+        assertEquals("Should return 2 content items", 2, resultsTwo.contentCount);
+        assertEquals("Should return exactly 2 items in list", 2, resultsTwo.list.size());
+
+        // Verify the correct contents were found (contentlet1 and contentlet2)
+        final Set<String> foundInodes = resultsTwo.list.stream()
+                .map(content -> (String) content.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain contentlet1", foundInodes.contains(contentlet1.getInode()));
+        assertTrue("Should contain contentlet2", foundInodes.contains(contentlet2.getInode()));
+        assertFalse("Should not contain contentlet3", foundInodes.contains(contentlet3.getInode()));
+
+        // Test Case 3: Filter with no matches - expect contentTotalCount = 0
+        final BrowserQuery queryNoMatches = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("NonExistentTerm")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsNone = browserAPI.getPaginatedContents(queryNoMatches);
+
+        assertNotNull("Results should not be null", resultsNone);
+        assertEquals("Should return no content items", 0, resultsNone.contentCount);
+        assertEquals("Should return empty list", 0, resultsNone.list.size());
+    }
+
+    /**
+     * Method to test <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     * Given scenario: Here we test a similar situation as above, but we set limits in the pageSize
+     * to verify that the total count accurately reflects the total items in existence reflected in the contentTotalCount
+     * Expected result: We should expect 5 matches filling the first page and a universe of 10 items
+     * @throws Exception
+     */
+    @Test
+    public void test_getPaginatedContents_Fixed_Page_Size_Using_textFilter_Verify_contentTotalCount() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create custom ContentType with title field
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        for(int i=0; i<10; i++) {
+            new ContentletDataGen(customContentType)
+                    .setProperty("title", String.format("SearchableItem %s",i))
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Item")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .offset(0)
+                .maxResults(5)
+                .build();
+
+        final PaginatedContents resultsOne = browserAPI.getPaginatedContents(query);
+
+        assertNotNull("Results should not be null", resultsOne);
+        assertEquals("Should return 5 matching item as we defined a pageSize of 5.", 5, resultsOne.contentCount);
+
+    }
+
+    /**
+     * Method to test <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     * Given scenario: We're creating content under a folder and giving read access to a user then we request such content
+     * Expected Results: We should get back the requested content
+     * @throws Exception
+     */
+    @Test
+    public void test_getContent_Using_LimitedUser_WithRead_Permissions() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        //Give him access to the site and parent folder
+        final Permission siteReadPermissions = new Permission(host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
+        permissionAPI.save(siteReadPermissions, host, APILocator.systemUser(), false);
+
+        //We need to assign Chris Publisher view permissions to the parent folder.
+        final Permission folderReadPermission = new Permission(folder.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
+        permissionAPI.save(folderReadPermission, folder, APILocator.systemUser(), false);
+
+        final File file = FileUtil.createTemporaryFile("content", ".txt", "content");
+        final Contentlet contentlet = new FileAssetDataGen(file)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+        assertNotNull(contentlet.getIdentifier());
+        assertFalse(contentlet.isLive());
+
+        final boolean hasReadPermission = permissionAPI.doesUserHavePermission(contentlet,
+                PermissionAPI.PERMISSION_READ, limitedUser, false);
+        assertTrue("This should have read Permissions", hasReadPermission);
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getInode())
+                .ignoreSiteForFolders(true)
+                .respectFrontEndRoles(false) // <-- This is key for this test!
+                .withUser(limitedUser)
+                .forceSystemHost(false)
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .offset(0)
+                .maxResults(5)
+                .build();
+        final PaginatedContents results = browserAPI.getPaginatedContents(query);
+        assertEquals("Should return 1 content item", 1, results.contentCount);
+        assertEquals("Should return exactly 1 item in list", 1, results.list.size());
+        assertEquals("Contentlet inode should match", contentlet.getInode(), results.list.get(0).get("inode"));
+    }
+
+    /**
+     * Method to test exhaustive pagination with permission filtering using getContentUnderParentFromDB
+     * <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     * Given scenario: Creating alternating content with and without read permissions in the same folder,
+     * then testing that pagination system exhaustively collects enough accessible content to complete
+     * the requested page size despite permission filtering reducing intermediate results.
+     * Expected Results: The pagination system should return the requested page size by iteratively
+     * searching for additional accessible content when permission filtering creates gaps.
+     * @throws Exception
+     */
+    @Test
+    public void test_exhaustive_pagination_with_permission_filtering() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        // Create a minimal backend user with no Publisher role (avoids broad READ from Publisher role).
+        // The Backend User role is required so the user can read non-live (working) contentlets.
+        final Role restrictedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(restrictedRole, TestUserUtils.getBackendRole())
+                .nextPersisted();
+        // A separate role (not assigned to limitedUser) used to break inheritance on odd contentlets
+        final Role noAccessRole = new RoleDataGen().nextPersisted();
+
+        // Give limited user access to the site and parent folder
+        final Permission siteReadPermissions = new Permission(host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+        permissionAPI.save(siteReadPermissions, host, APILocator.systemUser(), false);
+
+        final Permission folderReadPermission = new Permission(folder.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+        permissionAPI.save(folderReadPermission, folder, APILocator.systemUser(), false);
+
+        // Create alternating content: accessible and non-accessible
+        // This ensures non-continuous distribution in the database
+        final List<Contentlet> accessibleContentlets = new ArrayList<>();
+
+        // Create 20 pieces of content, alternating permissions (10 accessible, 10 non-accessible)
+        for (int i = 0; i < 20; i++) {
+            final File file = FileUtil.createTemporaryFile("content(" + i + ")", ".txt", "content-" + i);
+            final Contentlet contentlet = new FileAssetDataGen(file)
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+
+            // Give read permission to every other contentlet (even indices: 0, 2, 4, 6, ...)
+            if (i % 2 == 0) {
+                final Permission contentletReadPermission = new Permission(contentlet.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+                permissionAPI.save(contentletReadPermission, contentlet, APILocator.systemUser(), false);
+                accessibleContentlets.add(contentlet);
+            } else {
+                // Odd: break the inheritance chain by setting explicit permissions for noAccessRole only.
+                // limitedUser does not have noAccessRole, so it cannot read these contentlets even
+                // though the parent folder grants READ (this explicit entry overrides inheritance).
+                final Permission noAccessPermission = new Permission(contentlet.getPermissionId(),
+                        noAccessRole.getId(), PermissionAPI.PERMISSION_READ);
+                permissionAPI.save(noAccessPermission, contentlet, APILocator.systemUser(), false);
+            }
+        }
+
+        // Wait for indexing to complete
+        await().atMost(Duration.ofSeconds(10)).until(() -> {
+            // Verify that all contentlets have been indexed and permissions are properly applied
+            return accessibleContentlets.stream().allMatch(contentlet -> {
+                try {
+                    return permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, limitedUser, false);
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+        });
+
+        // Verify permission setup: should have 10 accessible contentlets
+        assertEquals("Should have created 10 accessible contentlets", 10, accessibleContentlets.size());
+
+        // Test Case 1: Request page size of 5 - should get exactly 5 accessible items
+        final BrowserQuery query1 = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getInode())
+                .ignoreSiteForFolders(true)
+                .respectFrontEndRoles(false)
+                .withUser(limitedUser)
+                .forceSystemHost(false)
+                .showContent(true)
+                .contentCursor(0)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        // Using reflection to access the package-private method for direct testing
+        final BrowserAPIImpl browserAPIImpl = (BrowserAPIImpl) browserAPI;
+
+        final var results1 = browserAPIImpl.getContentUnderParentFromDB(query1, 5);
+        assertEquals("Should return exactly 5 accessible contentlets", 5, results1.contentlets.size());
+        assertTrue("Should indicate more pages available", results1.hasMore);
+
+        // Test Case 2: Request page size of 8 - should get exactly 8 accessible items
+        final var results2 = browserAPIImpl.getContentUnderParentFromDB(query1, 8);
+        assertEquals("Should return exactly 8 accessible contentlets", 8, results2.contentlets.size());
+        assertTrue("Should indicate more pages available", results2.hasMore);
+
+        // Test Case 3: Request page size of 10 - should get all 10 accessible items
+        final var results3 = browserAPIImpl.getContentUnderParentFromDB(query1, 10);
+        assertEquals("Should return exactly 10 accessible contentlets", 10, results3.contentlets.size());
+        assertFalse("Should indicate no more pages available", results3.hasMore);
+
+        // Test Case 4: Request more than available - should get all 10 accessible items
+        final var results4 = browserAPIImpl.getContentUnderParentFromDB(query1, 15);
+        assertEquals("Should return all 10 accessible contentlets", 10, results4.contentlets.size());
+        assertFalse("Should indicate no more pages available", results4.hasMore);
+
+        // Test Case 5: Cursor-based pagination
+        // first page returns 5 items and a cursor,
+        // second page continues from that cursor and returns the remaining 5 items.
+        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 5);
+        assertEquals("Should return exactly 5 accessible contentlets on page 1", 5, results5.contentlets.size());
+        assertTrue("Should indicate more pages available after page 1", results5.hasMore);
+
+        // Build query2 from query1, advancing only the contentCursor
+        final BrowserQuery query2 = BrowserQuery.from(query1)
+                .contentCursor(results5.nextDbCursor)
+                .build();
+        final var results6 = browserAPIImpl.getContentUnderParentFromDB(query2, 8);
+        assertEquals("Should return remaining 5 accessible contentlets on page 2", 5, results6.contentlets.size());
+        assertFalse("Should indicate no more pages available after page 2", results6.hasMore);
+ }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder contains exactly N sub-folders and some contentlets.
+     *     When the client requests a page of size N, folders fill the page completely, leaving
+     *     {@code maxResults = 0} before the content block is reached.</li>
+     *     <li><b>Expected Result:</b> Even though no contentlets are added to the current page,
+     *     {@code hasMoreContent} must be {@code true} so the client knows a next page exists.
+     *     The {@code nextContentCursor} must remain at 0 since no content was consumed yet.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_foldersExactlyFillPage_hasMoreContentIsTrue()
+            throws Exception {
+
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
-        // Create 10 folders
-        for (int i = 0; i < 10; i++) {
+        // Create exactly 5 sub-folders
+        final int folderCount = 5;
+        for (int i = 0; i < folderCount; i++) {
             new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
                     .nextPersisted();
         }
 
-        // Create 5 links
-        for (int i = 0; i < 5; i++) {
-            new LinkDataGen()
-                    .hostId(host.getIdentifier())
-                    .title(String.format("link_%02d", i))
-                    .parent(parentFolder)
-                    .target("https://example.com")
-                    .linkType("EXTERNAL")
-                    .nextPersisted();
-        }
-
-        // Create 50 contentlets
-        for (int i = 0; i < 50; i++) {
+        // Create 3 contentlets — they must NOT appear in this page but must be detectable
+        for (int i = 0; i < 3; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1640,48 +2011,81 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Execute pagination query - Page 1 with page size 20
-        // Expected: 10 folders + 5 links + 5 contentlets
-        final BrowserQuery browserQuery = BrowserQuery.builder()
+        // Request exactly as many results as there are folders — page is filled by folders alone
+        final BrowserQuery query = BrowserQuery.builder()
                 .showFolders(true)
-                .showLinks(true)
                 .showContent(true)
                 .showFiles(true)
                 .showDotAssets(true)
+                .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .offset(0)
-                .maxResults(20)
+                .folderCursor(0)
+                .contentCursor(0)
+                .maxResults(folderCount)
                 .build();
 
-        final Map<String, Object> result = browserAPI.getPaginatedFolderContents(browserQuery);
+        final PaginatedContents result = browserAPI.getPaginatedContents(query);
 
-        // Verify results
         assertNotNull("Result should not be null", result);
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> list = (List<Map<String, Object>>) result.get("list");
-
-        assertEquals("Should return exactly 20 items (10 folders + 5 links + 5 contentlets)", 20, list.size());
-        assertEquals("Folder count should be 10", 10, result.get("folderCount"));
-        assertEquals("Link count should be 5", 5, result.get("linkCount"));
-        assertEquals("Content count should be 5", 5, result.get("contentCount"));
-        assertEquals("Content total count should be 50", 50, result.get("contentTotalCount"));
-
-        // Verify item types in order
-        int folderCount = 0, linkCount = 0, contentCount = 0;
-        for (Map<String, Object> item : list) {
-            if (item.get("mimeType") != null && item.get("mimeType").equals("application/dotlink")) {
-                linkCount++;
-            } else if (item.get("extension") != null && item.get("extension").equals("txt")) {
-                contentCount++;
-            } else if (item.get("name") != null && item.get("name").toString().startsWith("folder_")) {
-                folderCount++;
-            }
-        }
-
-        assertTrue("Should have folders in the result", folderCount > 0);
-        assertTrue("Should have links in the result", linkCount > 0);
-        assertTrue("Should have content in the result", contentCount > 0);
+        assertEquals("Page should contain only the folders", folderCount, result.list.size());
+        assertEquals("folderCount should equal the number of sub-folders", folderCount, result.folderCount);
+        assertEquals("contentCount should be 0 — no content added to this page", 0, result.contentCount);
+        assertFalse("hasMoreFolders should be false — all folders fit in this page", result.hasMoreFolders);
+        assertTrue("hasMoreContent must be true — content exists but was not yet shown", result.hasMoreContent);
+        assertEquals("nextContentCursor should stay at 0 — no content was consumed", 0, result.nextContentCursor);
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A site contains 20 content items but
+     *     {@code BROWSER_DB_MAX_SCAN_ROWS} is intentionally set to 15, lower than the total row
+     *     count. The scan loop must stop as soon as the number of rows scanned exceeds the limit,
+     *     preventing runaway queries on large sites with heavily restricted users.</li>
+     *     <li><b>Expected Result:</b> The request completes without hanging or throwing an
+     *     exception. The result contains whatever items were accumulated before the limit was hit,
+     *     and {@code nextContentCursor} reflects how far the scan reached (&gt; 0).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_scanLimitStopsLoop() throws Exception {
+        final int scanLimit = 15;
+        final int itemCount = 20;
+
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, scanLimit);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+            for (int i = 0; i < itemCount; i++) {
+                final File file = FileUtil.createTemporaryFile("scan-limit-" + i, ".txt", "content " + i);
+                new FileAssetDataGen(file).folder(folder).host(host).nextPersisted();
+            }
+
+            // Query against the site root (no folder filter) so all 20 items are in scope
+            final BrowserQuery query = BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(host.getIdentifier())
+                    .skipFolder(true)
+                    .showFiles(true)
+                    .showWorking(true)
+                    .showFolders(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents result = browserAPI.getPaginatedContents(query);
+
+            assertNotNull("Result must not be null when scan limit is reached", result);
+            // 20 items were accumulated before the scan limit fired (dbOffset 20 >= scanLimit 15)
+            assertTrue("Should have returned items accumulated before the scan limit",
+                    result.contentCount > 0);
+            // Cursor must reflect how far into the DB the scan reached
+            assertTrue("nextContentCursor should be > 0 since rows were scanned",
+                    result.nextContentCursor > 0);
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        }
+    }
 }

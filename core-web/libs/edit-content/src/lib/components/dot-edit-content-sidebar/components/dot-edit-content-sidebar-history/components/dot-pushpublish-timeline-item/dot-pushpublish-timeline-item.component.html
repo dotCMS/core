@@ -1,0 +1,61 @@
+@let item = $item();
+<div data-testid="pushpublish-item" class="block w-full">
+    <div
+        data-testid="content-wrapper"
+        class="flex items-center justify-between gap-2 rounded-lg bg-white p-2 mb-3 cursor-pointer hover:bg-gray-100 transition-colors min-w-0"
+        [pTooltip]="tooltipContent"
+        tooltipPosition="bottom"
+        [tooltipOptions]="{
+            showDelay: 100,
+            hideDelay: 100,
+            escape: false,
+            positionStyle: 'absolute',
+            appendTo: 'body'
+        }">
+        <ng-template #tooltipContent>
+            <div class="min-w-0 max-w-[280px] py-1">
+                <ul class="text-xs space-y-1 list-none pl-0 m-0">
+                    <li>{{ item.pushDate | date: 'MMM d, yyyy - h:mm a' }}</li>
+                    <li>
+                        {{ 'edit.content.sidebar.pushpublish.environment' | dm }}:
+                        {{ item.environment }}
+                    </li>
+                    <li>
+                        {{ 'edit.content.sidebar.pushpublish.bundle' | dm }}: {{ item.bundleId }}
+                    </li>
+                </ul>
+            </div>
+        </ng-template>
+
+        <div class="flex flex-col w-full gap-2 flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+                <span data-testid="time-display" class="font-semibold text-gray-900">
+                    {{ item.pushDate | dotRelativeDate }}
+                </span>
+                <div class="flex items-center gap-1" data-testid="bundle-id-section">
+                    <span data-testid="bundle-id-text" class="text-sm text-gray-700 font-mono">
+                        {{ $truncatedBundleId() }}
+                    </span>
+                    <dot-copy-button
+                        [copy]="item.bundleId"
+                        [tooltipText]="'Copy Bundle ID'"
+                        customClass="p-0! [&_.p-button-label]:text-sm"
+                        data-testid="copy-bundle-id" />
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div
+                    class="w-8 h-8 shrink-0 overflow-hidden rounded-full [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
+                    <p-avatar
+                        dotGravatar
+                        [label]="item.pushedBy.charAt(0).toUpperCase()"
+                        data-testid="user-avatar" />
+                </div>
+                <span data-testid="pushpublish-user" class="text-sm text-gray-700 truncate min-w-0">
+                    {{ item.pushedBy }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

@@ -215,19 +215,9 @@ function refreshIndexStats(){
 function doReindex(){
     var shards =1
     var contentType = dijit.byId('structure').item != null ? dijit.byId('structure').item.id : "DOTALL";
-    if("DOTALL"=== contentType){
-        var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 2)%>);
-        if(!number){
-            return;
-        }
-        shards = parseInt(number);
-        if(shards == null || shards <1){
-            return;
-        }
-    }
     dijit.byId('structure').reset();
 
-    fetch('/api/v1/esindex/reindex?shards=' + shards + '&contentType=' + contentType, {method:'POST'})
+    fetch('/api/v1/esindex/reindex?contentType=' + contentType, {method: 'POST'})
     .then(response => response.json())
     .then(data =>checkReindexationCallback(data))
     .then(()=>refreshIndexStats());
@@ -376,7 +366,6 @@ const indexTableRowTmpl = (data) => `<tr class="${data.rowClass} showPointer" id
     <td  class="showPointer" >${data.indexName}</td>
     <td>${data.created}</td>
     <td align="center">${data.documentCount}</td>
-    <td align="center">${data.numberOfShards}</td>
     <td align="center">${data.numberOfReplicas}</td>
     <td align="center">${data.size}</td>
     <td align="center">
@@ -402,7 +391,7 @@ function paintStatusTable(data){
         data.created = item.created;
         data.indexColor=item.health.status;
         data.numberOfReplicas=item.health.numberOfReplicas;
-        data.numberOfShards=item.health.numberOfShards;
+        //data.numberOfShards=item.health.numberOfShards;
         data.documentCount=(item.status === undefined) ? "n/a"  : item.status.documentCount;
         data.size=(item.status === undefined) ? "n/a"  : item.status.size;
 
@@ -694,7 +683,8 @@ function undohighlight(id) {
 function getAllThreads() {
 	document.getElementById('threadList').innerHTML = "";
 	dojo.query('#threadProgress').style({display:"block"});
-    ThreadMonitorTool.getThreads({
+    const hideSystemThreads = document.getElementById("hideSystemThreads").checked;
+    ThreadMonitorTool.getThreads(hideSystemThreads, {
         callback:function(data) {
         	dojo.query('#threadProgress').style({display:"none"});
             var tempString = "";
@@ -708,8 +698,6 @@ function getAllThreads() {
                 }
             }
 
-//             var editor = dijit.byId('threadList');
-//             editor.set('value',tempString);
             dwr.util.setValue("threadList", tempString, { escapeHtml:false });
 
         },
@@ -1330,7 +1318,8 @@ dd.leftdl {
         <input type="hidden" name="dataOnly" id="dataOnly">
         <input type="hidden" name="cmd" value="">
         <input type="hidden"  name="defaultStructure" id="defaultStructure" value="">
-        <input type="hidden" name="shards" id="numberOfShards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
+        <input type="hidden" name="shards" id="numberOfShards"
+               value="<%=Config.getIntProperty("es.index.number_of_shards", 1)%>">
 
         <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
         <!-- START Cache TAB -->
@@ -1897,6 +1886,11 @@ dd.leftdl {
         <img style="display:none;" id="sysInfoProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <br/>
          <div class="buttonRow" style="text-align:right;width:98% !important;">
+             <checkbox id="hideSystemThreads" name="hideSystemThreads" value="true" dojoType="dijit.form.CheckBox"
+                       checked="true"></checkbox>&nbsp;&nbsp;
+             <label for="hideSystemThreads"><%= LanguageUtil.get(pageContext, "Hide-System-Threads")
+                     .replaceAll("-", " ") %>
+             </label>&nbsp;&nbsp;
             <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="resetIcon">
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload") %>
             </button>
@@ -1976,7 +1970,7 @@ dd.leftdl {
 
  	<div align="center" style="padding-top: 10px;">
 		<label name="index"><%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%></label>
-  		<input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
+        <input type="text" id="shards" name="shards" value="<%=Config.getIntProperty("es.index.number_of_shards", 1)%>">
   	</div><br />
   	<div class="buttonRow" align="center">
 		<button dojoType="dijit.form.Button" iconClass="cancelIcon" onClick="javascript:dijit.byId('addIndex').hide();"><%= LanguageUtil.get(pageContext, "Cancel") %></button>&nbsp; &nbsp;

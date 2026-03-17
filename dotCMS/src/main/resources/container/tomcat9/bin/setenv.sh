@@ -28,10 +28,23 @@ export DB_USERNAME=${DB_USERNAME:-"dotcmsdbuser"}
 export DB_PASSWORD=${DB_PASSWORD:-"password"}
 export DB_HOST=${DB_HOST:-"db.dotcms.site"}
 export DB_NAME=${DB_NAME:-"dotcms"}
-export DB_MAX_WAIT=${DB_MAX_WAIT:-"180000"}
+
+# Max Connection Lifetime 30m
+export DB_MAX_WAIT=${DB_MAX_WAIT:-"1800000"}
+
+# Min Idle Connections
+export DB_MIN_IDLE=${DB_MIN_IDLE:-"1"}
+
+# Max Connections
 export DB_MAX_TOTAL=${DB_MAX_TOTAL:-"200"}
-export DB_CONNECTION_TIMEOUT=${DB_CONNECTION_TIMEOUT:-"5000"}
-export DB_MIN_IDLE=${DB_MIN_IDLE:-"10"}
+
+# Try new Connection Timeout - 30s
+export DB_CONNECTION_TIMEOUT=${DB_CONNECTION_TIMEOUT:-"30000"}
+
+# remove idle connections after 5m
+export DB_IDLE_TIMEOUT=${DB_IDLE_TIMEOUT:-"300000"}
+
+
 export DB_VALIDATION_QUERY=${DB_VALIDATION_QUERY:-""}
 export DB_LEAK_DETECTION_THRESHOLD=${DB_LEAK_DETECTION_THRESHOLD:-"300000"}
 export DB_DEFAULT_TRANSACTION_ISOLATION=${DB_DEFAULT_TRANSACTION_ISOLATION:-""}

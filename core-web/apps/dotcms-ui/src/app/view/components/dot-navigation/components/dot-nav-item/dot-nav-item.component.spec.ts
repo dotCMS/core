@@ -1,220 +1,362 @@
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
+
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMenu } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
+import { DotCurrentUserService, DotSystemConfigService } from '@dotcms/data-access';
+import { MenuGroup } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
 
 import { DotNavItemComponent } from './dot-nav-item.component';
 
-import { LABEL_IMPORTANT_ICON } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
-import { DotRandomIconPipeModule } from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe.module';
-import { dotMenuMock } from '../../services/dot-navigation.service.spec';
-import { DotNavIconModule } from '../dot-nav-icon/dot-nav-icon.module';
+import {
+    LABEL_IMPORTANT_ICON,
+    DotRandomIconPipe
+} from '../../../../pipes/dot-radom-icon/dot-random-icon.pipe';
+import { DotNavIconComponent } from '../dot-nav-icon/dot-nav-icon.component';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
+const defaultMenu: MenuGroup = {
+    id: '123',
+    label: 'Name',
+    icon: 'icon',
+    isOpen: false,
+    menuItems: [
+        {
+            active: true,
+            ajax: true,
+            angular: true,
+            id: '123',
+            label: 'Label 1',
+            url: 'url/one',
+            menuLink: 'url/one',
+            parentMenuId: '123',
+            parentMenuLabel: 'Name',
+            parentMenuIcon: 'icon'
+        },
+        {
+            active: false,
+            ajax: true,
+            angular: true,
+            id: '456',
+            label: 'Label 2',
+            url: 'url/two',
+            menuLink: 'url/two',
+            parentMenuId: '123',
+            parentMenuLabel: 'Name',
+            parentMenuIcon: 'icon'
+        }
+    ]
+};
+
+const menuForStore = {
+    active: false,
+    id: '123',
+    isOpen: false,
+    menuItems: defaultMenu.menuItems,
+    name: 'Name',
+    tabDescription: 'Description',
+    tabIcon: 'icon',
+    tabName: 'Name',
+    url: 'url',
+    label: 'Name'
+};
+
 @Component({
-    selector: 'dot-test-host-component',
-    template: `
-        <dot-nav-item [data]="menu" [collapsed]="collapsed"></dot-nav-item>
-    `,
-    standalone: false
+    selector: 'dot-nav-item-host',
+    standalone: true,
+    imports: [DotNavItemComponent],
+    template: '<dot-nav-item [data]="menu" [collapsed]="collapsed"></dot-nav-item>'
 })
 class TestHostComponent {
-    menu: DotMenu = {
-        ...dotMenuMock(),
-        active: true
-    };
+    menu: MenuGroup = { ...defaultMenu };
     collapsed = false;
 }
 
 describe('DotNavItemComponent', () => {
-    let fixtureHost: ComponentFixture<TestHostComponent>;
-    let componentHost: TestHostComponent;
+    let spectator: Spectator<TestHostComponent>;
     let component: DotNavItemComponent;
-    let de: DebugElement;
-    let deHost: DebugElement;
-    let navItem: DebugElement;
-    let subNav: DebugElement;
+    let host: TestHostComponent;
+    let globalStore: InstanceType<typeof GlobalStore>;
+    let navItemEl: HTMLElement;
+    let subNavDe: DebugElement;
 
-    // Mock getClientRects globally to avoid undefined errors
     beforeAll(() => {
-        Element.prototype.getClientRects = jest.fn(() => [
-            {
-                bottom: 1000,
-                height: 200,
-                top: 800,
-                left: 0,
-                right: 200,
-                width: 200,
-                x: 0,
-                y: 800
-            }
-        ]);
-
-        Element.prototype.getBoundingClientRect = jest.fn(() => ({
-            bottom: 1000,
-            height: 200,
-            top: 800,
-            left: 0,
-            right: 200,
-            width: 200,
-            x: 0,
-            y: 800
-        }));
+        Element.prototype.getClientRects = jest.fn(
+            () =>
+                [
+                    {
+                        bottom: 1000,
+                        height: 200,
+                        top: 800,
+                        left: 0,
+                        right: 200,
+                        width: 200,
+                        x: 0,
+                        y: 800
+                    }
+                ] as unknown as DOMRectList
+        );
+        Element.prototype.getBoundingClientRect = jest.fn(
+            () =>
+                ({
+                    bottom: 1000,
+                    height: 200,
+                    top: 800,
+                    left: 0,
+                    right: 200,
+                    width: 200,
+                    x: 0,
+                    y: 800
+                }) as unknown as DOMRect
+        );
     });
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotNavItemComponent, DotSubNavComponent],
-            imports: [
-                DotNavIconModule,
-                DotIconModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                TooltipModule,
-                DotRandomIconPipeModule
-            ]
-        }).compileComponents();
-    }));
+    const createComponent = createComponentFactory({
+        component: TestHostComponent,
+        imports: [
+            RouterTestingModule,
+            NoopAnimationsModule,
+            TooltipModule,
+            DotRandomIconPipe,
+            DotSubNavComponent,
+            DotNavIconComponent
+        ],
+        providers: [
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+            {
+                provide: DotSystemConfigService,
+                useValue: { getSystemConfig: () => of({}) }
+            },
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
+        detectChanges: false
+    });
 
     beforeEach(() => {
-        fixtureHost = TestBed.createComponent(TestHostComponent);
-        deHost = fixtureHost.debugElement;
-        componentHost = fixtureHost.componentInstance;
-        de = deHost.query(By.css('dot-nav-item'));
-        component = de.componentInstance;
-        fixtureHost.detectChanges();
-        navItem = de.query(By.css('.dot-nav__item'));
-        subNav = de.query(By.css('dot-sub-nav'));
+        defaultMenu.isOpen = true;
+        spectator = createComponent();
+        host = spectator.component;
+        host.menu = { ...defaultMenu };
+        host.collapsed = false;
+        component = spectator.query(DotNavItemComponent);
+        globalStore = spectator.inject(GlobalStore);
+        globalStore.loadMenu([menuForStore]);
+        spectator.detectChanges();
+
+        navItemEl = spectator.query(byTestId('nav-item')) as HTMLElement;
+        subNavDe = spectator.debugElement.query(By.css('dot-sub-nav'));
     });
 
     it('should set classes', () => {
-        expect(navItem.nativeElement.classList.contains('dot-nav__item--active')).toBe(true);
+        expect(navItemEl?.classList.contains('dot-nav__item--active')).toBe(true);
     });
 
     it('should have title wrapper set', () => {
-        const title: DebugElement = de.query(By.css('.dot-nav__title'));
-
+        const title = spectator.query('.dot-nav__title');
         expect(title).toBeDefined();
     });
 
     it('should have icons set', () => {
-        const icon: DebugElement = de.query(By.css('dot-nav-icon'));
-        const arrow: DebugElement = de.query(By.css('.dot-nav__item-arrow'));
-
-        expect(icon.componentInstance.icon).toBe('icon');
-        expect(arrow.componentInstance.name).toBe('arrow_drop_up');
+        const iconDe = spectator.debugElement.query(By.css('dot-nav-icon'));
+        const arrow = spectator.query(byTestId('nav-item-toggle'))?.querySelector('i');
+        expect(iconDe?.componentInstance?.icon).toBe('icon');
+        expect(arrow?.classList.contains('pi-chevron-up')).toBe(true);
     });
 
     it('should avoid label_important icon', () => {
-        componentHost.menu.tabIcon = LABEL_IMPORTANT_ICON;
-        fixtureHost.detectChanges();
-        const icon: DebugElement = de.query(By.css('dot-nav-icon'));
-
-        expect(icon.componentInstance.icon).not.toBe(LABEL_IMPORTANT_ICON);
+        host.menu = { ...defaultMenu, icon: LABEL_IMPORTANT_ICON };
+        spectator.detectChanges();
+        const iconDe = spectator.debugElement.query(By.css('dot-nav-icon'));
+        expect(iconDe?.componentInstance?.icon).not.toBe(LABEL_IMPORTANT_ICON);
     });
 
     it('should emit menuClick when nav__item is clicked', () => {
+        const mainArea = spectator.query(byTestId('nav-item-main'));
         jest.spyOn(component.menuClick, 'emit');
-        navItem.nativeElement.dispatchEvent(new MouseEvent('click', {}));
+        (mainArea as HTMLElement)?.click();
         expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
     });
 
+    describe('Toggle functionality', () => {
+        it('should have two clickable areas (main and toggle)', () => {
+            const mainArea = spectator.query(byTestId('nav-item-main'));
+            const toggleArea = spectator.query(byTestId('nav-item-toggle'));
+            expect(mainArea).toBeDefined();
+            expect(toggleArea).toBeDefined();
+        });
+
+        it('should emit menuClick when clicking on the main area (first 2/3)', () => {
+            const mainArea = spectator.query(byTestId('nav-item-main')) as HTMLElement;
+            jest.spyOn(component.menuClick, 'emit');
+            mainArea?.click();
+            spectator.detectChanges();
+            expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
+            expect(component.menuClick.emit).toHaveBeenCalledWith({
+                originalEvent: expect.any(MouseEvent),
+                data: expect.objectContaining({ id: '123', label: 'Name' })
+            });
+        });
+
+        it('should emit menuClick with toggleOnly flag when clicking on toggle area (last 1/3)', () => {
+            const toggleArea = spectator.query(byTestId('nav-item-toggle')) as HTMLElement;
+            jest.spyOn(component.menuClick, 'emit');
+            toggleArea?.click();
+            spectator.detectChanges();
+            expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
+            expect(component.menuClick.emit).toHaveBeenCalledWith({
+                originalEvent: expect.any(MouseEvent),
+                data: expect.objectContaining({ id: '123' }),
+                toggleOnly: true
+            });
+        });
+
+        it('should emit menuClick without toggleOnly flag when clicking on main area', () => {
+            const mainArea = spectator.query(byTestId('nav-item-main')) as HTMLElement;
+            jest.spyOn(component.menuClick, 'emit');
+            mainArea?.click();
+            spectator.detectChanges();
+            expect(component.menuClick.emit).toHaveBeenCalledWith(
+                expect.not.objectContaining({ toggleOnly: true })
+            );
+        });
+
+        it('should stop propagation when clicking toggle area', () => {
+            const toggleArea = spectator.query(byTestId('nav-item-toggle')) as HTMLElement;
+            const event = new MouseEvent('click', { bubbles: true });
+            jest.spyOn(event, 'stopPropagation');
+            toggleArea?.dispatchEvent(event);
+            expect(event.stopPropagation).toHaveBeenCalled();
+        });
+    });
+
     it('should set label correctly', () => {
-        const label: DebugElement = de.query(By.css('.dot-nav__item-label'));
-        expect(label.nativeElement.textContent.trim()).toBe('Name');
+        const label = spectator.query(byTestId('nav-item-label'));
+        expect(label?.textContent?.trim()).toBe('Name');
     });
 
     describe('dot-sub-nav', () => {
         it('should set position correctly if there is not enough space at the bottom', async () => {
-            deHost.componentInstance.collapsed = true;
-
-            // Mock getClientRects to return a valid rect with bottom property
+            defaultMenu.isOpen = true;
+            spectator = createComponent();
+            host = spectator.component;
+            host.menu = { ...defaultMenu };
+            host.collapsed = true;
+            component = spectator.query(DotNavItemComponent);
+            globalStore = spectator.inject(GlobalStore);
+            globalStore.loadMenu([menuForStore]);
+            spectator.detectChanges();
+            navItemEl = spectator.query(byTestId('nav-item')) as HTMLElement;
+            const subNav = spectator.debugElement.query(By.css('dot-sub-nav'))
+                ?.componentInstance as DotSubNavComponent;
             const mockRect = { bottom: 2000, height: 200, top: 1800 };
-            jest.spyOn(subNav.componentInstance.ul.nativeElement, 'getClientRects').mockReturnValue(
-                [mockRect]
-            );
-
-            // Mock window.innerHeight using Object.defineProperty
+            jest.spyOn(subNav?.ul?.nativeElement, 'getClientRects').mockReturnValue([mockRect]);
             Object.defineProperty(window, 'innerHeight', {
                 writable: true,
                 configurable: true,
                 value: 1760
             });
-
-            fixtureHost.detectChanges();
-
-            navItem.triggerEventHandler('mouseenter', {});
-            fixtureHost.detectChanges();
-
-            await fixtureHost.whenStable();
-
-            expect(subNav.styles).toBeDefined();
+            spectator.detectChanges();
+            navItemEl?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            expect(component.customStyles).toBeDefined();
         });
 
         it('should set position correctly if there is enough space at the bottom', () => {
-            deHost.componentInstance.collapsed = true;
-
-            // Mock getClientRects to return a rect that does NOT fit in the bottom space
+            defaultMenu.isOpen = true;
+            spectator = createComponent();
+            host = spectator.component;
+            host.menu = { ...defaultMenu };
+            host.collapsed = true;
+            component = spectator.query(DotNavItemComponent);
+            globalStore = spectator.inject(GlobalStore);
+            globalStore.loadMenu([menuForStore]);
+            spectator.detectChanges();
+            navItemEl = spectator.query(byTestId('nav-item')) as HTMLElement;
+            const subNav = spectator.debugElement.query(By.css('dot-sub-nav'));
+            const subNavComp = subNav?.componentInstance as DotSubNavComponent;
             const mockRect = { bottom: 2000, height: 200, top: 1800 };
-            jest.spyOn(subNav.componentInstance.ul.nativeElement, 'getClientRects').mockReturnValue(
-                [mockRect]
-            );
-
-            // Mock window.innerHeight to be smaller than the bottom position
+            jest.spyOn(subNavComp?.ul?.nativeElement, 'getClientRects').mockReturnValue([mockRect]);
             Object.defineProperty(window, 'innerHeight', {
                 writable: true,
                 configurable: true,
                 value: 1200
             });
-
-            subNav.nativeElement.style.position = 'absolute';
-            subNav.nativeElement.style.top = '5000px'; // moving it out of the window
-            de.nativeElement.style.position = 'absolute';
-            de.nativeElement.style.top = '800px';
-
-            fixtureHost.detectChanges();
-
-            navItem.triggerEventHandler('mouseenter', {});
-            fixtureHost.detectChanges();
-
-            expect(subNav.styles.cssText).toEqual(
-                'height: 0px; overflow: hidden; position: absolute; top: 5000px; bottom: 0px;'
+            (subNav?.nativeElement as HTMLElement).style.position = 'absolute';
+            (subNav?.nativeElement as HTMLElement).style.top = '5000px';
+            navItemEl.style.position = 'absolute';
+            navItemEl.style.top = '800px';
+            spectator.detectChanges();
+            navItemEl?.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+            spectator.detectChanges();
+            expect(component.customStyles).toEqual(
+                expect.objectContaining({
+                    bottom: '0',
+                    top: 'auto'
+                })
             );
         });
 
         it('should reset menu position when mouseleave', () => {
-            component.collapsed = true;
-            de.triggerEventHandler('mouseleave', {});
-            fixtureHost.detectChanges();
-            expect(subNav.styles.cssText).toEqual('height: 0px; overflow: hidden;');
+            defaultMenu.isOpen = true;
+            spectator = createComponent();
+            host = spectator.component;
+            host.menu = { ...defaultMenu };
+            host.collapsed = true;
+            component = spectator.query(DotNavItemComponent);
+            globalStore = spectator.inject(GlobalStore);
+            globalStore.loadMenu([menuForStore]);
+            spectator.detectChanges();
+            const navItemHost = spectator.query('dot-nav-item') as HTMLElement;
+            navItemHost?.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+            spectator.detectChanges();
+            expect(component.customStyles).toEqual({ overflow: 'hidden' });
         });
 
         it('should set data correctly', () => {
-            expect(subNav.componentInstance.data).toEqual(componentHost.menu);
-            expect(subNav.componentInstance.collapsed).toBe(false);
+            expect(subNavDe?.componentInstance?.data).toEqual(
+                expect.objectContaining({ id: '123', label: 'Name' })
+            );
+            expect(subNavDe?.componentInstance?.collapsed).toBe(false);
         });
 
         it('should emit itemClick on dot-sub-nav itemClick', () => {
             jest.spyOn(component.itemClick, 'emit');
-            subNav.nativeElement.dispatchEvent(new CustomEvent('itemClick', {}));
+            (subNavDe?.componentInstance as DotSubNavComponent)?.itemClick?.emit({
+                originalEvent: new MouseEvent('click'),
+                data: defaultMenu.menuItems[0]
+            });
             expect(component.itemClick.emit).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('Collapsed', () => {
         beforeEach(() => {
-            componentHost.collapsed = true;
-            fixtureHost.detectChanges();
+            defaultMenu.isOpen = true;
+            spectator = createComponent();
+            host = spectator.component;
+            host.menu = { ...defaultMenu };
+            host.collapsed = true;
+            component = spectator.query(DotNavItemComponent);
+            globalStore = spectator.inject(GlobalStore);
+            globalStore.loadMenu([menuForStore]);
+            spectator.detectChanges();
+            subNavDe = spectator.debugElement.query(By.css('dot-sub-nav'));
         });
 
         it('should set data correctly on sub-nav', () => {
-            expect(subNav.componentInstance.collapsed).toBe(true);
+            expect(subNavDe?.componentInstance?.collapsed).toBe(true);
         });
     });
 });

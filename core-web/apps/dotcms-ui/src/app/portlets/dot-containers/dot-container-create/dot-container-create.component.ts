@@ -1,22 +1,40 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { TabsModule } from 'primeng/tabs';
+
 import { pluck, take } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotContainerEntity } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotContainerHistoryComponent } from './dot-container-history/dot-container-history.component';
+import { DotContainerPermissionsComponent } from './dot-container-permissions/dot-container-permissions.component';
+import { DotContainerPropertiesComponent } from './dot-container-properties/dot-container-properties.component';
+
+import { DotGlobalMessageComponent } from '../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-container-create',
     templateUrl: './dot-container-create.component.html',
-    styleUrls: ['./dot-container-create.component.scss'],
-    standalone: false
+    imports: [
+        DotPortletBaseComponent,
+        TabsModule,
+        DotMessagePipe,
+        DotContainerPropertiesComponent,
+        DotContainerPermissionsComponent,
+        DotContainerHistoryComponent,
+        DotGlobalMessageComponent
+    ]
 })
 export class DotContainerCreateComponent implements OnInit {
     private activatedRoute = inject(ActivatedRoute);
     private dotRouterService = inject(DotRouterService);
 
     containerId = '';
+    activeTab = 0;
 
     ngOnInit() {
         this.activatedRoute.data

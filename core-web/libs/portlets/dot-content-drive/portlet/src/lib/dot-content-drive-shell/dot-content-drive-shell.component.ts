@@ -1,20 +1,26 @@
+import { of } from 'rxjs';
+
 import { Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     effect,
     ElementRef,
     inject,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { LazyLoadEvent, MessageService, SortEvent } from 'primeng/api';
+import { MessageService, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
+
+import { catchError } from 'rxjs/operators';
 
 import {
     DotFolderService,
@@ -24,7 +30,11 @@ import {
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { ContextMenuData, DotContentDriveItem } from '@dotcms/dotcms-models';
+import {
+    ContextMenuData,
+    DotContentDriveItem,
+    DotContentDrivePaginateEvent
+} from '@dotcms/dotcms-models';
 import {
     DotFolderListViewComponent,
     DotContentDriveUploadFiles,
@@ -50,7 +60,7 @@ import {
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { encodeFilters } from '../utils/functions';
+import { encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -63,7 +73,7 @@ import { encodeFilters } from '../utils/functions';
         ToastModule,
         DialogModule,
         DotContentDriveDialogFolderComponent,
-        MessagesModule,
+        MessageModule,
         ButtonModule,
         DotMessagePipe,
         DotContentDriveDropzoneComponent,
@@ -71,13 +81,16 @@ import { encodeFilters } from '../utils/functions';
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
-    styleUrl: './dot-content-drive-shell.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
+    }
 })
 export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
+
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
 
@@ -88,20 +101,39 @@ export class DotContentDriveShellComponent {
     readonly #localStorageService = inject(DotLocalstorageService);
 
     readonly $items = this.#store.items;
-    readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
+
     readonly $contextMenuData = this.#store.contextMenu;
 
     readonly $dialog = this.#store.dialog;
 
-    readonly DOT_CONTENT_DRIVE_STATUS = DotContentDriveStatus;
     readonly DIALOG_TYPE = DIALOG_TYPE;
 
-    // Default to false to avoid showing the message banner on init
-    readonly $showMessage = signal<boolean>(false);
+    readonly $offset = computed(() => this.#store.pagination().offset, {
+        equal: (a, b) => a === b
+    });
+
+    readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+    readonly $showMessage = signal(false);
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
+
+    readonly $totalItems = computed(() => {
+        const pagination = untracked(() => this.#store.pagination());
+        const currentPage = pagination.page; // 1-indexed
+        const limit = pagination.limit;
+        const page = this.#store.pages().at(-1);
+
+        const items = untracked(() => this.#store.items());
+
+        // The API uses cursor-based pagination and does not return a total count.
+        // When hasMoreContent is true, we return one page beyond current so PrimeNG enables the next-page button.
+        // When hasMoreContent is false, we can calculate the exact total.
+        return page.hasMoreContent
+            ? limit * (currentPage + 1)
+            : limit * (currentPage - 1) + items.length;
+    });
 
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
@@ -114,25 +146,47 @@ export class DotContentDriveShellComponent {
 
         if (path && path.length) {
             queryParams['path'] = path;
+        } else {
+            queryParams['path'] = null;
         }
 
         if (filters && Object.keys(filters).length) {
             queryParams['filters'] = encodeFilters(filters);
         } else {
-            delete queryParams['filters'];
+            queryParams['filters'] = null;
         }
 
-        const urlTree = this.#router.createUrlTree([], { queryParams });
+        const urlTree = this.#router.createUrlTree([], {
+            queryParams,
+            queryParamsHandling: 'merge'
+        });
         this.#location.go(urlTree.toString());
+    });
+
+    /**
+     * Effect that sets the path when a node is selected
+     * Uses untracked to avoid creating a dependency on path signal
+     */
+    readonly setPathEffect = effect(() => {
+        const selectedNode = this.#store.selectedNode();
+
+        if (selectedNode) {
+            // Read current path without tracking it to avoid circular dependencies
+            const currentPath = untracked(() => this.#store.path()) ?? '';
+
+            if (selectedNode.data.path != currentPath) {
+                this.#store.setPath(selectedNode.data.path);
+            }
+        }
     });
 
     ngOnInit() {
         this.$showMessage.set(
-            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY) // The existence of the key means the message banner has been hidden
+            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY)
         );
     }
 
-    protected onPaginate(event: LazyLoadEvent) {
+    protected onPaginate(event: DotContentDrivePaginateEvent) {
         // Explicit check because it can potentially be 0
         if (event.rows === undefined || event.first === undefined) {
             return;
@@ -140,7 +194,8 @@ export class DotContentDriveShellComponent {
 
         this.#store.setPagination({
             limit: event.rows,
-            offset: event.first
+            page: event.page ?? 1,
+            offset: event.first ?? 0
         });
     }
 
@@ -171,6 +226,22 @@ export class DotContentDriveShellComponent {
      * @param contentlet The content item that was double clicked
      */
     protected onDoubleClick(contentlet: DotContentDriveItem) {
+        if (isFolder(contentlet)) {
+            this.#store.setSelectedNode({
+                data: {
+                    type: 'folder',
+                    path: contentlet.path,
+                    hostname: this.#store.currentSite()?.hostname,
+                    id: contentlet.identifier,
+                    fromTable: true
+                },
+                key: contentlet.identifier,
+                label: contentlet.path,
+                leaf: false
+            });
+            return;
+        }
+
         this.#navigationService.editContent(contentlet);
     }
 
@@ -196,6 +267,7 @@ export class DotContentDriveShellComponent {
      */
     protected onCloseMessage() {
         this.$showMessage.set(false);
+
         this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
 
@@ -317,9 +389,9 @@ export class DotContentDriveShellComponent {
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.add-dotasset-error'),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.add-dotasset-error-detail'
-                        ),
+                        detail:
+                            error.error?.errors?.[0]?.message ??
+                            this.#dotMessageService.get('content-drive.add-dotasset-error-detail'),
                         life: ERROR_MESSAGE_LIFE
                     });
                 }
@@ -332,21 +404,37 @@ export class DotContentDriveShellComponent {
      * @param {DotContentDriveMoveItems} event - The move items event
      */
     protected onMoveItems(event: DotContentDriveMoveItems): void {
-        const { folderName, assetCount, pathToMove, dragItemsInodes } = this.getMoveMetadata(event);
+        const { folderName, pathToMove, dragItems } = this.getMoveMetadata(event);
 
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get(
-                'content-drive.move-to-folder-in-progress',
-                folderName
-            ),
-            detail: this.#dotMessageService.get(
-                'content-drive.move-to-folder-in-progress-detail',
-                assetCount.toString(),
-                `${assetCount > 1 ? 's ' : ' '}`
-            )
-        });
+        const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
+        const assetContentletsCount = dragItems.contentlets.length;
 
+        if (dragItems.folders.length > 0) {
+            this.#messageService.add({
+                severity: 'info',
+                summary: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-with-folders'
+                ),
+                detail: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-detail-with-folders',
+                    assetContentletsCount.toString(),
+                    `${assetContentletsCount > 1 ? 's ' : ' '}`
+                )
+            });
+        } else {
+            this.#messageService.add({
+                severity: 'info',
+                summary: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress',
+                    folderName
+                ),
+                detail: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-detail',
+                    assetContentletsCount.toString(),
+                    `${assetContentletsCount > 1 ? 's ' : ' '}`
+                )
+            });
+        }
         this.#dotWorkflowActionsFireService
             .bulkFire({
                 additionalParams: {
@@ -362,26 +450,75 @@ export class DotContentDriveShellComponent {
                 contentletIds: dragItemsInodes,
                 workflowActionId: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
             })
-            .subscribe(({ successCount }) => {
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('content-drive.move-to-folder-success'),
-                    detail: this.#dotMessageService.get(
-                        'content-drive.move-to-folder-success-detail',
-                        successCount.toString(),
-                        `${successCount > 1 ? 's ' : ' '}`,
-                        folderName
-                    ),
-                    life: SUCCESS_MESSAGE_LIFE
+            .pipe(
+                catchError(() => {
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get('content-drive.move-to-folder-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-error-detail'
+                        ),
+                        life: ERROR_MESSAGE_LIFE
+                    });
+
+                    return of({ successCount: 0, fails: [] });
+                })
+            )
+            .subscribe(({ successCount, fails }) => {
+                if (successCount > 0) {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-success'
+                        ),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-success-detail',
+                            successCount.toString(),
+                            `${successCount > 1 ? 's ' : ' '}`,
+                            folderName
+                        ),
+                        life: SUCCESS_MESSAGE_LIFE
+                    });
+                    this.#store.loadItems();
+                }
+
+                fails.forEach(({ errorMessage, inode }) => {
+                    const item = dragItems.contentlets.find((item) => item.inode === inode);
+
+                    const title = item?.title ?? inode;
+
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.move-to-folder-error-with-title',
+                            title
+                        ),
+                        detail: errorMessage,
+                        life: ERROR_MESSAGE_LIFE
+                    });
                 });
 
                 this.#store.cleanDragItems();
-                this.#store.loadItems();
             });
     }
 
+    protected onTableDrop(event: DotContentDriveItem) {
+        if (!isFolder(event)) {
+            return;
+        }
+
+        this.onMoveItems({
+            targetFolder: {
+                type: 'folder',
+                path: event.path,
+                hostname: this.#store.currentSite()?.hostname,
+                id: event.identifier
+            }
+        });
+    }
+
     protected getMoveMetadata(event: DotContentDriveMoveItems) {
-        const dragItemsInodes = this.#store.dragItems().map((item) => item.inode);
+        const dragItems = this.#store.dragItems();
 
         const path = event.targetFolder.path?.length > 0 ? event.targetFolder.path : '/';
 
@@ -394,8 +531,16 @@ export class DotContentDriveShellComponent {
         return {
             pathToMove: pathToMove,
             folderName: folderName,
-            assetCount: dragItemsInodes.length,
-            dragItemsInodes
+            assetCount: dragItems.contentlets.length + dragItems.folders.length,
+            dragItems
         };
+    }
+
+    protected onSelectItems(items: DotContentDriveItem[]) {
+        this.#store.setSelectedItems(items);
+    }
+
+    protected onTableScroll() {
+        this.#store.resetContextMenu();
     }
 }

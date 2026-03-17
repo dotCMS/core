@@ -41,7 +41,6 @@ THIS FILE AND ITS INCLUDES
 
     <link rel="stylesheet" type="text/css" href="<%=dojoPath%>/dijit/themes/dijit.css">
     <link rel="stylesheet" type="text/css" href="/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>">
-	<link rel="stylesheet" href="/dotcms-block-editor/styles.css" />
 	<link rel="stylesheet" href="/html/assets/monaco-editor/min/vs/editor/editor.main.css" />
 
 	<%
@@ -91,6 +90,19 @@ THIS FILE AND ITS INCLUDES
 	<script type="text/javascript" src="/html/js/dojo/custom-build/dojo/dojo.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/html/js/dojo/custom-build/build/build.js?b=<%= ReleaseInfo.getVersion() %>"></script>
   	<script type="text/javascript" src="/html/common/javascript.jsp?b=<%= ReleaseInfo.getVersion() %>"></script>
+
+	<!-- DWR Cookie Security Configuration -->
+	<script type="text/javascript">
+		// Configuration for DWR cookie security enhancement
+		// Set via dotmarketing-config.properties:
+		//   DWRSESSIONID_SECURE=true/false (default: false)
+		//   DWRSESSIONID_SAMESITE=Strict|Lax|None (default: empty/disabled)
+		window.dwrCookieSecurityConfig = {
+			secure: <%= Config.getBooleanProperty("DWRSESSIONID_SECURE", false) %>,
+			sameSite: '<%= Config.getStringProperty("DWRSESSIONID_SAMESITE", "") %>'
+		};
+	</script>
+	<script type="text/javascript" src="/html/js/dwr-cookie-security.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/engine.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/util.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 	<script type="text/javascript" src="/dwr/interface/HostAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>

@@ -1,18 +1,18 @@
 <div
     [pTooltip]="disabled ? ('editpage.personalization.content.add.message' | dm) : null"
     [tooltipPosition]="disabled ? 'bottom' : null"
-    class="dot-persona-selector__container h-full flex-auto flex align-items-center gap-3">
+    class="dot-persona-selector__container h-full flex-auto flex items-center gap-4">
     @if (persona) {
         <p-avatar
             [text]="persona?.name"
             [image]="persona?.photo"
             [badgeDisabled]="!persona?.personalized"
             pBadge
-            dotAvatar></p-avatar>
+            dotAvatar />
     }
 
     @if (!persona) {
-        <p-avatar [text]="'modes.persona.no.persona' | dm" dotAvatar></p-avatar>
+        <p-avatar [text]="'modes.persona.no.persona' | dm" dotAvatar />
     }
 
     <span class="dot-persona-selector__name">

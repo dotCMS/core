@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -36,7 +36,6 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
 @Component({
     imports: [
         AsyncPipe,
-        NgIf,
         DotExperimentsUiHeaderComponent,
         DotExperimentsConfigurationVariantsComponent,
         DotExperimentsConfigurationGoalsComponent,
@@ -56,7 +55,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
-    styleUrls: ['./dot-experiments-configuration.component.scss'],
+    host: { class: 'flex h-full w-full flex-col' },
     providers: [DotExperimentsConfigurationStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

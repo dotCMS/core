@@ -11,8 +11,8 @@ import {
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { ChipModule } from 'primeng/chip';
 import { MenuModule } from 'primeng/menu';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -42,8 +42,8 @@ import {
         CommonModule,
         AvatarModule,
         ButtonModule,
-        ChipModule,
         MenuModule,
+        TagModule,
         TooltipModule,
         DotGravatarDirective,
         DotMessagePipe,
@@ -51,7 +51,6 @@ import {
     ],
     providers: [DatePipe],
     templateUrl: './dot-history-timeline-item.component.html',
-    styleUrls: ['./dot-history-timeline-item.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotHistoryTimelineItemComponent {
@@ -101,35 +100,44 @@ export class DotHistoryTimelineItemComponent {
         const labels = this.$labels();
         const item = this.$item();
 
-        return [
-            {
+        const items = [];
+
+        if (!item.live) {
+            items.push({
+                id: 'restore',
                 label: labels.restore,
-                disabled: item.live,
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.RESTORE,
                         item
                     })
-            },
-            // {
-            //     label: labels.compare,
-            //     disabled: true,
-            //     command: () =>
-            //         this.actionTriggered.emit({
-            //             type: DotHistoryTimelineItemActionType.COMPARE,
-            //             item
-            //         })
-            // },
-            {
+            });
+        }
+        if (!item.working) {
+            items.push({
+                id: 'compare',
+                label: labels.compare,
+                command: () =>
+                    this.actionTriggered.emit({
+                        type: DotHistoryTimelineItemActionType.COMPARE,
+                        item
+                    })
+            });
+        }
+
+        if (!item.working || !item.live) {
+            items.push({
+                id: 'delete',
                 label: labels.delete,
-                disabled: item.working || item.live, // disable the delete button for working or live versions
                 command: () =>
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.DELETE,
                         item
                     })
-            }
-        ];
+            });
+        }
+
+        return items;
     });
 
     /**

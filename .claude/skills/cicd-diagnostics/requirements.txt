@@ -1,0 +1,17 @@
+# Python dependencies for cicd-diagnostics skill
+# No external dependencies required - uses standard library and GitHub CLI
+
+# Note: This skill uses the GitHub CLI (gh) which must be installed separately
+# The skill uses Python 3.8+ standard library modules:
+# - subprocess (for GitHub CLI calls)
+# - json (for JSON parsing)
+# - re (for regex)
+# - pathlib (for file operations)
+# - os, sys (standard system modules)
+
+# If you need to install GitHub CLI:
+# macOS: brew install gh
+# Linux: See https://github.com/cli/cli/blob/trunk/docs/install_linux.md
+# Windows: See https://github.com/cli/cli/blob/trunk/docs/install_windows.md
+
+

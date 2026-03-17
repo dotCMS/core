@@ -15,36 +15,13 @@ import {
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
+import { BaseApiClient } from '../base/api/base-api';
 
 /**
  * Client for interacting with the DotCMS Page API.
  * Provides methods to retrieve and manipulate pages.
  */
-export class PageClient {
-    /**
-     * Request options including authorization headers.
-     * @private
-     */
-    private requestOptions: DotRequestOptions;
-
-    /**
-     * Site ID for page requests.
-     * @private
-     */
-    private siteId: string;
-
-    /**
-     * DotCMS URL for page requests.
-     * @private
-     */
-    private dotcmsUrl: string;
-
-    /**
-     * HTTP client for making requests.
-     * @private
-     */
-    private httpClient: DotHttpClient;
-
+export class PageClient extends BaseApiClient {
     /**
      * Creates a new PageClient instance.
      *
@@ -73,10 +50,7 @@ export class PageClient {
         requestOptions: DotRequestOptions,
         httpClient: DotHttpClient
     ) {
-        this.requestOptions = requestOptions;
-        this.siteId = config.siteId || '';
-        this.dotcmsUrl = config.dotcmsUrl;
-        this.httpClient = httpClient;
+        super(config, requestOptions, httpClient);
     }
 
     /**
@@ -181,19 +155,32 @@ export class PageClient {
                 response.errors.forEach((error: { message: string }) => {
                     consola.error('[DotCMS GraphQL Error]: ', error.message);
                 });
+
+                const pageError = response.errors.find((error: { message: string }) =>
+                    error.message.includes('DotPage')
+                );
+
+                if (pageError) {
+                    // Throw HTTP error - will be caught and wrapped in DotErrorPage below
+                    throw new DotHttpError({
+                        status: 400,
+                        statusText: 'Bad Request',
+                        message: `GraphQL query failed for URL '${url}': ${pageError.message}`,
+                        data: response.errors
+                    });
+                }
             }
 
             const pageResponse = graphqlToPageEntity(response.data.page);
 
             if (!pageResponse) {
-                throw new DotErrorPage(
-                    `Page ${url} not found. Check the page URL and permissions.`,
-                    undefined,
-                    {
-                        query: completeQuery,
-                        variables: requestVariables
-                    }
-                );
+                // Throw HTTP error - will be caught and wrapped in DotErrorPage below
+                throw new DotHttpError({
+                    status: 404,
+                    statusText: 'Not Found',
+                    message: `Page ${url} not found. Check the page URL and permissions.`,
+                    data: response.errors
+                });
             }
 
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
@@ -207,7 +194,7 @@ export class PageClient {
                 }
             };
         } catch (error) {
-            // Handle DotHttpError instances from httpClient.request
+            // Handle DotHttpError instances
             if (error instanceof DotHttpError) {
                 throw new DotErrorPage(
                     `Page request failed for URL '${url}': ${error.message}`,

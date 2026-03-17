@@ -4,12 +4,12 @@ import { By } from '@angular/platform-browser';
 
 import { DotContainerPermissionsComponent } from './dot-container-permissions.component';
 
-import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 
 @Component({
     selector: 'dot-iframe',
-    template: '',
-    standalone: false
+    template: ''
 })
 export class IframeMockComponent {
     @Input() src: string;
@@ -34,13 +34,14 @@ describe('ContainerPermissionsComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
-                DotContainerPermissionsComponent,
-                IframeMockComponent,
-                DotTestHostComponent
-            ],
-            imports: [DotPortletBoxModule]
-        }).compileComponents();
+            declarations: [DotTestHostComponent],
+            imports: [DotContainerPermissionsComponent, DotPortletBoxComponent, IframeMockComponent]
+        })
+            .overrideComponent(DotContainerPermissionsComponent, {
+                remove: { imports: [IframeComponent] },
+                add: { imports: [IframeMockComponent] }
+            })
+            .compileComponents();
 
         fixture = TestBed.createComponent(DotContainerPermissionsComponent);
         de = fixture.debugElement;

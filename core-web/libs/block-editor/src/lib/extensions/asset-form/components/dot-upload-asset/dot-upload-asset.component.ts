@@ -10,7 +10,8 @@ import {
     ChangeDetectionStrategy,
     OnDestroy,
     HostListener,
-    ElementRef
+    ElementRef,
+    inject
 } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
@@ -31,7 +32,7 @@ export enum STATUS {
 @Component({
     selector: 'dot-upload-asset',
     templateUrl: './dot-upload-asset.component.html',
-    styleUrls: ['./dot-upload-asset.component.scss'],
+    styleUrls: ['./dot-upload-asset.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [shakeAnimation],
     standalone: false
@@ -70,12 +71,10 @@ export class DotUploadAssetComponent implements OnDestroy {
         }
     }
 
-    constructor(
-        private readonly sanitizer: DomSanitizer,
-        private readonly dotUploadFileService: DotUploadFileService,
-        private readonly cd: ChangeDetectorRef,
-        private readonly el: ElementRef
-    ) {}
+    private readonly sanitizer = inject(DomSanitizer);
+    private readonly dotUploadFileService = inject(DotUploadFileService);
+    private readonly cd = inject(ChangeDetectorRef);
+    private readonly el = inject(ElementRef);
 
     ngOnDestroy(): void {
         this.preventClose.emit(false);
@@ -168,7 +167,9 @@ export class DotUploadAssetComponent implements OnDestroy {
      */
     private setFile(file: File, buffer: string | ArrayBuffer): void {
         // Convert the buffer to a blob:
-        const videoBlob = new Blob([new Uint8Array(buffer as ArrayBufferLike)], {
+        // Ensure buffer is ArrayBuffer (not SharedArrayBuffer) for Blob compatibility
+        const arrayBuffer = buffer instanceof ArrayBuffer ? buffer : new ArrayBuffer(0);
+        const videoBlob = new Blob([new Uint8Array(arrayBuffer)], {
             type: 'video/mp4'
         });
 

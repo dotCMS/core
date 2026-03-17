@@ -1,13 +1,20 @@
 package com.dotcms.telemetry.collectors.workflow;
 
+import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 
 /**
  * Collect the count of Workflow Schemes
  */
+@ApplicationScoped
+@MetricsProfile({ProfileType.MINIMAL, ProfileType.STANDARD, ProfileType.FULL})
+@DashboardMetric(category = "system", priority = 2)
 public class SchemesDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

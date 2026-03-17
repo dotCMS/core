@@ -1,22 +1,24 @@
 import { Observable, of, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
     forwardRef,
+    inject,
     Input,
     Output,
-    ViewChild,
-    inject
+    ViewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { AutoComplete, AutoCompleteSelectEvent } from 'primeng/autocomplete';
+import { AutoComplete, AutoCompleteModule, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 
 import { switchMap, take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { Site } from '@dotcms/dotcms-js';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     CompleteEvent,
@@ -25,6 +27,9 @@ import {
     DotSimpleURL
 } from './models/dot-page-selector.models';
 import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
+
+import { DotDirectivesModule } from '../../../../shared/dot-directives.module';
+import { DotFieldHelperComponent } from '../../dot-field-helper/dot-field-helper.component';
 
 const NO_SPECIAL_CHAR = /^[a-zA-Z0-9._/-]*$/g;
 const REPLACE_SPECIAL_CHAR = /[^a-zA-Z0-9._/-]/g;
@@ -47,15 +52,25 @@ enum SearchType {
 @Component({
     selector: 'dot-page-selector',
     templateUrl: './dot-page-selector.component.html',
-    styleUrls: ['./dot-page-selector.component.scss'],
     providers: [
+        DotPageSelectorService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotPageSelectorComponent)
         }
     ],
-    standalone: false
+    imports: [
+        CommonModule,
+        FormsModule,
+        AutoCompleteModule,
+        DotDirectivesModule,
+        DotFieldHelperComponent,
+        DotMessagePipe
+    ],
+    host: {
+        class: 'relative'
+    }
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
     private dotPageSelectorService = inject(DotPageSelectorService);

@@ -2,7 +2,13 @@ package com.dotmarketing.portlets.containers.model;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotmarketing.beans.*;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
@@ -17,11 +23,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Containers in dotCMS allow you to specify both what types of Content can be added to a Page and how content of each
@@ -40,9 +45,6 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 
 	public static final String SYSTEM_CONTAINER = "SYSTEM_CONTAINER";
 
-    /*
-     * Convenience access 
-     */
     public static final String LEGACY_RELATION_TYPE = MultiTree.LEGACY_RELATION_TYPE;
 
 	private static final long serialVersionUID = 1L;
@@ -307,6 +309,27 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 	}
 
 
+	public String getHostId() throws DotDataException {
+		Host host = (Host)	getParentPermissionable();
+		return host.getIdentifier();
+	}
+
+
+
+
+	public String getHostName() throws DotDataException {
+		Host host = (Host)	getParentPermissionable();
+
+
+		return host.getHostname();
+	}
+
+
+	public String getVariant(){
+		return "DEFAULT";
+	}
+
+	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
 
 		try {

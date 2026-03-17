@@ -84,7 +84,7 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 const tr = view.state.tr;
 
                 component.instance.type = type;
-                component.instance.cancel.subscribe(() => {
+                component.instance.canceled.subscribe(() => {
                     removePlaceHolder(id);
                     abortControler.abort();
                     subscription$.unsubscribe();

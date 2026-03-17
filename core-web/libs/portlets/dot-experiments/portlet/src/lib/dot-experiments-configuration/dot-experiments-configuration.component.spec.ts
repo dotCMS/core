@@ -86,11 +86,10 @@ const defaultVmMock: ConfigurationViewModel = {
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
-    selector: `p-confirmPopup`,
+    selector: `p-confirmpopup`,
     template: `
         ConfirmPopupMockComponent
-    `,
-    standalone: true
+    `
 })
 export class ConfirmPopupMockComponent {}
 
@@ -102,8 +101,11 @@ describe('DotExperimentsConfigurationComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigurationComponent,
         componentProviders: [DotExperimentsConfigurationStore],
-        imports: [MockComponent(DotAddToBundleComponent), DotMessagePipe],
-
+        imports: [
+            MockComponent(DotAddToBundleComponent),
+            DotExperimentsConfigurationSchedulingComponent,
+            DotMessagePipe
+        ],
         providers: [
             ConfirmationService,
             {
@@ -182,7 +184,8 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
-        expect(spectator.query(DotExperimentsInlineEditTextComponent).disabled).toEqual(true);
+        const inlineEditComponent = spectator.query(DotExperimentsInlineEditTextComponent);
+        expect(inlineEditComponent.$disabled()).toEqual(true);
     });
 
     it('should show End Experiment after confirmation', () => {
@@ -199,7 +202,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(Menu)).toExist();
         spectator.query(Menu).model[1].command({ originalEvent: createFakeEvent('click') });
 
-        spectator.query(ConfirmDialog).accept();
+        spectator.query(ConfirmDialog).onAccept();
 
         expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
             EXPERIMENT_MOCK
@@ -241,7 +244,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(Menu)).toExist();
         spectator.query(Menu).model[3].command({ originalEvent: createFakeEvent('click') });
 
-        spectator.query(ConfirmDialog).accept();
+        spectator.query(ConfirmDialog).onAccept();
 
         expect(dotExperimentsConfigurationStore.cancelSchedule).toHaveBeenCalledWith(
             EXPERIMENT_MOCK

@@ -1,17 +1,7 @@
-@if (float) {
-    <p-button
-        (click)="toggle($event)"
-        [icon]="icon || ''"
-        class="dot-menu__button"
-        styleClass="p-button-sm p-button-rounded"
-        data-testid="dot-menu-button"></p-button>
-} @else {
-    <p-button
-        (click)="toggle($event)"
-        [icon]="icon || ''"
-        class="dot-menu__button"
-        styleClass="p-button-sm p-button-rounded p-button-text"
-        data-testid="dot-menu-button"></p-button>
-}
+<p-button
+    (onClick)="toggle($event)"
+    [icon]="$icon() || ''"
+    [styleClass]="$styleClass()"
+    data-testid="dot-menu-button" />
 
-<p-menu [popup]="true" [model]="model" #menu appendTo="body"></p-menu>
+<p-menu [popup]="true" [model]="$model()" #menu appendTo="body" />

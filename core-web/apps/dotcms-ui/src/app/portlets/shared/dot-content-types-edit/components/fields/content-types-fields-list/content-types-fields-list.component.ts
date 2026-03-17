@@ -1,3 +1,5 @@
+import { DragulaModule } from 'ng2-dragula';
+
 import { Component, inject, Input, OnInit, signal } from '@angular/core';
 
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
@@ -17,9 +19,8 @@ import { FieldService } from '../service';
  */
 @Component({
     selector: 'dot-content-types-fields-list',
-    styleUrls: ['./content-types-fields-list.component.scss'],
     templateUrl: './content-types-fields-list.component.html',
-    standalone: false
+    imports: [DragulaModule]
 })
 export class ContentTypesFieldsListComponent implements OnInit {
     @Input() baseType: string;

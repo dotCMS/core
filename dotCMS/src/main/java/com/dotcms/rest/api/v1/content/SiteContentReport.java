@@ -77,7 +77,7 @@ public class SiteContentReport implements ContentReport {
         Map<String, Long> entriesByContentTypes = null;
         try {
             entriesByContentTypes = this.contentTypeAPI.getEntriesByContentTypes();
-        } catch (final DotStateException | DotDataException e) {
+        } catch (final DotStateException e) {
             final String errorMsg = String.format("Error trying to retrieve total entries in all Content Types: " +
                     "%s", ExceptionUtil.getErrorMessage(e));
             Logger.error(this, errorMsg);

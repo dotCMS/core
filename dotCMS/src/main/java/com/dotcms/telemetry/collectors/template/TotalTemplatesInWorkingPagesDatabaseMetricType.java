@@ -3,10 +3,15 @@ package com.dotcms.telemetry.collectors.template;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collects the total all templates used in Working pages
  */
+@MetricsProfile(ProfileType.FULL)
+@ApplicationScoped
 public class TotalTemplatesInWorkingPagesDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

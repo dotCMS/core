@@ -21,8 +21,16 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.dotcms.rest.ResponseEntityListView;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import javax.servlet.http.HttpSession;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
 import org.glassfish.jersey.server.JSONP;
@@ -35,7 +43,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -69,13 +76,15 @@ public class FolderResource implements Serializable {
 
     /**
      * Delete one or more path for a site
-     * @param httpServletRequest
-     * @param httpServletResponse
-     * @param paths
-     * @param siteName
+     * @param httpServletRequest  The current instance of the {@link HttpServletRequest}.
+     * @param httpServletResponse The current instance of the {@link HttpServletResponse}.
+     * @param paths paths to delete
+     * @param siteName site name
      * @return List of folders deleted
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @throws IllegalArgumentException if the site name is not found
+     * @throws DoesNotExistException if the folder does not exist
+     * @throws DotSecurityException if the user does not have permission to delete the folder
+     * @throws DotDataException if there is an error deleting the folder
      */
     @DELETE
     @Path("/{siteName}")
@@ -83,6 +92,31 @@ public class FolderResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "deleteFoldersBySiteName",
+            summary = "Delete one or more path for a site",
+            description = "Delete one or more path for a site if they exist"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folders deleted successfully",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\n"
+                                    + "    \"entity\": [\n"
+                                    + "        \"/folder-1/folder-2/target-folder\"\n"
+                                    + "    ],\n"
+                                    + "    \"errors\": [],\n"
+                                    + "    \"i18nMessagesMap\": {},\n"
+                                    + "    \"messages\": [],\n"
+                                    + "    \"pagination\": null,\n"
+                                    + "    \"permissions\": []\n"
+                                    + "}"
+                            )
+                    )
+            ),
+            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
+            @ApiResponse(responseCode = "404", description = "Folders not found"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to delete folders")
+    })
     public final Response deleteFolders(@Context final HttpServletRequest httpServletRequest,
                                         @Context final HttpServletResponse httpServletResponse,
                                         final List<String> paths,
@@ -100,23 +134,21 @@ public class FolderResource implements Serializable {
         final List<String> deletedFolders = new ArrayList<>();
 
         final Host host = APILocator.getHostAPI().findByName(siteName, user, true);
-        if(!UtilMethods.isSet(host)) {
-
-            throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",siteName));
+        if (!UtilMethods.isSet(host)) {
+            throw new IllegalArgumentException(
+                    String.format(" Couldn't find any host with name `%s` ", siteName));
         }
 
-        Logger.debug(this, ()-> "Deleting the folders: " + paths);
+        Logger.debug(this, () -> "Deleting the folders: " + paths);
 
         for (final String path : paths) {
-
             final Folder folder = folderHelper.loadFolderByURI(host.getIdentifier(), user, path);
-            if (null != folder) {
 
-                Logger.debug(this, ()-> "Deleting the folder: " + path);
-                folderHelper.deleteFolder (folder, user);
+            if (folderHelper.isValidFolder(folder)) {
+                Logger.debug(this, () -> "Deleting the folder: " + path);
+                folderHelper.deleteFolder(folder, user);
                 deletedFolders.add(path);
             } else {
-
                 Logger.error(this, "The folder does not exists: " + path);
                 throw new DoesNotExistException("The folder does not exists: " + path);
             }
@@ -125,6 +157,21 @@ public class FolderResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(deletedFolders)).build(); // 200
     }
 
+    @Operation(
+            operationId = "createFoldersBySiteName",
+            summary = "Create folders by paths on a site",
+            description = "Creates one or more folders on the specified site. The request body is a raw JSON " +
+                    "array of folder paths (e.g., [\"/path1\", \"/path2/subpath\"]). Nested paths will " +
+                    "create intermediate folders as needed."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folders created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityListView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Site not found")
+    })
     @POST
     @Path("/createfolders/{siteName}")
     @JSONP
@@ -151,6 +198,15 @@ public class FolderResource implements Serializable {
             return Response.ok(new ResponseEntityView<>(createdFolders)).build(); // 200
     }
 
+    @Operation(
+            operationId = "selectFolderInFileBrowser",
+            summary = "Select folder in file browser",
+            description = "Marks a folder as the currently selected folder in the file browser session."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder selected successfully"),
+            @ApiResponse(responseCode = "401", description = "Authentication required")
+    })
     @PUT
     @Path("/{id}/file-browser-selected")
     @NoCache
@@ -171,6 +227,19 @@ public class FolderResource implements Serializable {
         return Response.ok().build(); // 200
     }
 
+    @Operation(
+            operationId = "loadFolderByURI",
+            summary = "Load a folder by site name and URI",
+            description = "Retrieves a folder by its URI path within the specified site."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityFolderView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder not found")
+    })
     @GET
     @Path ("/sitename/{siteName}/uri/{uri : .+}")
     @JSONP
@@ -209,6 +278,20 @@ public class FolderResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "loadFolderAndSubFoldersByPath",
+            summary = "Load folder and subfolders by path",
+            description = "Finds a folder by the given path within the specified site and returns the " +
+                    "folder along with all its subfolders, respecting the user's permissions."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder and subfolders retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityFolderWithSubfoldersView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder not found")
+    })
     @GET
     @Path ("/siteId/{siteId}/path/{path : .+}")
     @JSONP
@@ -280,6 +363,23 @@ public class FolderResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "findSubFoldersByPath",
+            summary = "Find subfolders by path",
+            description = "Retrieves subfolders of a given path, filtered by the path sent. The path format " +
+                    "supports site-specific search (//siteName/path) or global search (/path). " +
+                    "For example: '//default/folder1/' returns subfolder1, subfolder2 under folder1 in the 'default' site. " +
+                    "'/folder1/s' returns all subfolders starting with 's' under folder1 across all sites."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Subfolders retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityFolderSearchResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Path property must be sent"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Site not found")
+    })
     @POST
     @Path ("/byPath")
     @JSONP
@@ -336,6 +436,19 @@ public class FolderResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "findFolderById",
+            summary = "Find a folder by ID",
+            description = "Retrieves a folder by its identifier. Returns 404 if the folder does not exist."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityFolderView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder not found")
+    })
     @GET
     @Path ("/{folderId}")
     @JSONP

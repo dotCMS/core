@@ -1,39 +1,36 @@
-<ng-container *ngIf="!isLoading; else loadingStateTpl">
-    <div class="flex flex-column gap-2">
-        <div class="flex flex-row justify-content-end chart__header">
+@if (!$isLoading()) {
+    <div class="flex flex-col gap-2">
+        <div class="flex flex-row justify-end pr-1">
             <div class="legend-wrapper" data-testId="chart-legends"></div>
         </div>
-        <ng-container *ngIf="!isEmpty; else emptyStateTpl">
+        @if (!$isEmpty()) {
             <p-chart
-                [data]="data"
+                [data]="$data()"
                 [options]="options"
                 [plugins]="plugins"
-                id="{{ chartId }}"
+                [id]="chartId"
                 height="500px"
-                width="100%"></p-chart>
-        </ng-container>
+                width="100%" />
+        } @else {
+            <div
+                class="flex justify-center items-center flex-col w-full h-[500px] gap-0 bg-no-repeat bg-center bg-contain"
+                [style.background-image]="emptyChartBackgroundImage"
+                data-testId="empty-data-msg">
+                <i class="material-icons text-red-500 mb-2">show_chart</i>
+                <p class="m-0 text-lg">{{ 'experiments.reports.chart.empty.title' | dm }}</p>
+                <p class="m-0 text-base text-gray-600">
+                    {{ 'experiments.reports.chart.empty.description' | dm }}
+                </p>
+            </div>
+        }
     </div>
-</ng-container>
-
-<ng-template #loadingStateTpl>
-    <div class="grid" data-testId="loading-skeleton">
-        <div class="col-2 mt-4">
-            <p-skeleton height="1rem" width="100%"></p-skeleton>
+} @else {
+    <div class="grid grid-cols-12 gap-4" data-testId="loading-skeleton">
+        <div class="col-span-2 mt-6">
+            <p-skeleton height="1rem" width="100%" />
         </div>
-        <div class="col-12">
-            <p-skeleton height="33rem" width="100%"></p-skeleton>
+        <div class="col-span-12">
+            <p-skeleton height="33rem" width="100%" />
         </div>
     </div>
-</ng-template>
-
-<ng-template #emptyStateTpl>
-    <div
-        class="empty__wrapper flex justify-content-center align-items-center flex-column"
-        data-testId="empty-data-msg">
-        <i class="empty__icon pi pi-chart-line mb-2"></i>
-        <p class="empty__message m-0">{{ 'experiments.reports.chart.empty.title' | dm }}</p>
-        <p class="empty__description m-0">
-            {{ 'experiments.reports.chart.empty.description' | dm }}
-        </p>
-    </div>
-</ng-template>
+}

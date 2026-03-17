@@ -24,7 +24,7 @@ RUN apt update && \
     apt update && \
     apt install -y --no-install-recommends postgresql-common && \
     /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
-    apt install -y --no-install-recommends postgresql-client-16 && \
+    apt install -y --no-install-recommends postgresql-client-18 && \
     apt purge -y postgresql-common gnupg && \
     /usr/bin/pg_dump --version || exit 1 && \
     rm -rf /var/lib/apt/lists/*
@@ -37,7 +37,7 @@ RUN apt update && \
 RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && jlink \
     --verbose \
     --add-modules \
-        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,jdk.management.agent,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml,jdk.xml.dom,jdk.jfr,jdk.management.jfr,jdk.jcmd,jdk.attach \
+        java.base,jdk.crypto.ec,jdk.jdwp.agent,jdk.management,jdk.management.agent,java.sql,java.naming,java.desktop,java.management,java.security.jgss,java.instrument,jdk.unsupported,java.scripting,java.rmi,jdk.compiler,jdk.zipfs,jdk.naming.dns,jdk.localedata,java.xml,jdk.xml.dom,jdk.jfr,jdk.management.jfr,jdk.jcmd,jdk.attach,java.net.http \
     --compress 2 \
     --no-header-files \
     --no-man-pages \

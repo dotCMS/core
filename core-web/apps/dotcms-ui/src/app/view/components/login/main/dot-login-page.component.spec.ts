@@ -26,8 +26,8 @@ describe('DotLoginPageComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotLoginPageComponent],
             imports: [
+                DotLoginPageComponent,
                 BrowserAnimationsModule,
                 FormsModule,
                 ButtonModule,
@@ -47,10 +47,10 @@ describe('DotLoginPageComponent', () => {
         fixture.detectChanges();
     });
 
-    it('should set the background Image and background color', () => {
-        expect(document.body.style.backgroundColor).toEqual('rgb(58, 56, 71)');
-        expect(document.body.style.backgroundImage).toEqual(
-            'url(/html/images/backgrounds/bg-11.jpg)'
-        );
+    it('should set the background image, color, and layout styles on body', () => {
+        expect(['#3a3847', 'rgb(58, 56, 71)']).toContain(document.body.style.backgroundColor);
+        expect(document.body.style.backgroundImage).toContain('/html/images/backgrounds/bg-11.jpg');
+        expect(document.body.style.backgroundRepeat).toEqual('no-repeat');
+        expect(document.body.style.backgroundSize).toEqual('cover');
     });
 });

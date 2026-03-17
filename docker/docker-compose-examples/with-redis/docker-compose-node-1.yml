@@ -48,7 +48,7 @@ services:
         DOT_DOT_PUBSUB_PROVIDER_OVERRIDE: 'com.dotcms.dotpubsub.RedisPubSubImpl'
         DOT_REDIS_LETTUCECLIENT_URLS: 'redis://MY_SECRET_P4SS@redis'
         DOT_CACHE_DEFAULT_CHAIN: 'com.dotmarketing.business.cache.provider.caffine.CaffineCache,com.dotcms.cache.lettuce.RedisCache'
-        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20251006/starter-20251006.zip'
+        #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260211/starter-20260211.zip'
     depends_on:
       - opensearch
       - db
@@ -73,13 +73,13 @@ services:
       - redis_net
 
   db:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql
     networks:
       - db_net

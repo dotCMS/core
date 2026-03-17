@@ -157,7 +157,12 @@ public class ResetPermissionsJob extends DotStatefulJob {
 		
 		//Host?
 		perm = hostAPI.find(assetId, userAPI.getSystemUser(), false);
-		
+
+		//Folder?
+		if (perm == null) {
+			perm = APILocator.getFolderAPI().find(assetId, userAPI.getSystemUser(), false);
+		}
+
 		if(perm == null) {
 			//Content?
 			ContentletAPI contAPI = APILocator.getContentletAPI();

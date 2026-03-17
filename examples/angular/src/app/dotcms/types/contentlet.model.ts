@@ -58,7 +58,7 @@ export interface Destination extends Contentlet {
   modDate: string;
   url: string;
   shortDescription?: string;
-  activities?: string[];
+  activities?: Activity[];
   selectValue?: string;
 }
 
@@ -66,6 +66,7 @@ export interface Product extends Contentlet {
   salePrice: number;
   retailPrice: number;
   urlTitle: string;
+  description?: string;
 }
 
 export interface Activity extends Contentlet {

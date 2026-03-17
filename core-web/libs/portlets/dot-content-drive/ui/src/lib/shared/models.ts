@@ -1,4 +1,4 @@
-import { TreeNode } from 'primeng/api';
+import type { TreeNode } from 'primeng/api';
 
 /**
  * @export
@@ -40,6 +40,7 @@ export type DotFolderTreeNodeData = {
     path: string;
     hostname: string;
     id: string;
+    fromTable?: boolean;
 };
 
 /**

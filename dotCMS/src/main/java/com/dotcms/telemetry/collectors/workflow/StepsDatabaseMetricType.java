@@ -1,12 +1,19 @@
 package com.dotcms.telemetry.collectors.workflow;
 
+import com.dotcms.telemetry.DashboardMetric;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 import com.dotcms.telemetry.collectors.DBMetricType;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collect the count of Workflow Steps
  */
+@ApplicationScoped
+@MetricsProfile({ProfileType.STANDARD, ProfileType.FULL})
+@DashboardMetric(category = "system", priority = 3)
 public class StepsDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {

@@ -13,9 +13,9 @@ import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor
 import {
     DotPropertiesService,
     DotContentSearchService,
-    DotLanguagesService
+    DotMessageService
 } from '@dotcms/data-access';
-import { DotAssetSearchComponent } from '@dotcms/ui';
+import { DotAssetSearchComponent, provideDotCMSTheme } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
 
@@ -32,7 +32,12 @@ import { AppComponent } from './app.component';
         HttpClientModule,
         DotAssetSearchComponent
     ],
-    providers: [DotPropertiesService, DotContentSearchService, DotLanguagesService]
+    providers: [
+        DotPropertiesService,
+        DotContentSearchService,
+        DotMessageService,
+        provideDotCMSTheme()
+    ]
 })
 export class AppModule implements DoBootstrap {
     constructor(private injector: Injector) {}

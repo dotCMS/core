@@ -4,7 +4,7 @@
             *ngTemplateOutlet="
                 customRender;
                 context: { customRender: customRenderers?.[node.type], node: node }
-            "></ng-container>
+            " />
     } @else {
         @switch (node.type) {
             @case (BLOCKS.PARAGRAPH) {
@@ -89,9 +89,15 @@
                 <dotcms-block-editor-renderer-table [content]="node.content" />
             }
 
+            @case (BLOCKS.GRID_BLOCK) {
+                <dotcms-block-editor-renderer-grid-block
+                    [node]="node"
+                    [customRenderers]="customRenderers" />
+            }
+
             @case (BLOCKS.DOT_CONTENT) {
                 <dotcms-block-editor-renderer-contentlet
-                    [attrs]="node.attrs || {}"
+                    [node]="node"
                     [customRenderers]="customRenderers" />
             }
 
@@ -103,6 +109,5 @@
 }
 
 <ng-template #customRender let-customRender="customRender" let-node="node">
-    <ng-container
-        *ngComponentOutlet="customRender | async; inputs: { content: node }"></ng-container>
+    <ng-container *ngComponentOutlet="customRender | async; inputs: { node: node }" />
 </ng-template>

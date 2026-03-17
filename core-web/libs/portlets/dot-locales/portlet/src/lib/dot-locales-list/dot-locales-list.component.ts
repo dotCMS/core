@@ -9,6 +9,8 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { DialogService } from 'primeng/dynamicdialog';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -24,21 +26,24 @@ import {
 
 @Component({
     selector: 'dot-locales-list',
+    host: { class: 'flex flex-1 flex-col' },
     imports: [
         CommonModule,
-        InputTextModule,
         ButtonModule,
-        DotMessagePipe,
-        TableModule,
-        DotActionMenuButtonComponent,
-        TagModule,
         ConfirmDialogModule,
         ConfirmPopupModule,
-        ToastModule,
-        DotStateRestoreDirective
+        DotActionMenuButtonComponent,
+        DotMessagePipe,
+        DotStateRestoreDirective,
+        IconFieldModule,
+        InputIconModule,
+        InputTextModule,
+        TableModule,
+        TagModule,
+        ToastModule
     ],
     templateUrl: './dot-locales-list.component.html',
-    styleUrl: './dot-locales-list.component.scss',
+
     providers: [DotLocalesListStore, DialogService, MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

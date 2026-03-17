@@ -23,7 +23,10 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     selector: 'dot-form-dialog',
     imports: [ButtonModule, FocusTrapModule, DotMessagePipe],
     templateUrl: './dot-form-dialog.component.html',
-    styleUrls: ['./dot-form-dialog.component.scss']
+    host: {
+        class: 'flex min-h-0 flex-1 flex-col',
+        style: 'height: 100%'
+    }
 })
 export class DotFormDialogComponent implements OnInit, OnDestroy {
     private dynamicDialog = inject(DynamicDialogRef);
@@ -39,10 +42,10 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     saveButtonLoading: boolean;
 
     @Output()
-    save: EventEmitter<MouseEvent | KeyboardEvent> = new EventEmitter(null);
+    save: EventEmitter<MouseEvent | KeyboardEvent> = new EventEmitter();
 
     @Output()
-    cancel: EventEmitter<MouseEvent> = new EventEmitter(null);
+    cancel: EventEmitter<MouseEvent> = new EventEmitter();
 
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');
