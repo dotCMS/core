@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
@@ -18,7 +26,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPluginsListStore } from './store/dot-plugins-list.store';
 
@@ -43,8 +51,10 @@ const BUNDLE_STATE_LABELS: Record<number, string> = {
         ButtonModule,
         SelectModule,
         ConfirmDialogModule,
+        ContextMenuModule,
         ToolbarModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotAddToBundleComponent
     ],
     templateUrl: './dot-plugins-list.component.html',
     providers: [DotPluginsListStore, DialogService, ConfirmationService],
@@ -57,10 +67,30 @@ export class DotPluginsListComponent {
     selectedJar: string | null = null;
     isDragging = signal(false);
     private dragCounter = 0;
+    private selectedBundle = signal<BundleMap | null>(null);
+    readonly addToBundleIdentifier = signal<string | null>(null);
+    readonly contextMenu = viewChild<ContextMenu>('contextMenu');
 
     readonly availableJarOptions = computed(() =>
         this.store.availableJars().map((j) => ({ label: j, value: j }))
     );
+
+    readonly contextMenuItems = computed<MenuItem[]>(() => {
+        const bundle = this.selectedBundle();
+        if (!bundle) return [];
+        return [
+            {
+                label: this.dotMessageService.get('plugins.process-exports'),
+                icon: 'pi pi-cog',
+                command: () => this.store.processExports(bundle.symbolicName)
+            },
+            {
+                label: this.dotMessageService.get('plugins.add-to-bundle'),
+                icon: 'pi pi-box',
+                command: () => this.addToBundleIdentifier.set(bundle.jarFile)
+            }
+        ];
+    });
 
     /** Pass-through config so the table fills 100% height when empty (empty state centered). */
     readonly $ptConfig = computed(() => ({
@@ -172,6 +202,12 @@ export class DotPluginsListComponent {
         }
 
         this.store.uploadBundles(jarFiles);
+    }
+
+    onContextMenu(event: MouseEvent, bundle: BundleMap): void {
+        if (bundle.isSystem) return;
+        this.selectedBundle.set(bundle);
+        this.contextMenu()?.show(event);
     }
 
     confirmRestart(): void {

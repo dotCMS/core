@@ -105,7 +105,7 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-bundle>
-                <tr data-testid="plugin-row">
+                <tr data-testid="plugin-row" (contextmenu)="onContextMenu($event, bundle)">
                     <td data-testid="plugin-name">{{ bundle.symbolicName }}</td>
                     <td data-testid="plugin-state">{{ getStateLabel(bundle.state) | dm }}</td>
                     <td data-testid="plugin-jar">{{ bundle.jarFile }}</td>
@@ -140,15 +140,6 @@
                                     size="small"
                                     (onClick)="confirmUndeploy(bundle)"
                                     data-testid="plugin-undeploy-btn" />
-                                <span
-                                    class="border-l border-surface-300 h-4 mx-1 inline-block"
-                                    aria-hidden="true"></span>
-                                <p-button
-                                    [label]="'plugins.process-exports' | dm"
-                                    text
-                                    size="small"
-                                    (onClick)="store.processExports(bundle.symbolicName)"
-                                    data-testid="plugin-process-exports-btn" />
                             </div>
                         }
                     </td>
@@ -182,3 +173,11 @@
 </div>
 
 <p-confirmDialog />
+
+<p-contextMenu #contextMenu [model]="contextMenuItems()" appendTo="body" />
+
+@if (addToBundleIdentifier()) {
+    <dot-add-to-bundle
+        [assetIdentifier]="addToBundleIdentifier()!"
+        (cancel)="addToBundleIdentifier.set(null)" />
+}

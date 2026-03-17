@@ -35,7 +35,8 @@ describe('DotPluginsListComponent', () => {
             mockProvider(DotOsgiService, {
                 getInstalledBundles: jest.fn().mockReturnValue(of({ entity: [] })),
                 getAvailablePlugins: jest.fn().mockReturnValue(of({ entity: [] })),
-                uploadBundles: jest.fn().mockReturnValue(of({}))
+                uploadBundles: jest.fn().mockReturnValue(of({})),
+                processExports: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(ConfirmationService),
@@ -151,6 +152,75 @@ describe('DotPluginsListComponent', () => {
             component.isDragging.set(false);
             spectator.detectChanges();
             expect(spectator.query('[data-testid="plugins-drop-overlay"]')).toBeNull();
+        });
+    });
+
+    describe('context menu', () => {
+        const mockBundle = {
+            bundleId: 1,
+            symbolicName: 'test-bundle',
+            jarFile: 'test.jar',
+            state: 32,
+            isSystem: false
+        };
+        const systemBundle = { ...mockBundle, isSystem: true };
+
+        it('should set selectedBundle and show context menu for non-system bundle', () => {
+            const event = new MouseEvent('contextmenu');
+            const showSpy = jest.fn();
+            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: showSpy } as never);
+
+            component.onContextMenu(event, mockBundle);
+
+            expect(showSpy).toHaveBeenCalledWith(event);
+        });
+
+        it('should not show context menu for system bundle', () => {
+            const event = new MouseEvent('contextmenu');
+            const showSpy = jest.fn();
+            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: showSpy } as never);
+
+            component.onContextMenu(event, systemBundle);
+
+            expect(showSpy).not.toHaveBeenCalled();
+        });
+
+        it('should return menu items for a selected bundle', () => {
+            const event = new MouseEvent('contextmenu');
+            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: jest.fn() } as never);
+            component.onContextMenu(event, mockBundle);
+
+            const items = component.contextMenuItems();
+            expect(items).toHaveLength(2);
+            expect(items[0].icon).toBe('pi pi-cog');
+            expect(items[1].icon).toBe('pi pi-box');
+        });
+
+        it('should call processExports when Process Exports is clicked', () => {
+            const event = new MouseEvent('contextmenu');
+            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: jest.fn() } as never);
+            jest.spyOn(component.store, 'processExports');
+            component.onContextMenu(event, mockBundle);
+
+            component.contextMenuItems()[0].command!({} as never);
+
+            expect(component.store.processExports).toHaveBeenCalledWith('test-bundle');
+        });
+
+        it('should set addToBundleIdentifier when Add to Bundle is clicked', () => {
+            const event = new MouseEvent('contextmenu');
+            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: jest.fn() } as never);
+            component.onContextMenu(event, mockBundle);
+
+            component.contextMenuItems()[1].command!({} as never);
+
+            expect(component.addToBundleIdentifier()).toBe('test.jar');
+        });
+
+        it('should clear addToBundleIdentifier when set to null', () => {
+            component.addToBundleIdentifier.set('test.jar');
+            component.addToBundleIdentifier.set(null);
+            expect(component.addToBundleIdentifier()).toBeNull();
         });
     });
 });
