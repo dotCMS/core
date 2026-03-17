@@ -25,8 +25,8 @@ tags:
 - description: Endpoints that perform operations related to validating accessibility
     in content.
   name: Accessibility Checker
-- description: This REST Endpoint exposes information related to how dotCMS content
-    is accessed and interacted with by users.
+- description: Proxy endpoints that forward analytics requests to the dot-ca-event-manager
+    service.
   name: Content Analytics
 - description: System announcements and notifications
   name: Announcements
@@ -3023,64 +3023,36 @@ paths:
           description: default response
       tags:
       - AI
-  /v1/analytics/content/_query/cube:
+  /v1/analytics/content/event:
     post:
-      description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using a CubeJS JSON query. **Note:** This endpoint\
-        \ is in **beta** and may change."
-      operationId: postContentAnalyticsQuery
+      description: Validates the siteAuth query parameter and asynchronously forwards
+        POST requests to /v1/analytics/event/** to the dot-ca-event-manager service
+        at /v1/event/**. All query parameters and the request body are preserved.
+      operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
           application/json:
             schema:
               type: string
+        description: Sub-path after /event/
       responses:
         "200":
           content:
             application/json:
-              example:
-                dimensions:
-                - Events.experiment
-                - Events.variant
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "401":
-          description: Unauthorized
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Retrieve Content Analytics data **(Beta)**
-      tags:
-      - Content Analytics
-  /v1/analytics/content/event:
-    post:
-      description: receives a custom event payload and fires the event to the collectors.
-        **Note:** This endpoint is in **beta** and may change.
-      operationId: fireUserCustomEvent
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
+              schema:
                 type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              example: TBD
-          description: If the event was created successfully
+                description: dotCMS response envelope containing the upstream analytics
+                  data
+          description: Successful upstream response
         "400":
-          description: Bad Request
-        "403":
-          description: Forbidden
-        "415":
-          description: Unsupported Media Type
+          content:
+            application/json: {}
+          description: Invalid siteAuth or upstream returned an error
         "500":
-          description: Internal Server Error
-      summary: Fire an user custom event **(Beta)**.
+          content:
+            application/json: {}
+          description: Internal server error or upstream unreachable
+      summary: Proxy analytics event POST request with site auth validation
       tags:
       - Content Analytics
   /v1/analytics/content/siteauth/generate/{siteId}:
@@ -3108,6 +3080,39 @@ paths:
         "500":
           description: Internal Server Error
       summary: Generate Site Auth
+      tags:
+      - Content Analytics
+  /v1/analytics/{path}:
+    get:
+      description: "Forwards any authenticated GET request to /v1/analytics/** to\
+        \ the dot-ca-event-manager service at /v1/**, preserving all query parameters."
+      operationId: proxyAnalyticsGetRequest
+      parameters:
+      - description: Path to forward to the upstream analytics service
+        in: path
+        name: path
+        required: true
+        schema:
+          type: string
+          pattern: .*
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: dotCMS response envelope containing the upstream analytics
+                  data
+          description: Successful upstream response
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized – backend user required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or upstream unreachable
+      summary: Proxy any analytics GET request
       tags:
       - Content Analytics
   /v1/announcements:
@@ -27384,33 +27389,6 @@ components:
         urlTimeoutSeconds:
           type: integer
           format: int32
-    ReportResponseEntityView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            type: object
-            additionalProperties:
-              type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResetAssetPermissionsView:
       type: object
       properties:

@@ -4,13 +4,21 @@ import com.dotcms.jitsu.validators.AnalyticsValidator.AnalyticsValidationExcepti
 import com.dotcms.jitsu.validators.SiteAuthValidator;
 import com.dotcms.jitsu.validators.ValidationErrorCode;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.analytics.content.util.AnalyticsEventsResult;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +47,9 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
  * REST proxy resource that intercepts requests to {@code /v1/analytics/**} and forwards them to
@@ -105,7 +117,7 @@ public class EventAnalyticsProxyResource {
                     content = @Content(mediaType = "application/json"))
     })
     @POST
-    @Path("/event/ingest")
+    @Path("/content/event")
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -117,6 +129,7 @@ public class EventAnalyticsProxyResource {
             @Parameter(description = "Sub-path after /event/")
             final String body) {
 
+        String proxyBody = body;
         try {
             final Map<String, Object> bodyMap = JsonUtil.getJsonFromString(body);
             Object context = bodyMap.get("context");
@@ -142,6 +155,10 @@ public class EventAnalyticsProxyResource {
             }
 
             new SiteAuthValidator().validate(siteAuth.toString());
+
+            final Host site = ContentAnalyticsUtil.getSiteFromRequest(request);
+            ((Map<String, Object>) bodyMap.get("context")).put("site_id", site.getIdentifier());
+            proxyBody = JsonUtil.getJsonStringFromObject(bodyMap);
         } catch (final AnalyticsValidationException e) {
             Logger.warn(this, "SiteAuth validation failed for analytics proxy: " + e.getMessage());
             asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
@@ -158,8 +175,9 @@ public class EventAnalyticsProxyResource {
             return;
         }
 
+        final String finalProxyBody = proxyBody;
         ResponseUtil.handleAsyncResponse(
-                () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, body),
+                () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, finalProxyBody),
                 asyncResponse);
     }
 
@@ -216,4 +234,45 @@ public class EventAnalyticsProxyResource {
         return EventAnalyticsProxyHelper.proxy(path, uriInfo, null);
     }
 
+    @Operation(
+            operationId = "generateSiteAuth",
+            summary = "Generate Site Auth",
+            description = "Generates and returns a Site Key that must be used by the client-side JS " +
+                    "code to send custom Content Analytics Events",
+            tags = {"Content Analytics"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "The Site key was generated and " +
+                            "returned successfully"),
+                    @ApiResponse(responseCode = "400", description = "Bad Request"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "404", description = "Site ID in path is not found or " +
+                            "incorrect path"),
+                    @ApiResponse(responseCode = "405", description = "Method Not Allowed"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    @GET
+    @Path("/content/siteauth/generate/{siteId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.TEXT_PLAIN, "text/plain"})
+    public Response generateSiteKey(@PathParam("siteId") final String siteId,
+                                    @Context final HttpServletRequest request,
+                                    @Context final HttpServletResponse response) throws DotDataException, DotSecurityException {
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initDataObject.getUser();
+        final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
+        Objects.requireNonNull(site, String.format("Site with ID '%s' was not found", siteId));
+        return Response.ok().entity(ContentAnalyticsUtil.generateInternalSiteKey(site.getIdentifier())).build();
+    }
+
+    private int getResponseStatus(final AnalyticsEventsResult analyticsEventsResult) {
+        return analyticsEventsResult.getStatus() == AnalyticsEventsResult.ResponseStatus.ERROR ? 400
+                : analyticsEventsResult.getStatus() == AnalyticsEventsResult.ResponseStatus.SUCCESS ? 200
+                : 207;
+    }
 }

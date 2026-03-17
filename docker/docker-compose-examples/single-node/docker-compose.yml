@@ -66,7 +66,9 @@ services:
       DOT_CA_EVENT_MANAGER_BASE_URL: 'http://host.docker.internal:8080'
       DOT_CA_EVENT_MANAGER_CUSTOMER_ID: 'cust-001'
       DOT_CA_EVENT_MANAGER_PASSWORD: 'abc'
+      DOT_ANALYTICS_ENVIRONMENT: 'dev'
       DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
+      DOT_FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT: 'true'
     depends_on:
       - db
       - opensearch      

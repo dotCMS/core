@@ -26,6 +26,7 @@ import java.util.Map;
  *   <li>{@link #DOT_CA_EVENT_MANAGER_BASE_URL} – base URL of the dot-ca-event-manager service</li>
  *   <li>{@link #DOT_CA_EVENT_MANAGER_CUSTOMER_ID} – customer ID for Basic auth</li>
  *   <li>{@link #DOT_CA_EVENT_MANAGER_PASSWORD} – password for Basic auth</li>
+ *   <li>{@link #ANALYTICS_ENVIRONMENT} – environment name appended as {@code ?environment=} query param</li>
  * </ul>
  *
  * @author dotCMS
@@ -36,6 +37,7 @@ public class EventAnalyticsProxyHelper {
     static final String DOT_CA_EVENT_MANAGER_BASE_URL = "DOT_CA_EVENT_MANAGER_BASE_URL";
     static final String DOT_CA_EVENT_MANAGER_CUSTOMER_ID = "DOT_CA_EVENT_MANAGER_CUSTOMER_ID";
     static final String DOT_CA_EVENT_MANAGER_PASSWORD = "DOT_CA_EVENT_MANAGER_PASSWORD";
+    static final String ANALYTICS_ENVIRONMENT = "DOT_ANALYTICS_ENVIRONMENT";
 
     private EventAnalyticsProxyHelper() {
         // utility class — no instances
@@ -127,6 +129,14 @@ public class EventAnalyticsProxyHelper {
                 })
         );
 
+        final String analyticsEnvironment = Config.getStringProperty(ANALYTICS_ENVIRONMENT, "");
+        if (UtilMethods.isSet(analyticsEnvironment)) {
+            if (queryString.length() > 0) {
+                queryString.append("&");
+            }
+            queryString.append("environment=").append(analyticsEnvironment);
+        }
+
         return cleanBase + upstreamPath + (queryString.length() > 0 ? "?" + queryString : "");
     }
 
@@ -155,7 +165,7 @@ public class EventAnalyticsProxyHelper {
      * @return dotCMS-wrapped {@link Response}
      */
     static Response wrapUpstreamResponse(final CircuitBreakerUrl.Response<String> cbResponse) {
-        if (cbResponse == null || !UtilMethods.isSet(cbResponse.getResponse())) {
+        if (cbResponse == null ) {
             Logger.warn(EventAnalyticsProxyHelper.class,
                     "Received null or empty response from analytics service");
             return Response.serverError()
@@ -168,9 +178,9 @@ public class EventAnalyticsProxyHelper {
         final int statusCode = cbResponse.getStatusCode();
 
         try {
-            final Object parsedBody = DotObjectMapperProvider.getInstance()
+            final Object parsedBody = UtilMethods.isSet(cbResponse.getResponse()) ? DotObjectMapperProvider.getInstance()
                     .getDefaultObjectMapper()
-                    .readValue(cbResponse.getResponse(), Object.class);
+                    .readValue(cbResponse.getResponse(), Object.class) : "";
 
             return Response.status(statusCode)
                     .entity(new ResponseEntityView<>(parsedBody))

@@ -59,7 +59,7 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
  * @author Jose Castro
  * @since Sep 13th, 2024
  */
-@Path("/v1/analytics/content")
+//@Path("/v1/analytics/content")
 @Tag(name = "Content Analytics",
         description = "This REST Endpoint exposes information related to how dotCMS content is accessed and interacted with by users.")
 public class ContentAnalyticsResource {
@@ -92,7 +92,7 @@ public class ContentAnalyticsResource {
      * @param cubeJsQueryJson the query form.
      * @return the report response entity view.
      */
-    @Operation(
+    /*@Operation(
             operationId = "postContentAnalyticsQuery",
             summary = "Retrieve Content Analytics data **(Beta)**",
             description = "Returns information of specific dotCMS objects whose health and " +
@@ -126,7 +126,7 @@ public class ContentAnalyticsResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})*/
     public ReportResponseEntityView queryCubeJs(@Context final HttpServletRequest request,
                                           @Context final HttpServletResponse response,
                                           final String cubeJsQueryJson) throws CustomAttributeProcessingException {
@@ -162,7 +162,7 @@ public class ContentAnalyticsResource {
      * @param userEventPayload the query form.
      * @return the report response entity view.
      */
-    @Operation(
+    /*@Operation(
             operationId = "fireUserCustomEvent",
             summary = "Fire an user custom event **(Beta)**.",
             description = "receives a custom event payload and fires the event to the collectors. " +
@@ -189,7 +189,7 @@ public class ContentAnalyticsResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})*/
     public Response fireUserCustomEvent(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response,
                                                 final Map<String, Serializable> userEventPayload) throws DotSecurityException {
