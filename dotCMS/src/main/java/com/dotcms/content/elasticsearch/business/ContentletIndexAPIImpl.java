@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
-import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotmarketing.util.StringUtils.builder;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -19,6 +17,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.domain.CreateIndexStatus;
+import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
@@ -34,7 +33,6 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -79,6 +77,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.elasticsearch.ElasticsearchException;
 
@@ -90,7 +89,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
     private ReindexQueueAPI queueApi = null;
     private IndexAPI esIndexApi = null;
-    private ContentIndexMappingAPI mappingAPI = null;
+    private final AtomicReference<ContentIndexMappingAPI> mappingAPI = new AtomicReference<>();
 
     private final ContentletIndexOperations operationsES;
     private final ContentletIndexOperations operationsOS;
@@ -116,14 +115,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
-     * Lazy initializer avoids circular reference Stackoverflow error
+     * Lazy initializer avoids circular reference Stackoverflow error.
+     * Thread-safe: uses {@link AtomicReference#updateAndGet} to ensure
+     * exactly one instance is published without synchronization overhead.
+     *
      * @return ContentIndexMappingAPI
      */
     private ContentIndexMappingAPI getMappingAPI() {
-        if (mappingAPI == null) {
-            mappingAPI = APILocator.getContentMappingAPI();
-        }
-        return mappingAPI;
+        return mappingAPI.updateAndGet(
+                current -> current != null ? current : APILocator.getContentMappingAPI());
     }
 
     public ContentletIndexOperations operationsES() {
@@ -140,7 +140,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * otherwise routes to Elasticsearch.
      */
     ContentletIndexOperations getProvider() {
-        return isMigrationComplete() || isReadEnabled() ? operationsOS : operationsES;
+        //TODO: For now always default to ES
+        return operationsES;
     }
 
     /**

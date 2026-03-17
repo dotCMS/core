@@ -7,7 +7,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
@@ -33,6 +32,7 @@ public class BulkProcessorListener implements IndexBulkListener {
     static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
 
     private long contentletsIndexed;
+    private int lastBatchSize;
 
     BulkProcessorListener() {
         this.workingRecords = new HashMap<>();
@@ -54,6 +54,7 @@ public class BulkProcessorListener implements IndexBulkListener {
         Logger.info(this.getClass(), "Total Indexed        : " + contentletsIndexed);
         Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
         Logger.info(this.getClass(), "BulkRequests created : " + actionCount);
+        this.lastBatchSize = actionCount;
         contentletsIndexed += actionCount;
         final Optional<String> duration = APILocator.getContentletIndexAPI().reindexTimeElapsed();
         if (duration.isPresent()) {
@@ -87,8 +88,10 @@ public class BulkProcessorListener implements IndexBulkListener {
         }
 
         handleSuccess(successful);
-        // 50% failure rate forces a rebuild of the BulkProcessor
-        if (totalResponses == 0 || (successful.size() / totalResponses < .5)) {
+        // 50% failure rate forces a rebuild of the BulkProcessor.
+        // Guard: skip rebuild when the batch was empty — an empty response list
+        // with lastBatchSize == 0 is not an error condition.
+        if (lastBatchSize > 0 && (totalResponses == 0 || (successful.size() / totalResponses < .5))) {
             ReindexThread.rebuildBulkIndexer();
         }
     }

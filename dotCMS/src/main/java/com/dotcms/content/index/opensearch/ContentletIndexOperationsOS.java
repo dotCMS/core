@@ -17,9 +17,13 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.Refresh;
@@ -48,6 +52,9 @@ import org.opensearch.client.opensearch.core.bulk.IndexOperation;
  */
 @ApplicationScoped
 public class ContentletIndexOperationsOS implements ContentletIndexOperations {
+
+    private static final ObjectMapper OBJECT_MAPPER = DotObjectMapperProvider.createDefaultMapper();
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
 
     @Inject
     private OSClientProvider clientProvider;
@@ -114,7 +121,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
             this.maxActions = maxActions;
         }
 
-        void addAndMaybeFlush(final BulkOperation op) {
+        synchronized void addAndMaybeFlush(final BulkOperation op) {
             pending.add(op);
             if (pending.size() >= maxActions) {
                 flush();
@@ -123,8 +130,10 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
 
         /**
          * Submits the current pending batch to OpenSearch and fires listener callbacks.
-         * No-op when the pending list is empty. Synchronized to prevent a concurrent
-         * {@link #close()} from racing with an auto-flush triggered by the last add.
+         * No-op when the pending list is empty. Synchronized on the same monitor as
+         * {@link #addAndMaybeFlush} to prevent {@link #close()} from racing with an
+         * auto-flush: without the lock, ops added after close() drains the list
+         * would silently never reach OpenSearch.
          */
         synchronized void flush() {
             if (pending.isEmpty()) {
@@ -333,10 +342,18 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     // =========================================================================
 
     private static OSIndexBulkRequest asBulkRequest(final IndexBulkRequest req) {
+        if (!(req instanceof OSIndexBulkRequest)) {
+            throw new DotRuntimeException(
+                    "Expected OSIndexBulkRequest but got: " + req.getClass().getName());
+        }
         return (OSIndexBulkRequest) req;
     }
 
     private static OSIndexBulkProcessor asBulkProcessor(final IndexBulkProcessor proc) {
+        if (!(proc instanceof OSIndexBulkProcessor)) {
+            throw new DotRuntimeException(
+                    "Expected OSIndexBulkProcessor but got: " + proc.getClass().getName());
+        }
         return (OSIndexBulkProcessor) proc;
     }
 
@@ -344,10 +361,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
      * Parses a JSON string into a {@code Map<String,Object>} for use as the OpenSearch
      * document source. Uses the same Jackson mapper already available in the codebase.
      */
-    @SuppressWarnings("unchecked")
-    private static java.util.Map<String, Object> parseJsonToMap(final String jsonMapping) {
-        return Sneaky.sneak(() ->
-                com.dotcms.rest.api.v1.DotObjectMapperProvider.createDefaultMapper()
-                        .readValue(jsonMapping, java.util.Map.class));
+    private static Map<String, Object> parseJsonToMap(final String jsonMapping) {
+        return Sneaky.sneak(() -> OBJECT_MAPPER.readValue(jsonMapping, MAP_TYPE));
     }
 }
