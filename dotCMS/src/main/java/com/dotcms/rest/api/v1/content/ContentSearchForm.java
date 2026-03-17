@@ -1,8 +1,10 @@
 package com.dotcms.rest.api.v1.content;
 
 import com.dotcms.variant.VariantAPI;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -64,6 +66,7 @@ import static com.liferay.util.StringPool.BLANK;
  * @author Jose Castro
  * @since Jan 29th, 2025
  */
+@Schema(description = "Form for searching content with support for global search, content type specific fields, and system filters")
 @JsonDeserialize(builder = ContentSearchForm.Builder.class)
 public class ContentSearchForm implements Serializable {
 
@@ -105,6 +108,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return The global search term.
      */
+    @JsonGetter("globalSearch")
     public String globalSearch() {
         return this.globalSearch;
     }
@@ -116,6 +120,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return A map containing all the searchable fields for each content type.
      */
+    @JsonGetter("searchableFieldsByContentType")
     public Map<String, Map<String, Object>> searchableFields() {
         return this.searchableFieldsByContentType;
     }
@@ -156,6 +161,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return A map containing all the system searchable fields.
      */
+    @JsonGetter("systemSearchableFields")
     public Map<String, Object> systemSearchableFields() {
         return null != this.systemSearchableFields
                 ? this.systemSearchableFields
@@ -232,6 +238,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return The criterion being used to filter results by.
      */
+    @JsonGetter("orderBy")
     public String orderBy() {
         return this.orderBy;
     }
@@ -255,6 +262,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return If the search results must include archived content, returns {@code "true"}.
      */
+    @JsonGetter("archivedContent")
     public String archivedContent() {
         return this.archivedContent;
     }
@@ -266,6 +274,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return If the search results must include unpublished content, returns {@code "true"}.
      */
+    @JsonGetter("unpublishedContent")
     public String unpublishedContent() {
         return this.unpublishedContent;
     }
@@ -275,6 +284,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return If the search results must include locked content, returns {@code true}.
      */
+    @JsonGetter("lockedContent")
     public String lockedContent() {
         return this.lockedContent;
     }
@@ -284,6 +294,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return The page number to be used to paginate the search results.
      */
+    @JsonGetter("page")
     public int page() {
         return this.page;
     }
@@ -293,6 +304,7 @@ public class ContentSearchForm implements Serializable {
      *
      * @return The number of results to be shown per page.
      */
+    @JsonGetter("perPage")
     public int perPage() {
         return this.perPage;
     }
@@ -330,24 +342,33 @@ public class ContentSearchForm implements Serializable {
     public static final class Builder {
 
         @JsonProperty
+        @Schema(description = "Global search term applied across all content", example = "dotCMS")
         private String globalSearch = BLANK;
         @JsonProperty
+        @Schema(description = "Searchable fields organized by content type ID or variable name")
         private Map<String, Map<String, Object>> searchableFieldsByContentType = new HashMap<>();
         @JsonProperty
+        @Schema(description = "System-level search filters (siteId, languageId, etc.)")
         private Map<String, Object> systemSearchableFields;
 
         @JsonProperty
+        @Schema(description = "Include archived content in results", example = "true")
         private String archivedContent = BLANK;
         @JsonProperty
+        @Schema(description = "Include unpublished content in results", example = "true")
         private String unpublishedContent = BLANK;
         @JsonProperty
+        @Schema(description = "Include locked content in results", example = "true")
         private String lockedContent = BLANK;
 
         @JsonProperty
+        @Schema(description = "Field to order results by", example = "modDate desc")
         private String orderBy = BLANK;
         @JsonProperty
+        @Schema(description = "Page number for pagination (0-based)", example = "0")
         private int page = 0;
         @JsonProperty
+        @Schema(description = "Number of results per page", example = "20")
         private int perPage = 0;
 
         public Builder globalSearch(final String globalSearch) {

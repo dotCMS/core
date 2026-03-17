@@ -8,6 +8,7 @@ import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -19,7 +20,6 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.CategoriesPaginator;
 import com.dotcms.util.pagination.CategoryListDTOPaginator;
-import com.dotcms.util.pagination.ChildrenCategoryListDTOPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -32,19 +32,15 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
-import com.dotmarketing.portlets.categories.business.PaginatedCategories;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -55,11 +51,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -85,16 +81,16 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.FormDataParam;
+import javax.ws.rs.BeanParam;
 import org.glassfish.jersey.server.JSONP;
 
 /**
  * This resource provides all the different end-points associated to information and actions that
  * the front-end can perform on the Categories.
  */
+@SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/categories")
-@Tag(name = "Categories", description = "Content categorization and taxonomy")
+@Tag(name = "Categories")
 public class CategoriesResource {
 
     private final WebResource webResource;
@@ -171,12 +167,13 @@ public class CategoriesResource {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "500", description = "Internal server error retrieving categories")
     })
     @GET
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response getCategories(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             @Parameter(description = "Filter string to match against category names")
@@ -189,6 +186,7 @@ public class CategoriesResource {
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @Parameter(description = "Sort direction: ASC or DESC")
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @Parameter(description = "Whether to include children count for each category")
             @QueryParam("showChildrenCount") final boolean showChildrenCount) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
@@ -275,24 +273,26 @@ public class CategoriesResource {
                             schema = @Schema(implementation = ResponseEntityCategoryWithChildCountView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Parent category not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error retrieving child categories")
     })
     @GET
     @Path(("/children"))
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response getChildren(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @QueryParam(PaginationUtil.FILTER) final String filter,
-            @QueryParam(PaginationUtil.PAGE) final int page,
-            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-            @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @QueryParam("inode") final String inode,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount,
-            @QueryParam("allLevels") final boolean allLevels,
-            @QueryParam("parentList") final boolean parentList) {
+            @Parameter(description = "Filter text to search child categories") @QueryParam(PaginationUtil.FILTER) final String filter,
+            @Parameter(description = "Page number for pagination") @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "Field to order results by") @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @Parameter(description = "Sort direction (ASC or DESC)") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @Parameter(description = "Parent category inode to get children for") @QueryParam("inode") final String inode,
+            @Parameter(description = "Whether to include children count for each category") @QueryParam("showChildrenCount") final boolean showChildrenCount,
+            @Parameter(description = "Whether to include all nested levels") @QueryParam("allLevels") final boolean allLevels,
+            @Parameter(description = "Whether to include parent list hierarchy") @QueryParam("parentList") final boolean parentList) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -383,18 +383,25 @@ public class CategoriesResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+        summary = "Get category hierarchy for multiple categories",
+        description = "Retrieves the parent hierarchy for a set of categories specified by their keys. Returns parent lists for each category, starting from the top-level parent down to the direct parent. Categories that don't exist are ignored."
+    )
+    @ApiResponse(responseCode = "200", description = "Category hierarchies retrieved successfully",
+                content = @Content(mediaType = "application/json",
+                                  schema = @Schema(implementation = HierarchyShortCategoriesResponseView.class)))
+    @ApiResponse(responseCode = "400", description = "Bad request - invalid category keys form")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - user authentication required")
+    @ApiResponse(responseCode = "500", description = "Internal server error retrieving hierarchies")
     @POST
     @Path(("/hierarchy"))
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "getSchemes", summary = "Get the List of Parents from  set of categories",
-            description = "Response with the list of parents for a specific set of categories. If any of the categories" +
-                    "does not exists then it is just ignored"
-    )
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public final HierarchyShortCategoriesResponseView getHierarchy(@Context final HttpServletRequest httpRequest,
                                        @Context final HttpServletResponse httpResponse,
-                                       final CategoryKeysForm form) throws DotDataException {
+                                       @RequestBody(description = "Category keys form containing array of category keys", required = true) final CategoryKeysForm form) throws DotDataException {
 
         Logger.debug(this, () -> "Getting the List of Parents for the follow categories: " +
                 String.join(",", form.getKeys()));
@@ -424,17 +431,18 @@ public class CategoriesResource {
                             schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — idOrKey is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "404", description = "Category not found")
+            @ApiResponse(responseCode = "404", description = "Category not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error retrieving category")
     })
     @GET
     @JSONP
     @Path("/{idOrKey}")
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response getCategoryByIdOrKey(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @PathParam("idOrKey") final String idOrKey,
-            @QueryParam("showChildrenCount") final boolean showChildrenCount)
+            @Parameter(description = "Category ID (inode) or key", required = true) @PathParam("idOrKey") final String idOrKey,
+            @Parameter(description = "Whether to include children count") @QueryParam("showChildrenCount") final boolean showChildrenCount)
             throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -462,8 +470,8 @@ public class CategoriesResource {
                     "Category with idOrKey: " + idOrKey + " does not exist");
         }
 
-        return showChildrenCount ? Response.ok(new ResponseEntityView<CategoryWithChildCountView>(this.categoryHelper.toCategoryWithChildCountView(category, user))).build() :
-                Response.ok(new ResponseEntityView<CategoryView>(this.categoryHelper.toCategoryView(category, user))).build();
+        return showChildrenCount ? Response.ok(new ResponseEntityCategoryWithChildCountView(this.categoryHelper.toCategoryWithChildCountView(category, user))).build() :
+                Response.ok(new ResponseEntityCategoryView(this.categoryHelper.toCategoryView(category, user))).build();
     }
 
     /**
@@ -487,15 +495,17 @@ public class CategoriesResource {
                             schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — category name is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "500", description = "Internal server error creating category")
     })
     @POST
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response saveNew(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final CategoryForm categoryForm)
+            @RequestBody(description = "Category form with name and properties", required = true) final CategoryForm categoryForm)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -512,7 +522,7 @@ public class CategoriesResource {
                 "The category name is required");
 
         try {
-           return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
+           return Response.ok(new ResponseEntityCategoryView(this.categoryHelper.toCategoryView(
                    this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user))).build();
         } catch (InvocationTargetException | IllegalAccessException e) {
             Logger.error(this, e.getMessage(), e);
@@ -542,15 +552,18 @@ public class CategoriesResource {
                             schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "404", description = "Category not found")
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to update categories"),
+            @ApiResponse(responseCode = "404", description = "Category not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error updating category")
     })
     @PUT
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response save(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
+            @RequestBody(description = "Category form with updated properties including inode", required = true) final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -574,7 +587,7 @@ public class CategoriesResource {
         }
 
         try {
-           return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
+           return Response.ok(new ResponseEntityCategoryView(this.categoryHelper.toCategoryView(
                     this.fillAndSave(categoryForm, user, host, pageMode, oldCategory,
                             new Category()), user))).build();
         } catch (InvocationTargetException | IllegalAccessException e) {
@@ -604,16 +617,20 @@ public class CategoriesResource {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request"),
-            @ApiResponse(responseCode = "401", description = "Authentication required")
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to update categories"),
+            @ApiResponse(responseCode = "404", description = "Parent category not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error updating sort order")
     })
     @PUT
     @Path("/_sort")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response save(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final CategoryEditForm categoryEditForm
+            @RequestBody(description = "Category edit form with category data and sort order information", required = true) final CategoryEditForm categoryEditForm
     ) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -672,15 +689,17 @@ public class CategoriesResource {
                             schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "500", description = "Internal server error deleting categories")
     })
     @DELETE
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public final Response delete(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            final List<String> categoriesToDelete) {
+            @RequestBody(description = "List of category inodes to delete", required = true) final List<String> categoriesToDelete) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -717,7 +736,7 @@ public class CategoriesResource {
             Logger.debug(this, e.getMessage(), e);
         }
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityBulkResultView(
                         new BulkResultView(Long.valueOf(deletedIds.size()), 0L, failedToDelete)))
                 .build();
     }
@@ -818,7 +837,9 @@ public class CategoriesResource {
             @ApiResponse(responseCode = "200", description = "CSV file streamed successfully",
                     content = @Content(mediaType = "text/csv")),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Context category not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error exporting categories")
     })
     @GET
     @Path("/_export")
@@ -827,8 +848,8 @@ public class CategoriesResource {
     @Produces({"text/csv"})
     public final void export(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @QueryParam("contextInode") final String contextInode,
-            @QueryParam(PaginationUtil.FILTER) final String filter)
+            @Parameter(description = "Context category inode to export from") @QueryParam("contextInode") final String contextInode,
+            @Parameter(description = "Filter pattern to match category names") @QueryParam(PaginationUtil.FILTER) final String filter)
             throws DotDataException, DotSecurityException, IOException {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
@@ -889,19 +910,17 @@ public class CategoriesResource {
     }
 
     /**
-     * Exports a list of categories.
+     * Imports categories from a CSV file.
      *
-     * @param httpRequest
-     * @param httpResponse
-     * @param uploadedFile
-     * @param multiPart
-     * @param fileDetail
-     * @param filter
-     * @param exportType
-     * @param contextInode
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param httpRequest HTTP request context
+     * @param httpResponse HTTP response context
+     * @param uploadedFile CSV file containing categories to import
+     * @param fileDetail File metadata and disposition information
+     * @param filter Filter pattern for categories
+     * @param exportType Import type: 'replace' or 'append'
+     * @param contextInode Context category inode to import into
+     * @return Response indicating success/failure
+     * @throws IOException if file reading fails
      */
     @Operation(
             operationId = "importCategories",
@@ -910,51 +929,39 @@ public class CategoriesResource {
                     "the import strategy: 'replace' deletes existing categories before importing, " +
                     "'merge' adds or updates without removing existing ones."
     )
+    @RequestBody(required = true,
+            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA,
+                    schema = @Schema(implementation = CategoryImportData.class)))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Import result returned",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request or invalid file"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "500", description = "Internal server error importing categories")
     })
     @POST
     @Path("/_import")
     @JSONP
     @NoCache
-    @WrapInTransaction
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes({MediaType.MULTIPART_FORM_DATA})
     public Response importCategories(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @FormDataParam("file") final File uploadedFile,
-            FormDataMultiPart multiPart,
-            @FormDataParam("file") FormDataContentDisposition fileDetail,
-            @FormDataParam("filter") String filter,
-            @FormDataParam("exportType") String exportType,
-            @FormDataParam("contextInode") String contextInode) {
+            @Parameter(hidden = true) @BeanParam final CategoryImportData form) throws IOException {
 
-        return processImport(httpRequest, httpResponse, uploadedFile, multiPart, fileDetail, filter,
-                exportType, contextInode);
+        return processImport(httpRequest, httpResponse,
+                form.getFileInputStream(), form.getFileDetail(),
+                form.getFilter(), form.getExportType(), form.getContextInode());
 
     }
 
-    private String getContentFromFile(String path) throws IOException {
-
-        String content = StringPool.BLANK;
-
-        try (InputStream file = java.nio.file.Files.newInputStream(java.nio.file.Path.of(path))) {
-            byte[] uploadedFileBytes = file.readAllBytes();
-
-            content = new String(uploadedFileBytes);
-        }
-        return content;
-    }
+    
 
     private Response processImport(final HttpServletRequest httpRequest,
             final HttpServletResponse httpResponse,
-            final File uploadedFile,
-            final FormDataMultiPart multiPart,
+            final InputStream fileInputStream,
             final FormDataContentDisposition fileDetail,
             final String filter,
             final String exportType,
@@ -968,7 +975,6 @@ public class CategoriesResource {
         final List<FailedResultView> failedToDelete = new ArrayList<>();
         long successCount = 0;
 
-        StringReader stringReader = null;
         BufferedReader bufferedReader = null;
 
         try {
@@ -983,10 +989,7 @@ public class CategoriesResource {
                     contextInode,
                     filter, exportType));
 
-            String content = getContentFromFile(uploadedFile.getPath());
-
-            stringReader = new StringReader(content);
-            bufferedReader = new BufferedReader(stringReader);
+            bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
 
             if ("replace".equals(exportType)) {
                 Logger.debug(this, () -> "Replacing categories");
@@ -1030,11 +1033,11 @@ public class CategoriesResource {
             }
             throw new DotRuntimeException(e);
         } finally {
-            CloseUtils.closeQuietly(stringReader, bufferedReader);
+            CloseUtils.closeQuietly(bufferedReader);
         }
 
-        return Response.ok(new ResponseEntityView(
-                        new BulkResultView(successCount, 0L,
+        return Response.ok(new ResponseEntityBulkResultView(
+                        new BulkResultView(Long.valueOf(UtilMethods.isSet(unableToDeleteCats) ? 1 : 0), 0L,
                                 failedToDelete)))
                 .build();
     }
