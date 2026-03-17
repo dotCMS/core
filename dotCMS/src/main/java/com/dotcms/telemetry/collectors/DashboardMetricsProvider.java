@@ -235,14 +235,14 @@ public class DashboardMetricsProvider {
     }
     
     /**
-     * Finds a dashboard metric by its {@link MetricType#getName()} value.
-     * 
-     * @param metricName the metric name to find
+     * Finds a dashboard metric by its qualified name ({@code FEATURE_NAME}).
+     *
+     * @param qualifiedName the qualified metric name to find (e.g., "CONTENTLETS_COUNT")
      * @return the metric if found, null otherwise
      */
-    public MetricType getDashboardMetricByName(final String metricName) {
+    public MetricType getDashboardMetricByName(final String qualifiedName) {
         return getDashboardMetrics().stream()
-                .filter(metric -> metricName.equals(metric.getName()))
+                .filter(metric -> qualifiedName.equals(metric.getQualifiedName()))
                 .findFirst()
                 .orElse(null);
     }

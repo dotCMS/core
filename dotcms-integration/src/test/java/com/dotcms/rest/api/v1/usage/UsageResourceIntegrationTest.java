@@ -417,44 +417,44 @@ public class UsageResourceIntegrationTest {
 
         final Map<String, Object> contentMetrics = metricsByCategory.get("content");
 
-        // Then: Should have content items metric
+        // Then: Should have content items metric (qualified name: FEATURE_NAME)
         assertTrue(
-                "Content category should include COUNT_CONTENT metric",
-                contentMetrics.containsKey("COUNT_CONTENT")
+                "Content category should include CONTENTLETS_COUNT metric",
+                contentMetrics.containsKey("CONTENTLETS_COUNT")
         );
 
         // Then: Should have content types metric
         assertTrue(
-                "Content category should include COUNT_OF_CONTENT_TYPES metric",
-                contentMetrics.containsKey("COUNT_OF_CONTENT_TYPES")
+                "Content category should include CONTENT_TYPES_COUNT_OF_CONTENT_TYPES metric",
+                contentMetrics.containsKey("CONTENT_TYPES_COUNT_OF_CONTENT_TYPES")
         );
 
         // Then: Verify metric structure for content types
         @SuppressWarnings("unchecked")
         final Map<String, Object> contentTypesMetric =
-                (Map<String, Object>) contentMetrics.get("COUNT_OF_CONTENT_TYPES");
+                (Map<String, Object>) contentMetrics.get("CONTENT_TYPES_COUNT_OF_CONTENT_TYPES");
 
         assertEquals("Metric name should match",
-                "COUNT_OF_CONTENT_TYPES",
+                "CONTENT_TYPES_COUNT_OF_CONTENT_TYPES",
                 contentTypesMetric.get("name"));
         assertNotNull("Metric should have a value",
                 contentTypesMetric.get("value"));
         assertEquals("Metric should have correct i18n key",
-                "usage.metric.COUNT_OF_CONTENT_TYPES.label",
+                "usage.metric.CONTENT_TYPES_COUNT_OF_CONTENT_TYPES.label",
                 contentTypesMetric.get("displayLabel"));
 
         // Then: Verify metric structure for content items
         @SuppressWarnings("unchecked")
         final Map<String, Object> contentItemsMetric =
-                (Map<String, Object>) contentMetrics.get("COUNT_CONTENT");
+                (Map<String, Object>) contentMetrics.get("CONTENTLETS_COUNT");
 
         assertEquals("Metric name should match",
-                "COUNT_CONTENT",
+                "CONTENTLETS_COUNT",
                 contentItemsMetric.get("name"));
         assertNotNull("Metric should have a value",
                 contentItemsMetric.get("value"));
         assertEquals("Metric should have correct i18n key",
-                "usage.metric.COUNT_CONTENT.label",
+                "usage.metric.CONTENTLETS_COUNT.label",
                 contentItemsMetric.get("displayLabel"));
     }
 }
