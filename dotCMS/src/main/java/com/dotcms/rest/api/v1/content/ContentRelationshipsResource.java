@@ -97,8 +97,9 @@ public class ContentRelationshipsResource {
      * @return The list of associated contents.
      */
     @Operation(
-        summary = "Get content with relationships (deprecated)",
-        description = "Retrieves content with relationships based on query parameters, identifier, or inode. This endpoint is deprecated - use /v1/content with depth parameter instead."
+            operationId = "getContentRelationships",
+            summary = "Get content with relationships (deprecated)",
+            description = "Retrieves content with relationships based on query parameters, identifier, or inode. This endpoint is deprecated - use /v1/content with depth parameter instead."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 

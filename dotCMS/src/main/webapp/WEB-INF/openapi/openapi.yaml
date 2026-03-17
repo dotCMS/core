@@ -6918,7 +6918,7 @@ paths:
       description: "Returns a single contentlet based on its identifier or inode.\
         \ This is the primary endpoint for fetching content data with support for\
         \ language, variants, and relationship depth."
-      operationId: getContent_1
+      operationId: getContent
       parameters:
       - description: Contentlet identifier or inode
         in: path
@@ -7008,7 +7008,7 @@ paths:
       description: "Retrieves content with relationships based on query parameters,\
         \ identifier, or inode. This endpoint is deprecated - use /v1/content with\
         \ depth parameter instead."
-      operationId: getContent
+      operationId: getContentRelationships
       parameters:
       - description: "Query parameters, identifier, or inode for content lookup"
         in: path
