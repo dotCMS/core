@@ -69,6 +69,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     };
 
     loadingFields = signal(false);
+    savingContentType = signal(false);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private destroyRef = inject(DestroyRef);
@@ -316,6 +317,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             ...value
         });
 
+        this.savingContentType.set(true);
         this.crudService
             .postData<DotCMSContentType[], DotCMSContentType>('v1/contenttype', createdContentType)
             .pipe(
@@ -324,6 +326,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             )
             .subscribe(
                 (contentType: DotCMSContentType) => {
+                    this.savingContentType.set(false);
                     this.data = contentType;
                     this.layout = this.data.layout;
                     this.dotRouterService.goToEditContentType(
@@ -333,6 +336,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                     this.show = false;
                 },
                 (err) => {
+                    this.savingContentType.set(false);
                     this.handleHttpError(err);
                 }
             );
@@ -348,15 +352,18 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             id: this.data.id
         });
 
+        this.savingContentType.set(true);
         this.crudService
             .putData<DotCMSContentType>(`v1/contenttype/id/${this.data.id}`, updatedContentType)
             .pipe(take(1))
             .subscribe(
                 (contentType: DotCMSContentType) => {
+                    this.savingContentType.set(false);
                     this.data = contentType;
                     this.show = false;
                 },
                 (err) => {
+                    this.savingContentType.set(false);
                     this.handleHttpError(err);
                 }
             );

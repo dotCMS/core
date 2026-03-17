@@ -12278,17 +12278,31 @@ paths:
         name: filter
         schema:
           type: string
-      - description: "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH).\
-          \ Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, SENDING_TO_ENDPOINTS,\
-          \ PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY,\
-          \ SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS,\
-          \ FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK,\
-          \ INVALID_TOKEN, LICENSE_REQUIRED"
+      - description: "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH)"
         example: "SUCCESS,FAILED_TO_PUBLISH"
         in: query
         name: status
         schema:
           type: string
+          enum:
+          - BUNDLE_REQUESTED
+          - WAITING_FOR_PUBLISHING
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - PUBLISHING_BUNDLE
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - SUCCESS
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_PUBLISH
+          - FAILED_INTEGRITY_CHECK
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
       responses:
         "200":
           content:
@@ -12316,7 +12330,10 @@ paths:
     delete:
       description: "Removes all bundles matching the specified status filter. Cannot\
         \ purge in-progress bundles (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE).\
-        \ If no status specified, uses safe defaults (all terminal + queued statuses)."
+        \ If no status specified, uses safe defaults (all terminal + queued statuses).\
+        \ IMPORTANT: This endpoint processes asynchronously. Results are delivered\
+        \ via WebSocket system messages to browser clients. Non-browser API clients\
+        \ will not receive completion notifications."
       operationId: purgePublishingJobs
       parameters:
       - description: "Comma-separated status values to purge. If omitted, uses safe\
@@ -12333,7 +12350,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityPurgeView"
-          description: Purge operation initiated (processes in background)
+          description: Purge operation initiated (processes in background). Results
+            delivered via WebSocket system messages to browser clients only.
         "400":
           content:
             application/json: {}
@@ -12357,7 +12375,7 @@ paths:
       operationId: pushBundle
       parameters:
       - description: Bundle identifier
-        example: 550e8400-e29b-41d4-a716-446655440000
+        example: 01KJWNJM2C67DM56GHBJ4S7B89
         in: path
         name: bundleId
         required: true
@@ -12441,7 +12459,7 @@ paths:
       operationId: deletePublishingJob
       parameters:
       - description: Bundle identifier
-        example: 550e8400-e29b-41d4-a716-446655440000
+        example: 01KJWNJM2C67DM56GHBJ4S7B89
         in: path
         name: bundleId
         required: true
@@ -12483,7 +12501,7 @@ paths:
       operationId: getPublishingJobDetails
       parameters:
       - description: Bundle identifier
-        example: f3d9a4b7-staging-bundle-2026-01-15
+        example: 01KJWNJM2C67DM56GHBJ4S7B89
         in: path
         name: bundleId
         required: true
@@ -22290,47 +22308,80 @@ components:
               type: object
     ContainerForm:
       type: object
+      description: Form used to create or update a Container in dotCMS
       properties:
         code:
           type: string
+          description: Velocity/code used to render the container's content. Used
+            when maxContentlets is 0.
         containerStructures:
           type: array
+          description: List of content type associations for this container. Each
+            entry maps a content type to rendering code. The 'id' field is ignored
+            on input and auto-generated server-side. Only 'structureId' and 'code'
+            are required.
           items:
             $ref: "#/components/schemas/ContainerStructure"
         dynamic:
           type: boolean
+          description: Whether this container uses dynamic content type resolution
         friendlyName:
           type: string
+          description: Description of the container (displayed as 'Description' in
+            the UI). Also accepts 'description' as an alias field name in JSON.
         hostId:
           type: string
+          description: "Identifier of the site (host) where this container should\
+            \ be created or moved to. If not provided, the container is assigned to\
+            \ the site resolved from the current HTTP request context."
         identifier:
           type: string
+          description: "Identifier of the container. Required for updates, ignored\
+            \ on creation."
         maxContentlets:
           type: integer
           format: int32
+          description: Maximum number of contentlets this container can hold. Set
+            to 0 for no limit.
         notes:
           type: string
+          description: Internal notes about this container (not displayed to end users)
         owner:
           type: string
+          description: Owner user ID of the container
         postLoop:
           type: string
+          description: Velocity code executed after the content loop
         preLoop:
           type: string
+          description: Velocity code executed before the content loop
         showOnMenu:
           type: boolean
+          description: Whether this container should appear in navigation menus
         sortContentletsBy:
           type: string
+          description: Field name used to sort contentlets within this container
         sortOrder:
           type: integer
           format: int32
+          description: Sort order for display purposes
         staticify:
           type: boolean
+          description: Whether the container output should be staticified (cached
+            as static HTML)
         structureInode:
           type: string
+          description: Inode of the content type (structure) associated with this
+            container. This is a legacy field; prefer using containerStructures for
+            multiple content type associations.
         title:
           type: string
+          description: Title of the container
         useDiv:
           type: boolean
+          description: Whether to wrap content in a div element
+      required:
+      - title
     ContainerRaw:
       type: object
       properties:
@@ -23289,8 +23340,9 @@ components:
           example: endpoint-1
         port:
           type: string
-          description: Server port number
+          description: Server port number (1-65535)
           example: "443"
+          pattern: "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[1-9])$"
         protocol:
           type: string
           description: Communication protocol
@@ -26950,7 +27002,7 @@ components:
         bundleId:
           type: string
           description: Unique bundle identifier
-          example: f3d9a4b7-staging-bundle-2026-01-15
+          example: 01KJWNJM2C67DM56GHBJ4S7B89
         bundleName:
           type: string
           description: Human-readable bundle name
@@ -26965,6 +27017,10 @@ components:
           format: int32
           description: Number of target environments
           example: 3
+        filterKey:
+          type: string
+          description: Publishing filter key identifier (use this for API calls)
+          example: ForcePush.yml
         filterName:
           type: string
           description: Publishing filter name used
@@ -27076,7 +27132,9 @@ components:
             example: "[\"env-123\",\"env-456\"]"
         expireDate:
           type: string
+          format: date-time
           description: Scheduled expire date in ISO 8601 format with timezone offset
+            (required for expire/publishexpire)
           example: 2025-04-15T14:30:00-05:00
         filterKey:
           type: string
@@ -27084,11 +27142,18 @@ components:
           example: ForcePush.yml
         operation:
           type: string
-          description: "Operation type: publish, expire, or publishexpire"
+          description: "Operation type: publish, expire, or publishexpire. Case-insensitive\
+            \ (PUBLISH, Publish, publish all accepted)."
+          enum:
+          - publish
+          - expire
+          - publishexpire
           example: publish
         publishDate:
           type: string
+          format: date-time
           description: Scheduled publish date in ISO 8601 format with timezone offset
+            (required for publish/publishexpire)
           example: 2025-03-15T14:30:00-05:00
       required:
       - environments
@@ -30625,8 +30690,10 @@ components:
         deliveryStrategy:
           type: string
           description: "Which endpoints to retry: ALL_ENDPOINTS sends to all, FAILED_ENDPOINTS\
-            \ sends only to previously failed endpoints"
+            \ sends only to previously failed endpoints. Case-sensitive."
           enum:
+          - ALL_ENDPOINTS
+          - FAILED_ENDPOINTS
           - ALL_ENDPOINTS
           - FAILED_ENDPOINTS
           example: FAILED_ENDPOINTS

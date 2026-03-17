@@ -88,14 +88,16 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
 
-        Connection conn =null;
         Logger.info(this, "============= Running Task04205MigrateVanityURLToContent =============");
-        try {
+        // Use a direct pool connection (not the ThreadLocal-managed one) because this task
+        // sets autoCommit=true and manages its own lifecycle.  On a fresh database the
+        // virtual_link table does not exist, so queries will fail — a direct connection
+        // isolates that failure from the outer transaction opened by StartupTasksExecutor.
+        try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
 
 			/* drop virtual link constraints*/
             dropConstraints();
 
-            conn = DbConnectionFactory.getConnection();
             conn.setAutoCommit(true);
             DotConnect dc = new DotConnect();
 
@@ -143,15 +145,6 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
             Logger.error(this,
                     String.format(ERROR_MESSAGE,
                             e.getMessage()), e);
-        } finally {
-            try {
-                conn.close();
-            }catch (SQLException e){
-                Logger.error(this,
-                        String.format(ERROR_MESSAGE,
-                                e.getMessage()), e);
-            }
-
         }
         Logger.info(this,
                 "============= Finished Task04205MigrateVanityURLToContent =============");
