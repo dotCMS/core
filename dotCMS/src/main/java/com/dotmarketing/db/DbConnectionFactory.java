@@ -787,4 +787,42 @@ public class DbConnectionFactory {
             throw new DotDataException(e);
         }
     }
+
+    /**
+     * if it was opened by this call.</p>
+     *
+     * <p>This is semantically equivalent to the {@code @CloseDBIfOpened} annotation but
+     * works correctly on CDI beans where ByteBuddy annotations don't fire due to Weld proxies.</p>
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>
+     * return DbConnectionFactory.wrapConnection(() -&gt; {
+     *     return APILocator.getMetricsAPI().getValue("SELECT COUNT(*) FROM contentlet");
+     * });
+     * </pre>
+     *
+     * <p><b>When to use this vs LocalTransaction.wrapReturn():</b></p>
+     * <ul>
+     *   <li>Use this for read-only SELECT queries that don't need transactions</li>
+     *   <li>Use LocalTransaction.wrapReturn() for operations that modify data</li>
+     * </ul>
+     *
+     * @param delegate the operation to execute with connection management
+     * @param <T> the return type of the operation
+     * @return the result of the operation
+     * @throws DotDataException if a database error occurs
+     * @see com.dotcms.business.CloseDBIfOpened
+     * @see com.dotmarketing.db.LocalTransaction#wrapReturn
+     */
+    public static <T> T wrapConnection(final com.dotcms.util.ReturnableDelegate<T> delegate) throws DotDataException {
+        try {
+            return com.dotcms.business.interceptor.CloseDBIfOpenedHandler
+                    .wrapConnection(delegate::execute);
+        } catch (DotDataException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DotDataException("Error executing operation with connection", e);
+        }
+    }
+
 }
