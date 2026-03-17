@@ -23,7 +23,7 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.authentication.RequestUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.api.v1.workflow.WorkflowActionMultipartSchema
+import com.dotcms.rest.api.v1.workflow.WorkflowActionMultipartSchema;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
