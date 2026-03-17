@@ -34,6 +34,7 @@ import { DotInlineEditComponent } from '../../../../../view/components/_common/d
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
+import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor-builder.component';
 import { ContentTypesFieldsListComponent } from '../fields/content-types-fields-list';
 import { FieldDragDropService } from '../fields/service';
 
@@ -56,7 +57,8 @@ import { FieldDragDropService } from '../fields/service';
         DotPortletBoxComponent,
         IframeComponent,
         DotAddToMenuComponent,
-        ContentTypesFieldsListComponent
+        ContentTypesFieldsListComponent,
+        DotStyleEditorBuilderComponent
     ]
 })
 export class ContentTypesLayoutComponent implements OnInit {

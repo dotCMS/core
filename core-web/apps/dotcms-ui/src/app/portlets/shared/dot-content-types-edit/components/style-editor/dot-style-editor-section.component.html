@@ -1,0 +1,65 @@
+<div class="border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
+    <!-- Section header -->
+    <div
+        class="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
+        <input
+            pInputText
+            [ngModel]="$title()"
+            (ngModelChange)="setTitle($event)"
+            placeholder="Section Title"
+            class="text-base font-semibold text-gray-900 bg-transparent border-none! shadow-none! outline-none p-0 flex-1 ring-0!" />
+        <div class="flex items-center gap-1 shrink-0 ml-2">
+            <button
+                type="button"
+                (click)="moveUp.emit()"
+                [disabled]="$isFirst()"
+                class="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <i class="pi pi-chevron-up text-sm text-gray-500"></i>
+            </button>
+            <button
+                type="button"
+                (click)="moveDown.emit()"
+                [disabled]="$isLast()"
+                class="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <i class="pi pi-chevron-down text-sm text-gray-500"></i>
+            </button>
+            <div class="w-px h-4 bg-gray-300 mx-1"></div>
+            <button
+                type="button"
+                (click)="delete.emit()"
+                class="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+                <i class="pi pi-trash text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Fields -->
+    <div class="p-4 flex flex-col gap-3">
+        @if ($section().fields.length === 0) {
+            <div class="text-center py-6 text-sm text-gray-400">
+                No fields yet. Click below to add one.
+            </div>
+        }
+        @for (field of $section().fields; track field.uid; let i = $index) {
+            <dot-style-editor-field-form
+                [field]="field"
+                [isFirst]="i === 0"
+                [isLast]="i === $section().fields.length - 1"
+                (fieldChange)="fieldChange.emit($event)"
+                (delete)="removeField.emit(field.uid)"
+                (moveUp)="moveFieldUp.emit(field.uid)"
+                (moveDown)="moveFieldDown.emit(field.uid)" />
+        }
+    </div>
+
+    <!-- Add field button -->
+    <div class="px-4 pb-4">
+        <button
+            type="button"
+            (click)="addField.emit()"
+            class="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors">
+            <i class="pi pi-plus text-xs"></i>
+            Add Field to {{ $title() }}
+        </button>
+    </div>
+</div>

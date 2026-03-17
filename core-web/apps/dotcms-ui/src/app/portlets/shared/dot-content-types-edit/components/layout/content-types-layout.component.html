@@ -66,17 +66,20 @@
                 {{ 'contenttypes.tab.fields.header' | dm }}
             </p-tab>
             @if ($contentType()) {
-                <p-tab [value]="1">
+                <p-tab [value]="1">Style Editor</p-tab>
+            }
+            @if ($contentType()) {
+                <p-tab [value]="2">
                     {{ 'contenttypes.tab.relationship.header' | dm }}
                 </p-tab>
             }
             @if ($contentType() && showPermissionsTab | async) {
-                <p-tab [value]="2">
+                <p-tab [value]="3">
                     {{ 'contenttypes.tab.permissions.header' | dm }}
                 </p-tab>
             }
             @if ($contentType()) {
-                <p-tab [value]="$contentType() && (showPermissionsTab | async) ? 3 : 2">
+                <p-tab [value]="$contentType() && (showPermissionsTab | async) ? 4 : 3">
                     {{ 'contenttypes.tab.publisher.push.history.header' | dm }}
                 </p-tab>
             }
@@ -102,7 +105,12 @@
                 </div>
             </p-tabpanel>
             @if ($contentType()) {
-                <p-tabpanel [value]="1" class="h-full">
+                <p-tabpanel [value]="1" class="h-full min-h-0">
+                    <dot-style-editor-builder [contentType]="$contentType()" />
+                </p-tabpanel>
+            }
+            @if ($contentType()) {
+                <p-tabpanel [value]="2" class="h-full">
                     <div class="h-full">
                         <dot-portlet-box class="h-full">
                             <dot-iframe class="h-full" [src]="relationshipURL" />
@@ -111,7 +119,7 @@
                 </p-tabpanel>
             }
             @if ($contentType() && showPermissionsTab | async) {
-                <p-tabpanel [value]="2" class="h-full">
+                <p-tabpanel [value]="3" class="h-full">
                     <div class="h-full">
                         <dot-portlet-box class="h-full">
                             <dot-iframe class="h-full" [src]="permissionURL" />
@@ -121,7 +129,7 @@
             }
             @if ($contentType()) {
                 <p-tabpanel
-                    [value]="$contentType() && (showPermissionsTab | async) ? 3 : 2"
+                    [value]="$contentType() && (showPermissionsTab | async) ? 4 : 3"
                     class="h-full">
                     <div class="h-full">
                         <dot-portlet-box class="h-full">

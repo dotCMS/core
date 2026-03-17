@@ -203,6 +203,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly UVE_STATUS = UVE_STATUS;
 
+    SCHEMAS = [{"contentType":"Activity","sections":[{"title":"Typography","fields":[{"type":"dropdown","label":"Font sie","id":"fontSie","config":{"options":[{"label":"Text XL","value":"text-xl"},{"label":"Text SM","value":"text-sm"}]}},{"type":"input","label":"Caption Iframe","id":"captionIframe","config":{"inputType":"text","placeholder":"Type here the caption"}},{"type":"radio","label":"Layout","id":"layout","config":{"options":[{"label":"Left","value":"left","imageURL":"https://i.ibb.co/cXv3tfYd/Screenshot-2025-12-23-at-11-58-32-AM.png"},{"label":"Right","value":"right","imageURL":"https://i.ibb.co/v4cJxyLZ/Screenshot-2025-12-23-at-11-59-01-AM.png"}],"columns":2}},{"type":"checkboxGroup","label":"Settings","id":"settings","config":{"options":[{"label":"Bold","value":"bold"},{"label":"Underline","value":"underline"}]}}]}]}];
+
+
     readonly $paletteClass = computed(() => {
         return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
     });
@@ -530,7 +533,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof EditEmaEditorComponent
      */
     addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
+        const scriptString = `
+        <script>
+            console.log("called script")
+            function initDotUVE() {
+                console.log("called initDotUVE")
+            if (typeof dotUVE !== 'undefined' && dotUVE.registerStyleEditorSchemas) {
+                dotUVE.registerStyleEditorSchemas(${JSON.stringify(this.SCHEMAS)})
+            } else {
+                console.error('dotUVE is not available');
+            }
+        }
+        </script>
+        <script src="${SDK_EDITOR_SCRIPT_SOURCE}" onload="initDotUVE()"></script>
+        `;
         const bodyExists = rendered.includes('</body>');
 
         /*

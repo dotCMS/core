@@ -1,0 +1,73 @@
+<div class="h-full overflow-y-auto bg-gray-100 p-6">
+    <div class="max-w-3xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-6">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-900 m-0">
+                    Style Editor Form Generator
+                </h2>
+                <p class="text-sm text-gray-500 mt-1 mb-0">
+                    Create and organize the tools available in the style editor for this
+                    content type.
+                </p>
+            </div>
+            <div class="flex gap-2 shrink-0 ml-4 pt-1">
+                <!-- <p-button
+                    label="Cancel"
+                    [outlined]="true"
+                    severity="secondary"
+                    [disabled]="$saving()" /> -->
+                <p-button
+                    label="Save"
+                    [loading]="$saving()"
+                    [disabled]="!$isDirty()"
+                    (onClick)="save()" />
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <!-- @if ($sections().length === 0) {
+            <div
+                class="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-gray-300 rounded-xl bg-white mb-4">
+                <div
+                    class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="pi pi-table text-2xl text-gray-400"></i>
+                </div>
+                <h3 class="text-base font-medium text-gray-700 m-0">No sections yet</h3>
+                <p class="text-sm text-gray-500 mt-2 mb-0">
+                    Add a section to start building your style editor form.
+                </p>
+            </div>
+        } -->
+
+        <!-- Sections list -->
+        <div class="flex flex-col gap-4">
+            @for (section of $sections(); track section.uid; let i = $index) {
+                <dot-style-editor-section
+                    [section]="section"
+                    [isFirst]="i === 0"
+                    [isLast]="i === $sections().length - 1"
+                    (moveUp)="moveSectionUp(i)"
+                    (moveDown)="moveSectionDown(i)"
+                    (delete)="removeSection(i)"
+                    (titleChange)="updateSectionTitle(i, $event)"
+                    (addField)="addField(i)"
+                    (removeField)="removeField(i, $event)"
+                    (moveFieldUp)="moveFieldUp(i, $event)"
+                    (moveFieldDown)="moveFieldDown(i, $event)"
+                    (fieldChange)="updateField(i, $event)" />
+            }
+        </div>
+
+        <!-- Add New Section button -->
+        <div class="mt-4">
+            <button
+                type="button"
+                (click)="addSection()"
+                class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 font-medium text-sm transition-colors bg-white py-6">
+                <i class="pi pi-plus text-sm"></i>
+                Add New Section
+            </button>
+        </div>
+    </div>
+</div>
