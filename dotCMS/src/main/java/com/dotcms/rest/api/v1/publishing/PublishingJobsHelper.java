@@ -159,6 +159,7 @@ public class PublishingJobsHelper {
                 .bundleName(bundle != null ? bundle.getName() : null)
                 .status(auditStatus.getStatus())
                 .filterName(resolveFilterName(bundle))
+                .filterKey(bundle != null ? bundle.getFilterKey() : null)
                 .assetCount(auditStatus.getTotalNumberOfAssets())
                 .assetPreview(buildAssetPreviews(history))
                 .environmentCount(countEnvironments(history))

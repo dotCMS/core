@@ -88,7 +88,12 @@ public class EmbeddingsFactory {
     }
 
     void runSQL(final String sql) {
-        try (final Connection db = getPGVectorConnection()) {
+        // Use a plain connection (without PGvector.addVectorType) for DDL operations.
+        // addVectorType queries pg_type and caches the OID for "vector"; if called before
+        // the pgvector extension is created, it caches OID=0 (UNSPECIFIED) and that stale
+        // value persists for the connection's lifetime, causing "Unknown type vector" errors
+        // on subsequent queries that pass PGvector parameters.
+        try (final Connection db = PgVectorDataSource.datasource.get().getConnection()) {
             new DotConnect().setSQL(sql).loadResult(db);
         } catch (SQLException | DotDataException e) {
             throw new DotRuntimeException(e);

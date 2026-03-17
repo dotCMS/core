@@ -74,6 +74,18 @@ public interface AbstractPublishingJobView {
     String filterName();
 
     /**
+     * Publishing filter key used for this bundle.
+     *
+     * @return Filter key or null if not set
+     */
+    @Schema(
+            description = "Publishing filter key identifier (use this for API calls)",
+            example = "ForcePush.yml"
+    )
+    @Nullable
+    String filterKey();
+
+    /**
      * Total number of assets in the bundle.
      *
      * @return Asset count

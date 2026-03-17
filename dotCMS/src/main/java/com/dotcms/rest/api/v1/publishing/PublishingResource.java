@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -73,6 +74,7 @@ public class PublishingResource {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_PER_PAGE = 50;
     private static final int MAX_PER_PAGE = 500;
+    private static final Pattern BUNDLE_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
 
     private final WebResource webResource;
     private final Lazy<PublishAuditAPI> publishAuditAPI;
@@ -232,10 +234,16 @@ public class PublishingResource {
             }
         }
 
-        // Validate and normalize pagination parameters
-        final int validPage = Math.max(DEFAULT_PAGE, page);
-        final int validPerPage = Math.min(Math.max(1, perPage), MAX_PER_PAGE);
-        final int offset = (validPage - 1) * validPerPage;
+        // Validate pagination parameters
+        if (page < 1) {
+            throw new BadRequestException("Page must be 1 or greater (got: " + page + ")");
+        }
+        if (perPage < 1 || perPage > MAX_PER_PAGE) {
+            throw new BadRequestException(String.format(
+                    "per_page must be between 1 and %d (got: %d)", MAX_PER_PAGE, perPage));
+        }
+        
+        final int offset = (page - 1) * perPage;
 
         // Parse status filter
         final List<Status> statusList = publishingJobsHelper.parseStatuses(status);
@@ -243,7 +251,7 @@ public class PublishingResource {
         // Retrieve paginated audit statuses with combined filtering
         final List<PublishAuditStatus> auditStatuses =
                 publishAuditAPI.get().getPublishAuditStatus(
-                        validPerPage, offset, PublishingJobsHelper.ASSET_PREVIEW_LIMIT, filter, statusList);
+                        perPage, offset, PublishingJobsHelper.ASSET_PREVIEW_LIMIT, filter, statusList);
 
         // Get total count for pagination
         final int totalCount = publishAuditAPI.get()
@@ -256,14 +264,14 @@ public class PublishingResource {
 
         // Build pagination metadata
         final Pagination pagination = new Pagination.Builder()
-                .currentPage(validPage)
-                .perPage(validPerPage)
+                .currentPage(page)
+                .perPage(perPage)
                 .totalEntries(totalCount)
                 .build();
 
         Logger.debug(this, () -> String.format(
                 "Listed %d publishing jobs (page %d, total %d) with filter='%s', status='%s'",
-                jobs.size(), validPage, totalCount, filter, status));
+                jobs.size(), page, totalCount, filter, status));
 
         return new ResponseEntityPublishingJobsView(jobs, pagination);
     }
@@ -339,9 +347,7 @@ public class PublishingResource {
                 .init();
 
         // Validate bundleId
-        if (!UtilMethods.isSet(bundleId)) {
-            throw new BadRequestException("Bundle ID is required");
-        }
+        validateBundleId(bundleId);
 
         // Retrieve audit status
         final PublishAuditStatus auditStatus = publishAuditAPI.get()
@@ -448,16 +454,14 @@ public class PublishingResource {
 
         final User user = initData.getUser();
 
-        // Validate bundleId is provided
-        if (!UtilMethods.isSet(bundleId)) {
-            throw new BadRequestException("Bundle ID is required");
-        }
+        // Validate bundleId
+        validateBundleId(bundleId);
 
-        // Check if bundle exists (either in audit or bundle table)
-        final PublishAuditStatus auditStatus = publishAuditAPI.get().getPublishAuditStatus(bundleId);
+        // Check if bundle exists (either in bundle table or audit table)
         final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
+        final PublishAuditStatus auditStatus = publishAuditAPI.get().getPublishAuditStatus(bundleId);
 
-        if (auditStatus == null && bundle == null) {
+        if (bundle == null && auditStatus == null) {
             throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
         }
 
@@ -725,9 +729,7 @@ public class PublishingResource {
         final User user = initData.getUser();
 
         // 2. Validate bundleId
-        if (!UtilMethods.isSet(bundleId)) {
-            throw new BadRequestException("Bundle ID is required");
-        }
+        validateBundleId(bundleId);
 
         // 3. Validate form inputs
         if (form == null) {
@@ -735,66 +737,77 @@ public class PublishingResource {
         }
         form.checkValid();
 
-        // 4. Get and validate bundle exists
+        // 4. Pre-validate and parse date formats (before database operations)
+        final String operation = form.getOperation().toLowerCase();
+        Date publishDate = null;
+        Date expireDate = null;
+        switch (operation) {
+            case "publish":
+                publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
+                break;
+            case "expire":
+                expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+                break;
+            case "publishexpire":
+                publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
+                expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+                break;
+            default:
+                break; // checkValid() already validated operation
+        }
+
+        // 5. Get and validate bundle exists
         final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
         if (bundle == null) {
             throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
         }
 
-        // 5. Validate environments and permissions
+        // 6. Validate environments and permissions
         final List<Environment> validEnvs = publishingJobsHelper.validateEnvironmentPermissions(
                 form.getEnvironments(), user);
         if (validEnvs.isEmpty()) {
             throw new NotFoundException("No valid environments found or user lacks permission");
         }
 
-        // 6. Get filter and extract forcePush (falls back to default filter if not found)
+        // 7. Get filter and extract forcePush (falls back to default filter if not found)
         final FilterDescriptor filter = publisherAPI.get().getFilterDescriptorByKey(form.getFilterKey());
         final boolean forcePush = (boolean) filter.getFilters()
                 .getOrDefault(FilterDescriptor.FORCE_PUSH_KEY, false);
 
-        // 7. Update bundle with settings
+        // 8. Update bundle with settings
         bundle.setForcePush(forcePush);
         bundle.setFilterKey(form.getFilterKey());
         bundleAPI.get().saveBundleEnvironments(bundle, validEnvs);
 
-        // 8. Execute operation based on type — parse only the dates required per operation
-        final String operation = form.getOperation().toLowerCase();
+        // 9. Execute operation based on type (dates already parsed in step 4)
         switch (operation) {
-            case "publish": {
-                final Date publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
+            case "publish":
                 bundle.setPublishDate(publishDate);
                 bundleAPI.get().updateBundle(bundle);
                 publisherQueueAPI.get().publishBundleAssets(bundleId, publishDate);
                 break;
-            }
-            case "expire": {
-                final Date expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+            case "expire":
                 bundle.setExpireDate(expireDate);
                 bundleAPI.get().updateBundle(bundle);
                 publisherQueueAPI.get().unpublishBundleAssets(bundleId, expireDate);
                 break;
-            }
-            case "publishexpire": {
-                final Date publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
-                final Date expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+            case "publishexpire":
                 bundle.setPublishDate(publishDate);
                 bundle.setExpireDate(expireDate);
                 bundleAPI.get().updateBundle(bundle);
                 publisherQueueAPI.get().publishAndExpireBundleAssets(bundleId, publishDate, expireDate, user);
                 break;
-            }
             default:
                 throw new BadRequestException(String.format(
                         "Invalid operation: '%s'. Valid values: publish, expire, publishexpire",
                         form.getOperation()));
         }
 
-        // 9. Fire publisher queue immediately (2-second delay for responsive UX)
+        // 10. Fire publisher queue immediately (2-second delay for responsive UX)
         publisherQueueAPI.get().firePublisherQueueNow(
                 Map.of("deliveryStrategy", DeliveryStrategy.ALL_ENDPOINTS));
 
-        // 10. Build and return result (return actual valid environments, not requested)
+        // 11. Build and return result (return actual valid environments, not requested)
         final List<String> validEnvIds = validEnvs.stream()
                 .map(Environment::getId)
                 .collect(Collectors.toList());
@@ -842,7 +855,9 @@ public class PublishingResource {
             summary = "Bulk delete publishing jobs by status",
             description = "Removes all bundles matching the specified status filter. " +
                     "Cannot purge in-progress bundles (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE). " +
-                    "If no status specified, uses safe defaults (all terminal + queued statuses)."
+                    "If no status specified, uses safe defaults (all terminal + queued statuses). " +
+                    "IMPORTANT: This endpoint processes asynchronously. Results are delivered via WebSocket " +
+                    "system messages to browser clients. Non-browser API clients will not receive completion notifications."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -1020,6 +1035,22 @@ public class PublishingResource {
 
         } catch (Exception ex) {
             Logger.error(this, "Error sending purge error message", ex);
+        }
+    }
+
+    /**
+     * Validates that a bundle ID is present and contains only safe characters.
+     *
+     * @param bundleId The bundle ID to validate
+     * @throws BadRequestException if the bundle ID is missing or contains invalid characters
+     */
+    private static void validateBundleId(final String bundleId) {
+        if (!UtilMethods.isSet(bundleId)) {
+            throw new BadRequestException("Bundle ID is required");
+        }
+        if (!BUNDLE_ID_PATTERN.matcher(bundleId).matches()) {
+            throw new BadRequestException(
+                    "Invalid bundle ID format. Only alphanumeric characters, hyphens, and underscores are allowed.");
         }
     }
 }

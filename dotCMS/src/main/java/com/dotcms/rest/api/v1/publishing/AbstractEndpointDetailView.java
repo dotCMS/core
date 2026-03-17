@@ -65,7 +65,8 @@ public interface AbstractEndpointDetailView {
     @Schema(
             description = "Server port number as a string (valid range: 1–65535). May be empty if not configured.",
             example = "443",
-            requiredMode = Schema.RequiredMode.REQUIRED
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            pattern = "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[1-9])$"
     )
     String port();
 
