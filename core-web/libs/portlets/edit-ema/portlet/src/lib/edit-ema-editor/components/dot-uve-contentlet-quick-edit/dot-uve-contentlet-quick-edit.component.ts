@@ -190,7 +190,7 @@ export class DotUveContentletQuickEditComponent {
     protected handleSubmit(): void {
         const form = this.$contentletForm();
         if (form?.valid) {
-            this.submit.emit(form.value);
+            this.submit.emit(form.getRawValue());
         }
     }
 

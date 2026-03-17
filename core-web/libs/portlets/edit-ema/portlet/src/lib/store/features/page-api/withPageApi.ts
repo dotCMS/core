@@ -252,7 +252,8 @@ export function withPageApi(deps: WithPageApiDeps) {
                             }
                         }),
                         switchMap(() => {
-                            const pageRequest = !deps.requestMetadata()
+                            const isGraphQL = !!deps.requestMetadata();
+                            const pageRequest = !isGraphQL
                                 ? dotPageApiService.get(store.pageParams())
                                 : dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
                                       tap((response) =>
@@ -266,7 +267,9 @@ export function withPageApi(deps: WithPageApiDeps) {
 
                             return pageRequest.pipe(
                                 tap((pageAsset) => {
-                                    deps.setPageAsset({ pageAsset });
+                                    if (!isGraphQL) {
+                                        deps.setPageAsset({ pageAsset });
+                                    }
                                 }),
                                 switchMap((pageAsset) => {
                                     return dotLanguagesService.getLanguagesUsedPage(
@@ -336,19 +339,19 @@ export function withPageApi(deps: WithPageApiDeps) {
                                               );
 
                                     return pageRequest.pipe(
-                                        tapResponse(
-                                            () => {
-                                                patchState(store, {
-                                                    uveStatus: UVE_STATUS.LOADED
-                                                });
-                                            },
-                                            (e) => {
-                                                console.error(e);
-                                                patchState(store, {
-                                                    uveStatus: UVE_STATUS.ERROR
-                                                });
-                                            }
-                                        )
+                                        catchError((e) => {
+                                            console.error(e);
+                                            patchState(store, {
+                                                uveStatus: UVE_STATUS.ERROR
+                                            });
+
+                                            return EMPTY;
+                                        }),
+                                        tap(() => {
+                                            patchState(store, {
+                                                uveStatus: UVE_STATUS.LOADED
+                                            });
+                                        })
                                     );
                                 }),
                                 catchError((e) => {
@@ -472,40 +475,19 @@ export function withPageApi(deps: WithPageApiDeps) {
                  */
                 saveStyleEditor: (payload: SaveStylePropertiesPayload) => {
                     return dotPageApiService.saveStyleProperties(payload).pipe(
-                        tap({
-                            next: () => {
-                                // Success - clear history and set current state as the new base (last saved state)
-                                // This ensures future rollbacks always go back to this saved state
-                                deps.resetHistoryToCurrent();
-                            },
-                            error: (error) => {
-                                console.error('Error saving style properties:', error);
+                        tap(() => {
+                            deps.resetHistoryToCurrent();
+                        }),
+                        catchError((error) => {
+                            const rolledBack = deps.rollbackPageAssetResponse();
 
-                                // Rollback the optimistic update to the last saved state
-                                const rolledBack = deps.rollbackPageAssetResponse();
-
-                                if (!rolledBack) {
-                                    console.error(
-                                        'Failed to rollback optimistic update - no history available'
-                                    );
-
-                                    return;
-                                }
-
-                                // Update iframe with rolled back state
+                            if (rolledBack) {
                                 const rolledBackResponse = deps.pageAsset()?.clientResponse;
                                 if (rolledBackResponse) {
                                     iframeMessenger.sendPageData(rolledBackResponse);
                                 }
-                                console.warn(
-                                    'Rolled back optimistic style update due to save failure'
-                                );
                             }
-                        }),
-                        catchError((error) => {
-                            console.error('Error saving style properties:', error);
-                            // Re-throw error so component can handle it (show toast, etc.)
-                            // Rollback is already handled in tap error callback
+
                             return throwError(() => error);
                         })
                     );

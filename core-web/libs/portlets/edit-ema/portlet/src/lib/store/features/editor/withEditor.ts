@@ -133,7 +133,7 @@ export function withEditor() {
             });
 
             const editorCanEditLayout = computed(() => {
-                return hasPermissionToEditLayout() && store.viewMode() === UVE_MODE.EDIT;
+                return hasPermissionToEditLayout();
             });
 
             const editorCanEditStyles = computed(() => {

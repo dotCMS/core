@@ -1166,6 +1166,10 @@ describe('DotEmaShellComponent', () => {
                         page: {
                             ...MOCK_RESPONSE_HEADLESS.page,
                             canEdit: false
+                        },
+                        template: {
+                            ...MOCK_RESPONSE_HEADLESS.template,
+                            drawed: false
                         }
                     })
                 );

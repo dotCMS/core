@@ -99,7 +99,7 @@ export class DotEmaShellComponent implements OnInit {
         const template = this.uveStore.pageAsset()?.template;
         const isLoading = this.uveStore.uveStatus() === UVE_STATUS.LOADING;
         const templateDrawed = template?.drawed;
-        const isLayoutDisabled = !page?.canEdit || !templateDrawed;
+        const isLayoutDisabled = !this.uveStore.editorCanEditLayout();
         const canSeeRulesExists = page && 'canSeeRules' in page;
 
         return [
@@ -216,12 +216,15 @@ export class DotEmaShellComponent implements OnInit {
 
         // Check if we already have page data loaded with matching params
         const currentPageParams = this.uveStore.pageParams();
+
         const hasPageData = !!this.uveStore.pageAsset()?.page;
         const paramsMatch =
             currentPageParams &&
             currentPageParams.url === params.url &&
             currentPageParams.language_id === params.language_id &&
-            currentPageParams.mode === params.mode;
+            currentPageParams.mode === params.mode &&
+            currentPageParams.variantName === params.variantName &&
+            currentPageParams[PERSONA_KEY] === params.personaId;
 
         if (!hasPageData || !paramsMatch) {
             this.uveStore.pageLoad(params);

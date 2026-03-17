@@ -9,12 +9,12 @@ import {
     withState
 } from '@ngrx/signals';
 import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, Signal, untracked } from '@angular/core';
 
-import { map, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import {
     DotContentletLockerService,
@@ -157,65 +157,79 @@ export function withWorkflow() {
             const dotLanguagesService = inject(DotLanguagesService);
             const pageStore = store as StoreWithWorkflowPageApiDeps<typeof store>;
 
-            const reloadPageAfterLockChange = () => {
-                const params = store.pageParams();
+            const reloadPageAfterLockChange = rxMethod<void>(
+                pipe(
+                    tap(() => {
+                        const params = store.pageParams();
 
-                if (!params) {
-                    patchState(store, { workflowLockIsLoading: false });
-                    return;
-                }
+                        if (!params) {
+                            patchState(store, { workflowLockIsLoading: false });
+                            return;
+                        }
 
-                patchState(store, { uveStatus: UVE_STATUS.LOADING });
+                        patchState(store, { uveStatus: UVE_STATUS.LOADING });
+                    }),
+                    switchMap(() => {
+                        const params = store.pageParams();
 
-                const requestWithParams = pageStore.$requestWithParams?.();
-                const requestMetadata = pageStore.requestMetadata?.();
-                const pageRequest =
-                    !requestMetadata || !requestWithParams
-                        ? dotPageApiService.get(params).pipe(map((pageAsset) => ({ pageAsset })))
-                        : dotPageApiService.getGraphQLPage(requestWithParams);
+                        if (!params) {
+                            return EMPTY;
+                        }
 
-                pageRequest.subscribe({
-                    next: (response) => {
-                        const pageResponse =
-                            'pageAsset' in response ? response : { pageAsset: response };
+                        const requestWithParams = pageStore.$requestWithParams?.();
+                        const requestMetadata = pageStore.requestMetadata?.();
+                        const pageRequest =
+                            !requestMetadata || !requestWithParams
+                                ? dotPageApiService
+                                      .get(params)
+                                      .pipe(map((pageAsset) => ({ pageAsset })))
+                                : dotPageApiService.getGraphQLPage(requestWithParams);
 
-                        const content =
-                            'content' in pageResponse
-                                ? (pageResponse as { content?: Record<string, unknown> }).content
-                                : undefined;
-                        pageStore.setPageAsset({
-                            pageAsset: pageResponse.pageAsset,
-                            ...(content !== undefined && { content })
-                        });
+                        return pageRequest.pipe(
+                            switchMap((response) => {
+                                const pageResponse =
+                                    'pageAsset' in response
+                                        ? response
+                                        : { pageAsset: response };
 
-                        dotLanguagesService
-                            .getLanguagesUsedPage(pageResponse.pageAsset.page.identifier)
-                            .subscribe({
-                                next: (languages) => {
-                                    patchState(store, {
-                                        pageLanguages: languages,
-                                        uveStatus: UVE_STATUS.LOADED,
-                                        workflowLockIsLoading: false
-                                    });
-                                },
-                                error: ({ status: errorStatus }: HttpErrorResponse) => {
-                                    patchState(store, {
-                                        pageErrorCode: errorStatus,
-                                        uveStatus: UVE_STATUS.ERROR,
-                                        workflowLockIsLoading: false
-                                    });
-                                }
-                            });
-                    },
-                    error: ({ status: errorStatus }: HttpErrorResponse) => {
-                        patchState(store, {
-                            pageErrorCode: errorStatus,
-                            uveStatus: UVE_STATUS.ERROR,
-                            workflowLockIsLoading: false
-                        });
-                    }
-                });
-            };
+                                const content =
+                                    'content' in pageResponse
+                                        ? (
+                                              pageResponse as {
+                                                  content?: Record<string, unknown>;
+                                              }
+                                          ).content
+                                        : undefined;
+
+                                pageStore.setPageAsset({
+                                    pageAsset: pageResponse.pageAsset,
+                                    ...(content !== undefined && { content })
+                                });
+
+                                return dotLanguagesService.getLanguagesUsedPage(
+                                    pageResponse.pageAsset.page.identifier
+                                );
+                            }),
+                            tap((languages) => {
+                                patchState(store, {
+                                    pageLanguages: languages,
+                                    uveStatus: UVE_STATUS.LOADED,
+                                    workflowLockIsLoading: false
+                                });
+                            }),
+                            catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                patchState(store, {
+                                    pageErrorCode: errorStatus,
+                                    uveStatus: UVE_STATUS.ERROR,
+                                    workflowLockIsLoading: false
+                                });
+
+                                return EMPTY;
+                            })
+                        );
+                    })
+                )
+            );
 
             const lockPage = (inode: string) => {
                 patchState(store, { workflowLockIsLoading: true });
@@ -265,10 +279,10 @@ export function withWorkflow() {
                                             workflowIsLoading: false
                                         });
                                     },
-                                    error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                    error: () => {
                                         patchState(store, {
-                                            pageErrorCode: errorStatus,
-                                            uveStatus: UVE_STATUS.ERROR
+                                            workflowActions: [],
+                                            workflowIsLoading: false
                                         });
                                     }
                                 })
