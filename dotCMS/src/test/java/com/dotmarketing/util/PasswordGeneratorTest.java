@@ -77,6 +77,29 @@ public class PasswordGeneratorTest {
     }
 
     /**
+     * extractCharClass must handle both open {n,} and bounded {n,m} quantifiers.
+     * A bounded quantifier like {8,20} was previously unrecognised, causing a silent
+     * fallback to withDefaultValues() — issue #2 from PR #34989.
+     */
+    @Test
+    public void Test_ExtractCharClass_Handles_Both_Open_And_Bounded_Quantifiers() {
+        // Open quantifier {n,} — baseline
+        assertNotNull("Open quantifier {n,} must be recognised",
+                PasswordGenerator.Builder.extractCharClass(DEFAULT_REGEXP_PATTERN));
+
+        // Bounded quantifier {n,m}
+        final String bounded = "/^[A-Za-z0-9!@#$%]{8,20}$/";
+        final String charClass = PasswordGenerator.Builder.extractCharClass(bounded);
+        assertNotNull("Bounded quantifier {n,m} must be recognised", charClass);
+        assertTrue(charClass.startsWith("["));
+        assertTrue(charClass.endsWith("]"));
+
+        // extractCharset must also work for {n,m} patterns
+        assertNotNull("extractCharset must succeed for {n,m} pattern",
+                PasswordGenerator.Builder.extractCharset(bounded));
+    }
+
+    /**
      * extractCharset should return a non-empty string of allowed characters for the default pattern.
      * Every character in the result must match the extracted character class.
      */

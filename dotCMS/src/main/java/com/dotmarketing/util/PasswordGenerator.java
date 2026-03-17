@@ -191,10 +191,16 @@ public class PasswordGenerator {
                 final String rawPattern = PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN);
                 final String allowedChars = extractCharset(rawPattern);
                 if (allowedChars != null) {
-                    // Honour the minimum length from the pattern's {n,} quantifier.
+                    // Honour the minimum length from the pattern's {n,} or {n,m} quantifier.
                     this.length = Math.max(this.length, extractMinLength(rawPattern));
                     return withFilteredValues(allowedChars);
                 }
+                Logger.warn(Builder.class,
+                        "Could not extract a character class from passwords.regexptoolkit.pattern"
+                        + " (value: \"" + rawPattern + "\"). "
+                        + "Pattern must follow the /^[CharClass]{n,}$/ or /^[CharClass]{n,m}$/ shape. "
+                        + "Complex lookahead patterns are not supported. "
+                        + "Falling back to default password generator charsets.");
             }
             return withDefaultValues();
         }
@@ -315,8 +321,9 @@ public class PasswordGenerator {
             if (rawPattern == null || rawPattern.trim().isEmpty()) {
                 return null;
             }
+            // \\{\\d+,\\d*\\} matches both {n,} (open) and {n,m} (bounded) quantifiers
             final java.util.regex.Matcher m = Pattern.compile(
-                    "^/\\^(\\[(?:[^\\]\\\\]|\\\\.)*\\])\\{\\d+,\\}\\$/$"
+                    "^/\\^(\\[(?:[^\\]\\\\]|\\\\.)*\\])\\{\\d+,\\d*\\}\\$/$"
             ).matcher(rawPattern.trim());
             return m.matches() ? m.group(1) : null;
         }
