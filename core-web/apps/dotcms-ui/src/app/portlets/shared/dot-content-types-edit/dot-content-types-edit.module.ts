@@ -17,6 +17,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabsModule } from 'primeng/tabs';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -57,6 +58,7 @@ import { HintPropertyComponent } from './components/fields/content-type-fields-p
 import { NamePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/name-property';
 import { RegexCheckPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/regex-check-property';
 import { RenderModePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/render-mode-property';
+import { RenderOptionsPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/render-options-property';
 import { ValuesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/values-property';
 import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
 import { ContentTypeFieldsTabComponent } from './components/fields/content-type-fields-tab';
@@ -111,7 +113,8 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         RegexCheckPropertyComponent,
         ValuesPropertyComponent,
         DotBlockEditorSettingsComponent,
-        RenderModePropertyComponent
+        RenderModePropertyComponent,
+        RenderOptionsPropertyComponent
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
@@ -162,6 +165,7 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotSiteComponent,
         SplitButtonModule,
         TabsModule,
+        ToggleSwitchModule,
         DotRelationshipTreeComponent,
         DotPortletBoxComponent,
         DotMdIconSelectorComponent,

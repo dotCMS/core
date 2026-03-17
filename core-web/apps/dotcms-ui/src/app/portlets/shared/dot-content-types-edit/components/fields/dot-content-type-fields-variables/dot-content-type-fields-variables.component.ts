@@ -1,12 +1,25 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnChanges, OnDestroy, SimpleChanges, inject, input } from '@angular/core';
+import {
+    Component,
+    OnChanges,
+    OnDestroy,
+    SimpleChanges,
+    inject,
+    input,
+    signal
+} from '@angular/core';
 
 import { take, takeUntil } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotFieldVariable,
+    NEW_RENDER_MODE_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
@@ -29,7 +42,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     /** Local copy of field for access */
     field: DotCMSContentTypeField;
 
-    fieldVariables: DotFieldVariable[] = [];
+    fieldVariables = signal<DotFieldVariable[]>([]);
+
     blackList = {
         'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
             allowedBlocks: true
@@ -38,6 +52,10 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         'com.dotcms.contenttype.model.field.ImmutableBinaryField': {
             accept: true,
             systemOptions: true
+        },
+        [DotCMSClazzes.CUSTOM_FIELD]: {
+            customFieldOptions: true,
+            [NEW_RENDER_MODE_VARIABLE_KEY]: true
         }
     };
 
@@ -66,8 +84,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             .pipe(take(1))
             .subscribe(
                 () => {
-                    this.fieldVariables = this.fieldVariables.filter(
-                        (item: DotFieldVariable) => item.key !== variable.key
+                    this.fieldVariables.update((vars) =>
+                        vars.filter((item: DotFieldVariable) => item.key !== variable.key)
                     );
                 },
                 (err: HttpErrorResponse) => {
@@ -87,7 +105,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             .pipe(take(1))
             .subscribe(
                 (savedVariable: DotFieldVariable) => {
-                    this.fieldVariables = this.updateVariableCollection(savedVariable);
+                    this.fieldVariables.set(this.updateVariableCollection(savedVariable));
                 },
                 (err: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
@@ -97,15 +115,20 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
 
     private initTableData(): void {
         if (!this.field?.contentTypeId || !this.field?.id) {
-            this.fieldVariables = [];
+            this.fieldVariables.set([]);
             return;
         }
 
         this.fieldVariablesService
             .load(this.field)
             .pipe(takeUntil(this.destroy$))
-            .subscribe((fieldVariables: DotFieldVariable[]) => {
-                this.fieldVariables = fieldVariables.filter((item) => {
+            .subscribe((loadedVariables: DotFieldVariable[]) => {
+                const loadedKeys = new Set(loadedVariables.map((v) => v.key));
+                const fromField = (this.field.fieldVariables || []).filter(
+                    (v) => !loadedKeys.has(v.key)
+                );
+                const combined = [...loadedVariables, ...fromField];
+                const filtered = combined.filter((item) => {
                     const fieldBlackList = this.blackList[this.field.clazz];
                     if (fieldBlackList) {
                         return !fieldBlackList[item?.key];
@@ -113,22 +136,19 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
 
                     return true;
                 });
+
+                this.fieldVariables.set(filtered);
             });
     }
 
     private updateVariableCollection(savedVariable: DotFieldVariable): DotFieldVariable[] {
-        const variableExist = this.fieldVariables.find(
-            (item: DotKeyValue) => item.key === savedVariable.key
-        );
+        const current = this.fieldVariables();
+        const variableExist = current.find((item: DotKeyValue) => item.key === savedVariable.key);
 
         return variableExist
-            ? this.fieldVariables.map((item: DotFieldVariable) => {
-                  if (item.key === savedVariable.key) {
-                      item = savedVariable;
-                  }
-
-                  return item;
-              })
-            : [savedVariable, ...this.fieldVariables];
+            ? current.map((item: DotFieldVariable) =>
+                  item.key === savedVariable.key ? savedVariable : item
+              )
+            : [savedVariable, ...current];
     }
 }
