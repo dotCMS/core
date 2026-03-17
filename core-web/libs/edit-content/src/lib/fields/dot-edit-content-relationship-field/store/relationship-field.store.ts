@@ -58,7 +58,6 @@ const initialState: RelationshipFieldState = {
  * This store manages the state and actions related to the relationship field.
  */
 export const RelationshipFieldStore = signalStore(
-    { providedIn: 'root' },
     withState(initialState),
     withComputed((state) => ({
         /**

@@ -56,6 +56,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
+        RelationshipFieldStore,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
