@@ -30,7 +30,7 @@ public interface AbstractPublishingJobDetailView {
      */
     @Schema(
             description = "Unique bundle identifier",
-            example = "f3d9a4b7-staging-bundle-2026-01-15",
+            example = "01KJWNJM2C67DM56GHBJ4S7B89",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     String bundleId();
@@ -70,6 +70,20 @@ public interface AbstractPublishingJobDetailView {
     )
     @Nullable
     String filterName();
+
+    /**
+     * Publishing filter key used for this bundle.
+     * Pass this value as the {@code filterKey} field in {@code POST /api/v1/publishing/push/{bundleId}}
+     * to reproduce the same push configuration.
+     *
+     * @return Filter key or null if not set
+     */
+    @Schema(
+            description = "Publishing filter key (pass to POST /push/{bundleId} filterKey to reproduce this push)",
+            example = "ForcePush.yml"
+    )
+    @Nullable
+    String filterKey();
 
     /**
      * Total number of assets in the bundle.
