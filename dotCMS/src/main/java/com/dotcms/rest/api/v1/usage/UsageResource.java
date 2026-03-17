@@ -191,17 +191,13 @@ public class UsageResource {
                     qualifiedName, metricValue.getValue()));
         }
 
-        // Add non-numeric stats (getNotNumericStats returns Map<String, Object>)
-        final Map<String, Object> nonNumericStatsMap = snapshot.getNotNumericStats();
-        for (Map.Entry<String, Object> entry : nonNumericStatsMap.entrySet()) {
-            final String metricName = entry.getKey();
-            final Object value = entry.getValue();
-            // Create a MetricValue wrapper for consistency
-            final Metric metric = new Metric.Builder().name(metricName).build();
-            final MetricValue metricValue = new MetricValue(metric, value);
-            metricMap.put(metricName, metricValue);
+        // Add non-numeric stats — build qualified key the same way as numeric stats
+        for (MetricValue metricValue : snapshot.getNotNumericMetricValues()) {
+            final Metric metric = metricValue.getMetric();
+            final String qualifiedName = metric.getFeature().name() + "_" + metric.getName();
+            metricMap.put(qualifiedName, metricValue);
             Logger.debug(this, () -> String.format("Collected non-numeric metric: %s = %s",
-                    metricName, value));
+                    qualifiedName, metricValue.getValue()));
         }
 
         Logger.debug(this, () -> String.format("Built metric map with %d total values", metricMap.size()));
