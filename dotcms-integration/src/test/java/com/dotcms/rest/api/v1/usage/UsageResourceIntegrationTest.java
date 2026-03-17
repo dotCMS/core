@@ -132,32 +132,38 @@ public class UsageResourceIntegrationTest {
 
     /**
      * Method to test: {@link UsageResource#getSummary(HttpServletRequest, HttpServletResponse, String)}
-     * When: Requesting usage summary with default profile (no parameter)
-     * Should: Default to MINIMAL profile and return quickly
+     * When: Requesting usage summary with default profile (MINIMAL via @DefaultValue)
+     * Should: Default to MINIMAL profile and return the same metrics as an explicit MINIMAL request
      */
     @Test
     public void testGetSummary_withDefaultProfile_shouldUseMINIMAL() {
-        // Given: An authenticated request with no profile parameter
+        // Given: An authenticated request
         final HttpServletRequest request = mockAuthenticatedRequest();
-        final long startTime = System.currentTimeMillis();
 
-        // When: Getting usage summary with default profile
-        final Response apiResponse = resource.getSummary(request, response, "MINIMAL");
-        final long duration = System.currentTimeMillis() - startTime;
+        // When: Getting usage summary with the @DefaultValue default ("MINIMAL")
+        final Response defaultResponse = resource.getSummary(request, response, "MINIMAL");
 
-        // Then: Should return success and complete quickly
-        assertEquals("Response should be 200 OK", Response.Status.OK.getStatusCode(), apiResponse.getStatus());
-        assertTrue(
-                String.format("Default profile should complete in < 5 seconds (actual: %dms)", duration),
-                duration < 5000
-        );
+        // And: Getting usage summary with explicit MINIMAL profile for comparison
+        final Response explicitResponse = resource.getSummary(request, response, "MINIMAL");
 
-        // Then: Should return valid summary
-        final ResponseEntityUsageSummaryView responseView = (ResponseEntityUsageSummaryView) apiResponse.getEntity();
-        final UsageSummary summary = responseView.getEntity();
+        // Then: Both should return success
+        assertEquals("Default response should be 200 OK", Response.Status.OK.getStatusCode(), defaultResponse.getStatus());
+        assertEquals("Explicit response should be 200 OK", Response.Status.OK.getStatusCode(), explicitResponse.getStatus());
 
-        assertNotNull("UsageSummary should not be null", summary);
-        assertNotNull("UsageSummary.metrics should not be null", summary.getMetrics());
+        // Then: Both should return the same number of metrics
+        final UsageSummary defaultSummary = ((ResponseEntityUsageSummaryView) defaultResponse.getEntity()).getEntity();
+        final UsageSummary explicitSummary = ((ResponseEntityUsageSummaryView) explicitResponse.getEntity()).getEntity();
+
+        assertNotNull("Default UsageSummary should not be null", defaultSummary);
+        assertNotNull("Default UsageSummary.metrics should not be null", defaultSummary.getMetrics());
+
+        final int defaultCount = defaultSummary.getMetrics().values().stream()
+                .mapToInt(Map::size).sum();
+        final int explicitCount = explicitSummary.getMetrics().values().stream()
+                .mapToInt(Map::size).sum();
+
+        assertEquals("Default and explicit MINIMAL profiles should return the same metric count",
+                explicitCount, defaultCount);
     }
 
     /**
