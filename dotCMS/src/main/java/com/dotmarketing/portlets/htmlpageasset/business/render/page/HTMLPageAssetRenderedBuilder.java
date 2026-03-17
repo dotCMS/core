@@ -194,7 +194,7 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = (mode == PageMode.EDIT_MODE || mode == PageMode.ADMIN_MODE)
+            final String pageHTML = mode != PageMode.LIVE
                     ? injectUVEScript(this.getPageHTML(mode))
                     : this.getPageHTML(mode);
 
