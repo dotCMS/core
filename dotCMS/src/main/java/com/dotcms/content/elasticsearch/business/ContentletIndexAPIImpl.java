@@ -10,6 +10,7 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -98,7 +99,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     public ContentletIndexAPIImpl() {
         this(new ContentletIndexOperationsES(),
-             new ContentletIndexOperationsOS());
+             CDIUtils.getBeanThrows(ContentletIndexOperationsOS.class));
     }
 
     /** Package-private constructor for testing. */
