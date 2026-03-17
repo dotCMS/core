@@ -96,6 +96,18 @@
                 </div>
                 <dot-uve-zoom-controls />
             </div>
+            @if ($progressBar()) {
+                <p-progressBar
+                    [ngStyle]="{
+                        position: 'absolute',
+                        bottom: '0',
+                        left: '0',
+                        width: '100%'
+                    }"
+                    [style]="{ height: '6px' }"
+                    data-testId="progress-bar"
+                    mode="indeterminate" />
+            }
         </ng-template>
         <ng-template #end>
             <div class="flex items-center gap-1">
@@ -151,18 +163,6 @@
                             #iframe
                             data-testId="iframe" />
 
-                        @if ($progressBar()) {
-                            <p-progressBar
-                                [ngStyle]="{
-                                    position: 'absolute',
-                                    top: '0',
-                                    left: '0',
-                                    width: '100%'
-                                }"
-                                [style]="{ height: '6px' }"
-                                data-testId="progress-bar"
-                                mode="indeterminate" />
-                        }
                         @if ($showContentletControls()) {
                             <dot-uve-contentlet-tools
                                 (selectedContentlet)="handleSelectedContentlet($event)"
