@@ -68,7 +68,7 @@ tags:
     description: Additional Page API information
     url: https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
   name: Page
-- description: Push publishing job management endpoints
+- description: Bundle asset management endpoints
   name: Publishing
 - description: Content relationship management
   name: Relationships
@@ -4203,6 +4203,105 @@ paths:
           description: default response
       tags:
       - Browser Tree
+  /v1/bundles/assets:
+    post:
+      description: "Adds assets to an existing bundle or creates a new bundle. Bundle\
+        \ resolution: (1) look up by bundleId, (2) if not found, look up unsent bundles\
+        \ by bundleName, (3) if still not found, auto-create a new bundle. A non-matching\
+        \ bundleId does NOT return 404 — it falls through to name lookup and then\
+        \ auto-creation. Individual asset failures (e.g., no publish permission) are\
+        \ reported in the errors list as human-readable strings, not as HTTP errors."
+      operationId: addAssetsToBundle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAssetsToBundleForm"
+        description: Assets to add and target bundle information
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAddAssetsToBundleView"
+          description: Assets processed (check errors list for per-asset failures)
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request (e.g., empty assetIds) or publisher error\
+            \ (e.g., asset already linked to the bundle)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Add assets to a bundle
+      tags:
+      - Publishing
+  /v1/bundles/{bundleId}/assets:
+    delete:
+      description: Removes one or more assets from an unpushed bundle. Each asset
+        is processed independently with per-asset results. Assets not found in the
+        bundle return success=false.
+      operationId: removeAssetsFromBundle
+      parameters:
+      - description: Bundle identifier
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoveAssetsFromBundleForm"
+        description: Assets to remove from the bundle
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRemoveAssetsFromBundleView"
+          description: Removal completed (check per-asset success flags)
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request (e.g., blank bundleId, empty assetIds)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+        "409":
+          content:
+            application/json: {}
+          description: "Cannot remove assets while bundle is in BUNDLING, SENDING_TO_ENDPOINTS,\
+            \ or PUBLISHING_BUNDLE status"
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Remove assets from an unpushed bundle
+      tags:
+      - Publishing
   /v1/caches/menucache:
     delete:
       description: Just deletes the menu cache by request
@@ -21220,6 +21319,75 @@ components:
             type: object
         id:
           type: string
+    AddAssetsToBundleForm:
+      type: object
+      description: Form for adding assets to a bundle
+      properties:
+        assetIds:
+          type: array
+          description: List of asset identifiers to add to the bundle
+          example:
+          - asset-123
+          - asset-456
+          items:
+            type: string
+            description: List of asset identifiers to add to the bundle
+            example: "[\"asset-123\",\"asset-456\"]"
+        bundleId:
+          type: string
+          description: "Optional bundle ID. If provided and found, assets are added\
+            \ to this bundle. If not found, falls through to bundleName lookup, then\
+            \ auto-creation — does NOT return 404"
+          example: 550e8400-e29b-41d4-a716-446655440000
+        bundleName:
+          type: string
+          description: "Optional bundle name. Used as fallback when bundleId is not\
+            \ provided or not found. Searches unsent bundles by name (case-insensitive).\
+            \ If no match, a new bundle is created with this name"
+          example: My Content Bundle
+      required:
+      - assetIds
+    AddAssetsToBundleView:
+      type: object
+      properties:
+        bundleId:
+          type: string
+          description: Bundle identifier (new or existing)
+          example: 550e8400-e29b-41d4-a716-446655440000
+        bundleName:
+          type: string
+          description: Name of the bundle
+          example: My Content Bundle
+        created:
+          type: boolean
+          description: Whether a new bundle was created by this call
+          example: false
+        errors:
+          type: array
+          description: Per-asset error messages as human-readable strings. Empty list
+            = all assets added successfully
+          items:
+            type: string
+            description: Per-asset error messages as human-readable strings. Empty
+              list = all assets added successfully
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        total:
+          type: integer
+          format: int32
+          description: Total number of assets submitted (subtract errors count for
+            successful adds)
+          example: 5
+      required:
+      - bundleId
+      - created
+      - errors
+      - total
     AddVariantForm:
       type: object
       properties:
@@ -27449,6 +27617,47 @@ components:
         urlTimeoutSeconds:
           type: integer
           format: int32
+    RemoveAssetResultView:
+      type: object
+      properties:
+        assetId:
+          type: string
+          description: The asset identifier that was processed
+          example: 550e8400-e29b-41d4-a716-446655440000
+        message:
+          type: string
+          description: Human-readable result message
+          example: Asset removed from bundle
+        success:
+          type: boolean
+          description: Whether the asset was successfully removed from the bundle
+          example: true
+      required:
+      - assetId
+      - message
+      - success
+    RemoveAssetsFromBundleForm:
+      type: object
+      properties:
+        assetIds:
+          type: array
+          description: List of asset identifiers to remove from the bundle
+          example:
+          - asset-123
+          - asset-456
+          items:
+            type: string
+            description: List of asset identifiers to remove from the bundle
+            example: "[\"asset-123\",\"asset-456\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - assetIds
     ReportResponseEntityView:
       type: object
       properties:
@@ -27512,6 +27721,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/ContentletWorkflowStatusView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityAddAssetsToBundleView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/AddAssetsToBundleView"
         errors:
           type: array
           items:
@@ -29006,6 +29238,31 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/PushBundleResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRemoveAssetsFromBundleView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RemoveAssetResultView"
         errors:
           type: array
           items:
