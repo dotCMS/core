@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.common.reindex.ReindexThread.BULK_PROCESSOR_AWAIT_TIMEOUT;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 
 import com.dotcms.content.index.ContentletIndexOperations;
@@ -84,14 +85,16 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
     /** Wraps an ES {@link BulkProcessor} behind the neutral {@link IndexBulkProcessor} handle. */
     static final class ESIndexBulkProcessor implements IndexBulkProcessor {
         final BulkProcessor delegate;
+        private final int awaitTimeoutSeconds;
 
-        ESIndexBulkProcessor(final BulkProcessor delegate) {
+        ESIndexBulkProcessor(final BulkProcessor delegate, final int awaitTimeoutSeconds) {
             this.delegate = delegate;
+            this.awaitTimeoutSeconds = awaitTimeoutSeconds;
         }
 
         @Override
         public void close() throws Exception {
-            delegate.close();
+            delegate.awaitClose(awaitTimeoutSeconds, java.util.concurrent.TimeUnit.SECONDS);
         }
     }
 
@@ -216,7 +219,7 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
                         ReindexThread.BACKOFF_POLICY_MAX_RETRYS))
                 .build();
 
-        return new ESIndexBulkProcessor(processor);
+        return new ESIndexBulkProcessor(processor, BULK_PROCESSOR_AWAIT_TIMEOUT);
     }
 
     @Override
