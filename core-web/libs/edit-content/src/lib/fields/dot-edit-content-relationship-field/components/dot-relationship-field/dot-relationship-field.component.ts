@@ -49,8 +49,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         ChipModule,
         ContentletStatusPipe,
         LanguagePipe,
-        PaginationComponent,
-        DotMessagePipe
+        PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
