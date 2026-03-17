@@ -139,8 +139,8 @@ public class PasswordGenerator {
          */
         public Builder charset(final String charset, final int min) {
             Preconditions.checkNotNull(charset, "Charset param must not be null");
-            Preconditions.checkArgument(min < charset.length(),
-                    "min is expected to be less than " + charset.length());
+            Preconditions.checkArgument(min <= charset.length(),
+                    "min is expected to be at most " + charset.length());
             charsets.add(Charset.of(charset, min));
             return this;
         }
@@ -151,7 +151,7 @@ public class PasswordGenerator {
          * @return
          */
         public Builder charset(final int length) {
-            Preconditions.checkArgument(length <= 16, "The minimum length allowed is 16");
+            Preconditions.checkArgument(length >= 16, "Password length must be at least 16");
             this.length = length;
             return this;
         }
@@ -191,8 +191,9 @@ public class PasswordGenerator {
                 final String rawPattern = PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN);
                 final String allowedChars = extractCharset(rawPattern);
                 if (allowedChars != null) {
-                    // Honour the minimum length from the pattern's {n,} or {n,m} quantifier.
-                    this.length = Math.max(this.length, extractMinLength(rawPattern));
+                    // Honour the minimum length from the pattern's {n,} or {n,m} quantifier,
+                    // routing through charset(int) so the length is properly validated.
+                    charset(Math.max(this.length, extractMinLength(rawPattern)));
                     return withFilteredValues(allowedChars);
                 }
                 Logger.warn(Builder.class,
@@ -238,7 +239,8 @@ public class PasswordGenerator {
         /**
          * Filters {@code defaults} to the characters present in {@code allowed} and, if the
          * result is non-empty, registers it as a charset.  The minimum is capped at
-         * {@code filtered.length() - 1} to satisfy the builder precondition.
+         * {@code filtered.length()} so that even a single-character filtered group retains its
+         * per-group minimum guarantee rather than silently falling to zero.
          */
         private Builder addFiltered(final String defaults, final String allowed, final int desiredMin) {
             final String filtered = defaults.chars()
@@ -246,7 +248,7 @@ public class PasswordGenerator {
                     .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                     .toString();
             if (!filtered.isEmpty()) {
-                charset(filtered, Math.min(desiredMin, filtered.length() - 1));
+                charset(filtered, Math.min(desiredMin, filtered.length()));
             }
             return this;
         }

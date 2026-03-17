@@ -237,4 +237,55 @@ public class PasswordGeneratorTest {
         }
     }
 
+    /**
+     * Issue 1 regression: when filtering leaves exactly 1 char in a group the per-group
+     * minimum guarantee must still hold.  Previously Math.min(desiredMin, 1-1)=0 silently
+     * dropped the guarantee.
+     */
+    @Test
+    public void Test_WithFilteredValues_Preserves_Minimum_Guarantee_For_Single_Char_Group() {
+        // Allow only one special char ('!') plus all lowercase letters
+        final String restrictive = "!" + LOWER_CASE_LETTERS_CHARS;
+
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withFilteredValues(restrictive).build();
+
+        final Pattern hasExclamation = Pattern.compile("!");
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertTrue("Password must contain '!' even when it is the only allowed special char: " + password,
+                    hasExclamation.matcher(password).find());
+        }
+    }
+
+    /**
+     * Issue 3 — fallback behaviour: when withFilteredValues receives the complete set of
+     * default characters (no filtering needed), the resulting generator must meet the same
+     * per-group guarantees as withDefaultValues().  This mirrors the production path where
+     * withRegExpToolkitValues() falls back to withDefaultValues() when the toolkit is not
+     * RegExpToolkit.
+     */
+    @Test
+    public void Test_WithFilteredValues_With_All_Default_Chars_Has_Same_Guarantees_As_WithDefaultValues() {
+        final String allDefaults = SPECIAL_CHARS + UPPER_CASE_LETTERS_CHARS
+                + LOWER_CASE_LETTERS_CHARS + NUMBER_CHARS;
+
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withFilteredValues(allDefaults).build();
+
+        final Pattern hasSpecial = Pattern.compile("[" + SPECIAL_CHARS + "]");
+        final Pattern hasUpper   = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasLower   = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasDigit   = Pattern.compile("[" + NUMBER_CHARS + "]");
+
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be 16 chars", 16, password.length());
+            assertTrue("Must contain special char",  hasSpecial.matcher(password).find());
+            assertTrue("Must contain uppercase",     hasUpper.matcher(password).find());
+            assertTrue("Must contain lowercase",     hasLower.matcher(password).find());
+            assertTrue("Must contain digit",         hasDigit.matcher(password).find());
+        }
+    }
+
 }
