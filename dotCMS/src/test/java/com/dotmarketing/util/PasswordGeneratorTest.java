@@ -100,6 +100,43 @@ public class PasswordGeneratorTest {
     }
 
     /**
+     * buildJsRegexLiteral must escape any '/' inside the character class so that the
+     * resulting JS regex literal is syntactically valid — issue #3 from PR #34989.
+     * Without escaping, /[A-Za-z0-9/]/ would prematurely terminate the literal.
+     */
+    @Test
+    public void Test_BuildJsRegexLiteral_Escapes_ForwardSlash() {
+        // No slash — should pass through unchanged (most common case)
+        assertEquals("/[A-Za-z0-9!@#]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z0-9!@#]"));
+
+        // Single slash inside the class — must be escaped as \/
+        assertEquals("/[A-Za-z0-9\\/]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z0-9/]"));
+
+        // Multiple slashes — all must be escaped
+        assertEquals("/[A-Z\\/a-z\\/0-9]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Z/a-z/0-9]"));
+    }
+
+    /**
+     * extractCharClass must capture '/' as a literal character inside a character class.
+     * Combined with buildJsRegexLiteral's escaping this prevents JS syntax errors.
+     */
+    @Test
+    public void Test_ExtractCharClass_Captures_ForwardSlash_In_Char_Class() {
+        final String patternWithSlash = "/^[A-Za-z0-9/]{8,}$/";
+        final String charClass = PasswordGenerator.Builder.extractCharClass(patternWithSlash);
+        assertNotNull("Pattern with '/' in char class must be extractable", charClass);
+        assertTrue("Extracted char class must contain '/'", charClass.contains("/"));
+
+        // buildJsRegexLiteral must then produce a safe JS literal
+        final String jsLiteral = PasswordGenerator.Builder.buildJsRegexLiteral(charClass);
+        assertTrue("JS literal must not contain unescaped '/' inside the class",
+                jsLiteral.matches("/\\[.*\\\\/.*\\]/"));
+    }
+
+    /**
      * extractCharset should return a non-empty string of allowed characters for the default pattern.
      * Every character in the result must match the extracted character class.
      */

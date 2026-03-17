@@ -268,10 +268,26 @@ public class PasswordGenerator {
                 final String rawPattern = PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN);
                 final String charClass = extractCharClass(rawPattern);
                 if (charClass != null) {
-                    return "/" + charClass + "/";
+                    return buildJsRegexLiteral(charClass);
                 }
             }
             return "null";
+        }
+
+        /**
+         * Wraps a character-class token in JS regex-literal delimiters, escaping any
+         * forward-slash ({@code /}) inside the class as {@code \/} so the literal is not
+         * prematurely terminated.
+         *
+         * <p>For example, a char class {@code [A-Za-z0-9/]} becomes {@code /[A-Za-z0-9\/]/}.</p>
+         *
+         * <p>Package-private to allow direct unit-testing without a live PropsUtil context.</p>
+         *
+         * @param charClass the raw {@code [...]} token extracted from the portal pattern
+         * @return a valid JS regex literal string
+         */
+        static String buildJsRegexLiteral(final String charClass) {
+            return "/" + charClass.replace("/", "\\/") + "/";
         }
 
         /**
