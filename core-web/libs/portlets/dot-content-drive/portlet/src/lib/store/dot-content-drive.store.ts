@@ -106,7 +106,13 @@ export const DotContentDriveStore = signalStore(
                     path,
                     filters,
                     status: DotContentDriveStatus.LOADING,
-                    isTreeExpanded
+                    isTreeExpanded,
+                    pagination: {
+                        limit: DEFAULT_PAGINATION.limit,
+                        page: 1,
+                        offset: 0
+                    },
+                    pages: [DEFAULT_PAGE]
                 });
             },
             setItems(items: DotContentDriveItem[]) {
