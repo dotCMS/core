@@ -77,7 +77,7 @@ public class PasswordGenerator {
      */
     CharBuffer collectRequiredMinimums(final CharBuffer buffer, final List<Charset> charsets) {
         for (Charset charset : charsets) {
-            for (int i = 0; i <= charset.min; i++) {
+            for (int i = 0; i < charset.min; i++) {
                 buffer.append(nextChar(charset.chars));
             }
         }
@@ -161,8 +161,8 @@ public class PasswordGenerator {
          * @return
          */
         public Builder withDefaultValues() {
-            return charset(SPECIAL_CHARS, 1).charset(UPPER_CASE_LETTERS_CHARS, 1)
-                    .charset(LOWER_CASE_LETTERS_CHARS, 1).charset(NUMBER_CHARS, 1);
+            return charset(SPECIAL_CHARS, 2).charset(UPPER_CASE_LETTERS_CHARS, 2)
+                    .charset(LOWER_CASE_LETTERS_CHARS, 2).charset(NUMBER_CHARS, 2);
         }
 
         /**
