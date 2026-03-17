@@ -2,6 +2,8 @@ import { expect, describe } from '@jest/globals';
 import { SpectatorService, createServiceFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { TestBed } from '@angular/core/testing';
+
 import {
     DotContentTypeService,
     DotFieldService,
@@ -379,5 +381,107 @@ describe('RelationshipFieldStore', () => {
                 expect(store.status()).toBe(ComponentStatus.ERROR);
             });
         });
+    });
+});
+
+describe('RelationshipFieldStore - Instance Isolation', () => {
+    const mockContentType = {
+        id: 'test-content-type',
+        name: 'Test Content Type',
+        metadata: {
+            [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+        }
+    };
+
+    const storeProviders = [
+        RelationshipFieldStore,
+        RelationshipFieldService,
+        mockProvider(DotContentTypeService, {
+            getContentType: jest.fn().mockReturnValue(of(mockContentType))
+        }),
+        mockProvider(DotFieldService),
+        mockProvider(DotHttpErrorManagerService, {
+            handle: jest.fn()
+        })
+    ];
+
+    /**
+     * These tests use TestBed directly because Spectator's createServiceFactory
+     * shares the same TestBed context — calling it twice returns the same singleton.
+     * TestBed.resetTestingModule() is needed to create truly independent injectors.
+     */
+
+    it('should create independent instances that do not share state', () => {
+        const injector1 = TestBed.configureTestingModule({ providers: [...storeProviders] });
+        const store1 = injector1.inject(RelationshipFieldStore);
+
+        TestBed.resetTestingModule();
+
+        const injector2 = TestBed.configureTestingModule({ providers: [...storeProviders] });
+        const store2 = injector2.inject(RelationshipFieldStore);
+
+        expect(store1).not.toBe(store2);
+
+        const dataA = [
+            createFakeContentlet({ inode: 'a1', identifier: 'id-a1', id: 'a1' }),
+            createFakeContentlet({ inode: 'a2', identifier: 'id-a2', id: 'a2' })
+        ];
+        const dataB = [createFakeContentlet({ inode: 'b1', identifier: 'id-b1', id: 'b1' })];
+
+        store1.setData(dataA);
+        store2.setData(dataB);
+
+        expect(store1.data().length).toBe(2);
+        expect(store2.data().length).toBe(1);
+        expect(store1.formattedRelationship()).toBe('id-a1,id-a2');
+        expect(store2.formattedRelationship()).toBe('id-b1');
+    });
+
+    it('should not reset one instance when another initializes', () => {
+        const injector1 = TestBed.configureTestingModule({ providers: [...storeProviders] });
+        const store1 = injector1.inject(RelationshipFieldStore);
+
+        TestBed.resetTestingModule();
+
+        const injector2 = TestBed.configureTestingModule({ providers: [...storeProviders] });
+        const store2 = injector2.inject(RelationshipFieldStore);
+
+        const data = [createFakeContentlet({ inode: 'x1', identifier: 'id-x1', id: 'x1' })];
+        store1.setData(data);
+
+        const mockField = createFakeRelationshipField({
+            variable: 'other_field',
+            relationships: { cardinality: 0, isParentField: true, velocityVar: 'test-content-type' }
+        });
+        const mockContentlet = createFakeContentlet({ id: '999', inode: '999' });
+
+        store2.initialize({ field: mockField, contentlet: mockContentlet });
+
+        expect(store1.data().length).toBe(1);
+        expect(store1.formattedRelationship()).toBe('id-x1');
+    });
+
+    it('should not affect other instance when deleting items', () => {
+        const injector1 = TestBed.configureTestingModule({ providers: [...storeProviders] });
+        const store1 = injector1.inject(RelationshipFieldStore);
+
+        TestBed.resetTestingModule();
+
+        const injector2 = TestBed.configureTestingModule({ providers: [...storeProviders] });
+        const store2 = injector2.inject(RelationshipFieldStore);
+
+        const sharedItem = createFakeContentlet({
+            inode: 'shared-inode',
+            identifier: 'shared-id',
+            id: 'shared'
+        });
+
+        store1.setData([sharedItem]);
+        store2.setData([sharedItem]);
+
+        store1.deleteItem('shared-inode');
+
+        expect(store1.data().length).toBe(0);
+        expect(store2.data().length).toBe(1);
     });
 });
