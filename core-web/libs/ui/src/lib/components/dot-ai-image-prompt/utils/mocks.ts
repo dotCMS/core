@@ -79,7 +79,7 @@ export const MOCK_GENERATED_AI_IMAGE: DotGeneratedAIImage = {
     request: {
         text: 'Test prompt',
         type: PromptType.INPUT,
-        size: DotAIImageOrientation.HORIZONTAL
+        size: '1792x1024' // Landscape size
     },
     response: MOCK_AI_IMAGE_CONTENT
 };

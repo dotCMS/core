@@ -19,6 +19,8 @@ import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+
+import com.dotcms.ai.db.PgVectorDataSource;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -27,6 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.JNDIUtil;
+import com.pgvector.PGvector;
 import io.vavr.control.Try;
 
 public class DbConnectionFactory {
@@ -767,11 +770,25 @@ public class DbConnectionFactory {
     }
 
     /**
-     * Executes an operation with connection management but WITHOUT transaction semantics.
-     *
-     * <p>This method is designed for read-only operations (SELECT queries) that don't
-     * require transaction management. It provides connection lifecycle management only:
-     * opens a connection if needed, executes the operation, and closes the connection
+     * Adds the PGvector type to the SQLConnection
+     * so it can be used and queried against
+     * @return
+     * @throws DotDataException
+     */
+    public static Connection getPGVectorConnection() throws DotDataException {
+
+        try {
+            final Connection conn = PgVectorDataSource.datasource.get().getConnection();
+            PGvector.addVectorType(conn);
+            return conn;
+        } catch (SQLException e) {
+
+            Logger.error(DbConnectionFactory.class, e.getMessage(), e);
+            throw new DotDataException(e);
+        }
+    }
+
+    /**
      * if it was opened by this call.</p>
      *
      * <p>This is semantically equivalent to the {@code @CloseDBIfOpened} annotation but
