@@ -249,18 +249,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final Template template = new TemplateDataGen()
                 .withContainer(container.getIdentifier(), containerUUID)
                 .nextPersisted();
-
-        /*final TemplateLayout templateLayout = new TemplateLayoutDataGen()
-                .withContainer(container, containerUUID)
-                .next();
-
-        final Contentlet theme  = new ThemeDataGen().site(host).nextPersisted();
-        final Template template = new TemplateDataGen()
-                .withContainer(container.getIdentifier())
-                .host(host)
-                .drawedBody(templateLayout)
-                .theme(theme)
-                .nextPersisted();*/
         TemplateDataGen.publish(template, adminUser);
 
         final String pageName = "test-page" + UUIDGenerator.generateUuid().substring(1, 6);
