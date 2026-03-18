@@ -2,13 +2,13 @@
     <form
         [formGroup]="$form()!"
         class="flex h-full w-full flex-col gap-3 overflow-y-auto p-0 [&_.field-label]:mb-5 [&_.field-label]:block [&_.field-label]:text-base [&_.field-label]:font-bold">
-        <p-accordion [multiple]="true" class="uve-accordion" [value]="$activeTabIndices()">
+        <p-accordion [multiple]="true" [value]="$activeTabIndices()">
             @for (section of $sections(); track section.title; let index = $index) {
-                <p-accordion-panel [value]="index" class="uve-accordion-tab">
-                    <p-accordion-header>
+                <p-accordion-panel [value]="index">
+                    <p-accordion-header [pt]="{ root: { class: 'border-none!' } }">
                         {{ section.title }}
                     </p-accordion-header>
-                    <p-accordion-content>
+                    <p-accordion-content [pt]="{ content: { class: 'border-none!' } }">
                         <div class="flex flex-col gap-4">
                             @for (field of section.fields; track field.id) {
                                 @switch (field.type) {
