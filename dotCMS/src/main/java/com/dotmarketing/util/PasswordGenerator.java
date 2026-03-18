@@ -146,11 +146,12 @@ public class PasswordGenerator {
         }
 
         /**
-         * Specify the password length
-         * @param length
-         * @return
+         * Sets the desired password length; must be at least 16.
+         *
+         * @param length desired password length (minimum 16)
+         * @return this builder
          */
-        public Builder charset(final int length) {
+        public Builder withLength(final int length) {
             Preconditions.checkArgument(length >= 16, "Password length must be at least 16");
             this.length = length;
             return this;
@@ -161,6 +162,7 @@ public class PasswordGenerator {
          * @return
          */
         public Builder withDefaultValues() {
+            charsets.clear();
             return charset(SPECIAL_CHARS, 2).charset(UPPER_CASE_LETTERS_CHARS, 2)
                     .charset(LOWER_CASE_LETTERS_CHARS, 2).charset(NUMBER_CHARS, 2);
         }
@@ -204,9 +206,18 @@ public class PasswordGenerator {
             if ("com.liferay.portal.pwd.RegExpToolkit".equals(configuredToolkit)) {
                 final String allowedChars = extractCharset(rawPattern);
                 if (allowedChars != null) {
-                    // Honour the minimum length from the pattern's {n}, {n,} or {n,m} quantifier,
-                    // routing through charset(int) so the length is properly validated.
-                    charset(Math.max(this.length, extractMinLength(rawPattern)));
+                    // Honour the length constraints from the pattern's quantifier.
+                    // For {n,} or {n,m} where max >= 16, route through withLength() for validation.
+                    // For exact {n} or bounded {n,m} where max < 16, set length directly —
+                    // the usual 16-char floor does not apply when the pattern mandates less.
+                    final int minLen = extractMinLength(rawPattern);
+                    final int maxLen = extractMaxLength(rawPattern);
+                    final int targetLen = Math.min(maxLen, Math.max(this.length, minLen));
+                    if (targetLen < 16) {
+                        this.length = targetLen;
+                    } else {
+                        withLength(targetLen);
+                    }
                     return withFilteredValues(allowedChars);
                 }
                 Logger.warn(Builder.class,
@@ -234,6 +245,7 @@ public class PasswordGenerator {
          * @return this builder
          */
         Builder withFilteredValues(final String allowedChars) {
+            charsets.clear();
             addFiltered(SPECIAL_CHARS, allowedChars, 2);
             addFiltered(UPPER_CASE_LETTERS_CHARS, allowedChars, 2);
             addFiltered(LOWER_CASE_LETTERS_CHARS, allowedChars, 2);
@@ -259,10 +271,7 @@ public class PasswordGenerator {
          * per-group minimum guarantee rather than silently falling to zero.
          */
         private Builder addFiltered(final String defaults, final String allowed, final int desiredMin) {
-            final String filtered = defaults.chars()
-                    .filter(c -> allowed.indexOf(c) >= 0)
-                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                    .toString();
+            final String filtered = filterString(defaults, allowed);
             if (!filtered.isEmpty()) {
                 charset(filtered, Math.min(desiredMin, filtered.length()));
             }
@@ -408,7 +417,131 @@ public class PasswordGenerator {
             return m.find() ? Integer.parseInt(m.group(1)) : 0;
         }
 
+        /**
+         * Extracts the maximum password length from a pattern's quantifier:
+         * <ul>
+         *   <li>{@code {n}} (exact) → {@code n}</li>
+         *   <li>{@code {n,m}} (bounded) → {@code m}</li>
+         *   <li>{@code {n,}} (open) → {@link Integer#MAX_VALUE}</li>
+         * </ul>
+         *
+         * <p>Returns {@link Integer#MAX_VALUE} when the pattern is {@code null}, empty, or
+         * contains no recognisable quantifier.</p>
+         *
+         * @param rawPattern the raw Perl5 pattern string as stored in {@code portal.properties}
+         * @return the maximum length declared by the quantifier, or {@link Integer#MAX_VALUE}
+         */
+        static int extractMaxLength(final String rawPattern) {
+            if (rawPattern == null || rawPattern.trim().isEmpty()) {
+                return Integer.MAX_VALUE;
+            }
+            // Match bounded {n,m} — group 1 is the maximum
+            final java.util.regex.Matcher bounded = Pattern.compile("\\{\\d+,(\\d+)}")
+                    .matcher(rawPattern.trim());
+            if (bounded.find()) {
+                return Integer.parseInt(bounded.group(1));
+            }
+            // Match exact {n} (no comma) — group 1 is both min and max
+            final java.util.regex.Matcher exact = Pattern.compile("\\{(\\d+)}")
+                    .matcher(rawPattern.trim());
+            if (exact.find()) {
+                return Integer.parseInt(exact.group(1));
+            }
+            // {n,} or no quantifier — unbounded
+            return Integer.MAX_VALUE;
+        }
+
+        /**
+         * Returns a JSON array of per-group character strings for the JS password generator,
+         * enabling it to enforce the same per-group diversity guarantee as the Java generator.
+         *
+         * <p>When {@code RegExpToolkit} is active and the pattern is extractable, each default
+         * group is filtered to only characters accepted by the pattern.  Otherwise the full
+         * default groups are returned.  Empty groups are omitted from the array.</p>
+         *
+         * <p>Returns the string {@code "null"} when the toolkit is {@code RegExpToolkit} but
+         * the pattern is not extractable, so the JS side can fall back to its own logic.</p>
+         *
+         * @return a JS-safe JSON array literal like {@code ["!#...","ABCD...","abcd...","0123..."]}
+         *         or {@code "null"}
+         */
+        public static String buildJsGroupsJson() {
+            return buildJsGroupsJson(
+                    PropsUtil.get(PropsUtil.PASSWORDS_TOOLKIT),
+                    PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN));
+        }
+
+        /**
+         * Package-private overload that accepts the toolkit name and raw pattern directly,
+         * bypassing {@link PropsUtil}.  Enables unit-testing without a live Liferay context.
+         *
+         * @param configuredToolkit the value of {@code passwords.toolkit} (may be {@code null})
+         * @param rawPattern        the value of {@code passwords.regexptoolkit.pattern}
+         * @return a JS-safe JSON array literal or {@code "null"}
+         */
+        static String buildJsGroupsJson(final String configuredToolkit, final String rawPattern) {
+            final String[] groups;
+            if ("com.liferay.portal.pwd.RegExpToolkit".equals(configuredToolkit)) {
+                final String allowedChars = extractCharset(rawPattern);
+                if (allowedChars == null) {
+                    return "null";
+                }
+                groups = new String[] {
+                        filterString(SPECIAL_CHARS, allowedChars),
+                        filterString(UPPER_CASE_LETTERS_CHARS, allowedChars),
+                        filterString(LOWER_CASE_LETTERS_CHARS, allowedChars),
+                        filterString(NUMBER_CHARS, allowedChars)
+                };
+            } else {
+                groups = new String[] {
+                        SPECIAL_CHARS, UPPER_CASE_LETTERS_CHARS,
+                        LOWER_CASE_LETTERS_CHARS, NUMBER_CHARS
+                };
+            }
+            final StringBuilder sb = new StringBuilder("[");
+            boolean first = true;
+            for (final String group : groups) {
+                if (!group.isEmpty()) {
+                    if (!first) {
+                        sb.append(",");
+                    }
+                    sb.append("\"").append(escapeForJsonString(group)).append("\"");
+                    first = false;
+                }
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+
+        /** Filters {@code defaults} to only the characters present in {@code allowed}. */
+        private static String filterString(final String defaults, final String allowed) {
+            return defaults.chars()
+                    .filter(c -> allowed.indexOf(c) >= 0)
+                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                    .toString();
+        }
+
+        /**
+         * Escapes a string for safe embedding as a JSON string value inside an HTML
+         * {@code <script>} block.
+         */
+        private static String escapeForJsonString(final String s) {
+            return s.replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("<", "\\u003c")
+                    .replace(">", "\\u003e")
+                    .replace("\r", "\\r")
+                    .replace("\n", "\\n");
+        }
+
+        /** Special characters included by the default password generator. */
         static final String SPECIAL_CHARS = "!#$%&'()*+,.:;<=>?@^_`~-[]";
+        /**
+         * Uppercase letters, deliberately excluding I, O and Q (visually ambiguous glyphs).
+         * When {@link #withRegExpToolkitValues()} is active, these three letters may appear in
+         * generated passwords if the portal pattern allows A–Z, because they land in the
+         * optional supplementary charset rather than this group.
+         */
         static final String UPPER_CASE_LETTERS_CHARS = "ABCDEFGHJKLMNPRSTUVWXYZ";
         static final String LOWER_CASE_LETTERS_CHARS = "abcdefghijklmnopqrstuvwxyz";
         static final String NUMBER_CHARS = "0123456789";

@@ -424,4 +424,90 @@ public class PasswordGeneratorTest {
         }
     }
 
+    // ------------------------------------------------------------------ Issue 1 (exact quantifier)
+
+    /**
+     * extractMaxLength must return n for {n}, m for {n,m}, MAX_VALUE for {n,} and unrecognised.
+     */
+    @Test
+    public void Test_ExtractMaxLength_Returns_Correct_Value() {
+        assertEquals(8,                   PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{8}$/"));
+        assertEquals(20,                  PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{8,20}$/"));
+        assertEquals(Integer.MAX_VALUE,   PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{8,}$/"));
+        assertEquals(Integer.MAX_VALUE,   PasswordGenerator.Builder.extractMaxLength(null));
+        assertEquals(Integer.MAX_VALUE,   PasswordGenerator.Builder.extractMaxLength(""));
+        assertEquals(Integer.MAX_VALUE,   PasswordGenerator.Builder.extractMaxLength("/^[A-Z]+$/"));
+    }
+
+    /**
+     * Issue 1: withRegExpToolkitValues with an exact {n} pattern where n < 16 must honour
+     * the exact length instead of bloating the password to 16 chars (which would fail the
+     * backend's strict ^[...]{n}$ validator).
+     */
+    @Test
+    public void Test_WithRegExpToolkitValues_Exact_Quantifier_Honours_Pattern_Length() {
+        // {10} — exact length of 10, still below our usual 16-char floor
+        final String exactPattern = "/^[A-Za-z0-9!@#$%]{10}$/";
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withRegExpToolkitValues("com.liferay.portal.pwd.RegExpToolkit", exactPattern)
+                .build();
+
+        for (int i = 0; i < 50; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be exactly 10 chars for {10} pattern", 10, password.length());
+        }
+    }
+
+    // ------------------------------------------------------------------ Issue 2 (charset accumulation)
+
+    /**
+     * Issue 2: calling withXxx methods in sequence must not accumulate charsets.
+     * withFilteredValues() after withDefaultValues() should replace, not append, the charsets —
+     * otherwise the minimum sum would exceed the default length and build() would throw.
+     */
+    @Test
+    public void Test_Chained_WithXxx_Calls_Do_Not_Accumulate_Charsets() {
+        // Previously: withDefaultValues() (min=8) + withFilteredValues() (min=8) = min=16+,
+        // causing build() to throw IllegalArgumentException for length=16.
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withDefaultValues()
+                .withFilteredValues(SPECIAL_CHARS + UPPER_CASE_LETTERS_CHARS
+                        + LOWER_CASE_LETTERS_CHARS + NUMBER_CHARS)
+                .build(); // must NOT throw
+
+        // withFilteredValues replaced withDefaultValues — result should be 16 chars
+        assertEquals(16, generator.nextPassword().length());
+    }
+
+    // ------------------------------------------------------------------ Issue 4 (buildJsGroupsJson)
+
+    /**
+     * buildJsGroupsJson happy path: when RegExpToolkit is active with an extractable pattern,
+     * returns a JSON array of per-group char strings; angle brackets must be escaped.
+     * Uses the package-private overload to bypass PropsUtil.
+     */
+    @Test
+    public void Test_BuildJsGroupsJson_HappyPath_Returns_Json_Array_For_RegExpToolkit() {
+        final String result = PasswordGenerator.Builder.buildJsGroupsJson(
+                "com.liferay.portal.pwd.RegExpToolkit", DEFAULT_REGEXP_PATTERN);
+        assertTrue("Must start with [",  result.startsWith("["));
+        assertTrue("Must end with ]",    result.endsWith("]"));
+        assertNotEquals("Must not be null sentinel", "null", result);
+        // Angle brackets must be escaped — not raw in HTML output
+        assertFalse("Must not contain raw '<'", result.contains("<"));
+        assertFalse("Must not contain raw '>'", result.contains(">"));
+    }
+
+    /**
+     * buildJsGroupsJson fallback: when the toolkit is not RegExpToolkit, returns a JSON array
+     * based on the full default groups (still usable for per-group JS generation).
+     */
+    @Test
+    public void Test_BuildJsGroupsJson_Returns_Default_Groups_When_Toolkit_Not_RegExp() {
+        final String result = PasswordGenerator.Builder.buildJsGroupsJson(null, null);
+        assertTrue("Non-RegExp toolkit must still return a JSON array", result.startsWith("["));
+        assertTrue("Non-RegExp toolkit must still return a JSON array", result.endsWith("]"));
+        assertNotEquals("Must not be null sentinel", "null", result);
+    }
+
 }

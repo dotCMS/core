@@ -93,6 +93,7 @@
 
 <%
     String _jsPwdCharPattern = PasswordGenerator.Builder.buildJsCharPattern();
+    String _jsPwdGroups      = PasswordGenerator.Builder.buildJsGroupsJson();
 %>
     // Random Password Generator Fn
     var PasswordGenerator = {
@@ -104,6 +105,11 @@
         // When present it replaces _pattern as the per-character filter, keeping
         // generation in sync with the backend policy.
         _serverValidation: <%= _jsPwdCharPattern %>,
+
+        // Per-group character strings injected server-side.  Each element is one character
+        // group (special, upper, lower, digits).  When present, get() guarantees at least
+        // one character from each non-empty group — mirroring the Java PasswordGenerator.
+        _groups: <%= _jsPwdGroups %>,
 
         _getRandomByte: function() {
         if(window.crypto && window.crypto.getRandomValues)
@@ -125,6 +131,35 @@
         },
 
         get: function(length) {
+        var self = this;
+        var groups = this._groups;
+
+        if (groups && groups.length > 0) {
+            // Group-based generation: guarantees at least one char from every non-empty group,
+            // then fills the remaining slots from the combined pool and shuffles the result.
+            // This mirrors the Java PasswordGenerator.nextPassword() algorithm.
+            var password = [];
+            var combined = '';
+            for (var g = 0; g < groups.length; g++) {
+                if (groups[g].length > 0) {
+                    combined += groups[g];
+                    var idx = Math.floor(self._getRandomByte() * groups[g].length / 256);
+                    password.push(groups[g].charAt(idx));
+                }
+            }
+            while (password.length < length) {
+                var idx = Math.floor(self._getRandomByte() * combined.length / 256);
+                password.push(combined.charAt(idx));
+            }
+            // Fisher-Yates shuffle using cryptographic randomness
+            for (var i = password.length - 1; i > 0; i--) {
+                var j = Math.floor(self._getRandomByte() * (i + 1) / 256);
+                var tmp = password[i]; password[i] = password[j]; password[j] = tmp;
+            }
+            return password.join('');
+        }
+
+        // Fallback: original filter-based generation (no per-group guarantee)
         var charFilter = this._serverValidation || this._pattern;
         return Array.apply(null, {'length': length})
             .map(function()
@@ -132,13 +167,13 @@
             var result;
             while(true)
             {
-                result = String.fromCharCode(this._getRandomByte());
+                result = String.fromCharCode(self._getRandomByte());
                 if(charFilter.test(result))
                 {
                 return result;
                 }
             }
-            }, this)
+            })
             .join('');
         }
 
