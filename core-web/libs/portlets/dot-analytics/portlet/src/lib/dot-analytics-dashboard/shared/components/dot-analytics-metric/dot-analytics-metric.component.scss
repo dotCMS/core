@@ -92,6 +92,11 @@
         color: $color-palette-red-shade;
         background-color: $color-palette-red-op-10;
     }
+
+    &--neutral {
+        color: $color-palette-gray-500;
+        background-color: $color-palette-gray-op-10;
+    }
 }
 
 .metric-comparison {

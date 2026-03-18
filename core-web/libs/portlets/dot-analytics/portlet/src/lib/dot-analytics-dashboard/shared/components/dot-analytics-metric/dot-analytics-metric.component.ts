@@ -68,12 +68,19 @@ export class DotAnalyticsMetricComponent {
             return null;
         }
 
-        const isPositive = trend >= 0;
+        const isPositive = trend > 0;
+        const isNegative = trend < 0;
         return {
             value: trend,
             isPositive,
+            isNegative,
+            isNeutral: trend === 0,
             prefix: isPositive ? '+' : '',
-            class: isPositive ? 'metric-trend--positive' : 'metric-trend--negative'
+            class: isPositive
+                ? 'metric-trend--positive'
+                : isNegative
+                  ? 'metric-trend--negative'
+                  : 'metric-trend--neutral'
         };
     });
 

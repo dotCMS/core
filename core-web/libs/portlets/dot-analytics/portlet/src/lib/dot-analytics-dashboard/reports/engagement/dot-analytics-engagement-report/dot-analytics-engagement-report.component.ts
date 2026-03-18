@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     AnalyticsChartColors,
@@ -46,7 +45,6 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
 export default class DotAnalyticsEngagementReportComponent {
     /** Analytics dashboard store providing engagement data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
-    readonly #messageService = inject(DotMessageService);
 
     /** Controls visibility of the "How it's calculated" dialog */
     readonly $showCalculationDialog = signal(false);
@@ -79,9 +77,7 @@ export default class DotAnalyticsEngagementReportComponent {
 
         const current: SparklineDataset = {
             data: slice.current,
-            label:
-                this.#messageService.get('analytics.engagement.sparkline.period-current') ??
-                'This period',
+            label: 'analytics.engagement.sparkline.period-current',
             color: AnalyticsChartColors.primary.line,
             dashed: false
         };
@@ -92,9 +88,7 @@ export default class DotAnalyticsEngagementReportComponent {
                 slice.previous.length >= len ? slice.previous.slice(0, len) : slice.previous;
             const previous: SparklineDataset = {
                 data: previousData,
-                label:
-                    this.#messageService.get('analytics.engagement.sparkline.period-previous') ??
-                    'Previous period',
+                label: 'analytics.engagement.sparkline.period-previous',
                 color: AnalyticsChartColors.neutralDark.line,
                 dashed: true,
                 borderWidth: 1,

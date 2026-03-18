@@ -14,6 +14,7 @@ import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';
 
 import {
@@ -71,7 +72,7 @@ export interface SparklineDataset {
  */
 @Component({
     selector: 'dot-analytics-sparkline',
-    imports: [ChartModule, UIChart, SkeletonModule],
+    imports: [ChartModule, UIChart, SkeletonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @if ($isLoading()) {
@@ -102,7 +103,7 @@ export interface SparklineDataset {
                                 <span
                                     class="sparkline-tooltip__dot"
                                     [style.background]="item.color"></span>
-                                <span>{{ item.label }}: {{ item.value }}</span>
+                                <span>{{ item.label | dm }}: {{ item.value }}</span>
                             </div>
                         }
                     </div>
@@ -128,7 +129,7 @@ export interface SparklineDataset {
                                     class="sparkline-legend__line"
                                     [style.background]="item.color"></span>
                             }
-                            <span class="sparkline-legend__label">{{ item.label }}</span>
+                            <span class="sparkline-legend__label">{{ item.label | dm }}</span>
                         </div>
                     }
                 </div>

@@ -114,11 +114,14 @@
                         <span
                             class="metric-trend"
                             [class.metric-trend--positive]="trendData.isPositive"
-                            [class.metric-trend--negative]="!trendData.isPositive">
-                            <i
-                                [class]="
-                                    trendData.isPositive ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
-                                "></i>
+                            [class.metric-trend--negative]="trendData.isNegative"
+                            [class.metric-trend--neutral]="trendData.isNeutral">
+                            @if (!trendData.isNeutral) {
+                                <i
+                                    [class]="
+                                        trendData.isPositive ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
+                                    "></i>
+                            }
                             {{ trendData.prefix }}{{ trendData.value }}%
                         </span>
                         @if (hasComparisonLabel) {
