@@ -35,10 +35,13 @@
                     &mdash;
                 </div>
                 @if (hasIcon) {
-                    <i [class]="iconClasses" class="metric-icon pi" data-testid="metric-icon"></i>
+                    <i
+                        [class]="iconClasses"
+                        class="metric-icon shrink-0 pi"
+                        data-testid="metric-icon"></i>
                 }
             </div>
-            <div class="metric-subtitle" data-testid="metric-subtitle">
+            <div class="metric-subtitle flex items-center gap-2" data-testid="metric-subtitle">
                 {{ 'analytics.metrics.empty.no-activity' | dm }}
             </div>
         </div>
@@ -66,7 +69,9 @@
                 <div class="flex flex-col gap-1">
                     @if ($isFraction()) {
                         @let fractionParts = $fractionParts();
-                        <div class="metric-value metric-value--fraction" data-testid="metric-value">
+                        <div
+                            class="metric-value flex items-baseline gap-1"
+                            data-testid="metric-value">
                             <span class="metric-value__numerator">
                                 @if (fractionParts && animated) {
                                     <span
@@ -103,16 +108,21 @@
                     }
                 </div>
                 @if (hasIcon) {
-                    <i [class]="iconClasses" class="metric-icon pi" data-testid="metric-icon"></i>
+                    <i
+                        [class]="iconClasses"
+                        class="metric-icon shrink-0 pi"
+                        data-testid="metric-icon"></i>
                 }
             </div>
 
             <!-- Subtítulo -->
             @if (hasSubtitle || trendData || hasComparisonLabel) {
-                <div class="metric-fade-in metric-subtitle" data-testid="metric-subtitle">
+                <div
+                    class="metric-fade-in metric-subtitle flex items-center gap-2"
+                    data-testid="metric-subtitle">
                     @if (trendData) {
                         <span
-                            class="metric-trend"
+                            class="metric-trend inline-flex items-center gap-1"
                             [class.metric-trend--positive]="trendData.isPositive"
                             [class.metric-trend--negative]="trendData.isNegative"
                             [class.metric-trend--neutral]="trendData.isNeutral">
@@ -143,7 +153,7 @@
     }
 
     <div
-        class="metric-projected-content"
+        class="metric-projected-content flex flex-col flex-1 w-full mt-3"
         [class.metric-projected-content--hidden]="isErrorState"
         data-testid="metric-projected-content">
         <ng-content />

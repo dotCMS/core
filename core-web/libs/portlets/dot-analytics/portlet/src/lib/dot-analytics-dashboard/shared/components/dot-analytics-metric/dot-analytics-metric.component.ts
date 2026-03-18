@@ -27,7 +27,10 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-metric.component.html',
-    styleUrl: './dot-analytics-metric.component.scss'
+    styleUrl: './dot-analytics-metric.component.scss',
+    host: {
+        class: 'flex flex-col gap-2 w-full'
+    }
 })
 export class DotAnalyticsMetricComponent {
     // Inputs

@@ -5,11 +5,7 @@
     border-bottom: $field-border-size solid $color-palette-gray-300;
 }
 
-.dashboard-panels {
-    width: 100%;
-    max-width: 1600px;
-    margin: 0 auto;
-}
+// .dashboard-panels layout (w-full, max-w-[1600px], mx-auto) handled by Tailwind on the element
 
 :host ::ng-deep .dashboard-panels .p-tabpanel {
     width: 100%;

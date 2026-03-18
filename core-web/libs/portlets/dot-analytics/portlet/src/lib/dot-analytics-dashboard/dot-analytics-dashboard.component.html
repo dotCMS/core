@@ -38,7 +38,7 @@
                     <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
                 }
             </p-tablist>
-            <p-tabpanels class="dashboard-panels">
+            <p-tabpanels class="dashboard-panels w-full max-w-[1600px] mx-auto">
                 @for (tab of tabs; track tab.id) {
                     <p-tabpanel [value]="tab.id">
                         <ng-template #content>
