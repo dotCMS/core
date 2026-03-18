@@ -14,8 +14,8 @@ import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     createAnimationState,
