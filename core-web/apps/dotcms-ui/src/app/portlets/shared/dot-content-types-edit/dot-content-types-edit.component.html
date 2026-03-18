@@ -17,13 +17,14 @@
 }
 
 <p-dialog
-    [(visible)]="show"
+    [visible]="show()"
     [header]="templateInfo.header"
     [modal]="true"
     [closable]="dialogCloseable"
     [style]="{ width: '50rem' }"
-    (visibleChange)="onDialogHide()">
-    @if (show) {
+    (visibleChange)="show.set($event)"
+    (onHide)="onDialogHide()">
+    @if (show()) {
         <dot-content-types-form
             ($valid)="setDialogOkButtonState($event)"
             ($send)="handleFormSubmit($event)"

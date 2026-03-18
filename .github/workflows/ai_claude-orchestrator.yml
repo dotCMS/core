@@ -119,3 +119,62 @@ jobs:
       enable_mention_detection: false
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # Rollback safety analysis — runs on every PR push
+  claude-rollback-safety-check:
+    needs: security-check
+    # Cancel in-progress check when a new push arrives — always analyze latest state
+    concurrency:
+      group: claude-rollback-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    if: |
+      needs.security-check.outputs.authorized == 'true' &&
+      github.event_name == 'pull_request'
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
+      issues: write
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
+    with:
+      trigger_mode: automatic
+      prompt: |
+        You are a dotCMS rollback-safety analyst. Determine whether the changes in this PR are safe to roll back to the previous release.
+
+        STEP 1 — Read the rollback-unsafe categories reference:
+          cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md
+
+        STEP 2 — Get the full PR diff:
+          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+
+        STEP 3 — Analyze the diff against EVERY category in the reference document.
+          Focus on: database migrations (runonce tasks), Elasticsearch mapping changes,
+          data model changes, API contract changes, and any structural storage changes.
+          Ignore pure UI, test-only, or documentation changes unless they touch an unsafe category.
+
+        STEP 4a — If the changes match one or more unsafe categories, post this comment on the PR
+        using: gh pr comment ${{ github.event.pull_request.number }} --body "..."
+
+          Format:
+          Pull Request Unsafe to Rollback!!!
+          - Category: <category ID and name, e.g. "C-1 — Structural Data Model Change">
+          - Risk Level: <🔴 CRITICAL / 🟠 HIGH / 🟡 MEDIUM / 🟢 LOW>
+          - Why it's unsafe: <specific explanation tied to the actual code changed>
+          - Code that makes it unsafe: <file path(s) and the specific lines or block>
+          - Alternative (if possible): <the safer alternative from the reference, adapted to this change>
+
+          If multiple categories match, repeat the block for each one.
+
+          Then add the label: gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Not Safe To Rollback"
+
+        STEP 4b — If the changes do NOT match any unsafe category:
+          Only add the label: gh pr edit ${{ github.event.pull_request.number }} --add-label "AI: Safe To Rollback"
+          No comment needed.
+
+        Be specific: quote actual file names and code lines, not generic descriptions.
+      claude_args: '--allowedTools "Bash(git diff*),Bash(git log*),Bash(cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md),Bash(gh pr comment*),Bash(gh pr edit*)"'
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: false
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

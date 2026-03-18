@@ -34,7 +34,6 @@ import { WINDOW } from '@dotcms/utils';
 @Component({
     selector: 'dot-native-field',
     template: '<div #container></div>',
-    styleUrls: ['./native-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {

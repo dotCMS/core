@@ -12278,31 +12278,17 @@ paths:
         name: filter
         schema:
           type: string
-      - description: "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH)"
+      - description: "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH).\
+          \ Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, SENDING_TO_ENDPOINTS,\
+          \ PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY,\
+          \ SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS,\
+          \ FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK,\
+          \ INVALID_TOKEN, LICENSE_REQUIRED"
         example: "SUCCESS,FAILED_TO_PUBLISH"
         in: query
         name: status
         schema:
           type: string
-          enum:
-          - BUNDLE_REQUESTED
-          - WAITING_FOR_PUBLISHING
-          - BUNDLING
-          - SENDING_TO_ENDPOINTS
-          - PUBLISHING_BUNDLE
-          - BUNDLE_SENT_SUCCESSFULLY
-          - RECEIVED_BUNDLE
-          - BUNDLE_SAVED_SUCCESSFULLY
-          - SUCCESS
-          - SUCCESS_WITH_WARNINGS
-          - FAILED_TO_BUNDLE
-          - FAILED_TO_SENT
-          - FAILED_TO_SEND_TO_ALL_GROUPS
-          - FAILED_TO_SEND_TO_SOME_GROUPS
-          - FAILED_TO_PUBLISH
-          - FAILED_INTEGRITY_CHECK
-          - INVALID_TOKEN
-          - LICENSE_REQUIRED
       responses:
         "200":
           content:
@@ -12338,7 +12324,11 @@ paths:
       parameters:
       - description: "Comma-separated status values to purge. If omitted, uses safe\
           \ defaults (all terminal + queued, excludes in-progress). Cannot include:\
-          \ BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE"
+          \ BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE. Valid values: BUNDLE_REQUESTED,\
+          \ WAITING_FOR_PUBLISHING, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY,\
+          \ SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS,\
+          \ FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK,\
+          \ INVALID_TOKEN, LICENSE_REQUIRED"
         example: "SUCCESS,FAILED_TO_PUBLISH"
         in: query
         name: status
@@ -12350,8 +12340,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityPurgeView"
-          description: Purge operation initiated (processes in background). Results
-            delivered via WebSocket system messages to browser clients only.
+          description: Purge operation initiated (processes in background). The result
+            is delivered as a system notification to the triggering user's browser
+            session. Non-browser API clients will not receive the completion event.
         "400":
           content:
             application/json: {}
@@ -12486,7 +12477,8 @@ paths:
         "404":
           content:
             application/json: {}
-          description: Bundle not found
+          description: Bundle not found in either the publishing audit history or
+            the bundle table
         "409":
           content:
             application/json: {}
@@ -23340,7 +23332,8 @@ components:
           example: endpoint-1
         port:
           type: string
-          description: Server port number (1-65535)
+          description: "Server port number as a string (valid range: 1–65535). May\
+            \ be empty if not configured."
           example: "443"
           pattern: "^(6553[0-5]|655[0-2][0-9]|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[1-9])$"
         protocol:
@@ -25358,12 +25351,12 @@ components:
       type: array
       description: List of bundle identifiers to retry
       example:
-      - bundle-123
-      - bundle-456
+      - 01KJWNJM2C67DM56GHBJ4S7B89
+      - 01KJWNJM2C67DM56GHBJ4S7B90
       items:
         type: string
         description: List of bundle identifiers to retry
-        example: "[\"bundle-123\",\"bundle-456\"]"
+        example: "[\"01KJWNJM2C67DM56GHBJ4S7B89\",\"01KJWNJM2C67DM56GHBJ4S7B90\"]"
       properties:
         empty:
           type: boolean
@@ -26921,7 +26914,7 @@ components:
         bundleId:
           type: string
           description: Unique bundle identifier
-          example: f3d9a4b7-staging-bundle-2026-01-15
+          example: 01KJWNJM2C67DM56GHBJ4S7B89
         bundleName:
           type: string
           description: Human-readable bundle name
@@ -26938,6 +26931,11 @@ components:
               $ref: "#/components/schemas/EnvironmentDetailView"
             last:
               $ref: "#/components/schemas/EnvironmentDetailView"
+        filterKey:
+          type: string
+          description: "Publishing filter key (pass to POST /push/{bundleId} filterKey\
+            \ to reproduce this push)"
+          example: ForcePush.yml
         filterName:
           type: string
           description: Publishing filter name used
@@ -27134,7 +27132,8 @@ components:
           type: string
           format: date-time
           description: Scheduled expire date in ISO 8601 format with timezone offset
-            (required for expire/publishexpire)
+            (required for expire/publishexpire). Dates without timezone offset are
+            rejected.
           example: 2025-04-15T14:30:00-05:00
         filterKey:
           type: string
@@ -27153,7 +27152,8 @@ components:
           type: string
           format: date-time
           description: Scheduled publish date in ISO 8601 format with timezone offset
-            (required for publish/publishexpire)
+            (required for publish/publishexpire). Dates without timezone offset are
+            rejected.
           example: 2025-03-15T14:30:00-05:00
       required:
       - environments
@@ -27165,7 +27165,7 @@ components:
         bundleId:
           type: string
           description: Bundle identifier
-          example: 550e8400-e29b-41d4-a716-446655440000
+          example: 01KJWNJM2C67DM56GHBJ4S7B89
         environments:
           type: array
           description: List of environment IDs the bundle was pushed to
@@ -30674,12 +30674,13 @@ components:
           type: array
           description: List of bundle identifiers to retry
           example:
-          - bundle-123
-          - bundle-456
+          - 01KJWNJM2C67DM56GHBJ4S7B89
+          - 01KJWNJM2C67DM56GHBJ4S7B90
           items:
             type: string
             description: List of bundle identifiers to retry
-            example: "[\"bundle-123\",\"bundle-456\"]"
+            example: "[\"01KJWNJM2C67DM56GHBJ4S7B89\",\"01KJWNJM2C67DM56GHBJ4S7B90\"\
+              ]"
           properties:
             empty:
               type: boolean
@@ -30689,11 +30690,10 @@ components:
               type: string
         deliveryStrategy:
           type: string
+          default: ALL_ENDPOINTS
           description: "Which endpoints to retry: ALL_ENDPOINTS sends to all, FAILED_ENDPOINTS\
-            \ sends only to previously failed endpoints. Case-sensitive."
+            \ sends only to previously failed endpoints. Case-sensitive: must be uppercase."
           enum:
-          - ALL_ENDPOINTS
-          - FAILED_ENDPOINTS
           - ALL_ENDPOINTS
           - FAILED_ENDPOINTS
           example: FAILED_ENDPOINTS
