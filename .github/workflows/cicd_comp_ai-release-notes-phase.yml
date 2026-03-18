@@ -35,8 +35,6 @@ jobs:
       contents: write      # gh release view + gh release edit
       pull-requests: read  # Octokit pulls.get for PR details
       id-token: write      # Required by claude-code-action for OIDC
-    # All run: blocks reference these via $RELEASE_TAG / $REPO instead of
-    # direct ${{ }} interpolation to prevent shell injection from crafted tags.
     env:
       RELEASE_TAG: ${{ inputs.release_tag }}
       PREVIOUS_TAG: ${{ inputs.previous_tag }}
