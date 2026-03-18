@@ -28,7 +28,7 @@ on:
 # Prevent concurrent runs for the same tag
 concurrency:
   group: release-notes-${{ inputs.release_tag }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   release-notes:
