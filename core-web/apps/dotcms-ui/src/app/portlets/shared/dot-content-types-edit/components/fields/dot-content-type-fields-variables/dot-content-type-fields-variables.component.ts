@@ -14,12 +14,7 @@ import {
 import { take, takeUntil } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import {
-    DotCMSClazzes,
-    DotCMSContentTypeField,
-    DotFieldVariable,
-    NEW_RENDER_MODE_VARIABLE_KEY
-} from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
@@ -42,20 +37,18 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     /** Local copy of field for access */
     field: DotCMSContentTypeField;
 
-    fieldVariables = signal<DotFieldVariable[]>([]);
+    $fieldVariables = signal<DotFieldVariable[]>([]);
 
     blackList = {
         'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
             allowedBlocks: true
-            // contentAssets: true
         },
         'com.dotcms.contenttype.model.field.ImmutableBinaryField': {
             accept: true,
             systemOptions: true
         },
         [DotCMSClazzes.CUSTOM_FIELD]: {
-            customFieldOptions: true,
-            [NEW_RENDER_MODE_VARIABLE_KEY]: true
+            customFieldOptions: true
         }
     };
 
@@ -84,7 +77,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             .pipe(take(1))
             .subscribe(
                 () => {
-                    this.fieldVariables.update((vars) =>
+                    this.$fieldVariables.update((vars) =>
                         vars.filter((item: DotFieldVariable) => item.key !== variable.key)
                     );
                 },
@@ -105,7 +98,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             .pipe(take(1))
             .subscribe(
                 (savedVariable: DotFieldVariable) => {
-                    this.fieldVariables.set(this.updateVariableCollection(savedVariable));
+                    this.$fieldVariables.set(this.updateVariableCollection(savedVariable));
                 },
                 (err: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
@@ -115,7 +108,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
 
     private initTableData(): void {
         if (!this.field?.contentTypeId || !this.field?.id) {
-            this.fieldVariables.set([]);
+            this.$fieldVariables.set([]);
             return;
         }
 
@@ -137,12 +130,12 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                     return true;
                 });
 
-                this.fieldVariables.set(filtered);
+                this.$fieldVariables.set(filtered);
             });
     }
 
     private updateVariableCollection(savedVariable: DotFieldVariable): DotFieldVariable[] {
-        const current = this.fieldVariables();
+        const current = this.$fieldVariables();
         const variableExist = current.find((item: DotKeyValue) => item.key === savedVariable.key);
 
         return variableExist

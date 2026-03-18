@@ -12,6 +12,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     ReactiveFormsModule,
     UntypedFormBuilder,
+    UntypedFormControl,
     UntypedFormGroup,
     ValidationErrors,
     Validators
@@ -20,6 +21,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
     DotCMSContentTypeField,
     DotRenderModes,
@@ -304,6 +306,89 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
         });
     });
 
+    describe('showRenderOptionsSection', () => {
+        beforeEach(() => {
+            const service = TestBed.inject(FieldPropertyService);
+            jest.spyOn(service, 'getProperties').mockReturnValue(['property1']);
+            createHostComponent();
+        });
+
+        it('should return true when clazz is CUSTOM_FIELD and newRenderMode is IFRAME', () => {
+            comp.formFieldData = { ...mockDFormFieldData, clazz: DotCMSClazzes.CUSTOM_FIELD };
+            comp.form.addControl('newRenderMode', new UntypedFormControl(DotRenderModes.IFRAME));
+            expect(comp.showRenderOptionsSection).toBe(true);
+        });
+
+        it('should return false when newRenderMode is not IFRAME', () => {
+            comp.formFieldData = { ...mockDFormFieldData, clazz: DotCMSClazzes.CUSTOM_FIELD };
+            comp.form.addControl('newRenderMode', new UntypedFormControl('EDITABLE'));
+            expect(comp.showRenderOptionsSection).toBe(false);
+        });
+
+        it('should return false when clazz is not CUSTOM_FIELD', () => {
+            expect(comp.showRenderOptionsSection).toBe(false);
+        });
+
+        it('should return false when formFieldData is undefined', () => {
+            comp.formFieldData = undefined;
+            expect(comp.showRenderOptionsSection).toBe(false);
+        });
+    });
+
+    describe('Custom Field form controls', () => {
+        beforeEach(() => {
+            const service = TestBed.inject(FieldPropertyService);
+            jest.spyOn(service, 'getProperties').mockReturnValue(['newRenderMode']);
+            jest.spyOn(service, 'existsComponent').mockReturnValue(true);
+        });
+
+        it('should add showAsModal, customFieldWidth and customFieldHeight controls with defaults', () => {
+            hostFixture = TestBed.createComponent(DotHostTesterComponent);
+            hostComp = hostFixture.componentInstance;
+            hostComp.mockDFormFieldData = {
+                ...mockDFormFieldData,
+                clazz: DotCMSClazzes.CUSTOM_FIELD,
+                fieldVariables: []
+            };
+            de = hostFixture.debugElement;
+            hostFixture.detectChanges();
+            comp = de.query(By.css('dot-content-type-fields-properties-form')).componentInstance;
+
+            expect(comp.form.get('showAsModal')?.value).toBe(false);
+            expect(comp.form.get('customFieldWidth')?.value).toBe(398);
+            expect(comp.form.get('customFieldHeight')?.value).toBe(400);
+        });
+
+        it('should parse px values from existing customFieldOptions variable', () => {
+            hostFixture = TestBed.createComponent(DotHostTesterComponent);
+            hostComp = hostFixture.componentInstance;
+            hostComp.mockDFormFieldData = {
+                ...mockDFormFieldData,
+                clazz: DotCMSClazzes.CUSTOM_FIELD,
+                fieldVariables: [
+                    {
+                        key: CUSTOM_FIELD_OPTIONS_KEY,
+                        value: JSON.stringify({
+                            showAsModal: true,
+                            width: '600px',
+                            height: '350px'
+                        }),
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        id: 'options-id',
+                        fieldId: 'field123'
+                    }
+                ]
+            };
+            de = hostFixture.debugElement;
+            hostFixture.detectChanges();
+            comp = de.query(By.css('dot-content-type-fields-properties-form')).componentInstance;
+
+            expect(comp.form.get('showAsModal')?.value).toBe(true);
+            expect(comp.form.get('customFieldWidth')?.value).toBe(600);
+            expect(comp.form.get('customFieldHeight')?.value).toBe(350);
+        });
+    });
+
     describe('transformFormValue', () => {
         beforeEach(() => {
             jest.spyOn(mockFieldPropertyService, 'getProperties').mockReturnValue([
@@ -541,6 +626,113 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
                 expect(result.newRenderMode).toBe('editable');
                 expect(result.fieldVariables).toBeDefined();
                 expect(result.fieldVariables.length).toBe(1);
+            });
+
+            describe('when showAsModal is true', () => {
+                it('should include customFieldOptions variable with serialized JSON', () => {
+                    comp.formFieldData.fieldVariables = [];
+                    const formValue = {
+                        newRenderMode: DotRenderModes.IFRAME,
+                        showAsModal: true,
+                        customFieldWidth: 500,
+                        customFieldHeight: 300
+                    };
+                    const result = comp.transformFormValue(formValue);
+
+                    const optionsVar = result.fieldVariables.find(
+                        (v) => v.key === CUSTOM_FIELD_OPTIONS_KEY
+                    );
+                    expect(optionsVar).toBeDefined();
+                    expect(JSON.parse(optionsVar.value)).toEqual({
+                        showAsModal: true,
+                        width: '500px',
+                        height: '300px'
+                    });
+                });
+
+                it('should use default width 398 and height 400 when values are nullish', () => {
+                    comp.formFieldData.fieldVariables = [];
+                    const formValue = {
+                        newRenderMode: DotRenderModes.IFRAME,
+                        showAsModal: true,
+                        customFieldWidth: null,
+                        customFieldHeight: null
+                    };
+                    const result = comp.transformFormValue(formValue);
+
+                    const parsed = JSON.parse(
+                        result.fieldVariables.find((v) => v.key === CUSTOM_FIELD_OPTIONS_KEY).value
+                    );
+                    expect(parsed.width).toBe('398px');
+                    expect(parsed.height).toBe('400px');
+                });
+
+                it('should preserve existing customFieldOptions id and fieldId when updating', () => {
+                    comp.formFieldData.fieldVariables = [
+                        {
+                            key: CUSTOM_FIELD_OPTIONS_KEY,
+                            value: '{}',
+                            clazz: DotCMSClazzes.FIELD_VARIABLE,
+                            id: 'options-id',
+                            fieldId: 'field123'
+                        }
+                    ];
+                    const formValue = {
+                        newRenderMode: DotRenderModes.IFRAME,
+                        showAsModal: true,
+                        customFieldWidth: 400,
+                        customFieldHeight: 200
+                    };
+                    const result = comp.transformFormValue(formValue);
+
+                    const optionsVar = result.fieldVariables.find(
+                        (v) => v.key === CUSTOM_FIELD_OPTIONS_KEY
+                    );
+                    expect(optionsVar.id).toBe('options-id');
+                    expect(optionsVar.fieldId).toBe('field123');
+                });
+
+                it('should not duplicate customFieldOptions if it already existed', () => {
+                    comp.formFieldData.fieldVariables = [
+                        {
+                            key: CUSTOM_FIELD_OPTIONS_KEY,
+                            value: '{"showAsModal":true}',
+                            clazz: DotCMSClazzes.FIELD_VARIABLE,
+                            id: 'options-id',
+                            fieldId: 'field123'
+                        }
+                    ];
+                    const formValue = {
+                        newRenderMode: DotRenderModes.IFRAME,
+                        showAsModal: true,
+                        customFieldWidth: 400,
+                        customFieldHeight: 200
+                    };
+                    const result = comp.transformFormValue(formValue);
+
+                    const optionVars = result.fieldVariables.filter(
+                        (v) => v.key === CUSTOM_FIELD_OPTIONS_KEY
+                    );
+                    expect(optionVars.length).toBe(1);
+                });
+            });
+
+            describe('when showAsModal is false', () => {
+                it('should NOT include customFieldOptions variable', () => {
+                    comp.formFieldData.fieldVariables = [];
+                    const formValue = {
+                        newRenderMode: DotRenderModes.IFRAME,
+                        showAsModal: false,
+                        customFieldWidth: 500,
+                        customFieldHeight: 300
+                    };
+                    const result = comp.transformFormValue(formValue);
+
+                    const optionsVar = result.fieldVariables.find(
+                        (v) => v.key === CUSTOM_FIELD_OPTIONS_KEY
+                    );
+                    expect(optionsVar).toBeUndefined();
+                });
             });
         });
     });

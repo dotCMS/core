@@ -14,16 +14,12 @@ import {
     output,
     viewChild
 } from '@angular/core';
-import {
-    AbstractControl,
-    UntypedFormBuilder,
-    UntypedFormGroup,
-    Validators
-} from '@angular/forms';
+import { AbstractControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { takeUntil } from 'rxjs/operators';
 
 import {
+    CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -31,7 +27,6 @@ import {
     FeaturedFlags,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
-import { CUSTOM_FIELD_OPTIONS_KEY, getCustomFieldOptions } from '@dotcms/edit-content';
 import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../service';
@@ -93,7 +88,6 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         return contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
     });
 
-    /** Whether to show the Render Options section (custom field with Deprecated / iframe implementation) */
     get showRenderOptionsSection(): boolean {
         return (
             this.formFieldData?.clazz === DotCMSClazzes.CUSTOM_FIELD &&
@@ -164,8 +158,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
             const existingVariables = this.formFieldData.fieldVariables || [];
             const otherVariables = existingVariables.filter(
-                (v) =>
-                    v.key !== NEW_RENDER_MODE_VARIABLE_KEY && v.key !== CUSTOM_FIELD_OPTIONS_KEY
+                (v) => v.key !== NEW_RENDER_MODE_VARIABLE_KEY && v.key !== CUSTOM_FIELD_OPTIONS_KEY
             );
             const existingNewRenderMode = existingVariables.find(
                 (v) => v.key === NEW_RENDER_MODE_VARIABLE_KEY
@@ -180,8 +173,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                     ...(existingNewRenderMode || {}),
                     clazz: DotCMSClazzes.FIELD_VARIABLE,
                     key: NEW_RENDER_MODE_VARIABLE_KEY,
-                    value:
-                        value.newRenderMode || this.fieldPropertyService.$newRenderModeDefault()
+                    value: value.newRenderMode || this.fieldPropertyService.$newRenderModeDefault()
                 }
             ];
             if (showAsModal) {
@@ -266,9 +258,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         }
 
         if (this.formFieldData?.clazz === DotCMSClazzes.CUSTOM_FIELD) {
-            const options = getCustomFieldOptions(
-                this.formFieldData.fieldVariables || []
+            const optionsVar = (this.formFieldData.fieldVariables || []).find(
+                (v) => v.key === CUSTOM_FIELD_OPTIONS_KEY
             );
+            const options = optionsVar?.value ? (JSON.parse(optionsVar.value) ?? {}) : {};
             const widthStr = options.width ?? '398px';
             const heightStr = options.height ?? '400px';
             formFields['showAsModal'] = [options.showAsModal ?? false];
