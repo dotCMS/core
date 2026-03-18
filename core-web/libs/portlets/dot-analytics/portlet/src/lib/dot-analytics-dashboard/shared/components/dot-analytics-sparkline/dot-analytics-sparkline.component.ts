@@ -109,7 +109,7 @@ export interface SparklineDataset {
                 }
             </div>
             @if ($legendItems().length) {
-                <div class="sparkline-legend pb-0" data-testid="sparkline-legend">
+                <div class="sparkline-legend" data-testid="sparkline-legend">
                     @for (item of $legendItems(); track item.label) {
                         <div class="sparkline-legend__item">
                             @if (item.dashed) {

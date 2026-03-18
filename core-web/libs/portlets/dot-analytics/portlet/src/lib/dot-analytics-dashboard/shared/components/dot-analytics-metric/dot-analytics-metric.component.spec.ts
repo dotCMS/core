@@ -340,6 +340,42 @@ describe('DotAnalyticsMetricComponent', () => {
         });
     });
 
+    describe('Comparison Label', () => {
+        it('should display comparison label when provided with trend data', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('comparisonLabel', 'from previous 7 days');
+            spectator.setInput('trend', 15);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const comparison = spectator.query(byTestId('metric-comparison'));
+            expect(comparison).toExist();
+            expect(comparison).toHaveText('from previous 7 days');
+        });
+
+        it('should not display comparison label when not provided', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const comparison = spectator.query(byTestId('metric-comparison'));
+            expect(comparison).toBeFalsy();
+        });
+
+        it('should show no-prior-data message when comparisonLabel is set but no trend data', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('comparisonLabel', 'from previous 7 days');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const noPrior = spectator.query(byTestId('metric-no-prior'));
+            expect(noPrior).toExist();
+        });
+    });
+
     describe('Accessibility', () => {
         it('should have proper test ids for testing', () => {
             // Arrange

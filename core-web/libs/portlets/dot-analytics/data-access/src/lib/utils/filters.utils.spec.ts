@@ -9,6 +9,7 @@ describe('Filters Utils', () => {
         it('should return true for valid tab values', () => {
             expect(isValidTab(DASHBOARD_TABS.pageview)).toBe(true);
             expect(isValidTab(DASHBOARD_TABS.conversions)).toBe(true);
+            expect(isValidTab(DASHBOARD_TABS.engagement)).toBe(true);
         });
 
         it('should return false for invalid tab values', () => {
