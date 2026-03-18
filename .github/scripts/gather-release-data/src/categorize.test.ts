@@ -67,6 +67,7 @@ describe('categorize', () => {
     expect(categorize(makePR({ title: 'feat: add new widget' }))).toBe('feature');
     expect(categorize(makePR({ title: 'fix: resolve crash' }))).toBe('fix');
     expect(categorize(makePR({ title: 'chore: update deps' }))).toBe('infrastructure');
+    expect(categorize(makePR({ title: 'build: upgrade Maven wrapper' }))).toBe('infrastructure');
   });
 
   it('detects release machinery as internal', () => {

@@ -59,7 +59,7 @@ export function categorize(pr: PRDetails): Change['category'] {
   const title = pr.title.toLowerCase();
   if (title.startsWith('feat')) return 'feature';
   if (title.startsWith('fix')) return 'fix';
-  if (title.startsWith('chore') || title.startsWith('ci(') || title.startsWith('ci:')) return 'infrastructure';
+  if (title.startsWith('chore') || title.startsWith('build') || title.startsWith('ci(') || title.startsWith('ci:')) return 'infrastructure';
   if (title.startsWith('deprecat')) return 'deprecation';
 
   // Check for release-machinery commits that should be omitted
