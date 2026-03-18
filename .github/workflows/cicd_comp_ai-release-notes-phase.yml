@@ -29,7 +29,7 @@ on:
 jobs:
   generate-notes:
     name: Generate Release Notes
-    ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     continue-on-error: true
     permissions:
       contents: write      # gh release view + gh release edit
@@ -65,7 +65,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install script dependencies
         working-directory: .github/scripts/gather-release-data
@@ -122,11 +122,13 @@ jobs:
           cat /tmp/release-data.json >> /tmp/claude-prompt.md
           printf '\n```\n' >> /tmp/claude-prompt.md
 
-          # Pass prompt content via environment file to avoid shell escaping issues
+          # Pass prompt content via environment file to avoid shell escaping issues.
+          # Use a random delimiter to prevent PR body content from terminating the heredoc early.
+          DELIM="PROMPT_$(openssl rand -hex 16)"
           {
-            echo 'PROMPT_CONTENT<<PROMPT_EOF'
+            echo "PROMPT_CONTENT<<${DELIM}"
             cat /tmp/claude-prompt.md
-            echo 'PROMPT_EOF'
+            echo "${DELIM}"
           } >> "$GITHUB_ENV"
 
       - name: Generate release notes with Claude
