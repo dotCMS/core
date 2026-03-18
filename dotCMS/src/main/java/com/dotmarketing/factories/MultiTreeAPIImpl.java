@@ -655,14 +655,30 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     /**
-     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
-     * {@link MultiTree} linked previously with the page.
+     * Saves a collection of {@link MultiTree} objects linked to an HTML Page, replacing existing
+     * entries. The deletion strategy depends on two conditions:
      *
-     * @param pageId {@link String} Page's identifier
-     * @param personalization {@link String} personalization token
-     * @param multiTrees {@link List} of {@link MultiTree} to safe
-     * @param languageIdOpt {@link Optional} {@link Long}   optional language, if present will deletes only the contentlets that have a version on this language.
-     *                                        Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
+     * <ul>
+     *   <li><b>Language-scoped DELETE</b> (when {@code languageIdOpt} is present AND
+     *   {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code false}): Only removes existing
+     *   multi-tree entries whose child contentlet has a version in the given language. This
+     *   preserves language-exclusive content — e.g., English-only contentlets are left intact
+     *   when saving the Spanish version of a page.</li>
+     *
+     *   <li><b>Full DELETE</b> (when {@code languageIdOpt} is empty, OR
+     *   {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code true}): Removes all existing
+     *   multi-tree entries for the page/personalization/variant before inserting the new set.
+     *   The full delete is required when language fallback is enabled because {@code render()}
+     *   may return content from other languages as fallback, causing the client to re-submit
+     *   multilingual identifiers.</li>
+     * </ul>
+     *
+     * @param pageId          The page identifier.
+     * @param personalization The personalization token (e.g., persona key tag).
+     * @param multiTrees      The list of {@link MultiTree} objects to save.
+     * @param languageIdOpt   Optional language ID. When present and fallback is OFF, restricts
+     *                        the deletion of contentlets that have a version in this language.
+     * @param variantId       The variant identifier.
      * @throws DotDataException If there is an issue retrieving data from the DB.
      */
     @Override
@@ -689,7 +705,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         // Preserves already existing styles
         preserveStylesBeforeSaving(pageId, multiTrees);
 
-        if (languageIdOpt.isPresent()) {
+        // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, page rendering falls back to the
+        // default language for contentlets that have no version in the requested language. This
+        // means a client editing the page may receive and re-submit content whose identifiers span
+        // multiple languages.
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        // Use a language-scoped DELETE only when a specific language is provided AND the global
+        // language fallback is disabled. If fallback is ON, fall through to the full DELETE to
+        // avoid conflicts caused by multilingual content returned by the page render.
+        if (languageIdOpt.isPresent() && !defaultContentToDefaultLanguage) {
             if (DbConnectionFactory.isMySql()) {
                 deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt, variantId);
            } else {
@@ -762,12 +788,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     .addParam(copiedMultiTreeVariantId);
             final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
             if(contentExist != 0){
-                final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
-                final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
-                                                              "'%s'", contentletTitle, tree.getContentlet(),
-                        tree.getContainer());
-                Logger.debug(MultiTreeAPIImpl.class, errorMsg);
-                throw new IllegalArgumentException(errorMsg);
+                // The contentlet already exists in this container for the given page, personalization,
+                // and variant. This can happen when DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled
+                // and a fallback-language entry was not removed by a language-scoped DELETE.
+                Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
+                        "Content [%s] already exists in Container '%s', skipping.",
+                        tree.getContentlet(), tree.getContainer()));
+                continue;
             }
 
             final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
