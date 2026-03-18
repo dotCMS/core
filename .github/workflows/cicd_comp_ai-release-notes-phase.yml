@@ -29,7 +29,7 @@ on:
 jobs:
   generate-notes:
     name: Generate Release Notes
-    runs-on: ubuntu-24.04
+    ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     continue-on-error: true
     permissions:
       contents: write      # gh release view + gh release edit
