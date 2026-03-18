@@ -123,6 +123,10 @@ public interface IndexConfigHelper {
         return MigrationPhase.current().isMigrationNotStarted();
     }
 
+    static boolean isMigrationStarted(){
+        return !isMigrationNotStarted();
+    }
+
     static boolean isDualWrite(){
         return MigrationPhase.current().isDualWrite();
     }

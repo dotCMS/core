@@ -293,6 +293,7 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
      * Defaults to the ES implementation.
      */
     private IndexMappingRestOperations getProvider() {
+
         return IndexConfigHelper.isMigrationComplete() ? osOps : esOps;
     }
 
