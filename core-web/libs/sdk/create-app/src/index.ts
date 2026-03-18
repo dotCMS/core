@@ -79,6 +79,12 @@ program
     .option('-u, --username <username>', 'DotCMS instance username (skip in case of local)')
     .option('-p, --password <password>', 'DotCMS instance password (skip in case of local)')
 
+    // local options
+    .option(
+        '--starter <url>',
+        'Custom starter URL for the local dotCMS Docker instance (sets CUSTOM_STARTER_URL)'
+    )
+
     .action(async (projectName: string, options: DotCmsCliOptions) => {
         // welcome cli
         printWelcomeScreen();
@@ -87,6 +93,7 @@ program
             // ✅ VALIDATE ALL CLI FLAGS IMMEDIATELY - BEFORE ANY INTERACTIVE PROMPTS
             const validatedFramework = validateAndNormalizeFramework(options.framework);
             validateUrl(options.url);
+            validateUrl(options.starter);
             validateConflictingParameters(options);
             validateProjectName(projectName); // Validate CLI flag if provided
 
@@ -262,7 +269,10 @@ program
 
             // STEP 4 — Run docker-compose
             spinner.start('Starting dotCMS containers...');
-            const ran = await runDockerCompose({ directory: finalDirectory });
+            const ran = await runDockerCompose({
+                directory: finalDirectory,
+                starterUrl: options.starter
+            });
             if (!ran.ok) {
                 spinner.fail('Failed to start Docker containers');
                 const errorMessage = ran.val instanceof Error ? ran.val.message : String(ran.val);
@@ -423,14 +433,18 @@ async function downloadTheDockerCompose({
 }
 
 async function runDockerCompose({
-    directory
+    directory,
+    starterUrl
 }: {
     directory: string;
+    starterUrl?: string;
 }): Promise<Result<void, Error>> {
     try {
         // console.log(chalk.cyan("🐳 Starting Docker containers... (This might take some time)"));
 
-        await execa('docker', ['compose', 'up', '-d'], { cwd: directory });
+        const env = starterUrl ? { ...process.env, CUSTOM_STARTER_URL: starterUrl } : process.env;
+
+        await execa('docker', ['compose', 'up', '-d'], { cwd: directory, env });
         await execa('docker', ['ps'], { cwd: directory });
 
         // console.log(chalk.green("✔ Docker containers started successfully!\n"));
