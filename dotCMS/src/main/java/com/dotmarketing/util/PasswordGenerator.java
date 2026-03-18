@@ -170,12 +170,12 @@ public class PasswordGenerator {
          * filtered to only contain characters accepted by {@code passwords.regexptoolkit.pattern},
          * but only when {@code RegExpToolkit} is the active password toolkit.
          *
-         * <p>Each default charset group retains its "at least one" minimum requirement — only
-         * individual characters that the backend validator rejects are removed.  Any
-         * pattern-allowed characters not covered by the four default groups are added as an
-         * optional (min=0) supplementary charset, ensuring the generator never produces a
-         * character the validator rejects while still generating the strongest possible
-         * passwords.</p>
+         * <p>Each default charset group retains its "at least two" per-group minimum — matching
+         * the guarantee of {@link #withDefaultValues()} — only individual characters that the
+         * backend validator rejects are removed.  Any pattern-allowed characters not covered by
+         * the four default groups are added as an optional (min=0) supplementary charset,
+         * ensuring the generator never produces a character the validator rejects while still
+         * generating the strongest possible passwords.</p>
          *
          * <p>Falls back to {@link #withDefaultValues()} when:</p>
          * <ul>
@@ -208,9 +208,11 @@ public class PasswordGenerator {
 
         /**
          * Like {@link #withDefaultValues()} but each default charset is filtered so that only
-         * characters present in {@code allowedChars} are kept.  Any characters in
-         * {@code allowedChars} that fall outside the four default groups are appended as an
-         * optional supplementary charset (min=0).
+         * characters present in {@code allowedChars} are kept.  Each group retains the same
+         * "at least two" per-group minimum as {@link #withDefaultValues()}, capped at the
+         * number of characters that survive filtering.  Any characters in {@code allowedChars}
+         * that fall outside the four default groups are appended as an optional supplementary
+         * charset (min=0).
          *
          * <p>Package-private to allow direct unit-testing without a live PropsUtil context.</p>
          *
@@ -218,10 +220,10 @@ public class PasswordGenerator {
          * @return this builder
          */
         Builder withFilteredValues(final String allowedChars) {
-            addFiltered(SPECIAL_CHARS, allowedChars, 1);
-            addFiltered(UPPER_CASE_LETTERS_CHARS, allowedChars, 1);
-            addFiltered(LOWER_CASE_LETTERS_CHARS, allowedChars, 1);
-            addFiltered(NUMBER_CHARS, allowedChars, 1);
+            addFiltered(SPECIAL_CHARS, allowedChars, 2);
+            addFiltered(UPPER_CASE_LETTERS_CHARS, allowedChars, 2);
+            addFiltered(LOWER_CASE_LETTERS_CHARS, allowedChars, 2);
+            addFiltered(NUMBER_CHARS, allowedChars, 2);
 
             // Include any pattern-allowed chars not covered by the four default groups.
             final String allDefaults =
@@ -277,19 +279,27 @@ public class PasswordGenerator {
         }
 
         /**
-         * Wraps a character-class token in JS regex-literal delimiters, escaping any
-         * forward-slash ({@code /}) inside the class as {@code \/} so the literal is not
-         * prematurely terminated.
+         * Wraps a character-class token in JS regex-literal delimiters, escaping characters
+         * that could cause problems when embedded in an HTML {@code <script>} block:
+         * <ul>
+         *   <li>{@code /} → {@code \/} — prevents premature termination of the JS literal.</li>
+         *   <li>{@code <} → {@code \u003c}, {@code >} → {@code \u003e} — prevents angle
+         *       brackets from appearing raw in HTML output (defense-in-depth against injection);
+         *       JS regex engines interpret these Unicode escapes identically to the literal
+         *       characters.</li>
+         * </ul>
          *
          * <p>For example, a char class {@code [A-Za-z0-9/]} becomes {@code /[A-Za-z0-9\/]/}.</p>
          *
          * <p>Package-private to allow direct unit-testing without a live PropsUtil context.</p>
          *
          * @param charClass the raw {@code [...]} token extracted from the portal pattern
-         * @return a valid JS regex literal string
+         * @return a valid JS regex literal string safe for embedding in an HTML script block
          */
         static String buildJsRegexLiteral(final String charClass) {
-            return "/" + charClass.replace("/", "\\/") + "/";
+            return "/" + charClass.replace("/", "\\/")
+                                  .replace("<", "\\u003c")
+                                  .replace(">", "\\u003e") + "/";
         }
 
         /**
@@ -366,7 +376,7 @@ public class PasswordGenerator {
             return m.find() ? Integer.parseInt(m.group(1)) : 0;
         }
 
-        static final String SPECIAL_CHARS = "!#%+:=?@";
+        static final String SPECIAL_CHARS = "!#$%&'()*+,.:;<=>?@^_`~";
         static final String UPPER_CASE_LETTERS_CHARS = "ABCDEFGHJKLMNPRSTUVWXYZ";
         static final String LOWER_CASE_LETTERS_CHARS = "abcdefghijklmnopqrstuvwxyz";
         static final String NUMBER_CHARS = "0123456789";

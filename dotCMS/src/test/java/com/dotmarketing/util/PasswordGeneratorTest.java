@@ -100,13 +100,14 @@ public class PasswordGeneratorTest {
     }
 
     /**
-     * buildJsRegexLiteral must escape any '/' inside the character class so that the
-     * resulting JS regex literal is syntactically valid — issue #3 from PR #34989.
-     * Without escaping, /[A-Za-z0-9/]/ would prematurely terminate the literal.
+     * buildJsRegexLiteral must escape characters that are unsafe inside an HTML {@code <script>}
+     * block: '/' is escaped as '\/' to prevent premature JS literal termination; '<' and '>' are
+     * escaped as '\u003c' / '\u003e' (JS-valid Unicode escapes) to prevent angle brackets from
+     * appearing raw in HTML output — issue #3 and issue #5 from PR #34989.
      */
     @Test
-    public void Test_BuildJsRegexLiteral_Escapes_ForwardSlash() {
-        // No slash — should pass through unchanged (most common case)
+    public void Test_BuildJsRegexLiteral_Escapes_Special_Html_Chars() {
+        // No special chars — should pass through unchanged (most common case)
         assertEquals("/[A-Za-z0-9!@#]/",
                 PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z0-9!@#]"));
 
@@ -117,6 +118,14 @@ public class PasswordGeneratorTest {
         // Multiple slashes — all must be escaped
         assertEquals("/[A-Z\\/a-z\\/0-9]/",
                 PasswordGenerator.Builder.buildJsRegexLiteral("[A-Z/a-z/0-9]"));
+
+        // '<' and '>' must be escaped as \u003c / \u003e (defense-in-depth against HTML injection)
+        assertEquals("/[A-Za-z\\u003c\\u003e]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z<>]"));
+
+        // Combined: slash + angle brackets all escaped together
+        assertEquals("/[A-Za-z0-9\\/\\u003c\\u003e]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z0-9/<>]"));
     }
 
     /**
@@ -255,6 +264,36 @@ public class PasswordGeneratorTest {
             final String password = generator.nextPassword();
             assertTrue("Password must contain '!' even when it is the only allowed special char: " + password,
                     hasExclamation.matcher(password).find());
+        }
+    }
+
+    /**
+     * withRegExpToolkitValues() must fall back gracefully to withDefaultValues() when
+     * PropsUtil cannot provide a RegExpToolkit configuration (e.g. in unit-test environments
+     * where no Liferay context is active).  The resulting generator must meet the same
+     * per-group guarantees as withDefaultValues().
+     *
+     * <p>In a non-Liferay context PropsUtil.get() returns null, so the toolkit check
+     * fails and the method delegates to withDefaultValues().</p>
+     */
+    @Test
+    public void Test_WithRegExpToolkitValues_FallsBack_To_DefaultValues_When_Toolkit_Not_Configured() {
+        // PropsUtil returns null in unit-test scope → toolkit check fails → withDefaultValues()
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withRegExpToolkitValues().build();
+
+        final Pattern hasSpecial = Pattern.compile("[" + SPECIAL_CHARS + "]");
+        final Pattern hasUpper   = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasLower   = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasDigit   = Pattern.compile("[" + NUMBER_CHARS + "]");
+
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be 16 chars", 16, password.length());
+            assertTrue("Must contain special char",  hasSpecial.matcher(password).find());
+            assertTrue("Must contain uppercase",     hasUpper.matcher(password).find());
+            assertTrue("Must contain lowercase",     hasLower.matcher(password).find());
+            assertTrue("Must contain digit",         hasDigit.matcher(password).find());
         }
     }
 
