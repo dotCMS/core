@@ -52,7 +52,7 @@ The file must contain **only** the Markdown content below. No preamble, no comme
 ## Release: <fromTag> → <toTag>
 
 > [!CAUTION]
-> **Rollback Warning:** This release contains changes that prevent a simple redeploy-previous-version rollback.
+> **Rollback Warning:** This release contains an irrevertable change that is non-trivial to rollback from.
 > - **[Module]**: [Why rollback is unsafe]. ([#N](url))
 
 ### Features & Enhancements
