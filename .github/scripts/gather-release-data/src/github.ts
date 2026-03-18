@@ -168,8 +168,8 @@ export async function fetchPRDetails(
 
         const linkedIssues = extractLinkedIssues(data.body || '');
 
-        // Truncate body to first ~500 chars for context (avoids oversized JSON)
-        const body = (data.body || '').slice(0, 500);
+        // Safety cap at 50K chars to guard against extreme outliers
+        const body = (data.body || '').slice(0, 50_000);
 
         return {
           number: prNumber,
