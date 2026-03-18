@@ -4,21 +4,6 @@
 # Generates release notes using AI and updates the GitHub release description.
 # Called by the release pipeline (cicd_6-release.yml) or the backfill workflow.
 #
-# Flow:
-# 1. Validate the release tag exists
-# 2. Run TypeScript data-gathering script → structured JSON
-#    (previous_tag eliminates race condition when called from release pipeline;
-#     auto-detected from GitHub releases API when omitted in backfill)
-# 3. Assemble prompt (template + JSON)
-# 4. Claude writes release notes to /tmp/release-notes.md
-# 5. Deterministic step: gh release edit updates the release description
-#
-# Key design decisions:
-# - Claude only writes prose (Write tool) — no shell commands
-# - gh release edit is a plain shell step for auditability
-# - Non-blocking: does not affect release success/failure
-# - Always overwrites: re-running is safe and produces consistent results
-#
 
 name: AI Release Notes Phase
 
