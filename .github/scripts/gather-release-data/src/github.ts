@@ -162,9 +162,7 @@ export async function fetchPRDetails(
           pull_number: prNumber,
         });
 
-        const labels = data.labels.map((l) =>
-          typeof l === 'string' ? l : l.name || ''
-        );
+        const labels = data.labels.map((l) => l.name || '');
 
         const linkedIssues = extractLinkedIssues(data.body || '');
 
@@ -203,8 +201,9 @@ export async function fetchPRDetails(
   }
 
   if (fetchErrors.length > 0) {
-    throw new Error(
-      `Failed to fetch ${fetchErrors.length} PR(s): ${fetchErrors.map((n) => `#${n}`).join(', ')}`
+    process.stderr.write(
+      `Warning: Could not fetch ${fetchErrors.length} PR(s): ${fetchErrors.map((n) => `#${n}`).join(', ')}. ` +
+        `These PRs will be missing from the release notes.\n`
     );
   }
 
