@@ -31,15 +31,15 @@ export interface UsageSummary {
      * Example structure:
      * {
      *   "content": {
-     *     "COUNT_CONTENT": {
-     *       "name": "COUNT_CONTENT",
+     *     "CONTENTLETS_COUNT": {
+     *       "name": "CONTENTLETS_COUNT",
      *       "value": 12345,
      *       "displayLabel": "Total Content"
      *     }
      *   },
      *   "site": {
-     *     "COUNT_OF_SITES": {
-     *       "name": "COUNT_OF_SITES",
+     *     "SITES_COUNT_OF_SITES": {
+     *       "name": "SITES_COUNT_OF_SITES",
      *       "value": 10,
      *       "displayLabel": "Total Sites"
      *     }
