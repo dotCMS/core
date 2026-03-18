@@ -10,7 +10,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     templateUrl: './dot-uve-zoom-controls.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ButtonModule],
-    host: { class: 'flex items-center bg-(--gray-200) rounded-full px-2 gap-1' }
+    host: { class: 'flex items-center bg-gray-100 rounded-full px-2 gap-1' }
 })
 export class DotUveZoomControlsComponent {
     protected readonly store = inject(UVEStore);

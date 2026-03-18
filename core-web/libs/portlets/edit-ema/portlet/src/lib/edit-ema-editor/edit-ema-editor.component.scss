@@ -195,6 +195,9 @@ a:active {
         top: 0;
         left: 0;
         z-index: 1000;
+        border-left: none;
+        border-right: none;
+        border-top: none;
 
         .p-toolbar-center {
             flex: 1;
@@ -211,7 +214,6 @@ a:active {
 
 .browser-url-pill {
     flex: 1;
-    background-color: $color-palette-gray-200;
     display: flex;
     align-items: center;
     gap: $spacing-1;

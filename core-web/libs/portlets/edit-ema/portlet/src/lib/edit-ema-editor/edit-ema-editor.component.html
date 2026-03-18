@@ -23,7 +23,7 @@
 }
 
 <div
-    class="editor-content"
+    class="editor-content bg-gray-100"
     #editorContent
     [ngStyle]="$editorContentStyles()"
     [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
@@ -56,7 +56,7 @@
         </ng-template>
         <ng-template #center>
             <div class="browser-url-bar-container">
-                <div class="browser-url-pill">
+                <div class="browser-url-pill bg-gray-100">
                     <p-button
                         (click)="copyUrlOverlay.toggle($event)"
                         [pTooltip]="'editpage.header.copy' | dm"

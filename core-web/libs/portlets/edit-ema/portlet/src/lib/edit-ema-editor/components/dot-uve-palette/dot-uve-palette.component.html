@@ -43,7 +43,7 @@
         </p-tabpanel>
         <p-tabpanel [value]="TABS_MAP.LAYERS">
             @if ($activeTab() === TABS_MAP.LAYERS) {
-                <div class="w-full h-full p-3">
+                <div class="w-full h-full p-3 overflow-y-auto">
                     <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
                 </div>
             }
