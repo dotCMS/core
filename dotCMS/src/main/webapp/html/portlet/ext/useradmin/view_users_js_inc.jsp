@@ -92,23 +92,14 @@
 	});
 
 <%
-    String _jsPwdCharPattern = PasswordGenerator.Builder.buildJsCharPattern();
-    String _jsPwdGroups      = PasswordGenerator.Builder.buildJsGroupsJson();
+    String _jsPwdGroups = PasswordGenerator.Builder.buildJsGroupsJson();
 %>
     // Random Password Generator Fn
     var PasswordGenerator = {
 
-        // Based on https://www.grc.com/ppp.htm — fallback when no server pattern is available.
-        _pattern: /[!#%+23456789:=?@ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnopqrstuvwxyz]/,
-
-        // Character class extracted server-side from RegExpToolkit's pattern.
-        // When present it replaces _pattern as the per-character filter, keeping
-        // generation in sync with the backend policy.
-        _serverValidation: <%= _jsPwdCharPattern %>,
-
         // Per-group character strings injected server-side.  Each element is one character
-        // group (special, upper, lower, digits).  When present, get() guarantees at least
-        // one character from each non-empty group — mirroring the Java PasswordGenerator.
+        // group (special, upper, lower, digits).  get() guarantees at least two characters
+        // from each non-empty group — mirroring the Java PasswordGenerator desiredMin=2.
         _groups: <%= _jsPwdGroups %>,
 
         _getRandomByte: function() {
@@ -130,51 +121,41 @@
         }
         },
 
+        // Uniform random index in [0, n) using rejection sampling to eliminate modulo bias.
+        // Bytes in the partial-bucket tail (>= floor(256/n)*n) are discarded and re-drawn.
+        _randomIndex: function(n) {
+        var threshold = Math.floor(256 / n) * n;
+        var b;
+        do { b = this._getRandomByte(); } while (b >= threshold);
+        return b % n;
+        },
+
         get: function(length) {
         var self = this;
         var groups = this._groups;
+        var password = [];
+        var combined = '';
 
-        if (groups && groups.length > 0) {
-            // Group-based generation: guarantees at least one char from every non-empty group,
-            // then fills the remaining slots from the combined pool and shuffles the result.
-            // This mirrors the Java PasswordGenerator.nextPassword() algorithm.
-            var password = [];
-            var combined = '';
-            for (var g = 0; g < groups.length; g++) {
-                if (groups[g].length > 0) {
-                    combined += groups[g];
-                    var idx = Math.floor(self._getRandomByte() * groups[g].length / 256);
-                    password.push(groups[g].charAt(idx));
+        // Guarantee at least 2 chars from every non-empty group (mirrors Java desiredMin=2).
+        for (var g = 0; g < groups.length; g++) {
+            if (groups[g].length > 0) {
+                combined += groups[g];
+                var toTake = Math.min(2, groups[g].length);
+                for (var k = 0; k < toTake; k++) {
+                    password.push(groups[g].charAt(self._randomIndex(groups[g].length)));
                 }
             }
-            while (password.length < length) {
-                var idx = Math.floor(self._getRandomByte() * combined.length / 256);
-                password.push(combined.charAt(idx));
-            }
-            // Fisher-Yates shuffle using cryptographic randomness
-            for (var i = password.length - 1; i > 0; i--) {
-                var j = Math.floor(self._getRandomByte() * (i + 1) / 256);
-                var tmp = password[i]; password[i] = password[j]; password[j] = tmp;
-            }
-            return password.join('');
         }
-
-        // Fallback: original filter-based generation (no per-group guarantee)
-        var charFilter = this._serverValidation || this._pattern;
-        return Array.apply(null, {'length': length})
-            .map(function()
-            {
-            var result;
-            while(true)
-            {
-                result = String.fromCharCode(self._getRandomByte());
-                if(charFilter.test(result))
-                {
-                return result;
-                }
-            }
-            })
-            .join('');
+        // Fill remaining slots from the combined pool.
+        while (password.length < length) {
+            password.push(combined.charAt(self._randomIndex(combined.length)));
+        }
+        // Fisher-Yates shuffle using rejection-sampled randomness.
+        for (var i = password.length - 1; i > 0; i--) {
+            var j = self._randomIndex(i + 1);
+            var tmp = password[i]; password[i] = password[j]; password[j] = tmp;
+        }
+        return password.join('');
         }
 
     };

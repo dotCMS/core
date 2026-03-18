@@ -456,14 +456,14 @@ public class PasswordGenerator {
          * enabling it to enforce the same per-group diversity guarantee as the Java generator.
          *
          * <p>When {@code RegExpToolkit} is active and the pattern is extractable, each default
-         * group is filtered to only characters accepted by the pattern.  Otherwise the full
-         * default groups are returned.  Empty groups are omitted from the array.</p>
+         * group is filtered to only characters accepted by the pattern.  When the pattern is
+         * not extractable, or when a different toolkit is active, the full default groups are
+         * returned.  Empty groups are omitted from the array.</p>
          *
-         * <p>Returns the string {@code "null"} when the toolkit is {@code RegExpToolkit} but
-         * the pattern is not extractable, so the JS side can fall back to its own logic.</p>
+         * <p>This method always returns a valid JSON array — never the string {@code "null"} —
+         * so the JS side always has a per-group character set to work with.</p>
          *
          * @return a JS-safe JSON array literal like {@code ["!#...","ABCD...","abcd...","0123..."]}
-         *         or {@code "null"}
          */
         public static String buildJsGroupsJson() {
             return buildJsGroupsJson(
@@ -483,15 +483,21 @@ public class PasswordGenerator {
             final String[] groups;
             if ("com.liferay.portal.pwd.RegExpToolkit".equals(configuredToolkit)) {
                 final String allowedChars = extractCharset(rawPattern);
-                if (allowedChars == null) {
-                    return "null";
+                if (allowedChars != null) {
+                    groups = new String[] {
+                            filterString(SPECIAL_CHARS, allowedChars),
+                            filterString(UPPER_CASE_LETTERS_CHARS, allowedChars),
+                            filterString(LOWER_CASE_LETTERS_CHARS, allowedChars),
+                            filterString(NUMBER_CHARS, allowedChars)
+                    };
+                } else {
+                    // Pattern not extractable — fall back to full default groups so the
+                    // JS side always receives a valid per-group character set.
+                    groups = new String[] {
+                            SPECIAL_CHARS, UPPER_CASE_LETTERS_CHARS,
+                            LOWER_CASE_LETTERS_CHARS, NUMBER_CHARS
+                    };
                 }
-                groups = new String[] {
-                        filterString(SPECIAL_CHARS, allowedChars),
-                        filterString(UPPER_CASE_LETTERS_CHARS, allowedChars),
-                        filterString(LOWER_CASE_LETTERS_CHARS, allowedChars),
-                        filterString(NUMBER_CHARS, allowedChars)
-                };
             } else {
                 groups = new String[] {
                         SPECIAL_CHARS, UPPER_CASE_LETTERS_CHARS,
@@ -536,6 +542,7 @@ public class PasswordGenerator {
 
         /** Special characters included by the default password generator. */
         static final String SPECIAL_CHARS = "!#$%&'()*+,.:;<=>?@^_`~-[]";
+
         /**
          * Uppercase letters, deliberately excluding I, O and Q (visually ambiguous glyphs).
          * When {@link #withRegExpToolkitValues()} is active, these three letters may appear in

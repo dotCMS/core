@@ -510,4 +510,20 @@ public class PasswordGeneratorTest {
         assertNotEquals("Must not be null sentinel", "null", result);
     }
 
+    /**
+     * buildJsGroupsJson must fall back to default groups — not return "null" — when the
+     * toolkit is RegExpToolkit but the pattern is a complex lookahead that cannot be extracted.
+     * This ensures the JS side always has a valid per-group character set.
+     */
+    @Test
+    public void Test_BuildJsGroupsJson_Falls_Back_To_Default_Groups_When_Pattern_Not_Extractable() {
+        // Complex lookahead — extractCharset returns null for this pattern
+        final String complexPattern = "/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/";
+        final String result = PasswordGenerator.Builder.buildJsGroupsJson(
+                "com.liferay.portal.pwd.RegExpToolkit", complexPattern);
+        assertTrue("Must start with [",  result.startsWith("["));
+        assertTrue("Must end with ]",    result.endsWith("]"));
+        assertNotEquals("Must not return null sentinel for unextractable pattern", "null", result);
+    }
+
 }
