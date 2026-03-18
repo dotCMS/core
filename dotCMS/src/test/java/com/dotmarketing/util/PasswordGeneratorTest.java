@@ -5,6 +5,8 @@ import static com.dotmarketing.util.PasswordGenerator.Builder.NUMBER_CHARS;
 import static com.dotmarketing.util.PasswordGenerator.Builder.SPECIAL_CHARS;
 import static com.dotmarketing.util.PasswordGenerator.Builder.UPPER_CASE_LETTERS_CHARS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -23,6 +25,17 @@ public class PasswordGeneratorTest {
                     SPECIAL_CHARS, UPPER_CASE_LETTERS_CHARS, LOWER_CASE_LETTERS_CHARS, NUMBER_CHARS
             );
 
+    /**
+     * Escapes characters that have special meaning inside a Java regex character class
+     * ({@code [...]}).  Required when SPECIAL_CHARS contains {@code -}, {@code [}, or {@code ]}.
+     */
+    private static String escapeForCharClass(final String chars) {
+        return chars.replace("\\", "\\\\")   // must be first
+                    .replace("[",  "\\[")
+                    .replace("]",  "\\]")
+                    .replace("-",  "\\-");
+    }
+
     // Default portal.properties pattern (passwords.regexptoolkit.pattern) after the ? fix
     static final String DEFAULT_REGEXP_PATTERN =
             "/^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$/";
@@ -39,7 +52,7 @@ public class PasswordGeneratorTest {
         final Set<String> generatedPasswords = new HashSet<>(100);
 
         for (final String acceptablePasswordChar : ACCEPTABLE_PASSWORD_CHARS) {
-            final String acceptableCharsPattern = "[" + String.join("", acceptablePasswordChar) + "]";
+            final String acceptableCharsPattern = "[" + escapeForCharClass(acceptablePasswordChar) + "]";
             final Pattern pattern = Pattern.compile(acceptableCharsPattern);
             //Lets do this a few times just to be sure
             for (int i = 0; i <= 100; i++) {
@@ -100,6 +113,86 @@ public class PasswordGeneratorTest {
     }
 
     /**
+     * extractCharClass and extractMinLength must also handle exact-length quantifiers {n}
+     * (no comma) — issue #2 from the second review of PR #34989.
+     */
+    @Test
+    public void Test_ExtractCharClass_And_MinLength_Handle_Exact_Quantifier() {
+        final String exactPattern = "/^[A-Za-z0-9]{8}$/";
+
+        // extractCharClass must recognise {n}
+        final String charClass = PasswordGenerator.Builder.extractCharClass(exactPattern);
+        assertNotNull("extractCharClass must succeed for {n} pattern", charClass);
+        assertTrue(charClass.startsWith("["));
+        assertTrue(charClass.endsWith("]"));
+
+        // extractCharset must also succeed
+        assertNotNull("extractCharset must succeed for {n} pattern",
+                PasswordGenerator.Builder.extractCharset(exactPattern));
+
+        // extractMinLength must return the exact value
+        assertEquals(8, PasswordGenerator.Builder.extractMinLength(exactPattern));
+
+        // Verify that {n,} and {n,m} still work alongside {n}
+        assertEquals(10, PasswordGenerator.Builder.extractMinLength("/^[A-Z]{10}$/"));
+        assertEquals(8,  PasswordGenerator.Builder.extractMinLength("/^[A-Z]{8,}$/"));
+        assertEquals(8,  PasswordGenerator.Builder.extractMinLength("/^[A-Z]{8,20}$/"));
+    }
+
+    /**
+     * withRegExpToolkitValues() happy path: when the toolkit is RegExpToolkit and the
+     * pattern is extractable, passwords must comply with the pattern and carry per-group
+     * guarantees identical to withDefaultValues().
+     * Uses the package-private overload to bypass PropsUtil.
+     */
+    @Test
+    public void Test_WithRegExpToolkitValues_HappyPath_Produces_Pattern_Compliant_Passwords() {
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withRegExpToolkitValues("com.liferay.portal.pwd.RegExpToolkit", DEFAULT_REGEXP_PATTERN)
+                .build();
+
+        final Pattern validator = Pattern.compile(
+                "^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$");
+        final Pattern hasSpecial = Pattern.compile("[" + escapeForCharClass(SPECIAL_CHARS) + "]");
+        final Pattern hasUpper   = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasLower   = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasDigit   = Pattern.compile("[" + NUMBER_CHARS + "]");
+
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be 16 chars", 16, password.length());
+            assertTrue("Password must match backend pattern: " + password,
+                    validator.matcher(password).matches());
+            assertTrue("Must have special char", hasSpecial.matcher(password).find());
+            assertTrue("Must have uppercase",    hasUpper.matcher(password).find());
+            assertTrue("Must have lowercase",    hasLower.matcher(password).find());
+            assertTrue("Must have digit",        hasDigit.matcher(password).find());
+        }
+    }
+
+    /**
+     * buildJsCharPattern() happy path: when the toolkit is RegExpToolkit and the pattern is
+     * extractable, returns a safe JS regex literal; falls back to "null" otherwise.
+     * Uses the package-private overload to bypass PropsUtil.
+     */
+    @Test
+    public void Test_BuildJsCharPattern_HappyPath_Returns_Js_Literal_For_RegExpToolkit() {
+        final String result = PasswordGenerator.Builder.buildJsCharPattern(
+                "com.liferay.portal.pwd.RegExpToolkit", DEFAULT_REGEXP_PATTERN);
+        assertTrue("Must start with /",   result.startsWith("/"));
+        assertTrue("Must end with /",     result.endsWith("/"));
+        assertNotEquals("Must not be the null sentinel", "null", result);
+        // Angle brackets must be escaped — not raw in the HTML output
+        assertFalse("Must not contain raw '<'", result.contains("<"));
+        assertFalse("Must not contain raw '>'", result.contains(">"));
+
+        // Non-RegExp toolkit → sentinel "null"
+        assertEquals("null", PasswordGenerator.Builder.buildJsCharPattern(
+                "com.liferay.portal.pwd.DefaultPasswordToolkit", DEFAULT_REGEXP_PATTERN));
+        assertEquals("null", PasswordGenerator.Builder.buildJsCharPattern(null, null));
+    }
+
+    /**
      * buildJsRegexLiteral must escape characters that are unsafe inside an HTML {@code <script>}
      * block: '/' is escaped as '\/' to prevent premature JS literal termination; '<' and '>' are
      * escaped as '\u003c' / '\u003e' (JS-valid Unicode escapes) to prevent angle brackets from
@@ -126,6 +219,10 @@ public class PasswordGeneratorTest {
         // Combined: slash + angle brackets all escaped together
         assertEquals("/[A-Za-z0-9\\/\\u003c\\u003e]/",
                 PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z0-9/<>]"));
+
+        // Line terminators (\r, \n) must be escaped to prevent breaking the JS literal
+        assertEquals("/[A-Za-z\\r\\n]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z\r\n]"));
     }
 
     /**
@@ -208,7 +305,7 @@ public class PasswordGeneratorTest {
                 "^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$");
 
         // Per-group patterns — filtered defaults must still land at least one char per group
-        final Pattern hasSpecial   = Pattern.compile("[" + SPECIAL_CHARS + "]");
+        final Pattern hasSpecial   = Pattern.compile("[" + escapeForCharClass(SPECIAL_CHARS) + "]");
         final Pattern hasUpper     = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
         final Pattern hasLower     = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
         final Pattern hasDigit     = Pattern.compile("[" + NUMBER_CHARS + "]");
@@ -282,7 +379,7 @@ public class PasswordGeneratorTest {
         final PasswordGenerator generator = new PasswordGenerator.Builder()
                 .withRegExpToolkitValues().build();
 
-        final Pattern hasSpecial = Pattern.compile("[" + SPECIAL_CHARS + "]");
+        final Pattern hasSpecial = Pattern.compile("[" + escapeForCharClass(SPECIAL_CHARS) + "]");
         final Pattern hasUpper   = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
         final Pattern hasLower   = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
         final Pattern hasDigit   = Pattern.compile("[" + NUMBER_CHARS + "]");
@@ -312,7 +409,7 @@ public class PasswordGeneratorTest {
         final PasswordGenerator generator = new PasswordGenerator.Builder()
                 .withFilteredValues(allDefaults).build();
 
-        final Pattern hasSpecial = Pattern.compile("[" + SPECIAL_CHARS + "]");
+        final Pattern hasSpecial = Pattern.compile("[" + escapeForCharClass(SPECIAL_CHARS) + "]");
         final Pattern hasUpper   = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
         final Pattern hasLower   = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
         final Pattern hasDigit   = Pattern.compile("[" + NUMBER_CHARS + "]");
