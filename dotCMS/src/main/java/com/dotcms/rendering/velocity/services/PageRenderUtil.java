@@ -747,13 +747,33 @@ public class PageRenderUtil implements Serializable {
                     contentletIdentifier, mode.showLive, languageId,
                     user, true, variantName);
 
-            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, the contract is: show the
-            // requested-language version, or fall back to the default language. If the contentlet
-            // has no version in either, it must be excluded from this page render. A broader
-            // "any language" fallback would surface content that belongs to a different language
-            // (e.g. an ES-only contentlet on an EN page), causing entity.containers.uuid to
-            // include entries that the rendered HTML correctly omits.
-            return contentletOpt.orElse(null);
+            if (contentletOpt.isPresent()) {
+                return contentletOpt.get();
+            }
+
+            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, the contract is strictly:
+            // show the requested-language version, or fall back to the default language.
+            // If neither exists, exclude the contentlet — do NOT fall back to any other language.
+            if (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) {
+                return null;
+            }
+
+            // Without DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, honour the per-content-type
+            // languageFallback() opt-in: if the content type allows it, surface the contentlet
+            // from any available language when neither the requested nor the default language has
+            // a version.
+            try {
+                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                        contentletIdentifier, variantName);
+
+                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
+                    return anyLanguageContentlet;
+                }
+            } catch (Exception e) {
+                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
+            }
+
+            return null;
 
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control

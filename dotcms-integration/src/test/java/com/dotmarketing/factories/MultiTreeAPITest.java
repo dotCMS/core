@@ -741,6 +741,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_overridesMultitreesByPersonalization_multiLangContent_noFallback_skipsExistingEntries() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
 
@@ -791,7 +793,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     Optional.of(defaultLanguage.getId())
             );
         } finally {
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
         }
 
         final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
@@ -811,6 +813,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_overridesMultitreesByPersonalization_multiLangContent_withFallback_fullReplace() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
 
@@ -853,23 +857,23 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setTreeOrder(2)
                 .nextPersisted();
 
-        final MultiTree multiTreeContentEN = new MultiTreeDataGen()
-                .setPage(page)
-                .setContainer(container)
-                .setContentlet(enContentlet)
-                .setInstanceID(uniqueId)
-                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
-                .setTreeOrder(1)
-                .nextPersisted();
+        // These in-memory MultiTree objects simulate the payload the client re-submits after
+        // receiving the render() response with DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true.
+        // They must NOT be persisted here — the DB already has exactly 2 rows from the
+        // nextPersisted() calls above.
+        final MultiTree multiTreeContentEN = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier())
+                .setInstanceId(uniqueId)
+                .setTreeOrder(1);
 
-        final MultiTree multiTreeContentES = new MultiTreeDataGen()
-                .setPage(page)
-                .setContainer(container)
-                .setContentlet(espContentlet)
-                .setInstanceID(uniqueId)
-                .setPersonalization(DOT_PERSONALIZATION_DEFAULT)
-                .setTreeOrder(2)
-                .nextPersisted();
+        final MultiTree multiTreeContentES = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(espContentlet.getIdentifier())
+                .setInstanceId(uniqueId)
+                .setTreeOrder(2);
 
         // Simulate the client re-submitting the full render() output (mixed languages)
         // with DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true: full DELETE then re-INSERT, no conflicts.
@@ -883,7 +887,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     VariantAPI.DEFAULT_VARIANT.name()
             );
         } finally {
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
         }
 
         final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());

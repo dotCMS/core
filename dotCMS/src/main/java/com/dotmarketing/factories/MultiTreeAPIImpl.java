@@ -788,13 +788,19 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     .addParam(copiedMultiTreeVariantId);
             final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
             if(contentExist != 0){
-                // The contentlet already exists in this container for the given page, personalization,
-                // and variant. This can happen when DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled
-                // and a fallback-language entry was not removed by a language-scoped DELETE.
-                Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
-                        "Content [%s] already exists in Container '%s', skipping.",
+                if (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) {
+                    // When language fallback is enabled, the page render may return mixed-language
+                    // content that a client re-submits via addContent().
+                    Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
+                            "Content [%s] already exists in Container '%s', skipping (DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true).",
+                            tree.getContentlet(), tree.getContainer()));
+                    continue;
+                }
+                // For all other callers (variant copy, experiment promotion, etc.) a duplicate
+                // indicates a programming error or data corruption and must not be silently ignored.
+                throw new IllegalArgumentException(String.format(
+                        "Content [%s] already exists in Container '%s'. Duplicate multi-tree entries are not allowed.",
                         tree.getContentlet(), tree.getContainer()));
-                continue;
             }
 
             final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
