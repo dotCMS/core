@@ -1,0 +1,175 @@
+#
+# AI Release Notes Phase (Reusable Component)
+#
+# Generates release notes using AI and updates the GitHub release description.
+# Called by the release pipeline (cicd_6-release.yml) or the backfill workflow.
+#
+# Flow:
+# 1. Validate the release tag exists
+# 2. Run TypeScript data-gathering script → structured JSON
+#    (previous_tag eliminates race condition when called from release pipeline;
+#     auto-detected from GitHub releases API when omitted in backfill)
+# 3. Assemble prompt (template + JSON)
+# 4. Claude writes release notes to /tmp/release-notes.md
+# 5. Deterministic step: gh release edit updates the release description
+#
+# Key design decisions:
+# - Claude only writes prose (Write tool) — no shell commands
+# - gh release edit is a plain shell step for auditability
+# - Non-blocking: does not affect release success/failure
+# - Always overwrites: re-running is safe and produces consistent results
+#
+
+name: AI Release Notes Phase
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., v26.03.13-02)'
+        required: true
+        type: string
+      previous_tag:
+        description: 'Previous release tag for diff range. If omitted, auto-detected from GitHub releases API.'
+        required: false
+        type: string
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+        description: 'Anthropic API key for Claude'
+      CI_MACHINE_TOKEN:
+        required: false
+        description: 'GitHub token with release edit permissions (falls back to github.token)'
+
+jobs:
+  generate-notes:
+    name: Generate Release Notes
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    permissions:
+      contents: write      # gh release view + gh release edit
+      pull-requests: read  # Octokit pulls.get for PR details
+      id-token: write      # Required by claude-code-action for OIDC
+    # All run: blocks reference these via $RELEASE_TAG / $REPO instead of
+    # direct ${{ }} interpolation to prevent shell injection from crafted tags.
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      PREVIOUS_TAG: ${{ inputs.previous_tag }}
+      REPO: ${{ github.repository }}
+    # Skip non-standard releases (CLI, LTS)
+    if: >-
+      !contains(inputs.release_tag, 'dotcms-cli-')
+      && !contains(inputs.release_tag, '_lts_')
+      && startsWith(inputs.release_tag, 'v')
+    steps:
+      - name: Validate release exists
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" \
+            --repo "$REPO" \
+            --json tagName --jq '.tagName' > /dev/null 2>&1; then
+            echo "::error::Release '${RELEASE_TAG}' not found in ${REPO}. Verify the tag exists and the release has been published."
+            exit 1
+          fi
+          echo "Release '${RELEASE_TAG}' found."
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install script dependencies
+        working-directory: .github/scripts/gather-release-data
+        run: npm ci
+
+      - name: Build TypeScript
+        working-directory: .github/scripts/gather-release-data
+        run: npx tsc
+
+      - name: Gather release data
+        id: gather
+        working-directory: .github/scripts/gather-release-data
+        env:
+          GITHUB_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+        run: |
+          if [ -n "$PREVIOUS_TAG" ]; then
+            node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" --from-tag "$PREVIOUS_TAG" \
+              > /tmp/release-data.json 2>/tmp/gather-stderr.log
+          else
+            node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" \
+              > /tmp/release-data.json 2>/tmp/gather-stderr.log
+          fi
+
+          # Log the resolved range for operator visibility
+          cat /tmp/gather-stderr.log
+
+          # Validate JSON output
+          if ! jq empty /tmp/release-data.json 2>/dev/null; then
+            echo "Error: Script output is not valid JSON"
+            cat /tmp/release-data.json
+            exit 1
+          fi
+
+          # Log summary
+          echo "## Release Data Summary" >> "$GITHUB_STEP_SUMMARY"
+          FROM_TAG=$(jq -r '.fromTag' /tmp/release-data.json)
+          TO_TAG=$(jq -r '.toTag' /tmp/release-data.json)
+          TOTAL=$(jq -r '.totalCommits' /tmp/release-data.json)
+          CHANGES=$(jq '.changes | length' /tmp/release-data.json)
+          ROLLBACK=$(jq '.rollbackUnsafe | length' /tmp/release-data.json)
+          SKIPPED=$(jq '.skipped | length' /tmp/release-data.json)
+          echo "- **Range**: ${FROM_TAG} → ${TO_TAG}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Commits**: ${TOTAL}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Changes**: ${CHANGES}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Rollback unsafe**: ${ROLLBACK}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Skipped**: ${SKIPPED}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Assemble prompt
+        id: prompt
+        run: |
+          # Build the full prompt: template + JSON data
+          cat .github/scripts/gather-release-data/prompt-template.md > /tmp/claude-prompt.md
+          printf '\n---\n\n## Release Data (JSON)\n\n```json\n' >> /tmp/claude-prompt.md
+          cat /tmp/release-data.json >> /tmp/claude-prompt.md
+          printf '\n```\n' >> /tmp/claude-prompt.md
+
+          # Pass prompt content via environment file to avoid shell escaping issues
+          {
+            echo 'PROMPT_CONTENT<<PROMPT_EOF'
+            cat /tmp/claude-prompt.md
+            echo 'PROMPT_EOF'
+          } >> "$GITHUB_ENV"
+
+      - name: Generate release notes with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: ${{ env.PROMPT_CONTENT }}
+          claude_args: "--allowedTools Write --max-turns 3"
+
+      - name: Update release description
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+        run: |
+          if [ ! -f /tmp/release-notes.md ]; then
+            echo "Error: Claude did not generate /tmp/release-notes.md"
+            echo "Listing /tmp/ for debugging:"
+            ls -la /tmp/*.md 2>/dev/null || echo "No .md files in /tmp/"
+            exit 1
+          fi
+
+          echo "Generated release notes ($(wc -l < /tmp/release-notes.md) lines):"
+          cat /tmp/release-notes.md
+
+          gh release edit "$RELEASE_TAG" \
+            --repo "$REPO" \
+            --notes-file /tmp/release-notes.md
+
+          echo "## Release Notes Updated" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release [${RELEASE_TAG}](https://github.com/${REPO}/releases/tag/${RELEASE_TAG}) description updated." >> "$GITHUB_STEP_SUMMARY"

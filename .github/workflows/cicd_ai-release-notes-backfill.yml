@@ -1,0 +1,42 @@
+#
+# AI Release Notes — Backfill / Manual Trigger
+#
+# Standalone workflow for populating release notes on existing GitHub releases.
+# Calls the same reusable component used by the release pipeline.
+#
+# Use cases:
+# - Backfill notes on past releases that were created without descriptions
+# - Re-generate notes for a specific release (clear existing notes first)
+# - Test the release notes pipeline in isolation
+#
+
+name: 'AI Release Notes (Backfill)'
+run-name: "Release Notes: ${{ inputs.release_tag }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to generate notes for (e.g., v26.03.13-02)'
+        required: true
+        type: string
+      previous_tag:
+        description: 'Previous release tag for diff range (optional — auto-detected if omitted)'
+        required: false
+        type: string
+
+# Prevent concurrent runs for the same tag
+concurrency:
+  group: release-notes-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  release-notes:
+    name: Generate Notes
+    uses: ./.github/workflows/cicd_comp_ai-release-notes-phase.yml
+    with:
+      release_tag: ${{ inputs.release_tag }}
+      previous_tag: ${{ inputs.previous_tag }}
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
