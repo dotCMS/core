@@ -252,22 +252,37 @@ public List<MyEntity> unsafeFind(String name) throws DotDataException {
 
 ### Output Encoding Pattern
 ```java
-import org.springframework.web.util.HtmlUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 public class MyResponseBuilder {
-    
+
     public Map<String, Object> buildResponse(MyEntity entity) {
         Map<String, Object> response = new HashMap<>();
-        
+
         // Encode HTML content for safe display
-        response.put("name", HtmlUtils.htmlEscape(entity.getName()));
-        response.put("description", HtmlUtils.htmlEscape(entity.getDescription()));
-        
+        response.put("name", StringEscapeUtils.escapeHtml4(entity.getName()));
+        response.put("description", StringEscapeUtils.escapeHtml4(entity.getDescription()));
+
         // Safe content (already validated)
         response.put("id", entity.getId());
         response.put("createdDate", entity.getCreatedDate());
-        
+
         return response;
+    }
+}
+
+// Alternative: Let JAX-RS/Jersey handle encoding automatically
+@Path("/v1/myresource")
+public class MyResource {
+
+    @GET @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getById(@PathParam("id") String id) {
+        MyEntity entity = findById(id);
+
+        // Jackson automatically handles safe JSON serialization
+        // No manual HTML escaping needed for JSON responses
+        return Response.ok(new ResponseEntityView<>(entity)).build();
     }
 }
 ```
