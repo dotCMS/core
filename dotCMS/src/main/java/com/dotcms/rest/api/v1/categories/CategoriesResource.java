@@ -692,7 +692,7 @@ public class CategoriesResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public final Response delete(@Context final HttpServletRequest httpRequest,
                                  @Context final HttpServletResponse httpResponse,
-                                 @RequestBody(required = true,
+                                 @RequestBody(description = "JSON payload containing a list of the inodes of categories to delete.", required = true,
                                          content = @Content( schema = @Schema(type="array", implementation = String.class))
                                  ) final List<String> categoriesToDelete) {
 
@@ -940,7 +940,9 @@ public class CategoriesResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response importCategories(@Context final HttpServletRequest httpRequest,
                                      @Context final HttpServletResponse httpResponse,
-                                     /*not sure why hidden*/ @Parameter(hidden = true) @BeanParam @RequestBody(required = true,
+                                     @Parameter(hidden = true) @BeanParam @RequestBody(
+                                             description = "CSV file containing categories to be imported.",
+                                             required = true,
                                              content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA,
                                                      schema = @Schema(implementation = CategoryImportData.class))
                                      ) final CategoryImportData form) throws IOException {

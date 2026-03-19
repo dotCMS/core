@@ -4424,6 +4424,8 @@ paths:
           application/json:
             schema:
               type: string
+        description: JSON payload containing a list of the inodes of categories to
+          delete.
         required: true
       responses:
         "200":
