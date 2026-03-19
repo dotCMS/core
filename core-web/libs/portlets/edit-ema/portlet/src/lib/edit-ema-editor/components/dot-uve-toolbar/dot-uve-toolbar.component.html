@@ -2,6 +2,7 @@
 @let preview = mode === UVE_MODE.PREVIEW;
 @let live = mode === UVE_MODE.LIVE;
 @let runningExperiment = $runningExperiment();
+@let lockOptions = $lockOptions();
 
 <p-toolbar>
     <ng-template #start>
@@ -71,7 +72,7 @@
 
     <ng-template #end>
         <div class="flex items-center gap-1 uve-toolbar-end-actions">
-            @if ($lockOptions(); as lockOptions) {
+            @if (lockOptions.shouldShowButton) {
                 <dot-toggle-lock-button
                     [toggleLockOptions]="lockOptions"
                     (toggleLockClick)="handleToggleLock($event)"

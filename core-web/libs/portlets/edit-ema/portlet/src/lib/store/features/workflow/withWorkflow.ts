@@ -34,6 +34,7 @@ import type { PageComputed } from '../page/withPage';
 export interface WorkflowLockOptions {
     inode: string;
     isLocked: boolean;
+    shouldShowButton: boolean;
     lockedBy: string;
     canLock: boolean;
     isLockedByCurrentUser: boolean;
@@ -140,7 +141,9 @@ export function withWorkflow() {
                     isLocked,
                     isLockedByCurrentUser,
                     canLock,
-                    lockedBy: lockedByName
+                    lockedBy: lockedByName,
+                    shouldShowButton:
+                        $lockFeatureEnabled() || (isLocked && (isLockedByCurrentUser || canLock))
                 };
             });
 

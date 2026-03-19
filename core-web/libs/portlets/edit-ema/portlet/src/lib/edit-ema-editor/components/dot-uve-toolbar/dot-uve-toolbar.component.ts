@@ -189,10 +189,6 @@ export class DotUveToolbarComponent {
 
     // Build complete toggle lock options for presentational component
     readonly $lockOptions = computed(() => {
-        if (!this.#store.$lockFeatureEnabled()) {
-            return null;
-        }
-
         const storeLockOptions = this.#store.$lockOptions();
 
         if (!storeLockOptions) {
@@ -207,10 +203,7 @@ export class DotUveToolbarComponent {
         const args = storeLockOptions.lockedBy ? [storeLockOptions.lockedBy] : [];
 
         return {
-            inode: storeLockOptions.inode,
-            isLocked: storeLockOptions.isLocked,
-            isLockedByCurrentUser: storeLockOptions.isLockedByCurrentUser,
-            canLock: storeLockOptions.canLock,
+            ...storeLockOptions,
             loading,
             disabled,
             message,

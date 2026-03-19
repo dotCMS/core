@@ -358,7 +358,29 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return this.uveStore.editorEditPanelOpen();
     }
     readonly $lockOptions = this.uveStore.$lockOptions;
-    readonly $showLockOverlay = computed(() => this.$lockOptions()?.isLocked ?? false);
+    readonly $showLockOverlay = computed(() => {
+        const lockOptions = this.$lockOptions();
+
+        const lockFeatureEnabled = this.uveStore.$lockFeatureEnabled();
+        const isLocked = lockOptions?.isLocked;
+        const isLockedByCurrentUser = lockOptions?.isLockedByCurrentUser;
+        const canLock = lockOptions?.canLock;
+
+        // For feature flag, we force the user to lock pages to edit
+        // So we show the lock overlay if the page is not locked
+        if (lockFeatureEnabled) {
+            return !isLocked;
+        }
+
+        // Without feature flag, we show the lock overlay if the page is locked
+        // And is not locked by the current user or the user has no permission to lock/unlock
+        if (isLocked && (!isLockedByCurrentUser || !canLock)) {
+            return true;
+        }
+
+        return false;
+    });
+
     readonly $showContentletControls = this.uveStore.$showContentletControls;
     get $contentArea() {
         return this.uveStore.editorContentArea();
