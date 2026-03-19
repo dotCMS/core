@@ -28,7 +28,6 @@ import { FieldSettingsSection } from '../field-settings-section';
 
 @Component({
     selector: 'dot-hide-label-settings',
-    standalone: true,
     imports: [ReactiveFormsModule, CheckboxModule, DotMessagePipe],
     templateUrl: './dot-hide-label-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

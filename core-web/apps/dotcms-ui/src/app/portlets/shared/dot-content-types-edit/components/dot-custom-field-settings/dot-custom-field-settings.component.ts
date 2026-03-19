@@ -28,8 +28,6 @@ import { FieldSettingsSection } from './sections/field-settings-section';
 
 @Component({
     selector: 'dot-custom-field-settings',
-    standalone: true,
-    imports: [DotRenderOptionsSettingsComponent, DotHideLabelSettingsComponent],
     templateUrl: './dot-custom-field-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

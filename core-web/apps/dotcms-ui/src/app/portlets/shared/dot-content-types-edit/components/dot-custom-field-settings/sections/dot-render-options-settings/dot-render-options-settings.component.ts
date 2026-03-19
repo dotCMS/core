@@ -32,7 +32,6 @@ import { FieldSettingsSection } from '../field-settings-section';
 
 @Component({
     selector: 'dot-render-options-settings',
-    standalone: true,
     imports: [ReactiveFormsModule, InputTextModule, ToggleSwitchModule, DotMessagePipe],
     templateUrl: './dot-render-options-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
