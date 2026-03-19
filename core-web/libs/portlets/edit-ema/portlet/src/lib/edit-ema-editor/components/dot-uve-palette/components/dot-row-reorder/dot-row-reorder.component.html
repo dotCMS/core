@@ -1,0 +1,107 @@
+@if (rows().length > 0) {
+    <div
+        cdkDropList
+        cdkDropListLockAxis="y"
+        (cdkDropListDropped)="drop($event)"
+        class="flex flex-col gap-2">
+        @for (row of rows(); track $index; let i = $index) {
+            <div
+                cdkDrag
+                class="flex flex-col items-stretch gap-2 p-3 bg-(--surface-ground) rounded cursor-default transition-shadow duration-200 hover:shadow-md"
+                data-testid="row-item"
+                [cdkDragDisabled]="isColumnDragging()">
+                <div class="flex items-center gap-3 min-w-0 cursor-pointer">
+                    <div
+                        class="flex items-center text-(--text-color-secondary) cursor-grab select-none active:cursor-grabbing"
+                        cdkDragHandle
+                        (click)="$event.stopPropagation()">
+                        <i class="pi pi-bars"></i>
+                    </div>
+                    <div
+                        class="flex-1 text-sm text-(--text-color) min-w-0"
+                        data-testid="row-label"
+                        (click)="selectRow(i + 1)"
+                        (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()">
+                        {{ getRowLabel(row, i) }}
+                    </div>
+                    <p-button
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        [icon]="isRowExpanded(i) ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                        data-testid="row-toggle"
+                        [attr.aria-expanded]="isRowExpanded(i)"
+                        [attr.aria-label]="isRowExpanded(i) ? 'Collapse row' : 'Expand row'"
+                        (click)="toggleRow(i); $event.stopPropagation()"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()" />
+                </div>
+
+                @if (isRowExpanded(i) && row.columns?.length) {
+                    <div
+                        class="pl-7"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()">
+                        <div
+                            cdkDropList
+                            cdkDropListLockAxis="y"
+                            [cdkDropListData]="row.columns"
+                            (cdkDropListDropped)="dropColumn($event, i)"
+                            data-testid="row-columns"
+                            class="flex flex-col gap-2">
+                            @for (column of row.columns; track $index; let j = $index) {
+                                <div
+                                    cdkDrag
+                                    class="flex items-center gap-2 text-xs text-(--text-color) bg-(--surface-card) rounded p-2 px-3 row-column"
+                                    (cdkDragStarted)="setColumnDragging(true)"
+                                    (cdkDragEnded)="setColumnDragging(false)">
+                                    <div
+                                        class="inline-flex items-center justify-center text-(--text-color-secondary) cursor-grab select-none active:cursor-grabbing"
+                                        cdkDragHandle>
+                                        <i class="pi pi-bars"></i>
+                                    </div>
+                                    <div
+                                        class="flex-1 min-w-0"
+                                        data-testid="column-label"
+                                        (dblclick)="
+                                            openEditColumnDialog(i, j); $event.stopPropagation()
+                                        "
+                                        (mousedown)="$event.stopPropagation()"
+                                        (touchstart)="$event.stopPropagation()">
+                                        {{ getColumnLabel(column, j) }}
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+} @else {
+    <div
+        class="flex justify-center items-center p-8 text-(--text-color-secondary)"
+        data-testid="empty-state">
+        <span>No rows available</span>
+    </div>
+}
+
+<p-dialog
+    [header]="editingColumn() ? 'Edit Column' : 'Edit Row'"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [appendTo]="'body'"
+    [(visible)]="editRowDialogOpen"
+    (onHide)="closeEditRowDialog()">
+    <form class="flex flex-col gap-3 min-w-80" (submit)="$event.preventDefault(); submitEditRow()">
+        <label class="text-sm text-(--text-color)" for="row-styleClass">name</label>
+        <input id="row-styleClass" type="text" pInputText [formControl]="rowStyleClassControl" />
+
+        <div class="flex justify-end">
+            <button pButton type="submit" label="Submit"></button>
+        </div>
+    </form>
+</p-dialog>

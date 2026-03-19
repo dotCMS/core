@@ -1,69 +1,74 @@
+import { patchState, signalState } from '@ngrx/signals';
+
 import { NgClass } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    computed,
-    input,
-    Output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
 
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
-import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
-import { DotUveStyleEditorFormComponent } from './components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUVEPaletteListTypes } from './models';
 
+import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
 interface TabHeaderConfig {
     value: UVE_PALETTE_TABS;
     icon: string;
-    tooltip: string;
+    tooltipKey: string;
 }
 
 /**
  * Standalone palette component used by the EMA editor to display and switch
  * between different UVE-related resources (content types, components, styles, etc.).
  *
- * It exposes inputs to control the current page, language, variant and active tab,
- * and emits events when the active tab changes.
+ * Container component that uses signalState for local UI state (tab selection)
+ * and reads shared state from UVEStore.
  */
 @Component({
     selector: 'dot-uve-palette',
     imports: [
         NgClass,
         TabsModule,
-        DotUvePaletteListComponent,
         TooltipModule,
-        DotUveStyleEditorFormComponent,
-        DotUveStyleEditorEmptyStateComponent
+        DotMessagePipe,
+        DotRowReorderComponent,
+        DotUvePaletteListComponent
     ],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteComponent {
+    protected readonly uveStore = inject(UVEStore);
+    protected readonly dotPageLayoutService = inject(DotPageLayoutService);
     protected readonly $tabHeaders = computed<TabHeaderConfig[]>(() => {
         const tabs: TabHeaderConfig[] = [
-            { value: UVE_PALETTE_TABS.CONTENT_TYPES, icon: 'pi-stop', tooltip: 'Content types' },
-            { value: UVE_PALETTE_TABS.WIDGETS, icon: 'pi-th-large', tooltip: 'Widgets' },
-            { value: UVE_PALETTE_TABS.FAVORITES, icon: 'pi-star', tooltip: 'Favorites' }
+            {
+                value: UVE_PALETTE_TABS.CONTENT_TYPES,
+                icon: 'pi-stop',
+                tooltipKey: 'uve.palette.tab.content.types'
+            },
+            {
+                value: UVE_PALETTE_TABS.WIDGETS,
+                icon: 'pi-th-large',
+                tooltipKey: 'uve.palette.widgets.title'
+            },
+            {
+                value: UVE_PALETTE_TABS.FAVORITES,
+                icon: 'pi-star',
+                tooltipKey: 'uve.palette.favorites.title'
+            },
+            {
+                value: UVE_PALETTE_TABS.LAYERS,
+                icon: 'pi-table',
+                tooltipKey: 'uve.palette.tab.layers'
+            }
         ];
-
-        if (this.$showStyleEditorTab()) {
-            tabs.push({
-                value: UVE_PALETTE_TABS.STYLE_EDITOR,
-                icon: 'pi-palette',
-                tooltip: 'Style Editor'
-            });
-        }
-
         return tabs;
     });
 
@@ -74,51 +79,54 @@ export class DotUvePaletteComponent {
         root: { class: 'h-full min-h-0' }
     };
 
-    /**
-     * Absolute path of the page currently being edited.
-     */
-    $pagePath = input.required<string>({ alias: 'pagePath' });
-
-    /**
-     * Identifier of the language in which the page is being edited.
-     */
-    $languageId = input.required<number>({ alias: 'languageId' });
-
-    /**
-     * Variant identifier of the page/contentlet; defaults to `DEFAULT_VARIANT_ID`.
-     */
-    $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
-
-    /**
-     * Currently active palette tab.
-     */
-    $activeTab = input<UVE_PALETTE_TABS>(UVE_PALETTE_TABS.CONTENT_TYPES, { alias: 'activeTab' });
-
-    /**
-     * Whether the style editor tab should be shown in the palette.
-     */
-    $showStyleEditorTab = input<boolean>(false, { alias: 'showStyleEditorTab' });
-
-    /**
-     * The Style Schema to use for the current selected contentlet.
-     */
-    $styleSchema = input<StyleEditorFormSchema>(undefined, { alias: 'styleSchema' });
-
-    /**
-     * Emits whenever the active tab in the palette changes.
-     */
-    @Output() onTabChange = new EventEmitter<UVE_PALETTE_TABS>();
+    /** Emits whenever the active tab in the palette changes. */
+    onTabChange = output<UVE_PALETTE_TABS>();
 
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
 
     /**
-     * Called whenever the tab changes in the p-tabs component (PrimeNG v21).
-     * The valueChange event emits the new tab value directly.
+     * Local component UI state using NgRx signalState (recommended pattern).
+     * This keeps tab selection local to the component instead of polluting the global store.
+     */
+    readonly #localState = signalState({
+        currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
+    });
+
+    /**
+     * Computed signals that read from UVEStore for shared state.
+     * Made public for testing purposes.
+     */
+    readonly $pagePath = computed(() => this.uveStore.pageURI());
+    readonly $languageId = computed(() => this.uveStore.pageLanguageId());
+    readonly $variantId = computed(() => this.uveStore.pageVariantId());
+
+    /**
+     * Active tab - read from local state, not global store.
+     * Made public for testing purposes.
+     */
+    readonly $activeTab = this.#localState.currentTab;
+
+    /**
+     * Emits when a tree node is selected to scroll to the corresponding element.
+     */
+    onNodeSelect = output<{ selector: string; type: string }>();
+
+    constructor() {
+        // Tab management is now handled locally without effects
+    }
+
+    /**
+     * Called whenever the tab changes, either by user interaction or via the `activeIndex` property.
+     * Updates local component state using patchState instead of dispatching to global store.
      *
      * @param value The new tab value.
      */
-    protected handleTabChange(value: string | number): void {
-        this.onTabChange.emit(value as UVE_PALETTE_TABS);
+    protected handleTabChange(value: string | number | undefined): void {
+        if (value !== undefined && value !== null) {
+            const tab = value as UVE_PALETTE_TABS;
+            patchState(this.#localState, { currentTab: tab });
+            this.onTabChange.emit(tab);
+        }
     }
 }

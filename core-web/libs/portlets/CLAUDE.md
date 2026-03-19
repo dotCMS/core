@@ -31,19 +31,36 @@ Optional: Import dialog (CSV/file upload) — see `dot-tags-import/`.
 ## Key Rules
 
 - `untracked()` inside `effect()` to prevent infinite loops
-- `take(1)` on every HTTP call (signal store — no long-lived subscriptions)
+- `take(1)` on one-shot HTTP calls (e.g. `loadById`, dialog saves). **Do NOT add `take(1)` inside `rxMethod`** — `rxMethod` manages subscription lifetime automatically; adding `take(1)` there breaks cancellation
 - Error handling: always `catchError` → `httpErrorManager.handle(error)` → `return EMPTY`
 - On error from CRUD actions, set status back to `'loaded'` (not `'error'`) so the list stays usable
 - `DotHttpErrorManagerService.handle(error)` for all HTTP errors — no custom error UI
 - All user-facing text uses i18n keys via `DotMessagePipe` (`| dm`) or `DotMessageService.get()`
 - Key naming: `{feature}.{context}.{element}` (e.g., `tags.confirm.delete.header`)
-- `data-testid` on every interactive element; `[attr.aria-label]` on inputs and icon-only buttons
+- `data-testid` (all lowercase) on every interactive element; `[attr.aria-label]` on inputs and icon-only buttons
 
 ## CRUD Patterns
 
 **Modal dialogs (default)**: List component opens `DialogService.open(CreateComponent, ...)`. The dialog closes with the form value; the list component passes it to the store. This is the pattern used in `dot-tags` and should be the default for new portlets.
 
 **Routed CRUD (rare)**: Separate route for create/edit pages. Use only when the form is too complex for a dialog (many tabs, nested data). See `dot-experiments` for this pattern.
+
+## When the CRUD Pattern Is Not Enough
+
+Standard CRUD portlets (Shell + List + Store) cover most cases. For portlets with complex domain logic, multiple interconnected features, or large state surfaces, decompose the store into feature slices using `signalStoreFeature()`:
+
+```typescript
+export const UVEStore = signalStore(
+    withUve(),        // system lifecycle
+    withFlags(),      // feature flags
+    withPage(),       // page asset domain
+    withPageApi(),    // backend interactions
+    withWorkflow(),   // workflow/lock
+    withEditor(),     // editor UI state
+);
+```
+
+Each feature slice owns a named prefix in the flat state (e.g. `editor*`, `view*`, `page*`) and exposes only the methods and computeds relevant to its domain. See `libs/portlets/edit-ema/portlet/README.md` for a full example.
 
 ## Nx Generator Post-Setup
 
@@ -81,7 +98,9 @@ yarn nx generate @nx/angular:library --name=portlet \
 
 ## Other Reference Portlets
 
-- **`dot-locales`** — Simple list/edit (uses legacy ComponentStore)
+- **`dot-tags`** — Canonical reference for the standard CRUD pattern (modal dialogs, SignalStore)
 - **`dot-experiments`** — Full CRUD with guards, resolvers, shell, routed create/edit
 - **`dot-analytics`** — Enterprise license checking, lazy loading
 - **`dot-content-drive`** — Complex nested routing, reference for test config
+- **`edit-ema/portlet`** — Reference for complex portlets: feature slice decomposition, Container/Presentational pattern, flat prefixed state
+- **`dot-locales`** — Legacy pattern only (uses `ComponentStore`). Do not use as a model for new work

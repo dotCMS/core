@@ -823,8 +823,9 @@ export const UVE_PAGE_RESPONSE_MAP = {
             canSeeRules: true,
             pageURI: 'page-one',
             canLock: false,
-            isLocked: true,
-            lockedByUser: 'user'
+            locked: true,
+            lockedBy: 'user',
+            lockedByName: 'user'
         },
         site: {
             identifier: '123'

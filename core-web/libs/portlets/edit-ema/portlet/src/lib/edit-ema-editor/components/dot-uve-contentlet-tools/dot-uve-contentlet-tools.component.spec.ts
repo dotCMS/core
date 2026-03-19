@@ -1,5 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
-import { MockProvider } from 'ng-mocks';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -68,7 +67,7 @@ describe('DotUveContentletToolsComponent', () => {
     const createComponent = createComponentFactory({
         component: DotUveContentletToolsComponent,
         providers: [
-            MockProvider(DotMessageService, {
+            mockProvider(DotMessageService, {
                 get: (key: string) => {
                     const messages: Record<string, string> = {
                         content: 'Content',
@@ -88,13 +87,19 @@ describe('DotUveContentletToolsComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                isEnterprise: false,
                 contentletArea: MOCK_CONTENTLET_AREA,
                 allowContentDelete: true,
                 showStyleEditorOption: false
             }
         });
         spectator.detectChanges();
+
+        // Select the contentlet by clicking the hover bounds
+        const hoverBounds = spectator.query(byTestId('bounds-hover'));
+        if (hoverBounds) {
+            spectator.click(hoverBounds);
+            spectator.detectChanges();
+        }
     });
 
     describe('Rendering', () => {
@@ -103,7 +108,7 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         it('should render bounds container with correct styles', () => {
-            const bounds = spectator.query(byTestId('bounds'));
+            const bounds = spectator.query(byTestId('bounds-selected'));
             expect(bounds).toBeTruthy();
 
             const styles = (bounds as HTMLElement).style;
@@ -130,6 +135,13 @@ describe('DotUveContentletToolsComponent', () => {
             spectator.setInput('contentletArea', MOCK_EMPTY_CONTENTLET_AREA);
             spectator.detectChanges();
 
+            // Re-select after changing contentletArea
+            const hoverBounds = spectator.query(byTestId('bounds-hover'));
+            if (hoverBounds) {
+                spectator.click(hoverBounds);
+                spectator.detectChanges();
+            }
+
             const actions = spectator.query(byTestId('actions'));
             expect(actions).toBeFalsy();
         });
@@ -137,6 +149,13 @@ describe('DotUveContentletToolsComponent', () => {
         it('should NOT render bottom add button when container is empty', () => {
             spectator.setInput('contentletArea', MOCK_EMPTY_CONTENTLET_AREA);
             spectator.detectChanges();
+
+            // Re-select after changing contentletArea
+            const hoverBounds = spectator.query(byTestId('bounds-hover'));
+            if (hoverBounds) {
+                spectator.click(hoverBounds);
+                spectator.detectChanges();
+            }
 
             const addBottomButton = spectator.query(byTestId('add-bottom-button'));
             expect(addBottomButton).toBeFalsy();
@@ -152,9 +171,23 @@ describe('DotUveContentletToolsComponent', () => {
         it('should NOT render edit VTL button when no vtl files', () => {
             const areaWithoutVtl = {
                 ...MOCK_CONTENTLET_AREA,
-                payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: undefined }
+                x: MOCK_CONTENTLET_AREA.x + 1, // Change position to make it different
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                        identifier: 'different-contentlet-id'
+                    },
+                    vtlFiles: undefined
+                }
             };
             spectator.setInput('contentletArea', areaWithoutVtl);
+            spectator.detectChanges();
+
+            // Re-select after changing contentletArea
+            const hoverBounds = spectator.query(byTestId('bounds-hover'));
+            expect(hoverBounds).toBeTruthy();
+            spectator.click(hoverBounds);
             spectator.detectChanges();
 
             const editVtlButton = spectator.query(byTestId('edit-vtl-button'));
@@ -205,7 +238,11 @@ describe('DotUveContentletToolsComponent', () => {
                 const handler = jest.fn();
                 spectator.output('selectContent').subscribe(handler);
                 spectator.click(paletteButton);
-                expect(handler).toHaveBeenCalledWith(MOCK_CONTENTLET_AREA.payload);
+
+                expect(handler).toHaveBeenCalledWith({
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    position: 'after'
+                });
             });
         });
 
@@ -282,10 +319,7 @@ describe('DotUveContentletToolsComponent', () => {
                 });
             });
 
-            it('should emit addContent with type "form" when enterprise and selecting form from menu', () => {
-                spectator.setInput('isEnterprise', true);
-                spectator.detectChanges();
-
+            it('should emit addContent with type "form" when selecting form from menu', () => {
                 const addBottomButton = spectator.query(byTestId('add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
@@ -443,9 +477,6 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('menuItems', () => {
             it('should have 3 items (content, widget, form)', () => {
-                spectator.setInput('isEnterprise', false);
-                spectator.detectChanges();
-
                 const items = spectator.component.menuItems();
                 expect(items).toHaveLength(3);
                 expect(items[0].label).toBe('Content');
@@ -465,9 +496,23 @@ describe('DotUveContentletToolsComponent', () => {
             it('should return undefined when no vtl files', () => {
                 const areaWithoutVtl = {
                     ...MOCK_CONTENTLET_AREA,
-                    payload: { ...MOCK_CONTENTLET_AREA.payload, vtlFiles: undefined }
+                    x: MOCK_CONTENTLET_AREA.x + 1, // Change position to make it different
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        contentlet: {
+                            ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                            identifier: 'different-contentlet-id-2'
+                        },
+                        vtlFiles: undefined
+                    }
                 };
                 spectator.setInput('contentletArea', areaWithoutVtl);
+                spectator.detectChanges();
+
+                // Re-select after changing contentletArea so selected state reflects new area
+                const hoverBounds = spectator.query(byTestId('bounds-hover'));
+                expect(hoverBounds).toBeTruthy();
+                spectator.click(hoverBounds);
                 spectator.detectChanges();
 
                 expect(spectator.component.vtlMenuItems()).toBeUndefined();
@@ -476,7 +521,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('boundsStyles', () => {
             it('should apply correct inline styles from contentletArea dimensions', () => {
-                const bounds = spectator.query(byTestId('bounds')) as HTMLElement;
+                const bounds = spectator.query(byTestId('bounds-selected')) as HTMLElement;
 
                 expect(bounds.style.left).toBe('100px');
                 expect(bounds.style.top).toBe('200px');
@@ -485,12 +530,36 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             it('should default to 0px when contentletArea values are undefined', () => {
+                // Use a different contentlet id so the hover overlay is shown when we set areaWithUndefined
+                const areaWithDifferentId = {
+                    ...MOCK_CONTENTLET_AREA,
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        contentlet: {
+                            ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                            identifier: 'other-contentlet-id'
+                        }
+                    }
+                };
+                spectator.setInput('contentletArea', areaWithDifferentId);
+                spectator.detectChanges();
+                const hoverBoundsOther = spectator.query(byTestId('bounds-hover'));
+                spectator.click(hoverBoundsOther as Element);
+                spectator.detectChanges();
+
                 const areaWithUndefined = { ...MOCK_CONTENTLET_AREA, x: undefined };
                 spectator.setInput('contentletArea', areaWithUndefined as ContentletArea);
                 spectator.detectChanges();
 
-                const bounds = spectator.query(byTestId('bounds')) as HTMLElement;
-                expect(bounds.style.left).toBe('0px');
+                const hoverBounds = spectator.query(byTestId('bounds-hover'));
+                expect(hoverBounds).toBeTruthy();
+                spectator.click(hoverBounds as Element);
+                spectator.detectChanges();
+
+                const bounds = spectator.query(byTestId('bounds-selected')) as HTMLElement;
+                expect(bounds).toBeTruthy();
+                // The computed uses ?? operator, so undefined x should default to 0
+                expect(parseInt(bounds.style.left, 10)).toBe(0);
             });
         });
 
@@ -515,6 +584,13 @@ describe('DotUveContentletToolsComponent', () => {
                 };
                 spectator.setInput('contentletArea', areaWithoutContentlet);
                 spectator.detectChanges();
+
+                // Re-select after changing contentletArea so selected state reflects new area
+                const hoverBounds = spectator.query(byTestId('bounds-hover'));
+                if (hoverBounds) {
+                    spectator.click(hoverBounds);
+                    spectator.detectChanges();
+                }
 
                 const payload = spectator.component.dragPayload();
                 expect(payload).toEqual({
@@ -609,6 +685,13 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('showStyleEditorOption', true);
                 spectator.setInput('contentletArea', MOCK_EMPTY_CONTENTLET_AREA);
                 spectator.detectChanges();
+
+                // Re-select after changing contentletArea
+                const hoverBounds = spectator.query(byTestId('bounds-hover'));
+                if (hoverBounds) {
+                    spectator.click(hoverBounds);
+                    spectator.detectChanges();
+                }
 
                 const paletteButton = spectator.query(byTestId('palette-button'));
                 expect(paletteButton).toBeFalsy();

@@ -1,0 +1,10 @@
+<iframe
+    (load)="onIframeLoad()"
+    [src]="src() | safeUrl"
+    [title]="title()"
+    [style.pointer-events]="pointerEvents()"
+    [style.opacity]="opacity()"
+    sandbox="allow-scripts allow-same-origin allow-forms"
+    #iframe
+    data-testId="iframe"
+    class="border-none block w-full h-auto min-h-px"></iframe>

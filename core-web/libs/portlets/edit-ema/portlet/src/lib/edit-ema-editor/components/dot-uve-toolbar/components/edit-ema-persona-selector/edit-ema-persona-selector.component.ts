@@ -108,7 +108,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
      * @memberof EditEmaPersonaSelectorComponent
      */
     onSelect({ value }: { value: DotCMSViewAsPersona }) {
-        if (value.identifier === this.value.identifier) {
+        if (value?.identifier === this.value?.identifier || !value) {
             return;
         }
 

@@ -1,10 +1,11 @@
 import { expect, describe } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
-import { MockComponent, MockProvider } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,12 +23,15 @@ import {
     DotMessageService,
     DotPageLayoutService,
     DotRouterService,
+    DotSystemConfigService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { WINDOW } from '@dotcms/utils';
 import {
+    CurrentUserDataMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     MockDotRouterJestService
@@ -115,33 +119,25 @@ describe('EditEmaLayoutComponent', () => {
                 getByInode: jest.fn(() => of([]))
             }),
             mockProvider(ConfirmationService),
-            MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
-            MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
-            MockProvider(DotLanguagesService, new DotLanguagesServiceMock(), 'useValue'),
-            MockProvider(
-                DotLicenseService,
-                {
-                    isEnterprise: () => of(true)
-                },
-                'useValue'
-            ),
-            MockProvider(
-                DotContentletLockerService,
-                {
-                    unlock: (_inode: string) => of({})
-                },
-                'useValue'
-            ),
-            MockProvider(
-                LoginService,
-                {
-                    getCurrentUser: () => of({})
-                },
-                'useValue'
-            ),
+            { provide: DotExperimentsService, useValue: DotExperimentsServiceMock },
+            { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
+            { provide: DotLicenseService, useValue: { isEnterprise: () => of(true) } },
+            {
+                provide: DotContentletLockerService,
+                useValue: { unlock: (_inode: string) => of({}) }
+            },
+            { provide: LoginService, useValue: { getCurrentUser: () => of({}) } },
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: () => of({})
+            }),
+            {
+                provide: GlobalStore,
+                useValue: { loggedUser: signal(CurrentUserDataMock) }
             }
         ]
     });
@@ -154,7 +150,7 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
-        store.loadPageAsset({
+        store.pageLoad({
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',
@@ -176,7 +172,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should trigger a save after 5 secs', fakeAsync(() => {
             const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
-            const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+            const reloadSpy = jest.spyOn(store, 'pageReload');
 
             templateBuilder.templateChange.emit();
             tick(5000);

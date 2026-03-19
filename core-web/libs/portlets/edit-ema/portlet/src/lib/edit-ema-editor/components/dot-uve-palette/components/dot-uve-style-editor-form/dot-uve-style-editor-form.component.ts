@@ -22,6 +22,7 @@ import { ButtonModule } from 'primeng/button';
 import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSPageAsset } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './components/uve-style-editor-field-checkbox-group/uve-style-editor-field-checkbox-group.component';
@@ -39,6 +40,7 @@ import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../.
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { PageType } from '../../../../../store/models';
 import { filterFormValues } from '../../utils';
 
 @Component({
@@ -105,7 +107,7 @@ export class DotUveStyleEditorFormComponent {
      * Builds a form from the schema using the form builder service
      */
     #buildForm(schema: StyleEditorFormSchema): void {
-        const activeContentlet = this.#uveStore.activeContentlet();
+        const activeContentlet = this.#uveStore.editorActiveContentlet();
 
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
         const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
@@ -113,7 +115,6 @@ export class DotUveStyleEditorFormComponent {
         // Clear form first so the template destroys the form block and unbinds old controls.
         // Otherwise replacing FormGroup in place leaves stale DOM (e.g. dropdown with formControlName
         this.#form.set(null);
-
         queueMicrotask(() => {
             const form = this.#formBuilder.buildForm(schema, initialValues);
             this.#form.set(form);
@@ -121,7 +122,7 @@ export class DotUveStyleEditorFormComponent {
     }
 
     /**
-     * Restores form values from the rolled-back graphqlResponse state.
+     * Restores form values from the rolled-back pageAssetResponse state.
      * Used when rollback occurs to sync form with restored state.
      *
      * This method rebuilds the entire form (rather than patching) to trigger
@@ -129,7 +130,7 @@ export class DotUveStyleEditorFormComponent {
      * pending debounced saves from the old form instance.
      */
     #restoreFormFromRollback(): void {
-        const activeContentlet = this.#uveStore.activeContentlet();
+        const activeContentlet = this.#uveStore.editorActiveContentlet();
         const schema = this.$schema();
 
         if (!activeContentlet || !schema) {
@@ -137,17 +138,25 @@ export class DotUveStyleEditorFormComponent {
         }
 
         try {
-            // Use the internal graphqlResponse signal directly (it's already been rolled back)
+            // Use the internal pageAssetResponse signal directly (it's already been rolled back)
             // This ensures we get the rolled-back state, not the computed wrapper
-            const rolledBackGraphqlResponse = this.#uveStore.graphqlResponse();
+            const rolledBackPage = this.#uveStore.pageAsset();
 
-            if (!rolledBackGraphqlResponse) {
+            if (!rolledBackPage) {
                 return;
             }
 
+            const rolledBackAsset = { ...rolledBackPage } as DotCMSPageAsset & {
+                content?: unknown;
+                requestMetadata?: unknown;
+                clientResponse?: unknown;
+            };
+            delete rolledBackAsset.content;
+            delete rolledBackAsset.requestMetadata;
+            delete rolledBackAsset.clientResponse;
             // Extract style properties from the rolled-back state using utility function
             const styleProperties = extractStylePropertiesFromGraphQL(
-                rolledBackGraphqlResponse,
+                rolledBackAsset,
                 activeContentlet
             );
 
@@ -193,8 +202,8 @@ export class DotUveStyleEditorFormComponent {
                         // and identify the editor mode for this update.
                         map((formValues) => ({
                             formValues,
-                            activeContentlet: this.#uveStore.activeContentlet(),
-                            isTraditionalPage: this.#uveStore.isTraditionalPage()
+                            activeContentlet: this.#uveStore.editorActiveContentlet(),
+                            isTraditionalPage: this.#uveStore.pageType() === PageType.TRADITIONAL
                         })),
                         tap(({ formValues, activeContentlet, isTraditionalPage }) => {
                             // Traditional pages do not support instant iframe updates.
@@ -231,15 +240,23 @@ export class DotUveStyleEditorFormComponent {
         }
 
         try {
-            // Get the internal graphqlResponse for optimistic update
-            const internalGraphqlResponse = this.#uveStore.graphqlResponse();
-            if (!internalGraphqlResponse) {
+            // Get the internal pageAssetResponse for optimistic update
+            const internalPage = this.#uveStore.pageAsset();
+            if (!internalPage) {
                 return;
             }
 
-            // Deep clone the graphqlResponse before mutating to prevent affecting history entries
+            const internalAsset = { ...internalPage } as DotCMSPageAsset & {
+                content?: unknown;
+                requestMetadata?: unknown;
+                clientResponse?: unknown;
+            };
+            delete internalAsset.content;
+            delete internalAsset.requestMetadata;
+            delete internalAsset.clientResponse;
+            // Deep clone the pageAssetResponse before mutating to prevent affecting history entries
             // This ensures that mutations don't affect the stored state in history
-            const clonedResponse = structuredClone(internalGraphqlResponse);
+            const clonedResponse = structuredClone(internalAsset);
 
             // Update the cloned response (mutates the clone in place)
             const updatedInternalResponse = updateStylePropertiesInGraphQL(
@@ -250,11 +267,11 @@ export class DotUveStyleEditorFormComponent {
 
             // Optimistic update: Update state WITHOUT saving to history
             // History is only saved when we actually call the API (in #saveStyleProperties)
-            this.#uveStore.setGraphqlResponse(updatedInternalResponse);
+            this.#uveStore.setPageAsset({ pageAsset: updatedInternalResponse });
 
             // Send updated response to iframe immediately for instant feedback
             // Get the updated custom response (computed will reflect the changes)
-            const updatedCustomResponse = this.#uveStore.$customGraphqlResponse();
+            const updatedCustomResponse = this.#uveStore.pageAsset()?.clientResponse;
             if (!updatedCustomResponse) {
                 return;
             }
@@ -287,10 +304,7 @@ export class DotUveStyleEditorFormComponent {
 
         // Save current state to history BEFORE making the API call
         // This ensures that if the API call fails, we can rollback to this exact state
-        const currentGraphqlResponse = this.#uveStore.graphqlResponse();
-        if (currentGraphqlResponse) {
-            this.#uveStore.addHistory(currentGraphqlResponse);
-        }
+        this.#uveStore.addCurrentPageToHistory();
 
         if (isTraditionalPage) {
             this.#uveStore.setUveStatus(UVE_STATUS.LOADING);

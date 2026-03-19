@@ -11,13 +11,6 @@ export interface MessagePipeOptions {
     args: string[];
 }
 
-export interface UnlockOptions {
-    inode: string;
-    loading: boolean;
-    info: MessagePipeOptions;
-    disabled: boolean;
-}
-
 export interface InfoOptions {
     icon: string;
     info: MessagePipeOptions;
@@ -277,16 +270,6 @@ export interface ReorderMenuPayload {
 }
 
 export type DotPageAssetParams = DotPageApiParams;
-
-export interface ToggleLockOptions {
-    inode: string;
-    isLocked: boolean;
-    lockedBy: string;
-    canLock: boolean;
-    isLockedByCurrentUser: boolean;
-    showBanner: boolean;
-    showOverlay: boolean;
-}
 
 export type DotUVEPaletteListType =
     | DotCMSBaseTypesContentTypes.CONTENT

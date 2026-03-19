@@ -100,14 +100,21 @@ const pageParams = {
     language_id: '1'
 };
 
+const canEditPageContentSignal = signal(true);
+
+const pageSnapshotSignal = signal({
+    ...MOCK_RESPONSE_VTL,
+    clientResponse: MOCK_RESPONSE_VTL
+});
+
 const uveStoreMock = {
-    pageAPIResponse: signal(MOCK_RESPONSE_VTL),
+    pageAsset: pageSnapshotSignal,
     workflowActions: signal([]),
-    workflowLoading: signal(false),
-    $canEditPage: signal(true),
+    workflowIsLoading: signal(false),
+    editorCanEditContent: () => canEditPageContentSignal(),
     pageParams: signal(pageParams),
-    loadPageAsset: jest.fn(),
-    reloadCurrentPage: jest.fn(),
+    pageLoad: jest.fn(),
+    pageReload: jest.fn(),
     setWorkflowActionLoading: jest.fn()
 };
 
@@ -161,7 +168,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     describe('Without Workflow Actions', () => {
         it('should set action as an empty array and loading to true', () => {
-            uveStoreMock.workflowLoading.set(true);
+            uveStoreMock.workflowIsLoading.set(true);
             spectator.detectChanges();
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
@@ -171,7 +178,7 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it("should be disabled if user can't edit", () => {
-            uveStoreMock.$canEditPage.set(false);
+            canEditPageContentSignal.set(false);
             spectator.detectChanges();
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
@@ -181,8 +188,8 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     describe('With Workflow Actions', () => {
         beforeEach(() => {
-            uveStoreMock.workflowLoading.set(false);
-            uveStoreMock.$canEditPage.set(true);
+            uveStoreMock.workflowIsLoading.set(false);
+            canEditPageContentSignal.set(true);
             uveStoreMock.workflowActions.set(mockWorkflowsActions);
             spectator.detectChanges();
         });
@@ -195,9 +202,9 @@ describe('DotUveWorkflowActionsComponent', () => {
             expect(dotWorkflowActionsComponent.disabled()).toBeFalsy();
         });
 
-        it('should fire workflow actions and loadPageAssets', () => {
+        it('should fire workflow actions and pageLoads', () => {
             const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
-            const spyLoadPageAsset = jest.spyOn(store, 'loadPageAsset');
+            const spyLoadPageAsset = jest.spyOn(store, 'pageLoad');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
@@ -240,7 +247,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
         it('should fire workflow actions and reloadPage', () => {
             const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
-            const spyReloadCurrentPage = jest.spyOn(store, 'reloadCurrentPage');
+            const spyReloadCurrentPage = jest.spyOn(store, 'pageReload');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')

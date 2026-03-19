@@ -1,51 +1,271 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
+import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EMPTY, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { computed, effect, inject, Signal, untracked } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import {
+    DotContentletLockerService,
+    DotLanguagesService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
+import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
+import { computeIsPageLocked } from '../../../utils';
 import { UVEState } from '../../models';
+
+import type { PageComputed } from '../page/withPage';
+
+export interface WorkflowLockOptions {
+    inode: string;
+    isLocked: boolean;
+    lockedBy: string;
+    canLock: boolean;
+    isLockedByCurrentUser: boolean;
+}
 
 interface WithWorkflowState {
     workflowActions: DotCMSWorkflowAction[];
-    workflowLoading: boolean;
+    workflowIsLoading: boolean;
+    workflowLockIsLoading: boolean;
+}
+
+export interface WorkflowLockComputed {
+    $lockIsPageLocked: Signal<boolean>;
+    $lockFeatureEnabled: Signal<boolean>;
+    $lockOptions: Signal<WorkflowLockOptions | null>;
 }
 
 /**
- * Add load and reload method to the store
+ * Interface defining the methods provided by withWorkflow
+ * Use this as props type in dependent features
  *
- * @export
- * @return {*}
+ * TODO: Move lock/unlock state + methods to a dedicated signal-store feature.
+ * Locking does not use dotCMS Workflow Actions API (`DotWorkflowsActionsService`);
+ * it uses `DotContentletLockerService`, so this concern should be separated.
+ */
+export interface WithWorkflowMethods extends WorkflowLockComputed {
+    workflowFetch: RxMethod<string>;
+    setWorkflowActionLoading: (workflowIsLoading: boolean) => void;
+    workflowToggleLock: (
+        inode: string,
+        isLocked: boolean,
+        isLockedByCurrentUser: boolean,
+        lockedBy?: string
+    ) => void;
+}
+
+/** Page API deps used by workflow for reload-after-lock (not in props to avoid composition type conflicts). */
+interface WorkflowPageApiDeps {
+    requestMetadata: () => { query: string; variables: Record<string, string> } | null;
+    $requestWithParams: () => {
+        query: string;
+        variables: Record<string, string>;
+    } | null;
+    setPageAsset: (payload: {
+        pageAsset: DotCMSPageAsset;
+        content?: Record<string, unknown>;
+    }) => void;
+}
+
+/** Store type with page API deps needed by workflow; use for type assertion in feature callbacks. */
+type StoreWithWorkflowPageApiDeps<T> = T & WorkflowPageApiDeps;
+
+/**
+ * Workflow and lock management feature
+ *
+ * Responsibilities:
+ * - Fetch workflow actions for the current page
+ * - Manage page lock/unlock operations
+ * - Provide lock state computeds (isPageLocked, lock options)
+ * - Support toggle lock feature flag
+ *
+ * Note: pageReload() is accessed via type assertion because withWorkflow is composed
+ * BEFORE withPageApi in the store, so TypeScript cannot guarantee the method exists
+ * at composition time. The runtime access is safe because methods are called after
+ * full store initialization.
  */
 export function withWorkflow() {
     return signalStoreFeature(
         {
-            state: type<UVEState>()
+            state: type<UVEState>(),
+            props: type<PageComputed>()
         },
         withState<WithWorkflowState>({
             workflowActions: [],
-            workflowLoading: true
+            workflowIsLoading: true,
+            workflowLockIsLoading: false
+        }),
+        withComputed((store) => {
+            const $lockIsPageLocked = computed(() => {
+                return computeIsPageLocked(store.pageAsset()?.page ?? null, store.uveCurrentUser());
+            });
+
+            const $lockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+
+            const $lockOptions = computed<WorkflowLockOptions | null>(() => {
+                const page = store.pageAsset()?.page;
+                const user = store.uveCurrentUser();
+                const pageMode = store.pageParams()?.mode;
+
+                if (!page || pageMode !== UVE_MODE.EDIT) {
+                    return null;
+                }
+
+                const isLocked = Boolean(page.locked);
+                const lockedByUserId = page.lockedBy ?? '';
+                const isLockedByCurrentUser = isLocked && lockedByUserId === user?.userId;
+                const lockedByName = page.lockedByName ?? '';
+                // Some page responses omit `canLock` entirely; allow attempting lock/unlock and
+                // let backend authorization be the final source of truth.
+                const canLock = page.canLock ?? true;
+
+                return {
+                    inode: page.inode,
+                    isLocked,
+                    isLockedByCurrentUser,
+                    canLock,
+                    lockedBy: lockedByName
+                };
+            });
+
+            return {
+                $lockIsPageLocked,
+                $lockFeatureEnabled,
+                $lockOptions
+            } satisfies WorkflowLockComputed;
         }),
         withMethods((store) => {
             const dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
+            const dotContentletLockerService = inject(DotContentletLockerService);
+            const dotPageApiService = inject(DotPageApiService);
+            const dotLanguagesService = inject(DotLanguagesService);
+            const pageStore = store as StoreWithWorkflowPageApiDeps<typeof store>;
+
+            const reloadPageAfterLockChange = rxMethod<void>(
+                pipe(
+                    tap(() => {
+                        const params = store.pageParams();
+
+                        if (!params) {
+                            patchState(store, { workflowLockIsLoading: false });
+                            return;
+                        }
+
+                        patchState(store, { uveStatus: UVE_STATUS.LOADING });
+                    }),
+                    switchMap(() => {
+                        const params = store.pageParams();
+
+                        if (!params) {
+                            return EMPTY;
+                        }
+
+                        const requestWithParams = pageStore.$requestWithParams?.();
+                        const requestMetadata = pageStore.requestMetadata?.();
+                        const pageRequest =
+                            !requestMetadata || !requestWithParams
+                                ? dotPageApiService
+                                      .get(params)
+                                      .pipe(map((pageAsset) => ({ pageAsset })))
+                                : dotPageApiService.getGraphQLPage(requestWithParams);
+
+                        return pageRequest.pipe(
+                            switchMap((response) => {
+                                const pageResponse =
+                                    'pageAsset' in response ? response : { pageAsset: response };
+
+                                const content =
+                                    'content' in pageResponse
+                                        ? (
+                                              pageResponse as {
+                                                  content?: Record<string, unknown>;
+                                              }
+                                          ).content
+                                        : undefined;
+
+                                pageStore.setPageAsset({
+                                    pageAsset: pageResponse.pageAsset,
+                                    ...(content !== undefined && { content })
+                                });
+
+                                return dotLanguagesService.getLanguagesUsedPage(
+                                    pageResponse.pageAsset.page.identifier
+                                );
+                            }),
+                            tap((languages) => {
+                                patchState(store, {
+                                    pageLanguages: languages,
+                                    uveStatus: UVE_STATUS.LOADED,
+                                    workflowLockIsLoading: false
+                                });
+                            }),
+                            catchError(({ status: errorStatus }: HttpErrorResponse) => {
+                                patchState(store, {
+                                    pageErrorCode: errorStatus,
+                                    uveStatus: UVE_STATUS.ERROR,
+                                    workflowLockIsLoading: false
+                                });
+
+                                return EMPTY;
+                            })
+                        );
+                    })
+                )
+            );
+
+            const lockPage = (inode: string) => {
+                patchState(store, { workflowLockIsLoading: true });
+
+                dotContentletLockerService.lock(inode).subscribe({
+                    next: () => {
+                        patchState(store, { editorActiveContentlet: null });
+                        reloadPageAfterLockChange();
+                    },
+                    error: () => {
+                        patchState(store, { workflowLockIsLoading: false });
+                    }
+                });
+            };
+
+            const unlockPage = (inode: string) => {
+                patchState(store, { workflowLockIsLoading: true });
+
+                dotContentletLockerService.unlock(inode).subscribe({
+                    next: () => {
+                        patchState(store, { editorActiveContentlet: null });
+                        reloadPageAfterLockChange();
+                    },
+                    error: () => {
+                        patchState(store, { workflowLockIsLoading: false });
+                    }
+                });
+            };
 
             return {
                 /**
                  * Load workflow actions
                  */
-                getWorkflowActions: rxMethod<string>(
+                workflowFetch: rxMethod<string>(
                     pipe(
                         tap(() => {
                             patchState(store, {
-                                workflowLoading: true
+                                workflowIsLoading: true
                             });
                         }),
                         switchMap((pageInode) => {
@@ -54,13 +274,13 @@ export function withWorkflow() {
                                     next: (workflowActions = []) => {
                                         patchState(store, {
                                             workflowActions,
-                                            workflowLoading: false
+                                            workflowIsLoading: false
                                         });
                                     },
-                                    error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                    error: () => {
                                         patchState(store, {
-                                            errorCode: errorStatus,
-                                            status: UVE_STATUS.ERROR
+                                            workflowActions: [],
+                                            workflowIsLoading: false
                                         });
                                     }
                                 })
@@ -68,10 +288,45 @@ export function withWorkflow() {
                         })
                     )
                 ),
-                setWorkflowActionLoading: (workflowLoading: boolean) => {
-                    patchState(store, { workflowLoading });
+                setWorkflowActionLoading: (workflowIsLoading: boolean) => {
+                    patchState(store, { workflowIsLoading });
+                },
+                /**
+                 * Toggle page lock/unlock
+                 */
+                workflowToggleLock(
+                    inode: string,
+                    isLocked: boolean,
+                    isLockedByCurrentUser: boolean,
+                    lockedBy?: string
+                ) {
+                    if (isLocked && !isLockedByCurrentUser) {
+                        void lockedBy; // kept for method signature compatibility
+                        unlockPage(inode);
+                        return;
+                    }
+
+                    if (isLocked) {
+                        unlockPage(inode);
+                    } else {
+                        lockPage(inode);
+                    }
                 }
             };
+        }),
+        withHooks({
+            /**
+             * When page inode changes, fetch workflow actions asynchronously.
+             * Decouples workflow load from page load so the page can show LOADED without waiting.
+             */
+            onInit(store) {
+                effect(() => {
+                    const inode = store.pageAsset()?.page?.inode;
+                    if (inode) {
+                        untracked(() => store.workflowFetch(inode));
+                    }
+                });
+            }
         })
     );
 }

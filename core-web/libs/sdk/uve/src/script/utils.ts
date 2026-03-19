@@ -165,6 +165,130 @@ export function listenBlockEditorInlineEvent() {
     };
 }
 
+/**
+ * Reports the iframe document height to the parent UVE shell via postMessage.
+ *
+ * Uses ResizeObserver + resize/load events so the parent is notified whenever
+ * the page height changes — not just on initial load. Works for both traditional
+ * (VTL) and headless pages.
+ *
+ * Measurement is scheduled with double requestAnimationFrame so it runs after
+ * the browser has finished layout and paint. That avoids posting a height while
+ * subtree/layout is still settling (fonts, images, late injects). ResizeObserver
+ * and resize bursts are coalesced to at most one post per frame pair.
+ *
+ * @returns {{ destroyHeightReporter: () => void }} Cleanup function that removes
+ * all listeners and disconnects the ResizeObserver.
+ */
+export function reportIframeHeight(): { destroyHeightReporter: () => void } {
+    const measureAndSend = () => {
+        const height = Math.max(
+            document.body?.scrollHeight ?? 0,
+            document.documentElement?.scrollHeight ?? 0
+        );
+        window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
+    };
+
+    let rafOuter: number | null = null;
+    let rafInner: number | null = null;
+    let destroyed = false;
+
+    const scheduleSend = () => {
+        if (destroyed || rafOuter !== null) {
+            return;
+        }
+        rafOuter = requestAnimationFrame(() => {
+            rafOuter = null;
+            if (destroyed) {
+                return;
+            }
+            rafInner = requestAnimationFrame(() => {
+                rafInner = null;
+                if (!destroyed) {
+                    measureAndSend();
+                }
+            });
+        });
+    };
+
+    const onLoad = () => scheduleSend();
+    const onResize = () => scheduleSend();
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        scheduleSend();
+    } else {
+        window.addEventListener('load', onLoad);
+    }
+
+    window.addEventListener('resize', onResize);
+
+    const ro = new ResizeObserver(() => scheduleSend());
+    ro.observe(document.documentElement);
+    if (document.body) {
+        ro.observe(document.body);
+    }
+
+    return {
+        destroyHeightReporter: () => {
+            destroyed = true;
+            if (rafOuter !== null) {
+                cancelAnimationFrame(rafOuter);
+                rafOuter = null;
+            }
+            if (rafInner !== null) {
+                cancelAnimationFrame(rafInner);
+                rafInner = null;
+            }
+            ro.disconnect();
+            window.removeEventListener('load', onLoad);
+            window.removeEventListener('resize', onResize);
+        }
+    };
+}
+
+/**
+ * Injects UVE editor styles for empty containers and contentlets into the page.
+ * Provides visual placeholders so editors can identify and interact with empty areas.
+ *
+ * The empty-container label is read from the dotCMS i18n cache in localStorage
+ * (`dotMessagesKeys`). Falls back to 'Empty container' if the cache is unavailable
+ * (e.g. headless pages on a different origin).
+ */
+export function injectEmptyStateStyles(): void {
+    let emptyContainerLabel = 'Empty container';
+
+    try {
+        const messages = JSON.parse(localStorage.getItem('dotMessagesKeys') ?? '{}');
+        emptyContainerLabel = messages['editpage.container.is.empty'] ?? emptyContainerLabel;
+    } catch {
+        // localStorage unavailable or JSON malformed — use default
+    }
+
+    const style = document.createElement('style');
+    style.dataset['dotStyles'] = 'uve-empty-state';
+    style.textContent = `
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="contentlet"].empty-contentlet {
+            min-height: 4rem;
+            width: 100%;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${emptyContainerLabel}';
+        }
+    `;
+    document.head?.appendChild(style);
+}
+
 const listenBlockEditorClick = (): void => {
     const editBlockEditorNodes: NodeListOf<HTMLElement> = document.querySelectorAll(
         '[data-block-editor-content]'

@@ -1,16 +1,18 @@
+<!-- Signals does not work well inside templates, so we need to use a let statement to get the params. -->
+@let params = $params();
 <nav class="edit-ema-nav-bar">
     @for (item of items; track $index) {
         <ng-container
             [ngTemplateOutlet]="!item.href?.length ? button : anchor"
-            [ngTemplateOutletContext]="{ item: item, index: $index }" />
+            [ngTemplateOutletContext]="{ item: item, index: $index, params: params }" />
     }
 </nav>
 
-<ng-template #anchor let-item="item" let-index="index">
+<ng-template #anchor let-item="item" let-index="index" let-params="params">
     <div class="edit-ema-nav-bar__item-container">
         <a
             [routerLink]="item.isDisabled ? null : item.href"
-            [queryParams]="$params()"
+            [queryParams]="params"
             [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
             [pTooltip]="item.tooltip | dm"
             class="edit-ema-nav-bar__item"
@@ -19,7 +21,7 @@
             [routerLinkActiveOptions]="{
                 queryParams: 'ignored',
                 matrixParams: 'ignored',
-                paths: 'exact',
+                paths: 'subset',
                 fragment: 'ignored'
             }"
             queryParamsHandling="merge"

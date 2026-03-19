@@ -1,75 +1,80 @@
-@let context = contentContext();
-@let dragItem = dragPayload();
-@let isEmpty = isContainerEmpty();
+<!-- Hover Overlay: Blue box with opacity, no border, no tools -->
+@if (showHoverOverlay()) {
+    <div
+        [ngStyle]="hoverBoundsStyles()"
+        class="bounds hover"
+        (click)="handleClick()"
+        data-testId="bounds-hover"></div>
+}
 
-<div [ngStyle]="boundsStyles()" class="bounds" data-testId="bounds">
-    <p-button
-        (click)="setPositionFlag('before'); menu.toggle($event)"
-        class="add-button-top"
-        data-testId="add-top-button"
-        icon="pi pi-plus" />
-    @if (!isEmpty) {
+<!-- Selected Overlay: Border, tools visible, pointer-events: none on bounds -->
+@if (showSelectedOverlay()) {
+    @let selectedContext = selectedContentContext();
+    @let selectedDragItem = dragPayload();
+    @let selectedIsEmpty = isSelectedContainerEmpty();
+
+    <div [ngStyle]="selectedBoundsStyles()" class="bounds selected" data-testId="bounds-selected">
         <p-button
-            (click)="setPositionFlag('after'); menu.toggle($event)"
-            class="add-button-bottom"
-            data-testId="add-bottom-button"
+            (click)="setPositionFlag('before'); menu.toggle($event)"
+            class="add-button-top"
+            data-testId="add-top-button"
             icon="pi pi-plus" />
-    }
+        @if (!selectedIsEmpty) {
+            <p-button
+                (click)="setPositionFlag('after'); menu.toggle($event)"
+                class="add-button-bottom"
+                data-testId="add-bottom-button"
+                icon="pi pi-plus" />
+        }
 
-    @if (!isEmpty) {
-        <div class="actions" data-testId="actions">
-            @if (hasVtlFiles()) {
+        @if (!selectedIsEmpty) {
+            <div
+                class="actions absolute right-2 top-0 transform-[translate(0,-50%)] flex justify-end gap-1 pointer-events-[all] z-1 bg-white rounded-md border border-solid border-gray-300"
+                data-testId="actions">
                 <p-button
-                    (click)="menuVTL.toggle($event)"
-                    data-testId="edit-vtl-button"
-                    [rounded]="true"
-                    [raised]="true"
-                    icon="pi pi-code" />
-                <p-menu
-                    [model]="vtlMenuItems()"
-                    [popup]="true"
-                    #menuVTL
-                    appendTo="body"
-                    data-testId="menu-vtl" />
-            }
-            <p-button
-                [attr.data-item]="dragItem | json"
-                [attr.data-use-custom-drag-image]="useCustomDragImage"
-                data-type="contentlet"
-                draggable="true"
-                data-testId="drag-button"
-                [rounded]="true"
-                [raised]="true"
-                icon="pi pi-arrows-alt" />
-            <p-button
-                (click)="deleteContent.emit(context)"
-                [disabled]="!allowContentDelete()"
-                [pTooltip]="deleteButtonTooltip() | dm"
-                tooltipPosition="bottom"
-                [escape]="false"
-                data-testId="delete-button"
-                [rounded]="true"
-                [raised]="true"
-                styleClass="delete"
-                icon="pi pi-times" />
-
-            <p-button
-                (click)="editContent.emit(context)"
-                data-testId="edit-button"
-                [rounded]="true"
-                [raised]="true"
-                icon="pi pi-pencil" />
-
-            @if (showStyleEditorOption()) {
+                    [attr.data-item]="selectedDragItem | json"
+                    [attr.data-use-custom-drag-image]="useCustomDragImage"
+                    data-type="contentlet"
+                    draggable="true"
+                    data-testId="drag-button"
+                    [text]="true"
+                    icon="pi pi-arrows-alt" />
+                @if (selectedHasVtlFiles()) {
+                    <p-button
+                        (click)="menuVTL.toggle($event)"
+                        data-testId="edit-vtl-button"
+                        [text]="true"
+                        icon="pi pi-code" />
+                    <p-menu
+                        [model]="vtlMenuItems()"
+                        [popup]="true"
+                        #menuVTL
+                        appendTo="body"
+                        data-testId="menu-vtl" />
+                }
                 <p-button
-                    (click)="setSelectedContent()"
-                    data-testId="palette-button"
-                    [rounded]="true"
-                    [raised]="true"
-                    icon="pi pi-palette" />
-            }
-        </div>
-    }
-
-    <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
-</div>
+                    (click)="editContent.emit(selectedContext)"
+                    data-testId="edit-button"
+                    [text]="true"
+                    icon="pi pi-pencil" />
+                @if (showStyleEditorOption()) {
+                    <p-button
+                        (click)="selectContent.emit(selectedContext)"
+                        data-testId="palette-button"
+                        [text]="true"
+                        icon="pi pi-palette" />
+                }
+                <p-button
+                    (click)="deleteContent.emit(selectedContext)"
+                    [disabled]="!allowContentDelete()"
+                    [pTooltip]="deleteButtonTooltip() ?? '' | dm"
+                    tooltipPosition="bottom"
+                    [escape]="false"
+                    data-testId="delete-button"
+                    [text]="true"
+                    icon="pi pi-times" />
+            </div>
+        }
+        <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
+    </div>
+}

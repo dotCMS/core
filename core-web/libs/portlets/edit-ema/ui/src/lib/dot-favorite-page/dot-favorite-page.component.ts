@@ -1,7 +1,14 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, inject } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    OnDestroy,
+    CUSTOM_ELEMENTS_SCHEMA,
+    inject,
+    signal
+} from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -10,7 +17,11 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { filter, map, startWith, takeUntil } from 'rxjs/operators';
 
-import { DotTempFileUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotPageRenderService,
+    DotTempFileUploadService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotFormDialogComponent,
@@ -55,7 +66,12 @@ export interface DotFavoritePageFormData {
         DotMessagePipe
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    providers: [DotFavoritePageStore, DotTempFileUploadService, DotWorkflowActionsFireService]
+    providers: [
+        DotFavoritePageStore,
+        DotPageRenderService,
+        DotTempFileUploadService,
+        DotWorkflowActionsFireService
+    ]
 })
 export class DotFavoritePageComponent implements OnInit, OnDestroy {
     private ref = inject(DynamicDialogRef);
@@ -66,6 +82,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     form: FormGroup;
     isFormValid$: Observable<boolean>;
     timeStamp: string;
+    protected readonly isThumbnailLoading = signal(true);
 
     vm$: Observable<DotFavoritePageState> = this.store.vm$;
 
@@ -87,6 +104,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 filter((formStateData) => !!formStateData)
             )
             .subscribe((formStateData: DotFavoritePageFormData) => {
+                this.isThumbnailLoading.set(true);
                 this.form = this.fb.group({
                     inode: [formStateData?.inode],
                     thumbnail: [formStateData?.thumbnail],
@@ -106,6 +124,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 requestAnimationFrame(() => {
                     if (formStateData?.inode) {
                         this.form.get('thumbnail').setValue(formStateData?.thumbnail);
+                        // img (load) event will clear isThumbnailLoading for this path
                     } else {
                         this.setPreviewThumbnailListener();
                     }
@@ -118,6 +137,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                 filter((renderThumbnail) => renderThumbnail)
             )
             .subscribe(() => {
+                this.isThumbnailLoading.set(true);
                 requestAnimationFrame(() => {
                     this.setPreviewThumbnailListener();
                 });
@@ -177,18 +197,27 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
         this.store.setRenderThumbnail(true);
     }
 
+    protected onPreviewLoaded(): void {
+        this.isThumbnailLoading.set(false);
+    }
+
     private setPreviewThumbnailListener() {
         const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
         if (dotHtmlToImageElement) {
             dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
-                if (event.detail.file) {
-                    this.form.get('thumbnail').setValue(event.detail.file);
+                this.isThumbnailLoading.set(false);
+                const file = event.detail?.file;
+                if (file) {
+                    this.form.get('thumbnail').setValue(file);
                 } else {
                     this.form.get('thumbnail').setValue('');
                     this.store.setShowFavoriteEmptySkeleton(true);
+                    const errorMsg =
+                        event.detail?.error ||
+                        'Thumbnail could not be generated (e.g. html2canvas script failed to load).';
                     console.warn(
                         'We apologize for the inconvenience. The following error occurred while generating a thumbnail for this page:',
-                        event?.detail?.error
+                        errorMsg
                     );
                 }
             });

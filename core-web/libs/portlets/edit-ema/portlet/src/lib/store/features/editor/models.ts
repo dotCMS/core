@@ -1,10 +1,4 @@
-import {
-    DotDeviceListItem,
-    DotExperiment,
-    DotLanguage,
-    SeoMetaTags,
-    SeoMetaTagsResult
-} from '@dotcms/dotcms-models';
+import { DotDeviceListItem, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
@@ -15,7 +9,7 @@ import {
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
 import { ActionPayload } from '../../../shared/models';
-import { Orientation } from '../../models';
+import { Orientation, PageType } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
@@ -27,7 +21,10 @@ export interface EditorState {
     contentArea?: ContentletArea;
     palette: {
         open: boolean;
-        currentTab: UVE_PALETTE_TABS;
+        // currentTab is now managed as local state via signalState in DotUvePaletteComponent
+    };
+    rightSidebar: {
+        open: boolean;
     };
 }
 
@@ -55,57 +52,7 @@ export interface PageData {
 }
 
 export interface ReloadEditorContent {
-    isTraditionalPage: boolean;
-}
-
-export interface EditorProps {
-    seoResults?: {
-        ogTags: SeoMetaTags;
-        socialMedia: string;
-    };
-    iframe: {
-        wrapper?: {
-            width: string;
-            height: string;
-        };
-        pointerEvents: string;
-        opacity: string;
-    };
-    dropzone?: {
-        bounds: Container[];
-        dragItem: EmaDragItem;
-    };
-    showDialogs: boolean;
-    progressBar: boolean;
-    showBlockEditorSidebar: boolean;
-}
-
-/**
- * This is used for model the props of
- * the New UVE Toolbar with Preview Mode and Future Time Machine
- *
- * @export
- * @interface UVEToolbarProps
- */
-export interface UVEToolbarProps {
-    editor: {
-        bookmarksUrl: string;
-        apiUrl: string;
-    };
-    preview?: {
-        deviceSelector: {
-            apiLink: string;
-            hideSocialMedia: boolean;
-        };
-    };
-    runningExperiment?: DotExperiment;
-    currentLanguage: DotLanguage;
-    workflowActionsInode?: string;
-    unlockButton?: {
-        inode: string;
-        loading: boolean;
-    };
-    showInfoDisplay?: boolean;
+    pageType: PageType;
 }
 
 export interface PersonaSelectorProps {
@@ -117,5 +64,6 @@ export enum UVE_PALETTE_TABS {
     CONTENT_TYPES = 0,
     WIDGETS = 1,
     FAVORITES = 2,
-    STYLE_EDITOR = 3
+    LAYERS = 3,
+    STYLE_EDITOR = 4
 }

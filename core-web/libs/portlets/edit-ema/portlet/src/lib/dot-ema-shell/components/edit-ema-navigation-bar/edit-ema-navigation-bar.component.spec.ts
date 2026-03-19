@@ -22,11 +22,6 @@ const messages = {
 const store = {
     paletteOpen: () => false,
     setPaletteOpen: jest.fn(),
-    $editorProps: () => ({
-        palette: {
-            paletteClass: 'palette-class'
-        }
-    }),
     pageParams: () => ({
         language_id: '3',
         personaId: '123'

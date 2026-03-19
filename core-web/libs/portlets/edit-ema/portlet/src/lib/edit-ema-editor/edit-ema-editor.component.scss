@@ -6,11 +6,11 @@
 
 :host {
     display: grid;
-    grid-template-rows: min-content 1fr;
+    grid-template-rows: min-content 1fr min-content;
     height: 100%;
 
-    // Default state (no palette)
-    grid-template-columns: min-content 1fr;
+    // Default state (no palette, no right sidebar)
+    grid-template-columns: min-content 1fr min-content;
 }
 
 // To generate the space for the palette toggle button
@@ -19,19 +19,27 @@
     height: 0;
 }
 
-dot-uve-palette {
-    transition: all $basic-speed ease-in-out;
-
+.palette-wrapper {
     grid-column: 1 / 2;
     grid-row: 2 / -1;
-
-    &.closed {
-        width: 0;
-        border-left: none;
-    }
+    overflow: hidden;
+    width: 0;
+    transition: width $slow-animation-speed ease-in-out;
 
     &.open {
-        width: 21.43rem;
+        width: 18.75rem;
+    }
+
+    dot-uve-palette {
+        width: 18.75rem;
+        min-width: 18.75rem;
+        display: block;
+        transform: translateX(-100%);
+        transition: transform $slow-animation-speed ease-in-out;
+    }
+
+    &.open dot-uve-palette {
+        transform: translateX(0);
     }
 }
 
@@ -46,7 +54,7 @@ dot-ema-page-dropzone {
 
 dot-edit-ema-toolbar,
 dot-uve-toolbar {
-    grid-column: 1 /-1;
+    grid-column: 1 / 4;
 }
 
 dot-ema-device-display {
@@ -58,33 +66,100 @@ dot-results-seo-tool {
 }
 
 .editor-content {
-    padding: spacing.$spacing-4 spacing.$spacing-3;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: spacing.$spacing-1;
     overflow: auto;
+    position: relative;
+    height: 100%;
+    min-height: 0;
 
-    grid-column: 2 / -1;
+    grid-column: 2 / 3;
 }
 
-.editor-content-preview {
-    padding: spacing.$spacing-4;
+// Right sidebar wrapper with slide transition
+.edit-panel-wrapper {
+    grid-column: 3 / -1;
+    grid-row: 2 / -1;
+    overflow: hidden;
+    width: 0;
+    transition: width $basic-speed ease-in-out;
+
+    &.open {
+        width: 18.75rem;
+    }
+
+    > * {
+        width: 18.75rem;
+        min-width: 18.75rem;
+        transform: translateX(100%);
+        transition: transform $basic-speed ease-in-out;
+    }
+
+    &.open > * {
+        transform: translateX(0);
+    }
+
+    ::ng-deep {
+        .p-tabpanels {
+            height: 100%;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        p-tabs {
+            height: 100%;
+        }
+    }
+}
+
+.canvas-viewport {
+    padding: $spacing-4 0;
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+    // IMPORTANT:
+    // Do NOT use flex + justify-content:center here.
+    // When the canvas is wider than the scroll container, centering can introduce a negative left offset
+    // that becomes unreachable because scrollLeft cannot be negative (canvas appears "cut" on the left).
+    display: block;
+}
+
+.canvas-row {
+    display: flex;
+    align-items: flex-start;
+    width: fit-content;
+    margin: 0 auto; // center when it fits; when it overflows, scroll controls visibility
+}
+
+.canvas-gutter {
+    flex: 0 0 $spacing-3;
+    width: $spacing-3;
+}
+
+.canvas-outer {
+    position: relative;
+    display: block;
+    user-select: none;
+}
+
+.canvas-inner {
+    position: relative;
 }
 
 .iframe-wrapper {
     position: relative;
     overflow: hidden;
-    flex-grow: 1;
     margin: 0 auto;
-    border: solid 1px colors.$color-palette-gray-300;
-    height: 100%;
-    width: 100%;
-    transition: all 0.3s ease-in-out;
+    border: solid 1px $color-palette-gray-300;
+    width: 1520px;
+    min-width: 1520px;
+    height: auto;
 
     iframe {
         border: none;
+        display: block;
+        width: 100%;
+        // Height is controlled from TS to match the iframe document height (no iframe scrolling).
+        height: auto;
+        min-height: 1px;
     }
 
     dot-uve-lock-overlay {
@@ -112,4 +187,103 @@ a,
 a:focus,
 a:active {
     text-decoration: none;
+}
+
+:host ::ng-deep {
+    .browser-toolbar {
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+
+        .p-toolbar-center {
+            flex: 1;
+        }
+    }
+}
+
+.browser-url-bar-container {
+    display: flex;
+    align-items: center;
+    gap: $spacing-1;
+    flex: 1;
+}
+
+.browser-url-pill {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: $spacing-1;
+    border-radius: 1000px;
+    padding: 0 $spacing-1;
+}
+
+.browser-url-bar {
+    color: $black;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.flip-horizontal {
+    transform: scaleX(-1);
+}
+
+.url-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+    max-width: 25rem;
+}
+
+.url-item {
+    display: flex;
+    padding: $spacing-0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: $spacing-0;
+
+    &:not(:last-child)::after {
+        content: "";
+        display: block;
+        width: 100%;
+        height: 1px;
+        background: $color-palette-gray-200;
+        margin: $spacing-0 0;
+    }
+}
+
+.url-label {
+    font-style: normal;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.url-value {
+    display: flex;
+    align-items: center;
+    gap: $spacing-0;
+    min-height: 28px;
+    width: 100%;
+
+    a {
+        color: $black;
+        text-decoration: none;
+        flex: 1 0 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.875rem;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    p-button {
+        flex-shrink: 0;
+    }
 }

@@ -1,0 +1,27 @@
+<p-button
+    icon="pi pi-expand"
+    size="small"
+    [text]="true"
+    [rounded]="true"
+    (onClick)="resetView()"
+    aria-label="Reset zoom and position"
+    data-testId="zoom-reset" />
+<p-button
+    icon="pi pi-minus"
+    size="small"
+    [text]="true"
+    [rounded]="true"
+    (onClick)="viewZoomOut()"
+    aria-label="Zoom out"
+    data-testId="zoom-out" />
+<div class="min-w-10 text-center text-sm font-semibold text-gray-800" data-testId="zoom-level">
+    {{ viewZoomLabel() }}
+</div>
+<p-button
+    icon="pi pi-plus"
+    size="small"
+    [text]="true"
+    [rounded]="true"
+    (onClick)="viewZoomIn()"
+    aria-label="Zoom in"
+    data-testId="zoom-in" />

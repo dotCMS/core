@@ -1,8 +1,8 @@
 # dotCMS UVE SDK
 
-The `@dotcms/uve` SDK adds live editing to your JavaScript app using the dotCMS Universal Visual Editor (UVE). It provides low-level tools that power our framework-specific SDKs, such as [`@dotcms/react`](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/README.md) and [`@dotcms/angular`](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/angular/README.md).
+The `@dotcms/uve` SDK adds live editing to your JavaScript app using the dotCMS Universal Visual Editor (UVE). It provides low-level tools that power our framework-specific SDKs, such as [@dotcms/react](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/README.md) and [@dotcms/angular](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/angular/README.md).
 
-> ⚠️ We **do not recommend using this SDK directly** for most use cases, you should use a [framework SDK that handles setup](#Getting Started: Recommended Examples), rendering, and event wiring for you.
+> ⚠️ We **do not recommend using this SDK directly** for most use cases, you should use a [framework SDK that handles setup](#getting-started-recommended-examples), rendering, and event wiring for you.
 
 With `@dotcms/uve`, framework SDKs are able to:
 - Make pages and contentlets editable

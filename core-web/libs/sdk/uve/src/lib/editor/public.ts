@@ -12,6 +12,7 @@ import {
     addClassToEmptyContentlets,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
+    reportIframeHeight,
     scrollHandler,
     setClientIsReady
 } from '../../script/utils';
@@ -174,12 +175,14 @@ export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): 
     const { subscriptions } = registerUVEEvents();
     const { destroyScrollHandler } = scrollHandler();
     const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
+    const { destroyHeightReporter } = reportIframeHeight();
 
     return {
         destroyUVESubscriptions: () => {
             subscriptions.forEach((subscription) => subscription.unsubscribe());
             destroyScrollHandler();
             destroyListenBlockEditorInlineEvent();
+            destroyHeightReporter();
         }
     };
 }
