@@ -12,6 +12,7 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -45,6 +46,38 @@ public class NumberContentsDataFetcherTest {
 
     /**
      * MethodToTest: {@link NumberContentsDataFetcher#get(DataFetchingEnvironment)}
+     * Given Scenario: pageMode is not EDIT_MODE (e.g. LIVE).
+     * Expected Result: Returns null — numberContents is only computed in edit mode.
+     */
+    @Test
+    public void testGet_ReturnsNullWhenNotEditMode() throws Exception {
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container.getIdentifier(), "1")
+                .nextPersisted();
+        final Folder folder = new FolderDataGen().site(defaultHost).nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        final var fetcher = new NumberContentsDataFetcher();
+        final var environment = Mockito.mock(DataFetchingEnvironment.class);
+
+        final DotGraphQLContext context = DotGraphQLContext.createServletContext()
+                .with(user)
+                .build();
+        context.addParam("pageMode", PageMode.LIVE.name());
+        context.addParam("languageId", String.valueOf(defaultLanguage.getId()));
+
+        Mockito.when(environment.getContext()).thenReturn(context);
+        Mockito.when(environment.getSource()).thenReturn(page);
+
+        final Integer result = fetcher.get(environment);
+        assertEquals(null, result);
+    }
+
+    /**
+     * MethodToTest: {@link NumberContentsDataFetcher#get(DataFetchingEnvironment)}
      * Given Scenario: Page with no contentlets placed in any container.
      * Expected Result: Returns 0.
      */
@@ -65,6 +98,7 @@ public class NumberContentsDataFetcherTest {
         final DotGraphQLContext context = DotGraphQLContext.createServletContext()
                 .with(user)
                 .build();
+        context.addParam("pageMode", PageMode.EDIT_MODE.name());
         context.addParam("languageId", String.valueOf(defaultLanguage.getId()));
 
         Mockito.when(environment.getContext()).thenReturn(context);
@@ -125,6 +159,7 @@ public class NumberContentsDataFetcherTest {
         final DotGraphQLContext context = DotGraphQLContext.createServletContext()
                 .with(user)
                 .build();
+        context.addParam("pageMode", PageMode.EDIT_MODE.name());
         context.addParam("languageId", String.valueOf(defaultLanguage.getId()));
 
         Mockito.when(environment.getContext()).thenReturn(context);
