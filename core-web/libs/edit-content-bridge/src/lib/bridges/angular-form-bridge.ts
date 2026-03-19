@@ -90,7 +90,9 @@ export class AngularFormBridge implements FormBridge {
                 AngularFormBridge.instance.#onFieldVisibilityChange = onFieldVisibilityChange;
             }
 
-            AngularFormBridge.instance.#dialogService = dialogService;
+            if (dialogService !== undefined) {
+                AngularFormBridge.instance.#dialogService = dialogService;
+            }
         }
 
         return AngularFormBridge.instance;

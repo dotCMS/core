@@ -150,7 +150,7 @@ export function withContent() {
                         switchMap((contentType) => {
                             patchState(store, {
                                 state: ComponentStatus.LOADING,
-                                hiddenFields: new Set<string>()
+                                hiddenFields: {}
                             });
 
                             return forkJoin({
@@ -228,7 +228,7 @@ export function withContent() {
                         switchMap(({ inode, depth }) => {
                             patchState(store, {
                                 state: ComponentStatus.LOADING,
-                                hiddenFields: new Set<string>()
+                                hiddenFields: {}
                             });
 
                             return dotEditContentService.getContentById({ id: inode, depth }).pipe(

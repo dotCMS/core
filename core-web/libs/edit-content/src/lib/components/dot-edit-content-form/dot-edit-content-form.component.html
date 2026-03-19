@@ -56,19 +56,24 @@
 
         <!-- Template for the tab tabPanel -->
         <ng-template #tabPanelTemplate let-tab="tab">
+            @let hiddenFields = $store.hiddenFields();
             <div class="p-4">
                 @for (row of tab.layout; track row) {
                     <div
                         class="grid grid-flow-col auto-cols-fr gap-4 mb-4 last:mb-0"
+                        [class.hidden]="row.columns.every(c => c.fields.every(f => hiddenFields[f.variable]))"
                         data-testId="row">
                         @for (column of row.columns; track column) {
-                            <div class="flex flex-col gap-4" data-testId="column">
+                            <div
+                                class="flex flex-col gap-4"
+                                [class.hidden]="column.fields.every(f => hiddenFields[f.variable])"
+                                data-testId="column">
                                 @for (field of column.fields; track field) {
                                     <dot-edit-content-field
                                         [contentType]="contentType"
                                         [contentlet]="contentlet"
                                         [field]="field"
-                                        [class.hidden]="$store.hiddenFields().has(field.variable)"
+                                        [class.hidden]="hiddenFields[field.variable]"
                                         (disabledWYSIWYGChange)="onDisabledWYSIWYGChange($event)"
                                         data-testId="field" />
                                 }

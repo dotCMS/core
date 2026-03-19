@@ -7,7 +7,7 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { signalStore, withState, patchState } from '@ngrx/signals';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -318,11 +318,12 @@ describe('ContentFeature', () => {
         }));
 
         it('should reset hiddenFields immediately when initializing new content', fakeAsync(() => {
-            patchState(store, { hiddenFields: new Set(['field1', 'field2']) });
+            contentTypeService.getContentTypeWithRender.mockReturnValue(NEVER);
+            patchState(store, { hiddenFields: { field1: true, field2: true } });
 
             store.initializeNewContent('testContentType');
 
-            expect(store.hiddenFields().size).toBe(0);
+            expect(store.hiddenFields()).toEqual({});
             expect(store.state()).toBe(ComponentStatus.LOADING);
 
             tick();
@@ -375,11 +376,12 @@ describe('ContentFeature', () => {
         }));
 
         it('should reset hiddenFields immediately when initializing existing content', fakeAsync(() => {
-            patchState(store, { hiddenFields: new Set(['field1', 'field2']) });
+            dotEditContentService.getContentById.mockReturnValue(NEVER);
+            patchState(store, { hiddenFields: { field1: true, field2: true } });
 
             store.initializeExistingContent({ inode: '123' });
 
-            expect(store.hiddenFields().size).toBe(0);
+            expect(store.hiddenFields()).toEqual({});
             expect(store.state()).toBe(ComponentStatus.LOADING);
 
             tick();

@@ -140,10 +140,12 @@ export interface EditContentState {
     originalContentlet: DotCMSContentlet | null;
 
     /**
-     * Set of field variable names currently hidden via the BridgeAPI show()/hide() methods.
-     * Fields in this set are hidden in the form template using Tailwind's `hidden` class.
+     * Map of field variable names currently hidden via the BridgeAPI show()/hide() methods.
+     * A key present with `true` means the field is hidden; absent keys are visible.
+     * Uses Record<string, boolean> instead of Set for JSON serializability
+     * (Redux DevTools, state snapshots, hydration).
      */
-    hiddenFields: Set<string>;
+    hiddenFields: Record<string, boolean>;
 }
 
 export const initialRootState: EditContentState = {
@@ -238,7 +240,7 @@ export const initialRootState: EditContentState = {
     originalContentlet: null,
 
     // Field visibility state (controlled by BridgeAPI)
-    hiddenFields: new Set<string>()
+    hiddenFields: {} as Record<string, boolean>
 };
 
 /**
