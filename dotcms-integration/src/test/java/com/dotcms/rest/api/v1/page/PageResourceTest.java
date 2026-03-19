@@ -5,6 +5,7 @@ import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateAllContentle
 import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateContentletTitlesContainingInternal;
 import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateNoContentlets;
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1273,7 +1274,8 @@ public class PageResourceTest {
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
 
-        assertEquals("Rendered HTML Page is NOT the same as the expected one", "<div>" + TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT + "</div><div></div>", htmlPageAssetRendered.getHtml());
+        assertEquals("Rendered HTML Page is NOT the same as the expected one", "<div>" + TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT + "</div><div></div>"
+                + SDK_EDITOR_SCRIPT_SOURCE, htmlPageAssetRendered.getHtml());
 
         final ObjectMapper MAPPER = new ObjectMapper();
         final String layoutString =

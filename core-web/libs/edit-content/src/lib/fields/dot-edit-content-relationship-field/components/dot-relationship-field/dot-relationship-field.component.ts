@@ -49,13 +49,13 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         ChipModule,
         ContentletStatusPipe,
         LanguagePipe,
-        PaginationComponent,
-        DotMessagePipe
+        PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
+        RelationshipFieldStore,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -215,8 +215,8 @@ export class DotRelationshipFieldComponent
 
         const contentType = this.store.contentType();
 
-        // Don't open dialog if contentTypeId is null (invalid field data)
-        if (!contentType.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data)
+        if (!contentType?.id) {
             return;
         }
 

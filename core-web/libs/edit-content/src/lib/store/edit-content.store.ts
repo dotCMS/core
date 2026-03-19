@@ -19,6 +19,7 @@ import {
 
 import { withActivities } from './features/activities/activities.feature';
 import { withContent, DialogInitializationOptions } from './features/content/content.feature';
+import { withFieldVisibility } from './features/field-visibility/field-visibility.feature';
 import { withForm } from './features/form/form.feature';
 import { withHistory } from './features/history/history.feature';
 import { withInformation } from './features/information/information.feature';
@@ -137,6 +138,14 @@ export interface EditContentState {
     isViewingHistoricalVersion: boolean;
     historicalVersionInode: string | null;
     originalContentlet: DotCMSContentlet | null;
+
+    /**
+     * Map of field variable names currently hidden via the BridgeAPI show()/hide() methods.
+     * A key present with `true` means the field is hidden; absent keys are visible.
+     * Uses Record<string, boolean> instead of Set for JSON serializability
+     * (Redux DevTools, state snapshots, hydration).
+     */
+    hiddenFields: Record<string, boolean>;
 }
 
 export const initialRootState: EditContentState = {
@@ -228,7 +237,10 @@ export const initialRootState: EditContentState = {
     // Historical version viewing state
     isViewingHistoricalVersion: false,
     historicalVersionInode: null,
-    originalContentlet: null
+    originalContentlet: null,
+
+    // Field visibility state (controlled by BridgeAPI)
+    hiddenFields: {} as Record<string, boolean>
 };
 
 /**
@@ -246,6 +258,7 @@ export const DotEditContentStore = signalStore(
     withInformation(),
     withLock(),
     withForm(),
+    withFieldVisibility(),
     withLocales(),
     withActivities(),
     withHistory(),

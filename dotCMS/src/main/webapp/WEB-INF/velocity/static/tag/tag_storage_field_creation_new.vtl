@@ -17,40 +17,47 @@
 #end
 
 <div class="custom-field-wrapper">
-  <div class="select-wrapper">
-    <div id="tagStorageHolder">
-      <button
-        type="button"
-        id="tagStorageSelectButton"
-        class="custom-select-button placeholder"
-        aria-label="Select tag storage host"
-        aria-haspopup="listbox"
-        aria-expanded="false"
-        #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled="disabled" #end
-      ><span id="tagStorageLabelSpan">Select host</span><i class="pi pi-chevron-down" aria-hidden="true"></i></button>
-      <div id="tagStorageDropdown" class="custom-dropdown" role="listbox">
-        #foreach($c in $tagStorageHostList)
-          #if($c.isSystemHost)
-            #set($optionLabel = "")
-            #if($text)#set($optionLabel = $text.get("tag-system-host"))#end
-            #if(!$UtilMethods.isSet($optionLabel))#set($optionLabel = "System Host")#end
-          #else
-            #set($optionLabel = $c.hostName)
-          #end
-          #set($isSelected = ($UtilMethods.isSet($tagStorage) && $c.identifier.equals($tagStorage)) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier)))
-          <div
-            class="custom-option #if($isSelected) selected #end"
-            data-identifier="$esc.html($c.identifier)"
-            data-label="$esc.html($optionLabel)"
-            role="option"
-            #if($isSelected) aria-selected="true" #end
-          >
-            <div class="option-title">$esc.html($optionLabel)</div>
-          </div>
+  <details
+    class="dropdown dropdown-end"
+    id="tagStorageHolder"
+    #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) data-disabled="true" #end
+  >
+    <summary
+      class="btn min-w-48 justify-between gap-2"
+      id="tagStorageSelectButton"
+      role="button"
+      aria-label="Select tag storage host"
+      aria-haspopup="listbox"
+    >
+      <span id="tagStorageLabelSpan" class="truncate">Select host</span>
+      <i class="pi pi-chevron-down shrink-0" aria-hidden="true"></i>
+    </summary>
+    <ul
+      class="dropdown-content menu bg-base-200 rounded-box z-[1] w-52 max-h-60 overflow-y-auto p-2 shadow"
+      id="tagStorageDropdown"
+      role="listbox"
+    >
+      #foreach($c in $tagStorageHostList)
+        #if($c.isSystemHost)
+          #set($optionLabel = "")
+          #if($text)#set($optionLabel = $text.get("tag-system-host"))#end
+          #if(!$UtilMethods.isSet($optionLabel))#set($optionLabel = "System Host")#end
+        #else
+          #set($optionLabel = $c.hostName)
         #end
-      </div>
-    </div>
-  </div>
+        #set($isSelected = ($UtilMethods.isSet($tagStorage) && $c.identifier.equals($tagStorage)) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier)))
+        <li
+          class="menu-item #if($isSelected) active #end"
+          data-identifier="$esc.html($c.identifier)"
+          data-label="$esc.html($optionLabel)"
+          role="option"
+          #if($isSelected) aria-selected="true" #end
+        >
+          <button type="button" class="w-full text-left">$esc.html($optionLabel)</button>
+        </li>
+      #end
+    </ul>
+  </details>
 </div>
 
 <script type="application/javascript">
@@ -63,27 +70,29 @@
         return;
       }
       const holder = document.getElementById("tagStorageHolder");
-      const button = document.getElementById("tagStorageSelectButton");
+      const summary = document.getElementById("tagStorageSelectButton");
       const dropdown = document.getElementById("tagStorageDropdown");
-      if (!holder || !button || !dropdown) return;
+      if (!holder || !summary || !dropdown) return;
       const labelSpan = document.getElementById("tagStorageLabelSpan");
       const defaultLabel = labelSpan ? (labelSpan.textContent || "").trim() : "";
 
-      const options = Array.from(dropdown.querySelectorAll(".custom-option"));
-      let selectedOption = dropdown.querySelector(".custom-option.selected");
+      const options = Array.from(dropdown.querySelectorAll("li[data-identifier]"));
+      let selectedOption = dropdown.querySelector("li.active");
       const currentValue = field ? (field.getValue() || "") : "";
       if (selectedOption && selectedOption.dataset.label) {
         if (labelSpan) labelSpan.textContent = selectedOption.dataset.label;
-        button.classList.remove("placeholder");
+        summary.classList.remove("text-base-content/60");
       } else if (currentValue && options.length) {
         const match = options.find(function(o) { return o.dataset.identifier === currentValue; });
         if (match) {
-          match.classList.add("selected");
+          match.classList.add("active");
           match.setAttribute("aria-selected", "true");
           if (labelSpan) labelSpan.textContent = match.dataset.label || defaultLabel;
-          button.classList.remove("placeholder");
+          summary.classList.remove("text-base-content/60");
           selectedOption = match;
         }
+      } else {
+        summary.classList.add("text-base-content/60");
       }
       if (field && selectedOption && selectedOption.dataset.identifier) {
         field.setValue(selectedOption.dataset.identifier);
@@ -94,39 +103,35 @@
       }
 
       function closeDropdown() {
-        dropdown.classList.remove("open");
-        button.setAttribute("aria-expanded", "false");
+        holder.removeAttribute("open");
+        summary.setAttribute("aria-expanded", "false");
       }
 
-      function openDropdown() {
-        dropdown.classList.add("open");
-        button.setAttribute("aria-expanded", "true");
-      }
+      holder.addEventListener("toggle", function () {
+        summary.setAttribute("aria-expanded", holder.hasAttribute("open") ? "true" : "false");
+      });
 
-      function toggleDropdown() {
-        if (button.disabled) return;
-        if (dropdown.classList.contains("open")) {
-          closeDropdown();
-        } else {
-          openDropdown();
+      summary.addEventListener("click", function (e) {
+        if (holder.getAttribute("data-disabled") === "true") {
+          e.preventDefault();
+          return;
         }
-      }
-
-      button.addEventListener("click", function (e) {
-        e.stopPropagation();
-        toggleDropdown();
       });
 
       options.forEach(function(opt) {
-        opt.addEventListener("click", function () {
-          const identifier = this.dataset.identifier;
-          const label = this.dataset.label;
+        var btn = opt.querySelector("button");
+        if (!btn) return;
+        btn.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var identifier = opt.dataset.identifier;
+          var label = opt.dataset.label;
           if (field) field.setValue(identifier || "");
           if (labelSpan) labelSpan.textContent = label || defaultLabel;
-          button.classList.remove("placeholder");
-          options.forEach(function(o) { o.classList.remove("selected"); });
-          this.classList.add("selected");
-          this.setAttribute("aria-selected", "true");
+          summary.classList.remove("text-base-content/60");
+          options.forEach(function(o) { o.classList.remove("active"); });
+          opt.classList.add("active");
+          opt.setAttribute("aria-selected", "true");
           closeDropdown();
         });
       });
