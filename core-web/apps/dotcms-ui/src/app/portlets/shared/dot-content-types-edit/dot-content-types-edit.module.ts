@@ -43,6 +43,7 @@ import { DotBinarySettingsComponent } from './components/dot-binary-settings/dot
 import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-settings/dot-block-editor-settings.component';
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { DotCustomFieldSettingsComponent } from './components/dot-custom-field-settings';
 import { ContentTypesFieldDragabbleItemComponent } from './components/fields/content-type-field-dragabble-item';
 import { ContentTypeFieldsAddRowComponent } from './components/fields/content-type-fields-add-row/content-type-fields-add-row.component';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/content-type-fields-drop-zone';
@@ -141,6 +142,7 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotFieldHelperComponent,
         DotFieldValidationMessageComponent,
         DotBinarySettingsComponent,
+        DotCustomFieldSettingsComponent,
         TooltipModule,
         DotIconComponent,
         DotMaxlengthDirective,

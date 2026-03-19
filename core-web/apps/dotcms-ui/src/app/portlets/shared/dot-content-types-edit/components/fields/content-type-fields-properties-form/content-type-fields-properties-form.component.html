@@ -7,9 +7,6 @@
                 [group]="form"
                 dotDynamicFieldProperty />
         </div>
-        @if (property === 'newRenderMode' && showRenderOptionsSection) {
-            <dot-render-options-property [group]="form" />
-        }
     }
     @if (formFieldData?.relationships) {
         <dot-relationship-tree

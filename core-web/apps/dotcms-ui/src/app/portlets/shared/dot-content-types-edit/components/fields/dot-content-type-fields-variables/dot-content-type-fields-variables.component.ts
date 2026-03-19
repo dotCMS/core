@@ -48,7 +48,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             systemOptions: true
         },
         [DotCMSClazzes.CUSTOM_FIELD]: {
-            customFieldOptions: true
+            customFieldOptions: true,
+            hideLabel: true
         }
     };
 

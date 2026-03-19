@@ -90,7 +90,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     get isFieldWithSettings() {
         return [
             'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-            'com.dotcms.contenttype.model.field.ImmutableBinaryField'
+            'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+            'com.dotcms.contenttype.model.field.ImmutableCustomField'
         ].includes(this.currentFieldType?.clazz);
     }
 
@@ -425,7 +426,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     changesDialogActions(controls: DotDialogActions) {
-        this.dialogActions = controls;
+        this.dialogActions = {
+            ...controls,
+            cancel: this.defaultDialogActions.cancel
+        };
     }
 
     handleDialogVisibleChange(isVisible: boolean): void {

@@ -14,16 +14,14 @@ import {
     output,
     viewChild
 } from '@angular/core';
-import { AbstractControl, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 import { takeUntil } from 'rxjs/operators';
 
 import {
-    CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotRenderModes,
     FeaturedFlags,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
@@ -88,13 +86,6 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         return contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
     });
 
-    get showRenderOptionsSection(): boolean {
-        return (
-            this.formFieldData?.clazz === DotCMSClazzes.CUSTOM_FIELD &&
-            this.form?.get('newRenderMode')?.value === DotRenderModes.IFRAME
-        );
-    }
-
     /**
      * Angular lifecycle hook called when input properties change
      *
@@ -158,41 +149,24 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
             const existingVariables = this.formFieldData.fieldVariables || [];
             const otherVariables = existingVariables.filter(
-                (v) => v.key !== NEW_RENDER_MODE_VARIABLE_KEY && v.key !== CUSTOM_FIELD_OPTIONS_KEY
+                (v) => v.key !== NEW_RENDER_MODE_VARIABLE_KEY
             );
             const existingNewRenderMode = existingVariables.find(
                 (v) => v.key === NEW_RENDER_MODE_VARIABLE_KEY
             );
-            const existingCustomFieldOptions = existingVariables.find(
-                (v) => v.key === CUSTOM_FIELD_OPTIONS_KEY
-            );
-            const showAsModal = value.showAsModal ?? false;
-            const baseVariables = [
-                ...otherVariables,
-                {
-                    ...(existingNewRenderMode || {}),
-                    clazz: DotCMSClazzes.FIELD_VARIABLE,
-                    key: NEW_RENDER_MODE_VARIABLE_KEY,
-                    value: value.newRenderMode || this.fieldPropertyService.$newRenderModeDefault()
-                }
-            ];
-            if (showAsModal) {
-                const customFieldOptionsValue = JSON.stringify({
-                    showAsModal: true,
-                    width: `${value.customFieldWidth ?? 398}px`,
-                    height: `${value.customFieldHeight ?? 400}px`
-                });
-                baseVariables.push({
-                    ...(existingCustomFieldOptions || {}),
-                    clazz: DotCMSClazzes.FIELD_VARIABLE,
-                    key: CUSTOM_FIELD_OPTIONS_KEY,
-                    value: customFieldOptionsValue
-                });
-            }
 
             return {
                 ...value,
-                fieldVariables: baseVariables
+                fieldVariables: [
+                    ...otherVariables,
+                    {
+                        ...(existingNewRenderMode || {}),
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
+                        value:
+                            value.newRenderMode || this.fieldPropertyService.$newRenderModeDefault()
+                    }
+                ]
             };
         }
 
@@ -257,24 +231,6 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             formFields['id'] = this.formFieldData.id;
         }
 
-        if (this.formFieldData?.clazz === DotCMSClazzes.CUSTOM_FIELD) {
-            const optionsVar = (this.formFieldData.fieldVariables || []).find(
-                (v) => v.key === CUSTOM_FIELD_OPTIONS_KEY
-            );
-            const options = optionsVar?.value ? (JSON.parse(optionsVar.value) ?? {}) : {};
-            const widthStr = options.width ?? '398px';
-            const heightStr = options.height ?? '400px';
-            formFields['showAsModal'] = [options.showAsModal ?? false];
-            formFields['customFieldWidth'] = [
-                this.parsePxToNumber(widthStr, 398),
-                [Validators.required, Validators.min(1)]
-            ];
-            formFields['customFieldHeight'] = [
-                this.parsePxToNumber(heightStr, 400),
-                [Validators.required, Validators.min(1)]
-            ];
-        }
-
         this.form = this.fb.group(formFields);
         this.setAutoCheckValues();
         this.notifyFormChanges();
@@ -308,13 +264,6 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private isPropertyDisabled(property: string): boolean {
         return this.fieldPropertyService.isDisabledInEditMode(property);
-    }
-
-    /** Parse a CSS-like value (e.g. "398px") to a number for form controls */
-    private parsePxToNumber(value: string | undefined, defaultValue: number): number {
-        if (value == null || value === '') return defaultValue;
-        const parsed = parseInt(String(value).replace(/px$/i, '').trim(), 10);
-        return Number.isNaN(parsed) ? defaultValue : parsed;
     }
 
     /**

@@ -97,6 +97,15 @@
                                 [field]="currentField"
                                 [isVisible]="activeTab === 1"></dot-binary-settings>
                         }
+                        @case ('com.dotcms.contenttype.model.field.ImmutableCustomField') {
+                            <dot-custom-field-settings
+                                ($save)="toggleDialog()"
+                                ($valid)="setDialogOkButtonState($event)"
+                                ($changeControls)="changesDialogActions($event)"
+                                [field]="currentField"
+                                [isVisible]="activeTab === 1"
+                                [renderMode]="fieldPropertiesForm.form?.get('newRenderMode')?.value"></dot-custom-field-settings>
+                        }
                     }
                 </p-tabpanel>
             }
