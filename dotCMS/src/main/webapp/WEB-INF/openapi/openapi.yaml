@@ -20624,13 +20624,20 @@ paths:
           \ multiple tags = list with multiple elements."
         required: true
       responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityTagCreateView"
+          description: All submitted tags already existed. Response contains an empty
+            'created' list and all tags in 'duplicates'.
         "201":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagCreateView"
-          description: Tags created or retrieved. All submitted tags are returned
-            under 'created'.
+          description: "At least one new tag was created. New tags appear in 'created',\
+            \ pre-existing ones in 'duplicates'."
         "400":
           content:
             application/json: {}

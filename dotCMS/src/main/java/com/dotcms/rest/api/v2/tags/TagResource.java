@@ -4,8 +4,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityListView;
-import com.dotcms.rest.ResponseEntityRestTagListView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
@@ -227,15 +225,19 @@ public class TagResource {
      * @param response The current instance of the {@link HttpServletResponse}.
      * @param tagForms The list of {@link TagForm} objects containing the tags to create.
      *
-     * @return The {@link ResponseEntityListView} containing the created tags.
+     * @return The {@link ResponseEntityTagCreateView} containing created and duplicate tags.
      */
     @Operation(
             summary = "Create tags",
             description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. This operation is idempotent - existing tags are returned without error."
     )
     @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "All submitted tags already existed. Response contains an empty 'created' list and all tags in 'duplicates'.",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityTagCreateView.class))),
             @ApiResponse(responseCode = "201",
-                    description = "Tags created or retrieved. All submitted tags are returned under 'created'.",
+                    description = "At least one new tag was created. New tags appear in 'created', pre-existing ones in 'duplicates'.",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityTagCreateView.class))),
     @ApiResponse(responseCode = "400",
@@ -275,70 +277,70 @@ public class TagResource {
             form.checkValid(); // ValidationException (a BadRequestException) will propagate with correct messages
         }
 
-        // Create all tags
-        final List<Tag> savedTags = saveTags(request, tagForms, user);
+        // Create all tags, tracking new vs already-existing
+        final Map<String, List<Tag>> saveResult = saveTags(request, tagForms, user);
 
-        // Convert to RestTag list for response
-        final List<RestTag> resultList = savedTags.stream()
-            .map(TagsResourceHelper::toRestTag)
-            .collect(Collectors.toList());
+        final List<RestTag> created = saveResult.get("created").stream()
+                .map(TagsResourceHelper::toRestTag).collect(Collectors.toList());
+        final List<RestTag> duplicates = saveResult.get("duplicates").stream()
+                .map(TagsResourceHelper::toRestTag).collect(Collectors.toList());
 
         final Map<String, List<RestTag>> responseMap = new HashMap<>();
-        responseMap.put("created", resultList);
-        return Response.status(Response.Status.CREATED)
+        responseMap.put("created", created);
+        responseMap.put("duplicates", duplicates);
+
+        final Response.Status status = created.isEmpty() ? Response.Status.OK : Response.Status.CREATED;
+        return Response.status(status)
                 .entity(new ResponseEntityTagCreateView(responseMap))
                 .build();
     }
 
 
     /**
-     * Saves Tags in dotCMS using a list-based approach.
+     * Saves Tags in dotCMS, separating newly created tags from pre-existing ones.
      *
      * @param request   The current instance of the {@link HttpServletRequest}.
      * @param tagForms  The {@link List} of {@link TagForm} containing the Tags to save.
      * @param user      The {@link User} performing the operation.
      *
-     * @return List of created {@link Tag} objects.
+     * @return Map with "created" (new tags) and "duplicates" (already-existing tags).
      * @throws DotDataException     An error occurred when persisting Tag data.
      * @throws DotSecurityException The specified user does not have the required permissions to
      *                              perform this operation.
      */
     @WrapInTransaction
-    private List<Tag> saveTags(final HttpServletRequest request,
-                               final List<TagForm> tagForms,
-                               final User user)
+    private Map<String, List<Tag>> saveTags(final HttpServletRequest request,
+                                            final List<TagForm> tagForms,
+                                            final User user)
             throws DotDataException, DotSecurityException {
 
-        final List<Tag> savedTags = new ArrayList<>();
+        final List<Tag> created = new ArrayList<>();
+        final List<Tag> duplicates = new ArrayList<>();
 
-        for (TagForm form : tagForms) {
-            // Resolve site
+        for (final TagForm form : tagForms) {
             final String siteId = helper.getValidateSite(form.getSiteId(), user, request);
+            final String storageHostId = helper.resolveTagStorageHost(siteId);
+            final Tag existing = tagAPI.getTagByNameAndHost(form.getName().toLowerCase(), storageHostId);
 
-            // Create or get tag
             final boolean persona = (form.getPersona() != null) ? form.getPersona() : false;
-            final Tag tag = tagAPI.getTagAndCreate(
-                form.getName(),
-                form.getOwnerId(),
-                siteId,
-                persona,
-                false
-            );
+            final Tag tag = tagAPI.getTagAndCreate(form.getName(), form.getOwnerId(), siteId, persona, false);
 
             Logger.debug(TagResource.class, String.format("Saving Tag '%s'", tag.getTagName()));
 
-            // Bind to owner if specified
             if (UtilMethods.isSet(form.getOwnerId())) {
                 tagAPI.addUserTagInode(tag, form.getOwnerId());
                 Logger.debug(TagResource.class,
-                    String.format("Tag '%s' is now bound to user '%s'",
-                        tag.getTagName(), form.getOwnerId()));
+                        String.format("Tag '%s' is now bound to user '%s'", tag.getTagName(), form.getOwnerId()));
             }
 
-            savedTags.add(tag);
+            if (existing != null && UtilMethods.isSet(existing.getTagId())) {
+                duplicates.add(tag);
+            } else {
+                created.add(tag);
+            }
         }
 
-        return savedTags;
+        return Map.of("created", created, "duplicates", duplicates);
     }
 
     /**
