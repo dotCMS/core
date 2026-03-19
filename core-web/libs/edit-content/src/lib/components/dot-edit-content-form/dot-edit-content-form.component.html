@@ -61,12 +61,12 @@
                 @for (row of tab.layout; track row) {
                     <div
                         class="grid grid-flow-col auto-cols-fr gap-4 mb-4 last:mb-0"
-                        [class.hidden]="row.columns.every(c => c.fields.every(f => hiddenFields[f.variable]))"
+                        [class.hidden]="row.columns.some(c => c.fields.length > 0) && row.columns.every(c => c.fields.every(f => hiddenFields[f.variable]))"
                         data-testId="row">
                         @for (column of row.columns; track column) {
                             <div
                                 class="flex flex-col gap-4"
-                                [class.hidden]="column.fields.every(f => hiddenFields[f.variable])"
+                                [class.hidden]="column.fields.length > 0 && column.fields.every(f => hiddenFields[f.variable])"
                                 data-testId="column">
                                 @for (field of column.fields; track field) {
                                     <dot-edit-content-field

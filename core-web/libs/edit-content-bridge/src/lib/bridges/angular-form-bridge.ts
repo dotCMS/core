@@ -27,6 +27,7 @@ import {
  */
 export class AngularFormBridge implements FormBridge {
     private static instance: AngularFormBridge | null = null;
+    private static refCount = 0;
     #fieldSubscriptions: Map<string, FieldSubscription> = new Map();
     #form: FormGroup;
     #zone: NgZone;
@@ -95,17 +96,20 @@ export class AngularFormBridge implements FormBridge {
             }
         }
 
+        AngularFormBridge.refCount++;
+
         return AngularFormBridge.instance;
     }
 
     /**
      * Resets the singleton instance, allowing a new instance to be created.
-     * This will destroy the current instance and clear all subscriptions.
+     * This will force-destroy the current instance regardless of ref count.
      */
     static resetInstance(): void {
         if (AngularFormBridge.instance) {
-            AngularFormBridge.instance.destroy();
+            AngularFormBridge.instance.forceDestroy();
             AngularFormBridge.instance = null;
+            AngularFormBridge.refCount = 0;
         }
     }
 
@@ -223,23 +227,35 @@ export class AngularFormBridge implements FormBridge {
     }
 
     /**
-     * Cleans up all subscriptions when the bridge is destroyed.
-     * Also resets the singleton instance and closes any open dialogs.
+     * Decrements the reference count and only truly destroys the singleton
+     * when all consumers have released it. Safe to call from each
+     * NativeFieldComponent's ngOnDestroy without breaking other instances.
      */
     destroy(): void {
+        AngularFormBridge.refCount = Math.max(0, AngularFormBridge.refCount - 1);
+
+        if (AngularFormBridge.refCount === 0) {
+            this.forceDestroy();
+
+            if (AngularFormBridge.instance === this) {
+                AngularFormBridge.instance = null;
+            }
+        }
+    }
+
+    /**
+     * Unconditionally tears down the bridge: unsubscribes all field
+     * subscriptions, closes open dialogs. Used by resetInstance() and
+     * as the final step of ref-counted destroy().
+     */
+    private forceDestroy(): void {
         this.#fieldSubscriptions.forEach((fieldSubscription) => {
             fieldSubscription.subscription.unsubscribe();
         });
         this.#fieldSubscriptions.clear();
 
-        // Close any open dialog
         this.#dialogRef?.close();
         this.#dialogRef = null;
-
-        // Reset singleton instance if this is the current instance
-        if (AngularFormBridge.instance === this) {
-            AngularFormBridge.instance = null;
-        }
     }
 
     /**

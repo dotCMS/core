@@ -350,7 +350,7 @@ describe('AngularFormBridge', () => {
             expect(instance).toBeInstanceOf(AngularFormBridge);
         });
 
-        it('should reset instance in destroy method', () => {
+        it('should reset instance in destroy method when refCount reaches zero', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
                 mockNgZone as any,
@@ -364,6 +364,77 @@ describe('AngularFormBridge', () => {
                 mockDialogService as any
             );
             expect(instance1).not.toBe(instance2);
+        });
+
+        it('should NOT destroy singleton when other consumers still hold a reference', () => {
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            const instance2 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+
+            expect(instance1).toBe(instance2);
+
+            // First consumer releases — singleton must survive
+            instance1.destroy();
+
+            const instance3 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            expect(instance3).toBe(instance1);
+        });
+
+        it('should destroy singleton only after all consumers release', () => {
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            // Second consumer
+            AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+
+            instance1.destroy(); // refCount 2 → 1
+            instance1.destroy(); // refCount 1 → 0, now truly destroyed
+
+            const fresh = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            expect(fresh).not.toBe(instance1);
+        });
+
+        it('should keep subscriptions alive when one of two consumers calls destroy', () => {
+            const unsubscribeSpy = jest.fn();
+            mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
+
+            // Two consumers
+            const bridge1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+
+            bridge1.onChangeField('testField', () => {});
+            bridge1.destroy(); // one consumer releases, but refCount still > 0
+
+            expect(unsubscribeSpy).not.toHaveBeenCalled();
         });
     });
 

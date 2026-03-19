@@ -189,7 +189,8 @@ export function withContent() {
                                             currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'new',
-                                            error: null
+                                            error: null,
+                                            hiddenFields: {}
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -299,7 +300,8 @@ export function withContent() {
                                             state: ComponentStatus.LOADED,
                                             currentStep: step,
                                             lastTask: task,
-                                            initialContentletState
+                                            initialContentletState,
+                                            hiddenFields: {}
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
