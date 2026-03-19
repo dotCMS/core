@@ -18,6 +18,11 @@ on:
         description: 'Previous release tag for diff range. If omitted, auto-detected from GitHub releases API.'
         required: false
         type: string
+      allow_failure:
+        description: 'If true, job failures are non-blocking (used by release pipeline). Defaults to false.'
+        required: false
+        type: boolean
+        default: false
     secrets:
       ANTHROPIC_API_KEY:
         required: true
@@ -30,7 +35,7 @@ jobs:
   generate-notes:
     name: Generate Release Notes
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    continue-on-error: true
+    continue-on-error: ${{ inputs.allow_failure }}
     permissions:
       contents: write      # gh release view + gh release edit
       pull-requests: read  # Octokit pulls.get for PR details

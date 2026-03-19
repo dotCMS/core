@@ -169,6 +169,7 @@ jobs:
     uses: ./.github/workflows/cicd_comp_ai-release-notes-phase.yml
     with:
       release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      allow_failure: true
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}

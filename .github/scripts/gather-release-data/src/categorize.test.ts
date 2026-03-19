@@ -113,4 +113,16 @@ describe('processChanges', () => {
     expect(result.rollbackUnsafe).toHaveLength(1);
     expect(result.skipped).toHaveLength(0);
   });
+
+  it('rollback-unsafe PRs are immune to Changelog: Skip', () => {
+    const prDetails = new Map<number, PRDetails>([
+      [1, { number: 1, title: 'Dangerous migration', labels: ['feature', 'AI: Not Safe To Rollback', 'Changelog: Skip'], body: '', linkedIssues: [] }],
+    ]);
+
+    const result = processChanges(prDetails);
+
+    expect(result.changes).toHaveLength(1);
+    expect(result.rollbackUnsafe).toHaveLength(1);
+    expect(result.skipped).toHaveLength(0);
+  });
 });

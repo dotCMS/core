@@ -95,8 +95,9 @@ export function processChanges(prDetails: Map<number, PRDetails>): {
   const skipped: number[] = [];
 
   for (const [prNumber, pr] of prDetails) {
-    // Check rollback safety (independent of skip)
-    if (isRollbackUnsafe(pr.labels)) {
+    // Check rollback safety — rollback-unsafe PRs are never skipped
+    const unsafe = isRollbackUnsafe(pr.labels);
+    if (unsafe) {
       rollbackUnsafe.push({
         pr: prNumber,
         title: pr.title,
@@ -104,8 +105,8 @@ export function processChanges(prDetails: Map<number, PRDetails>): {
       });
     }
 
-    // Check skip
-    if (shouldSkip(pr.labels)) {
+    // Check skip (rollback-unsafe PRs are immune)
+    if (!unsafe && shouldSkip(pr.labels)) {
       skipped.push(prNumber);
       continue;
     }
