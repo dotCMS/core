@@ -155,12 +155,12 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                 (v) => v.key === NEW_RENDER_MODE_VARIABLE_KEY
             );
 
-            return {
+            const newFormValue = {
                 ...value,
                 fieldVariables: [
                     ...otherVariables,
                     {
-                        ...(existingNewRenderMode || {}),
+                        ...(existingNewRenderMode || {}), // Preserve existing properties (id, etc.)
                         clazz: DotCMSClazzes.FIELD_VARIABLE,
                         key: NEW_RENDER_MODE_VARIABLE_KEY,
                         value:
@@ -168,8 +168,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                     }
                 ]
             };
+            return newFormValue;
         }
-
         return value;
     }
 

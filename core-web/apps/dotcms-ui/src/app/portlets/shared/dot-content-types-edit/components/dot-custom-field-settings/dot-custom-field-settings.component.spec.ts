@@ -13,7 +13,6 @@ import {
     DotCMSContentTypeField,
     DotFieldVariable,
     DotRenderModes,
-    HIDE_LABEL_VARIABLE_KEY,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';

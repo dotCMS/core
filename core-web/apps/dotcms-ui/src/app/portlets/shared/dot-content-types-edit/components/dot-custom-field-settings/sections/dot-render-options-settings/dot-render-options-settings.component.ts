@@ -20,10 +20,10 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { map, startWith, tap } from 'rxjs/operators';
 
 import {
-    CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
     DotCMSContentTypeField,
-    DotFieldVariable
+    DotFieldVariable,
+    CUSTOM_FIELD_OPTIONS_KEY
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -67,7 +67,7 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
         );
         this.fieldVariableRef = optionsVar ?? null;
         const options = optionsVar?.value ? JSON.parse(optionsVar.value) : {};
-        const initialShowAsModal: boolean = false;
+        const initialShowAsModal = false;
 
         this.form = this.fb.group({
             showAsModal: [initialShowAsModal],

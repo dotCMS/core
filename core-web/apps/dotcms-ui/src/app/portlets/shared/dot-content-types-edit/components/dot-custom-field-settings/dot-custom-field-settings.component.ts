@@ -3,8 +3,9 @@ import { EMPTY, forkJoin, merge } from 'rxjs';
 import {
     ChangeDetectionStrategy,
     Component,
+    OnChanges,
+    SimpleChanges,
     computed,
-    effect,
     inject,
     input,
     output,
@@ -32,7 +33,7 @@ import { FieldSettingsSection } from './sections/field-settings-section';
     templateUrl: './dot-custom-field-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCustomFieldSettingsComponent {
+export class DotCustomFieldSettingsComponent implements OnChanges {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
     /** Live render mode from the properties form — overrides saved fieldVariables when provided */
@@ -63,18 +64,19 @@ export class DotCustomFieldSettingsComponent {
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     constructor() {
-        effect(() => {
-            if (this.$isVisible()) {
-                this.$changeControls.emit(this.dialogActions());
-            }
-        });
-
         merge(
             toObservable(this.renderOptions).pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY)),
             toObservable(this.hideLabel).pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY))
         )
             .pipe(takeUntilDestroyed())
             .subscribe(() => this.$valid.emit(this.canSave()));
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        const { $isVisible } = changes;
+        if ($isVisible?.currentValue) {
+            this.$changeControls.emit(this.dialogActions());
+        }
     }
 
     saveSettings(): void {

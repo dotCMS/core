@@ -68,7 +68,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     it('should load the component with one empty row', () => {
         jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
         fixtureHost.detectChanges();
-        expect(comp.$fieldVariables().length).toBe(0);
+        expect(comp.fieldVariables().length).toBe(0);
     });
 
     it('should save a variable', () => {
@@ -84,7 +84,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             comp.field,
             mockFieldVariables[0]
         );
-        expect(comp.$fieldVariables()[0]).toEqual(mockFieldVariables[0]);
+        expect(comp.fieldVariables()[0]).toEqual(mockFieldVariables[0]);
     });
 
     it('should update variable a variable', () => {
@@ -106,7 +106,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, variable);
         expect(dotFieldVariableService.save).toHaveBeenCalledTimes(1);
 
-        expect(comp.$fieldVariables()[0]).toEqual(variable);
+        expect(comp.fieldVariables()[0]).toEqual(variable);
     });
 
     it('should delete a variable from the server', () => {
@@ -127,7 +127,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
         expect(dotFieldVariableService.delete).toHaveBeenCalledTimes(1);
-        expect(comp.$fieldVariables()).toEqual(deletedCollection);
+        expect(comp.fieldVariables()).toEqual(deletedCollection);
     });
 
     describe('Block Editor Field', () => {
@@ -145,7 +145,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         it('should set variable correctly', () => {
             jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
-            expect(comp.$fieldVariables().length).toBe(mockFieldVariables.length);
+            expect(comp.fieldVariables().length).toBe(mockFieldVariables.length);
         });
 
         it('should not set allowedBlocks variable', () => {
@@ -161,7 +161,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 ])
             );
             fixtureHost.detectChanges();
-            expect(comp.$fieldVariables().length).toBe(0);
+            expect(comp.fieldVariables().length).toBe(0);
         });
     });
 
@@ -190,7 +190,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 ])
             );
             fixtureHost.detectChanges();
-            expect(comp.$fieldVariables().length).toBe(0);
+            expect(comp.fieldVariables().length).toBe(0);
         });
 
         it('should NOT filter out newRenderMode variable', () => {
@@ -206,8 +206,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 ])
             );
             fixtureHost.detectChanges();
-            expect(comp.$fieldVariables().length).toBe(1);
-            expect(comp.$fieldVariables()[0].key).toBe('newRenderMode');
+            expect(comp.fieldVariables().length).toBe(1);
+            expect(comp.fieldVariables()[0].key).toBe('newRenderMode');
         });
 
         it('should display other variables while filtering customFieldOptions', () => {
@@ -230,8 +230,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 ])
             );
             fixtureHost.detectChanges();
-            expect(comp.$fieldVariables().length).toBe(1);
-            expect(comp.$fieldVariables()[0].key).toBe('someOtherKey');
+            expect(comp.fieldVariables().length).toBe(1);
+            expect(comp.fieldVariables()[0].key).toBe('someOtherKey');
         });
     });
 });

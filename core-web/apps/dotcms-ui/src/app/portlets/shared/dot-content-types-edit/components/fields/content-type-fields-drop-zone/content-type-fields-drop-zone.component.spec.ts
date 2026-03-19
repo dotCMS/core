@@ -958,6 +958,7 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should change the dialogActions', () => {
+        fixture.detectChanges();
         const newDialogActions = {
             accept: {
                 action: () => {
@@ -971,7 +972,10 @@ describe('Load fields and drag and drop', () => {
             }
         };
         comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
+        expect(comp.dialogActions).toEqual({
+            ...newDialogActions,
+            cancel: comp.defaultDialogActions.cancel
+        });
     });
 
     it('should restore the default dialogActions on Overview Tab', async () => {
@@ -991,7 +995,10 @@ describe('Load fields and drag and drop', () => {
 
         // Changes Dialog Actions
         comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
+        expect(comp.dialogActions).toEqual({
+            ...newDialogActions,
+            cancel: comp.defaultDialogActions.cancel
+        });
 
         // Change to Overview Tab
         comp.handleTabChange(0);
@@ -1015,7 +1022,10 @@ describe('Load fields and drag and drop', () => {
 
         // Changes Dialog Actions
         comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
+        expect(comp.dialogActions).toEqual({
+            ...newDialogActions,
+            cancel: comp.defaultDialogActions.cancel
+        });
 
         // Change to Overview Tab
         comp.handleTabChange(0);
