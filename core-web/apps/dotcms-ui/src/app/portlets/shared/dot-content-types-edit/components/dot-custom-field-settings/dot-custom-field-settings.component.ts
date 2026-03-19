@@ -28,6 +28,7 @@ import { FieldSettingsSection } from './sections/field-settings-section';
 
 @Component({
     selector: 'dot-custom-field-settings',
+    imports: [DotRenderOptionsSettingsComponent, DotHideLabelSettingsComponent],
     templateUrl: './dot-custom-field-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -90,7 +91,8 @@ export class DotCustomFieldSettingsComponent {
 
     private activeSections(): FieldSettingsSection[] {
         return [this.renderOptions(), this.hideLabel()].filter(
-            (s): s is FieldSettingsSection => s != null
+            (s): s is DotRenderOptionsSettingsComponent | DotHideLabelSettingsComponent =>
+                s != null
         );
     }
 
