@@ -111,22 +111,17 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         this.fieldVariablesService
             .load(this.field)
             .pipe(takeUntil(this.destroy$))
-            .subscribe((loadedVariables: DotFieldVariable[]) => {
-                const loadedKeys = new Set(loadedVariables.map((v) => v.key));
-                const fromField = (this.field.fieldVariables || []).filter(
-                    (v) => !loadedKeys.has(v.key)
+            .subscribe((fieldVariables: DotFieldVariable[]) => {
+                this.fieldVariables.set(
+                    fieldVariables.filter((item) => {
+                        const fieldBlackList = this.blackList[this.field.clazz];
+                        if (fieldBlackList) {
+                            return !fieldBlackList[item?.key];
+                        }
+
+                        return true;
+                    })
                 );
-                const combined = [...loadedVariables, ...fromField];
-                const filtered = combined.filter((item) => {
-                    const fieldBlackList = this.blackList[this.field.clazz];
-                    if (fieldBlackList) {
-                        return !fieldBlackList[item?.key];
-                    }
-
-                    return true;
-                });
-
-                this.fieldVariables.set(filtered);
             });
     }
 
