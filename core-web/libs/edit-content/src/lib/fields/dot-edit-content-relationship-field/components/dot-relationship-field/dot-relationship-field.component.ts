@@ -33,7 +33,6 @@ import { HeaderComponent } from './../dot-select-existing-content/components/hea
 import { DotSelectExistingContentComponent } from './../dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './../pagination/pagination.component';
 
-import { DotEditContentDialogComponent } from '../../../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
@@ -189,7 +188,7 @@ export class DotRelationshipFieldComponent
      * @memberof DotEditContentRelationshipFieldComponent
      */
     ngOnInit() {
-        this.initialize(this.$inputs);
+        this.initialize(this.$inputs());
     }
 
     /**
@@ -269,11 +268,15 @@ export class DotRelationshipFieldComponent
     /**
      * Opens the new content dialog for creating content using the Angular editor
      */
-    showCreateNewContentDialog(): void {
+    async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
         if (this.$isDisabled() || !contentType) {
             return;
         }
+
+        const { DotEditContentDialogComponent } = await import(
+            '../../../../components/dot-create-content-dialog/dot-create-content-dialog.component'
+        );
 
         const dialogData: EditContentDialogData = {
             mode: 'new',
@@ -293,6 +296,7 @@ export class DotRelationshipFieldComponent
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
+            closable: true,
             closeOnEscape: true,
             draggable: false,
             keepInViewport: true,

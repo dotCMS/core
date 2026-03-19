@@ -12,6 +12,7 @@ import {
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
+import { pushFormBridge, popFormBridge } from '@dotcms/edit-content-bridge';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
@@ -75,11 +76,11 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        // Set state to loaded since this dialog only supports the new editor
         this.state.set(ComponentStatus.LOADED);
     }
 
     constructor() {
+        pushFormBridge();
         // Subscribe to dialog close events to handle callback when dialog is closed by any means
         this.#dialogRef.onClose.subscribe(() => {
             if (!this.#isClosing) {
@@ -155,5 +156,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.#isClosing = true;
+        popFormBridge();
     }
 }

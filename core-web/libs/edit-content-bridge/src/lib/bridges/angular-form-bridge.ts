@@ -28,6 +28,7 @@ import {
 export class AngularFormBridge implements FormBridge {
     private static instance: AngularFormBridge | null = null;
     private static refCount = 0;
+    private static instanceStack: { instance: AngularFormBridge; refCount: number }[] = [];
     #fieldSubscriptions: Map<string, FieldSubscription> = new Map();
     #form: FormGroup;
     #zone: NgZone;
@@ -110,6 +111,41 @@ export class AngularFormBridge implements FormBridge {
             AngularFormBridge.instance.forceDestroy();
             AngularFormBridge.instance = null;
             AngularFormBridge.refCount = 0;
+        }
+    }
+
+    /**
+     * Saves the current singleton instance onto a stack and clears it,
+     * allowing a new instance to be created for a nested context (e.g. a dialog).
+     * The parent's custom field components retain their direct reference to the
+     * stashed instance, so they remain functional behind the modal.
+     */
+    static pushInstance(): void {
+        if (AngularFormBridge.instance) {
+            AngularFormBridge.instanceStack.push({
+                instance: AngularFormBridge.instance,
+                refCount: AngularFormBridge.refCount
+            });
+            AngularFormBridge.instance = null;
+            AngularFormBridge.refCount = 0;
+        }
+    }
+
+    /**
+     * Destroys the current singleton instance and restores the previous one
+     * from the stack. Call this when a nested context (e.g. a dialog) is closed.
+     */
+    static popInstance(): void {
+        if (AngularFormBridge.instance) {
+            AngularFormBridge.instance.forceDestroy();
+            AngularFormBridge.instance = null;
+            AngularFormBridge.refCount = 0;
+        }
+
+        const previous = AngularFormBridge.instanceStack.pop();
+        if (previous) {
+            AngularFormBridge.instance = previous.instance;
+            AngularFormBridge.refCount = previous.refCount;
         }
     }
 
