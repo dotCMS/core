@@ -6,7 +6,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { getState, signalStore, withState, patchState } from '@ngrx/signals';
+import { signalStore, withState, patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
