@@ -3,8 +3,8 @@
 
 import { of, Subject } from 'rxjs';
 
-import { provideHttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
