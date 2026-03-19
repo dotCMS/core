@@ -66,6 +66,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v2.tags.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.company.CompanyResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest.class,
         com.dotcms.rest.api.v1.page.NavResourceTest.class,
         com.dotcms.rest.api.v1.page.PageResourceTest.class,

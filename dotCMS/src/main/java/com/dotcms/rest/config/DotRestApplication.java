@@ -56,6 +56,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 				@Tag(name = "Cache Management", description = "Cache provider management and operations"),
 				@Tag(name = "Categories", description = "Content categorization and taxonomy"),
 				@Tag(name = "Cluster Management", description = "Cluster nodes and distributed system management"),
+				@Tag(name = "Company Configuration", description = "Company settings and branding management"),
 				@Tag(name = "Containers", description = "Container templates and management"),
 				@Tag(name = "Content", description = "Endpoints for managing content and contentlets"),
 				@Tag(name = "Content Analytics", description = "Content performance analytics and reporting"),
