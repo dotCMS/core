@@ -751,28 +751,22 @@ public class PageRenderUtil implements Serializable {
                 return contentletOpt.get();
             }
 
-            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, the contract is strictly:
-            // show the requested-language version, or fall back to the default language.
-            // If neither exists, exclude the contentlet — do NOT fall back to any other language.
-            if (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) {
-                return null;
-            }
+            // Without DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, try to find in any language with the specified variant
+            // This allows pages to show content from other languages when the content type allows fallback
+            // but the content doesn't exist in the page's language or default language
+            if (!Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) {
+                try {
+                    final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                            contentletIdentifier, variantName);
 
-            // Without DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, honour the per-content-type
-            // languageFallback() opt-in: if the content type allows it, surface the contentlet
-            // from any available language when neither the requested nor the default language has
-            // a version.
-            try {
-                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
-                        contentletIdentifier, variantName);
-
-                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
-                    return anyLanguageContentlet;
+                    // Check if this content type allows language fallback
+                    if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
+                        return anyLanguageContentlet;
+                    }
+                } catch (Exception e) {
+                    Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
                 }
-            } catch (Exception e) {
-                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
             }
-
             return null;
 
         } catch (final DotContentletStateException e) {
