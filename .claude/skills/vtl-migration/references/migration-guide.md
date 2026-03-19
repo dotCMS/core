@@ -30,8 +30,28 @@ DotCustomFieldApi.ready(() => {
   field.onChange((value) => {
     console.log(value);
   });
+
+  // Visibility control
+  field.hide();  // hides the field (input + label) from view
+  field.show();  // restores the field's visibility
+
+  // State control
+  field.disable(); // prevents user interaction, applies disabled styling
+  field.enable();  // restores interactivity
 });
 ```
+
+### Field Object Methods
+
+| Method | Description |
+|--------|-------------|
+| `getValue()` | Returns the current value of the field |
+| `setValue(value)` | Sets the field's value |
+| `onChange(callback)` | Subscribes to value changes |
+| `show()` | Makes the field visible (input and associated label) |
+| `hide()` | Hides the field from view (input and associated label) |
+| `enable()` | Restores interactivity to the field |
+| `disable()` | Prevents user interaction and applies disabled styling |
 
 Always wrap all field access code inside `DotCustomFieldApi.ready()` to ensure the API is initialized.
 
@@ -283,6 +303,59 @@ For `dojoType="dijit.Dialog"` elements, use the native HTML `<dialog>` element w
 </script>
 ```
 
+### Rule 12: Use `field.show()` / `field.hide()` and `field.enable()` / `field.disable()` for field visibility and state
+
+When toggling a field's visibility or enabled/disabled state, use the built-in API methods instead of manipulating the DOM directly. These methods handle both the input element and its associated label.
+
+**Old (manual DOM manipulation):**
+```js
+// Hiding a field by manipulating DOM
+const fieldEl = document.getElementById("mediafile");
+fieldEl.style.display = "none";
+// or
+fieldEl.closest(".field-wrapper").classList.add("hidden");
+
+// Disabling a field by manipulating DOM
+fieldEl.setAttribute("disabled", "true");
+```
+
+**New (API methods):**
+```js
+DotCustomFieldApi.ready(() => {
+  const mediaFileField = DotCustomFieldApi.getField("mediafile");
+
+  // Visibility
+  mediaFileField.hide();  // hides the field + label
+  mediaFileField.show();  // restores visibility
+
+  // State
+  mediaFileField.disable(); // blocks editing + disabled styling
+  mediaFileField.enable();  // restores interactivity
+});
+```
+
+**Conditional visibility based on another field's value:**
+```js
+DotCustomFieldApi.ready(() => {
+  const mediaField = DotCustomFieldApi.getField("media");
+  const mediaFileField = DotCustomFieldApi.getField("mediafile");
+
+  const toggleVisibility = (value) => {
+    if (value === "upload") {
+      mediaFileField.show();
+    } else {
+      mediaFileField.hide();
+    }
+  };
+
+  // Set initial visibility
+  toggleVisibility(mediaField.getValue() || "external");
+
+  // React to changes
+  mediaField.onChange(toggleVisibility);
+});
+```
+
 ### Native Components and Platform Styles
 
 Custom fields run inside the admin Angular app, which uses **DaisyUI 5** and **Tailwind CSS**. Prefer **DaisyUI component classes** for semantic styling so the field matches the platform and respects the theme.
@@ -464,6 +537,8 @@ Be consistent when writing `<script>` tags in migrated VTL files:
 
 **DO change:**
 - API method calls: get/set/onChangeField → getField/getValue/setValue/onChange
+- Manual DOM show/hide of fields → `field.show()` / `field.hide()`
+- Manual DOM enable/disable of fields → `field.enable()` / `field.disable()`
 - `dojo.ready` → `DotCustomFieldApi.ready`
 - `dojo.byId` → `document.getElementById`
 - `dijit.byId` → `DotCustomFieldApi.getField`
@@ -495,6 +570,8 @@ Be consistent when writing `<script>` tags in migrated VTL files:
 - [ ] All `DotCustomFieldApi.get('name')` → `getField('name').getValue()`
 - [ ] All `DotCustomFieldApi.set('name', value)` → `getField('name').setValue(value)`
 - [ ] All `DotCustomFieldApi.onChangeField('name', cb)` → `getField('name').onChange(cb)`
+- [ ] Manual DOM show/hide of fields → `getField('name').show()` / `.hide()`
+- [ ] Manual DOM enable/disable of fields → `getField('name').enable()` / `.disable()`
 
 ### 4. Remove Dojo/Dijit
 - [ ] Remove all `dojo.require()` statements
@@ -516,6 +593,8 @@ Be consistent when writing `<script>` tags in migrated VTL files:
 - [ ] All VTL variables (`${fieldId}`, `$variable`) remain unchanged
 - [ ] Business logic unchanged
 - [ ] Functionality remains identical
+- [ ] Field visibility uses `field.show()` / `field.hide()` instead of manual DOM manipulation
+- [ ] Field state uses `field.enable()` / `field.disable()` instead of manual DOM attribute changes
 - [ ] Styling uses DaisyUI components where applicable; custom CSS only when DaisyUI/Tailwind are insufficient
 
 ---
@@ -563,6 +642,20 @@ const length = value.length; // Error if null
 // GOOD
 const value = field.getValue() || "";
 const length = value.length;
+```
+
+### Don't manually manipulate DOM for field visibility or state
+
+```js
+// BAD — manual DOM manipulation
+const el = document.querySelector('[data-field="mediafile"]');
+el.style.display = "none";
+el.setAttribute("disabled", "true");
+
+// GOOD — use the API
+const mediaFileField = DotCustomFieldApi.getField("mediafile");
+mediaFileField.hide();
+mediaFileField.disable();
 ```
 
 ### Don't mix old and new APIs
@@ -978,3 +1071,97 @@ DotCustomFieldApi.ready(() => {
 <input type="text" id="slugInput" class="input input-bordered w-full" />
 <div id="slugSuggestion" class="hidden mt-2 text-primary" role="region" aria-live="polite"></div>
 ```
+
+---
+
+### Example 4: Conditional Field Visibility (show/hide)
+
+This example shows a "Media" form where the "Media File" field is shown or hidden based on the "Media Location" radio selection. The custom field stores the selection in one field and toggles visibility of another.
+
+**New (show_hide.vtl):**
+```html
+<script>
+  DotCustomFieldApi.ready(() => {
+    const mediaField = DotCustomFieldApi.getField("media");
+    const mediaFileField = DotCustomFieldApi.getField("mediafile");
+
+    const currentValue = mediaField.getValue() || "external";
+    const radios = document.querySelectorAll('input[name="mediaLocation"]');
+
+    const initialRadio = Array.from(radios).find((radio) => radio.value === currentValue);
+    if (initialRadio) {
+      initialRadio.checked = true;
+    }
+
+    if (currentValue === "upload") {
+      mediaFileField.show();
+    } else {
+      mediaFileField.hide();
+    }
+
+    radios.forEach((radio) => {
+      radio.addEventListener("change", (e) => {
+        const value = e.target.value;
+        mediaField.setValue(value);
+
+        if (value === "upload") {
+          mediaFileField.show();
+        } else {
+          mediaFileField.hide();
+        }
+      });
+    });
+  });
+</script>
+
+<fieldset class="fieldset">
+  <legend class="fieldset-legend">Media Location</legend>
+  <div class="flex gap-4">
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="radio" name="mediaLocation" value="upload" class="radio radio-primary" />
+      <span>Upload File</span>
+    </label>
+    <label class="flex items-center gap-2 cursor-pointer">
+      <input type="radio" name="mediaLocation" value="external" class="radio radio-primary" checked />
+      <span>Link to External File</span>
+    </label>
+  </div>
+</fieldset>
+```
+
+Key points:
+- `mediaFileField.show()` and `mediaFileField.hide()` control the visibility of the entire "mediafile" field (input + label) — no manual DOM manipulation needed.
+- The radio buttons use DaisyUI classes (`radio radio-primary`) and are wrapped in a `fieldset` with `fieldset-legend`.
+- The initial visibility is set based on `mediaField.getValue()` before attaching the change listener.
+
+---
+
+### Example 5: Conditional Field Enable/Disable
+
+This example disables an "Expiration Date" field until the user checks an "Enable Expiration" checkbox.
+
+**New (expiration_toggle.vtl):**
+```html
+<script>
+  DotCustomFieldApi.ready(() => {
+    const enableExpirationField = DotCustomFieldApi.getField("enableExpiration");
+    const expirationDateField = DotCustomFieldApi.getField("expirationDate");
+
+    const toggle = (value) => {
+      if (value === "true" || value === true) {
+        expirationDateField.enable();
+      } else {
+        expirationDateField.disable();
+      }
+    };
+
+    toggle(enableExpirationField.getValue());
+    enableExpirationField.onChange(toggle);
+  });
+</script>
+```
+
+Key points:
+- `expirationDateField.disable()` prevents editing and applies disabled styling; `enable()` restores interactivity.
+- No manual DOM attribute manipulation (`setAttribute("disabled", ...)`) is needed.
+- The pattern is the same as show/hide: set initial state, then react to changes via `onChange`.
