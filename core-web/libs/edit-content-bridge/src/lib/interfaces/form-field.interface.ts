@@ -24,8 +24,9 @@ export interface FormFieldAPI {
     /**
      * Subscribes to changes of the field.
      * @param callback - Function to execute when the field value changes
+     * @returns A function to unsubscribe this specific callback
      */
-    onChange(callback: (value: FormFieldValue) => void): void;
+    onChange(callback: (value: FormFieldValue) => void): () => void;
 
     /**
      * Enables the field, allowing user interaction.

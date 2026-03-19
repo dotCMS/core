@@ -257,8 +257,8 @@ export class AngularFormBridge implements FormBridge {
                 this.set(fieldId, value);
             },
 
-            onChange: (callback: (value: FormFieldValue) => void): void => {
-                this.onChangeField(fieldId, callback);
+            onChange: (callback: (value: FormFieldValue) => void): (() => void) => {
+                return this.onChangeField(fieldId, callback);
             },
 
             enable: (): void => {

@@ -317,13 +317,15 @@ describe('ContentFeature', () => {
             expect(title.setTitle).toHaveBeenCalledWith('New Test - DotCMS');
         }));
 
-        it('should reset hiddenFields when initializing new content', fakeAsync(() => {
+        it('should reset hiddenFields immediately when initializing new content', fakeAsync(() => {
             patchState(store, { hiddenFields: new Set(['field1', 'field2']) });
 
             store.initializeNewContent('testContentType');
-            tick();
 
             expect(store.hiddenFields().size).toBe(0);
+            expect(store.state()).toBe(ComponentStatus.LOADING);
+
+            tick();
         }));
 
         it('should handle error when initializing new content', fakeAsync(() => {
@@ -372,13 +374,15 @@ describe('ContentFeature', () => {
             expect(store.state()).toBe(ComponentStatus.LOADED);
         }));
 
-        it('should reset hiddenFields when initializing existing content', fakeAsync(() => {
+        it('should reset hiddenFields immediately when initializing existing content', fakeAsync(() => {
             patchState(store, { hiddenFields: new Set(['field1', 'field2']) });
 
             store.initializeExistingContent({ inode: '123' });
-            tick();
 
             expect(store.hiddenFields().size).toBe(0);
+            expect(store.state()).toBe(ComponentStatus.LOADING);
+
+            tick();
         }));
 
         it('should set the correct title for existing content', fakeAsync(() => {

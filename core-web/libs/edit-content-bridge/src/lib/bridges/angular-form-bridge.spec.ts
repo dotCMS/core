@@ -401,9 +401,10 @@ describe('AngularFormBridge', () => {
         it('should subscribe to changes using onChange', () => {
             const callback = jest.fn();
             const fieldAPI = bridge.getField('testField');
-            fieldAPI.onChange(callback);
+            const unsubscribe = fieldAPI.onChange(callback);
 
             expect(mockFormControl.valueChanges.subscribe).toHaveBeenCalled();
+            expect(typeof unsubscribe).toBe('function');
 
             if (mockFormControl.valueChanges._callback) {
                 mockFormControl.valueChanges._callback('changed value');
