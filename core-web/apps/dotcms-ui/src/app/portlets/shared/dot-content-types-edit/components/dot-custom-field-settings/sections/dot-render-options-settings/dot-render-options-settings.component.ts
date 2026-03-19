@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -48,11 +48,11 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
     #fieldVariableRef: DotFieldVariable | null = null;
 
     get isDirty(): boolean {
-        return this.form.dirty;
+        return this.form?.dirty ?? false;
     }
 
     get valueChanges$(): Observable<unknown> {
-        return this.form.valueChanges;
+        return this.form?.valueChanges ?? EMPTY;
     }
 
     ngOnInit(): void {
@@ -60,10 +60,19 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
             (v) => v.key === CUSTOM_FIELD_OPTIONS_KEY
         );
         this.#fieldVariableRef = optionsVar ?? null;
-        const options = optionsVar?.value ? JSON.parse(optionsVar.value) : {};
+
+        let options: Record<string, string> = {};
+
+        try {
+            options = optionsVar?.value ? JSON.parse(optionsVar.value) : {};
+        } catch {
+            // Malformed JSON in field variable — fall back to defaults
+        }
+
+        const initialShowAsModal = !!options['showAsModal'];
 
         this.form = this.#fb.group({
-            showAsModal: [false],
+            showAsModal: [initialShowAsModal],
             customFieldWidth: [
                 this.#parsePxToNumber(options.width, 398),
                 [Validators.required, Validators.min(1)]
@@ -79,7 +88,7 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
             .subscribe(() => this.isValid.set(this.form.valid));
 
         this.form.controls['showAsModal'].valueChanges
-            .pipe(startWith(false), takeUntilDestroyed(this.#destroyRef))
+            .pipe(startWith(initialShowAsModal), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => {
                 this.$showAsModal.set(value);
                 this.#toggleSizeControls(value);

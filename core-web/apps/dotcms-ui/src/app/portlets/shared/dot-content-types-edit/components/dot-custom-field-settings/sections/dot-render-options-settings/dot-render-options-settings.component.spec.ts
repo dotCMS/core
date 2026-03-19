@@ -352,8 +352,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should ignore saved showAsModal and default to false', () => {
-            expect(component.form.controls['showAsModal'].value).toBe(false);
+        it('should restore saved showAsModal as true from existing variable', () => {
+            expect(component.form.controls['showAsModal'].value).toBe(true);
         });
 
         it('should parse width (strips "px") from existing variable', () => {
@@ -364,9 +364,9 @@ describe('DotRenderOptionsSettingsComponent', () => {
             expect(component.form.getRawValue().customFieldHeight).toBe(600);
         });
 
-        it('should disable width and height controls since showAsModal defaults to false', () => {
-            expect(component.form.controls['customFieldWidth'].disabled).toBe(true);
-            expect(component.form.controls['customFieldHeight'].disabled).toBe(true);
+        it('should enable width and height controls since showAsModal is restored as true', () => {
+            expect(component.form.controls['customFieldWidth'].enabled).toBe(true);
+            expect(component.form.controls['customFieldHeight'].enabled).toBe(true);
         });
 
         it('should include existing variable id in save payload (PUT-style update)', () => {
@@ -375,6 +375,52 @@ describe('DotRenderOptionsSettingsComponent', () => {
             const savedArg = (dotFieldVariablesService.save as jest.Mock).mock
                 .calls[0][1] as DotFieldVariable;
             expect(savedArg.id).toBe(MOCK_FIELD_VARIABLE_OPTIONS.id);
+        });
+    });
+
+    describe('with malformed JSON in field variable', () => {
+        const fieldWithBadJson: DotCMSContentTypeField = {
+            ...MOCK_FIELD_BASE,
+            fieldVariables: [
+                {
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    fieldId: 'field-id-456',
+                    id: 'var-id-bad',
+                    key: CUSTOM_FIELD_OPTIONS_KEY,
+                    value: '{invalid json!!!}'
+                }
+            ]
+        };
+
+        const createComponent = createComponentFactory({
+            component: DotRenderOptionsSettingsComponent,
+            imports: [
+                FormsModule,
+                ReactiveFormsModule,
+                InputTextModule,
+                ToggleSwitchModule,
+                DotMessagePipe
+            ],
+            providers: [
+                FormBuilder,
+                mockProvider(DotFieldVariablesService, {
+                    save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
+                }),
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ],
+            detectChanges: false
+        });
+
+        it('should fall back to defaults without throwing', () => {
+            const spectator = createComponent({
+                props: { field: fieldWithBadJson } as unknown
+            });
+            spectator.detectChanges();
+            const comp = spectator.component;
+
+            expect(comp.form.controls['showAsModal'].value).toBe(false);
+            expect(comp.form.getRawValue().customFieldWidth).toBe(398);
+            expect(comp.form.getRawValue().customFieldHeight).toBe(400);
         });
     });
 });

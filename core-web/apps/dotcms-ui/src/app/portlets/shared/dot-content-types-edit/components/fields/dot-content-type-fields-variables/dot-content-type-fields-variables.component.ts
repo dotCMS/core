@@ -6,7 +6,13 @@ import { Component, OnChanges, OnDestroy, SimpleChanges, inject, input, signal }
 import { take, takeUntil } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSClazzes, DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import {
+    CUSTOM_FIELD_OPTIONS_KEY,
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotFieldVariable,
+    HIDE_LABEL_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
@@ -41,8 +47,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             systemOptions: true
         },
         [DotCMSClazzes.CUSTOM_FIELD]: {
-            customFieldOptions: true,
-            hideLabel: true
+            [CUSTOM_FIELD_OPTIONS_KEY]: true,
+            [HIDE_LABEL_VARIABLE_KEY]: true
         }
     };
 

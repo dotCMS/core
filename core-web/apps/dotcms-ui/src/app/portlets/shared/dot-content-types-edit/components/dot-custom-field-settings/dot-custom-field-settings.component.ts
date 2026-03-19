@@ -81,6 +81,10 @@ export class DotCustomFieldSettingsComponent {
         const sections = this.#activeSections();
         const saveActions = sections.filter((s) => s.isDirty).map((s) => s.save(this.$field()));
 
+        if (saveActions.length === 0) {
+            return;
+        }
+
         forkJoin(saveActions)
             .pipe(
                 take(1),

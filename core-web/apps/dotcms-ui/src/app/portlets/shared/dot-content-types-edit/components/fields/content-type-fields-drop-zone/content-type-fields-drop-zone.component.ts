@@ -88,11 +88,9 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     readonly $loading = input<boolean>(false, { alias: 'loading' });
 
     get isFieldWithSettings() {
-        return [
-            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-            'com.dotcms.contenttype.model.field.ImmutableBinaryField',
-            'com.dotcms.contenttype.model.field.ImmutableCustomField'
-        ].includes(this.currentFieldType?.clazz);
+        return ([DotCMSClazzes.BLOCK_EDITOR, DotCMSClazzes.BINARY, DotCMSClazzes.CUSTOM_FIELD] as string[]).includes(
+            this.currentFieldType?.clazz
+        );
     }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {

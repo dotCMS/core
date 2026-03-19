@@ -254,12 +254,11 @@ describe('DotCustomFieldSettingsComponent', () => {
             expect(dotFieldVariablesService.save).not.toHaveBeenCalled();
         });
 
-        it('should NOT emit $save when no sections are dirty (forkJoin of empty array never completes)', () => {
+        it('should not emit $save when no sections are dirty', () => {
             jest.spyOn(component.$save, 'emit');
 
             component.saveSettings();
 
-            // forkJoin([]) with an empty array never emits, so $save is not called
             expect(component.$save.emit).not.toHaveBeenCalled();
         });
 

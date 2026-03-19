@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -38,11 +38,11 @@ export class DotHideLabelSettingsComponent implements OnInit, FieldSettingsSecti
     readonly isValid = signal(true);
 
     get isDirty(): boolean {
-        return this.form.dirty;
+        return this.form?.dirty ?? false;
     }
 
     get valueChanges$(): Observable<unknown> {
-        return this.form.valueChanges;
+        return this.form?.valueChanges ?? EMPTY;
     }
 
     readonly #fb = inject(FormBuilder);
