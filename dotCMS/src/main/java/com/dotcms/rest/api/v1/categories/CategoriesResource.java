@@ -688,10 +688,13 @@ public class CategoriesResource {
     @DELETE
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     public final Response delete(@Context final HttpServletRequest httpRequest,
                                  @Context final HttpServletResponse httpResponse,
-                                 final List<String> categoriesToDelete) {
+                                 @RequestBody(required = true,
+                                         content = @Content( schema = @Schema(type="array", implementation = String.class))
+                                 ) final List<String> categoriesToDelete) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -920,9 +923,6 @@ public class CategoriesResource {
                     "the import strategy: 'replace' deletes existing categories before importing, " +
                     "'merge' adds or updates without removing existing ones."
     )
-    @RequestBody(required = true,
-            content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA,
-                    schema = @Schema(implementation = CategoryImportData.class)))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Import result returned",
                     content = @Content(mediaType = "application/json",
@@ -940,7 +940,10 @@ public class CategoriesResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response importCategories(@Context final HttpServletRequest httpRequest,
                                      @Context final HttpServletResponse httpResponse,
-                                     @Parameter(hidden = true) @BeanParam final CategoryImportData form) throws IOException {
+                                     /*not sure why hidden*/ @Parameter(hidden = true) @BeanParam @RequestBody(required = true,
+                                             content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA,
+                                                     schema = @Schema(implementation = CategoryImportData.class))
+                                     ) final CategoryImportData form) throws IOException {
 
         return processImport(httpRequest, httpResponse,
                 form.getFileInputStream(), form.getFileDetail(),
