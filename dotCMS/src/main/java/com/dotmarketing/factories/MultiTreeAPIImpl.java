@@ -104,6 +104,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and child in (%s)";
     private static final String SELECT_MULTI_TREE_BY_LANG =
             "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ? and variant_id = ?";
+
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
 
@@ -710,7 +711,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
-        Set<String> originalContentletIds = new HashSet<>();
+        Set<String> originalContentletIds;
         final DotConnect db = new DotConnect();
 
         // Preserves already existing styles
@@ -871,19 +872,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     .addParam(copiedMultiTreeVariantId);
             final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
             if(contentExist != 0){
-                if (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) {
-                    // When language fallback is enabled, the page render may return mixed-language
-                    // content that a client re-submits via addContent().
-                    Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
-                            "Content [%s] already exists in Container '%s', skipping (DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true).",
-                            tree.getContentlet(), tree.getContainer()));
-                    continue;
-                }
-                // For all other callers (variant copy, experiment promotion, etc.) a duplicate
-                // indicates a programming error or data corruption and must not be silently ignored.
-                throw new IllegalArgumentException(String.format(
-                        "Content [%s] already exists in Container '%s'. Duplicate multi-tree entries are not allowed.",
-                        tree.getContentlet(), tree.getContainer()));
+                final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
+                final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
+                                                              "'%s'", contentletTitle, tree.getContentlet(),
+                        tree.getContainer());
+                Logger.debug(MultiTreeAPIImpl.class, errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
 
             final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
