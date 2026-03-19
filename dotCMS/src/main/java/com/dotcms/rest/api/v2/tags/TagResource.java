@@ -234,18 +234,10 @@ public class TagResource {
             description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. This operation is idempotent - existing tags are returned without error."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "No new tags created - all submitted tags already existed (duplicates only)",
-                    content = @Content(mediaType = "application/json",
-                    schema = @Schema(type = "object",
-                    description = "Response with 'entity' containing empty 'created' list " +
-                            "and 'duplicates' (list of already existing RestTag)"))),
             @ApiResponse(responseCode = "201",
-                    description = "Tags created - at least one new tag was created",
+                    description = "Tags created or retrieved. All submitted tags are returned under 'created'.",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(type = "object",
-                                    description = "Response with 'entity' containing 'created' (list of newly created RestTag)" +
-                                            "and 'duplicates' (list of already existing RestTag)"))),
+                            schema = @Schema(implementation = ResponseEntityTagCreateView.class))),
     @ApiResponse(responseCode = "400",
                     description = "Bad Request - Invalid tag data with field-level error details",
                     content = @Content(mediaType = "application/json")),
@@ -291,8 +283,10 @@ public class TagResource {
             .map(TagsResourceHelper::toRestTag)
             .collect(Collectors.toList());
 
+        final Map<String, List<RestTag>> responseMap = new HashMap<>();
+        responseMap.put("created", resultList);
         return Response.status(Response.Status.CREATED)
-                .entity(new ResponseEntityRestTagListView(resultList))
+                .entity(new ResponseEntityTagCreateView(responseMap))
                 .build();
     }
 
