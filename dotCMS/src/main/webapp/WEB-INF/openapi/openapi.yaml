@@ -20628,8 +20628,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityRestTagListView"
-          description: Tags created successfully
+                type: object
+                description: Response with 'entity' containing empty 'created' list
+                  and 'duplicates' (list of already existing RestTag)
+          description: No new tags created - all submitted tags already existed (duplicates
+            only)
+        "201":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response with 'entity' containing 'created' (list of
+                  newly created RestTag)and 'duplicates' (list of already existing
+                  RestTag)
+          description: Tags created - at least one new tag was created
         "400":
           content:
             application/json: {}
@@ -30079,31 +30091,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/ResetAssetPermissionsView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityRestTagListView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/RestTag"
         errors:
           type: array
           items:

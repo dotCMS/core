@@ -235,10 +235,18 @@ public class TagResource {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
-                    description = "Tags created successfully",
+                    description = "No new tags created - all submitted tags already existed (duplicates only)",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityRestTagListView.class))),
-            @ApiResponse(responseCode = "400",
+                    schema = @Schema(type = "object",
+                    description = "Response with 'entity' containing empty 'created' list " +
+                            "and 'duplicates' (list of already existing RestTag)"))),
+            @ApiResponse(responseCode = "201",
+                    description = "Tags created - at least one new tag was created",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Response with 'entity' containing 'created' (list of newly created RestTag)" +
+                                            "and 'duplicates' (list of already existing RestTag)"))),
+    @ApiResponse(responseCode = "400",
                     description = "Bad Request - Invalid tag data with field-level error details",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
