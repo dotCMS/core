@@ -98,6 +98,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL =
             "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and child in (%s)";
+    private static final String DELETE_MULTI_TREE_BY_INCOMING_CONTENTLETS_SQL =
+            "delete from multi_tree where parent1 = ? and relation_type != ? and personalization = ? and variant_id = ? and child in (%s)";
     private static final String SELECT_MULTI_TREE_BY_LANG =
             "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ? and variant_id = ?";
 
@@ -656,28 +658,33 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     /**
      * Saves a collection of {@link MultiTree} objects linked to an HTML Page, replacing existing
-     * entries. The deletion strategy depends on two conditions:
+     * entries. The deletion strategy depends on whether a language is specified and whether the
+     * global language-fallback flag is enabled:
      *
      * <ul>
+     *   <li><b>Selective DELETE</b> (when {@code languageIdOpt} is present AND
+     *   {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code true}): Only removes multi-tree
+     *   entries whose child identifier appears in the incoming {@code multiTrees} list. Entries
+     *   for contentlets that are not in the submitted list (e.g. an ESP-only contentlet when the
+     *   client is editing the ENG page) are left untouched. This prevents language-exclusive
+     *   content from being wiped when the fallback flag causes {@code render()} to omit them
+     *   from the page metadata returned to the client.</li>
+     *
      *   <li><b>Language-scoped DELETE</b> (when {@code languageIdOpt} is present AND
      *   {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code false}): Only removes existing
      *   multi-tree entries whose child contentlet has a version in the given language. This
      *   preserves language-exclusive content — e.g., English-only contentlets are left intact
      *   when saving the Spanish version of a page.</li>
      *
-     *   <li><b>Full DELETE</b> (when {@code languageIdOpt} is empty, OR
-     *   {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code true}): Removes all existing
+     *   <li><b>Full DELETE</b> (when {@code languageIdOpt} is empty): Removes all existing
      *   multi-tree entries for the page/personalization/variant before inserting the new set.
-     *   The full delete is required when language fallback is enabled because {@code render()}
-     *   may return content from other languages as fallback, causing the client to re-submit
-     *   multilingual identifiers.</li>
+     *   Used when no language context is provided (e.g. template-level saves).</li>
      * </ul>
      *
      * @param pageId          The page identifier.
      * @param personalization The personalization token (e.g., persona key tag).
      * @param multiTrees      The list of {@link MultiTree} objects to save.
-     * @param languageIdOpt   Optional language ID. When present and fallback is OFF, restricts
-     *                        the deletion of contentlets that have a version in this language.
+     * @param languageIdOpt   Optional language ID. When present, restricts the deletion scope as described above.
      * @param variantId       The variant identifier.
      * @throws DotDataException If there is an issue retrieving data from the DB.
      */
@@ -712,16 +719,30 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
                 "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
 
-        // Use a language-scoped DELETE only when a specific language is provided AND the global
-        // language fallback is disabled. If fallback is ON, fall through to the full DELETE to
-        // avoid conflicts caused by multilingual content returned by the page render.
-        if (languageIdOpt.isPresent() && !defaultContentToDefaultLanguage) {
+        if (languageIdOpt.isPresent() && defaultContentToDefaultLanguage) {
+            // Selective DELETE: only remove entries whose child identifier is present in the
+            // incoming multiTrees list. Entries for contentlets not submitted by the client
+            // (e.g. ESP-only content when editing the ENG page) are left untouched, preventing
+            // language-exclusive content from being silently wiped.
+            originalContentletIds = this.getOriginalContentlets(pageId,
+                    ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId);
+            final Set<String> incomingContentletIds = multiTrees.stream()
+                    .map(MultiTree::getContentlet)
+                    .collect(Collectors.toSet());
+            deleteMultiTreeByIncomingContentlets(pageId, personalization, variantId,
+                    incomingContentletIds);
+
+        } else if (languageIdOpt.isPresent()) {
+            // Language-scoped DELETE: only remove entries whose child contentlet has a version
+            // in the given language. Preserves language-exclusive content in other languages.
             if (DbConnectionFactory.isMySql()) {
                 deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt, variantId);
-           } else {
-                originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+            } else {
+                originalContentletIds = this.getOriginalContentlets(pageId,
+                        ContainerUUID.UUID_DEFAULT_VALUE,
                         personalization, variantId, languageIdOpt.get());
-                db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
+                db.setSQL(
+                                DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
                         .addParam(variantId)
                         .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
                         .addParam(personalization)
@@ -731,6 +752,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         .loadResult();
             }
         } else {
+            // Full DELETE: no language context — remove all entries for this page/personalization/variant.
             originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
                     personalization, variantId);
             db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
@@ -844,6 +866,46 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     .addParam(pageId)
                     .loadResult();
         }
+    }
+
+    /**
+     * Removes multi-tree entries for a specific set of contentlet identifiers, leaving all other
+     * entries for the page/personalization/variant untouched. This is used when
+     * {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is enabled: the client editing a page in one
+     * language only sees and re-submits contentlets that exist in that language (or the default
+     * language), so only those rows need to be replaced. Language-exclusive contentlets that were
+     * never sent by the client — e.g. an ESP-only contentlet when editing the ENG page — are
+     * intentionally preserved.
+     *
+     * @param pageId           The page identifier.
+     * @param personalization  The personalization token.
+     * @param variantId        The variant identifier.
+     * @param contentletIds    The set of contentlet identifiers to remove. If empty, no SQL is executed.
+     * @throws DotDataException If there is an issue executing the DELETE.
+     */
+    private void deleteMultiTreeByIncomingContentlets(
+            final String pageId,
+            final String personalization,
+            final String variantId,
+            final Set<String> contentletIds) throws DotDataException {
+
+        if (contentletIds.isEmpty()) {
+            return;
+        }
+
+        final String placeholders = contentletIds.stream()
+                .map(id -> "?")
+                .collect(Collectors.joining(", "));
+
+        final DotConnect db = new DotConnect()
+                .setSQL(String.format(DELETE_MULTI_TREE_BY_INCOMING_CONTENTLETS_SQL, placeholders))
+                .addParam(pageId)
+                .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                .addParam(personalization)
+                .addParam(variantId);
+
+        contentletIds.forEach(db::addParam);
+        db.loadResult();
     }
 
     @Override
