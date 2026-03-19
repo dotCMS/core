@@ -5,7 +5,7 @@
 import { Change, PRDetails, RollbackUnsafe } from './types';
 
 /** Labels that cause a PR to be omitted entirely from the changelog. */
-const SKIP_LABELS = ['Changelog: Skip'];
+const SKIP_LABELS = ['Changelog: Skip', 'Doc : Not Needed'];
 
 /** Labels indicating the release is not safe to rollback. */
 const ROLLBACK_UNSAFE_LABELS = [
@@ -59,7 +59,9 @@ export function categorize(pr: PRDetails): Change['category'] {
   const title = pr.title.toLowerCase();
   if (title.startsWith('feat')) return 'feature';
   if (title.startsWith('fix')) return 'fix';
+  if (title.startsWith('refactor')) return 'infrastructure';
   if (title.startsWith('chore') || title.startsWith('build') || title.startsWith('ci(') || title.startsWith('ci:')) return 'infrastructure';
+  if (title.startsWith('task')) return 'feature';
   if (title.startsWith('deprecat')) return 'deprecation';
 
   // Check for release-machinery commits that should be omitted

@@ -14,6 +14,10 @@ describe('shouldSkip', () => {
     expect(shouldSkip(['bug', 'Area : Backend'])).toBe(false);
   });
 
+  it('returns true for Doc : Not Needed label', () => {
+    expect(shouldSkip(['Doc : Not Needed'])).toBe(true);
+  });
+
   it('returns false for empty labels', () => {
     expect(shouldSkip([])).toBe(false);
   });
@@ -68,6 +72,8 @@ describe('categorize', () => {
     expect(categorize(makePR({ title: 'fix: resolve crash' }))).toBe('fix');
     expect(categorize(makePR({ title: 'chore: update deps' }))).toBe('infrastructure');
     expect(categorize(makePR({ title: 'build: upgrade Maven wrapper' }))).toBe('infrastructure');
+    expect(categorize(makePR({ title: 'refactor: extract helper class' }))).toBe('infrastructure');
+    expect(categorize(makePR({ title: 'task: implement data export' }))).toBe('feature');
   });
 
   it('detects release machinery as internal', () => {
