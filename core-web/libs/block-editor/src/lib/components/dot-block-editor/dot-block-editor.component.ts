@@ -645,7 +645,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             }),
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef),
-            createGridColumn(this.allowedBlocks?.length > 1 ? this.allowedBlocks : [])
+            createGridColumn(this.allowedBlocks.length > 1 ? this.allowedBlocks : [])
         ];
 
         if (isAIPluginInstalled) {

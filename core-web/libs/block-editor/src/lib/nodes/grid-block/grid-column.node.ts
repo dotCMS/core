@@ -1,5 +1,9 @@
 import { Node } from '@tiptap/core';
 
+// Maps allowedBlocks keys to their TipTap node names for grid column content.
+// Custom nodes such as `aiContent` and `loader` are intentionally absent — they are
+// editor-level utilities that do not make sense inside a grid column and are not
+// registered as StarterKit node types.
 const GRID_COLUMN_CONTENT_MAP: Record<string, string> = {
     heading: 'heading',
     bulletList: 'bulletList',
@@ -29,6 +33,8 @@ function buildGridColumnContent(allowedBlocks: string[]): string {
     }
 
     const headingAllowed = allowedBlocks.some((b) => b.startsWith('heading'));
+    // `paragraph` is always included — StarterKit always registers it and
+    // DotBlockEditorComponent seeds allowedBlocks with ['paragraph'] at initialization.
     const nodeTypes = ['paragraph'];
 
     for (const [key, nodeType] of Object.entries(GRID_COLUMN_CONTENT_MAP)) {
