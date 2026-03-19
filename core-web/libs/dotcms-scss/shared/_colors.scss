@@ -223,6 +223,7 @@ $success: $color-accessible-text-green;
 $foreground-active: #848484;
 
 @mixin root-colors {
+    --color-white: #ffffff;
     --color-primary-h: 225deg;
     --color-primary-s: 85%;
     --color-secondary-h: 256;
@@ -450,7 +451,7 @@ $foreground-active: #848484;
     --color-background: #3a3847;
     --empty-message: "";
 
-    /* primeflex https://primeflex.org/theming  */
+    /* PrimeNG color palette aliases */
 
     --primary-100: var(--color-palette-primary-100);
     --primary-200: var(--color-palette-primary-200);

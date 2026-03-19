@@ -32,6 +32,8 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   [How-to Guides](#how-to-guides)
     -   [How to Fetch Complete Pages](#how-to-fetch-complete-pages)
     -   [How to Query Content Collections](#how-to-query-content-collections)
+        -   [Including System Host Content](#including-system-host-content)
+    -   [How to Run Raw Lucene Content Queries](#how-to-run-raw-lucene-content-queries)
     -   [How to Use AI-Powered Search](#how-to-use-ai-powered-search)
     -   [How to Work with GraphQL](#how-to-work-with-graphql)
     -   [How to Use with TypeScript](#how-to-use-with-typescript)
@@ -41,6 +43,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
     -   [HTTP Client Configuration](#http-client-configuration)
     -   [page.get() Method](#pageget-method)
     -   [content.getCollection() Method](#contentgetcollection-method)
+    -   [content.query() Method](#contentquery-method)
     -   [ai.search() Method](#aisearch-method)
     -   [navigation.get() Method](#navigationget-method)
     -   [Error Handling](#error-handling)
@@ -215,6 +218,58 @@ const products = await client.content
         .not()
         .field('discontinued').equals('true')
     )
+    .limit(10);
+```
+
+#### Including System Host Content
+
+By default, `getCollection()` scopes queries to the configured `siteId`. Call `.includeSystemHost()` to also return content that belongs to the dotCMS **System Host** — shared content available across all sites.
+
+```typescript
+// Return content from both the configured site AND the System Host
+const blogs = await client.content
+    .getCollection('Blog')
+    .includeSystemHost()
+    .limit(10);
+```
+
+Under the hood, all positive `+conhost:` constraints in the assembled query are collected and grouped into a single `+(conhost:<siteId> conhost:SYSTEM_HOST)` OR group, so dotCMS returns content from any of the matched hosts.
+
+```typescript
+// Multiple sites + System Host (multisite scenario)
+const blogs = await client.content
+    .getCollection('Blog')
+    .query('+conhost:site-a')
+    .includeSystemHost()
+    .limit(10);
+// Resulting conhost constraint: +(conhost:site-a conhost:<configured-siteId> conhost:SYSTEM_HOST)
+```
+
+> [!NOTE]
+> Negative conhost exclusions (`-conhost:excluded-site`) in raw queries are preserved as-is and are not affected by `includeSystemHost()`.
+
+### How to Run Raw Lucene Content Queries
+
+Use `client.content.query()` when you want to execute a **raw Lucene query string** (without the query-builder DSL), and you want full control over constraints like `contentType`, `live`, `languageId`, `conhost`, etc.
+
+> [!NOTE]
+> `content.query()` does **not** prefix fields with `contentType.` (unlike `getCollection()`), and it does **not** inject system constraints into your query string.
+
+#### Basic Raw Query
+
+```typescript
+const response = await client.content
+    .query('+contentType:Blog +title:"Hello World"')
+    .limit(10)
+    .page(1);
+```
+
+#### Setting Language (request body)
+
+```typescript
+const response = await client.content
+    .query('+contentType:Blog +title:"Hello World"')
+    .language(1) // sets languageId in the request body (does not alter the Lucene string)
     .limit(10);
 ```
 
@@ -768,6 +823,40 @@ getCollection<T = DotCMSBasicContentlet>(
 #### Example
 ```typescript
 const blogs = await client.content.getCollection('Blog').limit(10).page(1);
+```
+
+### content.query() Method
+
+```typescript
+query<T = DotCMSBasicContentlet>(
+  rawQuery: string
+): RawQueryBuilder<T>
+```
+
+#### Parameters
+
+| Parameter  | Type     | Required | Description            |
+| ---------- | -------- | -------- | ---------------------- |
+| `rawQuery` | `string` | ✅       | Raw Lucene query string |
+
+#### Builder Methods
+
+| Method       | Arguments          | Description                                                                 |
+| ------------ | ------------------ | --------------------------------------------------------------------------- |
+| `limit()`    | `number`           | Set number of items to return                                               |
+| `page()`     | `number`           | Set which page of results to fetch                                          |
+| `sortBy()`   | `SortBy[]`         | Sort by one or more fields                                                  |
+| `render()`   | -                  | Enable server-side rendering (velocity) for widgets in returned content     |
+| `depth()`    | `number`           | Set depth of related content                                                |
+| `language()` | `number \| string` | Set `languageId` in the request body (does not modify the raw Lucene string) |
+
+#### Example
+
+```typescript
+const response = await client.content
+    .query('+contentType:Blog +title:"Hello World"')
+    .language(1)
+    .limit(10);
 ```
 
 ### ai.search() Method

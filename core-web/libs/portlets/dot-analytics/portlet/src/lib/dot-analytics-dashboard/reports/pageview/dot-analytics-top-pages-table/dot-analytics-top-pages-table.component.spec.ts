@@ -1,0 +1,250 @@
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { MockModule } from 'ng-mocks';
+
+import { SkeletonModule } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import {
+    RequestState,
+    TopPerformanceTableEntity
+} from '@dotcms/portlets/dot-analytics/data-access';
+
+import { DotAnalyticsTopPagesTableComponent } from './dot-analytics-top-pages-table.component';
+
+describe('DotAnalyticsTopPagesTableComponent', () => {
+    let spectator: Spectator<DotAnalyticsTopPagesTableComponent>;
+
+    const mockTableData: TopPerformanceTableEntity[] = [
+        {
+            'EventSummary.title': 'Home Page',
+            'EventSummary.identifier': '/home',
+            'EventSummary.totalEvents': '1250'
+        },
+        {
+            'EventSummary.title': 'About Us',
+            'EventSummary.identifier': '/about',
+            'EventSummary.totalEvents': '890'
+        },
+        {
+            'EventSummary.title': 'Contact',
+            'EventSummary.identifier': '/contact',
+            'EventSummary.totalEvents': '567'
+        }
+    ];
+
+    const createMockTableState = (
+        data: TopPerformanceTableEntity[] | null = mockTableData,
+        status: ComponentStatus = ComponentStatus.LOADED
+    ): RequestState<TopPerformanceTableEntity[]> => ({
+        data,
+        status,
+        error: null
+    });
+
+    const createComponent = createComponentFactory({
+        component: DotAnalyticsTopPagesTableComponent,
+        overrideComponents: [
+            [
+                DotAnalyticsTopPagesTableComponent,
+                {
+                    remove: { imports: [SkeletonModule, TableModule] },
+                    add: {
+                        imports: [MockModule(SkeletonModule), MockModule(TableModule)]
+                    }
+                }
+            ]
+        ],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: {
+                    get: jest.fn().mockReturnValue('Translated message')
+                }
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('tableState', createMockTableState());
+    });
+
+    describe('Component Initialization', () => {
+        it('should create component successfully', () => {
+            expect(spectator.component).toBeTruthy();
+        });
+    });
+
+    describe('Required Inputs', () => {
+        it('should initialize with required tableState input', () => {
+            expect(spectator.component.$tableState()).toEqual(createMockTableState());
+        });
+
+        it('should transform and provide table data', () => {
+            expect(spectator.component['$data']()).toBeDefined();
+            expect(Array.isArray(spectator.component['$data']())).toBe(true);
+        });
+    });
+
+    describe('Data Handling', () => {
+        it('should handle data changes', () => {
+            const newData: TopPerformanceTableEntity[] = [
+                {
+                    'EventSummary.title': 'New Page',
+                    'EventSummary.identifier': '/new',
+                    'EventSummary.totalEvents': '100'
+                }
+            ];
+            spectator.setInput('tableState', createMockTableState(newData, ComponentStatus.LOADED));
+
+            expect(spectator.component.$tableState().data).toEqual(newData);
+            expect(spectator.component['$data']()).toHaveLength(1);
+        });
+
+        it('should handle empty data array', () => {
+            spectator.setInput('tableState', createMockTableState([], ComponentStatus.LOADED));
+
+            expect(spectator.component.$tableState().data).toEqual([]);
+            expect(spectator.component['$data']()).toHaveLength(0);
+        });
+    });
+
+    describe('Status Changes', () => {
+        it('should handle different status values', () => {
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.LOADING)
+            );
+            expect(spectator.component.$tableState().status).toBe(ComponentStatus.LOADING);
+
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.ERROR)
+            );
+            expect(spectator.component.$tableState().status).toBe(ComponentStatus.ERROR);
+
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.INIT)
+            );
+            expect(spectator.component.$tableState().status).toBe(ComponentStatus.INIT);
+        });
+    });
+
+    describe('Computed Properties', () => {
+        it('should correctly identify loading state', () => {
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.LOADING)
+            );
+            expect(spectator.component['$isLoading']()).toBe(true);
+
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.INIT)
+            );
+            expect(spectator.component['$isLoading']()).toBe(true);
+
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.LOADED)
+            );
+            expect(spectator.component['$isLoading']()).toBe(false);
+        });
+
+        it('should correctly identify empty state', () => {
+            spectator.setInput('tableState', createMockTableState([], ComponentStatus.LOADED));
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
+            spectator.setInput('tableState', createMockTableState(null, ComponentStatus.LOADED));
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.LOADED)
+            );
+            expect(spectator.component['$isEmpty']()).toBe(false);
+        });
+
+        it('should correctly identify error state', () => {
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.ERROR)
+            );
+            expect(spectator.component['$isError']()).toBe(true);
+
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.LOADED)
+            );
+            expect(spectator.component['$isError']()).toBe(false);
+
+            spectator.setInput(
+                'tableState',
+                createMockTableState(mockTableData, ComponentStatus.LOADING)
+            );
+            expect(spectator.component['$isError']()).toBe(false);
+        });
+    });
+
+    describe('Empty State', () => {
+        it('should show empty state when data is empty', () => {
+            spectator = createComponent({
+                props: {
+                    tableState: createMockTableState([], ComponentStatus.LOADED)
+                } as unknown
+            });
+
+            const emptyState = spectator.query('[data-testid="empty-table-state"]');
+            expect(emptyState).toExist();
+        });
+
+        it('should show empty state icon and messages', () => {
+            spectator = createComponent({
+                props: {
+                    tableState: createMockTableState([], ComponentStatus.LOADED)
+                } as unknown
+            });
+
+            const emptyState = spectator.query('dot-analytics-empty-state');
+            expect(emptyState).toExist();
+        });
+
+        it('should not show empty state when data is available', () => {
+            spectator = createComponent({
+                props: {
+                    tableState: createMockTableState(mockTableData, ComponentStatus.LOADED)
+                } as unknown
+            });
+
+            const emptyState = spectator.query('[data-testid="empty-table-state"]');
+            expect(emptyState).not.toExist();
+        });
+    });
+
+    describe('Error State', () => {
+        it('should show error state when status is ERROR', () => {
+            spectator = createComponent({
+                props: {
+                    tableState: createMockTableState(mockTableData, ComponentStatus.ERROR)
+                } as unknown
+            });
+
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).toExist();
+        });
+
+        it('should not show error state when status is not ERROR', () => {
+            spectator = createComponent({
+                props: {
+                    tableState: createMockTableState(mockTableData, ComponentStatus.LOADED)
+                } as unknown
+            });
+
+            const stateMessage = spectator.query('dot-analytics-state-message');
+            expect(stateMessage).not.toExist();
+        });
+    });
+});

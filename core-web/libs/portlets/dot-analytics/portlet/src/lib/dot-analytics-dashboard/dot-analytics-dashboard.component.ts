@@ -1,58 +1,64 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, Type } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { MessagesModule } from 'primeng/messages';
-import { TabViewModule } from 'primeng/tabview';
+import { MessageModule } from 'primeng/message';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
     DASHBOARD_TAB_LIST,
+    DASHBOARD_TABS,
+    DashboardTab,
     DotAnalyticsDashboardStore,
+    isValidTab,
     TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import DotAnalyticsDashboardConversionsReportComponent from './components/dot-analytics-dashboard-conversions-report/dot-analytics-dashboard-conversions-report.component';
-import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
-import DotAnalyticsDashboardPageviewReportComponent from './components/dot-analytics-dashboard-pageview-report/dot-analytics-dashboard-pageview-report.component';
+import DotAnalyticsConversionsReportComponent from './reports/conversions/dot-analytics-conversions-report/dot-analytics-conversions-report.component';
+import DotAnalyticsEngagementReportComponent from './reports/engagement/dot-analytics-engagement-report/dot-analytics-engagement-report.component';
+import DotAnalyticsPageviewReportComponent from './reports/pageview/dot-analytics-pageview-report/dot-analytics-pageview-report.component';
+import { DotAnalyticsFiltersComponent } from './shared/components/dot-analytics-filters/dot-analytics-filters.component';
 
 const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-banner';
 
 @Component({
-    selector: 'lib-dot-analytics-dashboard',
+    selector: 'dot-analytics-dashboard',
     imports: [
         CommonModule,
         ButtonModule,
-        MessagesModule,
-        TabViewModule,
-        DotAnalyticsDashboardFiltersComponent,
-        DotAnalyticsDashboardPageviewReportComponent,
-        DotAnalyticsDashboardConversionsReportComponent,
+        MessageModule,
+        TabsModule,
+        DotAnalyticsFiltersComponent,
         DotMessagePipe
     ],
+    providers: [DotAnalyticsDashboardStore],
     templateUrl: './dot-analytics-dashboard.component.html',
     styleUrl: './dot-analytics-dashboard.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
+/**
+ * Root analytics dashboard component. Manages tab navigation, time range filters,
+ * and the Engagement, Pageview, and Conversions tabs.
+ */
 export default class DotAnalyticsDashboardComponent {
-    store = inject(DotAnalyticsDashboardStore);
-
+    /** Analytics dashboard store providing data and actions */
+    protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #localStorageService = inject(DotLocalstorageService);
 
-    // Message banner visibility
+    /** Controls visibility of the top informational message banner */
     readonly $showMessage = signal<boolean>(
         !this.#localStorageService.getItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY)
     );
 
-    // Tab configuration from constants
     readonly tabs = DASHBOARD_TAB_LIST;
 
-    readonly $activeTabIndex = computed(() => {
-        const currentTab = this.store.currentTab();
-
-        return this.tabs.findIndex((tab) => tab.id === currentTab);
-    });
+    readonly tabComponents: Record<DashboardTab, Type<unknown>> = {
+        [DASHBOARD_TABS.pageview]: DotAnalyticsPageviewReportComponent,
+        [DASHBOARD_TABS.conversions]: DotAnalyticsConversionsReportComponent,
+        [DASHBOARD_TABS.engagement]: DotAnalyticsEngagementReportComponent
+    };
 
     /**
      * Closes the message banner and stores the preference in localStorage
@@ -63,13 +69,12 @@ export default class DotAnalyticsDashboardComponent {
     }
 
     /**
-     * Handles tab change event from p-tabView.
+     * Handles tab change event from p-tabs.
      * Updates the store and URL query param.
      */
-    onTabChange(event: { index: number }): void {
-        const tab = this.tabs[event.index];
-        if (tab) {
-            this.store.setCurrentTabAndNavigate(tab.id);
+    onTabChange(tabId: string | number | undefined): void {
+        if (tabId !== undefined && isValidTab(String(tabId))) {
+            this.store.setCurrentTabAndNavigate(tabId as DashboardTab);
         }
     }
 

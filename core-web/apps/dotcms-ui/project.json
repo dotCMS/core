@@ -6,7 +6,7 @@
     "prefix": "dot",
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:application",
+            "executor": "@angular/build:application",
             "outputs": ["{options.outputPath.base}"],
             "options": {
                 "baseHref": "./",
@@ -66,10 +66,10 @@
                     }
                 ],
                 "styles": [
+                    "node_modules/prismjs/themes/prism-okaidia.css",
                     "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/styles.scss",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
+                    "apps/dotcms-ui/src/style.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ],
                 "scripts": [],
@@ -125,7 +125,7 @@
         },
         "serve": {
             "continuous": true,
-            "executor": "@angular-devkit/build-angular:dev-server",
+            "executor": "@angular/build:dev-server",
             "dependsOn": [],
 
             "options": {
@@ -145,7 +145,7 @@
             "defaultConfiguration": "development"
         },
         "extract-i18n": {
-            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcms-ui:build"
             }

@@ -1,0 +1,2 @@
+# Ensure shell scripts always use LF line endings (required for Linux/Codespaces)
+*.sh text eol=lf

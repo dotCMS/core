@@ -12,6 +12,7 @@ import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-te
 
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
@@ -54,6 +55,12 @@ describe('DotEditContentletComponent', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
+                },
+                {
+                    provide: DotCustomEventHandlerService,
+                    useValue: {
+                        handle: jest.fn()
+                    }
                 }
             ]
         });

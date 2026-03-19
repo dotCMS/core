@@ -44,7 +44,9 @@ cube('ContentAttribution', {
                   event_type <> 'conversion'    
             GROUP BY customer_id, cluster_id, context_user_id, context_site_id, event_type, identifier, title
         )
-       SELECT customer_id, cluster_id, context_user_id, context_site_id, event_type, identifier, title, day, conversions, totalEvents, (conversions * 100)/totalEvents as convRate
+       SELECT customer_id, cluster_id, context_user_id, context_site_id, event_type, identifier, title, day, conversions, totalEvents, if(totalEvents = 0, 0.0,
+                                                                                                                                            round(toFloat64(conversions) * 100 / totalEvents, 2)
+                                                                                                                                       ) as convRate
        FROM conversions_total
                 INNER JOIN events_total ON
            conversions_total.customer_id = events_total.customer_id AND

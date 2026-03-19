@@ -61,8 +61,10 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
 /**
  * Resolves the host folder path for a contentlet based on its type and URL structure.
  *
- * For file assets, it extracts the directory path by removing the filename.
- * For other content types, it extracts the path up to the '/content' segment.
+ * For FILEASSET and HTMLPAGE, removes the last path segment to get the parent path:
+ * - File assets: the last segment is the filename, so the result is the directory path.
+ * - Pages: the last segment is the page URL segment (e.g. /about/team), so the result is the path of the parent folder.
+ * For other content types, extracts the path up to the '/content' segment.
  *
  * @param contentlet - The contentlet object containing hostName, url, and type
  * @param field - The field object containing the default value
@@ -84,8 +86,11 @@ const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
     const fullPath = `${hostName}${url}`;
 
     try {
-        if (baseType === DotCMSBaseTypesContentTypes.FILEASSET) {
-            // For file assets, remove the filename to get the directory path
+        if (
+            baseType === DotCMSBaseTypesContentTypes.FILEASSET ||
+            baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+        ) {
+            // Remove the last path segment: filename for file assets, page URL segment for pages
             const pathSegments = fullPath.split('/');
             if (pathSegments.length > 1) {
                 return pathSegments.slice(0, -1).join('/');

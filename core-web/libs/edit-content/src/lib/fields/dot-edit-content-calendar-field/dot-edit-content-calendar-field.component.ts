@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 
 import {
     DotCMSContentType,
@@ -44,7 +44,7 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
 @Component({
     selector: 'dot-edit-content-calendar-field',
     imports: [
-        CalendarModule,
+        DatePickerModule,
         ReactiveFormsModule,
         DotMessagePipe,
         DotCardFieldComponent,

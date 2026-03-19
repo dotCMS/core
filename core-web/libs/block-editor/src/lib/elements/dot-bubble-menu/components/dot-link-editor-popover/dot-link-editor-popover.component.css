@@ -1,0 +1,122 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+/* Host does not create a box; panel is hidden when inside host (Tippy moves it when open, so it’s no longer under :host). */
+:host {
+    display: contents;
+}
+
+/* When the panel is still in the host, hide it so it doesn’t take layout space. */
+:host .link-editor-popover__panel {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    margin: -1px;
+    padding: 0;
+    border: 0;
+}
+
+.link-editor-popover__panel {
+    @apply flex flex-col gap-6 w-72 p-3 bg-white rounded-lg shadow-md;
+}
+
+.link-editor-popover__panel ::ng-deep p-listbox {
+    @apply w-full;
+}
+
+.link-editor-popover__panel ::ng-deep .p-listbox-items {
+    @apply flex flex-col gap-2;
+}
+
+.link-editor-popover__panel ::ng-deep .p-listbox-item {
+    @apply w-full h-full p-2;
+}
+
+.link-editor-popover__panel ::ng-deep .p-listbox-item.p-highlight,
+.link-editor-popover__panel ::ng-deep .p-listbox-item.p-focus,
+.link-editor-popover__panel ::ng-deep .p-listbox-item:hover {
+    @apply bg-gray-300;
+}
+
+.link-editor-popover__panel ::ng-deep .p-listbox-empty-message {
+    @apply flex items-center justify-center min-h-[15.625rem] py-10;
+}
+
+.search-input {
+    @apply h-8;
+}
+
+.loading-skeleton-container {
+    @apply flex flex-col gap-2 overflow-y-auto;
+}
+
+.current-link-view__header {
+    @apply flex items-center gap-2 mb-4;
+}
+
+.current-link-view__icon {
+    @apply text-2xl;
+}
+
+.current-link-view__link {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap max-w-[18.75rem] inline-block;
+}
+
+.current-link-view__checkbox-container {
+    @apply flex items-center gap-3 mb-6;
+}
+
+.current-link-view__checkbox {
+    @apply mr-1;
+}
+
+.current-link-view__actions {
+    @apply flex gap-3;
+}
+
+.current-link-view__action-button {
+    @apply w-1/2;
+}
+
+.listbox-item {
+    @apply flex items-center gap-3 py-1 h-full w-full;
+}
+
+.listbox-item__img {
+    @apply w-12 h-12 object-cover rounded bg-gray-200;
+}
+
+.listbox-item__icon {
+    @apply text-3xl text-gray-500 w-12 text-center rounded border border-gray-300;
+}
+
+.listbox-item__content {
+    @apply flex flex-1 flex-col;
+}
+
+.listbox-item__title {
+    @apply font-semibold text-black;
+}
+
+.listbox-item__url {
+    @apply text-xs text-gray-600 break-all;
+}
+
+.skeleton-item {
+    @apply flex items-center gap-4;
+}
+
+.skeleton-lines {
+    @apply flex-1 flex flex-col gap-2;
+}
+
+.empty-message {
+    @apply text-center py-10 text-base break-words;
+}
+
+.empty-message kbd {
+    @apply inline-block px-2 py-1 text-xs font-mono bg-gray-200 border border-gray-300 rounded text-gray-700;
+    box-shadow: 0 1px 0 var(--gray-400);
+}

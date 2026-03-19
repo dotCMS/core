@@ -123,7 +123,7 @@ export const ResposiveFileField: Story = {
                 value
             },
             template: `
-                <div class="w-20rem">
+                <div class="w-80">
                     <dot-edit-content-file-field ${argsToTemplate(newArgs)} [(ngModel)]="value" />
                     <p>Current value: {{ value }}</p>
                 </div>

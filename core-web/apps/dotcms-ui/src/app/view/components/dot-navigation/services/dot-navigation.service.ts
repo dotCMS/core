@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
@@ -12,6 +12,7 @@ import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
 @Injectable()
 export class DotNavigationService {
@@ -19,6 +20,7 @@ export class DotNavigationService {
     private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
     private dotcmsEventsService = inject(DotcmsEventsService);
+    private dynamicRouteService = inject(DynamicRouteService);
     private loginService = inject(LoginService);
     private router = inject(Router);
     private titleService = inject(Title);
@@ -30,14 +32,16 @@ export class DotNavigationService {
 
         // Load initial menu - store handles menu link processing and entity transformation
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
+            this.registerDynamicRoutes(menus);
             this.#globalStore.loadMenu(menus);
 
             if (this.dotRouterService.currentPortlet.id) {
-                this.#globalStore.setActiveMenu(
-                    this.dotRouterService.currentPortlet.id,
-                    this.dotRouterService.queryParams['mId'],
-                    true
-                );
+                this.#globalStore.setActiveMenu({
+                    portletId: this.dotRouterService.currentPortlet.id,
+                    shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                    bookmark: true,
+                    breadcrumbs: this.#globalStore.breadcrumbs()
+                });
             }
         });
 
@@ -60,11 +64,12 @@ export class DotNavigationService {
                                 Object.keys(this.dotRouterService.queryParams).length === 0;
 
                             if (this.dotRouterService.currentPortlet.id) {
-                                this.#globalStore.setActiveMenu(
-                                    this.dotRouterService.currentPortlet.id,
-                                    this.dotRouterService.queryParams['mId'],
-                                    queryParamsValid
-                                );
+                                this.#globalStore.setActiveMenu({
+                                    portletId: this.dotRouterService.currentPortlet.id,
+                                    shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                                    bookmark: queryParamsValid,
+                                    breadcrumbs: this.#globalStore.breadcrumbs()
+                                });
                             }
                         }),
                         map(() => true)
@@ -80,13 +85,15 @@ export class DotNavigationService {
                 .reloadMenu()
                 .pipe(take(1))
                 .subscribe((menus: DotMenu[]) => {
+                    this.registerDynamicRoutes(menus);
                     this.#globalStore.loadMenu(menus);
 
                     if (this.dotRouterService.currentPortlet.id) {
-                        this.#globalStore.setActiveMenu(
-                            this.dotRouterService.currentPortlet.id,
-                            this.dotRouterService.queryParams['mId']
-                        );
+                        this.#globalStore.setActiveMenu({
+                            portletId: this.dotRouterService.currentPortlet.id,
+                            shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                            breadcrumbs: this.#globalStore.breadcrumbs()
+                        });
                     }
                 });
         });
@@ -98,6 +105,7 @@ export class DotNavigationService {
                 switchMap(() => this.dotMenuService.reloadMenu())
             )
             .subscribe((menus: DotMenu[]) => {
+                this.registerDynamicRoutes(menus);
                 this.#globalStore.loadMenu(menus);
                 this.goToFirstPortlet();
             });
@@ -136,5 +144,10 @@ export class DotNavigationService {
         if (this.router.url.indexOf('c/') > -1) {
             this.dotIframeService.reload();
         }
+    }
+
+    private registerDynamicRoutes(menus: DotMenu[]): void {
+        const allMenuItems = menus.flatMap((menu) => menu.menuItems);
+        this.dynamicRouteService.registerRoutesFromMenuItems(allMenuItems);
     }
 }

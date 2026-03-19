@@ -7,7 +7,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 

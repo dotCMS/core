@@ -23,6 +23,8 @@ export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 
 export const BASE_IFRAME_MEASURE_UNIT = 'px';
 
+export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
+
 export const COMMON_ERRORS: CommonErrorsInfo = {
     [CommonErrors.NOT_FOUND]: {
         icon: 'compass',
@@ -72,7 +74,8 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
 // Add the Feature flags we want to fetch for UVE
 export const UVE_FEATURE_FLAGS = [
     FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
-    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
+    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
+    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
 ];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {

@@ -15,7 +15,7 @@ import {
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
-import { BaseApiClient } from '../base/base-api';
+import { BaseApiClient } from '../base/api/base-api';
 
 /**
  * Client for interacting with the DotCMS Page API.

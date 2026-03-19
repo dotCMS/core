@@ -1,5 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
 
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,6 +12,7 @@ import {
     OnInit,
     output,
     Renderer2,
+    signal,
     viewChild
 } from '@angular/core';
 
@@ -20,10 +22,17 @@ import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 
+import { take } from 'rxjs/operators';
+
 import { DotLanguagesService } from '@dotcms/data-access';
-import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
 import {
-    DotContentletStatusPipe,
+    ContextMenuData,
+    DotContentDriveItem,
+    DotContentDrivePaginateEvent,
+    DotLanguage
+} from '@dotcms/dotcms-models';
+import {
+    DotContentletStatusChipComponent,
     DotLocaleTagPipe,
     DotMessagePipe,
     DotRelativeDatePipe
@@ -36,17 +45,19 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     imports: [
         ButtonModule,
         ChipModule,
-        DotContentletStatusPipe,
+        DotContentletStatusChipComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
         TableModule,
-        DotLocaleTagPipe
+        DotLocaleTagPipe,
+        NgTemplateOutlet
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
-    styleUrl: './dot-folder-list-view.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-folder-list-view.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'w-full h-full min-h-0 block' }
 })
 export class DotFolderListViewComponent implements OnInit {
     private readonly renderer = inject(Renderer2);
@@ -100,7 +111,7 @@ export class DotFolderListViewComponent implements OnInit {
      * @type {Output<LazyLoadEvent>}
      * @alias paginate
      */
-    paginate = output<LazyLoadEvent>();
+    paginate = output<DotContentDrivePaginateEvent>();
 
     /**
      * An output that emits the sort event.
@@ -151,6 +162,14 @@ export class DotFolderListViewComponent implements OnInit {
     drop = output<DotContentDriveItem>();
 
     /**
+     * An output that emits the scroll event.
+     *
+     * @type {Output<Event>}
+     * @alias scroll
+     */
+    scroll = output<Event>();
+
+    /**
      * An array of selected items.
      *
      * @type {DotContentDriveItem[]}
@@ -166,15 +185,19 @@ export class DotFolderListViewComponent implements OnInit {
         () => this.$totalItems() > this.MIN_ROWS_PER_PAGE
     );
 
+    readonly $loadingRows = signal<number[]>(Array.from({ length: this.MIN_ROWS_PER_PAGE }));
+
     /**
-     * Computed style class for the table.
-     *
-     * @type {ComputedSignal<string>}
-     * @alias styleClass
+     * Computed pass-through configuration for empty table.
      */
-    protected readonly $styleClass = computed(() =>
-        this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
-    );
+    readonly $ptConfig = computed(() => ({
+        table: {
+            style: {
+                'table-layout': 'fixed',
+                ...(this.$items().length === 0 && { height: '100%', width: '100%' })
+            }
+        }
+    }));
 
     /**
      * State of the component.
@@ -193,17 +216,62 @@ export class DotFolderListViewComponent implements OnInit {
         this.selectedItems = [];
     });
 
+    /**
+     * Bound scroll handler to ensure the same reference is used for add/remove event listener
+     */
+    private readonly boundScrollHandler = this.scrollHandler.bind(this);
+
     ngOnInit(): void {
         // We should be getting this from the Global Store
         // But it gets out of scope for the ticket.
-        this.dotLanguagesService.get().subscribe((languages) => {
-            const languagesMap = new Map<number, DotLanguage>();
-            languages.forEach((language) => {
-                languagesMap.set(language.id, language);
-            });
+        this.dotLanguagesService
+            .get()
+            .pipe(take(1))
+            .subscribe((languages) => {
+                const languagesMap = new Map<number, DotLanguage>();
+                languages.forEach((language) => {
+                    languagesMap.set(language.id, language);
+                });
 
-            patchState(this.state, { languagesMap });
-        });
+                patchState(this.state, { languagesMap });
+            });
+    }
+
+    /**
+     * Initializes the component after the view has been initialized
+     */
+    ngAfterViewInit(): void {
+        const tableBody = this.getTableBody();
+
+        if (tableBody) {
+            tableBody.addEventListener('scroll', this.boundScrollHandler);
+        }
+    }
+
+    /**
+     * Destroys the component
+     */
+    ngOnDestroy(): void {
+        const tableBody = this.getTableBody();
+        if (tableBody) {
+            tableBody.removeEventListener('scroll', this.boundScrollHandler);
+        }
+    }
+
+    /**
+     * Gets the table body element
+     * @returns The table body element
+     */
+    private getTableBody(): HTMLElement | null {
+        return this.dataTable()?.el.nativeElement.querySelector('.p-datatable-table-container');
+    }
+
+    /**
+     * Handles scroll events from the table body
+     * @param event The scroll event
+     */
+    private scrollHandler(event: Event) {
+        this.scroll.emit(event);
     }
 
     /**
@@ -221,7 +289,9 @@ export class DotFolderListViewComponent implements OnInit {
      * @param event The lazy load event containing pagination info
      */
     onPage(event: LazyLoadEvent) {
-        this.paginate.emit(event);
+        const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
+        this.paginate.emit({ ...event, page });
+        this.$loadingRows.set([...Array(event.rows)]);
     }
 
     /**
@@ -357,8 +427,8 @@ export class DotFolderListViewComponent implements OnInit {
             this.renderer.addClass(wrapper, 'drag-image-item');
             this.renderer.addClass(wrapper, `drag-image-item-${idx}`);
 
-            // Check if first child is an img - if so, copy its HTML
-            const firstChild = thumbnail.firstElementChild;
+            // Check if the thumbnail is an icon or an image - if so, copy its HTML
+            const firstChild = thumbnail.tagName === 'I' ? thumbnail : thumbnail.firstElementChild;
 
             if (!firstChild) {
                 return;
@@ -407,6 +477,7 @@ export class DotFolderListViewComponent implements OnInit {
      */
     protected onFirstChange() {
         const dataTable = this.dataTable();
+
         if (dataTable) {
             dataTable.first = this.$offset();
         }

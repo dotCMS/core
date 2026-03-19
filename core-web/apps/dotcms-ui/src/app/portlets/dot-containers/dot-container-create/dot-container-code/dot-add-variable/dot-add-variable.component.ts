@@ -16,7 +16,6 @@ import { DotAddVariableState, DotAddVariableStore } from './store/dot-add-variab
 @Component({
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
-    styleUrls: ['./dot-add-variable.component.scss'],
     imports: [CommonModule, ButtonModule, DataViewModule, DotMessagePipe],
     providers: [DotAddVariableStore, DotFieldsService]
 })

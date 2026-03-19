@@ -1,0 +1,23 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    display: contents;
+}
+
+.bubble-menu {
+    @apply flex items-center bg-white rounded-md shadow-md p-1 gap-0.5 w-full;
+}
+
+.bubble-menu.hidden {
+    @apply hidden;
+}
+
+.bubble-menu .divider {
+    @apply border-l border-gray-200 h-6 mx-1;
+}
+
+/* Ensure material icons match PrimeNG small button icon size */
+.bubble-menu .bubble-menu-icon {
+    @apply text-base w-5 h-5 inline-flex items-center justify-center leading-none;
+}

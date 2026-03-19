@@ -38,15 +38,17 @@ import {
     PositionPayload
 } from '../../../shared/models';
 import {
-    mapContainerStructureToArrayOfContainers,
-    getPersonalization,
     areContainersEquals,
+    getContentTypeVarRecord,
     getEditorStates,
-    sanitizeURL,
+    getFullPageURL,
+    getPersonalization,
     getWrapperMeasures,
-    getFullPageURL
+    mapContainerStructureToArrayOfContainers,
+    sanitizeURL
 } from '../../../utils';
 import { UVEState } from '../../models';
+import { WithFlagsState } from '../flags/models';
 import { PageContextComputed } from '../withPageContext';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
@@ -80,7 +82,7 @@ const initialState: EditorState = {
 export function withEditor() {
     return signalStoreFeature(
         {
-            state: type<UVEState>(),
+            state: type<UVEState & WithFlagsState>(),
             props: type<PageContextComputed>()
         },
         withState<EditorState>(initialState),
@@ -97,6 +99,9 @@ export function withEditor() {
 
                     return numberContents > 1 || !persona || isDefaultPersona;
                 }),
+                $allowedContentTypes: computed<Record<string, true>>(() => {
+                    return getContentTypeVarRecord(pageEntity()?.containers);
+                }),
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.contentArea();
                     const canEditPage = store.$canEditPage();
@@ -104,11 +109,11 @@ export function withEditor() {
 
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
-                $styleSchema: computed<unknown>(() => {
-                    const contentlet = store.activeContentlet();
+                $styleSchema: computed<StyleEditorFormSchema>(() => {
+                    const activeContentlet = store.activeContentlet();
                     const styleSchemas = store.styleSchemas();
                     const contentSchema = styleSchemas.find(
-                        (schema) => schema.contentType === contentlet?.contentType
+                        (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
                     );
                     return contentSchema;
                 }),
@@ -307,13 +312,18 @@ export function withEditor() {
                         state: EDITOR_STATE.IDLE
                     });
                 },
-                setActiveContentlet(contentlet: ContentletPayload) {
+                setActiveContentlet(contentlet: ActionPayload) {
                     patchState(store, {
                         activeContentlet: contentlet,
                         palette: {
                             open: true,
                             currentTab: UVE_PALETTE_TABS.STYLE_EDITOR
                         }
+                    });
+                },
+                resetActiveContentlet() {
+                    patchState(store, {
+                        activeContentlet: null
                     });
                 },
                 resetContentletArea() {
@@ -351,14 +361,13 @@ export function withEditor() {
                 ): DotTreeNode {
                     const { identifier: contentId } = contentlet;
                     const {
-                        variantId,
                         uuid: relationType,
                         contentletsId,
                         identifier: containerId
                     } = container;
 
                     const { personalization, id: pageId } = store.$pageData();
-
+                    const variantId = store.$variantId();
                     const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
 
                     return {

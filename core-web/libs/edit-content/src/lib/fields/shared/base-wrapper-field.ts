@@ -54,10 +54,18 @@ export abstract class BaseWrapperField {
     });
 
     get isRequired(): boolean {
+        // First check the field definition (source of truth)
+        const field = this.$field();
+        if (field?.required) {
+            return true;
+        }
+
+        // Fallback to checking the validator (for fields using standard Validators.required)
         const control = this.formControl;
         if (!control) {
             return false;
         }
+
         return control.hasValidator(Validators.required);
     }
 

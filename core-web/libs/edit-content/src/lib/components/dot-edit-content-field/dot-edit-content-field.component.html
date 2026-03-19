@@ -108,7 +108,7 @@
             <dot-binary-field-wrapper
                 [contentlet]="contentlet"
                 [field]="field"
-                (valueUpdated)="onBinaryFieldValueUpdated($event)"
+                ($valueUpdated)="onBinaryFieldValueUpdated($event)"
                 [attr.data-testId]="'field-' + field.variable" />
         }
     }

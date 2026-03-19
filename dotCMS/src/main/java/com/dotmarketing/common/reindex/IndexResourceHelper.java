@@ -6,10 +6,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.elasticsearch.cluster.health.ClusterIndexHealth;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndexStats;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.domain.ClusterIndexHealth;
+import com.dotcms.content.index.domain.IndexStats;
 import com.dotmarketing.business.APILocator;
 import com.google.common.collect.ImmutableList;
 import io.vavr.control.Try;
@@ -21,7 +21,7 @@ public class IndexResourceHelper {
         private static IndexResourceHelper helper = new IndexResourceHelper();
     }
     ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
-    ESIndexAPI esapi = APILocator.getESIndexAPI();
+    IndexAPI esapi = APILocator.getESIndexAPI();
     
     private IndexResourceHelper() {
         

@@ -160,7 +160,9 @@ const PrimaryTemplate = `
       <td>{{car.brand}}</td>
       <td>{{car.color}}</td>
       <td>
-        <button pButton type="button" icon="pi pi-ellipsis-v" class="p-button-rounded p-button-text" (click)="menu.toggle($event)"></button>
+        <button pButton type="button" class="p-button-rounded p-button-text" (click)="menu.toggle($event)">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <p-menu #menu [popup]="true" [model]="items"></p-menu>
       </td>
     </tr>

@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    // Vue development
+    "vue.volar",
+
+    // Code quality
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // EditorConfig support
+    "editorconfig.editorconfig"
+  ]
+}

@@ -18,8 +18,6 @@
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "apps/dotcdn/src/styles.scss"
                 ],
                 "stylePreprocessorOptions": {
@@ -65,7 +63,7 @@
             "defaultConfiguration": ""
         },
         "serve": {
-            "executor": "@angular-devkit/build-angular:dev-server",
+            "executor": "@angular/build:dev-server",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy.conf.json",
                 "buildTarget": "dotcdn:build"
@@ -78,7 +76,7 @@
             "continuous": true
         },
         "extract-i18n": {
-            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcdn:build"
             }
@@ -95,8 +93,6 @@
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "apps/dotcdn/src/styles.scss"
                 ],
                 "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],

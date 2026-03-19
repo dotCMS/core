@@ -5,6 +5,8 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 
+import { LazyLoadEvent } from 'primeng/api';
+
 import { DotFormatDateService, DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
@@ -191,7 +193,7 @@ describe('DotFolderListViewComponent', () => {
 
             spectator.triggerEventHandler(table, 'onPage', { first: 10, rows: 10 });
 
-            expect(paginateSpy).toHaveBeenCalledWith({ first: 10, rows: 10 });
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 10, rows: 10, page: 2 });
         });
 
         it('should emit sort event when sort changes', () => {
@@ -247,34 +249,23 @@ describe('DotFolderListViewComponent', () => {
     });
 
     describe('Styles and Pagination', () => {
-        it('should have empty-table class when items list is empty', () => {
+        it('should render table when items list is empty', () => {
             spectator.setInput('items', []);
             spectator.setInput('totalItems', 0);
             spectator.detectChanges();
 
-            // Verify the styleClass computed signal contains 'empty-table'
-            // PrimeNG applies styleClass to the p-table component's root element
-            // We need to find the element that has the styleClass applied
+            // Verify the table is still rendered when empty
             const tableElement = spectator.query(byTestId('table'));
-            // PrimeNG may apply the class to a parent wrapper, so we check the element or its parent
-            const elementWithClass =
-                tableElement?.closest('.empty-table') ||
-                spectator.query('.empty-table') ||
-                (tableElement?.parentElement?.classList.contains('empty-table')
-                    ? tableElement.parentElement
-                    : null);
-
-            expect(elementWithClass).toBeTruthy();
+            expect(tableElement).toBeTruthy();
         });
 
-        it('should not show pagination when there are 20 or fewer total items', () => {
+        it('should always show pagination regardless of totalItems', () => {
             spectator.setInput('totalItems', 20);
             spectator.detectChanges();
 
-            // Verify pagination is not shown by checking that paginator element doesn't exist
-            // or by verifying the styleClass doesn't indicate pagination
+            // Paginator is always rendered ([paginator]="true")
             const paginator = spectator.query('.p-paginator');
-            expect(paginator).toBeFalsy();
+            expect(paginator).toBeTruthy();
         });
 
         it('should emit paginate event when calling onPage', () => {
@@ -286,7 +277,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.component.onPage(mockEvent);
             spectator.detectChanges();
 
-            expect(paginateSpy).toHaveBeenCalledWith(mockEvent);
+            expect(paginateSpy).toHaveBeenCalledWith({ ...mockEvent, page: 2 });
         });
 
         it('should sync table first value when firstChange event is emitted', () => {
@@ -343,6 +334,110 @@ describe('DotFolderListViewComponent', () => {
             const loadingRow = spectator.query(byTestId('loading-row'));
 
             expect(loadingRow).toBeNull();
+        });
+
+        it('should show loading row when loading is true and items is empty', () => {
+            spectator.setInput('items', []);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRows = spectator.queryAll(byTestId('loading-row'));
+
+            expect(loadingRows.length).toBeGreaterThan(0);
+        });
+
+        it('should show loading row instead of data rows when loading is true and items has data', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRows = spectator.queryAll(byTestId('loading-row'));
+            const itemRows = spectator.queryAll(byTestId('item-row'));
+
+            expect(loadingRows.length).toBe(mockItems.length);
+            expect(itemRows.length).toBe(0);
+        });
+
+        it('should render loading row with checkbox-sized skeleton in first column', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const loadingRow = spectator.query(byTestId('loading-row'));
+            const firstCell = loadingRow?.querySelector('td');
+            const skeleton = firstCell?.querySelector('p-skeleton');
+
+            expect(firstCell).toBeTruthy();
+            expect(skeleton).toBeTruthy();
+            expect(skeleton?.getAttribute('height')).toBe('1.5rem');
+            expect(skeleton?.getAttribute('width')).toBe('1.5rem');
+        });
+
+        it('should set $loadingRows length to event.rows when onPage is called', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            spectator.component.onPage({ first: 0, rows: 40 } as LazyLoadEvent);
+            spectator.detectChanges();
+
+            expect(spectator.component.$loadingRows().length).toBe(40);
+        });
+    });
+
+    describe('onPage page number calculation', () => {
+        it('should resolve page 1 when first=0 (falsy)', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 0, rows: 20 });
+
+            // first=0 is falsy → page defaults to 1
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 0, rows: 20, page: 1 });
+        });
+
+        it('should resolve page 2 when first=20, rows=20', () => {
+            spectator.setInput('totalItems', 50);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
+        });
+
+        it('should resolve page 3 when first=40, rows=20', () => {
+            spectator.setInput('totalItems', 80);
+            spectator.detectChanges();
+
+            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            spectator.component.onPage({ first: 40, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledWith({ first: 40, rows: 20, page: 3 });
+        });
+    });
+
+    describe('Empty state and pass-through config', () => {
+        it('should set table height and width 100% in $ptConfig when items is empty', () => {
+            spectator.setInput('items', []);
+            spectator.detectChanges();
+
+            const ptConfig = spectator.component.$ptConfig();
+            const tableStyle = ptConfig.table?.style as { height?: string; width?: string };
+
+            expect(tableStyle?.height).toBe('100%');
+            expect(tableStyle?.width).toBe('100%');
+        });
+
+        it('should not set full size in $ptConfig when items has data', () => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            const ptConfig = spectator.component.$ptConfig();
+            const tableStyle = ptConfig.table?.style as { height?: string; width?: string };
+
+            expect(tableStyle?.height).toBeUndefined();
+            expect(tableStyle?.width).toBeUndefined();
         });
     });
 
@@ -423,11 +518,11 @@ describe('DotFolderListViewComponent', () => {
             expect(contentletTitle.textContent.trim()).toBe(firstItem.title);
         });
 
-        it('should have item title text with truncate-text class', () => {
+        it('should have item title text with truncate class', () => {
             const itemTitleText = spectator.query(byTestId('item-title-text'));
 
             expect(itemTitleText).toBeTruthy();
-            expect(itemTitleText.classList.contains('truncate-text')).toBe(true);
+            expect(itemTitleText.classList.contains('truncate')).toBe(true);
         });
 
         it('should not have max-width: 100% style on item-title td', () => {
@@ -467,6 +562,17 @@ describe('DotFolderListViewComponent', () => {
 
         describe('Status', () => {
             it('should have a published status', () => {
+                // Update firstItem to have all required properties for Published status
+                spectator.setInput('items', [
+                    {
+                        ...firstItem,
+                        live: true,
+                        working: true,
+                        hasLiveVersion: true
+                    }
+                ]);
+                spectator.detectChanges();
+
                 const statusColumn = spectator.query(byTestId('item-status'));
 
                 expect(statusColumn.textContent.trim()).toBe('Published');
@@ -493,7 +599,8 @@ describe('DotFolderListViewComponent', () => {
                         ...firstItem,
                         live: false,
                         archived: false,
-                        working: true
+                        working: false,
+                        hasLiveVersion: false
                     }
                 ]);
                 spectator.detectChanges();
@@ -827,7 +934,7 @@ describe('DotFolderListViewComponent', () => {
                 expect(spectator.component.state.isDragging()).toBe(false);
             });
 
-            it('should apply is-dragging class to row when isDragging is true', () => {
+            it('should apply cursor-grabbing class to row when isDragging is true', () => {
                 const event = createDragStartEvent();
                 const item = mockItems[0];
 
@@ -835,11 +942,11 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
-                expect(row.classList.contains('is-dragging')).toBe(true);
+                expect(row.classList.contains('cursor-grabbing')).toBe(true);
                 expect(spectator.component.state.isDragging()).toBe(true);
             });
 
-            it('should remove is-dragging class from row when isDragging is false', () => {
+            it('should remove cursor-grabbing class from row when isDragging is false', () => {
                 const event = createDragStartEvent();
                 const item = mockItems[0];
 
@@ -848,7 +955,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 let row = spectator.query(byTestId('item-row')) as HTMLElement;
-                expect(row.classList.contains('is-dragging')).toBe(true);
+                expect(row.classList.contains('cursor-grabbing')).toBe(true);
                 expect(spectator.component.state.isDragging()).toBe(true);
 
                 // End dragging
@@ -856,7 +963,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 row = spectator.query(byTestId('item-row')) as HTMLElement;
-                expect(row.classList.contains('is-dragging')).toBe(false);
+                expect(row.classList.contains('cursor-grabbing')).toBe(false);
                 expect(spectator.component.state.isDragging()).toBe(false);
             });
 
@@ -866,7 +973,7 @@ describe('DotFolderListViewComponent', () => {
 
                 // Verify initial state in DOM
                 let row = spectator.query(byTestId('item-row')) as HTMLElement;
-                expect(row.classList.contains('is-dragging')).toBe(false);
+                expect(row.classList.contains('cursor-grabbing')).toBe(false);
 
                 // Start drag and verify state + DOM
                 spectator.component.onDragStart(event, item);
@@ -874,7 +981,7 @@ describe('DotFolderListViewComponent', () => {
 
                 row = spectator.query(byTestId('item-row')) as HTMLElement;
                 expect(spectator.component.state.isDragging()).toBe(true);
-                expect(row.classList.contains('is-dragging')).toBe(true);
+                expect(row.classList.contains('cursor-grabbing')).toBe(true);
 
                 // End drag and verify state + DOM
                 spectator.component.onDragEnd();
@@ -882,7 +989,7 @@ describe('DotFolderListViewComponent', () => {
 
                 row = spectator.query(byTestId('item-row')) as HTMLElement;
                 expect(spectator.component.state.isDragging()).toBe(false);
-                expect(row.classList.contains('is-dragging')).toBe(false);
+                expect(row.classList.contains('cursor-grabbing')).toBe(false);
             });
         });
 
@@ -930,18 +1037,17 @@ describe('DotFolderListViewComponent', () => {
                 expect(spectator.component.state.dragOverRowId()).toBeNull();
             });
 
-            it('should apply is-drag-over class when dragOverRowId matches item identifier', () => {
+            it('should set dragOverRowId when dragOverRowId matches item identifier', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
 
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                expect(row.classList.contains('is-drag-over')).toBe(true);
                 expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
             });
 
-            it('should not apply is-drag-over class when dragOverRowId does not match', () => {
+            it('should update dragOverRowId when dragging over different rows', () => {
                 const rows = spectator.queryAll(byTestId('item-row')) as HTMLElement[];
                 const dragOverEvent = createDragOverEvent();
 
@@ -949,8 +1055,8 @@ describe('DotFolderListViewComponent', () => {
                 rows[1].dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                // First row should not have the class
-                expect(rows[0].classList.contains('is-drag-over')).toBe(false);
+                // dragOverRowId should be set to the second item
+                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
             });
         });
 
@@ -1125,19 +1231,18 @@ describe('DotFolderListViewComponent', () => {
                 expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
             });
 
-            it('should reflect dragOverRowId changes in the DOM immediately', () => {
+            it('should reflect dragOverRowId state changes immediately', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
 
                 // Verify initial state
-                expect(row.classList.contains('is-drag-over')).toBe(false);
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
 
                 // Drag over first item
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
                 expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
-                expect(row.classList.contains('is-drag-over')).toBe(true);
             });
         });
     });
@@ -1242,6 +1347,110 @@ describe('DotFolderListViewComponent', () => {
             spectator.click(titleText);
 
             expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+    });
+
+    describe('Scroll Events', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should emit scroll event when table body is scrolled', () => {
+            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
+
+            const scrollEvent = new Event('scroll');
+            tableBody.dispatchEvent(scrollEvent);
+
+            expect(scrollSpy).toHaveBeenCalledWith(scrollEvent);
+        });
+
+        it('should add scroll event listener on ngAfterViewInit and emit scroll events', () => {
+            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
+            const addListenerSpy = jest.spyOn(tableBody, 'addEventListener');
+
+            spectator.component.ngAfterViewInit();
+
+            expect(addListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+
+            // Verify the listener emits scroll events
+            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollEvent = new Event('scroll');
+            tableBody.dispatchEvent(scrollEvent);
+
+            expect(scrollSpy).toHaveBeenCalledWith(scrollEvent);
+        });
+
+        it('should remove scroll event listener on ngOnDestroy and stop emitting', () => {
+            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
+            const removeListenerSpy = jest.spyOn(tableBody, 'removeEventListener');
+
+            spectator.component.ngOnDestroy();
+
+            expect(removeListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
+
+            // Verify scroll events are no longer emitted after destroy
+            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollEvent = new Event('scroll');
+            tableBody.dispatchEvent(scrollEvent);
+
+            expect(scrollSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not throw when ngOnDestroy is called without table body', () => {
+            // Mock dataTable to return null for el.nativeElement.querySelector
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => ({
+                    el: {
+                        nativeElement: {
+                            querySelector: () => null
+                        }
+                    }
+                }),
+                writable: true
+            });
+
+            expect(() => spectator.component.ngOnDestroy()).not.toThrow();
+        });
+
+        it('should not throw when ngAfterViewInit is called without table body', () => {
+            // Mock dataTable to return null for el.nativeElement.querySelector
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => ({
+                    el: {
+                        nativeElement: {
+                            querySelector: () => null
+                        }
+                    }
+                }),
+                writable: true
+            });
+
+            expect(() => spectator.component.ngAfterViewInit()).not.toThrow();
+        });
+
+        it('should not add event listener when dataTable is undefined', () => {
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => undefined,
+                writable: true
+            });
+
+            expect(() => spectator.component.ngAfterViewInit()).not.toThrow();
+        });
+
+        it('should not remove event listener when dataTable is undefined', () => {
+            Object.defineProperty(spectator.component, 'dataTable', {
+                value: () => undefined,
+                writable: true
+            });
+
+            expect(() => spectator.component.ngOnDestroy()).not.toThrow();
         });
     });
 });

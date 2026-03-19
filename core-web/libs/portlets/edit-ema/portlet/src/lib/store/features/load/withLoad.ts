@@ -3,7 +3,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
@@ -64,12 +64,14 @@ export function withLoad() {
                 loadPageAsset: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
-                            if (!store.pageParams()) {
+                            const currentParams = untracked(() => store.pageParams());
+
+                            if (!currentParams) {
                                 return params as DotPageAssetParams;
                             }
 
                             return {
-                                ...store.pageParams(),
+                                ...currentParams,
                                 ...params
                             };
                         }),
@@ -150,6 +152,8 @@ export function withLoad() {
                                         tap(({ experiment, languages }) => {
                                             const isTraditionalPage = !pageParams.clientHost;
 
+                                            store.addHistory({ pageAsset });
+
                                             patchState(store, {
                                                 pageAPIResponse: pageAsset,
                                                 isEnterprise,
@@ -186,12 +190,15 @@ export function withLoad() {
                             }
                         }),
                         switchMap(() => {
-                            const pageRequest = !store.graphql()
-                                ? dotPageApiService.get(store.pageParams())
-                                : dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
-                                      tap((response) => store.setGraphqlResponse(response)),
-                                      map((response) => response.pageAsset)
-                                  );
+                            const graphql = untracked(() => store.graphql());
+                            const pageRequest = !graphql
+                                ? dotPageApiService.get(untracked(() => store.pageParams()))
+                                : dotPageApiService
+                                      .getGraphQLPage(untracked(() => store.$graphqlWithParams()))
+                                      .pipe(
+                                          tap((response) => store.setGraphqlResponse(response)),
+                                          map((response) => response.pageAsset)
+                                      );
 
                             return pageRequest.pipe(
                                 tap((pageAPIResponse) => {

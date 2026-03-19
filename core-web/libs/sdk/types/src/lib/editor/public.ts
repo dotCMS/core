@@ -219,5 +219,4 @@ export interface EditableContainerData {
     identifier: string;
     acceptTypes: string;
     maxContentlets: number;
-    variantId?: string;
 }

@@ -52,6 +52,7 @@ import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dot
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
+    DotContentletStatusChipComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -83,9 +84,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Published',
         live: true,
         name: 'movie',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'movie',
@@ -100,9 +99,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Unpublish',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -117,9 +114,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Archived',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -134,9 +129,7 @@ const containersMock: DotContainer[] = [
         identifier: 'SYSTEM_CONTAINER',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -151,9 +144,7 @@ const containersMock: DotContainer[] = [
         identifier: 'FILE_CONTAINER',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: '//demo.dotcms.com/application/containers/default/',
         pathName: '//demo.dotcms.com/application/containers/default/',
         source: CONTAINER_SOURCE.FILE,
@@ -252,6 +243,7 @@ describe('ContainerListComponent', () => {
                 CommonModule,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
+                DotContentletStatusChipComponent,
                 DotEmptyStateComponent,
                 DotMessagePipe,
                 DotPortletBaseComponent,
@@ -391,17 +383,15 @@ describe('ContainerListComponent', () => {
         });
 
         it('should select all except system and file container', () => {
-            const menu: Menu = fixture.debugElement.query(
-                By.css('.container-listing__header-options p-menu')
-            ).componentInstance;
+            const menu: Menu = fixture.debugElement.query(By.directive(Menu)).componentInstance;
             // Spy on the store's dotContainersService since it's now using component-level providers
             jest.spyOn(store['dotContainersService'], 'publish').mockReturnValue(
                 of(mockBulkResponseSuccess)
             );
 
-            comp.selectedContainers = containersMock;
-
             fixture.detectChanges();
+
+            comp.selectedContainers = containersMock;
 
             comp.handleActionMenuOpen({} as MouseEvent);
 
@@ -501,14 +491,12 @@ describe('ContainerListComponent', () => {
 
         it('should update selectedContainers in store when actions button is clicked', () => {
             jest.spyOn(store, 'updateSelectedContainers');
-            comp.selectedContainers = [containersMock[0]];
+
             fixture.detectChanges();
 
-            const bulkButton = fixture.debugElement.query(
-                By.css('[data-testId="bulkActions"]')
-            ).nativeElement;
+            comp.selectedContainers = [containersMock[0]];
 
-            bulkButton.click();
+            comp.handleActionMenuOpen({} as MouseEvent);
 
             expect(store.updateSelectedContainers).toHaveBeenCalledWith([containersMock[0]]);
             expect(store.updateSelectedContainers).toHaveBeenCalledTimes(1);

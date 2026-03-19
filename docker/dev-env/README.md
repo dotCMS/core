@@ -146,7 +146,7 @@ then
 docker run --rm \
 -p 8000:8000 \
 -p 8443:8443 \
--v $PWD/data:/data 
+-v $PWD/data:/data \
 dotcms/dotcms-dev:testing
 ```
 

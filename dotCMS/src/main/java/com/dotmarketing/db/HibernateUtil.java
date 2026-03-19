@@ -16,7 +16,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -934,7 +933,6 @@ public class HibernateUtil {
      * or the session has ended.
      *
      * @param listener The commit listener wrapped as a {@link Runnable} object.
-     * @throws DotHibernateException An error occurred when registering the commit listener.
      */
     public static void addCommitListenerNoThrow(final Runnable listener) {
         addCommitListener(UUIDGenerator.generateUuid(), listener);

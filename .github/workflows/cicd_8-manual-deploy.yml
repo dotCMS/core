@@ -1,0 +1,384 @@
+#
+# Manual Deploy Workflow
+#
+# On-demand deployment of Docker images from any branch, tag, or commit.
+# Designed for testing feature branches, deploying hotfixes, or creating ad-hoc builds.
+#
+# ─────────────────────────────────────────────────────────────
+# How Docker tags are produced
+# ─────────────────────────────────────────────────────────────
+# All deployments use environment='manual' (fixed). Tags follow the standard pattern:
+#
+#   manual[_{suffix}]          ← mutable base tag  (e.g., manual, manual_java25)
+#   manual[_{suffix}]_{sha}    ← immutable, always created
+#   manual[_{suffix}]_{ref}    ← mutable alias, ref-derived (when ref is not protected)
+#   {custom_tag}               ← optional exact alias chosen by the developer
+#
+# Note: 'latest' tagging is intentionally not available in this workflow.
+# Manual builds are feature/hotfix builds and should never overwrite the official
+# 'latest' tag. Use the release workflow (cicd_6) for that.
+#
+# effective_artifact_suffix priority: explicit artifact_suffix → java_version major → empty
+#
+# ref-derived alias format: manual[_{suffix}]_{sanitized-ref}
+#   ref=issue-33882-primeng, no java  → manual_issue-33882-primeng
+#   ref=issue-33882-primeng, java25   → manual_issue-33882-primeng_java25
+#   ref=main, release-*, v[0-9]*      → no alias (protected refs)
+#
+# version input is for Maven artifact isolation ONLY – does NOT affect Docker tags.
+# Auto-derives from 'ref' when empty.
+#
+# ─────────────────────────────────────────────────────────────
+# Migration from legacy-release_publish-dotcms-docker-image.yml
+# ─────────────────────────────────────────────────────────────
+#
+# MOST COMMON PATTERN – replaces "modernization" builds (legacy-compatible):
+#   Old:  Actions → "Build/Push dotCMS docker image" → select branch → custom_tag=modernization
+#   New:  Actions → "-8 Manual Deploy" → "Use workflow from" → select branch → custom_tag=modernization
+#           ref: (leave empty — build ref defaults to the "Use workflow from" branch)
+#   Result: dotcms/dotcms:manual  +  dotcms/dotcms:manual_issue-33882-primeng-update
+#           + dotcms/dotcms:modernization
+#
+# BRANCH-ONLY PATTERN – no custom_tag, leave ref empty:
+#   "Use workflow from": issue-33882-primeng-update   (ref left empty)
+#   Result: dotcms/dotcms:manual  +  dotcms/dotcms:manual_issue-33882-primeng-update
+#
+# DECOUPLED PATTERN – run latest workflow against a feature branch:
+#   "Use workflow from": main   (latest workflow code)
+#   ref: issue-33882-primeng-update   (branch to build)
+#   Result: same tags, but workflow logic is always from main
+#
+# JAVA VARIANT PATTERN:
+#   ref:          issue-33865-java-25-part2
+#   java_version: 25.0.2-ms
+#   custom_tag:   java25-testing
+#   Result: dotcms/dotcms:manual_java25  +  dotcms/dotcms:manual_issue-33865-java-25-part2_java25
+#           + dotcms/dotcms:java25-testing
+#   -OR- without custom_tag:
+#   Result: dotcms/dotcms:manual_java25  +  dotcms/dotcms:manual_issue-33865-java-25-part2_java25
+#
+# LTS/HOTFIX PATTERN – release refs are protected (no auto-alias):
+#   ref: release-24.12.27_lts
+#   Result: dotcms/dotcms:manual  +  dotcms/dotcms:manual_{sha}  (no ref alias)
+#
+# ─────────────────────────────────────────────────────────────
+# This workflow replaces legacy-release_publish-dotcms-docker-image.yml
+# ─────────────────────────────────────────────────────────────
+
+name: '-8 Manual Deploy'
+run-name: "Manual [${{ inputs.ref || github.ref_name }}]${{ inputs.java_version && format(' ({0})', inputs.java_version) || '' }}${{ inputs.custom_tag && format(' → {0}', inputs.custom_tag) || '' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      # ── Common inputs (needed by most developers) ──────────────────────────
+      ref:
+        description: 'Branch, tag, or commit SHA to build. Leave empty to build from the "Use workflow from" branch. Set explicitly when you want to run the latest workflow code from main while building a different branch (e.g., workflow from main, code from issue-33882-feature).'
+        required: false
+        type: string
+        default: ''
+      custom_tag:
+        description: 'Optional human-readable alias tag applied after the build (e.g., modernization, java25-testing). Creates dotcms/dotcms:{your-tag} pointing to the same image as the automatic tags. Leave empty to rely only on the automatic tags (e.g., manual, manual_issue-33882-primeng-update).'
+        required: false
+        type: string
+      java_version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.2-ms). Leave empty to use default Java 21 from .sdkmanrc.'
+        required: false
+        type: string
+        default: ''
+      deploy_dev_image:
+        description: 'Also push a dev image (dotcms/dotcms-dev) alongside the standard image.'
+        type: boolean
+        default: false
+      # ── Advanced inputs (leave at defaults for normal feature-branch builds) ─
+      version:
+        description: 'Advanced: Maven artifact version. Auto-derived from ref when empty. Does NOT affect Docker tags — only controls how Maven names the built JARs. Set only when you need artifact isolation for a specific hotfix (e.g., hotfix-25.01.01).'
+        required: false
+        type: string
+        default: ''
+      artifact_suffix:
+        description: 'Advanced: renames the Docker base-tag namespace AND Maven artifact namespace (e.g., java25-ms makes the base tag manual_java25-ms instead of manual_java25). Auto-derived from java_version when empty. This is unrelated to custom_tag — it does not add an extra alias tag, it changes the base tag itself. Leave empty unless you need a suffix distinct from what java_version derives.'
+        required: false
+        type: string
+        default: ''
+      allow_release_override:
+        description: '⚠️ DANGER: Allow overriding actual release artifacts in Maven/Artifactory. Only enable if you know what you are doing!'
+        type: boolean
+        default: false
+
+# Allow concurrent manual deploys but prevent duplicate runs for same ref+java+custom_tag
+concurrency:
+  group: manual-deploy-${{ github.event.inputs.ref || github.ref_name }}-${{ github.event.inputs.java_version }}-${{ github.event.inputs.custom_tag }}
+  cancel-in-progress: true
+
+jobs:
+  # Safety checks - prevent accidental artifact collision
+  # Also computes effective_version (auto-derived from ref when version input is empty)
+  safety-check:
+    name: Safety Check
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      safe_to_proceed: ${{ steps.validate.outputs.safe_to_proceed }}
+      warning_message: ${{ steps.validate.outputs.warning_message }}
+      effective_version: ${{ steps.validate.outputs.effective_version }}
+      effective_artifact_suffix: ${{ steps.validate.outputs.effective_artifact_suffix }}
+      effective_ref_tag: ${{ steps.validate.outputs.effective_ref_tag }}
+      effective_ref: ${{ steps.validate.outputs.effective_ref }}
+    steps:
+      - name: Validate Inputs
+        id: validate
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          # Resolve build ref: explicit input takes priority, otherwise fall back to the
+          # dispatch branch ("Use workflow from"). This preserves legacy behavior when ref
+          # is left empty, while allowing workflow source and build source to differ.
+          if [[ -n "${{ inputs.ref }}" ]]; then
+            REF="${{ inputs.ref }}"
+            echo "ℹ️  Using explicit ref: '${REF}'"
+          else
+            REF="${{ github.ref_name }}"
+            echo "ℹ️  No ref provided — using dispatch branch: '${REF}'"
+          fi
+
+          ARTIFACT_SUFFIX="${{ inputs.artifact_suffix }}"
+          JAVA_VERSION="${{ inputs.java_version }}"
+          CUSTOM_TAG="${{ inputs.custom_tag }}"
+          ALLOW_OVERRIDE="${{ inputs.allow_release_override }}"
+
+          # Auto-derive version from ref when not provided
+          # Version is used only for Maven artifact naming, not Docker tags
+          if [[ -z "${VERSION}" ]]; then
+            # Sanitize ref for use as Maven version: replace / with -
+            EFFECTIVE_VERSION=$(echo "${REF}" | tr '/' '-')
+            echo "ℹ️  Version not set - auto-derived from ref: '${EFFECTIVE_VERSION}'"
+          else
+            EFFECTIVE_VERSION="${VERSION}"
+          fi
+          echo "effective_version=${EFFECTIVE_VERSION}" >> "$GITHUB_OUTPUT"
+
+          # Check if effective_version looks like a release version (yy.mm.dd-## or yy.mm.dd_lts_v##)
+          if [[ "${EFFECTIVE_VERSION}" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}(-[0-9]{1,2}|_lts_v[0-9]{1,2})$ ]]; then
+            if [[ "${ALLOW_OVERRIDE}" != "true" ]]; then
+              echo "❌ ERROR: Version '${EFFECTIVE_VERSION}' matches release version pattern!"
+              echo "This could overwrite actual release artifacts in Maven/Artifactory."
+              echo ""
+              echo "To proceed, you must:"
+              echo "1. Use a different version name (e.g., ${EFFECTIVE_VERSION}-test, manual-${EFFECTIVE_VERSION})"
+              echo "2. OR set allow_release_override: true (dangerous!)"
+              echo ""
+              echo "safe_to_proceed=false" >> "$GITHUB_OUTPUT"
+              echo "warning_message=Version matches release pattern - blocked for safety" >> "$GITHUB_OUTPUT"
+              exit 1
+            else
+              echo "⚠️  WARNING: allow_release_override is true - proceeding with release version pattern"
+              echo "This may overwrite actual release artifacts!"
+            fi
+          fi
+
+          # Warn if version is too generic
+          if [[ "${EFFECTIVE_VERSION}" == "main" || "${EFFECTIVE_VERSION}" == "master" || "${EFFECTIVE_VERSION}" == "latest" ]]; then
+            echo "⚠️  WARNING: Generic version name '${EFFECTIVE_VERSION}' may cause confusion"
+            echo "Consider setting an explicit version like 'manual-$(date +%Y%m%d)' or 'feature-test-123'"
+          fi
+
+          # Compute effective artifact suffix (drives Docker base tag and Maven namespace)
+          # Priority: explicit artifact_suffix → java_version major → empty
+          # Note: custom_tag does NOT affect the base tag - it is a separate alias only
+          if [[ -n "${ARTIFACT_SUFFIX}" ]]; then
+            EFFECTIVE_ARTIFACT_SUFFIX="${ARTIFACT_SUFFIX}"
+            echo "✅ Using explicit artifact suffix: '${EFFECTIVE_ARTIFACT_SUFFIX}'"
+          elif [[ -n "${JAVA_VERSION}" ]]; then
+            JAVA_MAJOR=$(echo "${JAVA_VERSION}" | grep -oE '^[0-9]+')
+            EFFECTIVE_ARTIFACT_SUFFIX="java${JAVA_MAJOR}"
+            echo "ℹ️  Artifact suffix derived from java_version: '${EFFECTIVE_ARTIFACT_SUFFIX}'"
+          else
+            EFFECTIVE_ARTIFACT_SUFFIX=""
+            echo "ℹ️  No artifact suffix - standard build (base tag: manual)"
+          fi
+          echo "effective_artifact_suffix=${EFFECTIVE_ARTIFACT_SUFFIX}" >> "$GITHUB_OUTPUT"
+
+          # Compute ref-derived tag identifier for build discoverability.
+          # This is passed to the deployment phase as tag-identifier, which creates
+          # manual[_{suffix}]_{identifier} (e.g., manual_issue-33882 or manual_java25_issue-33882).
+          # Protected refs (main, master, release-*, v[0-9]*) are skipped to avoid overwriting official images.
+          # Sanitize: replace / with -, strip invalid Docker tag chars, cap at 100 chars
+          if [[ "${REF}" == "main" || "${REF}" == "master" ]]; then
+            EFFECTIVE_REF_TAG=""
+            echo "ℹ️  Skipping ref-derived tag for main/master (protected ref)"
+          elif [[ "${REF}" =~ ^release- || "${REF}" =~ ^v[0-9] ]]; then
+            EFFECTIVE_REF_TAG=""
+            echo "ℹ️  Skipping ref-derived tag for release ref (protected ref)"
+          else
+            EFFECTIVE_REF_TAG=$(echo "${REF}" | tr '/' '-' | tr -cd 'a-zA-Z0-9_.-' | cut -c1-100)
+            echo "ℹ️  Ref-derived tag identifier: '${EFFECTIVE_REF_TAG}'"
+          fi
+          echo "effective_ref_tag=${EFFECTIVE_REF_TAG}" >> "$GITHUB_OUTPUT"
+
+          # Safety check: prevent custom_tag from overwriting official images
+          if [[ -n "${CUSTOM_TAG}" ]]; then
+            # Block protected workflow tags
+            if [[ "${CUSTOM_TAG}" == "latest" || "${CUSTOM_TAG}" == "trunk" || "${CUSTOM_TAG}" == "nightly" ]]; then
+              echo "❌ ERROR: custom_tag '${CUSTOM_TAG}' is a protected workflow tag that cannot be overwritten"
+              echo "safe_to_proceed=false" >> "$GITHUB_OUTPUT"
+              echo "warning_message=custom_tag '${CUSTOM_TAG}' is protected" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+            # Block release version patterns (yy.mm.dd-## or yy.mm.dd_lts_v##)
+            if [[ "${CUSTOM_TAG}" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}(-[0-9]{1,2}|_lts(_v[0-9]{1,2})?)$ ]]; then
+              echo "❌ ERROR: custom_tag '${CUSTOM_TAG}' matches a release version pattern"
+              echo "This would overwrite an official release Docker image!"
+              echo "safe_to_proceed=false" >> "$GITHUB_OUTPUT"
+              echo "warning_message=custom_tag '${CUSTOM_TAG}' matches release version pattern" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+            echo "✅ Custom tag '${CUSTOM_TAG}' validated"
+          fi
+
+          echo "effective_ref=${REF}" >> "$GITHUB_OUTPUT"
+          echo "safe_to_proceed=true" >> "$GITHUB_OUTPUT"
+          echo "warning_message=" >> "$GITHUB_OUTPUT"
+
+  # Initialize - standard initialization phase
+  initialize:
+    name: Initialize
+    needs: [ safety-check ]
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      change-detection: 'disabled'  # Manual deploy builds everything - no change detection needed
+
+  # Build - standard build phase with custom ref and version
+  build:
+    name: Build
+    needs: [ safety-check, initialize ]
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+      ref: ${{ needs.safety-check.outputs.effective_ref }}
+      validate: false
+      version: ${{ needs.safety-check.outputs.effective_version }}
+      generate-docker: true
+      java-version: ${{ inputs.java_version }}
+      artifact-suffix: ${{ needs.safety-check.outputs.effective_artifact_suffix }}
+    permissions:
+      contents: read
+      packages: write
+
+  # Deployment - standard deployment phase
+  # Primary Docker tags (from deploy-docker action):
+  #   manual[_{suffix}]        ← mutable base tag  (e.g., manual, manual_java25)
+  #   manual[_{suffix}]_{sha}  ← immutable
+  # Alias tags (pushed after build):
+  #   manual[_{suffix}]_{ref}  ← mutable, ref-derived (when effective_ref_tag is set)
+  #   {custom_tag}             ← optional developer alias (pulled from immutable SHA tag)
+  deployment:
+    name: Deployment
+    needs: [ safety-check, initialize, build ]
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      environment: 'manual'
+      tag-identifier: ${{ needs.safety-check.outputs.effective_ref_tag }}
+      custom-tag: ${{ inputs.custom_tag }}
+      artifact-run-id: ${{ github.run_id }}
+      deploy-dev-image: ${{ inputs.deploy_dev_image }}
+      java-version: ${{ inputs.java_version }}
+      artifact-suffix: ${{ needs.safety-check.outputs.effective_artifact_suffix }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
+
+  # Finalize - standard finalization phase
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ safety-check, initialize, build, deployment ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ github.run_id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Summary notification
+  summary:
+    name: Deployment Summary
+    if: always()
+    needs: [ safety-check, deployment ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Manual Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Build Ref:** \`${{ needs.safety-check.outputs.effective_ref }}\`${{ inputs.ref == '' && ' *(from dispatch branch)*' || '' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow Ref:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment (base Docker tag):** \`manual\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Maven Artifact Version:** \`${{ needs.safety-check.outputs.effective_version }}\`" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -n "${{ needs.safety-check.outputs.effective_artifact_suffix }}" ]]; then
+            echo "**Artifact Suffix:** \`${{ needs.safety-check.outputs.effective_artifact_suffix }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ -n "${{ inputs.java_version }}" ]]; then
+            echo "**Java Version:** \`${{ inputs.java_version }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "${{ inputs.deploy_dev_image }}" == "true" ]]; then
+            echo "**Dev Image:** Deployed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "${{ needs.safety-check.outputs.warning_message }}" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️  **Warning:** ${{ needs.safety-check.outputs.warning_message }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Tags" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Base tags (from deployment phase):**" >> $GITHUB_STEP_SUMMARY
+          for tag in ${{ needs.deployment.outputs.docker_tags }}; do
+            echo "- \`${tag}\`" >> $GITHUB_STEP_SUMMARY
+          done
+
+          SUFFIX="${{ needs.safety-check.outputs.effective_artifact_suffix }}"
+          REF_ID="${{ needs.safety-check.outputs.effective_ref_tag }}"
+          if [[ -n "${REF_ID}" ]]; then
+            if [[ -n "${SUFFIX}" ]]; then
+              echo "- \`dotcms/dotcms:manual_${REF_ID}_${SUFFIX}\`  ← ref alias" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- \`dotcms/dotcms:manual_${REF_ID}\`  ← ref alias" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          if [[ -n "${{ inputs.custom_tag }}" ]]; then
+            echo "- \`dotcms/dotcms:${{ inputs.custom_tag }}\`  ← custom tag alias" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pull Commands" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          if [[ -n "${{ inputs.custom_tag }}" ]]; then
+            echo "# Primary (custom tag):" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull dotcms/dotcms:${{ inputs.custom_tag }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [[ -n "${REF_ID}" ]]; then
+            echo "# By branch:" >> $GITHUB_STEP_SUMMARY
+            if [[ -n "${SUFFIX}" ]]; then
+              echo "docker pull dotcms/dotcms:manual_${REF_ID}_${SUFFIX}" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "docker pull dotcms/dotcms:manual_${REF_ID}" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          if [[ -z "${{ inputs.custom_tag }}" && -z "${REF_ID}" ]]; then
+            for tag in ${{ needs.deployment.outputs.docker_tags }}; do
+              echo "docker pull ${tag}" >> $GITHUB_STEP_SUMMARY
+            done
+          fi
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Maven Artifact Namespace" >> $GITHUB_STEP_SUMMARY
+          echo "Version: \`${{ needs.safety-check.outputs.effective_version }}\`, Suffix: \`${{ needs.safety-check.outputs.effective_artifact_suffix || '(none)' }}\`" >> $GITHUB_STEP_SUMMARY

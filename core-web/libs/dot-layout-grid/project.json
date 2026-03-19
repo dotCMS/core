@@ -10,7 +10,7 @@
             "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@angular-devkit/build-angular:karma",
+            "executor": "@angular/build:karma",
             "outputs": ["{workspaceRoot}/coverage/libs/dot-layout-grid"],
             "options": {
                 "main": "libs/dot-layout-grid/src/test.ts",

@@ -81,6 +81,9 @@ public class ContentUtilsTest {
     public static final String QUERY_BY_STRUCTURE_NAME = "+live:true +structureName:%s";
     public static final String SYS_PUBLISH_DATE = "sysPublishDate";
     public static final String SYS_EXPIRE_DATE = "sysExpireDate";
+    private static final String TIME_MACHINE_CONTENT_TYPE_NAME =
+            "NewsTimeMachine" + System.currentTimeMillis();
+    private static ContentType timeMachineContentType;
     private static User user;
     private static LanguageAPI languageAPI;
 
@@ -105,6 +108,20 @@ public class ContentUtilsTest {
         relationshipAPI = APILocator.getRelationshipAPI();
 
         defaultLanguage = languageAPI.getDefaultLanguage();
+    }
+
+    private static ContentType getTimeMachineContentType() {
+        if (timeMachineContentType == null) {
+            timeMachineContentType = TestDataUtils.getNewsLikeContentType(
+                    TIME_MACHINE_CONTENT_TYPE_NAME);
+        }
+        return timeMachineContentType;
+    }
+
+    private static String buildIdentifierQuery(final ContentType contentType,
+            final Contentlet contentlet) {
+        return String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable()) +
+                " +identifier:" + contentlet.getIdentifier();
     }
 
     public static class SortTestCase {
@@ -910,13 +927,14 @@ public class ContentUtilsTest {
         final Calendar contentPublishDate = Calendar.getInstance();
         contentPublishDate.add(Calendar.DATE, 1);
 
-        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
-        new ContentletDataGen(contentType.id())
+        final ContentType contentType = getTimeMachineContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE)
+                .setProperty("title", "tm-" + System.currentTimeMillis())
                 .setProperty(SYS_PUBLISH_DATE, contentPublishDate.getTime())
                 .nextPersisted();
 
-        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+        final String query = buildIdentifierQuery(contentType, contentlet);
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null,
                 APILocator.systemUser(), timeMachine);
@@ -941,12 +959,13 @@ public class ContentUtilsTest {
         final Calendar timeMachine = Calendar.getInstance();
         timeMachine.add(Calendar.DATE, 2);
 
-        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final ContentType contentType = getTimeMachineContentType();
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty("title", "tm-" + System.currentTimeMillis())
                 .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
                 .nextPersisted();
 
-        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+        final String query = buildIdentifierQuery(contentType, contentlet);
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null,
                 APILocator.systemUser(),
@@ -968,9 +987,10 @@ public class ContentUtilsTest {
         final Calendar expireDate = Calendar.getInstance();
         expireDate.add(Calendar.DATE, 2);
 
-        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
-        new ContentletDataGen(contentType.id())
+        final ContentType contentType = getTimeMachineContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE)
+                .setProperty("title", "tm-" + System.currentTimeMillis())
                 .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
                 .nextPersisted();
 
@@ -978,7 +998,7 @@ public class ContentUtilsTest {
         afterTomorrow.add(Calendar.DATE, 3);
         final String timeMachine = String.valueOf(afterTomorrow.getTime().getTime());
 
-        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+        final String query = buildIdentifierQuery(contentType, contentlet);
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null,
                 APILocator.systemUser(), timeMachine);
@@ -1003,9 +1023,10 @@ public class ContentUtilsTest {
         final Calendar expireDate = Calendar.getInstance();
         expireDate.add(Calendar.DATE, 3);
 
-        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final ContentType contentType = getTimeMachineContentType();
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE)
+                .setProperty("title", "tm-" + System.currentTimeMillis())
                 .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
                 .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
                 .nextPersisted();
@@ -1013,7 +1034,7 @@ public class ContentUtilsTest {
         final Calendar timeMachine = Calendar.getInstance();
         timeMachine.add(Calendar.DATE, 2);
 
-        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+        final String query = buildIdentifierQuery(contentType, contentlet);
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null,
                 APILocator.systemUser(),
@@ -1040,9 +1061,10 @@ public class ContentUtilsTest {
         final Calendar expireDate = Calendar.getInstance();
         expireDate.add(Calendar.DATE, 2);
 
-        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
-        new ContentletDataGen(contentType.id())
+        final ContentType contentType = getTimeMachineContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE)
+                .setProperty("title", "tm-" + System.currentTimeMillis())
                 .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
                 .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
                 .nextPersisted();
@@ -1050,7 +1072,7 @@ public class ContentUtilsTest {
         final Calendar timeMachine = Calendar.getInstance();
         timeMachine.add(Calendar.DATE, 3);
 
-        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+        final String query = buildIdentifierQuery(contentType, contentlet);
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null,
                 APILocator.systemUser(),
@@ -1059,8 +1081,8 @@ public class ContentUtilsTest {
         assertEquals(0, contentlets.size());
 
         final List<Contentlet> contentNoTM = ContentUtils.pull(
-                String.format("+structureName:%s", contentType.variable()), 10, null,
-                APILocator.systemUser(), null);
+                "+structureName:" + contentType.variable() + " +identifier:" +
+                        contentlet.getIdentifier(), 10, null, APILocator.systemUser(), null);
         assertEquals(1, contentNoTM.size());
     }
 

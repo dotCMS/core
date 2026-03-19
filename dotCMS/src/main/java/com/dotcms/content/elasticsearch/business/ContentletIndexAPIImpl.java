@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import com.dotcms.content.index.IndexAPI;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
@@ -86,7 +87,7 @@ import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
-import org.elasticsearch.client.indices.CreateIndexResponse;
+import com.dotcms.content.index.domain.CreateIndexStatus;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -105,14 +106,15 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
             "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
-    private static ReindexQueueAPI queueApi = null;
-    private static final ESIndexAPI esIndexApi = new ESIndexAPI();
+    private ReindexQueueAPI queueApi = null;
+    private IndexAPI esIndexApi = null;
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
-    private static ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+    private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();
+        esIndexApi = APILocator.getESIndexAPI();
     }
 
     public synchronized void getRidOfOldIndex() throws DotDataException {
@@ -216,10 +218,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         final String mapping = JsonUtil.getJsonFileContentAsString("es-content-mapping.json");
-        CreateIndexResponse cir = esIndexApi.createIndex(indexName, settings, shards);
+        CreateIndexStatus cir = esIndexApi.createIndex(indexName, settings, shards);
 
         int i = 0;
-        while (!cir.isAcknowledged()) {
+        while (!cir.acknowledged()) {
             DateUtil.sleep(100);
 
             if (i++ > 300) {

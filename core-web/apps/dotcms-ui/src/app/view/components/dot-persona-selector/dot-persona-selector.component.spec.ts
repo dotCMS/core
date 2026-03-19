@@ -1,5 +1,5 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -9,6 +9,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotCurrentUserService,
     DotEventsService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
@@ -19,10 +20,11 @@ import {
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
-import { LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona, DotSystemConfig } from '@dotcms/dotcms-models';
 import {
     cleanUpDialog,
+    DotCurrentUserServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
@@ -106,6 +108,7 @@ describe('DotPersonaSelectorComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             provideAnimations(),
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             DotSessionStorageService,
             {
                 provide: DotMessageService,
@@ -123,7 +126,11 @@ describe('DotPersonaSelectorComponent', () => {
             DotWorkflowActionsFireService,
             ConfirmationService,
             DotAlertConfirmService,
-            DotEventsService
+            DotEventsService,
+            {
+                provide: DotcmsEventsService,
+                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
+            }
         ],
         detectChanges: false
     });
@@ -289,7 +296,7 @@ describe('DotPersonaSelectorComponent', () => {
             expect(personaDialog.visible).toBe(true);
             expect(personaDialog.personaName).toBe('Bill');
             personaDialog.visible = false;
-            spectator.detectChanges();
+            spectator.fixture.detectChanges(false);
         });
 
         it('should emit persona and refresh the list on Add new persona', () => {

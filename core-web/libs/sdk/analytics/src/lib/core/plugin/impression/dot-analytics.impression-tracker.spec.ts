@@ -1,19 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { getUVEState } from '@dotcms/uve';
-
 import { DotCMSImpressionTracker } from './dot-analytics.impression-tracker';
 
 import {
-    ANALYTICS_CONTENTLET_CLASS,
+    CONTENTLET_CLASS,
     DEFAULT_IMPRESSION_CONFIG,
     IMPRESSION_EVENT_TYPE
 } from '../../shared/constants/dot-analytics.constants';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
-import { INITIAL_SCAN_DELAY_MS } from '../../shared/utils/dot-analytics.utils';
+import { INITIAL_SCAN_DELAY_MS, isBrowser } from '../../shared/utils/dot-analytics.utils';
 
 // Mock dependencies
-jest.mock('@dotcms/uve');
+jest.mock('../../shared/utils/dot-analytics.utils', () => ({
+    ...jest.requireActual('../../shared/utils/dot-analytics.utils'),
+    isBrowser: jest.fn(() => true)
+}));
+
 jest.mock('./dot-analytics.impression.utils', () => ({
     ...jest.requireActual('./dot-analytics.impression.utils'),
     createDebounce: jest.fn((callback) => callback) // Execute immediately for testing
@@ -41,12 +43,12 @@ describe('DotCMSImpressionTracker', () => {
         } = {}
     ): HTMLElement => {
         const element = document.createElement('div');
-        element.className = ANALYTICS_CONTENTLET_CLASS;
-        element.dataset.dotAnalyticsIdentifier = identifier;
-        element.dataset.dotAnalyticsInode = options.inode || 'inode-123';
-        element.dataset.dotAnalyticsContenttype = options.contentType || 'Blog';
-        element.dataset.dotAnalyticsTitle = options.title || 'Test Content';
-        element.dataset.dotAnalyticsBasetype = options.baseType || 'CONTENT';
+        element.className = CONTENTLET_CLASS;
+        element.dataset.dotIdentifier = identifier;
+        element.dataset.dotInode = options.inode || 'inode-123';
+        element.dataset.dotType = options.contentType || 'Blog';
+        element.dataset.dotTitle = options.title || 'Test Content';
+        element.dataset.dotBasetype = options.baseType || 'CONTENT';
 
         // Mock getBoundingClientRect
         element.getBoundingClientRect = jest.fn(() => ({
@@ -68,9 +70,6 @@ describe('DotCMSImpressionTracker', () => {
         // Reset mocks
         jest.clearAllMocks();
         jest.useFakeTimers();
-
-        // Mock getUVEState (not in editor by default)
-        (getUVEState as jest.Mock).mockReturnValue(false);
 
         // Setup config
         mockConfig = {
@@ -136,27 +135,14 @@ describe('DotCMSImpressionTracker', () => {
         });
 
         it('should NOT initialize in SSR (no window)', () => {
-            // Hide window
-            const originalWindow = global.window;
-            delete (global as any).window;
+            (isBrowser as jest.Mock).mockReturnValue(false);
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
 
             expect(global.IntersectionObserver).not.toHaveBeenCalled();
 
-            // Restore
-            (global as any).window = originalWindow;
-        });
-
-        it('should NOT initialize in UVE editor mode', () => {
-            (getUVEState as jest.Mock).mockReturnValue(true);
-
-            tracker = new DotCMSImpressionTracker(mockConfig);
-            tracker.initialize();
-
-            expect(global.IntersectionObserver).not.toHaveBeenCalled();
-            expect(getUVEState).toHaveBeenCalled();
+            (isBrowser as jest.Mock).mockReturnValue(true);
         });
 
         it('should setup MutationObserver for dynamic content', () => {
@@ -304,8 +290,8 @@ describe('DotCMSImpressionTracker', () => {
 
         it('should skip elements without identifier', () => {
             const element = document.createElement('div');
-            element.className = ANALYTICS_CONTENTLET_CLASS;
-            // No data-dot-analytics-identifier
+            element.className = CONTENTLET_CLASS;
+            // No data-dot-identifier
             document.body.appendChild(element);
 
             tracker = new DotCMSImpressionTracker(mockConfig);
@@ -639,21 +625,6 @@ describe('DotCMSImpressionTracker', () => {
     });
 
     describe('SPA Navigation Detection', () => {
-        let originalLocation: Location;
-
-        beforeEach(() => {
-            originalLocation = window.location;
-        });
-
-        afterEach(() => {
-            // Restore
-            Object.defineProperty(window, 'location', {
-                value: originalLocation,
-                writable: true,
-                configurable: true
-            });
-        });
-
         it('should clear element states on navigation', () => {
             const element = createMockContentletElement('content-123');
             document.body.appendChild(element);
@@ -678,12 +649,8 @@ describe('DotCMSImpressionTracker', () => {
             const timerCountWithActive = jest.getTimerCount();
             expect(timerCountWithActive).toBeGreaterThanOrEqual(1); // At least navigation interval
 
-            // Simulate navigation by replacing window.location
-            Object.defineProperty(window, 'location', {
-                value: { pathname: '/new-page' },
-                writable: true,
-                configurable: true
-            });
+            // Simulate SPA navigation (tracker listens to pushState and checks pathname)
+            history.pushState({}, '', '/new-page');
 
             // Trigger navigation check via interval
             jest.advanceTimersByTime(1000);
@@ -710,12 +677,8 @@ describe('DotCMSImpressionTracker', () => {
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
             expect(callback).toHaveBeenCalledTimes(1);
 
-            // Simulate navigation
-            Object.defineProperty(window, 'location', {
-                value: { pathname: '/new-page' },
-                writable: true,
-                configurable: true
-            });
+            // Simulate SPA navigation (tracker listens to pushState and checks pathname)
+            history.pushState({}, '', '/new-page');
 
             // Advance timers to trigger interval check
             jest.advanceTimersByTime(1000);

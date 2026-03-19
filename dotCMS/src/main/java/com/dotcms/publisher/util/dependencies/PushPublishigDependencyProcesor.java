@@ -603,17 +603,23 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      */
     private void processStoryBockDependencies(final Contentlet contentlet) {
         if (contentlet.getContentType().hasStoryBlockFields()) {
-            this.storyBlockAPI.get().getDependencies(contentlet).forEach(contentletId -> {
+            this.storyBlockAPI.get().getDependencies(contentlet).forEach(dependency -> {
                 Contentlet contentInStoryBlock = new Contentlet();
                 try {
-                    contentInStoryBlock = this.contentletAPI.get().findContentletByIdentifier(contentletId,
-                            contentlet.isLive(), contentlet.getLanguageId(), APILocator.systemUser(), false);
+                    // Use the languageId stored in the Story Block field data, not the parent contentlet's language
+                    // This fixes the issue where dependencies in non-default languages were not being found
+                    contentInStoryBlock = this.contentletAPI.get().findContentletByIdentifier(
+                            dependency.identifier(),
+                            contentlet.isLive(),
+                            dependency.languageId(),
+                            APILocator.systemUser(),
+                            false);
                     tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, contentInStoryBlock,
                             ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
                 } catch (final DotDataException | DotSecurityException e) {
-                    Logger.warn(this, String.format("Could not analyze dependent Contentlet '%s' referenced in Story "
-                                                            + "Block field from Contentlet Inode " + "'%s': %s",
-                            contentInStoryBlock, contentlet.getInode(), e.getMessage()));
+                    Logger.warn(this, String.format("Could not analyze dependent Contentlet '%s' (language: %d) "
+                                                            + "referenced in Story Block field from Contentlet Inode '%s': %s",
+                            dependency.identifier(), dependency.languageId(), contentlet.getInode(), e.getMessage()));
                 }
             });
         }

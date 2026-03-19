@@ -31,6 +31,7 @@ public enum PortletID {
     PUBLISHING_QUEUE, 
     QUERY_TOOL, 
     TAGS,
+    TAGS_LEGACY("tags-legacy"),
     TEMPLATES,
     TIME_MACHINE,
     REPORTS,
@@ -43,10 +44,11 @@ public enum PortletID {
     VANITY_URLS,
     WEB_EVENT_REGISTRATIONS,
     WEB_FORMS,
-    WORKFLOW, 
+    WORKFLOW,
     WORKFLOW_SCHEMES,
     LOCALES,
-    ANALYTICS_DASHBOARD;
+    ANALYTICS_DASHBOARD,
+    USAGE;
 
     private final String url;
 

@@ -102,7 +102,7 @@ public class FileViewStrategy extends AbstractTransformStrategy<Contentlet> {
 
         if(fileAsContentOptional.isEmpty()) {
             //Prevent NPE
-            Logger.warn(this, "Live FileAsset not found for identifier: " + fileAssetIdentifier);
+            Logger.debug(this, "Live FileAsset not found for identifier: " + fileAssetIdentifier);
             return Map.of();
         }
 

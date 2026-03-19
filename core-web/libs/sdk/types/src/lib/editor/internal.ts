@@ -110,26 +110,5 @@ export interface DotContentletAttributes {
     'data-dot-type': string;
     'data-dot-container': string;
     'data-dot-on-number-of-pages': string;
+    'data-dot-style-properties'?: string;
 }
-
-/**
- * Helper type to create analytics attribute names with the correct prefix
- * @internal
- */
-type AnalyticsAttribute<T extends string> = `data-dot-analytics-${T}`;
-
-/**
- * Analytics attribute keys
- * @internal
- */
-type AnalyticsAttributeKey = 'identifier' | 'inode' | 'basetype' | 'contenttype' | 'title';
-
-/**
- * Interface representing the analytics data attributes of a DotCMS contentlet.
- * Guarantees all keys have the 'data-dot-analytics-' prefix.
- * Includes a class for fast DOM selection.
- * @interface DotAnalyticsAttributes
- */
-export type DotAnalyticsAttributes = {
-    [K in AnalyticsAttributeKey as AnalyticsAttribute<K>]: string;
-};

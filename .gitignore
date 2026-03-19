@@ -14,12 +14,11 @@ bin/*.sh
 *.sublime-workspace
 
 # IDE - VSCode
-.vscode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+
+
+# Allow core-web VSCode settings
+!core-web/.vscode/
+!core-web/.vscode/**
 
 # none enterprise stuff should make it here #
 #######################################
@@ -118,6 +117,9 @@ node_modules/
 !/core-web/.yarn/sdks
 !/core-web/.yarn/versions
 
+# Stencil-generated types (regenerated on every build; causes CI "changes during build" failure if tracked)
+/core-web/libs/dotcms-webcomponents/src/components.d.ts
+
 # misc
 /core-web/.nx
 /core-web/.angular/cache
@@ -140,6 +142,10 @@ dotsecure
 /core-web/out*/
 dist-docs/
 **/test-reports/
+/core-web/apps/dotcms-ui-e2e/playwright-report
+/core-web/apps/dotcms-ui-e2e/test-results
+/core-web/apps/dotcms-ui-e2e/test-results/junit.xml
+/core-web/apps/dotcms-ui-e2e/target
 
 #env
 /core-web/**/.env
@@ -157,7 +163,6 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 release.properties
 .flattened-pom.xml
-
 /dependencies.txt
 /updates.txt
 
@@ -190,6 +195,9 @@ dotCMS/dependencies.gradle
 examples/nextjs/package-lock.json
 examples/angular/package-lock.json
 examples/astro/package-lock.json
+
+# core-web uses yarn, ignore npm lock file
+/core-web/package-lock.json
 
 local/
 

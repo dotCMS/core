@@ -3,8 +3,9 @@ import { DOMSerializer } from 'prosemirror-model';
 
 import { Component, computed, input, signal, viewChild } from '@angular/core';
 
-import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
-import { RippleModule } from 'primeng/ripple';
+import { ContextMenu } from 'primeng/contextmenu';
+import { Ripple } from 'primeng/ripple';
+import type { ContextMenuPassThroughOptions } from 'primeng/types/contextmenu';
 
 import { Editor } from '@tiptap/core';
 
@@ -13,6 +14,22 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { MENU_LABELS, PLATFORM_PATTERNS, SHORTCUTS } from './context-menu.constants';
 import { ContextMenuItem, Platform } from './context-menu.interfaces';
 import { htmlToMarkdown } from './markdown.utils';
+
+/** PrimeNG 21 PassThrough (pt) – root/panel styling; item template styles itself via Tailwind. */
+const CONTEXT_MENU_PT: ContextMenuPassThroughOptions = {
+    root: {
+        class: 'w-max min-w-[11rem] rounded-lg border border-gray-200 bg-white p-1 shadow-md'
+    },
+    rootList: {
+        class: 'm-0 outline-none'
+    },
+    itemContent: {
+        class: 'm-0'
+    },
+    separator: {
+        class: 'my-1 border-t border-gray-200'
+    }
+};
 
 /**
  * Context menu component for the dot editor that provides clipboard operations
@@ -26,8 +43,7 @@ import { htmlToMarkdown } from './markdown.utils';
 @Component({
     selector: 'dot-editor-context-menu',
     templateUrl: './dot-context-menu.component.html',
-    styleUrls: ['./dot-context-menu.component.scss'],
-    imports: [ContextMenuModule, RippleModule, DotMessagePipe]
+    imports: [ContextMenu, Ripple, DotMessagePipe]
 })
 export class DotContextMenuComponent {
     $editor = input.required<Editor>({ alias: 'editor' });
@@ -35,6 +51,7 @@ export class DotContextMenuComponent {
 
     protected readonly target = computed(() => this.$editor().view.dom.parentElement);
     protected readonly items = computed(() => this.buildMenuItems());
+    protected readonly pt = CONTEXT_MENU_PT;
     private readonly hasSelection = signal(false);
 
     private get platform(): Platform {

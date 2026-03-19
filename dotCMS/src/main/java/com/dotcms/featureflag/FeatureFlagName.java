@@ -44,4 +44,20 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_UVE_TOGGLE_LOCK = "FEATURE_FLAG_UVE_TOGGLE_LOCK";
 
     String FEATURE_FLAG_UVE_STYLE_EDITOR = "FEATURE_FLAG_UVE_STYLE_EDITOR";
+
+    String FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES = "FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES";
+
+    /**
+     * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
+     *
+     * <ul>
+     *   <li>0 — ES only (default)</li>
+     *   <li>1 — dual-write, ES reads</li>
+     *   <li>2 — dual-write, OS reads</li>
+     *   <li>3 — OS only</li>
+     * </ul>
+     *
+     * @see com.dotcms.content.index.IndexConfigHelper.MigrationPhase
+     */
+    String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
 }

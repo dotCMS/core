@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import com.dotcms.content.elasticsearch.business.ESContentletScroll;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -43,9 +43,11 @@ public interface ContentletAPIPostHook {
 
 	/**
 	 * @param offset can be 0 if no offset
-	 * @param limit can be 0 of no limit
+	 * @param limit can be 0 if no limit
 	 * @param returnValue - value returned by primary API Method
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
 	 */
+	@Deprecated
 	public default void findAllContent(int offset, int limit, List<Contentlet> returnValue){}
 	
 	/**
@@ -1851,5 +1853,5 @@ public interface ContentletAPIPostHook {
 	 * @param sortBy The sort criteria
 	 * @param returnValue The ESContentletScroll object returned by the API
 	 */
-	default void createScrollQuery(String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy, ESContentletScroll returnValue) {}
+	default void createScrollQuery(String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy, IndexContentletScroll returnValue) {}
 }

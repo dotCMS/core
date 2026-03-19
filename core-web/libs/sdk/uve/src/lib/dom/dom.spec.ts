@@ -2,15 +2,15 @@
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import {
-    getDotCMSContentletsBound,
-    computeScrollIsInBottom,
-    getContentletsInContainer,
-    getDotContainerAttributes,
-    getContainersData,
-    getDotContentletAttributes,
     combineClasses,
+    computeScrollIsInBottom,
+    findDotCMSElement,
     getColumnPositionClasses,
-    findDotCMSElement
+    getContainersData,
+    getContentletsInContainer,
+    getDotCMSContentletsBound,
+    getDotContainerAttributes,
+    getDotContentletAttributes
 } from './dom.utils';
 
 describe('getDotCMSContentletsBound', () => {
@@ -282,6 +282,82 @@ describe('getDotContentletAttributes', () => {
         const result = getDotContentletAttributes(contentlet as any, 'container');
         expect(result['data-dot-title']).toBe('Widget Title');
     });
+
+    it('should include data-dot-style-properties when styleProperties exist', () => {
+        const styleProperties = {
+            'font-size': 20,
+            'font-family': 'Arial',
+            alignment: 'center'
+        };
+
+        const contentlet = {
+            identifier: 'test-id',
+            baseType: 'test-base',
+            title: 'Test Title',
+            inode: 'test-inode',
+            contentType: 'test-type',
+            dotStyleProperties: styleProperties
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getDotContentletAttributes(contentlet, 'test-container');
+
+        expect(result['data-dot-style-properties']).toBe(JSON.stringify(styleProperties));
+    });
+
+    it('should not include data-dot-style-properties when styleProperties do not exist', () => {
+        const contentlet = {
+            identifier: 'test-id',
+            baseType: 'test-base',
+            title: 'Test Title',
+            inode: 'test-inode',
+            contentType: 'test-type'
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getDotContentletAttributes(contentlet, 'test-container');
+
+        expect(result['data-dot-style-properties']).toBeUndefined();
+    });
+
+    it('should not include data-dot-style-properties when styleProperties is null', () => {
+        const contentlet = {
+            identifier: 'test-id',
+            baseType: 'test-base',
+            title: 'Test Title',
+            inode: 'test-inode',
+            contentType: 'test-type',
+            styleProperties: null
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getDotContentletAttributes(contentlet, 'test-container');
+
+        expect(result['data-dot-style-properties']).toBeUndefined();
+    });
+
+    it('should stringify styleProperties correctly', () => {
+        const styleProperties = {
+            'font-size': 20,
+            'font-family': 'Arial',
+            'text-decoration': {
+                underline: true,
+                overline: false
+            }
+        };
+
+        const contentlet = {
+            identifier: 'test-id',
+            contentType: 'test-type',
+            dotStyleProperties: styleProperties
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getDotContentletAttributes(contentlet, 'test-container');
+
+        const stylePropertiesAttr = result['data-dot-style-properties'];
+        expect(stylePropertiesAttr).toBe(JSON.stringify(styleProperties));
+        if (!stylePropertiesAttr) {
+            throw new Error('stylePropertiesAttr should be defined');
+        }
+        expect(JSON.parse(stylePropertiesAttr)).toEqual(styleProperties);
+    });
 });
 
 describe('getContainersData', () => {
@@ -299,9 +375,6 @@ describe('getContainersData', () => {
                     containerStructures: [{ contentTypeVar: 'type1' }, { contentTypeVar: 'type2' }],
                     container: {
                         maxContentlets: 5,
-                        parentPermissionable: {
-                            variantId: 'variant-1'
-                        },
                         path: '/test/path'
                     }
                 }
@@ -316,7 +389,6 @@ describe('getContainersData', () => {
 
         expect(result).toEqual({
             uuid: '123',
-            variantId: 'variant-1',
             acceptTypes: 'type1,type2',
             maxContentlets: 5,
             identifier: '/test/path'

@@ -2,7 +2,7 @@ import {
     DotContentDriveFolder,
     DotContentDriveItem,
     DotFolder,
-    SiteEntity
+    DotSite
 } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
@@ -39,6 +39,7 @@ export enum DotContentDriveSortOrder {
  */
 export interface DotContentDrivePagination {
     limit: number;
+    page: number;
     offset: number;
 }
 
@@ -60,7 +61,7 @@ export interface DotContentDriveSort {
  * @interface DotContentDriveInit
  */
 export interface DotContentDriveInit {
-    currentSite: SiteEntity;
+    currentSite: DotSite;
     path: string;
     filters: DotContentDriveFilters;
     isTreeExpanded: boolean;
@@ -84,6 +85,14 @@ export interface DotContentDriveDialog {
     payload?: DotContentDriveFolder;
 }
 
+export interface DotContentDrivePage {
+    hasMoreContent: boolean;
+    hasMoreFolders: boolean;
+    folderCursor: number;
+    contentCursor: number;
+    offset: number;
+}
+
 /**
  * The state of the content drive.
  *
@@ -94,10 +103,10 @@ export interface DotContentDriveState extends DotContentDriveInit {
     items: DotContentDriveItem[];
     selectedItems: DotContentDriveItem[];
     status: DotContentDriveStatus;
-    totalItems: number;
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
     contextMenu?: DotContentDriveContextMenu;
+    pages: DotContentDrivePage[];
 }
 
 /**

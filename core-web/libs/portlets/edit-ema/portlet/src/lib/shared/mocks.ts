@@ -1,35 +1,35 @@
 import { of } from 'rxjs';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, CONTAINER_SOURCE, FeaturedFlags } from '@dotcms/dotcms-models';
+import { CONTAINER_SOURCE, DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
-    DotCMSLayout,
-    DotCMSPageAsset,
-    DotCMSSite,
-    DotCMSViewAsPersona,
-    DotCMSPageAssetContainers,
-    DotCMSPage,
-    DotCMSTemplate,
-    DotCMSContainerStructure,
     DotCMSContainer,
+    DotCMSContainerStructure,
+    DotCMSLayout,
+    DotCMSPage,
+    DotCMSPageAsset,
+    DotCMSPageAssetContainers,
+    DotCMSSite,
+    DotCMSTemplate,
+    DotCMSURLContentMap,
     DotCMSVanityUrl,
-    DotCMSURLContentMap
+    DotCMSViewAsPersona
 } from '@dotcms/types';
 import {
-    mockSites,
+    dotcmsContentletMock,
+    mockDotContainers,
     mockDotLayout,
     mockDotTemplate,
-    mockDotContainers,
-    dotcmsContentletMock
+    mockSites
 } from '@dotcms/utils-testing';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from './consts';
 import { ActionPayload, ClientData } from './models';
 
 import {
-    EmaDragItem,
+    Container,
     ContentletArea,
-    Container
+    EmaDragItem
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 
 export const HEADLESS_BASE_QUERY_PARAMS = {
@@ -53,8 +53,7 @@ export const PAYLOAD_MOCK: ActionPayload = {
         contentletsId: ['19c5ecc0c59b17b5780acd624ad52444', '2e5d54e6-7ea3-4d72-8577-b8731b206ca0'],
         identifier: '//demo.dotcms.com/application/containers/banner/',
         maxContentlets: 25,
-        uuid: '1',
-        variantId: '1'
+        uuid: '1'
     },
     contentlet: {
         identifier: '19c5ecc0c59b17b5780acd624ad52444',
@@ -416,8 +415,7 @@ export const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
         acceptTypes: 'test',
         uuid: 'test',
         maxContentlets: 1,
-        contentletsId: ['123'],
-        variantId: '123'
+        contentletsId: ['123']
     },
     pageId: 'test',
     position: 'before'
@@ -605,8 +603,7 @@ export const EMA_DRAG_ITEM_CONTENTLET_MOCK: EmaDragItem = {
                 identifier: '321',
                 acceptTypes: 'kenobi,theChosenOne,yoda',
                 maxContentlets: 3,
-                uuid: '123',
-                variantId: '123'
+                uuid: '123'
             },
             contentlet: {
                 identifier: '321',
@@ -632,7 +629,6 @@ export const MOCK_CONTENTLET_AREA: ContentletArea = {
             acceptTypes: '',
             identifier: '',
             maxContentlets: 0,
-            variantId: '',
             uuid: ''
         },
         contentlet: {
@@ -649,8 +645,7 @@ export const ACTION_MOCK: ClientData = {
         acceptTypes: 'file',
         identifier: '789',
         maxContentlets: 100,
-        uuid: '2',
-        variantId: '1'
+        uuid: '2'
     }
 };
 
@@ -727,8 +722,7 @@ export const ACTION_PAYLOAD_MOCK: ActionPayload = {
         acceptTypes: 'test',
         uuid: 'uuid-123',
         maxContentlets: 1,
-        contentletsId: ['123'],
-        variantId: '123'
+        contentletsId: ['123']
     },
     pageId: 'test',
     position: 'after'
@@ -1049,7 +1043,8 @@ export const dotPropertiesServiceMock = {
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,
             [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK]: false,
-            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: false
+            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: false,
+            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false
         })
 };
 

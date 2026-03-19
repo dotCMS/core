@@ -4,24 +4,29 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
     aggregateTotalConversions,
+    createEmptyAnalyticsEntity,
+    createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
-    determineGranularityForTimeRange,
     extractPageTitle,
     extractPageViews,
     extractSessions,
     extractTopPageValue,
+    fillMissingDates,
     getDateRange,
+    getPreviousPeriod,
     transformDeviceBrowsersData,
     transformPageViewTimeLineData,
     transformTopPagesTableData
 } from './analytics-data.utils';
 
+import { AnalyticsChartColors } from '../../constants';
+import { Granularity } from '../../types';
+
+// eslint-disable-next-line no-duplicate-imports
 import type {
-    Granularity,
     PageViewDeviceBrowsersEntity,
     PageViewTimeLineEntity,
     TablePageData,
-    TimeRange,
     TopPagePerformanceEntity,
     TopPerformanceTableEntity,
     TotalConversionsEntity,
@@ -66,16 +71,16 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(1250);
             });
 
-            it('should return 0 when data is null', () => {
+            it('should return null when data is null', () => {
                 const result = extractPageViews(null);
-                expect(result).toBe(0);
+                expect(result).toBeNull();
             });
 
-            it('should return 0 when totalRequest is missing', () => {
+            it('should return null when totalRequest is missing', () => {
                 const mockData: Partial<TotalPageViewsEntity> = {};
 
                 const result = extractPageViews(mockData as TotalPageViewsEntity);
-                expect(result).toBe(0);
+                expect(result).toBeNull();
             });
 
             it('should handle string numbers correctly', () => {
@@ -98,9 +103,9 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(342);
             });
 
-            it('should return 0 when data is null', () => {
+            it('should return null when data is null', () => {
                 const result = extractSessions(null);
-                expect(result).toBe(0);
+                expect(result).toBeNull();
             });
 
             it('should return NaN when totalUsers is missing', () => {
@@ -123,9 +128,9 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(890);
             });
 
-            it('should return 0 when data is null', () => {
+            it('should return null when data is null', () => {
                 const result = extractTopPageValue(null);
-                expect(result).toBe(0);
+                expect(result).toBeNull();
             });
 
             it('should return NaN when totalRequest is missing', () => {
@@ -357,7 +362,7 @@ describe('Analytics Data Utils', () => {
                 expect(result.datasets[0].label).toBe(
                     'analytics.charts.pageviews-timeline.dataset-label'
                 );
-                expect(result.datasets[0].borderColor).toBe('#3B82F6');
+                expect(result.datasets[0].borderColor).toBe(AnalyticsChartColors.primary.line);
                 expect(result.datasets[0].cubicInterpolationMode).toBe('monotone');
             });
 
@@ -716,7 +721,9 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.labels).toEqual(['No Data']);
                 expect(result.datasets[0].data).toEqual([1]);
-                expect(result.datasets[0].backgroundColor).toEqual(['#E5E7EB']);
+                expect(result.datasets[0].backgroundColor).toEqual([
+                    AnalyticsChartColors.neutral.line
+                ]);
             });
 
             it('should group by browser and device type correctly', () => {
@@ -784,79 +791,6 @@ describe('Analytics Data Utils', () => {
         });
     });
 
-    describe('determineGranularityForTimeRange', () => {
-        it('should return hour granularity for today', () => {
-            const result = determineGranularityForTimeRange('today' as TimeRange);
-            expect(result).toBe('hour' as Granularity);
-        });
-
-        it('should return hour granularity for yesterday', () => {
-            const result = determineGranularityForTimeRange('yesterday' as TimeRange);
-            expect(result).toBe('hour' as Granularity);
-        });
-
-        it('should return day granularity for last 7 days', () => {
-            const result = determineGranularityForTimeRange('from 7 days ago to now' as TimeRange);
-            expect(result).toBe('day' as Granularity);
-        });
-
-        it('should return day granularity for last 30 days', () => {
-            const result = determineGranularityForTimeRange('from 30 days ago to now' as TimeRange);
-            expect(result).toBe('day' as Granularity);
-        });
-
-        it('should return day granularity for CUSTOM_TIME_RANGE (default for custom ranges)', () => {
-            const result = determineGranularityForTimeRange('CUSTOM_TIME_RANGE' as TimeRange);
-            expect(result).toBe('day' as Granularity);
-        });
-
-        describe('all valid TimeRange values', () => {
-            it('should handle all dropdown options correctly', () => {
-                const testCases = [
-                    { value: 'today', expected: 'hour' },
-                    { value: 'yesterday', expected: 'hour' },
-                    { value: 'from 7 days ago to now', expected: 'day' },
-                    { value: 'from 30 days ago to now', expected: 'day' },
-                    { value: 'CUSTOM_TIME_RANGE', expected: 'day' }
-                ];
-
-                testCases.forEach(({ value, expected }) => {
-                    const result = determineGranularityForTimeRange(value as TimeRange);
-                    expect(result).toBe(expected as Granularity);
-                });
-            });
-        });
-
-        describe('edge cases (fallback behavior)', () => {
-            it('should return day granularity for unknown patterns', () => {
-                // These would only occur in edge cases or custom implementations
-                const edgeCases = ['invalid format', 'from custom date to custom date', ''];
-
-                edgeCases.forEach((timeRange) => {
-                    const result = determineGranularityForTimeRange(timeRange as TimeRange);
-                    expect(result).toBe('day' as Granularity);
-                });
-            });
-        });
-
-        describe('custom date range', () => {
-            it('should return day granularity for custom date range on the same month', () => {
-                const result = determineGranularityForTimeRange(['2024-01-01', '2024-01-31']);
-                expect(result).toBe('day');
-            });
-
-            it('should return hour granularity for custom date range on the same day', () => {
-                const result = determineGranularityForTimeRange(['2024-01-01', '2024-01-01']);
-                expect(result).toBe('hour');
-            });
-
-            it('should return month granularity for custom date range', () => {
-                const result = determineGranularityForTimeRange(['2024-01-01', '2024-04-31']);
-                expect(result).toBe('month');
-            });
-        });
-    });
-
     describe('getDateRange', () => {
         beforeEach(() => {
             jest.useFakeTimers();
@@ -868,22 +802,6 @@ describe('Analytics Data Utils', () => {
         });
 
         describe('success cases', () => {
-            it('should return today range correctly', () => {
-                const result = getDateRange('today');
-                const [startDate, endDate] = result;
-
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
-            });
-
-            it('should return yesterday range correctly', () => {
-                const result = getDateRange('yesterday');
-                const [startDate, endDate] = result;
-
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
-            });
-
             it('should return last 7 days range correctly', () => {
                 const result = getDateRange('last7days');
                 const [startDate, endDate] = result;
@@ -915,35 +833,156 @@ describe('Analytics Data Utils', () => {
                 expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 00:00:00');
                 expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-15 23:59:59');
             });
+        });
+    });
 
-            it('should handle leap year dates correctly', () => {
-                jest.setSystemTime(new Date('2024-02-15T12:00:00.000Z'));
+    describe('getPreviousPeriod', () => {
+        it('should return previous period of same length for custom date range', () => {
+            const result = getPreviousPeriod(['2026-02-01', '2026-02-06']);
+            expect(result).toEqual(['2026-01-26', '2026-01-31']);
+        });
 
-                const result = getDateRange('yesterday');
-                const [startDate, endDate] = result;
+        it('should return previous period for single-day custom range', () => {
+            const result = getPreviousPeriod(['2026-02-01', '2026-02-01']);
+            expect(result).toEqual(['2026-01-31', '2026-01-31']);
+        });
 
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-02-14 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-02-14 23:59:59');
+        it('should return previous period for predefined last7days', () => {
+            jest.useFakeTimers();
+            jest.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+            const result = getPreviousPeriod('last7days');
+            jest.useRealTimers();
+            // last7days: Jan 9 - Jan 15 (7 days). Previous: Jan 2 - Jan 8
+            expect(result[0]).toBe('2024-01-02');
+            expect(result[1]).toBe('2024-01-08');
+        });
+    });
+
+    describe('fillMissingDates', () => {
+        describe('with PageViewTimeLineEntity', () => {
+            it('should return empty array when data is null', () => {
+                const result = fillMissingDates(
+                    null as unknown as PageViewTimeLineEntity[],
+                    ['2024-01-01', '2024-01-03'],
+                    Granularity.DAY,
+                    createEmptyAnalyticsEntity
+                );
+
+                expect(result).toEqual([]);
             });
 
-            it('should handle month boundary dates correctly', () => {
-                jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+            it('should return empty array when data is not an array', () => {
+                const result = fillMissingDates(
+                    {} as unknown as PageViewTimeLineEntity[],
+                    ['2024-01-01', '2024-01-03'],
+                    Granularity.DAY,
+                    createEmptyAnalyticsEntity
+                );
 
-                const result = getDateRange('yesterday');
-                const [startDate, endDate] = result;
-
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 23:59:59');
+                expect(result).toEqual([]);
             });
 
-            it('should handle year boundary dates correctly', () => {
-                jest.setSystemTime(new Date('2024-01-01T12:00:00.000Z'));
+            it('should fill all dates in range when data is empty', () => {
+                const result = fillMissingDates<PageViewTimeLineEntity>(
+                    [],
+                    ['2024-01-01', '2024-01-03'],
+                    Granularity.DAY,
+                    createEmptyAnalyticsEntity
+                );
 
-                const result = getDateRange('yesterday');
-                const [startDate, endDate] = result;
+                // Should create 3 days worth of empty data
+                expect(result).toHaveLength(3);
+                result.forEach((item) => {
+                    expect(item['EventSummary.totalEvents']).toBe('0');
+                });
+            });
 
-                expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 00:00:00');
-                expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 23:59:59');
+            it('should return correct number of entries for date range', () => {
+                const result = fillMissingDates<PageViewTimeLineEntity>(
+                    [],
+                    ['2024-01-01', '2024-01-05'],
+                    Granularity.DAY,
+                    createEmptyAnalyticsEntity
+                );
+
+                // 5 days: Jan 1, 2, 3, 4, 5
+                expect(result).toHaveLength(5);
+                // All should be zero since input was empty
+                result.forEach((item) => {
+                    expect(item['EventSummary.totalEvents']).toBe('0');
+                    expect(item['EventSummary.day']).toBeDefined();
+                    expect(item['EventSummary.day.day']).toBeDefined();
+                });
+            });
+
+            it('should use the factory function to create empty entities', () => {
+                const customFactory = jest.fn((date: Date, dateKey: string) => ({
+                    'EventSummary.day': dateKey,
+                    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+                    'EventSummary.totalEvents': '999' // Custom value to verify factory is used
+                }));
+
+                const result = fillMissingDates(
+                    [],
+                    ['2024-01-01', '2024-01-02'],
+                    Granularity.DAY,
+                    customFactory
+                );
+
+                expect(customFactory).toHaveBeenCalledTimes(2);
+                expect(result[0]['EventSummary.totalEvents']).toBe('999');
+            });
+        });
+
+        describe('with TrafficVsConversionsEntity', () => {
+            it('should create entities with correct structure when filling gaps', () => {
+                const result = fillMissingDates(
+                    [],
+                    ['2024-01-01', '2024-01-02'],
+                    Granularity.DAY,
+                    createEmptyTrafficVsConversionsEntity
+                );
+
+                expect(result).toHaveLength(2);
+                result.forEach((item) => {
+                    expect(item['EventSummary.uniqueVisitors']).toBe('0');
+                    expect(item['EventSummary.uniqueConvertingVisitors']).toBe('0');
+                    expect(item['EventSummary.day']).toBeDefined();
+                    expect(item['EventSummary.day.day']).toBeDefined();
+                });
+            });
+        });
+    });
+
+    describe('Entity Factories', () => {
+        const testDate = new Date('2024-01-15T12:00:00.000Z');
+        const testDateKey = testDate.toISOString();
+
+        describe('createEmptyAnalyticsEntity', () => {
+            it('should create entity with correct structure', () => {
+                const result = createEmptyAnalyticsEntity<PageViewTimeLineEntity>(
+                    testDate,
+                    testDateKey
+                );
+
+                expect(result).toEqual({
+                    'EventSummary.day': testDateKey,
+                    'EventSummary.day.day': '2024-01-15',
+                    'EventSummary.totalEvents': '0'
+                });
+            });
+        });
+
+        describe('createEmptyTrafficVsConversionsEntity', () => {
+            it('should create entity with correct structure', () => {
+                const result = createEmptyTrafficVsConversionsEntity(testDate, testDateKey);
+
+                expect(result).toEqual({
+                    'EventSummary.day': testDateKey,
+                    'EventSummary.day.day': '2024-01-15',
+                    'EventSummary.uniqueVisitors': '0',
+                    'EventSummary.uniqueConvertingVisitors': '0'
+                });
             });
         });
     });

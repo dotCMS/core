@@ -1,7 +1,0 @@
-<p-button
-    (click)="menu.toggle($event)"
-    [disabled]="!actionsAvailable"
-    icon="pi pi-ellipsis-v"
-    styleClass=" p-button-rounded" />
-
-<p-menu [model]="actions | async" #menu popup="popup" appendTo="body" />

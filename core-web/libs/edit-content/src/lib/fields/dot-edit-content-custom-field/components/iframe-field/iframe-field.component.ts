@@ -123,7 +123,9 @@ export class IframeFieldComponent implements OnDestroy {
             params.set('modal', 'true');
         }
 
-        return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
+        const url = `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
+
+        return url;
     });
 
     /**
@@ -198,6 +200,11 @@ export class IframeFieldComponent implements OnDestroy {
         if (!this.ALLOWED_ORIGINS.includes(origin)) {
             console.warn('❌ Message received from unauthorized origin:', origin);
 
+            return;
+        }
+
+        // Ignore messages that don't have the expected structure
+        if (!data || typeof data !== 'object' || !('type' in data)) {
             return;
         }
 

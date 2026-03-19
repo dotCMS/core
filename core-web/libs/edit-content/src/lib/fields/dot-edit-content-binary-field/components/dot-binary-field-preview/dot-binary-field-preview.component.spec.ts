@@ -42,6 +42,9 @@ const clickOnInfoButton = (spectator: Spectator<DotBinaryFieldPreviewComponent>)
     spectator.detectChanges();
 };
 
+const queryGlobalByTestId = (testId: string): HTMLElement | null =>
+    document.querySelector(`[data-testid="${testId}"]`);
+
 describe('DotBinaryFieldPreviewComponent', () => {
     let spectator: Spectator<DotBinaryFieldPreviewComponent>;
     let dotResourceLinksService: DotResourceLinksService;
@@ -243,7 +246,7 @@ describe('DotBinaryFieldPreviewComponent', () => {
             mimeType: 'image/png'
         };
 
-        it('should have the correct resource links', () => {
+        it('should have the correct resource links', fakeAsync(() => {
             const spyResourceLinks = jest
                 .spyOn(dotResourceLinksService, 'getFileResourceLinksByInode')
                 .mockReturnValue(of(RESOURCE_LINKS));
@@ -251,11 +254,13 @@ describe('DotBinaryFieldPreviewComponent', () => {
             spectator.detectChanges();
 
             clickOnInfoButton(spectator);
+            tick();
+            spectator.detectChanges();
 
-            const fileLinkElement = spectator.query(byTestId('resource-link-FileLink'));
-            const resourceLinkElement = spectator.query(byTestId('resource-link-Resource-Link'));
-            const versionPathElement = spectator.query(byTestId('resource-link-VersionPath'));
-            const idPathElement = spectator.query(byTestId('resource-link-IdPath'));
+            const fileLinkElement = queryGlobalByTestId('resource-link-FileLink');
+            const resourceLinkElement = queryGlobalByTestId('resource-link-Resource-Link');
+            const versionPathElement = queryGlobalByTestId('resource-link-VersionPath');
+            const idPathElement = queryGlobalByTestId('resource-link-IdPath');
 
             expect(fileLinkElement).not.toBeNull();
             expect(resourceLinkElement).not.toBeNull();
@@ -266,7 +271,7 @@ describe('DotBinaryFieldPreviewComponent', () => {
                 fieldVariable: 'Binary',
                 inode: CONTENTLET_MOCK.inode
             });
-        });
+        }));
 
         it('should not have the Resource-Link', () => {
             const spyResourceLinks = jest

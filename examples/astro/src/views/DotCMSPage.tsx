@@ -1,9 +1,11 @@
-import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
+import { DotCMSLayoutBody, useEditableDotCMSPage, useStyleEditorSchemas } from "@dotcms/react";
 import type { DotCMSCustomPageResponse } from "@/types/page.model";
 
 import { dotComponents } from "@/components/content-types";
 import Footer from "@/components/common/Footer";
 import Header from "@/components/common/header/Header";
+import { ACTIVITY_SCHEMA, BANNER_SCHEMA } from "@/dotcms-integration";
+
 
 export const DotCMSPage = ({
   pageResponse,
@@ -12,6 +14,8 @@ export const DotCMSPage = ({
 }) => {
   const { pageAsset, content } =
     useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
+  
+  useStyleEditorSchemas([ACTIVITY_SCHEMA, BANNER_SCHEMA]);
   const { layout } = pageAsset;
 
   const showHeader = layout.header && content;

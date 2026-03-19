@@ -11,7 +11,6 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-ema-running-experiment',
     imports: [TagModule, RouterModule, RouterLink, DotMessagePipe, TitleCasePipe, DatePipe],
     templateUrl: './dot-ema-running-experiment.component.html',
-    styleUrl: './dot-ema-running-experiment.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEmaRunningExperimentComponent {

@@ -10,6 +10,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.CountView;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityContentletView;
 import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityMapView;
@@ -29,6 +30,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.VersionableAPI;
@@ -703,6 +705,66 @@ public class ContentResource {
         final Contentlet contentletHydrated = new DotTransformerBuilder().contentResourceOptions(false)
                 .content(contentlet).build().hydrate().get(0);
         return new ResponseEntityMapView(WorkflowHelper.getInstance().contentletToMap(contentlet));
+    }
+
+    /**
+     * Refreshes a contentlet by reindexing it and clearing it from cache.
+     *
+     * @param request            the HTTP servlet request, containing information about the client request.
+     * @param response           the HTTP servlet response, used for setting response parameters.
+     * @param identifierOrInode  the identifier or inode of the contentlet to be refreshed.
+     * @param language           the language ID of the contentlet (optional, defaults to -1 for fallback).
+     * @return a ResponseEntityBooleanView indicating success of the refresh operation
+     *
+     * @throws DotDataException        if there is a data access issue.
+     * @throws DotSecurityException    if the user does not have the required permissions.
+     * @throws DoesNotExistException   if the contentlet does not exist.
+     */
+    @PUT
+    @Path("/_refresh/{identifierOrInode}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "refreshContent", summary = "Refresh a contentlet",
+            description = "Reindexes and clears cache for the contentlet specified by its identifier or inode. " +
+                    "This operation forces the content to be refreshed in both the search index and application cache.",
+            tags = {"Content"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully refreshed contentlet",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityBooleanView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid identifier format"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks write permissions"),
+                    @ApiResponse(responseCode = "404", description = "Content not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
+            }
+    )
+    public ResponseEntityBooleanView refreshContent(@Context HttpServletRequest request,
+                                                    @Context HttpServletResponse response,
+                                                    @Parameter(description = "Contentlet identifier or inode", required = true)
+                                                    @PathParam("identifierOrInode") final String identifierOrInode,
+                                                    @Parameter(description = "Language ID for content localization")
+                                                    @DefaultValue("-1") @QueryParam("language") final String language)
+            throws DotDataException, DotSecurityException {
+
+        final User user =
+                new WebResource.InitBuilder(this.webResource)
+                        .requestAndResponse(request, response)
+                        .requiredAnonAccess(AnonymousAccess.WRITE)
+                        .init().getUser();
+
+        Logger.debug(this, () -> "Refreshing the contentlet: " + identifierOrInode);
+        final PageMode mode = PageMode.get(request);
+        final long testLangId = LanguageUtil.getLanguageId(language);
+        final long languageId = testLangId <= 0 ? this.languageWebAPI.getLanguage(request).getId() : testLangId;
+        final Contentlet contentlet = this.resolveContentletOrFallBack(identifierOrInode, mode, languageId, user);
+        CacheLocator.getContentletCache().remove(contentlet.getIdentifier());
+        this.contentletAPI.refresh(contentlet);
+
+        Logger.info(this, "Successfully refreshed contentlet: " + identifierOrInode);
+
+        return new ResponseEntityBooleanView(true);
     }
 
     /**

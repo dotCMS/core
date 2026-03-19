@@ -1,25 +1,26 @@
 @if (vm$ | async; as vm) {
     <p-card>
-        <ng-template pTemplate="title">
-            <h2 data-testId="targeting-card-name">
+        <ng-template #title>
+            <h2 class="m-0 text-lg font-bold uppercase" data-testId="targeting-card-name">
                 {{ 'experiments.configure.targeting.name' | dm }}
             </h2>
         </ng-template>
 
-        <ng-template pTemplate="footer">
+        <ng-template #footer>
             <div
                 [pTooltip]="vm.disabledTooltipLabel | dm"
                 [tooltipDisabled]="!vm.disabledTooltipLabel"
                 class="inline-block"
                 data-testId="tooltip-on-disabled"
                 tooltipPosition="bottom">
-                <button
-                    (click)="setupTargeting()"
+                <p-button
+                    (onClick)="setupTargeting()"
                     [disabled]="vm.disabledTooltipLabel"
-                    class="p-button-sm p-button-text"
+                    [text]="true"
+                    [size]="'small'"
                     data-testId="targeting-add-button"
-                    label="{{ 'experiments.configure.targeting.add' | dm }}"
-                    pButton></button>
+                    [label]="'experiments.configure.targeting.add' | dm"
+                    type="button" />
             </div>
         </ng-template>
     </p-card>

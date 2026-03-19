@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    // EditorConfig support for consistent formatting
+    "editorconfig.editorconfig",
+
+    // Java extensions (install only these 4, NOT the full Extension Pack)
+    "redhat.java",                    // Language Support for Java (core language server)
+    "vscjava.vscode-java-debug",      // Debugger for Java
+    "vscjava.vscode-java-test",       // Test Runner for Java
+    "vscjava.vscode-java-dependency", // Project Manager for Java
+
+    // Docker development
+    "ms-azuretools.vscode-docker"     // Docker container management
+  ],
+  "unwantedRecommendations": [
+    // Do NOT install these - they cause issues
+    "vscjava.vscode-java-pack",       // Use individual extensions instead
+    "vscjava.vscode-maven",           // Causes auto-build errors
+    "visualstudioexptteam.vscodeintellicode"  // Not needed
+  ]
+}

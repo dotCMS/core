@@ -19,6 +19,9 @@
     "compilerOptions": {
         "target": "ES2022",
         "lib": ["es2022", "dom", "dom.iterable"],
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "moduleResolution": "bundler",
+        "resolvePackageJsonExports": true,
+        "module": "preserve"
     }
 }
