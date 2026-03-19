@@ -47,6 +47,11 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since Mar 22, 2012
  */
+/**
+ * @deprecated This DWR class is deprecated and will be removed in a future release.
+ *             Use the JAX-RS REST API at {@code /api/v1/site/} instead.
+ */
+@Deprecated(forRemoval = true)
 public class HostAjax {
 
 	private final HostAPI hostAPI = APILocator.getHostAPI();

@@ -1,12 +1,17 @@
 package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -20,12 +25,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import com.liferay.util.Base64;
 import static org.junit.Assert.*;
 import java.util.ArrayList;
@@ -1411,5 +1419,679 @@ public class PermissionResourceIntegrationTest {
             }
         }
         assertTrue("Should find the test folder in assets", foundFolder);
+    }
+
+    // ==================== GET Asset Permissions Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user requests permissions for a host.</li>
+     *     <li><b>Expected Result:</b> Returns asset metadata (assetId, assetType, inheritanceMode)
+     *     and a paginated list of role permissions.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getAssetPermissions_hostAsAdmin_success() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final ResponseEntityPaginatedDataView responseView = resource.getAssetPermissions(
+                request, response, testHost.getIdentifier(), 1, 40);
+
+        assertNotNull("Response should not be null", responseView);
+        final Object entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
+
+        // The entity is an AssetPermissionsView
+        assertTrue("Entity should be AssetPermissionsView",
+                entity instanceof AssetPermissionsView);
+
+        final AssetPermissionsView view = (AssetPermissionsView) entity;
+        assertEquals("assetId should match", testHost.getIdentifier(), view.assetId());
+        assertEquals("assetType should be HOST", PermissionAPI.Scope.HOST, view.assetType());
+        assertNotNull("inheritanceMode should be present", view.inheritanceMode());
+        assertTrue("host should be parentPermissionable", view.isParentPermissionable());
+        assertNotNull("permissions list should be present", view.permissions());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user requests permissions for a folder.</li>
+     *     <li><b>Expected Result:</b> Returns asset metadata with FOLDER type and permissions.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getAssetPermissions_folderAsAdmin_success() throws Exception {
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final ResponseEntityPaginatedDataView responseView = resource.getAssetPermissions(
+                request, response, testFolder.getInode(), 1, 40);
+
+        assertNotNull("Response should not be null", responseView);
+        final AssetPermissionsView view = (AssetPermissionsView) responseView.getEntity();
+        assertEquals("assetType should be FOLDER", PermissionAPI.Scope.FOLDER, view.assetType());
+        assertTrue("folder should be parentPermissionable", view.isParentPermissionable());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Asset ID does not exist in the system.</li>
+     *     <li><b>Expected Result:</b> NotFoundInDbException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = NotFoundInDbException.class)
+    public void test_getAssetPermissions_assetNotFound_throws404() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        resource.getAssetPermissions(request, response, "non-existent-asset-id-99999", 1, 40);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Non-admin user without READ permission on the asset.</li>
+     *     <li><b>Expected Result:</b> DotSecurityException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_getAssetPermissions_noReadPermission_throws403() throws Exception {
+        // Create a host with no permissions for limited user
+        final Host restrictedHost = new SiteDataGen().nextPersisted();
+
+        final String knownPassword = "testPassword202";
+        final User noPermUser = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        final HttpServletRequest request = getHttpRequest(noPermUser.getEmailAddress(), knownPassword);
+
+        resource.getAssetPermissions(request, response, restrictedHost.getIdentifier(), 1, 40);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin requests asset permissions with pagination page=1, per_page=2.</li>
+     *     <li><b>Expected Result:</b> Response respects pagination and returns limited results.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getAssetPermissions_pagination_success() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        // Use updateTestHost which has permissions set up for multiple roles
+        final ResponseEntityPaginatedDataView responseView = resource.getAssetPermissions(
+                request, response, updateTestHost.getIdentifier(), 1, 2);
+
+        assertNotNull("Response should not be null", responseView);
+        final AssetPermissionsView view = (AssetPermissionsView) responseView.getEntity();
+        assertNotNull("permissions should be present", view.permissions());
+        assertTrue("permissions page should respect per_page limit",
+                view.permissions().size() <= 2);
+    }
+
+    // ==================== Update Role Permissions Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateRolePermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates INDIVIDUAL permissions for a role on a host.</li>
+     *     <li><b>Expected Result:</b> Permissions are saved successfully with the specified levels.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateRolePermissions_basicIndividual_success() throws Exception {
+        final Role roleToUpdate = new RoleDataGen().nextPersisted();
+        final Host roleTestHost = new SiteDataGen().nextPersisted();
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Arrays.asList("READ", "WRITE"));
+
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        final ResponseEntityUpdateRolePermissionsView responseView = resource.updateRolePermissions(
+                request, response, roleToUpdate.getId(), roleTestHost.getIdentifier(), false, form);
+
+        assertNotNull("Response should not be null", responseView);
+        final UpdateRolePermissionsView entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
+        assertEquals("roleId should match", roleToUpdate.getId(), entity.roleId());
+        assertEquals("roleName should match", roleToUpdate.getName(), entity.roleName());
+        assertNotNull("asset should be present", entity.asset());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateRolePermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin user updates permissions with multiple scopes
+     *     (INDIVIDUAL + FOLDER + CONTENT) for a role on a folder.</li>
+     *     <li><b>Expected Result:</b> Permissions saved with all scopes.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateRolePermissions_multipleScopes_success() throws Exception {
+        final Role roleToUpdate = new RoleDataGen().nextPersisted();
+        final Folder roleTestFolder = new FolderDataGen().site(testHost).nextPersisted();
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Arrays.asList("READ", "WRITE", "PUBLISH"));
+        permissions.put("FOLDER", Arrays.asList("READ", "CAN_ADD_CHILDREN"));
+        permissions.put("CONTENT", Arrays.asList("READ", "WRITE", "PUBLISH"));
+
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        final ResponseEntityUpdateRolePermissionsView responseView = resource.updateRolePermissions(
+                request, response, roleToUpdate.getId(), roleTestFolder.getInode(), false, form);
+
+        assertNotNull("Response should not be null", responseView);
+        final UpdateRolePermissionsView entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
+        assertNotNull("asset should be present", entity.asset());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateRolePermissions}</li>
+     *     <li><b>Given Scenario:</b> Non-admin user attempts to update role permissions.</li>
+     *     <li><b>Expected Result:</b> DotSecurityException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_updateRolePermissions_nonAdmin_forbidden() throws Exception {
+        final Role roleToUpdate = new RoleDataGen().nextPersisted();
+
+        final String knownPassword = "testPassword303";
+        final User nonAdminUser = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Arrays.asList("READ"));
+
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        resource.updateRolePermissions(
+                getHttpRequest(nonAdminUser.getEmailAddress(), knownPassword),
+                response, roleToUpdate.getId(), testHost.getIdentifier(), false, form);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateRolePermissions}</li>
+     *     <li><b>Given Scenario:</b> Invalid scope name in the form.</li>
+     *     <li><b>Expected Result:</b> BadRequestException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_updateRolePermissions_invalidScope_badRequest() throws Exception {
+        final Role roleToUpdate = new RoleDataGen().nextPersisted();
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INVALID_SCOPE", Arrays.asList("READ"));
+
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        resource.updateRolePermissions(
+                request, response, roleToUpdate.getId(), testHost.getIdentifier(), false, form);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateRolePermissions}</li>
+     *     <li><b>Given Scenario:</b> Empty role ID provided.</li>
+     *     <li><b>Expected Result:</b> BadRequestException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_updateRolePermissions_emptyRoleId_badRequest() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Arrays.asList("READ"));
+
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        resource.updateRolePermissions(
+                request, response, "", testHost.getIdentifier(), false, form);
+    }
+
+    // ==================== Break Permission Inheritance Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#permissionIndividually}</li>
+     *     <li><b>Given Scenario:</b> Admin user breaks inheritance on a folder that currently inherits.</li>
+     *     <li><b>Expected Result:</b> Success response, and the folder now has individual permissions.</li>
+     * </ul>
+     */
+    @Test
+    public void test_permissionIndividually_folder_success() throws Exception {
+        // Create a fresh folder under testHost (should inherit by default)
+        final Folder freshFolder = new FolderDataGen()
+                .site(testHost)
+                .title("inherit-break-test")
+                .nextPersisted();
+
+        // Ensure it's inheriting first
+        APILocator.getPermissionAPI().resetPermissionsUnder(testHost);
+
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final ResponseEntityStringView responseView = resource.permissionIndividually(
+                request, response, freshFolder.getInode());
+
+        assertNotNull("Response should not be null", responseView);
+        assertEquals("Success message should be returned",
+                "Permission inheritance broken successfully", responseView.getEntity());
+
+        // Verify the folder now has individual permissions
+        final boolean isInheriting = APILocator.getPermissionAPI().isInheritingPermissions(freshFolder);
+        assertFalse("Folder should no longer inherit permissions", isInheriting);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#permissionIndividually}</li>
+     *     <li><b>Given Scenario:</b> Asset ID does not exist.</li>
+     *     <li><b>Expected Result:</b> NotFoundInDbException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = NotFoundInDbException.class)
+    public void test_permissionIndividually_assetNotFound_throws404() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        resource.permissionIndividually(request, response, "non-existent-asset-id-88888");
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#permissionIndividually}</li>
+     *     <li><b>Given Scenario:</b> User without EDIT_PERMISSIONS on the asset.</li>
+     *     <li><b>Expected Result:</b> DotSecurityException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_permissionIndividually_noEditPermission_throws403() throws Exception {
+        final Host restrictedHost = new SiteDataGen().nextPersisted();
+        final Folder restrictedFolder = new FolderDataGen()
+                .site(restrictedHost)
+                .nextPersisted();
+
+        final String knownPassword = "testPassword404";
+        final User noPermUser = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        // Give READ only (no EDIT_PERMISSIONS)
+        final Role userRole = APILocator.getRoleAPI().getUserRole(noPermUser);
+        final Permission readOnlyPerm = new Permission(
+                restrictedFolder.getPermissionId(),
+                userRole.getId(),
+                PermissionAPI.PERMISSION_READ,
+                true
+        );
+        APILocator.getPermissionAPI().save(readOnlyPerm, restrictedFolder, adminUser, false);
+
+        resource.permissionIndividually(
+                getHttpRequest(noPermUser.getEmailAddress(), knownPassword),
+                response, restrictedFolder.getInode());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#permissionIndividually}</li>
+     *     <li><b>Given Scenario:</b> Empty asset ID provided.</li>
+     *     <li><b>Expected Result:</b> BadRequestException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_permissionIndividually_emptyAssetId_throws400() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        resource.permissionIndividually(request, response, "");
+    }
+
+    // ==================== Get Permissionable Object Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getPermissionableObject}</li>
+     *     <li><b>Given Scenario:</b> Admin requests permissionable metadata for a host.</li>
+     *     <li><b>Expected Result:</b> Returns correct metadata with isHost=true.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPermissionableObject_host_success() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final ResponseEntityPermissionableObjectView responseView =
+                resource.getPermissionableObject(request, response, testHost.getIdentifier());
+
+        assertNotNull("Response should not be null", responseView);
+        final PermissionableObjectView view = responseView.getEntity();
+        assertNotNull("Entity should not be null", view);
+        assertEquals("id should match", testHost.getIdentifier(), view.getId());
+        assertTrue("isHost should be true", view.isHost());
+        assertFalse("isFolder should be false", view.isFolder());
+        assertTrue("admin should have permissions to edit", view.isDoesUserHavePermissionsToEdit());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getPermissionableObject}</li>
+     *     <li><b>Given Scenario:</b> Admin requests permissionable metadata for a folder.</li>
+     *     <li><b>Expected Result:</b> Returns correct metadata with isFolder=true.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPermissionableObject_folder_success() throws Exception {
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final ResponseEntityPermissionableObjectView responseView =
+                resource.getPermissionableObject(request, response, testFolder.getInode());
+
+        assertNotNull("Response should not be null", responseView);
+        final PermissionableObjectView view = responseView.getEntity();
+        assertNotNull("Entity should not be null", view);
+        assertTrue("isFolder should be true", view.isFolder());
+        assertFalse("isHost should be false", view.isHost());
+        assertTrue("isParentPermissionable should be true", view.isParentPermissionable());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getPermissionableObject}</li>
+     *     <li><b>Given Scenario:</b> Empty asset ID provided.</li>
+     *     <li><b>Expected Result:</b> BadRequestException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_getPermissionableObject_emptyAssetId_throws400() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        resource.getPermissionableObject(request, response, "");
+    }
+
+    // ==================== Get Permissions By Permission Type Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getPermissionsByPermissionType}</li>
+     *     <li><b>Given Scenario:</b> Admin user requests permissions by type for another user.</li>
+     *     <li><b>Expected Result:</b> Returns map of permission types indexed by permissionable types.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPermissionsByPermissionType_adminForUser_success() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Response result = resource.getPermissionsByPermissionType(
+                request, response, adminUser.getUserId(), "READ", null);
+
+        assertNotNull("Response should not be null", result);
+        assertEquals("Status should be 200", 200, result.getStatus());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getPermissionsByPermissionType}</li>
+     *     <li><b>Given Scenario:</b> Non-admin user requests their own permissions.</li>
+     *     <li><b>Expected Result:</b> Success - user can view own permissions.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPermissionsByPermissionType_selfAccess_success() throws Exception {
+        final String knownPassword = "testPassword505";
+        final User testUser = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        final HttpServletRequest request = getHttpRequest(testUser.getEmailAddress(), knownPassword);
+
+        final Response result = resource.getPermissionsByPermissionType(
+                request, response, testUser.getUserId(), "READ", null);
+
+        assertNotNull("Response should not be null", result);
+        assertEquals("Status should be 200", 200, result.getStatus());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getPermissionsByPermissionType}</li>
+     *     <li><b>Given Scenario:</b> Non-admin user tries to access another user's permissions.</li>
+     *     <li><b>Expected Result:</b> DotSecurityException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_getPermissionsByPermissionType_nonAdminAccessOther_forbidden() throws Exception {
+        final String knownPassword = "testPassword606";
+        final User testUser = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        final HttpServletRequest request = getHttpRequest(testUser.getEmailAddress(), knownPassword);
+
+        // Try to access admin's permissions
+        resource.getPermissionsByPermissionType(
+                request, response, adminUser.getUserId(), "READ", null);
+    }
+
+    // ==================== Get By Contentlet Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getByContentlet}</li>
+     *     <li><b>Given Scenario:</b> Admin requests permissions for a contentlet.</li>
+     *     <li><b>Expected Result:</b> Returns permissions list for the contentlet.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getByContentlet_adminAccess_success() throws Exception {
+        // Create a contentlet using the default content type
+        final Contentlet testContentlet = new ContentletDataGen(
+                APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find("webPageContent").id())
+                .host(testHost)
+                .setProperty("title", "Test Content for Permissions")
+                .setProperty("body", "Test body")
+                .languageId(1)
+                .nextPersisted();
+
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Response result = resource.getByContentlet(
+                request, response, testContentlet.getIdentifier(), "READ");
+
+        assertNotNull("Response should not be null", result);
+        assertEquals("Status should be 200", 200, result.getStatus());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getByContentlet}</li>
+     *     <li><b>Given Scenario:</b> Admin requests permissions with type ALL.</li>
+     *     <li><b>Expected Result:</b> Returns all permissions (unfiltered).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getByContentlet_typeAll_success() throws Exception {
+        final Contentlet testContentlet = new ContentletDataGen(
+                APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find("webPageContent").id())
+                .host(testHost)
+                .setProperty("title", "Test Content ALL Permissions")
+                .setProperty("body", "Test body")
+                .languageId(1)
+                .nextPersisted();
+
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Response result = resource.getByContentlet(
+                request, response, testContentlet.getIdentifier(), "ALL");
+
+        assertNotNull("Response should not be null", result);
+        assertEquals("Status should be 200", 200, result.getStatus());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getByContentlet}</li>
+     *     <li><b>Given Scenario:</b> Contentlet ID does not exist.</li>
+     *     <li><b>Expected Result:</b> 404 Not Found response.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getByContentlet_contentletNotFound_returns404() throws Exception {
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Response result = resource.getByContentlet(
+                request, response, "non-existent-contentlet-99999", "READ");
+
+        assertNotNull("Response should not be null", result);
+        assertEquals("Status should be 404", 404, result.getStatus());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#getByContentlet}</li>
+     *     <li><b>Given Scenario:</b> Non-admin user tries to access contentlet permissions.</li>
+     *     <li><b>Expected Result:</b> DotSecurityException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_getByContentlet_nonAdmin_forbidden() throws Exception {
+        final String knownPassword = "testPassword707";
+        final User nonAdmin = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        resource.getByContentlet(
+                getHttpRequest(nonAdmin.getEmailAddress(), knownPassword),
+                response, "any-contentlet-id", "READ");
+    }
+
+    // ==================== Reset + Re-get roundtrip Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> Multiple endpoints in sequence</li>
+     *     <li><b>Given Scenario:</b> Admin sets individual permissions on a folder, reads them,
+     *     resets to inherited, and reads again.</li>
+     *     <li><b>Expected Result:</b> After reset, the folder returns to inherited mode.</li>
+     * </ul>
+     */
+    @Test
+    public void test_roundtrip_setPermissions_thenReset_success() throws Exception {
+        // Create a fresh folder
+        final Folder roundtripFolder = new FolderDataGen()
+                .site(testHost)
+                .title("roundtrip-test")
+                .nextPersisted();
+
+        final HttpServletRequest adminRequest = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        // Step 1: Set individual permissions via updateAssetPermissions
+        final Role roundtripRole = new RoleDataGen().nextPersisted();
+        final RolePermissionForm roleForm = new RolePermissionForm(
+                roundtripRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE),
+                null
+        );
+        final UpdateAssetPermissionsForm updateForm = new UpdateAssetPermissionsForm(
+                Arrays.asList(roleForm)
+        );
+
+        resource.updateAssetPermissions(
+                adminRequest, response, roundtripFolder.getInode(), false, updateForm);
+
+        // Step 2: Verify asset has individual permissions
+        final ResponseEntityPaginatedDataView getResponse = resource.getAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response, roundtripFolder.getInode(), 1, 40);
+
+        final AssetPermissionsView viewAfterUpdate = (AssetPermissionsView) getResponse.getEntity();
+        assertEquals("Should be INDIVIDUAL after update",
+                InheritanceMode.INDIVIDUAL, viewAfterUpdate.inheritanceMode());
+
+        // Step 3: Reset permissions to inherited
+        resource.resetAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response, roundtripFolder.getInode());
+
+        // Step 4: Verify it's now inherited
+        final ResponseEntityPaginatedDataView getResponseAfterReset = resource.getAssetPermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response, roundtripFolder.getInode(), 1, 40);
+
+        final AssetPermissionsView viewAfterReset = (AssetPermissionsView) getResponseAfterReset.getEntity();
+        assertEquals("Should be INHERITED after reset",
+                InheritanceMode.INHERITED, viewAfterReset.inheritanceMode());
+    }
+
+    // ==================== Non-admin Security Boundary Tests ====================
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#resetAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Non-admin user attempts to reset asset permissions.</li>
+     *     <li><b>Expected Result:</b> DotSecurityException is thrown.</li>
+     * </ul>
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_resetAssetPermissions_nonAdmin_forbidden() throws Exception {
+        final String knownPassword = "testPassword808";
+        final User nonAdmin = new UserDataGen()
+                .password(knownPassword)
+                .roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        resource.resetAssetPermissions(
+                getHttpRequest(nonAdmin.getEmailAddress(), knownPassword),
+                response, testHost.getIdentifier());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link PermissionResource#updateAssetPermissions}</li>
+     *     <li><b>Given Scenario:</b> Admin sets permissions for a template asset.</li>
+     *     <li><b>Expected Result:</b> Permissions updated successfully for non-folder/host asset.</li>
+     * </ul>
+     */
+    @Test
+    public void test_updateAssetPermissions_templateAsset_success() throws Exception {
+        final Template testTemplate = new TemplateDataGen().nextPersisted();
+        final HttpServletRequest request = getHttpRequest(adminUser.getEmailAddress(), "admin");
+
+        final Role templateRole = new RoleDataGen().nextPersisted();
+        final RolePermissionForm roleForm = new RolePermissionForm(
+                templateRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ),
+                null
+        );
+        final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(
+                Arrays.asList(roleForm)
+        );
+
+        // Use identifier (not inode) because AssetPermissionHelper.resolveAsset
+        // uses findWorkingTemplate which expects the identifier
+        final ResponseEntityUpdatePermissionsView responseView = resource.updateAssetPermissions(
+                request, response, testTemplate.getIdentifier(), false, form);
+
+        assertNotNull("Response should not be null", responseView);
+        final UpdateAssetPermissionsView entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
     }
 }

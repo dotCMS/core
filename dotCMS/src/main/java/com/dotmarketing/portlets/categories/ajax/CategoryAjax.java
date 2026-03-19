@@ -37,6 +37,11 @@ import com.liferay.portal.util.PortalUtil;
 /**
  * @author David
  */
+/**
+ * @deprecated This DWR class is deprecated and will be removed in a future release.
+ *             Use the JAX-RS REST API at {@code /api/v1/categories/} instead.
+ */
+@Deprecated(forRemoval = true)
 public class CategoryAjax {
 
 	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();

@@ -7,6 +7,11 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
+/**
+ * @deprecated This DWR class is deprecated and will be removed in a future release.
+ *             No JSP callers remain. DWR entry removed from dwr.xml.
+ */
+@Deprecated(forRemoval = true)
 public class InodeAjax {
 	
 	public int compareInodes(String inodeStr1,String inodeStr2){

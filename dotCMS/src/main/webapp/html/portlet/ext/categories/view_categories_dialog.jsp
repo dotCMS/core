@@ -41,8 +41,6 @@
 }
 
 </style>
-<script type="text/javascript" src="/dwr/interface/CategoryAjax.js"></script>
-
 <script type="text/javascript">
 	dojo.require("dojox.grid.enhanced.plugins.Pagination");
 	dojo.require('dijit.layout.ContentPane');

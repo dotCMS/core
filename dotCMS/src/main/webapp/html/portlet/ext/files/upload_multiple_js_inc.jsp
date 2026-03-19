@@ -3,7 +3,6 @@
 
 <%@page import="com.dotmarketing.util.UtilMethods" %>
 
-<script src="/dwr/interface/HostAjax.js" type="text/javascript"></script>
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
 <script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
 

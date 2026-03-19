@@ -13,7 +13,211 @@
 <%@ page import="com.dotmarketing.portlets.rules.model.Rule" %>
 <%@ page import="com.dotmarketing.portlets.templates.design.bean.TemplateLayout" %>
 
-<script type="text/javascript" src="/dwr/interface/PermissionAjax.js"></script>
+<script type="text/javascript">
+// DWR-to-REST compatibility layer for PermissionAjax
+var PermissionAjax = (function () {
+
+    var PERM_BIT = {
+        READ: 1,
+        WRITE: 2,
+        PUBLISH: 4,
+        EDIT_PERMISSIONS: 8,
+        CAN_ADD_CHILDREN: 16
+    };
+
+    var SCOPE_TO_CLASS = {
+        HOST: 'com.dotmarketing.beans.Host',
+        FOLDER: 'com.dotmarketing.portlets.folders.model.Folder',
+        CONTAINER: 'com.dotmarketing.portlets.containers.model.Container',
+        TEMPLATE: 'com.dotmarketing.portlets.templates.model.Template',
+        TEMPLATE_LAYOUT: 'com.dotmarketing.portlets.templates.design.bean.TemplateLayout',
+        PAGE: 'com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage',
+        LINK: 'com.dotmarketing.portlets.links.model.Link',
+        CONTENT: 'com.dotmarketing.portlets.contentlet.model.Contentlet',
+        STRUCTURE: 'com.dotmarketing.portlets.structure.model.Structure',
+        CATEGORY: 'com.dotmarketing.portlets.categories.model.Category',
+        RULES: 'com.dotmarketing.portlets.rules.model.Rule'
+    };
+
+    var FIELD_TO_SCOPE = {
+        foldersPermission: 'FOLDER',
+        containersPermission: 'CONTAINER',
+        templatesPermission: 'TEMPLATE',
+        templateLayoutsPermission: 'TEMPLATE_LAYOUT',
+        pagesPermission: 'PAGE',
+        linksPermission: 'LINK',
+        contentPermission: 'CONTENT',
+        structurePermission: 'STRUCTURE',
+        rulesPermission: 'RULES'
+    };
+
+    function namesToBits(nameArray) {
+        var bits = 0;
+        if (!nameArray) return bits;
+        nameArray.forEach(function (p) {
+            if (PERM_BIT[p] !== undefined) bits |= PERM_BIT[p];
+        });
+        return bits;
+    }
+
+    function resolveCallback(callbackConfig) {
+        if (typeof callbackConfig === 'function') {
+            return { fn: callbackConfig, scope: window };
+        }
+        return { fn: callbackConfig.callback, scope: callbackConfig.scope || window };
+    }
+
+    return {
+
+        getAssetPermissions: function (assetId, languageId, callbackConfig) {
+            var cb = resolveCallback(callbackConfig);
+            var langParam = languageId ? '&languageId=' + encodeURIComponent(languageId) : '';
+            fetch('/api/v1/permissions/' + encodeURIComponent(assetId) + '?per_page=100' + langParam, { cache: 'no-cache' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var entity = data.entity || {};
+                    var permissions = entity.permissions || [];
+                    var dwrRoles = permissions.map(function (rp) {
+                        var role = {
+                            id: rp.roleId,
+                            name: rp.roleName,
+                            inherited: !!rp.inherited,
+                            inheritedFromType: rp.inheritedFromType || '',
+                            inheritedFromPath: rp.inheritedFromPath || '',
+                            inheritedFromId: rp.inheritedFromId || '',
+                            editPermissions: true,
+                            locked: false,
+                            permissions: []
+                        };
+                        // Merge all permission types into "individual" to match DWR behavior.
+                        // DWR's getAssetPermissions() forced ALL permissions from getPermissions()
+                        // to type="individual", so roles with only inheritable-type permissions
+                        // (e.g., FOLDER READ) still had their bits in the "individual" bucket.
+                        var allBits = namesToBits(rp.individual);
+                        var inheritable = rp.inheritable || {};
+                        Object.keys(inheritable).forEach(function (scope) {
+                            allBits |= namesToBits(inheritable[scope]);
+                        });
+                        if (allBits > 0) {
+                            role.permissions.push({
+                                type: 'individual',
+                                permission: allBits,
+                                inode: entity.assetId
+                            });
+                        }
+                        // Also add scope-specific entries for inheritable permissions
+                        // (these come from the separate getInheritablePermissions() call in the DWR)
+                        Object.keys(inheritable).forEach(function (scope) {
+                            var className = SCOPE_TO_CLASS[scope] || scope;
+                            role.permissions.push({
+                                type: className,
+                                permission: namesToBits(inheritable[scope]),
+                                inode: entity.assetId
+                            });
+                        });
+                        return role;
+                    });
+                    cb.fn.call(cb.scope, dwrRoles);
+                })
+                .catch(function (error) {
+                    console.error('PermissionAjax.getAssetPermissions failed:', error);
+                });
+        },
+
+        saveAssetPermissions: function (assetId, languageId, permissions, cascade, callbackConfig) {
+            function bitsToNames(bits) {
+                var names = [];
+                if (bits & PERM_BIT.READ) names.push('READ');
+                if (bits & PERM_BIT.WRITE) names.push('WRITE');
+                if (bits & PERM_BIT.PUBLISH) names.push('PUBLISH');
+                if (bits & PERM_BIT.EDIT_PERMISSIONS) names.push('EDIT_PERMISSIONS');
+                if (bits & PERM_BIT.CAN_ADD_CHILDREN) names.push('CAN_ADD_CHILDREN');
+                return names;
+            }
+
+            var restPermissions = permissions.map(function (p) {
+                var roleForm = { roleId: p.roleId, individual: [] };
+                if (p.individualPermission != null) {
+                    roleForm.individual = bitsToNames(parseInt(p.individualPermission) || 0);
+                }
+                var inheritable = {};
+                Object.keys(FIELD_TO_SCOPE).forEach(function (field) {
+                    if (p[field] != null) {
+                        var names = bitsToNames(parseInt(p[field]) || 0);
+                        if (names.length > 0) {
+                            inheritable[FIELD_TO_SCOPE[field]] = names;
+                        }
+                    }
+                });
+                if (Object.keys(inheritable).length > 0) {
+                    roleForm.inheritable = inheritable;
+                }
+                return roleForm;
+            });
+
+            var url = '/api/v1/permissions/' + encodeURIComponent(assetId) + '?cascade=' + (cascade ? 'true' : 'false');
+            if (languageId) url += '&languageId=' + encodeURIComponent(languageId);
+
+            fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ permissions: restPermissions }),
+                cache: 'no-cache'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function () {
+                    if (typeof callbackConfig === 'function') {
+                        callbackConfig();
+                    } else if (callbackConfig && typeof callbackConfig.callback === 'function') {
+                        callbackConfig.callback.call(callbackConfig.scope || window);
+                    }
+                })
+                .catch(function (error) {
+                    console.error('PermissionAjax.saveAssetPermissions failed:', error);
+                });
+        },
+
+        permissionIndividually: function (assetId, languageId, callback) {
+            var url = '/api/v1/permissions/' + encodeURIComponent(assetId) + '/_individualpermission';
+            if (languageId) url += '?languageId=' + encodeURIComponent(languageId);
+            fetch(url, { method: 'PUT', cache: 'no-cache' })
+                .then(function (r) { return r.json(); })
+                .then(function () {
+                    if (typeof callback === 'function') callback();
+                })
+                .catch(function (error) {
+                    console.error('PermissionAjax.permissionIndividually failed:', error);
+                });
+        },
+
+        resetAssetPermissions: function (assetId, languageId, callback) {
+            var url = '/api/v1/permissions/' + encodeURIComponent(assetId) + '/_reset';
+            if (languageId) url += '?languageId=' + encodeURIComponent(languageId);
+            fetch(url, { method: 'PUT', cache: 'no-cache' })
+                .then(function (r) { return r.json(); })
+                .then(function () {
+                    if (typeof callback === 'function') callback();
+                })
+                .catch(function (error) {
+                    console.error('PermissionAjax.resetAssetPermissions failed:', error);
+                });
+        },
+
+        getAsset: function (inodeOrId, callbackConfig) {
+            var cb = resolveCallback(callbackConfig);
+            fetch('/api/v1/permissions/' + encodeURIComponent(inodeOrId) + '/_permissionable', { cache: 'no-cache' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    cb.fn.call(cb.scope, data.entity);
+                })
+                .catch(function (error) {
+                    console.error('PermissionAjax.getAsset failed:', error);
+                });
+        }
+
+    };
+}());
+</script>
 <script type="text/javascript" src="/html/js/dotcms/dijit/form/RolesFilteringSelect.js"></script>
 <script type="text/javascript"><!--
 

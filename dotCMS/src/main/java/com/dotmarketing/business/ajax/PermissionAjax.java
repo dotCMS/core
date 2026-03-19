@@ -64,6 +64,11 @@ import com.liferay.portal.model.User;
  * @author davidtorresv
  *
  */
+/**
+ * @deprecated This DWR class is deprecated and will be removed in a future release.
+ *             Use the JAX-RS REST API at {@code /api/v1/permissions/} instead.
+ */
+@Deprecated(forRemoval = true)
 public class PermissionAjax {
 
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
