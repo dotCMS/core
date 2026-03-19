@@ -19,8 +19,6 @@ import {
     DotSystemConfigService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -143,7 +141,6 @@ describe('DotToolbarComponent', () => {
                     }
                 }
             }),
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotRouterService, useClass: MockDotRouterService },
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotEventsService,

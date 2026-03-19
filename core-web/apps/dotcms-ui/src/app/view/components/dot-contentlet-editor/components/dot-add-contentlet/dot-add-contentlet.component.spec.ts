@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -21,7 +22,6 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -33,7 +33,6 @@ import {
 } from '@dotcms/dotcms-js';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotRouterService
@@ -64,10 +63,11 @@ describe('DotAddContentletComponent', () => {
                 DotContentletWrapperComponent,
                 DotIframeDialogComponent,
                 BrowserAnimationsModule,
-                RouterTestingModule,
-                HttpClientTestingModule
+                RouterTestingModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentletEditorService,
                 DotMenuService,
                 {
@@ -83,7 +83,6 @@ describe('DotAddContentletComponent', () => {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 ApiRoot,
                 DotIframeService,

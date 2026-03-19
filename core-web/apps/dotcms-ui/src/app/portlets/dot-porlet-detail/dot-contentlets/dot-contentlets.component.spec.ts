@@ -3,7 +3,8 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -32,7 +33,6 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -72,7 +72,7 @@ describe('DotContentletsComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentletsComponent,
         detectChanges: false,
-        imports: [DotEditContentletComponent, RouterTestingModule, HttpClientTestingModule],
+        imports: [DotEditContentletComponent, RouterTestingModule],
         componentProviders: [
             { provide: DotContentletEditorService, useValue: mockContentletEditorService }
         ],
@@ -93,13 +93,8 @@ describe('DotContentletsComponent', () => {
             { provide: LoginService, useClass: LoginServiceMock },
             DotWorkflowEventHandlerService,
             PushPublishService,
-            {
-                provide: CoreWebService,
-                useValue: {
-                    request: jest.fn().mockReturnValue(of({})),
-                    requestView: jest.fn().mockReturnValue(of({ entity: {} }))
-                }
-            },
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: DotRouterService, useClass: MockDotRouterService },
             { provide: DotUiColorsService, useClass: MockDotUiColorsService },
             ApiRoot,

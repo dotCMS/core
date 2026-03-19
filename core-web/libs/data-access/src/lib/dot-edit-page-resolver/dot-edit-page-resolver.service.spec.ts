@@ -3,16 +3,16 @@
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     DotLicenseServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -57,10 +57,10 @@ describe('DotEditPageResolver', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotSessionStorageService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService

@@ -17,7 +17,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotPushPublishDialogService,
-    CoreWebService,
     DotcmsEventsService,
     LoginService,
     DotcmsConfigService,
@@ -69,7 +68,6 @@ describe('DotExperimentsListComponent', () => {
             DotHttpErrorManagerService,
             mockProvider(DotExperimentsService),
             mockProvider(DotPushPublishDialogService),
-            mockProvider(CoreWebService),
             mockProvider(DotcmsEventsService),
             mockProvider(LoginService),
             mockProvider(LoggerService),

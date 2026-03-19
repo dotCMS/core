@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { CoreWebService, DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
+import { DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
@@ -17,7 +17,6 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -157,7 +156,6 @@ describe('DotWorkflowEventHandlerService', () => {
                 useClass: LoginServiceMock
             },
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
         ]
     });

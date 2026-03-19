@@ -27,7 +27,6 @@ import {
     DotSystemConfigService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
@@ -303,8 +302,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
                         cluster: { clusterId: 'cluster-id', companyKeyDigest: 'digest' }
                     })
                 )
-            }),
-            mockProvider(CoreWebService)
+            })
         ]
     });
 
@@ -396,7 +394,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -558,7 +555,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -635,7 +631,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -711,7 +706,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -785,7 +779,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),

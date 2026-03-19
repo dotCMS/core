@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -19,7 +20,6 @@ import { PaginatorModule } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCategory } from '@dotcms/dotcms-models';
 import {
     DotActionMenuButtonComponent,
@@ -27,7 +27,7 @@ import {
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCategoriesListComponent } from './dot-categories-list.component';
 
@@ -48,7 +48,6 @@ xdescribe('DotCategoriesListingTableComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let el: HTMLElement;
-    let coreWebService: CoreWebService;
     const items: DotCategory[] = [
         {
             categoryId: '9e882f2a-ada2-47e3-a441-bdf9a7254216',
@@ -106,7 +105,6 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 SharedModule,
                 MenuModule,
                 DotMenuComponent,
-                HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 BreadcrumbModule,
@@ -123,14 +121,14 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 DotCategoriesListComponent
             ],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotCategoriesService
             ]
         });
 
         hostFixture = TestBed.createComponent(TestHostComponent);
-        coreWebService = TestBed.inject(CoreWebService);
     });
 
     it('should have default attributes', fakeAsync(() => {
@@ -145,8 +143,6 @@ xdescribe('DotCategoriesListingTableComponent', () => {
     }));
 
     it('renderer basic datatable component', fakeAsync(() => {
-        setRequestSpy(items);
-
         hostFixture.detectChanges();
         tick();
         hostFixture.detectChanges();
@@ -168,7 +164,6 @@ xdescribe('DotCategoriesListingTableComponent', () => {
     }));
 
     it('should renders the dot empty state component if items array is empty', fakeAsync(() => {
-        setRequestSpy([]);
         hostFixture.detectChanges();
         tick();
         hostFixture.detectChanges();
@@ -176,13 +171,4 @@ xdescribe('DotCategoriesListingTableComponent', () => {
         const emptyState = de.query(By.css('[data-testid="title"]'));
         expect(emptyState.nativeElement.textContent).toBe('Your category list is empty');
     }));
-
-    function setRequestSpy(response: any): void {
-        jest.spyOn<any>(coreWebService, 'requestView').mockReturnValue(
-            of({
-                entity: response,
-                header: (type) => (type === 'Link' ? 'test;test=test' : '40')
-            })
-        );
-    }
 });

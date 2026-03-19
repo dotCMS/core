@@ -5,8 +5,6 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocketURL,
@@ -39,7 +37,6 @@ describe('DotNotificationItemComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotcmsEventsService,
             DotcmsConfigService,

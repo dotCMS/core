@@ -43,7 +43,6 @@ import {
     DotSiteBrowserService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -60,7 +59,6 @@ import {
     DotMessagePipe
 } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     createFakeContentType,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
@@ -250,7 +248,6 @@ describe('DotContainerPropertiesComponent', () => {
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock },
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: ActivatedRoute, useValue: { data: of(containerMockData) } },

@@ -2,7 +2,8 @@
 
 import { of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -17,13 +18,7 @@ import {
     DotMessageService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    LoggerService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 import { AppComponent } from './app.component';
@@ -40,9 +35,10 @@ describe('AppComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [AppComponent, RouterTestingModule, HttpClientTestingModule],
+            imports: [AppComponent, RouterTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotUiColorsService,
                 DotNavLogoService,
                 DotcmsConfigService,

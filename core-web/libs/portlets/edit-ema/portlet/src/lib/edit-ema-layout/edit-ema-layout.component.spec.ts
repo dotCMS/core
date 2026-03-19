@@ -4,7 +4,8 @@ import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectat
 import { MockComponent, MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,7 +25,7 @@ import {
     DotRouterService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -88,8 +89,10 @@ describe('EditEmaLayoutComponent', () => {
 
     const createComponent = createComponentFactory({
         component: EditEmaLayoutComponent,
-        imports: [HttpClientTestingModule, MockComponent(TemplateBuilderComponent)],
+        imports: [MockComponent(TemplateBuilderComponent)],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             UVEStore,
             DotMessageService,
             DotActionUrlService,
@@ -98,7 +101,6 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotContentTypeService),
-            mockProvider(CoreWebService),
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {

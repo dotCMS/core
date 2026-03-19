@@ -15,7 +15,6 @@ import { PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
 
@@ -58,7 +57,6 @@ const meta: Meta<DotDeviceSelectorSeoComponent> = {
             providers: [
                 DotDevicesService,
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: HttpClient,
                     useValue: {

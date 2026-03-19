@@ -14,7 +14,6 @@ import { TabsModule } from 'primeng/tabs';
 import { TextareaModule } from 'primeng/textarea';
 
 import {
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -56,7 +55,6 @@ const dotEventSocketURLFactory = () => {
         ReactiveFormsModule
     ],
     providers: [
-        CoreWebService,
         LoggerService,
         StringUtils,
         SiteService,

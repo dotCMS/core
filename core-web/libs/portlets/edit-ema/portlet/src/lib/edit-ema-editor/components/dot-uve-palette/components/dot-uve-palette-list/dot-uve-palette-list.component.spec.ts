@@ -30,7 +30,6 @@ import {
     DotMessageService,
     DotPageContentTypeService
 } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -247,10 +246,6 @@ describe('DotUvePaletteListComponent', () => {
                 }
             },
             MessageService,
-            {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
-            },
             {
                 provide: DotMessageService,
                 useValue: {

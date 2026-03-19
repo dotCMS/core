@@ -1,6 +1,7 @@
 import { mockProvider } from '@ngneat/spectator/jest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -31,8 +32,6 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -71,7 +70,8 @@ describe('DotPortletDetailComponent', () => {
                 DotCustomEventHandlerService,
                 DotWorkflowEventHandlerService,
                 DotIframeService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 PushPublishService,
                 ApiRoot,
                 DotFormatDateService,
@@ -103,7 +103,6 @@ describe('DotPortletDetailComponent', () => {
             ],
             imports: [
                 DotPortletDetailComponent,
-                HttpClientTestingModule,
                 RouterTestingModule,
                 BrowserAnimationsModule,
                 DotDownloadBundleDialogComponent

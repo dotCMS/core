@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     DebugElement,
@@ -32,7 +33,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { createFakeEvent, MockDotMessageService } from '@dotcms/utils-testing';
@@ -178,7 +178,6 @@ describe('DotContentEditorComponent', () => {
     let hostComponent: HostTestComponent;
     let comp: DotContentEditorComponent;
     let de: DebugElement;
-    let coreWebService: CoreWebService;
     let menu: Menu;
 
     beforeEach(async () => {
@@ -200,18 +199,18 @@ describe('DotContentEditorComponent', () => {
                 ButtonModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                HttpClientTestingModule,
                 BrowserAnimationsModule,
                 SkeletonModule
             ],
 
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DialogService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                },
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
+                }
             ]
         })
             .overrideComponent(DotContentEditorComponent, {
@@ -227,16 +226,10 @@ describe('DotContentEditorComponent', () => {
         hostFixture = TestBed.createComponent(HostTestComponent);
         hostComponent = hostFixture.componentInstance;
         de = hostFixture.debugElement;
-        coreWebService = TestBed.inject(CoreWebService);
     });
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            jest.spyOn(coreWebService, 'requestView').mockReturnValue(
-                of({
-                    entity: mockContentTypes
-                }) as any
-            );
             hostFixture.detectChanges();
             tick();
             de = hostFixture.debugElement;

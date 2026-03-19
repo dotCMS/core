@@ -27,8 +27,6 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     LoggerService,
@@ -131,7 +129,6 @@ describe('DotWizardComponent', () => {
             StringUtils,
             mockProvider(DotHttpErrorManagerService),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: PushPublishService, useClass: PushPublishServiceMock },
             { provide: LoginService, useClass: LoginServiceMock },
             {
