@@ -121,7 +121,7 @@ import {
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import * as uveUtils from '../utils';
-import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
+import { TEMPORAL_DRAG_ITEM } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -1049,8 +1049,9 @@ describe('EditEmaEditorComponent', () => {
                         pageParams: {
                             ...(componentStore.pageParams() ?? {}),
                             url: 'index',
-                            language_id: 1,
-                            mode: UVE_MODE.EDIT
+                            language_id: '1',
+                            mode: UVE_MODE.EDIT,
+                            [PERSONA_KEY]: 'persona-id-123'
                         }
                     });
                     // Set pageAPIResponse so $toggleLockOptions has a page (loadPageAsset may not have completed yet)
@@ -3416,7 +3417,7 @@ describe('EditEmaEditorComponent', () => {
                     });
                 });
 
-                describe('script and styles injection', () => {
+                describe('styles injection', () => {
                     describe('designer templates', () => {
                         beforeEach(() => {
                             jest.spyOn(dotPageApiService, 'get').mockReturnValue(
@@ -3441,18 +3442,13 @@ describe('EditEmaEditorComponent', () => {
                             });
                         });
 
-                        it('should add script and styles to iframe', () => {
+                        it('should add styles to iframe', () => {
                             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
                             const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
                             iframe.dispatchEvent(new Event('load'));
 
                             spectator.detectChanges();
 
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining(
-                                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                                )
-                            );
                             expect(spyWrite).toHaveBeenCalledWith(
                                 expect.stringContaining(`[data-dot-object="container"]:empty`)
                             );
@@ -3473,18 +3469,12 @@ describe('EditEmaEditorComponent', () => {
                             store.loadPageAsset({ url: 'index', clientHost: null });
                         });
 
-                        it('should add script and styles to iframe for advance templates', () => {
+                        it('should add styles to iframe for advance templates', () => {
                             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
                             const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
 
                             iframe.dispatchEvent(new Event('load'));
-
                             spectator.detectChanges();
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining(
-                                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                                )
-                            );
 
                             expect(spyWrite).toHaveBeenCalledWith(
                                 expect.stringContaining('[data-dot-object="container"]:empty')
@@ -3495,6 +3485,30 @@ describe('EditEmaEditorComponent', () => {
                                 )
                             );
                         });
+                    });
+                });
+
+                describe('when pageRender is undefined', () => {
+                    beforeEach(() => {
+                        jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                            of({
+                                ...MOCK_RESPONSE_VTL,
+                                page: { ...MOCK_RESPONSE_VTL.page, rendered: undefined }
+                            })
+                        );
+                        store.loadPageAsset({ url: 'index', clientHost: null });
+                    });
+
+                    it('should not write to the iframe document', () => {
+                        spectator.detectChanges();
+
+                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
+
+                        iframe.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
+                        expect(spyWrite).not.toHaveBeenCalled();
                     });
                 });
             });

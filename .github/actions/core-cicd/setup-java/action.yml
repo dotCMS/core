@@ -68,7 +68,11 @@ runs:
       run: |
         if [ ! -f "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
         echo "Downloading SDKMAN install"
-        curl -s "https://get.sdkman.io" | bash
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          curl -s "https://get.sdkman.io" | zsh
+        else
+          curl -s "https://get.sdkman.io" | bash
+        fi
         fi
     - name: Save Cache SDKMan install
       id: save-cache-sdkman
