@@ -339,6 +339,10 @@ public class PageRenderUtil implements Serializable {
                 contextMap.put("totalSize"      + entry.getKey(), entry.getValue().size());
             }
 
+            for (final Map.Entry<String, Map<String, Map<String, Object>>> entry : containerUuidPersona.stylePropertiesEntrySet()) {
+                contextMap.put("stylePropertiesMap" + entry.getKey(), entry.getValue());
+            }
+
             rawContainers.add(new ContainerRaw(container, containerStructures, contentMaps));
         }
 
@@ -837,6 +841,7 @@ public class PageRenderUtil implements Serializable {
      */
     private static class ContainerUUIDPersona {
         Map<String, List<String>> contents = Maps.newHashMap();
+        Map<String, Map<String, Map<String, Object>>> styleProperties = Maps.newHashMap();
 
         public void add(
                 final Container container,
@@ -845,6 +850,13 @@ public class PageRenderUtil implements Serializable {
 
             get(container, uniqueUUIDForRender, personalizedContentlet)
                     .add(personalizedContentlet.getContentletId());
+
+            final Map<String, Object> sp = personalizedContentlet.getStyleProperties();
+            if (UtilMethods.isSet(sp) && !sp.isEmpty()) {
+                styleProperties
+                        .computeIfAbsent(getKey(container, uniqueUUIDForRender, personalizedContentlet), k -> Maps.newHashMap())
+                        .put(personalizedContentlet.getContentletId(), sp);
+            }
         }
 
         private List<String> get(Container container, String uniqueUUIDForRender, PersonalizedContentlet personalizedContentlet) {
@@ -868,6 +880,10 @@ public class PageRenderUtil implements Serializable {
 
         public Set<? extends Map.Entry<String, List<String>>> entrySet() {
             return contents.entrySet();
+        }
+
+        public Set<? extends Map.Entry<String, Map<String, Map<String, Object>>>> stylePropertiesEntrySet() {
+            return styleProperties.entrySet();
         }
     }
 
