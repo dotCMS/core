@@ -37,7 +37,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -167,9 +166,9 @@ public class UsageResource {
 
         Logger.debug(this, () -> String.format("Found %d dashboard metrics to collect", keyMetrics.size()));
 
-        // Collect metric names to pass to MetricStatsCollector
+        // Collect qualified metric names to pass to MetricStatsCollector
         final Set<String> metricNames = keyMetrics.stream()
-                .map(MetricType::getName)
+                .map(MetricType::getQualifiedName)
                 .collect(java.util.stream.Collectors.toSet());
 
         // Use MetricStatsCollector which provides caching
@@ -180,56 +179,25 @@ public class UsageResource {
                 snapshot.getStats().size() + snapshot.getNotNumericStats().size()));
 
         // Build metric map from snapshot - combine numeric and non-numeric stats
+        // Uses qualified name (FEATURE_NAME) as the unique key
         final Map<String, MetricValue> metricMap = new HashMap<>();
 
-        // Add numeric stats
+        // Add numeric stats — build qualified key from the Metric's feature and name
         for (MetricValue metricValue : snapshot.getStats()) {
-            final String metricName = metricValue.getMetric().getName();
-
-            // Handle duplicate "COUNT" keys by mapping to specific names based on feature
-            // TODO: Remove this workaround once MetricType naming is standardized
-            // See: https://github.com/dotCMS/core/issues/34042
-            final String mapKey;
-            if ("COUNT".equals(metricName)) {
-                // Find the corresponding MetricType to get the feature
-                final Optional<MetricType> metricTypeOpt = keyMetrics.stream()
-                        .filter(mt -> "COUNT".equals(mt.getName()))
-                        .findFirst();
-
-                if (metricTypeOpt.isPresent()) {
-                    switch (metricTypeOpt.get().getFeature()) {
-                        case CONTENTLETS:
-                            mapKey = "COUNT_CONTENT";
-                            break;
-                        case LANGUAGES:
-                            mapKey = "COUNT_LANGUAGES";
-                            break;
-                        default:
-                            mapKey = metricName;
-                    }
-                } else {
-                    mapKey = metricName;
-                }
-            } else {
-                mapKey = metricName;
-            }
-
-            metricMap.put(mapKey, metricValue);
-            Logger.debug(this, () -> String.format("Collected metric: %s = %s (mapped to: %s)",
-                    metricName, metricValue.getValue(), mapKey));
+            final Metric metric = metricValue.getMetric();
+            final String qualifiedName = metric.getFeature().name() + "_" + metric.getName();
+            metricMap.put(qualifiedName, metricValue);
+            Logger.debug(this, () -> String.format("Collected metric: %s = %s",
+                    qualifiedName, metricValue.getValue()));
         }
 
-        // Add non-numeric stats (getNotNumericStats returns Map<String, Object>)
-        final Map<String, Object> nonNumericStatsMap = snapshot.getNotNumericStats();
-        for (Map.Entry<String, Object> entry : nonNumericStatsMap.entrySet()) {
-            final String metricName = entry.getKey();
-            final Object value = entry.getValue();
-            // Create a MetricValue wrapper for consistency
-            final Metric metric = new Metric.Builder().name(metricName).build();
-            final MetricValue metricValue = new MetricValue(metric, value);
-            metricMap.put(metricName, metricValue);
+        // Add non-numeric stats — build qualified key the same way as numeric stats
+        for (MetricValue metricValue : snapshot.getNotNumericMetricValues()) {
+            final Metric metric = metricValue.getMetric();
+            final String qualifiedName = metric.getFeature().name() + "_" + metric.getName();
+            metricMap.put(qualifiedName, metricValue);
             Logger.debug(this, () -> String.format("Collected non-numeric metric: %s = %s",
-                    metricName, value));
+                    qualifiedName, metricValue.getValue()));
         }
 
         Logger.debug(this, () -> String.format("Built metric map with %d total values", metricMap.size()));
@@ -249,13 +217,13 @@ public class UsageResource {
     /**
      * Organizes metrics by their category as defined by @DashboardMetric annotation.
      * Only includes metrics that were successfully collected (present in metricMap).
-     * Uses the mapped metric name (e.g., "COUNT_CONTENT" instead of "COUNT") for consistency.
-     * 
-     * <p>Display labels are provided as i18n keys (format: usage.metric.{METRIC_NAME}.label)
+     * Uses the qualified metric name (FEATURE_NAME) as the unique key.
+     *
+     * <p>Display labels are provided as i18n keys (format: usage.metric.{QUALIFIED_NAME}.label)
      * which are translated on the frontend using the i18nMessagesMap.</p>
-     * 
+     *
      * @param keyMetrics the list of dashboard metrics with their annotations
-     * @param metricMap the collected metric values keyed by mapped metric name
+     * @param metricMap the collected metric values keyed by qualified metric name
      * @param metricsProvider the DashboardMetricsProvider instance (reused to avoid repeated CDI lookups)
      * @return map of category names to maps of metric metadata (name, value, displayLabel as i18n key)
      */
@@ -263,66 +231,37 @@ public class UsageResource {
             final Collection<MetricType> keyMetrics,
             final Map<String, MetricValue> metricMap,
             final DashboardMetricsProvider metricsProvider) {
-        
+
         final Map<String, Map<String, Object>> categoryMap = new HashMap<>();
-        
+
         for (final MetricType metricType : keyMetrics) {
-            final String originalName = metricType.getName();
-            
-            // Get the mapped key (e.g., "COUNT" -> "COUNT_CONTENT" for CONTENTLETS feature)
-            final String mapKey = getMappedMetricName(metricType);
-            
+            final String qualifiedName = metricType.getQualifiedName();
+
             // Get the category from @DashboardMetric annotation, or use "other" as default
-            // Pass metricsProvider to avoid repeated CDI lookups
             final String category = getCategoryFromMetric(metricType, metricsProvider);
-            
-            // Get the i18n key for the display label instead of hardcoded English string
-            final String displayLabelKey = getDisplayLabelI18nKey(mapKey);
+
+            // Get the i18n key for the display label
+            final String displayLabelKey = getDisplayLabelI18nKey(qualifiedName);
             
             // Only include metrics that were successfully collected
-            final MetricValue metricValue = metricMap.get(mapKey);
+            final MetricValue metricValue = metricMap.get(qualifiedName);
             if (metricValue != null) {
-                // Use raw value to preserve numeric types for JSON serialization
-                // This allows the frontend to properly format numbers (K, M suffixes, etc.)
                 final Object rawValue = metricValue.getRawValue();
-                
-                // Create metric metadata object with name, value, and displayLabelKey (i18n key)
+
                 final Map<String, Object> metricData = new HashMap<>();
-                metricData.put("name", mapKey);
+                metricData.put("name", qualifiedName);
                 metricData.put("value", rawValue);
-                metricData.put("displayLabel", displayLabelKey); // Store i18n key, not translated string
-                
+                metricData.put("displayLabel", displayLabelKey);
+
                 categoryMap.computeIfAbsent(category, k -> new HashMap<>())
-                        .put(mapKey, metricData);
-                
-                Logger.debug(this, () -> String.format("Added metric %s (mapped from %s) to category %s with value %s, labelKey: %s",
-                        mapKey, originalName, category, metricValue.getValue(), displayLabelKey));
+                        .put(qualifiedName, metricData);
+
+                Logger.debug(this, () -> String.format("Added metric %s to category %s with value %s",
+                        qualifiedName, category, metricValue.getValue()));
             }
         }
-        
+
         return categoryMap;
-    }
-
-
-    /**
-     * Gets the mapped metric name, handling special cases like "COUNT" -> "COUNT_CONTENT".
-     */
-    private String getMappedMetricName(final MetricType metricType) {
-        final String metricName = metricType.getName();
-        
-        // Handle duplicate "COUNT" keys by mapping to specific names based on feature
-        if ("COUNT".equals(metricName)) {
-            switch (metricType.getFeature()) {
-                case CONTENTLETS:
-                    return "COUNT_CONTENT";
-                case LANGUAGES:
-                    return "COUNT_LANGUAGES";
-                default:
-                    return metricName;
-            }
-        }
-        
-        return metricName;
     }
 
     /**
@@ -340,13 +279,13 @@ public class UsageResource {
 
     /**
      * Generates the i18n key for a metric's display label.
-     * Format: usage.metric.{METRIC_NAME}.label
-     * 
-     * @param metricName the metric name (e.g., "COUNT_CONTENT")
-     * @return the i18n key (e.g., "usage.metric.COUNT_CONTENT.label")
+     * Format: usage.metric.{QUALIFIED_NAME}.label
+     *
+     * @param qualifiedName the qualified metric name (e.g., "CONTENTLETS_COUNT")
+     * @return the i18n key (e.g., "usage.metric.CONTENTLETS_COUNT.label")
      */
-    private String getDisplayLabelI18nKey(final String metricName) {
-        return "usage.metric." + metricName + ".label";
+    private String getDisplayLabelI18nKey(final String qualifiedName) {
+        return "usage.metric." + qualifiedName + ".label";
     }
 
     /**

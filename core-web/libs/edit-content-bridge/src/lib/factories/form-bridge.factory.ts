@@ -8,7 +8,7 @@ import { DojoFormBridge } from '../bridges/dojo-form-bridge';
 import { FormBridge } from '../interfaces/form-bridge.interface';
 
 /**
- * Configuration interface for Angular form bridge implementation
+ * Configuration interface for Angular form bridge implementation.
  * @interface
  */
 interface AngularConfig {
@@ -16,6 +16,14 @@ interface AngularConfig {
     form: FormGroup;
     zone: NgZone;
     dialogService: DialogService;
+    /**
+     * Optional callback invoked when a field's visibility changes via show()/hide().
+     * Used to propagate visibility state back to the Angular store.
+     *
+     * @param fieldVariable - The variable name of the field whose visibility changed.
+     * @param visible - `true` if the field should be shown, `false` if hidden.
+     */
+    onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void;
 }
 
 /**
@@ -39,7 +47,12 @@ type BridgeConfig = AngularConfig | DojoConfig;
  */
 export function createFormBridge(config: BridgeConfig): FormBridge {
     if (config.type === 'angular') {
-        return AngularFormBridge.getInstance(config.form, config.zone, config.dialogService);
+        return AngularFormBridge.getInstance(
+            config.form,
+            config.zone,
+            config.dialogService,
+            config.onFieldVisibilityChange
+        );
     }
 
     return new DojoFormBridge();

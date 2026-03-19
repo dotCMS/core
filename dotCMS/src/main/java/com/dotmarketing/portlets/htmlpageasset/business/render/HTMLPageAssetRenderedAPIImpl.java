@@ -665,7 +665,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setSite(host).setURLMapper(pageURI)
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
-        return new PageLivePreviewVersionBean(renderLive, renderWorking);
+        // strips the UVE script so the comparison is purely on page content
+        return new PageLivePreviewVersionBean(
+                renderLive.replace(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE, ""),
+                renderWorking.replace(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE, ""));
     }
 
     private static class DiffMockRequest extends MockAttributeRequest {
