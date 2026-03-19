@@ -96,7 +96,7 @@ public class MetricTimeoutTest {
         // Collect metrics with cache bypass to ensure we actually execute the database query
         // Without bypass, cached values would prevent testing connection management
         // Using "test.slow.database.metric" which executes pg_sleep(3) to test real DB connection handling
-        final MetricsSnapshot snapshot = collector.getStats(Set.of("test.slow.database.metric"), null, true);
+        final MetricsSnapshot snapshot = collector.getStats(Set.of("EXPERIMENTS_test.slow.database.metric"), null, true);
 
         // Wait for executor to complete shutdown and connections to return
         await().atMost(3, TimeUnit.SECONDS)
@@ -175,7 +175,7 @@ public class MetricTimeoutTest {
 
             // Collect with cache bypass to force fresh database query execution on each iteration
             // This ensures we actually test connection management, not cached values
-            final MetricsSnapshot snapshot = collector.getStats(Set.of("test.slow.database.metric"), null, true);
+            final MetricsSnapshot snapshot = collector.getStats(Set.of("EXPERIMENTS_test.slow.database.metric"), null, true);
 
             // Verify timeout occurred
             Assert.assertFalse("Should have timeout error", snapshot.getErrors().isEmpty());
