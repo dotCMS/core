@@ -68,7 +68,7 @@
                                         [contentType]="contentType"
                                         [contentlet]="contentlet"
                                         [field]="field"
-                                        [class.hidden]="$store.isFieldHidden(field.variable)"
+                                        [class.hidden]="$store.hiddenFields().has(field.variable)"
                                         (disabledWYSIWYGChange)="onDisabledWYSIWYGChange($event)"
                                         data-testId="field" />
                                 }

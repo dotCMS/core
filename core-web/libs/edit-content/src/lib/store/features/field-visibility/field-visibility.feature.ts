@@ -36,16 +36,6 @@ export function withFieldVisibility() {
             },
 
             /**
-             * Checks whether a field is currently hidden.
-             *
-             * @param fieldVariable - The variable name of the field to check.
-             * @returns `true` if the field is hidden, `false` otherwise.
-             */
-            isFieldHidden(fieldVariable: string): boolean {
-                return store.hiddenFields().has(fieldVariable);
-            },
-
-            /**
              * Resets all field visibility, making every field visible again.
              */
             resetFieldVisibility(): void {

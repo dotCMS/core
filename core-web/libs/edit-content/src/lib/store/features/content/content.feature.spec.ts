@@ -6,7 +6,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { signalStore, withState, patchState } from '@ngrx/signals';
+import { getState, signalStore, withState, patchState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
@@ -317,6 +317,15 @@ describe('ContentFeature', () => {
             expect(title.setTitle).toHaveBeenCalledWith('New Test - DotCMS');
         }));
 
+        it('should reset hiddenFields when initializing new content', fakeAsync(() => {
+            patchState(store, { hiddenFields: new Set(['field1', 'field2']) });
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            expect(store.hiddenFields().size).toBe(0);
+        }));
+
         it('should handle error when initializing new content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
             contentTypeService.getContentTypeWithRender.mockReturnValue(
@@ -361,6 +370,15 @@ describe('ContentFeature', () => {
             expect(store.contentType()).toEqual(CONTENT_TYPE_MOCK);
             expect(store.currentContentActions()).toEqual(parseCurrentActions(mockActions));
             expect(store.state()).toBe(ComponentStatus.LOADED);
+        }));
+
+        it('should reset hiddenFields when initializing existing content', fakeAsync(() => {
+            patchState(store, { hiddenFields: new Set(['field1', 'field2']) });
+
+            store.initializeExistingContent({ inode: '123' });
+            tick();
+
+            expect(store.hiddenFields().size).toBe(0);
         }));
 
         it('should set the correct title for existing content', fakeAsync(() => {

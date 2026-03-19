@@ -32,7 +32,7 @@ export class AngularFormBridge implements FormBridge {
     #zone: NgZone;
     #dialogService: DialogService;
     #dialogRef: DynamicDialogRef | null = null;
-    #visibilityWarningEmitted = false;
+    #visibilityWarningEmitted: Record<'show' | 'hide', boolean> = { show: false, hide: false };
 
     /**
      * Optional callback invoked when a field's visibility changes via show()/hide().
@@ -86,7 +86,10 @@ export class AngularFormBridge implements FormBridge {
                 );
             }
 
-            AngularFormBridge.instance.#onFieldVisibilityChange = onFieldVisibilityChange;
+            if (onFieldVisibilityChange !== undefined) {
+                AngularFormBridge.instance.#onFieldVisibilityChange = onFieldVisibilityChange;
+            }
+
             AngularFormBridge.instance.#dialogService = dialogService;
         }
 
@@ -207,8 +210,8 @@ export class AngularFormBridge implements FormBridge {
      * but no onFieldVisibilityChange callback was provided.
      */
     private warnIfNoVisibilityCallback(fieldId: string, method: 'show' | 'hide'): void {
-        if (!this.#onFieldVisibilityChange && !this.#visibilityWarningEmitted) {
-            this.#visibilityWarningEmitted = true;
+        if (!this.#onFieldVisibilityChange && !this.#visibilityWarningEmitted[method]) {
+            this.#visibilityWarningEmitted[method] = true;
             console.warn(
                 `AngularFormBridge: ${method}() called on field '${fieldId}' but no onFieldVisibilityChange callback is configured. ` +
                     'Field visibility changes will have no effect. ' +

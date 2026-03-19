@@ -68,23 +68,6 @@ describe('FieldVisibilityFeature', () => {
         });
     });
 
-    describe('isFieldHidden', () => {
-        it('should return false for a visible field', () => {
-            expect(store.isFieldHidden('myField')).toBe(false);
-        });
-
-        it('should return true for a hidden field', () => {
-            store.setFieldVisibility('myField', false);
-            expect(store.isFieldHidden('myField')).toBe(true);
-        });
-
-        it('should return false after showing a previously hidden field', () => {
-            store.setFieldVisibility('myField', false);
-            store.setFieldVisibility('myField', true);
-            expect(store.isFieldHidden('myField')).toBe(false);
-        });
-    });
-
     describe('resetFieldVisibility', () => {
         it('should clear all hidden fields', () => {
             store.setFieldVisibility('fieldA', false);
@@ -95,14 +78,14 @@ describe('FieldVisibilityFeature', () => {
             expect(store.hiddenFields().size).toBe(0);
         });
 
-        it('should make isFieldHidden return false for all fields after reset', () => {
+        it('should make hiddenFields return false for all fields after reset', () => {
             store.setFieldVisibility('fieldA', false);
             store.setFieldVisibility('fieldB', false);
 
             store.resetFieldVisibility();
 
-            expect(store.isFieldHidden('fieldA')).toBe(false);
-            expect(store.isFieldHidden('fieldB')).toBe(false);
+            expect(store.hiddenFields().has('fieldA')).toBe(false);
+            expect(store.hiddenFields().has('fieldB')).toBe(false);
         });
     });
 });
