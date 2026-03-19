@@ -8,10 +8,10 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
     DotCMSContentTypeField,
-    DotFieldVariable,
-    CUSTOM_FIELD_OPTIONS_KEY
+    DotFieldVariable
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';

@@ -1,10 +1,9 @@
-import { EMPTY, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
     Component,
     OnInit,
-    Signal,
     inject,
     input,
     signal
@@ -35,32 +34,29 @@ import { FieldSettingsSection } from '../field-settings-section';
 export class DotHideLabelSettingsComponent implements OnInit, FieldSettingsSection {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    // Initialized in ngOnInit — safe to use after view is ready
     form!: FormGroup;
-
-    // hideLabel has no validation rules — always valid
-    readonly isValid: Signal<boolean> = signal(true);
+    readonly isValid = signal(true);
 
     get isDirty(): boolean {
-        return this.form?.dirty ?? false;
+        return this.form.dirty;
     }
 
     get valueChanges$(): Observable<unknown> {
-        return this.form?.valueChanges ?? EMPTY;
+        return this.form.valueChanges;
     }
 
-    private readonly fb = inject(FormBuilder);
-    private readonly fieldVariablesService = inject(DotFieldVariablesService);
+    readonly #fb = inject(FormBuilder);
+    readonly #fieldVariablesService = inject(DotFieldVariablesService);
 
-    private fieldVariableRef: DotFieldVariable | null = null;
+    #fieldVariableRef: DotFieldVariable | null = null;
 
     ngOnInit(): void {
         const hideLabelVar = (this.$field().fieldVariables || []).find(
             (v) => v.key === HIDE_LABEL_VARIABLE_KEY
         );
-        this.fieldVariableRef = hideLabelVar ?? null;
+        this.#fieldVariableRef = hideLabelVar ?? null;
 
-        this.form = this.fb.group({
+        this.form = this.#fb.group({
             hideLabel: [hideLabelVar?.value === 'true']
         });
     }
@@ -68,14 +64,14 @@ export class DotHideLabelSettingsComponent implements OnInit, FieldSettingsSecti
     save(field: DotCMSContentTypeField): Observable<DotFieldVariable> {
         const { hideLabel } = this.form.getRawValue();
         const fieldVariable: DotFieldVariable = {
-            ...(this.fieldVariableRef || {}),
+            ...(this.#fieldVariableRef || {}),
             clazz: DotCMSClazzes.FIELD_VARIABLE,
             key: HIDE_LABEL_VARIABLE_KEY,
             value: hideLabel ? 'true' : 'false'
         };
 
-        return this.fieldVariablesService
+        return this.#fieldVariablesService
             .save(field, fieldVariable)
-            .pipe(tap((saved) => (this.fieldVariableRef = saved)));
+            .pipe(tap((saved) => (this.#fieldVariableRef = saved)));
     }
 }

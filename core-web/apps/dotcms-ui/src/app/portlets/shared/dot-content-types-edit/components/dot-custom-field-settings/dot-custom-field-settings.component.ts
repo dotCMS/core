@@ -3,9 +3,8 @@ import { EMPTY, forkJoin, merge } from 'rxjs';
 import {
     ChangeDetectionStrategy,
     Component,
-    OnChanges,
-    SimpleChanges,
     computed,
+    effect,
     inject,
     input,
     output,
@@ -33,7 +32,7 @@ import { FieldSettingsSection } from './sections/field-settings-section';
     templateUrl: './dot-custom-field-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCustomFieldSettingsComponent implements OnChanges {
+export class DotCustomFieldSettingsComponent {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
     /** Live render mode from the properties form — overrides saved fieldVariables when provided */
@@ -60,59 +59,58 @@ export class DotCustomFieldSettingsComponent implements OnChanges {
     private readonly renderOptions = viewChild(DotRenderOptionsSettingsComponent);
     private readonly hideLabel = viewChild(DotHideLabelSettingsComponent);
 
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     constructor() {
+        effect(() => {
+            if (this.$isVisible()) {
+                this.$changeControls.emit(this.#dialogActions());
+            }
+        });
+
         merge(
             toObservable(this.renderOptions).pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY)),
             toObservable(this.hideLabel).pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY))
         )
             .pipe(takeUntilDestroyed())
-            .subscribe(() => this.$valid.emit(this.canSave()));
-    }
-
-    ngOnChanges(changes: SimpleChanges): void {
-        const { $isVisible } = changes;
-        if ($isVisible?.currentValue) {
-            this.$changeControls.emit(this.dialogActions());
-        }
+            .subscribe(() => this.$valid.emit(this.#canSave()));
     }
 
     saveSettings(): void {
-        const sections = this.activeSections();
+        const sections = this.#activeSections();
         const saveActions = sections.filter((s) => s.isDirty).map((s) => s.save(this.$field()));
 
         forkJoin(saveActions)
             .pipe(
                 take(1),
-                catchError((err) => this.dotHttpErrorManagerService.handle(err).pipe(take(1)))
+                catchError((err) => this.#dotHttpErrorManagerService.handle(err).pipe(take(1)))
             )
             .subscribe(() => this.$save.emit());
     }
 
-    private activeSections(): FieldSettingsSection[] {
+    #activeSections(): FieldSettingsSection[] {
         return [this.renderOptions(), this.hideLabel()].filter(
             (s): s is DotRenderOptionsSettingsComponent | DotHideLabelSettingsComponent =>
                 s != null
         );
     }
 
-    private canSave(): boolean {
-        const sections = this.activeSections();
+    #canSave(): boolean {
+        const sections = this.#activeSections();
 
-        return sections.some((s) => s.isDirty) && sections.every((s) => s.isValid() ?? true);
+        return sections.some((s) => s.isDirty) && sections.every((s) => s.isValid());
     }
 
-    private dialogActions(): DotDialogActions {
+    #dialogActions(): DotDialogActions {
         return {
             cancel: {
-                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
+                label: this.#dotMessageService.get('contenttypes.dropzone.action.cancel')
             },
             accept: {
                 action: () => this.saveSettings(),
-                disabled: !this.canSave(),
-                label: this.dotMessageService.get('contenttypes.dropzone.action.save')
+                disabled: !this.#canSave(),
+                label: this.#dotMessageService.get('contenttypes.dropzone.action.save')
             }
         };
     }
