@@ -5,8 +5,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotCategory } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotCategory } from '@dotcms/dotcms-models';
 
 import { HierarchyParent } from '../models/dot-category-field.models';
 

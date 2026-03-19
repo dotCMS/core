@@ -5,8 +5,9 @@ import { Injectable, inject } from '@angular/core';
 
 import { catchError, pluck } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-js';
+
 import {
+    DotCMSResponse,
     DotExperiment,
     DotExperimentResults,
     DotExperimentStatus,

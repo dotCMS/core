@@ -34,7 +34,7 @@ describe('DotAccountService', () => {
         httpTesting.verify();
     });
 
-    it('Should update user data', () => {
+    it('Should update user data and return entity', () => {
         const user: DotAccountUser = {
             userId: '1',
             givenName: 'Test',
@@ -42,12 +42,16 @@ describe('DotAccountService', () => {
             currentPassword: 'Password',
             email: 'test@test.com'
         };
-        service.updateUser(user).subscribe();
+        const mockEntity = { reauthenticate: false, userID: '1', user: {} };
+
+        service.updateUser(user).subscribe((response) => {
+            expect(response).toEqual(mockEntity);
+        });
 
         const req = httpTesting.expectOne('/api/v1/users/current');
         expect(req.request.method).toBe('PUT');
         expect(req.request.body).toEqual(user);
-        req.flush({});
+        req.flush({ entity: mockEntity });
     });
 
     it('Should do the put request to add the getting starter portlet to menu', () => {

@@ -5,15 +5,12 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
+import { DotCMSResponseJsonObject } from '@dotcms/dotcms-models';
+
 export interface DotContentletLockResponse {
     id: string;
     inode: string;
     message: string;
-}
-
-// Response type for endpoints that return bodyJsonObject
-interface DotBodyJsonResponse<T> {
-    bodyJsonObject: T;
 }
 
 /**
@@ -37,7 +34,7 @@ export class DotContentletLockerService {
     lock(inode: string): Observable<DotContentletLockResponse> {
         return this.http
             .put<
-                DotBodyJsonResponse<DotContentletLockResponse>
+                DotCMSResponseJsonObject<DotContentletLockResponse>
             >(`/api/content/lock/inode/${inode}`, {})
             .pipe(map((response) => response.bodyJsonObject));
     }
@@ -52,7 +49,7 @@ export class DotContentletLockerService {
     unlock(inode: string): Observable<DotContentletLockResponse> {
         return this.http
             .put<
-                DotBodyJsonResponse<DotContentletLockResponse>
+                DotCMSResponseJsonObject<DotContentletLockResponse>
             >(`/api/content/unlock/inode/${inode}`, {})
             .pipe(map((response) => response.bodyJsonObject));
     }

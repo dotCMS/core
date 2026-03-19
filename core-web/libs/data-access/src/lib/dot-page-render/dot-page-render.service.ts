@@ -58,11 +58,25 @@ export class DotPageRenderService {
     ): Observable<DotPageRenderParameters> {
         const params: DotPageRenderRequestParams = this.getOptionalViewAsParams(viewAs, mode);
 
+        const httpParams = this.toStringRecord({ ...extraParams, ...params });
+
         return this.http
             .get<
                 DotCMSResponse<DotPageRenderParameters>
-            >(`/api/v1/page/render/${url?.replace(/^\//, '')}`, { params: { ...extraParams, ...params } as Record<string, string> })
+            >(`/api/v1/page/render/${url?.replace(/^\//, '')}`, { params: httpParams })
             .pipe(map((response) => response.entity));
+    }
+
+    private toStringRecord(source: Record<string, unknown>): Record<string, string> {
+        const result: Record<string, string> = {};
+
+        for (const [key, value] of Object.entries(source)) {
+            if (value != null) {
+                result[key] = String(value);
+            }
+        }
+
+        return result;
     }
 
     private getOptionalViewAsParams(
@@ -84,7 +98,7 @@ export class DotPageRenderService {
         return mode ? { mode } : {};
     }
 
-    private getPersonaParam(persona: DotPersona): { [key: string]: string } {
+    private getPersonaParam(persona?: DotPersona): { [key: string]: string } {
         return persona
             ? {
                   'com.dotmarketing.persona.id': persona.identifier || ''
@@ -92,7 +106,7 @@ export class DotPageRenderService {
             : {};
     }
 
-    private getDeviceParam(device: DotDevice): { [key: string]: string } {
+    private getDeviceParam(device?: DotDevice): { [key: string]: string } {
         return device
             ? {
                   device_inode: device.inode
@@ -100,7 +114,7 @@ export class DotPageRenderService {
             : {};
     }
 
-    private getLanguageParam(language: number): { [key: string]: string } {
+    private getLanguageParam(language?: number): { [key: string]: string } {
         return language
             ? {
                   language_id: language.toString()

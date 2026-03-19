@@ -5,9 +5,9 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, pluck } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotCMSContentletWorkflowActions,
+    DotCMSResponse,
     DotCMSWorkflow,
     DotCMSWorkflowAction
 } from '@dotcms/dotcms-models';

@@ -13,7 +13,8 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, filter } from 'rxjs/operators';
 
-import { ResponseView, DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { ResponseView } from '@dotcms/dotcms-js';
+import { DotCMSResponse, DotRequestOptionsArgs } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class CoreWebServiceMock {

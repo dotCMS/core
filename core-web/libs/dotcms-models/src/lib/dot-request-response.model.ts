@@ -4,8 +4,10 @@
  */
 export interface DotCMSResponse<T = unknown> {
     entity: T;
+    contentlets?: T;
+    tempFiles?: T;
     errors: string[];
-    i18nMessagesMap: Record<string, unknown>;
+    i18nMessagesMap: Record<string, string>;
     messages: string[];
     pagination: unknown;
     permissions: string[];
@@ -17,4 +19,20 @@ export interface DotCMSResponse<T = unknown> {
  */
 export interface DotCMSResponseJsonObject<T = unknown> {
     bodyJsonObject: T;
+}
+
+export interface DotRequestOptionsArgs {
+    url: string;
+    body?:
+        | {
+              [key: string]: unknown;
+          }
+        | string;
+    method?: string;
+    params?: {
+        [key: string]: unknown;
+    };
+    headers?: {
+        [key: string]: unknown;
+    };
 }

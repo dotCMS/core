@@ -8,8 +8,8 @@ import { map, mergeMap } from 'rxjs/operators';
 import {
     DotAjaxActionResponseView,
     DotBundle,
-    DotCurrentUser,
-    DotCMSResponseJsonObject
+    DotCMSResponseJsonObject,
+    DotCurrentUser
 } from '@dotcms/dotcms-models';
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
@@ -57,8 +57,6 @@ export class AddToBundleService {
 
         const body = `assetIdentifier=${assetIdentifier}&bundleName=${bundleData.name}&bundleSelect=${bundleData.id}`;
 
-        return this.http
-            .post<DotAjaxActionResponseView>(this.addToBundleUrl, body, { headers })
-            .pipe(map((res) => res));
+        return this.http.post<DotAjaxActionResponseView>(this.addToBundleUrl, body, { headers });
     }
 }

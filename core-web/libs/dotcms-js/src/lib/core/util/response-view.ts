@@ -1,6 +1,6 @@
-import { HttpResponse, HttpHeaders } from '@angular/common/http';
+import { HttpHeaders, HttpResponse } from '@angular/common/http';
 
-import { DotCMSResponse } from '../core-web.service';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 /**
  * @deprecated Use DotCMSResponse from @dotcms/dotcms-models and Angular HttpClient directly instead.

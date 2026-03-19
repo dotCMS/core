@@ -35,8 +35,10 @@ export class DotAccountService {
      * @returns {Observable<DotCMSResponse<unknown>>}
      * @memberof DotAccountService
      */
-    updateUser(user: DotAccountUser): Observable<DotCMSResponse<UpdateUserResponse>> {
-        return this.http.put<DotCMSResponse<UpdateUserResponse>>('/api/v1/users/current', user);
+    updateUser(user: DotAccountUser): Observable<UpdateUserResponse> {
+        return this.http
+            .put<DotCMSResponse<UpdateUserResponse>>('/api/v1/users/current', user)
+            .pipe(map((response) => response.entity));
     }
 
     /**
