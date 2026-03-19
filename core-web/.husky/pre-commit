@@ -132,6 +132,42 @@ check_sdk_client_affected() {
     fi
 }
 
+check_yarn_lock_registry() {
+    local yarn_lock="${root_dir}/core-web/yarn.lock"
+    local expected_registry="dotcms-npm.b-cdn.net"
+    local bad_registries=("registry.yarnpkg.com" "registry.npmjs.org")
+
+    # Only run if yarn.lock is staged
+    if ! git diff --cached --name-only | grep -q "core-web/yarn.lock"; then
+        print_color "$BLUE" "ℹ️  yarn.lock not staged — skipping registry check"
+        return 0
+    fi
+
+    local found_bad=false
+    for registry in "${bad_registries[@]}"; do
+        if grep -q "$registry" "$yarn_lock"; then
+            print_color "$RED" "❌ yarn.lock contains '$registry' instead of BunnyCDN ($expected_registry)"
+            found_bad=true
+        fi
+    done
+
+    if [ "$found_bad" = true ]; then
+        print_color "$RED" "❌ yarn.lock was regenerated with the wrong registry"
+        print_color "$YELLOW" "   This usually means you have a global registry override set."
+        print_color "$YELLOW" "   Check with:  yarn config list | grep registry"
+        print_color "$YELLOW" "   Or:          npm config get registry"
+        print_color "$YELLOW" "   Fix with:"
+        print_color "$BLUE"   "     yarn config delete registry"
+        print_color "$BLUE"   "     npm config delete registry   # if set via npm"
+        print_color "$BLUE"   "     cd core-web && yarn install"
+        has_errors=true
+        return 1
+    fi
+
+    print_color "$GREEN" "✅ yarn.lock registry URLs are correct (BunnyCDN)"
+    return 0
+}
+
 check_sdkman() {
     SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
 
@@ -174,6 +210,7 @@ perform_frontend_fixes() {
         cd "$root_dir" || exit 1
         git add "core-web/yarn.lock"
         cd "${root_dir}/core-web" || exit 1
+        check_yarn_lock_registry
     fi
 
     # ENOBUFS auto-fix will handle cache issues when they occur
