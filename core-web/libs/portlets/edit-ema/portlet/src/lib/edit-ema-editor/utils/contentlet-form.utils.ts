@@ -13,7 +13,10 @@ export type QuickEditFieldClass =
     | typeof DotCMSClazzes.CHECKBOX
     | typeof DotCMSClazzes.MULTI_SELECT
     | typeof DotCMSClazzes.RADIO
-    | typeof DotCMSClazzes.SELECT;
+    | typeof DotCMSClazzes.SELECT
+    | typeof DotCMSClazzes.BINARY
+    | typeof DotCMSClazzes.IMAGE
+    | typeof DotCMSClazzes.FILE;
 
 /**
  * Supported field types for the quick edit form
@@ -24,7 +27,10 @@ export const QUICK_EDIT_SUPPORTED_FIELDS: QuickEditFieldClass[] = [
     DotCMSClazzes.CHECKBOX,
     DotCMSClazzes.MULTI_SELECT,
     DotCMSClazzes.RADIO,
-    DotCMSClazzes.SELECT
+    DotCMSClazzes.SELECT,
+    DotCMSClazzes.BINARY,
+    DotCMSClazzes.IMAGE,
+    DotCMSClazzes.FILE
 ];
 
 /**
@@ -40,7 +46,16 @@ export interface FieldOption {
  */
 export type QuickEditField = Pick<
     DotCMSContentTypeField,
-    'name' | 'variable' | 'regexCheck' | 'dataType' | 'readOnly' | 'required' | 'clazz' | 'values'
+    | 'name'
+    | 'variable'
+    | 'regexCheck'
+    | 'dataType'
+    | 'readOnly'
+    | 'required'
+    | 'clazz'
+    | 'values'
+    | 'fieldVariables'
+    | 'fieldType'
 >;
 
 /**
@@ -119,7 +134,9 @@ export function getQuickEditFields(layout: DotCMSContentTypeLayoutRow[]): QuickE
             readOnly: field.readOnly,
             required: field.required,
             clazz: field.clazz,
-            values: field.values
+            values: field.values,
+            fieldVariables: field.fieldVariables,
+            fieldType: field.fieldType
         }));
 }
 

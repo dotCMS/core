@@ -2,7 +2,11 @@
     [class.opacity-50]="$isDisabled()"
     [class.pointer-events-none]="$isDisabled()"
     [class.border-dashed]="store.isUploading()"
-    class="flex h-[14.4rem] min-w-50 w-full flex-col items-center justify-center gap-2 rounded-md border border-[var(--p-inputtext-border-color)] p-2 min-[306px]:flex-row">
+    [class]="
+        $vertical()
+            ? 'flex min-h-[14.4rem] min-w-50 w-full flex-col items-center justify-center gap-2 rounded-md border border-[var(--p-inputtext-border-color)] p-2'
+            : 'flex min-h-[14.4rem] min-w-50 w-full flex-col items-center justify-center gap-2 rounded-md border border-[var(--p-inputtext-border-color)] p-2 min-[306px]:flex-row'
+    ">
     @switch (store.fileStatus()) {
         @case ('init') {
             <div

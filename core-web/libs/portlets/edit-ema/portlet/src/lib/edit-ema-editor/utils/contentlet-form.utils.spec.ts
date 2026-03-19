@@ -286,9 +286,13 @@ describe('ContentletFormUtils', () => {
 
             const result = getQuickEditFields(layout);
 
-            // Should only include TEXT field, not IMAGE or FILE
-            expect(result).toHaveLength(1);
-            expect(result[0].clazz).toBe(DotCMSClazzes.TEXT);
+            // Should include TEXT, IMAGE, and FILE fields
+            expect(result).toHaveLength(3);
+            expect(result.map((f) => f.clazz)).toEqual([
+                DotCMSClazzes.TEXT,
+                DotCMSClazzes.IMAGE,
+                DotCMSClazzes.FILE
+            ]);
         });
 
         it('should flatten nested structure correctly', () => {
@@ -420,16 +424,16 @@ describe('ContentletFormUtils', () => {
             expect(isQuickEditSupportedField(DotCMSClazzes.MULTI_SELECT)).toBe(true);
         });
 
-        it('should return false for IMAGE field', () => {
-            expect(isQuickEditSupportedField(DotCMSClazzes.IMAGE)).toBe(false);
+        it('should return true for IMAGE field', () => {
+            expect(isQuickEditSupportedField(DotCMSClazzes.IMAGE)).toBe(true);
         });
 
-        it('should return false for FILE field', () => {
-            expect(isQuickEditSupportedField(DotCMSClazzes.FILE)).toBe(false);
+        it('should return true for FILE field', () => {
+            expect(isQuickEditSupportedField(DotCMSClazzes.FILE)).toBe(true);
         });
 
-        it('should return false for BINARY field', () => {
-            expect(isQuickEditSupportedField(DotCMSClazzes.BINARY)).toBe(false);
+        it('should return true for BINARY field', () => {
+            expect(isQuickEditSupportedField(DotCMSClazzes.BINARY)).toBe(true);
         });
 
         it('should return false for undefined', () => {
@@ -439,8 +443,8 @@ describe('ContentletFormUtils', () => {
     });
 
     describe('QUICK_EDIT_SUPPORTED_FIELDS constant', () => {
-        it('should contain exactly 6 supported field types', () => {
-            expect(QUICK_EDIT_SUPPORTED_FIELDS).toHaveLength(6);
+        it('should contain exactly 9 supported field types', () => {
+            expect(QUICK_EDIT_SUPPORTED_FIELDS).toHaveLength(9);
         });
 
         it('should contain all expected field types', () => {
@@ -450,6 +454,9 @@ describe('ContentletFormUtils', () => {
             expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.SELECT);
             expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.RADIO);
             expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.MULTI_SELECT);
+            expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.BINARY);
+            expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.IMAGE);
+            expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.FILE);
         });
     });
 });

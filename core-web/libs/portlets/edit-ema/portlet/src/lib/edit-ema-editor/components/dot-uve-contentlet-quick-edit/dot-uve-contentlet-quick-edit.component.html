@@ -97,6 +97,32 @@
                                     [disabled]="field.readOnly"
                                     [placeholder]="'Select ' + field.name"></p-multiSelect>
                             }
+                            @case (DotCMSClazzes.BINARY) {
+                                <dot-edit-content-binary-field
+                                    [formControlName]="field.variable"
+                                    [field]="$any(field)"
+                                    [contentlet]="data().contentlet" />
+                            }
+                            @case (DotCMSClazzes.IMAGE) {
+                                <dot-file-field
+                                    [formControlName]="field.variable"
+                                    [field]="$any(field)"
+                                    [contentlet]="data().contentlet"
+                                    [hasError]="
+                                        $contentletForm()?.get(field.variable)?.invalid ?? false
+                                    "
+                                    [vertical]="true" />
+                            }
+                            @case (DotCMSClazzes.FILE) {
+                                <dot-file-field
+                                    [formControlName]="field.variable"
+                                    [field]="$any(field)"
+                                    [contentlet]="data().contentlet"
+                                    [hasError]="
+                                        $contentletForm()?.get(field.variable)?.invalid ?? false
+                                    "
+                                    [vertical]="true" />
+                            }
                         }
                     </div>
                 }

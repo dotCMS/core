@@ -1,9 +1,12 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { Component, input } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSClazzes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotEditContentBinaryFieldComponent, DotFileFieldComponent } from '@dotcms/edit-content';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
@@ -11,12 +14,67 @@ import {
     DotUveContentletQuickEditComponent
 } from './dot-uve-contentlet-quick-edit.component';
 
+@Component({
+    selector: 'dot-file-field',
+    standalone: true,
+    template: '',
+    providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: MockDotFileFieldComponent, multi: true }]
+})
+class MockDotFileFieldComponent implements ControlValueAccessor {
+    field = input<unknown>();
+    contentlet = input<unknown>();
+    hasError = input<boolean>(false);
+    vertical = input<boolean>(false);
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    writeValue(_value: unknown) {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    registerOnChange(_fn: unknown) {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    registerOnTouched(_fn: unknown) {}
+}
+
+@Component({
+    selector: 'dot-edit-content-binary-field',
+    standalone: true,
+    template: '',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: MockDotEditContentBinaryFieldComponent,
+            multi: true
+        }
+    ]
+})
+class MockDotEditContentBinaryFieldComponent implements ControlValueAccessor {
+    field = input<unknown>();
+    contentlet = input<unknown>();
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    writeValue(_value: unknown) {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    registerOnChange(_fn: unknown) {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    registerOnTouched(_fn: unknown) {}
+}
+
 describe('DotUveContentletQuickEditComponent', () => {
     let spectator: Spectator<DotUveContentletQuickEditComponent>;
     let fixture: ComponentFixture<DotUveContentletQuickEditComponent>;
 
     const createComponent = createComponentFactory({
         component: DotUveContentletQuickEditComponent,
+        overrideComponents: [
+            [
+                DotUveContentletQuickEditComponent,
+                {
+                    remove: {
+                        imports: [DotFileFieldComponent, DotEditContentBinaryFieldComponent]
+                    },
+                    add: {
+                        imports: [MockDotFileFieldComponent, MockDotEditContentBinaryFieldComponent]
+                    }
+                }
+            ]
+        ],
         providers: [
             {
                 provide: DotMessageService,
@@ -180,6 +238,75 @@ describe('DotUveContentletQuickEditComponent', () => {
         const inodeInput = spectator.query('input[formcontrolname="inode"]');
         expect(inodeInput).toBeTruthy();
         expect((inodeInput as HTMLInputElement).value).toBe('inode-123');
+    });
+
+    describe('IMAGE and FILE fields', () => {
+        it('should render dot-file-field with vertical=true for IMAGE fields', () => {
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                fields: [
+                    {
+                        name: 'Image Field',
+                        variable: 'imageField',
+                        clazz: DotCMSClazzes.IMAGE,
+                        fieldType: 'Image',
+                        fieldVariables: [],
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT'
+                    }
+                ]
+            });
+            spectator.detectChanges();
+
+            const fileFieldInstance = spectator.query(MockDotFileFieldComponent);
+            expect(fileFieldInstance).toBeTruthy();
+            expect(fileFieldInstance?.vertical()).toBe(true);
+        });
+
+        it('should render dot-file-field with vertical=true for FILE fields', () => {
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                fields: [
+                    {
+                        name: 'File Field',
+                        variable: 'fileField',
+                        clazz: DotCMSClazzes.FILE,
+                        fieldType: 'File',
+                        fieldVariables: [],
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT'
+                    }
+                ]
+            });
+            spectator.detectChanges();
+
+            const fileFieldInstance = spectator.query(MockDotFileFieldComponent);
+            expect(fileFieldInstance).toBeTruthy();
+            expect(fileFieldInstance?.vertical()).toBe(true);
+        });
+
+        it('should render dot-edit-content-binary-field for BINARY fields', () => {
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                fields: [
+                    {
+                        name: 'Binary Field',
+                        variable: 'binaryField',
+                        clazz: DotCMSClazzes.BINARY,
+                        fieldType: 'Binary',
+                        fieldVariables: [],
+                        required: false,
+                        readOnly: false,
+                        dataType: 'SYSTEM'
+                    }
+                ]
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query('dot-edit-content-binary-field')).toBeTruthy();
+        });
     });
 
     it('should not submit form when invalid', () => {

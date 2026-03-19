@@ -26,6 +26,7 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotCMSClazzes, DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotEditContentBinaryFieldComponent, DotFileFieldComponent } from '@dotcms/edit-content';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ContainerPayload } from '../../../shared/models';
@@ -36,7 +37,15 @@ import { ContainerPayload } from '../../../shared/models';
  */
 export type ContentletField = Pick<
     DotCMSContentTypeField,
-    'name' | 'variable' | 'clazz' | 'required' | 'readOnly' | 'regexCheck' | 'dataType'
+    | 'name'
+    | 'variable'
+    | 'clazz'
+    | 'required'
+    | 'readOnly'
+    | 'regexCheck'
+    | 'dataType'
+    | 'fieldVariables'
+    | 'fieldType'
 > & {
     options?: Array<{ label: string; value: string }>;
 };
@@ -75,7 +84,9 @@ export interface ContentletEditData {
         RadioButtonModule,
         SelectModule,
         TextareaModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotEditContentBinaryFieldComponent,
+        DotFileFieldComponent
     ],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
     host: { class: 'flex flex-col h-full' },
