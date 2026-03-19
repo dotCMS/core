@@ -1,10 +1,10 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { formatSecondsToTime, MetricFormat } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCountUpDirective } from '../../directives';
@@ -13,12 +13,10 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
 /**
  * Metric card component for displaying key analytics metrics.
  * Shows a metric name, value, optional subtitle, and icon in a compact card format.
- *
  */
 @Component({
     selector: 'dot-analytics-metric',
     imports: [
-        CommonModule,
         CardModule,
         SkeletonModule,
         DotMessagePipe,
@@ -37,8 +35,11 @@ export class DotAnalyticsMetricComponent {
     /** Optional title displayed above the card */
     readonly $title = input<string>('', { alias: 'title' });
 
-    /** Metric value (number will be formatted with separators, string for special formats like "2/3", null for empty) */
+    /** Metric value. Prefer number + format; strings are supported for backward compat but won't animate. */
     readonly $value = input.required<number | string | null>({ alias: 'value' });
+
+    /** Display format: 'number' (default), 'time' (seconds → Xm Ys), 'percentage' (appends %) */
+    readonly $format = input<MetricFormat>('number', { alias: 'format' });
 
     /** Optional secondary text below the metric value */
     readonly $subtitle = input<string>('', { alias: 'subtitle' });
@@ -79,82 +80,53 @@ export class DotAnalyticsMetricComponent {
             isNegative,
             isNeutral: trend === 0,
             prefix: isPositive ? '+' : '',
-            class: isPositive
-                ? 'metric-trend--positive'
+            colorClasses: isPositive
+                ? 'text-green-700 bg-green-50'
                 : isNegative
-                  ? 'metric-trend--negative'
-                  : 'metric-trend--neutral'
+                  ? 'text-red-600 bg-red-50'
+                  : 'text-gray-500 bg-gray-100'
         };
     });
 
-    /** Check if value is a fraction format (e.g., "2/3") */
-    protected readonly $isFraction = computed(() => {
-        const val = this.$value();
-
-        return typeof val === 'string' && val.includes('/');
-    });
-
-    /** Extract and format numerator and denominator from fraction string */
-    protected readonly $fractionParts = computed(() => {
-        const val = this.$value();
-        if (typeof val === 'string' && val.includes('/')) {
-            const [num, den] = val.split('/').map((s) => s.trim());
-            const numerator = parseInt(num, 10);
-            const denominator = parseInt(den, 10);
-
-            return {
-                numerator: numerator.toLocaleString(),
-                denominator: denominator.toLocaleString(),
-                // Raw values for count-up animation
-                numeratorValue: numerator,
-                denominatorValue: denominator
-            };
-        }
-
-        return null;
-    });
-
-    /** Formats numeric values with locale-specific separators */
+    /** Formats the value for static display based on format (number) or as-is (string) */
     protected readonly $formattedValue = computed(() => {
         const val = this.$value();
-        if (typeof val === 'number') {
-            // Formatear números grandes con separadores de miles
-            return val.toLocaleString();
+        if (val === null || val === undefined) {
+            return null;
         }
 
-        return val;
+        // String values display as-is (legacy path, e.g. "150/1000")
+        if (typeof val === 'string') {
+            return val;
+        }
+
+        const format = this.$format();
+        switch (format) {
+            case 'time':
+                return formatSecondsToTime(val);
+            case 'percentage':
+                return `${val}%`;
+            default:
+                return val.toLocaleString();
+        }
     });
 
-    /** Returns numeric value for count-up animation, or null if not a number */
+    /** Returns value info for count-up animation (only for numeric values) */
     protected readonly $numericValue = computed(() => {
         const val = this.$value();
-
-        if (typeof val === 'number') {
-            return { value: val, suffix: '', format: 'number' as const };
+        if (val === null || val === undefined || typeof val !== 'number') {
+            return null;
         }
 
-        if (typeof val === 'string') {
-            // Check for time format "Xm Ys" or "Xm" or "Ys"
-            const timeMatch = val.match(/^(?:(\d+)m)?\s*(?:(\d+)s)?$/);
-            if (timeMatch && (timeMatch[1] || timeMatch[2])) {
-                const minutes = parseInt(timeMatch[1] || '0', 10);
-                const seconds = parseInt(timeMatch[2] || '0', 10);
-                const totalSeconds = minutes * 60 + seconds;
-
-                return { value: totalSeconds, suffix: '', format: 'time' as const };
-            }
-
-            // Check for numeric strings with suffix (e.g., "45%", "5.2%")
-            const numMatch = val.match(/^([\d.]+)(.*)$/);
-            if (numMatch) {
-                const num = parseFloat(numMatch[1]);
-                if (!isNaN(num)) {
-                    return { value: num, suffix: numMatch[2], format: 'number' as const };
-                }
-            }
+        const format = this.$format();
+        switch (format) {
+            case 'time':
+                return { value: val, suffix: '', format: 'time' as const };
+            case 'percentage':
+                return { value: val, suffix: '%', format: 'number' as const };
+            default:
+                return { value: val, suffix: '', format: 'number' as const };
         }
-
-        return null;
     });
 
     /** Computed signal for complete icon classes */

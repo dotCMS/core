@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     AnalyticsChartColors,
@@ -46,11 +47,17 @@ export default class DotAnalyticsEngagementReportComponent {
     /** Analytics dashboard store providing engagement data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
 
+    readonly #messageService = inject(DotMessageService);
+
     /** Controls visibility of the "How it's calculated" dialog */
     readonly $showCalculationDialog = signal(false);
 
     /** Comparison label derived from the current time range (e.g., "from previous 7 days") */
-    readonly $comparisonLabel = computed(() => getComparisonLabel(this.store.timeRange()));
+    readonly $comparisonLabel = computed(() => {
+        const { key, args } = getComparisonLabel(this.store.timeRange());
+
+        return this.#messageService.get(key, ...args);
+    });
 
     /** KPIs slice: data and status for the metric cards */
     readonly $kpis = computed(() => this.store.engagementKpis().data);

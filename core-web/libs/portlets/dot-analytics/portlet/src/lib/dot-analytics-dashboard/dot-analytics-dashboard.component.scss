@@ -1,12 +1,1 @@
-@use "variables" as *;
-
-.header-container {
-    background: $color-palette-gray-100;
-    border-bottom: $field-border-size solid $color-palette-gray-300;
-}
-
-// .dashboard-panels layout (w-full, max-w-[1600px], mx-auto) handled by Tailwind on the element
-
-:host ::ng-deep .dashboard-panels .p-tabpanel {
-    width: 100%;
-}
+// All layout and styling handled by Tailwind utilities and PrimeNG styleClass on the template

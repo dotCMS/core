@@ -20,6 +20,14 @@ import { ChartData } from '../../../shared/types';
 import DotAnalyticsContentConversionsTableComponent from '../dot-analytics-content-conversions-table/dot-analytics-content-conversions-table.component';
 import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conversions-overview-table/dot-analytics-conversions-overview-table.component';
 
+/** Safely parse a string to integer, returning null for NaN/undefined/null */
+function safeParseInt(value: string | undefined | null): number | null {
+    if (value == null) return null;
+    const n = parseInt(value, 10);
+
+    return Number.isFinite(n) ? n : null;
+}
+
 /**
  * Conversions Report Component
  *
@@ -99,28 +107,29 @@ export default class DotAnalyticsConversionsReportComponent {
         const totalConversions = this.store.totalConversions();
         const convertingVisitors = this.store.convertingVisitors();
 
-        const totalConversionsRaw = totalConversions.data
-            ? parseInt(totalConversions.data['EventSummary.totalEvents'], 10)
-            : null;
+        const totalConversionsRaw = safeParseInt(
+            totalConversions.data?.['EventSummary.totalEvents']
+        );
         const totalConversionsValue = totalConversionsRaw === 0 ? null : totalConversionsRaw;
 
-        const uniqueVisitors = convertingVisitors.data
-            ? parseInt(convertingVisitors.data['EventSummary.uniqueVisitors'], 10)
-            : null;
-
-        const uniqueConvertingVisitors = convertingVisitors.data
-            ? parseInt(convertingVisitors.data['EventSummary.uniqueConvertingVisitors'], 10)
-            : null;
+        const uniqueVisitors = safeParseInt(
+            convertingVisitors.data?.['EventSummary.uniqueVisitors']
+        );
+        const uniqueConvertingVisitors = safeParseInt(
+            convertingVisitors.data?.['EventSummary.uniqueConvertingVisitors']
+        );
 
         const hasVisitorData = uniqueVisitors != null && uniqueVisitors > 0;
 
-        const conversionRate = hasVisitorData
-            ? `${Math.round(((uniqueConvertingVisitors ?? 0) / uniqueVisitors) * 10000) / 100}%`
-            : null;
+        const conversionRate =
+            hasVisitorData && uniqueConvertingVisitors != null
+                ? Math.round((uniqueConvertingVisitors / uniqueVisitors) * 10000) / 100
+                : null;
 
-        const convertingVisitorsValue = hasVisitorData
-            ? `${uniqueConvertingVisitors ?? 0}/${uniqueVisitors}`
-            : null;
+        const convertingVisitorsValue =
+            hasVisitorData && uniqueConvertingVisitors != null
+                ? `${uniqueConvertingVisitors}/${uniqueVisitors}`
+                : null;
 
         return [
             {
@@ -142,6 +151,7 @@ export default class DotAnalyticsConversionsReportComponent {
             {
                 name: 'analytics.metrics.site-conversion-rate',
                 value: conversionRate,
+                format: 'percentage',
                 subtitle: 'analytics.metrics.site-conversion-rate.subtitle',
                 icon: 'pi-chart-line',
                 status: convertingVisitors.status,

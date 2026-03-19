@@ -101,20 +101,32 @@ describe('Filters Utils', () => {
     });
 
     describe('getComparisonLabel', () => {
-        it('should return "from previous 7 days" for last7days range', () => {
-            expect(getComparisonLabel(TIME_RANGE_OPTIONS.last7days)).toBe('from previous 7 days');
+        it('should return i18n key with days arg for last7days range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.last7days)).toEqual({
+                key: 'analytics.metrics.comparison.previous-days',
+                args: ['7']
+            });
         });
 
-        it('should return "from previous 30 days" for last30days range', () => {
-            expect(getComparisonLabel(TIME_RANGE_OPTIONS.last30days)).toBe('from previous 30 days');
+        it('should return i18n key with days arg for last30days range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.last30days)).toEqual({
+                key: 'analytics.metrics.comparison.previous-days',
+                args: ['30']
+            });
         });
 
-        it('should return "from previous range" for custom date range array', () => {
-            expect(getComparisonLabel(['2024-01-01', '2024-01-31'])).toBe('from previous range');
+        it('should return previous-range key for custom date range array', () => {
+            expect(getComparisonLabel(['2024-01-01', '2024-01-31'])).toEqual({
+                key: 'analytics.metrics.comparison.previous-range',
+                args: []
+            });
         });
 
-        it('should return "from previous range" for custom string range', () => {
-            expect(getComparisonLabel(TIME_RANGE_OPTIONS.custom)).toBe('from previous range');
+        it('should return previous-range key for custom string range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.custom)).toEqual({
+                key: 'analytics.metrics.comparison.previous-range',
+                args: []
+            });
         });
     });
 });

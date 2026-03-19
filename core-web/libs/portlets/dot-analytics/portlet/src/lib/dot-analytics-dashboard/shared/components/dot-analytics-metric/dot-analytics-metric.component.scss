@@ -1,5 +1,4 @@
-@use "variables" as *;
-
+// Animation — no Tailwind equivalent for custom keyframes
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -9,101 +8,6 @@
     }
 }
 
-// Layout handled by Tailwind via host: { class: 'flex flex-col gap-2 w-full' }
-
 .metric-fade-in {
     animation: fadeIn 200ms ease-in;
-}
-
-.metric-value {
-    font-size: $font-size-xxxl;
-    font-weight: $font-weight-bold;
-    color: $color-palette-gray-900;
-    margin: 0;
-    line-height: 1.1;
-
-    &--empty {
-        color: $color-palette-gray-400;
-    }
-
-    // --fraction layout handled by Tailwind: flex items-baseline gap-1
-
-    &__numerator {
-        font-size: $font-size-xxxl;
-        font-weight: $font-weight-bold;
-        color: $color-palette-gray-900;
-    }
-
-    &__separator {
-        font-size: $font-size-xxxl;
-        font-weight: $font-weight-bold;
-        color: $color-palette-gray-900;
-    }
-
-    &__denominator {
-        font-size: $font-size-xxl;
-        font-weight: $font-weight-bold;
-        color: $color-palette-gray-600;
-    }
-}
-
-.metric-subtitle {
-    // Layout (flex, items-center, gap-2) handled by Tailwind on the element
-    font-size: $font-size-md;
-    color: $color-palette-gray-600;
-    margin: 0;
-}
-
-// .metric-icon shrink-0 handled by Tailwind on the element
-
-.metric-trend {
-    // Layout (inline-flex, items-center, gap-1) handled by Tailwind on the element
-    font-size: $font-size-sm;
-    font-weight: $font-weight-semi-bold;
-    padding: $spacing-0 $spacing-1;
-    border-radius: $border-radius-md;
-
-    i {
-        font-size: $font-size-sm;
-        width: 1rem;
-    }
-
-    &--positive {
-        color: $color-palette-green-shade;
-        background-color: $color-palette-green-op-10;
-    }
-
-    &--negative {
-        color: $color-palette-red-shade;
-        background-color: $color-palette-red-op-10;
-    }
-
-    &--neutral {
-        color: $color-palette-gray-500;
-        background-color: $color-palette-gray-op-10;
-    }
-}
-
-.metric-comparison {
-    font-size: $font-size-sm;
-    color: $color-palette-gray-500;
-}
-
-.metric-no-prior {
-    font-size: $font-size-sm;
-    color: $color-palette-gray-400;
-    font-style: italic;
-}
-
-.metric-projected-content {
-    // Layout (flex, flex-col, flex-1, w-full, mt-3) handled by Tailwind on the element
-
-    &:empty {
-        display: none;
-    }
-
-    &--hidden {
-        visibility: hidden;
-        pointer-events: none;
-    }
 }

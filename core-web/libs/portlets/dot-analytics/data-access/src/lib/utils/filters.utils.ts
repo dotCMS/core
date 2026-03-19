@@ -50,18 +50,26 @@ export function paramsToTimeRange(params: Params | null | undefined): TimeRangeI
     return TIME_RANGE_OPTIONS.last7days;
 }
 
+/** Return type for getComparisonLabel — i18n key with optional args */
+export interface ComparisonLabelInfo {
+    key: string;
+    args: string[];
+}
+
 /**
- * Returns a comparison label string based on the current time range.
+ * Returns an i18n key and args for the comparison label based on the current time range.
  *
  * @param timeRange - The current time range input
- * @returns A label like "from previous 7 days" or "from previous range" for custom ranges
+ * @returns An object with `key` (i18n key) and `args` (substitution values)
  */
-export function getComparisonLabel(timeRange: TimeRangeInput): string {
+export function getComparisonLabel(timeRange: TimeRangeInput): ComparisonLabelInfo {
     if (Array.isArray(timeRange)) {
-        return 'from previous range';
+        return { key: 'analytics.metrics.comparison.previous-range', args: [] };
     }
 
     const days = TIME_RANGE_DAYS_MAP[timeRange];
 
-    return days !== undefined ? `from previous ${days} days` : 'from previous range';
+    return days !== undefined
+        ? { key: 'analytics.metrics.comparison.previous-days', args: [String(days)] }
+        : { key: 'analytics.metrics.comparison.previous-range', args: [] };
 }

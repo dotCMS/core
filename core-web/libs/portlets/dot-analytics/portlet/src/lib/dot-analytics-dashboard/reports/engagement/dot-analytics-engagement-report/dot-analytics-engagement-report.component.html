@@ -7,7 +7,8 @@
         <dot-analytics-metric
             class="h-full"
             [title]="'analytics.engagement.metrics.engagement-rate'"
-            [value]="(kpis?.engagementRate?.value ?? '') + (kpis?.engagementRate?.value ? '%' : '')"
+            [value]="kpis?.engagementRate?.value ?? null"
+            [format]="kpis?.engagementRate?.format ?? 'percentage'"
             [trend]="kpis?.engagementRate?.trend"
             [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
             [comparisonLabel]="comparisonLabel"
@@ -28,21 +29,22 @@
     <div class="engagement-dashboard__metrics-row grid grid-cols-1 md:grid-cols-3 gap-6">
         <dot-analytics-metric
             [title]="'analytics.engagement.metrics.avg-interactions'"
-            [value]="kpis?.avgInteractions?.value ?? ''"
+            [value]="kpis?.avgInteractions?.value ?? null"
             [trend]="kpis?.avgInteractions?.trend"
             [comparisonLabel]="comparisonLabel"
             icon="pi-bullseye"
             [status]="kpisStatus" />
         <dot-analytics-metric
             [title]="'analytics.engagement.metrics.avg-session-time'"
-            [value]="kpis?.avgSessionTime?.value ?? ''"
+            [value]="kpis?.avgSessionTime?.value ?? null"
+            [format]="kpis?.avgSessionTime?.format ?? 'time'"
             [trend]="kpis?.avgSessionTime?.trend"
             [comparisonLabel]="comparisonLabel"
             icon="pi-clock"
             [status]="kpisStatus" />
         <dot-analytics-metric
             [title]="'analytics.engagement.metrics.total-sessions'"
-            [value]="kpis?.totalSessions?.value ?? ''"
+            [value]="kpis?.totalSessions?.value ?? null"
             [trend]="kpis?.totalSessions?.trend"
             [comparisonLabel]="comparisonLabel"
             icon="pi-bullseye"

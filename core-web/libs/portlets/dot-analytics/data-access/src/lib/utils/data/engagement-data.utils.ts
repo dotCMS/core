@@ -16,13 +16,14 @@ const EMPTY_KPIS: EngagementKPIs = {
     totalSessions: { value: 0, trend: 0, label: 'Total Sessions' },
     engagementRate: {
         value: 0,
+        format: 'percentage',
         trend: 0,
         label: 'Engagement Rate',
         subtitle: '0 Engaged Sessions'
     },
     avgInteractions: { value: 0, trend: 0, label: 'Avg Interactions (Engaged)' },
-    avgSessionTime: { value: '0m 0s', trend: 0, label: 'Average Session Time' },
-    conversionRate: { value: '0%', trend: 0, label: 'Conversion Rate' }
+    avgSessionTime: { value: 0, format: 'time', trend: 0, label: 'Average Session Time' },
+    conversionRate: { value: 0, format: 'percentage', trend: 0, label: 'Conversion Rate' }
 };
 
 function parseNum(s: string | undefined | null): number {
@@ -81,7 +82,7 @@ export function toEngagementKPIs(
     const avgSessionTimeCur = parseNum(current['EngagementDaily.avgSessionTimeSeconds']);
 
     const engagementRateValue = Math.round(engagementRateCur * 10000) / 100;
-    const conversionRateValue = `${Math.round(conversionRateCur * 1000) / 10}%`;
+    const conversionRateValue = Math.round(conversionRateCur * 1000) / 10;
 
     // When there is no previous period data, trends are undefined ("No prior data")
     const hasPriorData = previousRow != null;
@@ -115,6 +116,7 @@ export function toEngagementKPIs(
         },
         engagementRate: {
             value: engagementRateValue,
+            format: 'percentage',
             trend: engagementRateTrend,
             label: 'Engagement Rate',
             subtitle: `${engagedSessionsCur.toLocaleString()} Engaged Sessions`
@@ -125,12 +127,14 @@ export function toEngagementKPIs(
             label: 'Avg Interactions (Engaged)'
         },
         avgSessionTime: {
-            value: formatSecondsToTime(avgSessionTimeCur),
+            value: avgSessionTimeCur,
+            format: 'time',
             trend: avgSessionTimeTrend,
             label: 'Average Session Time'
         },
         conversionRate: {
             value: conversionRateValue,
+            format: 'percentage',
             trend: conversionRateTrend,
             label: 'Conversion Rate'
         }

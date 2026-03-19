@@ -15,7 +15,7 @@
         </p-message>
     }
 
-    <div class="header-container p-4 py-6">
+    <div class="bg-gray-100 border-b border-gray-300 p-4 py-6">
         <div class="flex justify-between items-center">
             <dot-analytics-filters
                 [timeRange]="store.timeRange()"
@@ -40,7 +40,7 @@
             </p-tablist>
             <p-tabpanels class="dashboard-panels w-full max-w-[1600px] mx-auto">
                 @for (tab of tabs; track tab.id) {
-                    <p-tabpanel [value]="tab.id">
+                    <p-tabpanel [value]="tab.id" styleClass="w-full">
                         <ng-template #content>
                             <ng-container *ngComponentOutlet="tabComponents[tab.id]" />
                         </ng-template>
