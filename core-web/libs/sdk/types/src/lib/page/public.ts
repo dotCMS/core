@@ -1172,6 +1172,19 @@ export interface DotGraphQLApiResponse {
 }
 
 /**
+ * Error codes returned by the DotCMS GraphQL API.
+ * - NOT_FOUND: The requested page or resource does not exist (HTTP 404)
+ * - PERMISSION_DENIED: The user lacks permission to access the resource (HTTP 401/403)
+ * - INVALID_LANGUAGE: The languageId provided is not a valid language (HTTP 400)
+ * - BAD_REQUEST: The GraphQL query itself is malformed or invalid (HTTP 400)
+ */
+export type DotCMSGraphQLErrorCode =
+    | 'NOT_FOUND'
+    | 'PERMISSION_DENIED'
+    | 'INVALID_LANGUAGE'
+    | 'BAD_REQUEST';
+
+/**
  * Represents a GraphQL error
  * @interface DotCMSGraphQLError
  */
@@ -1183,6 +1196,14 @@ export interface DotCMSGraphQLError {
     }[];
     extensions: {
         classification: string;
+        /** Structured error code from DotCMS backend — use this for programmatic error handling */
+        code?: DotCMSGraphQLErrorCode;
+        /** HTTP status hint from backend (e.g. 404, 400) */
+        status?: number;
+        /** The type of resource that was not found, if applicable */
+        resourceType?: string;
+        /** The identifier of the resource that was not found, if applicable */
+        resourceId?: string;
     };
 }
 
@@ -1193,6 +1214,7 @@ export interface DotCMSPageResponse {
     pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown> | unknown;
     error?: DotCMSGraphQLError;
+    errors?: DotCMSGraphQLError[];
     graphql: {
         query: string;
         variables: Record<string, unknown>;
@@ -1231,6 +1253,8 @@ export type DotCMSClientPageGetResponse<T extends DotCMSExtendedPageResponse> = 
  * Wraps HTTP errors and adds page-specific context including GraphQL information
  */
 export class DotErrorPage extends Error {
+    public readonly status: number;
+    public readonly code: DotCMSGraphQLErrorCode | 'UNKNOWN';
     public readonly httpError?: DotHttpError;
     public readonly graphql?: {
         query: string;
@@ -1239,11 +1263,15 @@ export class DotErrorPage extends Error {
 
     constructor(
         message: string,
+        status: number,
+        code: DotCMSGraphQLErrorCode | 'UNKNOWN',
         httpError?: DotHttpError,
         graphql?: { query: string; variables: Record<string, unknown> }
     ) {
         super(message);
         this.name = 'DotCMSPageError';
+        this.status = status;
+        this.code = code;
         this.httpError = httpError;
         this.graphql = graphql;
 
@@ -1258,6 +1286,8 @@ export class DotErrorPage extends Error {
         return {
             name: this.name,
             message: this.message,
+            status: this.status,
+            code: this.code,
             httpError: this.httpError?.toJSON(),
             graphql: this.graphql,
             stack: this.stack

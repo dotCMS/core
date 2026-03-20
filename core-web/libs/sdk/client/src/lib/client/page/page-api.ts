@@ -150,39 +150,80 @@ export class PageClient extends BaseApiClient {
                 headers: requestHeaders,
                 httpClient: this.httpClient
             });
-            // The GQL endpoint can return errors and data, we need to handle both
-            if (response.errors) {
+
+            // 1. Log all GraphQL errors
+            if (response.errors?.length) {
                 response.errors.forEach((error: { message: string }) => {
                     consola.error('[DotCMS GraphQL Error]: ', error.message);
                 });
+            }
 
-                const pageError = response.errors.find((error: { message: string }) =>
-                    error.message.includes('DotPage')
-                );
+            // 2. BAD QUERY — data is null/undefined means the entire query failed
+            //    (syntax error, unknown type, validation error)
+            //    Must check BEFORE accessing response.data.page
+            if (!response.data) {
+                const firstError = response.errors?.[0];
 
-                if (pageError) {
-                    // Throw HTTP error - will be caught and wrapped in DotErrorPage below
-                    throw new DotHttpError({
+                throw new DotErrorPage(
+                    firstError?.message ?? 'GraphQL query failed',
+                    400,
+                    'BAD_REQUEST',
+                    new DotHttpError({
                         status: 400,
                         statusText: 'Bad Request',
-                        message: `GraphQL query failed for URL '${url}': ${pageError.message}`,
+                        message: firstError?.message ?? 'GraphQL query failed',
                         data: response.errors
-                    });
+                    }),
+                    { query: completeQuery, variables: requestVariables }
+                );
+            }
+
+            // 3. STRUCTURED ERRORS — check extensions.code for NOT_FOUND, PERMISSION_DENIED, etc.
+            if (response.errors?.length) {
+                const structuredError = response.errors.find(
+                    (error: { extensions?: { code?: string } }) => error.extensions?.code
+                );
+
+                if (structuredError) {
+                    const code = structuredError.extensions.code!;
+                    const status =
+                        structuredError.extensions.status ??
+                        (code === 'NOT_FOUND' ? 404 : code === 'PERMISSION_DENIED' ? 403 : 400);
+
+                    throw new DotErrorPage(
+                        structuredError.message,
+                        status,
+                        code,
+                        new DotHttpError({
+                            status,
+                            statusText: code,
+                            message: structuredError.message,
+                            data: response.errors
+                        }),
+                        { query: completeQuery, variables: requestVariables }
+                    );
                 }
             }
 
+            // 4. Transform and check page — null page with no structured error = 404
             const pageResponse = graphqlToPageEntity(response.data.page);
 
             if (!pageResponse) {
-                // Throw HTTP error - will be caught and wrapped in DotErrorPage below
-                throw new DotHttpError({
-                    status: 404,
-                    statusText: 'Not Found',
-                    message: `Page ${url} not found. Check the page URL and permissions.`,
-                    data: response.errors
-                });
+                throw new DotErrorPage(
+                    `Page ${url} not found`,
+                    404,
+                    'NOT_FOUND',
+                    new DotHttpError({
+                        status: 404,
+                        statusText: 'Not Found',
+                        message: `Page ${url} not found`,
+                        data: response.errors
+                    }),
+                    { query: completeQuery, variables: requestVariables }
+                );
             }
 
+            // 5. Build response — include any non-fatal errors for consumers to inspect
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
             return {
@@ -191,29 +232,30 @@ export class PageClient extends BaseApiClient {
                 graphql: {
                     query: completeQuery,
                     variables: requestVariables
-                }
+                },
+                errors: response.errors ?? undefined
             };
         } catch (error) {
-            // Handle DotHttpError instances
+            if (error instanceof DotErrorPage) {
+                throw error;
+            }
+
             if (error instanceof DotHttpError) {
                 throw new DotErrorPage(
                     `Page request failed for URL '${url}': ${error.message}`,
+                    error.status,
+                    'UNKNOWN',
                     error,
-                    {
-                        query: completeQuery,
-                        variables: requestVariables
-                    }
+                    { query: completeQuery, variables: requestVariables }
                 );
             }
 
-            // Handle other errors (GraphQL errors, validation errors, etc.)
             throw new DotErrorPage(
                 `Page request failed for URL '${url}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                500,
+                'UNKNOWN',
                 undefined,
-                {
-                    query: completeQuery,
-                    variables: requestVariables
-                }
+                { query: completeQuery, variables: requestVariables }
             );
         }
     }
