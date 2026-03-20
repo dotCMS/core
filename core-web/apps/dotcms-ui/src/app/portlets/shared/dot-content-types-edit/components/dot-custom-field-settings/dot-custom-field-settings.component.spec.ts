@@ -349,7 +349,7 @@ describe('DotCustomFieldSettingsComponent', () => {
             const emitSpy = jest.spyOn(component.$changeControls, 'emit');
             spectator.setInput('isVisible', true);
 
-            const emitted = (emitSpy.mock.calls[0][0] as ReturnType<typeof Object.assign>);
+            const emitted = emitSpy.mock.calls[0][0] as ReturnType<typeof Object.assign>;
             expect(emitted.accept.disabled).toBe(false);
         });
 
