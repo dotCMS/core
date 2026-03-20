@@ -6,24 +6,27 @@ import {
     signal,
     viewChild
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
-import { SelectModule } from 'primeng/select';
-import { TableModule } from 'primeng/table';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
+import { Menu, MenuModule } from 'primeng/menu';
+import { Table, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
 
 import {
     BUNDLE_STATE,
-    BundleMap,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    PluginRow
 } from '@dotcms/data-access';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
@@ -33,26 +36,20 @@ import { DotPluginsListStore } from './store/dot-plugins-list.store';
 import { DotPluginsExtraPackagesComponent } from '../dot-plugins-extra-packages/dot-plugins-extra-packages.component';
 import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upload.component';
 
-const BUNDLE_STATE_LABELS: Record<number, string> = {
-    [BUNDLE_STATE.UNINSTALLED]: 'plugins.state.uninstalled',
-    [BUNDLE_STATE.INSTALLED]: 'plugins.state.installed',
-    [BUNDLE_STATE.RESOLVED]: 'plugins.state.resolved',
-    [BUNDLE_STATE.STARTING]: 'plugins.state.starting',
-    [BUNDLE_STATE.STOPPING]: 'plugins.state.stopping',
-    [BUNDLE_STATE.ACTIVE]: 'plugins.state.active'
-};
-
 @Component({
     selector: 'dot-plugins-list',
     standalone: true,
     imports: [
-        FormsModule,
+        MenuModule,
         TableModule,
         ButtonModule,
-        SelectModule,
+        ChipModule,
         ConfirmDialogModule,
         ContextMenuModule,
         ToolbarModule,
+        IconFieldModule,
+        InputIconModule,
+        InputTextModule,
         DotMessagePipe,
         DotAddToBundleComponent
     ],
@@ -64,54 +61,70 @@ const BUNDLE_STATE_LABELS: Record<number, string> = {
 export class DotPluginsListComponent {
     readonly store = inject(DotPluginsListStore);
     protected readonly BUNDLE_STATE = BUNDLE_STATE;
-    selectedJar: string | null = null;
     isDragging = signal(false);
     private dragCounter = 0;
-    private selectedBundle = signal<BundleMap | null>(null);
+    private selectedBundle = signal<PluginRow | null>(null);
     readonly addToBundleIdentifier = signal<string | null>(null);
     readonly contextMenu = viewChild<ContextMenu>('contextMenu');
-
-    readonly availableJarOptions = computed(() =>
-        this.store.availableJars().map((j) => ({ label: j, value: j }))
-    );
+    readonly toolbarMenu = viewChild.required<Menu>('toolbarMenu');
+    private readonly table = viewChild<Table>('dt');
 
     readonly contextMenuItems = computed<MenuItem[]>(() => {
         const bundle = this.selectedBundle();
         if (!bundle) return [];
+
+        if (bundle.state === 'undeployed') {
+            return [
+                {
+                    label: this.dotMessageService.get('plugins.deploy'),
+                    command: () => this.store.deploy(bundle.jarFile)
+                }
+            ];
+        }
+
+        const stateAction: MenuItem =
+            bundle.state === BUNDLE_STATE.ACTIVE
+                ? {
+                      label: this.dotMessageService.get('plugins.stop'),
+                      command: () => this.store.stop(bundle.jarFile)
+                  }
+                : {
+                      label: this.dotMessageService.get('plugins.start'),
+                      command: () => this.store.start(bundle.jarFile)
+                  };
+
         return [
+            stateAction,
+            {
+                label: this.dotMessageService.get('plugins.undeploy'),
+                command: () => this.confirmUndeploy(bundle)
+            },
+            { separator: true },
             {
                 label: this.dotMessageService.get('plugins.process-exports'),
-                icon: 'pi pi-cog',
                 command: () => this.store.processExports(bundle.symbolicName)
             },
             {
                 label: this.dotMessageService.get('plugins.add-to-bundle'),
-                icon: 'pi pi-box',
                 command: () => this.addToBundleIdentifier.set(bundle.jarFile)
             }
         ];
     });
 
-    /** Pass-through config so the table fills 100% height when empty (empty state centered). */
-    readonly $ptConfig = computed(() => ({
-        table: {
-            style: {
-                'table-layout': 'fixed' as const,
-                ...(this.store.bundles().length === 0 && {
-                    height: '100%',
-                    width: '100%'
-                })
-            }
+    readonly toolbarMenuItems = computed<MenuItem[]>(() => [
+        {
+            label: this.dotMessageService.get('plugins.restart-osgi'),
+            command: () => this.confirmRestart()
         }
-    }));
+    ]);
 
     private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
 
-    getStateLabel(state: number): string {
-        return BUNDLE_STATE_LABELS[state] ?? 'plugins.state.unknown';
+    filterTable(value: string): void {
+        this.table()?.filterGlobal(value, 'contains');
     }
 
     refresh(): void {
@@ -124,7 +137,9 @@ export class DotPluginsListComponent {
             header: this.dotMessageService.get('plugins.upload.title'),
             width: '500px',
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            resizable: false,
+            draggable: false
         });
         ref?.onClose.pipe(take(1)).subscribe((result) => {
             if (result) {
@@ -135,25 +150,31 @@ export class DotPluginsListComponent {
     }
 
     openExtraPackagesDialog(): void {
-        this.dialogService.open(DotPluginsExtraPackagesComponent, {
+        const ref = this.dialogService.open(DotPluginsExtraPackagesComponent, {
             header: this.dotMessageService.get('plugins.extra-packages.title'),
             width: '600px',
+            height: '600px',
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            resizable: false,
+            draggable: false
+        });
+        ref?.onClose.pipe(take(1)).subscribe((result) => {
+            if (result === 'restart') {
+                this.confirmRestart();
+            }
         });
     }
 
-    deploySelectedJar(jar: string): void {
-        this.store.deploy(jar);
-    }
-
-    confirmUndeploy(bundle: BundleMap): void {
+    confirmUndeploy(bundle: PluginRow): void {
         this.confirmationService.confirm({
             message: this.dotMessageService.get(
                 'plugins.confirm.undeploy.message',
                 bundle.symbolicName ?? bundle.jarFile
             ),
             header: this.dotMessageService.get('plugins.confirm.undeploy.header'),
+            acceptLabel: this.dotMessageService.get('Ok'),
+            rejectLabel: this.dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-outlined',
             rejectButtonStyleClass: 'p-button-primary',
             defaultFocus: 'reject',
@@ -204,8 +225,11 @@ export class DotPluginsListComponent {
         this.store.uploadBundles(jarFiles);
     }
 
-    onContextMenu(event: MouseEvent, bundle: BundleMap): void {
-        if (bundle.isSystem) return;
+    onToolbarMenuToggle(event: MouseEvent): void {
+        this.toolbarMenu().toggle(event);
+    }
+
+    onContextMenu(event: MouseEvent, bundle: PluginRow): void {
         this.selectedBundle.set(bundle);
         this.contextMenu()?.show(event);
     }
@@ -213,7 +237,9 @@ export class DotPluginsListComponent {
     confirmRestart(): void {
         this.confirmationService.confirm({
             message: this.dotMessageService.get('plugins.confirm.restart.message'),
-            header: this.dotMessageService.get('plugins.restart'),
+            header: this.dotMessageService.get('plugins.restart-osgi'),
+            acceptLabel: this.dotMessageService.get('Ok'),
+            rejectLabel: this.dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-outlined',
             defaultFocus: 'reject',

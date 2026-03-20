@@ -31,6 +31,7 @@ describe('DotPluginsUploadComponent', () => {
     });
 
     beforeEach(() => {
+        jest.clearAllMocks();
         spectator = createComponent();
         component = spectator.component;
         osgiService = spectator.inject(DotOsgiService);
@@ -38,26 +39,19 @@ describe('DotPluginsUploadComponent', () => {
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
-    });
-
     describe('onFileSelect', () => {
-        it('should filter and store only .jar files', () => {
+        it('should store only .jar files from the selection', () => {
             const jarFile = makeFile('plugin.jar');
-            const txtFile = makeFile('readme.txt');
-            component.onFileSelect({ files: [jarFile, txtFile] } as never);
+            component.onFileSelect({ currentFiles: [jarFile, makeFile('readme.txt')] } as never);
             expect(component.selectedFiles()).toEqual([jarFile]);
         });
 
-        it('should set empty array when no jar files match', () => {
-            component.onFileSelect({ files: [makeFile('readme.txt')] } as never);
+        it('should store an empty array when no jar files are in the selection', () => {
+            component.onFileSelect({ currentFiles: [makeFile('readme.txt')] } as never);
             expect(component.selectedFiles()).toEqual([]);
         });
-    });
 
-    describe('onFileClear', () => {
-        it('should clear selectedFiles', () => {
+        it('should clear selection on file clear', () => {
             component.selectedFiles.set([makeFile('plugin.jar')]);
             component.onFileClear();
             expect(component.selectedFiles()).toEqual([]);
@@ -65,12 +59,12 @@ describe('DotPluginsUploadComponent', () => {
     });
 
     describe('upload', () => {
-        it('should do nothing when no files are selected', () => {
+        it('should not call the service when no files are selected', () => {
             component.upload();
             expect(osgiService.uploadBundles).not.toHaveBeenCalled();
         });
 
-        it('should upload files and close dialog with true on success', () => {
+        it('should upload selected files and close the dialog with true on success', () => {
             const file = makeFile('plugin.jar');
             component.selectedFiles.set([file]);
             component.upload();
@@ -89,26 +83,28 @@ describe('DotPluginsUploadComponent', () => {
     });
 
     describe('close', () => {
-        it('should close dialog with false', () => {
+        it('should close the dialog with false without uploading', () => {
             component.close();
+            expect(osgiService.uploadBundles).not.toHaveBeenCalled();
             expect(dialogRef.close).toHaveBeenCalledWith(false);
         });
     });
 
     describe('selectedFilesSummary', () => {
-        it('should return empty string when no files', () => {
+        it('should return empty string when no files are selected', () => {
             expect(component.selectedFilesSummary()).toBe('');
         });
 
-        it('should return file name when one file selected', () => {
+        it('should return the file name when exactly one file is selected', () => {
             component.selectedFiles.set([makeFile('plugin.jar')]);
             expect(component.selectedFilesSummary()).toBe('plugin.jar');
         });
 
-        it('should return summary with "and N more" when multiple files', () => {
+        it('should return first file name and an "N more" suffix for multiple files', () => {
             component.selectedFiles.set([makeFile('a.jar'), makeFile('b.jar'), makeFile('c.jar')]);
-            expect(component.selectedFilesSummary()).toContain('a.jar');
-            expect(component.selectedFilesSummary()).toContain('plugins.upload.and-n-more');
+            const summary = component.selectedFilesSummary();
+            expect(summary).toContain('a.jar');
+            expect(summary).toContain('plugins.upload.and-n-more');
         });
     });
 });

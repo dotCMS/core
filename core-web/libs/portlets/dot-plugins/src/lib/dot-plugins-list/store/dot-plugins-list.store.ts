@@ -1,13 +1,27 @@
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { EMPTY, Observable } from 'rxjs';
 
-import { DestroyRef, effect, inject, untracked } from '@angular/core';
+import { computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { catchError, debounceTime, take } from 'rxjs/operators';
 
-import { BundleMap, DotHttpErrorManagerService, DotOsgiService } from '@dotcms/data-access';
+import {
+    BundleMap,
+    DotHttpErrorManagerService,
+    DotOsgiService,
+    PluginRow
+} from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
+
+const BUNDLES_LOADED_DEBOUNCE_MS = 5000;
 
 type DotPluginsListStatus = 'init' | 'loading' | 'loaded' | 'error' | 'restarting';
 
@@ -15,18 +29,32 @@ interface DotPluginsListState {
     bundles: BundleMap[];
     availableJars: string[];
     status: DotPluginsListStatus;
-    ignoreSystemBundles: boolean;
 }
 
 const initialState: DotPluginsListState = {
     bundles: [],
     availableJars: [],
-    status: 'init',
-    ignoreSystemBundles: true
+    status: 'init'
 };
 
 export const DotPluginsListStore = signalStore(
     withState<DotPluginsListState>(initialState),
+    withComputed((store) => ({
+        rows: computed<PluginRow[]>(() => [
+            ...store.bundles().map((b) => ({
+                jarFile: b.jarFile,
+                symbolicName: b.symbolicName || b.jarFile,
+                state: b.state,
+                bundleId: b.bundleId,
+                version: b.version
+            })),
+            ...store.availableJars().map((jar) => ({
+                jarFile: jar,
+                symbolicName: jar,
+                state: 'undeployed' as const
+            }))
+        ])
+    })),
     withMethods((store) => {
         const osgiService = inject(DotOsgiService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
@@ -34,7 +62,7 @@ export const DotPluginsListStore = signalStore(
         function loadBundles() {
             patchState(store, { status: 'loading' });
             osgiService
-                .getInstalledBundles(store.ignoreSystemBundles())
+                .getInstalledBundles(true)
                 .pipe(
                     take(1),
                     catchError((error) => {
@@ -83,9 +111,6 @@ export const DotPluginsListStore = signalStore(
         return {
             loadBundles,
             loadAvailablePlugins,
-            setIgnoreSystemBundles(value: boolean) {
-                patchState(store, { ignoreSystemBundles: value });
-            },
             uploadBundles(files: File[], onSuccess?: () => void) {
                 handlePluginAction(osgiService.uploadBundles(files), () => {
                     loadBundles();
@@ -128,13 +153,8 @@ export const DotPluginsListStore = signalStore(
             const dotcmsEventsService = inject(DotcmsEventsService);
             const destroyRef = inject(DestroyRef);
 
-            effect(() => {
-                store.ignoreSystemBundles();
-                untracked(() => {
-                    store.loadBundles();
-                    store.loadAvailablePlugins();
-                });
-            });
+            store.loadBundles();
+            store.loadAvailablePlugins();
 
             dotcmsEventsService
                 .subscribeTo('OSGI_FRAMEWORK_RESTART')
@@ -143,7 +163,7 @@ export const DotPluginsListStore = signalStore(
 
             dotcmsEventsService
                 .subscribeTo('OSGI_BUNDLES_LOADED')
-                .pipe(debounceTime(4000), takeUntilDestroyed(destroyRef))
+                .pipe(debounceTime(BUNDLES_LOADED_DEBOUNCE_MS), takeUntilDestroyed(destroyRef))
                 .subscribe(() => {
                     store.loadBundles();
                     store.loadAvailablePlugins();

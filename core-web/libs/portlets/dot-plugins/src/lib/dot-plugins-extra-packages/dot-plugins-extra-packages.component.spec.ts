@@ -28,6 +28,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
     });
 
     beforeEach(() => {
+        jest.clearAllMocks();
         spectator = createComponent();
         component = spectator.component;
         osgiService = spectator.inject(DotOsgiService);
@@ -35,14 +36,18 @@ describe('DotPluginsExtraPackagesComponent', () => {
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
-    });
-
     describe('ngOnInit', () => {
-        it('should load extra packages on init', () => {
+        it('should load and populate extra packages on init', () => {
             expect(osgiService.getExtraPackages).toHaveBeenCalled();
             expect(component.extraPackages()).toBe('pkg1\npkg2');
+        });
+
+        it('should default to empty string when entity is null', () => {
+            jest.spyOn(osgiService, 'getExtraPackages').mockReturnValue(
+                of({ entity: null as unknown as string })
+            );
+            component.ngOnInit();
+            expect(component.extraPackages()).toBe('');
         });
 
         it('should handle load error', () => {
@@ -51,18 +56,10 @@ describe('DotPluginsExtraPackagesComponent', () => {
             component.ngOnInit();
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
         });
-
-        it('should default to empty string on null entity', () => {
-            jest.spyOn(osgiService, 'getExtraPackages').mockReturnValue(
-                of({ entity: null as unknown as string })
-            );
-            component.ngOnInit();
-            expect(component.extraPackages()).toBe('');
-        });
     });
 
     describe('save', () => {
-        it('should save extra packages and close dialog with true', () => {
+        it('should save the current packages and close the dialog with true', () => {
             component.extraPackages.set('pkg1\npkg2\npkg3');
             component.save();
             expect(osgiService.updateExtraPackages).toHaveBeenCalledWith('pkg1\npkg2\npkg3');
@@ -76,17 +73,12 @@ describe('DotPluginsExtraPackagesComponent', () => {
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(component.saving()).toBe(false);
         });
-
-        it('should set saving to true during request', () => {
-            jest.spyOn(osgiService, 'updateExtraPackages').mockReturnValue(of({}));
-            component.save();
-            expect(component.saving()).toBe(false); // reset after success
-        });
     });
 
     describe('close', () => {
-        it('should close dialog with false', () => {
+        it('should close dialog with false without saving', () => {
             component.close();
+            expect(osgiService.updateExtraPackages).not.toHaveBeenCalled();
             expect(dialogRef.close).toHaveBeenCalledWith(false);
         });
     });

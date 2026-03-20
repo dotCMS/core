@@ -280,6 +280,12 @@
     </portlet>
 
     <portlet>
+        <portlet-name>plugins</portlet-name>
+        <display-name>Plugins</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
         <portlet-name>configuration</portlet-name>
         <display-name>CMS Config</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>

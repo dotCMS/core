@@ -11,7 +11,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
-import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
+import { FileUpload, FileUploadModule, FileSelectEvent } from 'primeng/fileupload';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -45,9 +45,7 @@ export class DotPluginsUploadComponent {
     });
 
     onFileSelect(event: FileSelectEvent): void {
-        const raw = event.files ?? (event as { currentFiles?: File[] }).currentFiles;
-        const rawFiles = Array.isArray(raw) ? raw : raw != null ? [raw] : [];
-        const jars = rawFiles.filter((f) => f?.name?.toLowerCase().endsWith('.jar'));
+        const jars = event.currentFiles.filter((f) => f?.name?.toLowerCase().endsWith('.jar'));
         this.selectedFiles.set(jars);
     }
 

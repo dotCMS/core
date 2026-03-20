@@ -28,3 +28,12 @@ export const BUNDLE_STATE = {
     STOPPING: 16,
     ACTIVE: 32
 } as const;
+
+/** Unified row model for the plugins table (installed bundles + undeployed jars). */
+export interface PluginRow {
+    jarFile: string;
+    symbolicName: string;
+    state: number | 'undeployed';
+    bundleId?: number;
+    version?: string;
+}

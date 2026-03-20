@@ -14,6 +14,7 @@ public enum PortletID {
     DASHBOARD,
     DIRECTOR,
     DYNAMIC_PLUGINS,
+    PLUGINS,
     ES_SEARCH,
     EVENTS,
     EVENTS_APPROVAL,

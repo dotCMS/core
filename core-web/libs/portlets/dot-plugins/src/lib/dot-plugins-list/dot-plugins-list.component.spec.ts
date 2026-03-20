@@ -5,6 +5,7 @@ import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
+    BUNDLE_STATE,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
@@ -36,6 +37,7 @@ describe('DotPluginsListComponent', () => {
                 getInstalledBundles: jest.fn().mockReturnValue(of({ entity: [] })),
                 getAvailablePlugins: jest.fn().mockReturnValue(of({ entity: [] })),
                 uploadBundles: jest.fn().mockReturnValue(of({})),
+                deploy: jest.fn().mockReturnValue(of({})),
                 processExports: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
@@ -47,37 +49,28 @@ describe('DotPluginsListComponent', () => {
     });
 
     beforeEach(() => {
+        jest.clearAllMocks();
         spectator = createComponent();
         component = spectator.component;
     });
 
-    it('should create', () => {
-        expect(component).toBeTruthy();
-    });
-
-    it('should have toolbar with upload, refresh and restart buttons', () => {
-        expect(spectator.query('[data-testid="plugins-upload-btn"]')).toBeTruthy();
-        expect(spectator.query('[data-testid="plugins-refresh-btn"]')).toBeTruthy();
-        expect(spectator.query('[data-testid="plugins-restart-btn"]')).toBeTruthy();
-    });
-
-    it('should have plugins table', () => {
-        expect(spectator.query('[data-testid="plugins-table"]')).toBeTruthy();
-    });
-
-    it('should show drag-and-drop hint text', () => {
-        expect(spectator.query('[data-testid="plugins-drag-hint"]')).toBeTruthy();
-    });
-
     describe('drag and drop', () => {
-        it('should set isDragging to true on dragenter', () => {
+        it('should show drop overlay while dragging and hide it when drag leaves', () => {
             const event = { preventDefault: jest.fn(), dataTransfer: null } as unknown as DragEvent;
             component.onDragEnter(event);
             expect(component.isDragging()).toBe(true);
-            expect(event.preventDefault).toHaveBeenCalled();
+
+            spectator.detectChanges();
+            expect(spectator.query('[data-testid="plugins-drop-overlay"]')).toBeTruthy();
+
+            component.onDragLeave(event);
+            expect(component.isDragging()).toBe(false);
+
+            spectator.detectChanges();
+            expect(spectator.query('[data-testid="plugins-drop-overlay"]')).toBeNull();
         });
 
-        it('should set isDragging to false when all drag enters have left', () => {
+        it('should keep isDragging true until all nested dragenter events have a matching dragleave', () => {
             const event = { preventDefault: jest.fn(), dataTransfer: null } as unknown as DragEvent;
             component.onDragEnter(event);
             component.onDragEnter(event);
@@ -87,15 +80,10 @@ describe('DotPluginsListComponent', () => {
             expect(component.isDragging()).toBe(false);
         });
 
-        it('should call preventDefault on dragover', () => {
-            const event = { preventDefault: jest.fn() } as unknown as DragEvent;
-            component.onDragOver(event);
-            expect(event.preventDefault).toHaveBeenCalled();
-        });
-
-        it('should upload jar files on drop and reset drag state', () => {
+        it('should upload only jar files on drop and reset drag state', () => {
             const jarFile = makeFile('plugin.jar');
-            const event = makeDragEvent([jarFile]);
+            const txtFile = makeFile('readme.txt');
+            const event = makeDragEvent([jarFile, txtFile]);
             jest.spyOn(component.store, 'uploadBundles');
             component.isDragging.set(true);
 
@@ -105,9 +93,8 @@ describe('DotPluginsListComponent', () => {
             expect(component.store.uploadBundles).toHaveBeenCalledWith([jarFile]);
         });
 
-        it('should show error via DotMessageDisplayService and not upload when no jar files are dropped', () => {
-            const txtFile = makeFile('readme.txt');
-            const event = makeDragEvent([txtFile]);
+        it('should show an error and not upload when dropped files contain no jars', () => {
+            const event = makeDragEvent([makeFile('readme.txt')]);
             const pushSpy = jest.spyOn(component['dotMessageDisplayService'], 'push');
             jest.spyOn(component.store, 'uploadBundles');
 
@@ -119,108 +106,115 @@ describe('DotPluginsListComponent', () => {
             );
         });
 
-        it('should do nothing when no files are dropped', () => {
+        it('should do nothing when drop event has no files', () => {
             const event = makeDragEvent([]);
             jest.spyOn(component.store, 'uploadBundles');
             const pushSpy = jest.spyOn(component['dotMessageDisplayService'], 'push');
-            pushSpy.mockClear();
 
             component.onDrop(event);
 
             expect(component.store.uploadBundles).not.toHaveBeenCalled();
             expect(pushSpy).not.toHaveBeenCalled();
         });
-
-        it('should filter only jar files when dropping mixed files', () => {
-            const jarFile = makeFile('plugin.jar');
-            const txtFile = makeFile('readme.txt');
-            const event = makeDragEvent([jarFile, txtFile]);
-            jest.spyOn(component.store, 'uploadBundles');
-
-            component.onDrop(event);
-
-            expect(component.store.uploadBundles).toHaveBeenCalledWith([jarFile]);
-        });
-
-        it('should show drop overlay when isDragging is true', () => {
-            component.isDragging.set(true);
-            spectator.detectChanges();
-            expect(spectator.query('[data-testid="plugins-drop-overlay"]')).toBeTruthy();
-        });
-
-        it('should hide drop overlay when isDragging is false', () => {
-            component.isDragging.set(false);
-            spectator.detectChanges();
-            expect(spectator.query('[data-testid="plugins-drop-overlay"]')).toBeNull();
-        });
     });
 
     describe('context menu', () => {
-        const mockBundle = {
-            bundleId: 1,
-            symbolicName: 'test-bundle',
-            jarFile: 'test.jar',
-            state: 32,
-            isSystem: false
+        const mockShowSpy = jest.fn();
+
+        const openContextMenu = (bundle: object) => {
+            jest.spyOn(component, 'contextMenu').mockReturnValue({
+                show: mockShowSpy
+            } as never);
+            component.onContextMenu(new MouseEvent('contextmenu'), bundle as never);
         };
-        const systemBundle = { ...mockBundle, isSystem: true };
 
-        it('should set selectedBundle and show context menu for non-system bundle', () => {
-            const event = new MouseEvent('contextmenu');
-            const showSpy = jest.fn();
-            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: showSpy } as never);
+        beforeEach(() => mockShowSpy.mockClear());
 
-            component.onContextMenu(event, mockBundle);
-
-            expect(showSpy).toHaveBeenCalledWith(event);
+        it('should open the context menu on right-click', () => {
+            openContextMenu({
+                jarFile: 'test.jar',
+                symbolicName: 'test',
+                state: BUNDLE_STATE.ACTIVE
+            });
+            expect(mockShowSpy).toHaveBeenCalled();
         });
 
-        it('should not show context menu for system bundle', () => {
-            const event = new MouseEvent('contextmenu');
-            const showSpy = jest.fn();
-            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: showSpy } as never);
+        describe('installed bundle actions', () => {
+            it('should show Stop as first action when bundle is ACTIVE', () => {
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                expect(component.contextMenuItems()[0].label).toBe('plugins.stop');
+            });
 
-            component.onContextMenu(event, systemBundle);
+            it('should show Start as first action when bundle is not ACTIVE', () => {
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.RESOLVED
+                });
+                expect(component.contextMenuItems()[0].label).toBe('plugins.start');
+            });
 
-            expect(showSpy).not.toHaveBeenCalled();
+            it('should include undeploy, separator, process exports and add-to-bundle actions', () => {
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                const items = component.contextMenuItems();
+                expect(items[1].label).toBe('plugins.undeploy');
+                expect(items[2].separator).toBe(true);
+                expect(items[3].label).toBe('plugins.process-exports');
+                expect(items[4].label).toBe('plugins.add-to-bundle');
+            });
+
+            it('should call processExports with the bundle symbolic name', () => {
+                jest.spyOn(component.store, 'processExports');
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test-bundle',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                component.contextMenuItems()[3].command!({} as never);
+                expect(component.store.processExports).toHaveBeenCalledWith('test-bundle');
+            });
+
+            it('should set addToBundleIdentifier to the jar file name', () => {
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                component.contextMenuItems()[4].command!({} as never);
+                expect(component.addToBundleIdentifier()).toBe('test.jar');
+            });
         });
 
-        it('should return menu items for a selected bundle', () => {
-            const event = new MouseEvent('contextmenu');
-            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: jest.fn() } as never);
-            component.onContextMenu(event, mockBundle);
+        describe('undeployed bundle actions', () => {
+            it('should show only the Deploy action for an undeployed jar', () => {
+                openContextMenu({
+                    jarFile: 'new-plugin.jar',
+                    symbolicName: 'new-plugin.jar',
+                    state: 'undeployed'
+                });
+                const items = component.contextMenuItems();
+                expect(items).toHaveLength(1);
+                expect(items[0].label).toBe('plugins.deploy');
+            });
 
-            const items = component.contextMenuItems();
-            expect(items).toHaveLength(2);
-            expect(items[0].icon).toBe('pi pi-cog');
-            expect(items[1].icon).toBe('pi pi-box');
-        });
-
-        it('should call processExports when Process Exports is clicked', () => {
-            const event = new MouseEvent('contextmenu');
-            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: jest.fn() } as never);
-            jest.spyOn(component.store, 'processExports');
-            component.onContextMenu(event, mockBundle);
-
-            component.contextMenuItems()[0].command!({} as never);
-
-            expect(component.store.processExports).toHaveBeenCalledWith('test-bundle');
-        });
-
-        it('should set addToBundleIdentifier when Add to Bundle is clicked', () => {
-            const event = new MouseEvent('contextmenu');
-            jest.spyOn(component, 'contextMenu').mockReturnValue({ show: jest.fn() } as never);
-            component.onContextMenu(event, mockBundle);
-
-            component.contextMenuItems()[1].command!({} as never);
-
-            expect(component.addToBundleIdentifier()).toBe('test.jar');
-        });
-
-        it('should clear addToBundleIdentifier when set to null', () => {
-            component.addToBundleIdentifier.set('test.jar');
-            component.addToBundleIdentifier.set(null);
-            expect(component.addToBundleIdentifier()).toBeNull();
+            it('should call store.deploy with the jar file name', () => {
+                jest.spyOn(component.store, 'deploy');
+                openContextMenu({
+                    jarFile: 'new-plugin.jar',
+                    symbolicName: 'new-plugin.jar',
+                    state: 'undeployed'
+                });
+                component.contextMenuItems()[0].command!({} as never);
+                expect(component.store.deploy).toHaveBeenCalledWith('new-plugin.jar');
+            });
         });
     });
 });

@@ -60,7 +60,6 @@
         data-testid="plugins-upload-cancel-btn" />
     <p-button
         [label]="'plugins.upload' | dm"
-        icon="pi pi-upload"
         [disabled]="selectedFiles().length === 0"
         [loading]="uploading()"
         (onClick)="upload()"
