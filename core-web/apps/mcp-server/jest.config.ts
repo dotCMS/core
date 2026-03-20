@@ -6,7 +6,7 @@ export default {
     transform: {
         '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }]
     },
-    moduleFileExtensions: ['ts', 'js', 'html'],
-    coverageDirectory: '../../coverage/apps/mcp-server',
-    setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts']
+    moduleFileExtensions: ['ts', 'js', 'html', 'json'],
+    testMatch: ['**/*.spec.ts', '**/*.test.ts'],
+    coverageDirectory: '../../coverage/apps/mcp-server'
 };

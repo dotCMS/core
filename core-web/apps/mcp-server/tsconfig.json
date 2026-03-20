@@ -1,17 +1,17 @@
 {
     "extends": "../../tsconfig.base.json",
-    "files": [],
-    "include": [],
+    "compilerOptions": {
+        "strict": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "target": "es2017",
+        "module": "commonjs",
+        "skipLibCheck": true
+    },
+    "include": ["xmcp-env.d.ts", "src/**/*.ts"],
     "references": [
-        {
-            "path": "./tsconfig.app.json"
-        },
         {
             "path": "./tsconfig.spec.json"
         }
-    ],
-    "compilerOptions": {
-        "strict": true,
-        "esModuleInterop": true
-    }
+    ]
 }

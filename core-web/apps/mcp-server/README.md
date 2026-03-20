@@ -1,6 +1,6 @@
 # dotCMS MCP Server
 
-The dotCMS MCP (Model Context Protocol) Server enables AI assistants to interact directly with dotCMS content management capabilities. This powerful integration allows AI tools like Claude, GPT, and others to discover content schemas, create content types, manage content workflows, and perform complex content operations—all through natural language interactions.
+The dotCMS MCP (Model Context Protocol) Server enables AI assistants to interact directly with dotCMS content management capabilities. Built with [xmcp](https://xmcp.dev), this server provides sandbox-isolated code execution for exploring the dotCMS REST API specification and executing authenticated API calls.
 
 ### When to Use It:
 
@@ -26,10 +26,8 @@ The dotCMS MCP (Model Context Protocol) Server enables AI assistants to interact
     -   [Create a dotCMS API Token](#create-a-dotcms-api-token)
 -   [Quickstart](#quickstart)
 -   [Available Tools](#available-tools)
-    -   [Context Initialization](#context-initialization)
-    -   [Content Type Management](#content-type-management)
-    -   [Content Operations](#content-operations)
-    -   [Content Search](#content-search)
+    -   [Search](#search)
+    -   [Execute](#execute)
 -   [Development](#development)
     -   [Local Development Setup](#local-development-setup)
     -   [Project Structure](#project-structure)
@@ -87,38 +85,21 @@ Before setting up the MCP server, you need these environment variables to connec
 
 ### Environment Variables
 
-| Variable     | Required | Description                        | Example |
-| ------------ | -------- | ---------------------------------- | ------- |
-| `DOTCMS_URL` | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
+| Variable           | Required | Description                        | Example |
+| ------------------ | -------- | ---------------------------------- | ------- |
+| `DOTCMS_URL`  | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
 | `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
-| `VERBOSE`    | ❌       | Enable detailed logging for troubleshooting | `true` |
-| `RESPONSE_MAX_LENGTH` | ❌       | Maximum character limit for response truncation (no truncation if not set) | `5000` |
-
-### Response Truncation
-
-The MCP server includes intelligent response truncation to manage large data responses and optimize performance. This feature is controlled by the `RESPONSE_MAX_LENGTH` environment variable:
-
-**Behavior:**
-- **Not set or 0**: No truncation occurs (unlimited response length)
-- **Positive number**: Responses are truncated to the specified character limit
-- **Invalid value**: No truncation occurs (falls back to unlimited)
-
-**When truncation occurs:**
-- Large content search results
-- Extensive content type schemas
-- Bulk content operations
-- Any response exceeding the specified limit
-
-**Truncation format:**
-```
-Original response content...
-[truncated]
-```
+| `SANDBOX_TIMEOUT`  | ❌       | Sandbox execution timeout in ms (default: 15000) | `15000` |
 
 
 ## Quickstart
 
-Get up and running with the dotCMS MCP Server in minutes:
+Get up and running with the dotCMS MCP Server in minutes.
+
+The server runs on both **Node.js** (≥20) and **Bun** — the correct sandbox implementation is selected automatically at runtime.
+
+> [!NOTE]
+> This version is currently in **beta**. Once stable, replace `@dotcms/mcp-server@beta` with `@dotcms/mcp-server` in the examples below.
 
 ### Claude Desktop Setup
 
@@ -127,15 +108,34 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
+**Using npx (Node.js):**
+
 ```json
 {
     "mcpServers": {
         "dotcms": {
             "command": "npx",
-            "args": ["-y", "@dotcms/mcp-server"],
+            "args": ["-y", "@dotcms/mcp-server@beta"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-api-token"
+            }
+        }
+    }
+}
+```
+
+**Using bunx (Bun):**
+
+```json
+{
+    "mcpServers": {
+        "dotcms": {
+            "command": "bunx",
+            "args": ["@dotcms/mcp-server@beta"],
+            "env": {
+                "DOTCMS_URL": "https://your-dotcms-instance.com",
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
@@ -146,15 +146,34 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
 
 Add the MCP server to your Cursor configuration. Open Cursor Settings and navigate to "Features" > "Model Context Protocol" or create/edit the configuration file:
 
+**Using npx (Node.js):**
+
 ```json
 {
     "mcpServers": {
         "dotcms": {
             "command": "npx",
-            "args": ["-y", "@dotcms/mcp-server"],
+            "args": ["-y", "@dotcms/mcp-server@beta"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-api-token"
+            }
+        }
+    }
+}
+```
+
+**Using bunx (Bun):**
+
+```json
+{
+    "mcpServers": {
+        "dotcms": {
+            "command": "bunx",
+            "args": ["@dotcms/mcp-server@beta"],
+            "env": {
+                "DOTCMS_URL": "https://your-dotcms-instance.com",
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
@@ -169,7 +188,7 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
 Example interactions:
 ```
 You: "Create a new blog post about AI in content management"
-AI: [Automatically learns your content structure and creates the blog post]
+AI: [Searches the API spec, then executes the appropriate API calls]
 
 You: "Show me all my content types"
 AI: [Discovers and displays your content schemas]
@@ -180,83 +199,47 @@ AI: [Analyzes your Product fields and generates a complete component]
 
 ## Available Tools
 
-The dotCMS MCP Server provides four core tools that enable comprehensive content management through AI:
+The dotCMS MCP Server provides two core tools that enable comprehensive content management through AI:
 
-**Tool**: `context_initialization`
+### Search
 
-**Purpose**: Must be called first to discover all available content types, sites, and workflow schemes
+**Tool**: `search`
 
-```
-You: "Learn about my dotCMS setup"
-AI: [Calls context_initialization and learns your complete content schema]
-```
+**Purpose**: Explore the dotCMS REST API specification using JavaScript code that runs in an isolated sandbox.
 
-**What it provides:**
+The `spec` global contains the full dereferenced OpenAPI spec with `paths` object.
 
--   Complete list of content types with field definitions
--   Current site information
--   Available workflow schemes
--   Caches results for 30 minutes to optimize performance
+```javascript
+// List all available endpoint paths
+return Object.keys(spec.paths)
 
-### Content Type Management
-
-**Tools**: `content_type_list`, `content_type_create`
-
-**Purpose**: Discover and create content type schemas
-
-```
-You: "Show me all my content types"
-AI: [Calls content_type_list to display your content schemas]
-
-You: "Create a new Product content type with name, price, and description fields"
-AI: [Calls content_type_create with the appropriate schema]
+// Find endpoints related to content types
+return Object.entries(spec.paths)
+  .filter(([path]) => path.includes('contenttype'))
+  .map(([path, methods]) => ({ path, methods: Object.keys(methods) }))
 ```
 
-**Capabilities:**
+### Execute
 
--   List and filter existing content types
--   Create new content types with custom fields
--   Support for all dotCMS field types (Text, Image, Date, etc.)
+**Tool**: `execute`
 
-### Content Operations
+**Purpose**: Execute authenticated API calls against your dotCMS instance using JavaScript code in an isolated sandbox.
 
-**Tools**: `content_save`, `content_action`
+```javascript
+// List content types
+const result = await api.request({ path: '/api/v1/contenttype' })
+return result
 
-**Purpose**: Create, update, and manage content through workflow actions
-
-```
-You: "Create a new blog post about dotCMS MCP integration"
-AI: [Calls content_save to create the content]
-
-You: "Publish the blog post we just created"
-AI: [Calls content_action with PUBLISH action]
-```
-
-**Supported Actions:**
-
--   **Save**: Create or update content
--   **Publish**: Make content live
--   **Unpublish**: Remove from live site
--   **Archive**: Move to archive state
--   **Delete**: Permanently remove content
-
-### Content Search
-
-**Tool**: `content_search`
-
-**Purpose**: Query content using Lucene syntax
-
-```
-You: "Find all blog posts published this year that mention 'AI'"
-AI: [Calls content_search with appropriate Lucene query]
+// Search content with Elasticsearch
+const result = await api.request({
+  method: 'POST',
+  path: '/api/v1/es/search',
+  body: { query: 'contentType:webPageContent +languageId:1' }
+})
+return pick(result.contentlets, ['identifier', 'title', 'modDate'])
 ```
 
-**Search Capabilities:**
-
--   Full Lucene query syntax support
--   Filter by content type, date ranges, field values
--   Wildcard and fuzzy search
--   Boolean operators (AND, OR, NOT)
+**Helper utilities available**: `pick(arr, fields)`, `table(arr)`, `count(arr, field)`, `sum(arr, field)`, `first(arr, n)`
 
 
 ## Development
@@ -275,8 +258,8 @@ cd core/core-web
 # Install dependencies
 yarn install
 
-# Build the server
-yarn nx build mcp-server
+# Build the server (pass the OpenAPI spec URL or local file path)
+yarn nx build mcp-server --specUrl=https://demo.dotcms.com/api/openapi.json
 ```
 
 > [!NOTE]
@@ -284,40 +267,42 @@ yarn nx build mcp-server
 
 #### 2. Use MCP Inspector for debug
 
-After a succesful build
+After a successful build:
 
 ```bash
-npx @modelcontextprotocol/inspector -e DOTCMS_URL=https://demo.dotcms.com -e AUTH_TOKEN=the-auth-token node dist/apps/mcp-server
+npx @modelcontextprotocol/inspector -e DOTCMS_URL=https://demo.dotcms.com -e AUTH_TOKEN=the-api-token node dist/apps/mcp-server/stdio.js
 ```
 
 #### 3. Use Local Build in AI Assistants
 
-**Claude Desktop Configuration:**
+The built server works with both `node` and `bun` — the correct sandbox is selected automatically.
+
+**Using Node.js:**
 ```json
 {
     "mcpServers": {
         "dotcms": {
             "command": "node",
-            "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/main.js"],
+            "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/stdio.js"],
             "env": {
                 "DOTCMS_URL": "your-dotcms-url",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
 }
 ```
 
-**Cursor IDE Configuration:**
+**Using Bun:**
 ```json
 {
     "mcpServers": {
         "dotcms": {
-            "command": "node",
-            "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/main.js"],
+            "command": "bun",
+            "args": ["/path/to/dotcms/core/core-web/dist/apps/mcp-server/stdio.js"],
             "env": {
                 "DOTCMS_URL": "your-dotcms-url",
-                "AUTH_TOKEN": "your-auth-token"
+                "AUTH_TOKEN": "your-api-token"
             }
         }
     }
@@ -329,55 +314,63 @@ npx @modelcontextprotocol/inspector -e DOTCMS_URL=https://demo.dotcms.com -e AUT
 ```
 mcp-server/
 ├── src/
-│   ├── main.ts              # Entry point and server initialization
-│   ├── services/            # HTTP clients for dotCMS APIs
-│   │   ├── client.ts        # Base authenticated HTTP client
-│   │   ├── contentype.ts    # Content type operations
-│   │   ├── workflow.ts      # Content workflow actions
-│   │   ├── search.ts        # Content search functionality
-│   │   └── site.ts          # Site information
-│   ├── tools/               # MCP tool implementations
-│   │   ├── context/         # Context initialization
-│   │   ├── content-types/   # Content type management
-│   │   ├── workflow/        # Content operations
-│   │   └── search/          # Search functionality
-│   ├── types/               # TypeScript type definitions
-│   └── utils/               # Shared utilities
-├── jest.config.ts           # Test configuration
-└── project.json             # Nx project configuration
+│   ├── tools/              # MCP tool implementations
+│   │   ├── search.ts       # API spec exploration tool
+│   │   └── execute.ts      # API execution tool
+│   ├── lib/                # Core library code
+│   │   ├── executor.ts     # Sandbox executor orchestration
+│   │   ├── http-client.ts  # Authenticated HTTP adapter
+│   │   ├── spec.ts         # OpenAPI spec loader
+│   │   ├── types.ts        # TypeScript type definitions
+│   │   └── sandbox/        # Sandbox isolation (dual-runtime)
+│   │       ├── index.ts        # Runtime detection factory
+│   │       ├── interface.ts    # Sandbox interface
+│   │       ├── bun-worker.ts   # Bun Web Worker sandbox
+│   │       └── node-worker.ts  # Node.js worker_threads sandbox
+│   ├── prompts/            # Prompt templates (xmcp convention)
+│   └── generated/          # Build-time generated files
+│       └── spec.json       # Processed OpenAPI spec
+├── scripts/
+│   └── generate-spec.ts    # OpenAPI spec processor
+├── openapi.json            # Full dotCMS OpenAPI specification
+├── xmcp.config.ts          # xmcp framework configuration
+├── jest.config.ts          # Test configuration
+└── project.json            # Nx project configuration
 ```
 
 ### Key Architecture Patterns
 
-**Service Layer**: All services extend `AgnosticClient` which provides:
+**xmcp Framework**: The server uses [xmcp](https://xmcp.dev) for MCP protocol handling:
+-   Tools are auto-discovered from `src/tools/`
+-   Each tool exports `schema`, `metadata`, and a default handler function
+-   Built with rspack for optimized bundling
 
--   Automatic authentication with Bearer tokens
--   Environment variable validation
--   Comprehensive error logging
--   Structured request/response handling
+**Sandbox Isolation**: Code execution is sandboxed using Workers with dual-runtime support:
+-   **Bun**: Uses native Web Workers (`Blob` + `URL.createObjectURL`)
+-   **Node.js**: Uses `worker_threads` (`new Worker(code, { eval: true })`)
+-   Runtime is detected automatically via `typeof globalThis.Bun`
+-   API tokens are never exposed to sandbox code
+-   Configurable timeout prevents runaway execution
+-   Adapter pattern bridges sandbox ↔ main thread for API calls
 
-**Tool Registration**: Each tool module exports a registration function that:
-
--   Defines tool schema with Zod validation
--   Implements handlers with proper error handling
--   Returns structured MCP responses
-
-**Type Safety**: Extensive use of Zod schemas for:
-
--   Runtime input validation
--   TypeScript type generation
--   API response validation
+**Build-time Spec Processing**: The OpenAPI spec is pre-processed at build time:
+-   `generate-spec` target dereferences `$ref` pointers and filters to relevant endpoints
+-   Output is a compact JSON embedded in the bundle
+-   Reduces runtime overhead and MCP response size
 
 ### Development Commands
 
 ```bash
-# Build for development
-yarn nx build mcp-server
+# Build for production (pass the OpenAPI spec URL or local file path)
+yarn nx build mcp-server --specUrl=https://demo.dotcms.com/api/openapi.json
+
+# Development mode (with hot reload)
+yarn nx serve mcp-server
 
 # Lint the code
 yarn nx lint mcp-server
 
-# Serve in development mode
+# Serve the built server
 yarn nx serve mcp-server
 
 # Run all tests
@@ -386,28 +379,18 @@ yarn nx test mcp-server
 # Run tests in watch mode
 yarn nx test mcp-server --watch
 
-# Run with coverage
-yarn nx test mcp-server --coverage
+# Regenerate the spec only (URL or local file path)
+yarn nx generate-spec mcp-server -- https://demo.dotcms.com/api/openapi.json
 ```
 
 ### Contributing Guidelines
 
 When adding new MCP tools:
 
-1. Create the tool in the appropriate `src/tools/` subdirectory
-2. Define Zod schemas for input validation
-3. Implement proper error handling
-4. Add comprehensive logging
-5. Register the tool in `src/main.ts`
-6. Add tests and documentation
-
-**Development Guidelines:**
-
--   **Follow TypeScript best practices**: Use strict typing and proper interfaces
--   **Add comprehensive tests**: Include unit tests for new functionality
--   **Document your changes**: Update documentation for new features
--   **Use Zod validation**: All inputs and outputs should be validated
--   **Follow logging patterns**: Use the Logger class for consistent logging
+1. Create a new `.ts` file in `src/tools/`
+2. Export `schema` (Zod), `metadata` (ToolMetadata), and a default handler
+3. xmcp auto-discovers the tool — no registration needed
+4. Add tests and documentation
 
 ## Security Best Practices
 
@@ -418,15 +401,7 @@ When adding new MCP tools:
 -   **Token Rotation**: Regularly rotate API tokens
 -   **Monitoring**: Monitor API usage for unusual patterns
 -   **HTTPS Only**: Always use HTTPS for dotCMS connections
-
-### Logging and Monitoring
-
-The MCP server includes comprehensive logging:
-
--   **Structured Logging**: All operations logged with context
--   **Error Tracking**: Detailed error information with stack traces
--   **Request/Response Logging**: Full API interaction logging in verbose mode
--   **Performance Monitoring**: Request timing and performance metrics
+-   **Sandbox Isolation**: API tokens are injected by the main thread and never exposed to sandbox code
 
 ## dotCMS Support
 
@@ -434,7 +409,7 @@ We offer multiple channels to get help with the dotCMS MCP Server:
 
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
--   **Documentation**: Join our [community discussions](https://dev.dotcms.com/) to ask questions and share solutions
+-   **Documentation**: Visit our [developer documentation](https://dev.dotcms.com/) for detailed guides
 
 When reporting issues, please include:
 
@@ -457,25 +432,6 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 6. Commit your changes (`git commit -m 'Add amazing MCP feature'`)
 7. Push to the branch (`git push origin feature/amazing-mcp-feature`)
 8. Open a Pull Request
-
-### Development Guidelines
-
--   **Follow TypeScript best practices**: Use strict typing and proper interfaces
--   **Add comprehensive tests**: Include unit tests for new functionality
--   **Document your changes**: Update documentation for new features
--   **Use Zod validation**: All inputs and outputs should be validated
--   **Follow logging patterns**: Use the Logger class for consistent logging
-
-### Adding New Tools
-
-When adding new MCP tools:
-
-1. Create the tool in the appropriate `src/tools/` subdirectory
-2. Define Zod schemas for input validation
-3. Implement proper error handling
-4. Add comprehensive logging
-5. Register the tool in `src/main.ts`
-6. Add tests and documentation
 
 ## Licensing Information
 
