@@ -2869,4 +2869,92 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+    /**
+     * Given a content type with CMS Anonymous role having READ permission,
+     * When find() is called via a ContentTypeAPI built with respectFrontendRoles=true and the anonymous user,
+     * Then the content type should be returned without throwing DotSecurityException.
+     * <p>
+     * This is a regression test for: https://github.com/dotCMS/core/issues/35037
+     * ContentTypeAPIImpl.find() was ignoring respectFrontendRoles, causing anonymous GraphQL
+     * relationship field queries to fail even when CMS Anonymous had VIEW permission on the content type.
+     */
+    @Test
+    public void testFind_anonymousUserWithFrontendRoles_shouldSucceedWhenCmsAnonymousHasReadPermission()
+            throws DotDataException, DotSecurityException {
+
+        final long now = System.currentTimeMillis();
+        ContentType testType = null;
+        try {
+            // Create a content type
+            testType = contentTypeApi.save(
+                    ContentTypeBuilder.builder(SimpleContentType.class)
+                            .name("AnonymousPermTest" + now)
+                            .variable("anonymousPermTest" + now)
+                            .host(Host.SYSTEM_HOST)
+                            .folder(FolderAPI.SYSTEM_FOLDER)
+                            .build()
+            );
+
+            // Grant CMS Anonymous role READ permission on the content type
+            final com.dotmarketing.beans.Permission readPermission = new com.dotmarketing.beans.Permission(
+                    testType.getPermissionId(),
+                    APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                    PermissionAPI.PERMISSION_READ,
+                    true
+            );
+            APILocator.getPermissionAPI().save(readPermission, testType, user, false);
+
+            // Build ContentTypeAPI with anonymous user and respectFrontendRoles=true
+            final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+            final ContentTypeAPI anonymousApi = APILocator.getContentTypeAPI(anonymousUser, true);
+
+            // Should NOT throw DotSecurityException
+            final ContentType found = anonymousApi.find(testType.id());
+            assertNotNull("Anonymous user with frontend roles should be able to find the content type", found);
+            assertEquals(testType.id(), found.id());
+        } finally {
+            if (testType != null) {
+                contentTypeApi.delete(testType);
+            }
+        }
+    }
+
+    /**
+     * Given a content type WITHOUT CMS Anonymous READ permission,
+     * When find() is called with the anonymous user and respectFrontendRoles=true,
+     * Then DotSecurityException should still be thrown.
+     * <p>
+     * This is a regression test for: https://github.com/dotCMS/core/issues/35037
+     */
+    @Test(expected = DotSecurityException.class)
+    public void testFind_anonymousUserWithFrontendRoles_shouldFailWhenCmsAnonymousLacksReadPermission()
+            throws DotDataException, DotSecurityException {
+
+        final long now = System.currentTimeMillis();
+        ContentType testType = null;
+        try {
+            testType = contentTypeApi.save(
+                    ContentTypeBuilder.builder(SimpleContentType.class)
+                            .name("AnonNoPermTest" + now)
+                            .variable("anonNoPermTest" + now)
+                            .host(Host.SYSTEM_HOST)
+                            .folder(FolderAPI.SYSTEM_FOLDER)
+                            .build()
+            );
+
+            // Explicitly remove all anonymous permissions (reset to none)
+            APILocator.getPermissionAPI().removePermissions(testType);
+
+            final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+            final ContentTypeAPI anonymousApi = APILocator.getContentTypeAPI(anonymousUser, true);
+
+            // Should throw DotSecurityException
+            anonymousApi.find(testType.id());
+        } finally {
+            if (testType != null) {
+                contentTypeApi.delete(testType);
+            }
+        }
+    }
+
 }
