@@ -17,7 +17,7 @@ import { Menu } from './routing.service';
  * easier way to access the information.
  *
  * @deprecated Use DotSystemConfigService from @dotcms/data-access instead.
- * This service uses the deprecated CoreWebService and will be removed in a future version.
+ * This service will be removed in a future version.
  */
 const DOTCMS_WEBSOCKET_RECONNECT_TIME = 'dotcms.websocket.reconnect.time';
 const DOTCMS_DISABLE_WEBSOCKET_PROTOCOL = 'dotcms.websocket.disable';
@@ -104,7 +104,7 @@ interface DotAppConfigResponse {
 
 /**
  * @deprecated Use DotSystemConfigService from @dotcms/data-access instead.
- * This service uses the deprecated CoreWebService and will be removed in a future version.
+ * This service will be removed in a future version.
  *
  * @example
  * ```typescript

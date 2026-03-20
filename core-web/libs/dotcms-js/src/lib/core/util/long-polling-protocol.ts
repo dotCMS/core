@@ -51,7 +51,7 @@ export class LongPollingProtocol extends Protocol {
 
         let params = new HttpParams();
         if (lastCallBack) {
-            params = params.set('lastCallBack', lastCallBack.toString());
+            params = params.set('lastCallBack', lastCallBack);
         }
 
         this.http

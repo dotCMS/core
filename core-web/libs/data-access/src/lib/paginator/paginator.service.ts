@@ -194,7 +194,7 @@ export class PaginatorService {
                         10
                     );
 
-                    return response.body.entity;
+                    return response.body?.entity ?? ([] as unknown as T);
                 }),
                 take(1)
             );

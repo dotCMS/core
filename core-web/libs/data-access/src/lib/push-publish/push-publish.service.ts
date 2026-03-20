@@ -82,9 +82,7 @@ export class PushPublishService {
         const body = this.getPublishEnvironmentData(assetIdentifier, pushPublishData);
         const url = isBundle ? this.publishBundleURL : this.publishUrl;
 
-        return this.http
-            .post<DotAjaxActionResponseView>(url, body, { headers })
-            .pipe(map((res) => res));
+        return this.http.post<DotAjaxActionResponseView>(url, body, { headers });
     }
 
     private getPublishEnvironmentData(
