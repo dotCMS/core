@@ -59,10 +59,14 @@ export class DotCrudService {
      * @returns {Observable<any>}
      * @memberof DotCrudService
      */
-    getDataById<T>(baseUrl: string, id: string, pick = 'entity'): Observable<T> {
+    getDataById<T>(
+        baseUrl: string,
+        id: string,
+        pick: 'entity' | 'contentlets' | 'tempFiles' = 'entity'
+    ): Observable<T> {
         const url = this.normalizeUrl(`${baseUrl}/id/${id}`);
 
-        return this.http.get<Record<string, T>>(url).pipe(map((response) => response[pick]));
+        return this.http.get<DotCMSResponse<T>>(url).pipe(map((response) => response[pick] as T));
     }
 
     /**
@@ -80,18 +84,16 @@ export class DotCrudService {
     }
 
     /**
-     * Normalizes URL to ensure it starts with /api/ if needed
+     * Normalizes URL to ensure it starts with /api/ if needed.
+     * Absolute paths (starting with /) are returned as-is;
+     * relative paths get /api/ prepended.
      * @private
      */
     private normalizeUrl(url: string): string {
-        if (url.startsWith('/api/') || url.startsWith('/')) {
+        if (url.startsWith('/')) {
             return url;
         }
 
-        if (url.startsWith('v1/') || url.startsWith('v2/') || url.startsWith('v3/')) {
-            return `/api/${url}`;
-        }
-
-        return url;
+        return `/api/${url}`;
     }
 }

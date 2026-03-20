@@ -5,13 +5,10 @@ import { Injectable, inject } from '@angular/core';
 
 import { filter, map, take } from 'rxjs/operators';
 
+import { DotCMSResponse } from '@dotcms/dotcms-models';
+
 import { LoggerService } from './logger.service';
 import { Menu } from './routing.service';
-
-// Local interface to avoid circular dependency with dotcms-models
-interface DotCMSEntityResponse<T> {
-    entity: T;
-}
 
 /**
  * Created by josecastro on 7/29/16.
@@ -148,7 +145,7 @@ export class DotcmsConfigService {
         this.loggerService.debug('Loading configuration on: ', this.configUrl);
 
         this.http
-            .get<DotCMSEntityResponse<DotAppConfigResponse>>(this.configUrl)
+            .get<DotCMSResponse<DotAppConfigResponse>>(this.configUrl)
             .pipe(map((response) => response.entity))
             .subscribe((res: DotAppConfigResponse) => {
                 this.loggerService.debug('Configuration Loaded!', res);
@@ -187,7 +184,7 @@ export class DotcmsConfigService {
      * @memberof DotcmsConfigService
      */
     getTimeZones(): Observable<DotTimeZone[]> {
-        return this.http.get<DotCMSEntityResponse<DotAppConfigResponse>>(this.configUrl).pipe(
+        return this.http.get<DotCMSResponse<DotAppConfigResponse>>(this.configUrl).pipe(
             map((response) => response.entity.config.timezones),
             map((timezones: DotTimeZone[]) => {
                 return timezones.sort((a: DotTimeZone, b: DotTimeZone) => {
@@ -212,7 +209,7 @@ export class DotcmsConfigService {
      * @memberof DotcmsConfigService
      */
     getSystemTimeZone(): Observable<DotTimeZone> {
-        return this.http.get<DotCMSEntityResponse<DotAppConfigResponse>>(this.configUrl).pipe(
+        return this.http.get<DotCMSResponse<DotAppConfigResponse>>(this.configUrl).pipe(
             map((response) => response.entity.config.systemTimezone),
             take(1)
         );

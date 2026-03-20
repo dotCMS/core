@@ -1,30 +1,26 @@
-import { Observable } from 'rxjs';
+import { throwError } from 'rxjs';
 
-import {
-    HttpErrorResponse,
-    HttpEvent,
-    HttpHandler,
-    HttpInterceptor,
-    HttpRequest
-} from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
 
-import { catchError, map, take } from 'rxjs/operators';
+import { catchError, switchMap, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
-@Injectable()
-export class ServerErrorInterceptor implements HttpInterceptor {
-    private httpErrorManagerService = inject(DotHttpErrorManagerService);
+/**
+ * Global HTTP interceptor that routes errors through DotHttpErrorManagerService
+ * for centralized UI feedback (dialogs, 401 → login redirect, etc.),
+ * then re-throws so callers can also react (e.g. stop loading spinners).
+ */
+export const serverErrorInterceptor: HttpInterceptorFn = (req, next) => {
+    const httpErrorManagerService = inject(DotHttpErrorManagerService);
 
-    intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-        return next.handle(request).pipe(
-            catchError((error: HttpErrorResponse) => {
-                return this.httpErrorManagerService.handle(error).pipe(
-                    take(1),
-                    map(() => null)
-                );
-            })
-        );
-    }
-}
+    return next(req).pipe(
+        catchError((error: HttpErrorResponse) => {
+            return httpErrorManagerService.handle(error).pipe(
+                take(1),
+                switchMap(() => throwError(() => error))
+            );
+        })
+    );
+};
