@@ -295,10 +295,7 @@ public class TagResource {
         responseMap.put("created", created);
         responseMap.put("duplicates", duplicates);
 
-        final Response.Status status = created.isEmpty() ? Response.Status.OK : Response.Status.CREATED;
-        return Response.status(status)
-                .entity(new ResponseEntityTagCreateView(responseMap))
-                .build();
+        return Response.ok(new ResponseEntityTagCreateView(responseMap)).build();
     }
 
 

@@ -78,7 +78,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                     new TagForm(tagName, site.getIdentifier(), null, null));
             final Response result = resource.createTags(request, response, forms);
 
-            assertEquals(201, result.getStatus());
+            assertEquals(200,result.getStatus());
             @SuppressWarnings("unchecked")
             final ResponseEntityView<Map<String, Object>> entity =
                     (ResponseEntityView<Map<String, Object>>) result.getEntity();
@@ -114,7 +114,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                     new TagForm(tagName, site.getIdentifier(), null, null));
             final Response result = resource.createTags(request, response, forms);
 
-            assertEquals(201, result.getStatus());
+            assertEquals(200,result.getStatus());
             @SuppressWarnings("unchecked")
             final ResponseEntityView<Map<String, Object>> entity =
                     (ResponseEntityView<Map<String, Object>>) result.getEntity();
@@ -276,7 +276,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
             final List<TagForm> forms = List.of(
                     new TagForm(tagName, Host.SYSTEM_HOST, null, null));
             final Response createResult = resource.createTags(request, response, forms);
-            assertEquals(201, createResult.getStatus());
+            assertEquals(200,createResult.getStatus());
 
             @SuppressWarnings("unchecked")
             final ResponseEntityView<Map<String, Object>> createEntity =
@@ -396,7 +396,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
                     new TagForm(mixed, Host.SYSTEM_HOST, null, null));
 
             final Response createResult = resource.createTags(request, response, forms);
-            assertEquals(201, createResult.getStatus());
+            assertEquals(200,createResult.getStatus());
             @SuppressWarnings("unchecked")
             final ResponseEntityView<Map<String, Object>> entity =
                     (ResponseEntityView<Map<String, Object>>) createResult.getEntity();
