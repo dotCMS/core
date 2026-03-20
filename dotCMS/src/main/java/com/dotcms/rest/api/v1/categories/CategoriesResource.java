@@ -910,11 +910,7 @@ public class CategoriesResource {
      *
      * @param httpRequest HTTP request context
      * @param httpResponse HTTP response context
-     * @param uploadedFile CSV file containing categories to import
-     * @param fileDetail File metadata and disposition information
-     * @param filter Filter pattern for categories
-     * @param exportType Import type: 'replace' or 'append'
-     * @param contextInode Context category inode to import into
+     * @param form Multipart form data containing the CSV file and import parameters
      * @return Response indicating success/failure
      * @throws IOException if file reading fails
      */
@@ -923,7 +919,12 @@ public class CategoriesResource {
             summary = "Import categories from a CSV file",
             description = "Imports categories from an uploaded CSV file. The 'exportType' parameter controls " +
                     "the import strategy: 'replace' deletes existing categories before importing, " +
-                    "'merge' adds or updates without removing existing ones."
+                    "'merge' adds or updates without removing existing ones.",
+            requestBody = @RequestBody(
+                    description = "CSV file containing categories to be imported.",
+                    required = true,
+                    content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(implementation = CategoryImportData.class)))
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Import result returned",
@@ -942,12 +943,7 @@ public class CategoriesResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response importCategories(@Context final HttpServletRequest httpRequest,
                                      @Context final HttpServletResponse httpResponse,
-                                     @Parameter(hidden = true) @BeanParam @RequestBody(
-                                             description = "CSV file containing categories to be imported.",
-                                             required = true,
-                                             content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA,
-                                                     schema = @Schema(implementation = CategoryImportData.class))
-                                     ) final CategoryImportData form) throws IOException {
+                                     @BeanParam final CategoryImportData form) throws IOException {
 
         return processImport(httpRequest, httpResponse,
                 form.getFileInputStream(), form.getFileDetail(),
@@ -1045,7 +1041,7 @@ public class CategoriesResource {
         }
 
         return Response.ok(new ResponseEntityBulkResultView(
-                        new BulkResultView(Long.valueOf(UtilMethods.isSet(unableToDeleteCats) ? 1 : 0), 0L,
+                        new BulkResultView(successCount, 0L,
                                 failedToDelete)))
                 .build();
     }
