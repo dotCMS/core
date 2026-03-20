@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 import { ErrorMessage } from './components/ErrorMessage';
@@ -14,6 +16,25 @@ export interface DotCMSLayoutBodyProps<
         [key: string]: React.ComponentType<TContentlet> | React.ComponentType<any>;
     };
     mode?: DotCMSPageRendererMode;
+    /**
+     * Pre-rendered server component nodes keyed by contentlet identifier.
+     * Use this to render Next.js server components (async components) within the layout.
+     * When a contentlet's identifier matches a key in this map, the pre-rendered node
+     * is used instead of looking up a component in `components`.
+     *
+     * @example
+     * ```tsx
+     * // Server component (page.tsx)
+     * const slots = {
+     *   [blogListContentlet.identifier]: <BlogListContainer {...blogListContentlet} />
+     * };
+     * <Page pageContent={pageContent} slots={slots} />
+     *
+     * // Client component (Page.tsx)
+     * <DotCMSLayoutBody page={pageAsset} components={pageComponents} slots={slots} />
+     * ```
+     */
+    slots?: Record<string, ReactNode>;
 }
 
 /**
@@ -28,6 +49,7 @@ export interface DotCMSLayoutBodyProps<
  * @param {DotCMSPageAsset} props.page - The DotCMS page asset containing the layout information.
  * @param {Record<string, React.ComponentType<DotCMSContentlet>>} [props.components] - mapping of custom components for content rendering.
  * @param {DotCMSPageRendererMode} [props.mode='production'] - The renderer mode; defaults to 'production'. Alternate modes might trigger different behaviors.
+ * @param {Record<string, ReactNode>} [props.slots] - Pre-rendered server component nodes keyed by contentlet identifier.
  *
  * @returns {JSX.Element} The rendered DotCMS page body or an error message if the layout body is missing.
  *
@@ -35,14 +57,16 @@ export interface DotCMSLayoutBodyProps<
 export const DotCMSLayoutBody = ({
     page,
     components = {},
-    mode = 'production'
+    mode = 'production',
+    slots = {}
 }: DotCMSLayoutBodyProps) => {
     const dotCMSPageBody = page?.layout?.body;
 
     const contextValue = {
         pageAsset: page,
         userComponents: components,
-        mode
+        mode,
+        slots
     };
 
     return (

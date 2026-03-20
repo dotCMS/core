@@ -9,7 +9,7 @@ import { useIsDevMode } from '../../hooks/useIsDevMode';
 
 const Wrapper = ({ children, mode = 'production' }: any) => {
     return (
-        <DotCMSPageContext.Provider value={{ mode, pageAsset: {} as any, userComponents: {} }}>
+        <DotCMSPageContext.Provider value={{ mode, pageAsset: {} as any, userComponents: {}, slots: {} }}>
             {children}
         </DotCMSPageContext.Provider>
     );
