@@ -1,4 +1,4 @@
-import { EMPTY, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -37,22 +37,26 @@ import { FieldSettingsSection } from '../field-settings-section';
 export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsSection {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    form: FormGroup | undefined;
-    readonly $isValid = signal(true);
-    protected readonly $showAsModal = signal(false);
-
     readonly #fb = inject(FormBuilder);
     readonly #fieldVariablesService = inject(DotFieldVariablesService);
     readonly #destroyRef = inject(DestroyRef);
 
+    form: FormGroup = this.#fb.group({
+        showAsModal: [false],
+        customFieldWidth: [398, [Validators.required, Validators.min(1)]],
+        customFieldHeight: [400, [Validators.required, Validators.min(1)]]
+    });
+    readonly $isValid = signal(true);
+    protected readonly $showAsModal = signal(false);
+
     #fieldVariableRef: DotFieldVariable | null = null;
 
     get isDirty(): boolean {
-        return this.form?.dirty ?? false;
+        return this.form.dirty;
     }
 
     get valueChanges$(): Observable<unknown> {
-        return this.form?.valueChanges ?? EMPTY;
+        return this.form.valueChanges;
     }
 
     ngOnInit(): void {
@@ -71,17 +75,15 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
 
         const initialShowAsModal = !!options['showAsModal'];
 
-        this.form = this.#fb.group({
-            showAsModal: [initialShowAsModal],
-            customFieldWidth: [
-                this.#parsePxToNumber(options.width, 398),
-                [Validators.required, Validators.min(1)]
-            ],
-            customFieldHeight: [
-                this.#parsePxToNumber(options.height, 400),
-                [Validators.required, Validators.min(1)]
-            ]
-        });
+        this.form.patchValue(
+            {
+                showAsModal: initialShowAsModal,
+                customFieldWidth: this.#parsePxToNumber(options.width, 398),
+                customFieldHeight: this.#parsePxToNumber(options.height, 400)
+            },
+            { emitEvent: false }
+        );
+        this.form.markAsPristine();
 
         this.form.statusChanges
             .pipe(takeUntilDestroyed(this.#destroyRef))
@@ -96,7 +98,7 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
     }
 
     save(field: DotCMSContentTypeField): Observable<DotFieldVariable> {
-        const value = this.form?.getRawValue();
+        const value = this.form.getRawValue();
         const fieldVariable: DotFieldVariable = {
             ...(this.#fieldVariableRef || {}),
             clazz: DotCMSClazzes.FIELD_VARIABLE,

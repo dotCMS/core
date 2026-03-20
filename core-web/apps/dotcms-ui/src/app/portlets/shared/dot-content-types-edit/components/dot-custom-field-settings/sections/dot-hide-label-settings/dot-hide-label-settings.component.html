@@ -1,12 +1,10 @@
-@if (form) {
-    <div [formGroup]="form" class="flex gap-2 items-center py-2">
-        <p-checkbox
-            formControlName="hideLabel"
-            [binary]="true"
-            inputId="hideLabel"
-            data-testid="hide-label-checkbox" />
-        <label for="hideLabel">
-            {{ 'contenttypes.field.properties.hideLabel.label' | dm }}
-        </label>
-    </div>
-}
+<div [formGroup]="form" class="flex gap-2 items-center py-2">
+    <p-checkbox
+        formControlName="hideLabel"
+        [binary]="true"
+        inputId="hideLabel"
+        data-testid="hide-label-checkbox" />
+    <label for="hideLabel">
+        {{ 'contenttypes.field.properties.hideLabel.label' | dm }}
+    </label>
+</div>

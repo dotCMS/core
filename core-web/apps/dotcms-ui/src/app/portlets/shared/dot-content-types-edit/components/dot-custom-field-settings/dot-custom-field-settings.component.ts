@@ -6,16 +6,19 @@ import {
     computed,
     inject,
     input,
+    OnChanges,
     output,
+    SimpleChanges,
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 import { catchError, switchMap, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
+    DotDialogActions,
     DotRenderModes,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
@@ -30,12 +33,13 @@ import { FieldSettingsSection } from './sections/field-settings-section';
     templateUrl: './dot-custom-field-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCustomFieldSettingsComponent {
+export class DotCustomFieldSettingsComponent implements OnChanges {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
     /** Live render mode from the properties form — overrides saved fieldVariables when provided */
     readonly $renderMode = input<string | undefined>(undefined, { alias: 'renderMode' });
 
+    readonly $changeControls = output<DotDialogActions>();
     readonly $save = output<void>();
     readonly $valid = output<boolean>();
 
@@ -57,6 +61,7 @@ export class DotCustomFieldSettingsComponent {
     private readonly hideLabel = viewChild(DotHideLabelSettingsComponent);
 
     readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     constructor() {
         merge(
@@ -65,6 +70,13 @@ export class DotCustomFieldSettingsComponent {
         )
             .pipe(takeUntilDestroyed())
             .subscribe(() => this.$valid.emit(this.#canSave()));
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        const { $isVisible } = changes;
+        if ($isVisible?.currentValue) {
+            this.$changeControls.emit(this.#dialogActions());
+        }
     }
 
     saveSettings(): void {
@@ -85,8 +97,7 @@ export class DotCustomFieldSettingsComponent {
 
     #activeSections(): FieldSettingsSection[] {
         return [this.renderOptions(), this.hideLabel()].filter(
-            (s): s is DotRenderOptionsSettingsComponent | DotHideLabelSettingsComponent =>
-                s != null
+            (s): s is DotRenderOptionsSettingsComponent | DotHideLabelSettingsComponent => s != null
         );
     }
 
@@ -94,5 +105,18 @@ export class DotCustomFieldSettingsComponent {
         const sections = this.#activeSections();
 
         return sections.some((s) => s.isDirty) && sections.every((s) => s.$isValid());
+    }
+
+    #dialogActions(): DotDialogActions {
+        return {
+            accept: {
+                action: () => this.saveSettings(),
+                label: this.#dotMessageService.get('contenttypes.dropzone.action.save'),
+                disabled: !this.#canSave()
+            },
+            cancel: {
+                label: this.#dotMessageService.get('contenttypes.dropzone.action.cancel')
+            }
+        };
     }
 }

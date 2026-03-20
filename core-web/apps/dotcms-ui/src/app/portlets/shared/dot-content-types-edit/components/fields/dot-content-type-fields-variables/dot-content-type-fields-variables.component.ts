@@ -1,7 +1,16 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnChanges, OnDestroy, SimpleChanges, inject, input, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnChanges,
+    OnDestroy,
+    SimpleChanges,
+    inject,
+    input,
+    signal
+} from '@angular/core';
 
 import { take, takeUntil } from 'rxjs/operators';
 
@@ -134,9 +143,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
 
     private updateVariableCollection(savedVariable: DotFieldVariable): DotFieldVariable[] {
         const current = this.$fieldVariables();
-        const variableExist = current.find(
-            (item: DotKeyValue) => item.key === savedVariable.key
-        );
+        const variableExist = current.find((item: DotKeyValue) => item.key === savedVariable.key);
 
         return variableExist
             ? current.map((item: DotFieldVariable) => {

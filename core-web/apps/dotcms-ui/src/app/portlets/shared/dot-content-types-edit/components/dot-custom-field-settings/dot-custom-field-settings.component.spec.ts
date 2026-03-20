@@ -187,7 +187,9 @@ describe('DotCustomFieldSettingsComponent', () => {
             jest.spyOn(component.$valid, 'emit');
 
             // Trigger a valueChanges event without dirtying — by patching via setValue (no markAsDirty)
-            const renderOptionsInstance = spectator.query(DotRenderOptionsSettingsComponent) as DotRenderOptionsSettingsComponent;
+            const renderOptionsInstance = spectator.query(
+                DotRenderOptionsSettingsComponent
+            ) as DotRenderOptionsSettingsComponent;
             renderOptionsInstance.form.controls['showAsModal'].setValue(false, { emitEvent: true });
 
             expect(component.$valid.emit).toHaveBeenCalledWith(false);
@@ -196,7 +198,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should emit true when a section is dirty and valid', () => {
             jest.spyOn(component.$valid, 'emit');
 
-            const renderOptionsInstance = spectator.query(DotRenderOptionsSettingsComponent) as DotRenderOptionsSettingsComponent;
+            const renderOptionsInstance = spectator.query(
+                DotRenderOptionsSettingsComponent
+            ) as DotRenderOptionsSettingsComponent;
             renderOptionsInstance.form.controls['showAsModal'].setValue(true);
             renderOptionsInstance.form.markAsDirty();
             // Trigger valueChanges
@@ -224,7 +228,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should call save on the renderOptions section when it is dirty', () => {
             jest.spyOn(component.$save, 'emit');
 
-            const renderOptionsInstance = spectator.query(DotRenderOptionsSettingsComponent) as DotRenderOptionsSettingsComponent;
+            const renderOptionsInstance = spectator.query(
+                DotRenderOptionsSettingsComponent
+            ) as DotRenderOptionsSettingsComponent;
             renderOptionsInstance.form.controls['showAsModal'].setValue(true);
             renderOptionsInstance.form.markAsDirty();
 
@@ -237,7 +243,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should emit $save after successful save', () => {
             jest.spyOn(component.$save, 'emit');
 
-            const renderOptionsInstance = spectator.query(DotRenderOptionsSettingsComponent) as DotRenderOptionsSettingsComponent;
+            const renderOptionsInstance = spectator.query(
+                DotRenderOptionsSettingsComponent
+            ) as DotRenderOptionsSettingsComponent;
             renderOptionsInstance.form.markAsDirty();
 
             component.saveSettings();
@@ -251,7 +259,9 @@ describe('DotCustomFieldSettingsComponent', () => {
             );
             jest.spyOn(component.$save, 'emit');
 
-            const renderOptionsInstance = spectator.query(DotRenderOptionsSettingsComponent) as DotRenderOptionsSettingsComponent;
+            const renderOptionsInstance = spectator.query(
+                DotRenderOptionsSettingsComponent
+            ) as DotRenderOptionsSettingsComponent;
             renderOptionsInstance.form.markAsDirty();
 
             component.saveSettings();
@@ -260,6 +270,115 @@ describe('DotCustomFieldSettingsComponent', () => {
             // so the subscribe callback runs and $save IS emitted
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
             expect(component.$save.emit).toHaveBeenCalled();
+        });
+
+        it('should call save on the hideLabel section when it is dirty', () => {
+            jest.spyOn(component.$save, 'emit');
+
+            const hideLabelInstance = spectator.query(
+                DotHideLabelSettingsComponent
+            ) as DotHideLabelSettingsComponent;
+            hideLabelInstance.form.controls['hideLabel'].setValue(true);
+            hideLabelInstance.form.markAsDirty();
+
+            component.saveSettings();
+
+            expect(dotFieldVariablesService.save).toHaveBeenCalledWith(
+                MOCK_FIELD,
+                expect.objectContaining({ key: 'hideLabel' })
+            );
+            expect(component.$save.emit).toHaveBeenCalled();
+        });
+
+        it('should call save on both sections and emit $save once when both are dirty', () => {
+            jest.spyOn(component.$save, 'emit');
+
+            const renderOptionsInstance = spectator.query(
+                DotRenderOptionsSettingsComponent
+            ) as DotRenderOptionsSettingsComponent;
+            renderOptionsInstance.form.controls['showAsModal'].setValue(true);
+            renderOptionsInstance.form.markAsDirty();
+
+            const hideLabelInstance = spectator.query(
+                DotHideLabelSettingsComponent
+            ) as DotHideLabelSettingsComponent;
+            hideLabelInstance.form.controls['hideLabel'].setValue(true);
+            hideLabelInstance.form.markAsDirty();
+
+            component.saveSettings();
+
+            expect(dotFieldVariablesService.save).toHaveBeenCalledTimes(2);
+            expect(component.$save.emit).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('ngOnChanges / $changeControls output', () => {
+        it('should emit $changeControls when $isVisible changes to true', () => {
+            const emitSpy = jest.spyOn(component.$changeControls, 'emit');
+
+            spectator.setInput('isVisible', true);
+
+            expect(emitSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    accept: expect.objectContaining({
+                        action: expect.any(Function),
+                        label: 'Save',
+                        disabled: true
+                    }),
+                    cancel: expect.objectContaining({ label: 'Cancel' })
+                })
+            );
+        });
+
+        it('should not emit $changeControls when $isVisible changes to false', () => {
+            spectator.setInput('isVisible', true);
+            const emitSpy = jest.spyOn(component.$changeControls, 'emit');
+
+            spectator.setInput('isVisible', false);
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should emit $changeControls with accept.disabled false when a section is dirty and valid', () => {
+            const renderOptionsInstance = spectator.query(
+                DotRenderOptionsSettingsComponent
+            ) as DotRenderOptionsSettingsComponent;
+            renderOptionsInstance.form.controls['showAsModal'].setValue(true);
+            renderOptionsInstance.form.markAsDirty();
+
+            const emitSpy = jest.spyOn(component.$changeControls, 'emit');
+            spectator.setInput('isVisible', true);
+
+            const emitted = (emitSpy.mock.calls[0][0] as ReturnType<typeof Object.assign>);
+            expect(emitted.accept.disabled).toBe(false);
+        });
+
+        it('should call saveSettings when the emitted accept.action is invoked', () => {
+            const saveSpy = jest.spyOn(component, 'saveSettings');
+            const emitSpy = jest.spyOn(component.$changeControls, 'emit');
+
+            spectator.setInput('isVisible', true);
+
+            const emitted = emitSpy.mock.calls[0][0] as { accept: { action: () => void } };
+            emitted.accept.action();
+
+            expect(saveSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('$valid output (invalid dirty state)', () => {
+        it('should emit false when a section is dirty but invalid', () => {
+            jest.spyOn(component.$valid, 'emit');
+
+            const renderOptionsInstance = spectator.query(
+                DotRenderOptionsSettingsComponent
+            ) as DotRenderOptionsSettingsComponent;
+            renderOptionsInstance.form.controls['showAsModal'].setValue(true);
+            renderOptionsInstance.form.controls['customFieldWidth'].setValue(0);
+            renderOptionsInstance.form.markAsDirty();
+            renderOptionsInstance.form.controls['showAsModal'].setValue(true, { emitEvent: true });
+
+            expect(component.$valid.emit).toHaveBeenCalledWith(false);
         });
     });
 });

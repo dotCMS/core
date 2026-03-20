@@ -72,8 +72,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     readonly $propertiesForm =
         viewChild.required<ContentTypeFieldsPropertiesFormComponent>('fieldPropertiesForm');
 
-    readonly $settingsComponent = viewChild<{ saveSettings(): void }>('settingsComponent');
-
     readonly $layout = input<DotCMSContentTypeLayoutRow[]>(undefined, { alias: 'layout' });
     readonly $contentType = input<DotCMSContentType>(undefined, { alias: 'contentType' });
 
@@ -92,9 +90,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     readonly $loading = input<boolean>(false, { alias: 'loading' });
 
     get isFieldWithSettings() {
-        return ([DotCMSClazzes.BLOCK_EDITOR, DotCMSClazzes.BINARY, DotCMSClazzes.CUSTOM_FIELD] as string[]).includes(
-            this.currentFieldType?.clazz
-        );
+        return (
+            [
+                DotCMSClazzes.BLOCK_EDITOR,
+                DotCMSClazzes.BINARY,
+                DotCMSClazzes.CUSTOM_FIELD
+            ] as string[]
+        ).includes(this.currentFieldType?.clazz);
     }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
@@ -407,15 +409,6 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 accept: {
                     ...this.defaultDialogActions.accept,
                     disabled: !this.overviewFormChanged
-                }
-            };
-        } else if (index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isFieldWithSettings) {
-            this.dialogActions = {
-                ...this.defaultDialogActions,
-                accept: {
-                    ...this.defaultDialogActions.accept,
-                    disabled: true,
-                    action: () => this.$settingsComponent()?.saveSettings()
                 }
             };
         }

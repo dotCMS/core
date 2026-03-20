@@ -988,7 +988,9 @@ describe('Load fields and drag and drop', () => {
         // Simulate arbitrary dialogActions being set (e.g. by a Settings tab)
         comp.dialogActions = {
             accept: {
-                action: () => { /* settings save */ },
+                action: () => {
+                    /* settings save */
+                },
                 label: 'Save',
                 disabled: false
             },

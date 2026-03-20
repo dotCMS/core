@@ -96,9 +96,9 @@ describe('DotHideLabelSettingsComponent', () => {
             });
         });
 
-        describe('isValid', () => {
+        describe('$isValid', () => {
             it('should always return true', () => {
-                expect(component.isValid()).toBe(true);
+                expect(component.$isValid()).toBe(true);
             });
         });
 

@@ -7,4 +7,3 @@ export * from './name-property';
 export * from './regex-check-property';
 export * from './render-mode-property';
 export * from './values-property';
-

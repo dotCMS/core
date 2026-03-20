@@ -11,6 +11,7 @@ import {
     CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
     DotCMSContentTypeField,
+    DotCMSContentTypeFieldVariable,
     DotFieldVariable
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -57,7 +58,7 @@ const MOCK_FIELD_BASE: DotCMSContentTypeField = {
     values: null
 };
 
-const MOCK_FIELD_VARIABLE_OPTIONS: DotFieldVariable = {
+const MOCK_FIELD_VARIABLE_OPTIONS: DotCMSContentTypeFieldVariable = {
     clazz: DotCMSClazzes.FIELD_VARIABLE,
     fieldId: 'field-id-456',
     id: 'var-id-789',
@@ -120,15 +121,15 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
         });
 
-        describe('isValid', () => {
+        describe('$isValid', () => {
             it('should return true initially (controls disabled, form valid)', () => {
-                expect(component.isValid()).toBe(true);
+                expect(component.$isValid()).toBe(true);
             });
 
             it('should return true when showAsModal is false (width/height disabled)', () => {
                 expect(component.form.controls['customFieldWidth'].disabled).toBe(true);
                 expect(component.form.controls['customFieldHeight'].disabled).toBe(true);
-                expect(component.isValid()).toBe(true);
+                expect(component.$isValid()).toBe(true);
             });
 
             it('should return true when showAsModal is true and values are valid', () => {
@@ -136,21 +137,21 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
                 expect(component.form.controls['customFieldWidth'].enabled).toBe(true);
                 expect(component.form.controls['customFieldHeight'].enabled).toBe(true);
-                expect(component.isValid()).toBe(true);
+                expect(component.$isValid()).toBe(true);
             });
 
             it('should return false when showAsModal is true and customFieldWidth is 0', () => {
                 component.form.controls['showAsModal'].setValue(true);
                 component.form.controls['customFieldWidth'].setValue(0);
 
-                expect(component.isValid()).toBe(false);
+                expect(component.$isValid()).toBe(false);
             });
 
             it('should return false when showAsModal is true and customFieldHeight is 0', () => {
                 component.form.controls['showAsModal'].setValue(true);
                 component.form.controls['customFieldHeight'].setValue(0);
 
-                expect(component.isValid()).toBe(false);
+                expect(component.$isValid()).toBe(false);
             });
         });
 
@@ -244,7 +245,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
                 // Call save again — it should now carry the id from the first save
                 component.save(MOCK_FIELD_BASE).subscribe();
 
-                const secondCallArg = saveSpy.mock.calls[1][1] as DotFieldVariable;
+                const secondCallArg = (saveSpy.mock.calls as unknown[][])[1][1] as DotFieldVariable;
                 expect(secondCallArg.id).toBe(MOCK_SAVED_VARIABLE.id);
             });
 
