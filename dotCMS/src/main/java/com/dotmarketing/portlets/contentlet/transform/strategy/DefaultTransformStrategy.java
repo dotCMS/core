@@ -271,7 +271,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                 Logger.warn(this,
                                 String.format("An error occurred when retrieving the Binary file from field"
                                                 + " '%s' in Contentlet with ID '%s': %s", field.variable(),
-                                                contentlet.getIdentifier(), e.getMessage()));
+                                                contentlet.getIdentifier(), e.getMessage()), e);
             }
 
 

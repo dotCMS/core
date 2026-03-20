@@ -11,12 +11,20 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.servlet.http.HttpServletRequest;
@@ -50,8 +58,9 @@ import static com.dotcms.util.DotPreconditions.checkNotNull;
  * @author Anibal Gomez
  * @since Apre 26th, 2017
  */
+@SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/contenttype/{typeId}/fields")
-@Tag(name = "Content Type Field", description = "Content type field management and configuration")
+@Tag(name = "Content Type Field")
 public class FieldVariableResource implements Serializable {
 
 	private final transient WebResource webResource;
@@ -99,14 +108,40 @@ public class FieldVariableResource implements Serializable {
 	 * @throws DotSecurityException The current user does not have the necessary permissions to
 	 *                              execute this action.
 	 */
+	@Operation(
+		summary = "Create field variable by field ID",
+		description = "Creates a new field variable for a specific field identified by its ID"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variable created successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid field variable data",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@POST
 	@Path("/id/{fieldId}/variables")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response createFieldVariableByFieldId(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response createFieldVariableByFieldId(@Parameter(description = "Content type ID", required = true)
+												 @PathParam("typeId") final String typeId,
+												 @Parameter(description = "Field ID", required = true)
 												 @PathParam("fieldId") final String fieldId,
+												 @RequestBody(description = "Field variable data", 
+															required = true,
+															content = @Content(schema = @Schema(implementation = String.class)))
 												 final String fieldVariableJson,
 												 @Context final HttpServletRequest req,
 												 @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
@@ -150,14 +185,40 @@ public class FieldVariableResource implements Serializable {
 	 * @throws DotSecurityException The current user does not have the necessary permissions to
 	 *                              execute this action.
 	 */
+	@Operation(
+		summary = "Create field variable by field variable name",
+		description = "Creates a new field variable for a specific field identified by its velocity variable name"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variable created successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid field variable data",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@POST
 	@Path("/var/{fieldVar}/variables")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response createFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response createFieldVariableByFieldVar(@Parameter(description = "Content type ID", required = true)
+												  @PathParam("typeId") final String typeId,
+												  @Parameter(description = "Field velocity variable name", required = true)
 												  @PathParam("fieldVar") final String fieldVar,
+												  @RequestBody(description = "Field variable data", 
+															 required = true,
+															 content = @Content(schema = @Schema(implementation = String.class)))
 												  final String fieldVariableJson,
 												  @Context final HttpServletRequest req,
 												  @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
@@ -187,12 +248,26 @@ public class FieldVariableResource implements Serializable {
 	 *
 	 * @throws DotDataException An error occurred when accessing the database.
 	 */
+	@Operation(
+		summary = "Get field variables by field ID",
+		description = "Retrieves all field variables for a specific field identified by its ID"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variables retrieved successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/id/{fieldId}/variables")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response getFieldVariablesByFieldId(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public final Response getFieldVariablesByFieldId(@Parameter(description = "Content type ID", required = true)
+													 @PathParam("typeId") final String typeId,
+													 @Parameter(description = "Field ID", required = true)
 													 @PathParam("fieldId") final String fieldId,
 													 @Context final HttpServletRequest req,
 													 @Context final HttpServletResponse res) throws DotDataException {
@@ -218,12 +293,26 @@ public class FieldVariableResource implements Serializable {
 	 *
 	 * @throws DotDataException An error occurred when accessing the database.
 	 */
+	@Operation(
+		summary = "Get field variables by field variable name",
+		description = "Retrieves all field variables for a specific field identified by its velocity variable name"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variables retrieved successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/var/{fieldVar}/variables")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public final Response getFieldVariablesByFieldVar(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public final Response getFieldVariablesByFieldVar(@Parameter(description = "Content type ID", required = true)
+													  @PathParam("typeId") final String typeId,
+													  @Parameter(description = "Field velocity variable name", required = true)
 													  @PathParam("fieldVar") final String fieldVar,
 													  @Context final HttpServletRequest req,
 													  @Context final HttpServletResponse res) throws DotDataException {
@@ -250,13 +339,28 @@ public class FieldVariableResource implements Serializable {
 	 * @throws DotDataException An error occurred when retrieving the Field Variable from the
 	 *                          database.
 	 */
+	@Operation(
+		summary = "Get specific field variable by field ID",
+		description = "Retrieves a specific field variable by field ID and variable ID"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variable retrieved successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field or field variable not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/id/{fieldId}/variables/id/{fieldVarId}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getFieldVariableByFieldId(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getFieldVariableByFieldId(@Parameter(description = "Content type ID", required = true)
+											  @PathParam("typeId") final String typeId,
+											  @Parameter(description = "Field ID", required = true)
 											  @PathParam("fieldId") final String fieldId,
+											  @Parameter(description = "Field variable ID", required = true)
 											  @PathParam("fieldVarId") final String fieldVarId,
 											  @Context final HttpServletRequest req,
 											  @Context final HttpServletResponse res) throws DotDataException {
@@ -284,13 +388,28 @@ public class FieldVariableResource implements Serializable {
 	 * @throws DotDataException An error occurred when retrieving the Field Variable from the
 	 *                          database.
 	 */
+	@Operation(
+		summary = "Get specific field variable by field variable name",
+		description = "Retrieves a specific field variable by field velocity variable name and variable ID"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variable retrieved successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field or field variable not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@GET
 	@Path("/var/{fieldVar}/variables/id/{fieldVarId}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response getFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getFieldVariableByFieldVar(@Parameter(description = "Content type ID", required = true)
+											   @PathParam("typeId") final String typeId,
+											   @Parameter(description = "Field velocity variable name", required = true)
 											   @PathParam("fieldVar") final String fieldVar,
+											   @Parameter(description = "Field variable ID", required = true)
 											   @PathParam("fieldVarId") final String fieldVarId,
 											   @Context final HttpServletRequest req,
 											   @Context final HttpServletResponse res) throws DotDataException {
@@ -330,15 +449,42 @@ public class FieldVariableResource implements Serializable {
 	 * @throws DotSecurityException The current user does not have the necessary permissions to
 	 *                              execute this action.
 	 */
+	@Operation(
+		summary = "Update field variable by field ID",
+		description = "Updates an existing field variable for a specific field identified by its ID"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variable updated successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid field variable data",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field or field variable not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@Path("/id/{fieldId}/variables/id/{fieldVarId}")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response updateFieldVariableByFieldId(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response updateFieldVariableByFieldId(@Parameter(description = "Content type ID", required = true)
+												 @PathParam("typeId") final String typeId,
+												 @Parameter(description = "Field ID", required = true)
 												 @PathParam("fieldId") final String fieldId,
+												 @Parameter(description = "Field variable ID", required = true)
 												 @PathParam("fieldVarId") final String fieldVarId,
+												 @RequestBody(description = "Updated field variable data", 
+															required = true,
+															content = @Content(schema = @Schema(implementation = String.class)))
 												 final String fieldVariableJson,
 												 @Context final HttpServletRequest req,
 												 @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
@@ -383,15 +529,42 @@ public class FieldVariableResource implements Serializable {
 	 * @throws DotSecurityException The current user does not have the necessary permissions to
 	 *                              execute this action.
 	 */
+	@Operation(
+		summary = "Update field variable by field variable name",
+		description = "Updates an existing field variable for a specific field identified by its velocity variable name"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variable updated successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "400", 
+					description = "Bad request - invalid field variable data",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field or field variable not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@PUT
 	@Path("/var/{fieldVar}/variables/id/{fieldVarId}")
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response updateFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response updateFieldVariableByFieldVar(@Parameter(description = "Content type ID", required = true)
+												  @PathParam("typeId") final String typeId,
+												  @Parameter(description = "Field velocity variable name", required = true)
 												  @PathParam("fieldVar") final String fieldVar,
+												  @Parameter(description = "Field variable ID", required = true)
 												  @PathParam("fieldVarId") final String fieldVarId,
+												  @RequestBody(description = "Updated field variable data", 
+															 required = true,
+															 content = @Content(schema = @Schema(implementation = String.class)))
 												  final String fieldVariableJson,
 												  @Context final HttpServletRequest req,
 												  @Context final HttpServletResponse res) throws DotDataException, DotSecurityException {
@@ -423,13 +596,34 @@ public class FieldVariableResource implements Serializable {
 	 * @throws DotDataException An error occurred when deleting the Field Variable from the
 	 *                          database.
 	 */
+	@Operation(
+		summary = "Delete field variable by field ID",
+		description = "Deletes a specific field variable for a field identified by its ID"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variable deleted successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field or field variable not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@DELETE
 	@Path("/id/{fieldId}/variables/id/{fieldVarId}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response deleteFieldVariableByFieldId(@PathParam("typeId") final String typeId,
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response deleteFieldVariableByFieldId(@Parameter(description = "Content type ID", required = true)
+												 @PathParam("typeId") final String typeId,
+												 @Parameter(description = "Field ID", required = true)
 												 @PathParam("fieldId") final String fieldId,
+												 @Parameter(description = "Field variable ID", required = true)
 												 @PathParam("fieldVarId") final String fieldVarId,
 												 @Context final HttpServletRequest req,
 												 @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException {
@@ -463,13 +657,34 @@ public class FieldVariableResource implements Serializable {
 	 * @throws DotDataException An error occurred when deleting the Field Variable from the
 	 *                          database.
 	 */
+	@Operation(
+		summary = "Delete field variable by field variable name",
+		description = "Deletes a specific field variable for a field identified by its velocity variable name"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", 
+					description = "Field variable deleted successfully",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "401", 
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404", 
+					description = "Not found - field or field variable not found",
+					content = @Content(mediaType = "application/json"))
+	})
 	@DELETE
 	@Path("/var/{fieldVar}/variables/id/{fieldVarId}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response deleteFieldVariableByFieldVar(@PathParam("typeId") final String typeId,
+	@Produces({MediaType.APPLICATION_JSON})
+	public Response deleteFieldVariableByFieldVar(@Parameter(description = "Content type ID", required = true)
+												  @PathParam("typeId") final String typeId,
+												  @Parameter(description = "Field velocity variable name", required = true)
 												  @PathParam("fieldVar") final String fieldVar,
+												  @Parameter(description = "Field variable ID", required = true)
 												  @PathParam("fieldVarId") final String fieldVarId,
 												  @Context final HttpServletRequest req,
 												  @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException {
