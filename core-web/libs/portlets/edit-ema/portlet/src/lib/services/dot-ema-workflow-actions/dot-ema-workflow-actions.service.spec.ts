@@ -12,12 +12,7 @@ import {
     DotMessageService,
     DotFormatDateService
 } from '@dotcms/data-access';
-import {
-    DotEventsSocketURL,
-    LoginService,
-    CoreWebService,
-    CoreWebServiceMock
-} from '@dotcms/dotcms-js';
+import { DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSWorkflowActionEvent,
     DotWizardStep,
@@ -149,7 +144,6 @@ describe('DotEmaWorkflowActionsService', () => {
                 useClass: LoginServiceMock
             },
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
         ]
     });

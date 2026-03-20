@@ -3,6 +3,8 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -14,7 +16,6 @@ import {
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -67,8 +68,9 @@ describe('DotDownloadBundleDialogComponent', () => {
         component: DotDownloadBundleDialogComponent,
         imports: [SelectButtonModule, SelectModule, NoopAnimationsModule, DotMessagePipe],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotDownloadBundleDialogService,
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock }
         ],
         componentProviders: [

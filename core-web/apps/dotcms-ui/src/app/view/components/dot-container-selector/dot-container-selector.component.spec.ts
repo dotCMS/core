@@ -1,22 +1,16 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import {
-    ApiRoot,
-    BrowserUtil,
-    CoreWebService,
-    LoggerService,
-    StringUtils,
-    UserModel
-} from '@dotcms/dotcms-js';
+import { ApiRoot, BrowserUtil, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 
@@ -40,14 +34,15 @@ describe('ContainerSelectorComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContainerSelectorComponent,
         detectChanges: false,
-        imports: [BrowserAnimationsModule, HttpClientTestingModule],
+        imports: [BrowserAnimationsModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: DotMessageService, useValue: messageServiceMock },
             BrowserUtil,
             IframeOverlayService,
             PaginatorService,
             DotTemplateContainersCacheService,
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             ApiRoot,
             UserModel,
             LoggerService,

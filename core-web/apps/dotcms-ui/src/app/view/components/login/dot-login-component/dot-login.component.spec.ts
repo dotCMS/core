@@ -12,11 +12,10 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { delay } from 'rxjs/operators';
 
 import { DotFormatDateService, DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
     mockLoginFormResponse,
@@ -74,7 +73,6 @@ describe('DotLoginComponent', () => {
         providers: [
             { provide: LoginService, useClass: LoginServiceMock },
             { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: ActivatedRoute, useClass: ActivatedRouteMock },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
             DotMessageService,

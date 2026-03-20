@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { HttpCode, LoginService } from '@dotcms/dotcms-js';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
@@ -26,7 +26,6 @@ export class DotHttpErrorManagerService {
     private dotDialogService = inject(DotAlertConfirmService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
     private dotMessageService = inject(DotMessageService);
-    private loginService = inject(LoginService);
     private dotRouterService = inject(DotRouterService);
 
     private readonly errorHandlers?: Record<HttpCode, (response?: HttpErrorResponse) => boolean>;
@@ -176,15 +175,9 @@ export class DotHttpErrorManagerService {
     }
 
     private handleUnathorized(): boolean {
-        if (this.loginService.auth.user) {
-            this.handleForbidden();
-        } else {
-            this.dotRouterService.goToLogin();
+        this.dotRouterService.goToLogin();
 
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     /**

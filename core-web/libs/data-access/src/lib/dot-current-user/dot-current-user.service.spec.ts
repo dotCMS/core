@@ -1,14 +1,13 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCurrentUser,
     DotPermissionsType,
     UserPermissions,
     PermissionsType
 } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotCurrentUserService } from './dot-current-user.service';
 
@@ -18,11 +17,7 @@ describe('DotCurrentUserService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotCurrentUserService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotCurrentUserService]
         });
         dotCurrentUserService = TestBed.inject(DotCurrentUserService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -91,7 +86,7 @@ describe('DotCurrentUserService', () => {
             `/api/v1/permissions/_bypermissiontype?userid=${userId}&permission=${UserPermissions.WRITE}&permissiontype=${PermissionsType.HTMLPAGES}`
         );
         expect(req.request.method).toBe('GET');
-        req.flush({});
+        req.flush({ entity: {} });
     });
 
     afterEach(() => {

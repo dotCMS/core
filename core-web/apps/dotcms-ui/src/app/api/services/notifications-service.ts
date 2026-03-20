@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService, DotCMSResponse } from '@dotcms/dotcms-js';
+import { DotCMSResponse, DotCMSResponseJsonObject } from '@dotcms/dotcms-models';
 
 import { DotNotificationResponse } from '../../shared/models/notifications/notification.model';
 
@@ -17,53 +18,57 @@ interface DotNotificationServiceUrls {
 
 @Injectable()
 export class NotificationsService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     private urls: DotNotificationServiceUrls;
 
     constructor() {
         this.urls = {
-            dismissNotificationsUrl: 'v1/notification/delete',
-            getLastNotificationsUrl: 'v1/notification/getNotifications/offset/0/limit/24',
-            getNotificationsUrl: 'v1/notification/getNotifications/',
-            markAsReadNotificationsUrl: 'v1/notification/markAsRead'
+            dismissNotificationsUrl: '/api/v1/notification/delete',
+            getLastNotificationsUrl: '/api/v1/notification/getNotifications/offset/0/limit/24',
+            getNotificationsUrl: '/api/v1/notification/getNotifications/',
+            markAsReadNotificationsUrl: '/api/v1/notification/markAsRead'
         };
     }
 
+    /*
+     * The notification API returns a two-level envelope:
+     *   { bodyJsonObject: { entity: DotNotificationResponse, errors: [], ... } }
+     *
+     * DotCMSResponseJsonObject models the outer `bodyJsonObject` wrapper,
+     * DotCMSResponse models the inner standard payload (`entity`, `errors`, etc.).
+     * The `map` below unwraps the outer layer so callers receive a flat DotCMSResponse.
+     */
+
     getLastNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
-        return this.coreWebService
-            .requestView({
-                url: this.urls.getLastNotificationsUrl
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http.get<DotCMSResponse<DotNotificationResponse>>(
+            this.urls.getLastNotificationsUrl
+        );
     }
 
     getAllNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
-        return this.coreWebService
-            .requestView({
-                url: this.urls.getNotificationsUrl
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http
+            .get<
+                DotCMSResponseJsonObject<DotCMSResponse<DotNotificationResponse>>
+            >(this.urls.getNotificationsUrl)
+            .pipe(map((response) => response.bodyJsonObject));
     }
 
     dismissNotifications(
         items: Record<string, unknown>
     ): Observable<DotCMSResponse<DotNotificationResponse>> {
-        return this.coreWebService
-            .requestView({
-                body: items,
-                method: 'PUT',
-                url: this.urls.dismissNotificationsUrl
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http
+            .put<
+                DotCMSResponseJsonObject<DotCMSResponse<DotNotificationResponse>>
+            >(this.urls.dismissNotificationsUrl, items)
+            .pipe(map((response) => response.bodyJsonObject));
     }
 
     markAllAsRead(): Observable<DotCMSResponse<DotNotificationResponse>> {
-        return this.coreWebService
-            .request({
-                method: 'PUT',
-                url: this.urls.markAsReadNotificationsUrl
-            })
-            .pipe(pluck('bodyJsonObject'));
+        return this.http
+            .put<
+                DotCMSResponseJsonObject<DotCMSResponse<DotNotificationResponse>>
+            >(this.urls.markAsReadNotificationsUrl, {})
+            .pipe(map((response) => response.bodyJsonObject));
     }
 }

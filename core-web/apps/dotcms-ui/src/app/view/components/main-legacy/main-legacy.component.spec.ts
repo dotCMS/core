@@ -3,7 +3,8 @@
 import { mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -33,7 +34,6 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -45,7 +45,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { MainComponentLegacyComponent } from './main-legacy.component';
 
@@ -130,14 +130,14 @@ describe('MainLegacyComponent', () => {
                 // DotContentletEditorModule,
                 DotDownloadBundleDialogComponent,
                 DotWizardComponent,
-                HttpClientTestingModule,
                 MainComponentLegacyComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotMenuService,
                 DotCustomEventHandlerService,
                 DotLicenseService,

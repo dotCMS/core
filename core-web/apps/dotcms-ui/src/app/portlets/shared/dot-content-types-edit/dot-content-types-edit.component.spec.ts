@@ -3,7 +3,8 @@
 import { of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -25,7 +26,7 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentType,
@@ -35,7 +36,6 @@ import {
 import { DotIconComponent } from '@dotcms/ui';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     createFakeEvent,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
@@ -151,11 +151,12 @@ describe('DotContentTypesEditComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 DotIconComponent,
-                HttpClientTestingModule,
                 ButtonModule,
                 DialogModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -173,7 +174,6 @@ describe('DotContentTypesEditComponent', () => {
                     useValue: { data: of(route) }
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
@@ -520,7 +520,6 @@ describe('DotContentTypesEditComponent', () => {
                     { provide: SiteService, useClass: SiteServiceMock },
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                     ConfirmationService,
                     DotAlertConfirmService,

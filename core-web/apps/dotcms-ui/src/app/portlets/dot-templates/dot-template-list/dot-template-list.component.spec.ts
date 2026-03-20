@@ -4,7 +4,8 @@
 import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -28,7 +29,6 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -54,7 +54,6 @@ import {
     DotRelativeDatePipe
 } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     createFakeEvent,
     DotFormatDateServiceMock,
     MockDotMessageService,
@@ -482,12 +481,13 @@ describe('DotTemplateListComponent', () => {
 
         await TestBed.configureTestingModule({
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: DotRouterService,
@@ -531,7 +531,6 @@ describe('DotTemplateListComponent', () => {
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
                 DotContentletStatusChipComponent,
-                HttpClientTestingModule,
                 DynamicDialogModule,
                 BrowserAnimationsModule
             ],
@@ -558,7 +557,6 @@ describe('DotTemplateListComponent', () => {
         dotRouterService = dotRouterServiceSpy;
         dialogService = dialogServiceSpy;
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
-        void TestBed.inject(CoreWebService);
         dotSiteBrowserService = dotSiteBrowserServiceSpy;
     });
 

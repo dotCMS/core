@@ -1,10 +1,9 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
 
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import {
     provideRouter,
     RouteReuseStrategy,
@@ -25,10 +24,9 @@ import { DotLoginPageResolver } from './view/components/login/dot-login-page-res
 export const appConfig: ApplicationConfig = {
     providers: [
         // Core Angular providers
-        provideAnimationsAsync(),
-        provideDotCMSTheme(),
         provideAnimations(),
-        provideHttpClient(),
+        provideDotCMSTheme(),
+        provideHttpClient(withFetch()),
         provideRouter(
             appRoutes,
             withHashLocation(),

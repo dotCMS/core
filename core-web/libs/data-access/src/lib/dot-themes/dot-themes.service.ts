@@ -3,9 +3,9 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { DotTheme, DotPagination } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotPagination, DotTheme } from '@dotcms/dotcms-models';
 import { hasValidValue } from '@dotcms/utils';
 
 const THEMES_API_URL = '/api/v1/themes';
@@ -40,8 +40,8 @@ export class DotThemesService {
      */
     get(inode: string): Observable<DotTheme> {
         return this.http
-            .get<{ entity: DotTheme }>(`${THEMES_API_URL}/id/${inode}`)
-            .pipe(pluck('entity'));
+            .get<DotCMSResponse<DotTheme>>(`${THEMES_API_URL}/id/${inode}`)
+            .pipe(map((response) => response.entity));
     }
 
     /**

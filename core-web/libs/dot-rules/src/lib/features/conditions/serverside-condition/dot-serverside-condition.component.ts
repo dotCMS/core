@@ -1,6 +1,7 @@
 import { Observable, of, from } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, ChangeDetectionStrategy, inject, input, output, effect } from '@angular/core';
 import { ReactiveFormsModule, FormsModule, UntypedFormControl } from '@angular/forms';
 
@@ -11,7 +12,7 @@ import { SelectModule } from 'primeng/select';
 
 import { map, mergeMap, toArray, startWith, shareReplay } from 'rxjs/operators';
 
-import { CoreWebService, LoggerService } from '@dotcms/dotcms-js';
+import { LoggerService } from '@dotcms/dotcms-js';
 import { isEmpty } from '@dotcms/utils';
 
 import { ConditionModel, ParameterModel } from '../../../services/api/rule/Rule';
@@ -79,7 +80,7 @@ interface DropdownOption {
 })
 export class DotServersideConditionComponent {
     private readonly logger = inject(LoggerService);
-    private readonly coreWebService = inject(CoreWebService);
+    private readonly http = inject(HttpClient);
     private readonly i18nService = inject(I18nService);
 
     // Inputs
@@ -382,17 +383,19 @@ export class DotServersideConditionComponent {
         const control = ServerSideFieldModel.createNgControl(instance, param.key);
 
         // Fetch options from REST endpoint
-        const options$ = this.coreWebService.request({ url: inputType.optionUrl }).pipe(
-            map((res: Record<string, unknown> | unknown[]) =>
-                this.jsonEntriesToOptions(
-                    res,
-                    inputType.optionValueField || 'key',
-                    inputType.optionLabelField || 'value'
-                )
-            ),
-            startWith([]),
-            shareReplay(1)
-        );
+        const options$ = this.http
+            .get<Record<string, unknown> | unknown[]>(inputType.optionUrl)
+            .pipe(
+                map((res: Record<string, unknown> | unknown[]) =>
+                    this.jsonEntriesToOptions(
+                        res,
+                        inputType.optionValueField || 'key',
+                        inputType.optionLabelField || 'value'
+                    )
+                ),
+                startWith([]),
+                shareReplay(1)
+            );
 
         const input: InputConfig = {
             allowAdditions: inputType.allowAdditions,

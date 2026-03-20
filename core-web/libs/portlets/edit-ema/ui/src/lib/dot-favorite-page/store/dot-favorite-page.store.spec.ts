@@ -1,7 +1,8 @@
 import { describe, expect } from '@jest/globals';
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
@@ -13,9 +14,7 @@ import {
     DotHttpErrorManagerService,
     DotTempFileUploadService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
-    CoreWebServiceMock,
     dotcmsContentletMock,
     mockDotCMSTempFile,
     MockDotHttpErrorManagerService,
@@ -60,13 +59,12 @@ describe('DotFavoritePageStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotSessionStorageService,
                 DotFavoritePageStore,
                 DotPageRenderService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock

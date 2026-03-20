@@ -3,7 +3,8 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -17,15 +18,8 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
+import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import {
-    CoreWebService,
-    DotcmsEventsService,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
-import {
-    CoreWebServiceMock,
     DotcmsEventsServiceMock,
     LoginServiceMock,
     MockDotRouterService
@@ -63,8 +57,10 @@ describe('DotCreateContentletComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotCreateContentletComponent,
-        imports: [HttpClientTestingModule, DotContentletWrapperComponent, DotIframeMockComponent],
+        imports: [DotContentletWrapperComponent, DotIframeMockComponent],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotIframeService,
             DotEventsService,
             DotFormatDateService,
@@ -86,7 +82,6 @@ describe('DotCreateContentletComponent', () => {
                 provide: DotRouterService,
                 useClass: MockDotRouterService
             },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
             {
                 provide: ActivatedRoute,

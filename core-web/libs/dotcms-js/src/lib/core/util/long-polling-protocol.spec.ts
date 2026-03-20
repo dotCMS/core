@@ -1,123 +1,66 @@
-import { Observable, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
-import { ReflectiveInjector } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { LongPollingProtocol } from './long-polling-protocol';
-import { ResponseView } from './response-view';
 
-import { CoreWebService } from '../core-web.service';
 import { LoggerService } from '../logger.service';
 import { StringUtils } from '../string-utils.service';
 
-class CoreWebServiceMock {
-    public requestView(): Observable<ResponseView> {
-        return null;
-    }
-}
-
 describe('LongPollingProtocol', () => {
-    let injector: ReflectiveInjector;
-    let coreWebServiceMock: CoreWebServiceMock;
+    let httpClient: HttpClient;
+    let httpTesting: HttpTestingController;
     let longPollingProtocol: LongPollingProtocol;
     const url = 'http://testing';
 
     beforeEach(() => {
-        coreWebServiceMock = new CoreWebServiceMock();
+        TestBed.configureTestingModule({
+            providers: [provideHttpClient(), provideHttpClientTesting(), StringUtils, LoggerService]
+        });
 
-        injector = ReflectiveInjector.resolveAndCreate([
-            { provide: CoreWebService, useValue: coreWebServiceMock },
-            StringUtils,
-            LoggerService
-        ]);
+        httpClient = TestBed.inject(HttpClient);
+        httpTesting = TestBed.inject(HttpTestingController);
 
-        const loggerService = injector.get(LoggerService);
+        const loggerService = TestBed.inject(LoggerService);
+        longPollingProtocol = new LongPollingProtocol(url, loggerService, httpClient);
+    });
 
-        longPollingProtocol = new LongPollingProtocol(
-            url,
-            loggerService,
-            injector.get(CoreWebService)
-        );
+    afterEach(() => {
+        httpTesting.verify();
     });
 
     it('should connect', () => {
-        const requestOpts = {
-            url: url,
-            params: {}
-        };
-
-        spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-            longPollingProtocol.close();
-
-            return of({
-                entity: {
-                    message: 'message'
-                }
-            });
-        });
-
         longPollingProtocol.connect();
 
-        expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
+        const req = httpTesting.expectOne(url);
+        expect(req.request.method).toBe('GET');
+
+        longPollingProtocol.close();
+        req.flush({ entity: { message: 'message' } });
     });
 
     it('should trigger message', (done) => {
-        const requestOpts = {
-            url: url,
-            params: {}
-        };
-
-        spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-            longPollingProtocol.close();
-
-            return of({
-                entity: {
-                    message: 'message'
-                }
-            });
-        });
-
         longPollingProtocol.message$().subscribe((message) => {
-            expect(message).toEqual({
-                message: 'message'
-            });
+            expect(message).toEqual({ message: 'message' });
             done();
         });
 
         longPollingProtocol.connect();
 
-        expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
+        const req = httpTesting.expectOne(url);
+        longPollingProtocol.close();
+        req.flush({ entity: { message: 'message' } });
     });
 
     it('should trigger message with lastCallback', (done) => {
         let countRequest = 0;
 
-        spyOn(coreWebServiceMock, 'requestView').and.callFake((opts) => {
-            countRequest++;
-
-            if (countRequest === 2) {
-                expect(opts).toEqual({
-                    url: url,
-                    params: {
-                        lastCallBack: 2
-                    }
-                });
-            }
-
-            return of({
-                entity: [
-                    {
-                        message: 'message',
-                        creationDate: 1
-                    }
-                ]
-            });
-        });
-
         longPollingProtocol.message$().subscribe((message) => {
-            expect(message).toEqual({
-                message: 'message',
-                creationDate: 1
-            });
+            expect(message).toEqual({ message: 'message', creationDate: 1 });
+            countRequest++;
 
             if (countRequest === 2) {
                 longPollingProtocol.close();
@@ -126,46 +69,34 @@ describe('LongPollingProtocol', () => {
         });
 
         longPollingProtocol.connect();
+
+        const req1 = httpTesting.expectOne(url);
+        req1.flush({ entity: [{ message: 'message', creationDate: 1 }] });
+
+        const req2 = httpTesting.expectOne(`${url}?lastCallBack=2`);
+        longPollingProtocol.close();
+        req2.flush({ entity: [{ message: 'message', creationDate: 1 }] });
     });
 
     it('should reconnect after a message', () => {
-        let firstMessage = true;
-        const requestOpts = {
-            url: url,
-            params: {}
-        };
-
-        spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-            if (!firstMessage) {
-                longPollingProtocol.close();
-                expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
-                expect(coreWebServiceMock.requestView).toHaveBeenCalledTimes(2);
-            } else {
-                firstMessage = false;
-            }
-
-            return of({
-                entity: [
-                    {
-                        message: 'message'
-                    }
-                ]
-            });
-        });
-
         longPollingProtocol.connect();
+
+        const req1 = httpTesting.expectOne(url);
+        req1.flush({ entity: [{ message: 'message' }] });
+
+        const req2 = httpTesting.expectOne(url);
+        longPollingProtocol.close();
+        req2.flush({ entity: [{ message: 'message' }] });
     });
 
     it('should trigger a error', (done) => {
-        spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-            return throwError({
-                entity: {}
-            });
-        });
-
         longPollingProtocol.error$().subscribe(() => {
             done();
         });
+
         longPollingProtocol.connect();
+
+        const req = httpTesting.expectOne(url);
+        req.flush(null, { status: 500, statusText: 'Server Error' });
     });
 });

@@ -14,8 +14,6 @@ import {
     DotIframeService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -65,7 +63,6 @@ describe('DotToolbarUserStore', () => {
                     }
                 }
             },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: LoginService, useClass: LoginServiceMock },
             {

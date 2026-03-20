@@ -4,7 +4,6 @@ import { RouterModule } from '@angular/router';
 import {
     ApiRoot,
     BrowserUtil,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     LoggerService,
@@ -49,7 +48,6 @@ import { RuleViewService } from './services/ui/dot-view-rule-service';
     providers: [
         ApiRoot,
         BrowserUtil,
-        CoreWebService,
         DotcmsConfigService,
         DotcmsEventsService,
         LoggerService,

@@ -3,7 +3,8 @@
 
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -11,7 +12,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
@@ -20,7 +20,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
@@ -63,7 +63,8 @@ const fakeEvent = () => ({
 describe('DotIframeDialogComponent', () => {
     const defaultProviders = [
         { provide: LoginService, useClass: LoginServiceMock },
-        { provide: CoreWebService, useClass: CoreWebServiceMock },
+        provideHttpClient(),
+        provideHttpClientTesting(),
         DotIframeService,
         DotRouterService,
         DotUiColorsService,
@@ -93,7 +94,7 @@ describe('DotIframeDialogComponent', () => {
 
         const createHost = createComponentFactory({
             component: TestHostComponent,
-            imports: [BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule],
+            imports: [BrowserAnimationsModule, RouterTestingModule],
             providers: defaultProviders,
             detectChanges: false
         });
@@ -256,7 +257,7 @@ describe('DotIframeDialogComponent', () => {
 
         const createHost2 = createComponentFactory({
             component: TestHost2Component,
-            imports: [BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule],
+            imports: [BrowserAnimationsModule, RouterTestingModule],
             providers: defaultProviders,
             detectChanges: false
         });
