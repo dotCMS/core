@@ -2114,7 +2114,7 @@ paths:
       - Personalization
   /personas/sites/{id}:
     get:
-      operationId: list_12
+      operationId: list_11
       parameters:
       - in: path
         name: id
@@ -4423,7 +4423,9 @@ paths:
         content:
           application/json:
             schema:
-              type: string
+              type: array
+              items:
+                type: string
         description: JSON payload containing a list of the inodes of categories to
           delete.
         required: true
@@ -4712,7 +4714,7 @@ paths:
         \ by their keys. Returns parent lists for each category, starting from the\
         \ top-level parent down to the direct parent. Categories that don't exist\
         \ are ignored."
-      operationId: getHierarchy
+      operationId: getCategoryHierarchy
       requestBody:
         content:
           application/json:
@@ -6434,7 +6436,7 @@ paths:
     post:
       description: Retrieves related content for a contentlet based on relationship
         field configuration and query conditions
-      operationId: pullRelated
+      operationId: pullRelatedContent
       requestBody:
         content:
           application/json:
@@ -6836,7 +6838,7 @@ paths:
   /v1/content/{identifier}/push/history:
     get:
       description: Returns the push history of a contentlet
-      operationId: getPushHistory
+      operationId: getContentletPushHistory
       parameters:
       - description: ID of the Contentlet whose push history will be retrieved.
         in: path
@@ -6882,7 +6884,7 @@ paths:
     get:
       description: Retrieves the total number of references to a specific contentlet
         by its identifier
-      operationId: getAllContentletReferencesCount
+      operationId: getContentletReferencesCount
       parameters:
       - description: Content identifier
         in: path
@@ -8024,7 +8026,7 @@ paths:
       deprecated: true
       description: Deletes multiple fields from a content type by their field IDs.
         Use v2 API instead for new implementations.
-      operationId: deleteFields
+      operationId: deleteContentTypeFieldsV1
       parameters:
       - description: Content type ID
         in: path
@@ -8075,7 +8077,7 @@ paths:
       deprecated: true
       description: Retrieves all fields for a specific content type. Use v2 API instead
         for new implementations.
-      operationId: getContentTypeFields
+      operationId: getContentTypeFieldsV1
       parameters:
       - description: Content type ID
         in: path
@@ -8112,7 +8114,7 @@ paths:
     post:
       deprecated: true
       description: Creates a new field for a content type. Use v2 API instead.
-      operationId: createContentTypeField
+      operationId: createContentTypeFieldV1
       parameters:
       - description: Content type ID
         in: path
@@ -8156,7 +8158,7 @@ paths:
     put:
       deprecated: true
       description: Updates multiple fields for a content type. Use v2 API instead.
-      operationId: updateFields
+      operationId: updateContentTypeFieldsV1
       parameters:
       - description: Content type ID
         in: path
@@ -8202,7 +8204,7 @@ paths:
       deprecated: true
       description: Deletes a specific field from a content type by its field ID. Use
         v2 API instead for new implementations.
-      operationId: deleteContentTypeFieldById
+      operationId: deleteContentTypeFieldByIdV1
       parameters:
       - description: Content type ID
         in: path
@@ -8246,7 +8248,7 @@ paths:
       deprecated: true
       description: Retrieves a specific field from a content type by its unique field
         ID. Use v2 API instead for new implementations.
-      operationId: getContentTypeFieldById
+      operationId: getContentTypeFieldByIdV1
       parameters:
       - description: Content type ID
         in: path
@@ -8290,7 +8292,7 @@ paths:
       deprecated: true
       description: Updates a specific field in a content type by its field ID. Use
         v2 API instead for new implementations.
-      operationId: updateContentTypeFieldById
+      operationId: updateContentTypeFieldByIdV1
       parameters:
       - description: Content type ID
         in: path
@@ -8556,7 +8558,7 @@ paths:
       deprecated: true
       description: Deletes a specific field from a content type by its variable name.
         Use v2 API instead for new implementations.
-      operationId: deleteContentTypeFieldByVar
+      operationId: deleteContentTypeFieldByVariableV1
       parameters:
       - description: Content type ID
         in: path
@@ -8600,7 +8602,7 @@ paths:
       deprecated: true
       description: Retrieves a specific field from a content type by its variable
         name. Use v2 API instead for new implementations.
-      operationId: getContentTypeFieldByVar
+      operationId: getContentTypeFieldByVariableV1
       parameters:
       - description: Content type ID
         in: path
@@ -8644,7 +8646,7 @@ paths:
       deprecated: true
       description: Updates a specific field in a content type by its variable name.
         Use v2 API instead for new implementations.
-      operationId: updateContentTypeFieldByVar
+      operationId: updateContentTypeFieldByVariableV1
       parameters:
       - description: Content type ID
         in: path
@@ -20089,7 +20091,7 @@ paths:
   /v2/contenttype/{typeIdOrVarName}/fields:
     delete:
       deprecated: true
-      operationId: deleteFields_1
+      operationId: deleteFields
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -20113,7 +20115,7 @@ paths:
       - Content Type Field
     get:
       deprecated: true
-      operationId: getContentTypeFields_1
+      operationId: getContentTypeFields
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -20129,7 +20131,7 @@ paths:
       tags:
       - Content Type Field
     post:
-      operationId: createContentTypeField_1
+      operationId: createContentTypeField
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -20151,7 +20153,7 @@ paths:
       - Content Type Field
     put:
       deprecated: true
-      operationId: updateFields_1
+      operationId: updateFields
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -20173,7 +20175,7 @@ paths:
       - Content Type Field
   /v2/contenttype/{typeIdOrVarName}/fields/id/{fieldId}:
     delete:
-      operationId: deleteContentTypeFieldById_1
+      operationId: deleteContentTypeFieldById
       parameters:
       - in: path
         name: fieldId
@@ -20189,7 +20191,7 @@ paths:
       tags:
       - Content Type Field
     get:
-      operationId: getContentTypeFieldById_1
+      operationId: getContentTypeFieldById
       parameters:
       - in: path
         name: fieldId
@@ -20205,7 +20207,7 @@ paths:
       tags:
       - Content Type Field
     put:
-      operationId: updateContentTypeFieldById_1
+      operationId: updateContentTypeFieldById
       parameters:
       - in: path
         name: fieldId
@@ -20227,7 +20229,7 @@ paths:
       - Content Type Field
   /v2/contenttype/{typeIdOrVarName}/fields/var/{fieldVar}:
     delete:
-      operationId: deleteContentTypeFieldByVar_1
+      operationId: deleteContentTypeFieldByVar
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -20248,7 +20250,7 @@ paths:
       tags:
       - Content Type Field
     get:
-      operationId: getContentTypeFieldByVar_1
+      operationId: getContentTypeFieldByVar
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -20269,7 +20271,7 @@ paths:
       tags:
       - Content Type Field
     put:
-      operationId: updateContentTypeFieldByVar_1
+      operationId: updateContentTypeFieldByVar
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -20527,6 +20529,46 @@ paths:
       tags:
       - Internationalization
   /v2/tags:
+    delete:
+      description: Deletes one or more tags by ID. Missing IDs are silently skipped
+        — the operation is idempotent.
+      operationId: bulkDeleteTags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+        description: List of tag IDs to delete
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
+          description: "Bulk delete completed. Check successCount, skippedCount, and\
+            \ fails for details."
+        "400":
+          content:
+            application/json: {}
+          description: Bad Request - invalid input
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions to delete tags
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Bulk delete tags
+      tags:
+      - Tags
     get:
       description: "Searches and lists tags with filtering, pagination, and sorting.\
         \ The filter parameter performs a case-insensitive search with wildcards on\
@@ -20534,7 +20576,7 @@ paths:
         supermarket\"). When using the filter, results are ordered by match length\
         \ (shortest first) to prioritize exact matches. The site parameter accepts\
         \ either a site ID or site name for filtering by specific sites."
-      operationId: list_11
+      operationId: listTags
       parameters:
       - description: Tag name filter (LIKE search)
         example: market
@@ -20619,7 +20661,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TagForm"
+              type: array
+              items:
+                $ref: "#/components/schemas/TagForm"
         description: "List of tag data to create. Single tag = list with one element,\
           \ multiple tags = list with multiple elements."
         required: true
@@ -20721,7 +20765,7 @@ paths:
     get:
       description: Download a CSV template file with headers and example data for
         tag imports. No parameters required.
-      operationId: downloadTemplate
+      operationId: downloadTagImportTemplate
       responses:
         "200":
           content:
@@ -20785,7 +20829,7 @@ paths:
       description: Breaks the link between an inode and all its associated tags. Removes
         all tag associations for the specified content but does not delete the tags
         themselves.
-      operationId: deleteTagInodesByInode
+      operationId: deleteTagInodeAssociations
       parameters:
       - description: Inode to remove tag associations from
         in: path
@@ -20822,7 +20866,7 @@ paths:
     get:
       description: Retrieves all tags associated with a given inode. Returns tag-inode
         relationships for the specified content.
-      operationId: findTagsByInode
+      operationId: getTagsByInode
       parameters:
       - description: Inode to retrieve tags for
         in: path
@@ -20861,7 +20905,7 @@ paths:
       description: "Binds tags with a given inode. Lookup can be done via tag name\
         \ or ID. If tag name matches multiple tags, all matching tags will be bound.\
         \ Use tag ID for specific binding."
-      operationId: linkTagsAndInode
+      operationId: linkTagsToInode
       parameters:
       - description: Name or UUID of the tag to link
         in: path
@@ -21007,7 +21051,7 @@ paths:
     get:
       description: "Retrieves a single tag by its name or UUID. For name-based searches,\
         \ uses site context for disambiguation."
-      operationId: getTagsByNameOrId
+      operationId: getTagByNameOrId
       parameters:
       - description: Tag name or UUID
         in: path
@@ -21051,7 +21095,7 @@ paths:
     delete:
       description: Deletes a tag based on its ID. The tag must exist and the user
         must have appropriate permissions.
-      operationId: delete_13
+      operationId: deleteTag
       parameters:
       - description: ID of the tag to delete
         in: path
@@ -21087,7 +21131,7 @@ paths:
       - Tags
   /v3/contenttype/{typeIdOrVarName}/fields:
     delete:
-      operationId: deleteFields_2
+      operationId: deleteFields_1
       parameters:
       - in: path
         name: typeIdOrVarName
@@ -21108,7 +21152,7 @@ paths:
       tags:
       - Content Type Field
     get:
-      operationId: getContentTypeFields_2
+      operationId: getContentTypeFields_1
       parameters:
       - in: path
         name: typeIdOrVarName

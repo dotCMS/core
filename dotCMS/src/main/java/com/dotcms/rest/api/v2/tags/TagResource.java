@@ -8,6 +8,9 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityBulkResultView;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.util.pagination.OrderDirection;
@@ -36,6 +39,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -126,6 +130,7 @@ public class TagResource {
      * @return The {@link ResponseEntityPaginatedDataView} containing the paginated list of Tags.
      */
     @Operation(
+        operationId = "listTags",
         summary = "List/Search Tags",
         description = "Searches and lists tags with filtering, pagination, and sorting. " +
                       "The filter parameter performs a case-insensitive search with wildcards " +
@@ -228,6 +233,7 @@ public class TagResource {
      * @return The {@link ResponseEntityTagCreateView} containing created and duplicate tags.
      */
     @Operation(
+            operationId = "createTags",
             summary = "Create tags",
             description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. This operation is idempotent - existing tags are returned without error."
     )
@@ -263,7 +269,7 @@ public class TagResource {
             @Context final HttpServletResponse response,
             @RequestBody(description = "List of tag data to create. Single tag = list with one element, multiple tags = list with multiple elements.",
                     required = true,
-                    content = @Content(schema = @Schema(type = "array", implementation = TagForm.class)))
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = TagForm.class))))
             final List<TagForm> tagForms) throws DotDataException, DotSecurityException {
 
         // Initialize and check permissions
@@ -357,6 +363,7 @@ public class TagResource {
      * @return The {@link ResponseEntityRestTagView} containing the updated tag.
      */
     @Operation(
+            operationId = "updateTag",
             summary = "Update tag",
             description = "Updates a tag's name and site assignment. You can identify the tag by its UUID or by its name. When using a tag name, you must specify which site's tag you want to update via the siteId query parameter."
     )
@@ -440,7 +447,7 @@ public class TagResource {
                 String.format("Site with ID '%s' does not exist", tagForm.getSiteId())
             );
         }
-        targetSiteId = targetHost.getIdentifier();
+        targetSiteId = helper.resolveTagStorageHost(targetHost.getIdentifier());
 
         // 5. Check for duplicate if name or site is changing
         if (!existingTag.getTagName().equals(tagForm.getName()) ||
@@ -479,6 +486,7 @@ public class TagResource {
      * User.
      */
     @Operation(
+        operationId = "getTagsByUserId",
         summary = "Get tags by user ID",
         description = "Retrieves all tags owned by a specific user. Returns tags that were explicitly linked to the user during creation."
     )
@@ -539,6 +547,7 @@ public class TagResource {
      * @return The {@link Response} containing the found Tag or error information.
      */
     @Operation(
+            operationId = "getTagByNameOrId",
             summary = "Get tag by name or ID",
             description = "Retrieves a single tag by its name or UUID. For name-based searches, uses site context for disambiguation."
     )
@@ -607,6 +616,77 @@ public class TagResource {
     }
 
     /**
+     * Deletes one or more Tags by ID in a single bulk operation. Missing IDs are skipped
+     * (the operation is idempotent).
+     *
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     * @param tagIds   List of tag IDs to delete.
+     *
+     * @return A {@link ResponseEntityBulkResultView} with success, skipped, and failure counts.
+     */
+    @Operation(
+        operationId = "bulkDeleteTags",
+        summary = "Bulk delete tags",
+        description = "Deletes one or more tags by ID. Missing IDs are silently skipped — the operation is idempotent."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Bulk delete completed. Check successCount, skippedCount, and fails for details.",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad Request - invalid input",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - insufficient permissions to delete tags",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityBulkResultView bulkDelete(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @RequestBody(description = "List of tag IDs to delete", required = true,
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class))))
+            final List<String> tagIds) throws DotDataException {
+
+        final InitDataObject initDataObject = getInitDataObject(request, response);
+        final User user = initDataObject.getUser();
+        Logger.debug(TagResource.class, () -> String.format("User '%s' is bulk-deleting %d tag(s)", user.getUserId(), tagIds.size()));
+
+        long successCount = 0;
+        long skippedCount = 0;
+        final List<FailedResultView> fails = new ArrayList<>();
+
+        for (final String tagId : tagIds) {
+            final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
+            if (tag == null) {
+                skippedCount++;
+                continue;
+            }
+            try {
+                tagAPI.deleteTag(tag);
+                successCount++;
+            } catch (Exception e) {
+                Logger.error(TagResource.class, String.format("Failed to delete tag '%s': %s", tagId, e.getMessage()));
+                fails.add(new FailedResultView(tagId, e.getMessage()));
+            }
+        }
+
+        return new ResponseEntityBulkResultView(new BulkResultView(successCount, skippedCount, fails));
+    }
+
+    /**
      * Deletes a Tag based on its ID.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
@@ -616,6 +696,7 @@ public class TagResource {
      * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
      */
     @Operation(
+        operationId = "deleteTag",
         summary = "Delete tag",
         description = "Deletes a tag based on its ID. The tag must exist and the user must have appropriate permissions."
     )
@@ -677,6 +758,7 @@ public class TagResource {
      * @return The {@link ResponseEntityTagInodesMapView} containing the list of linked Tags.
      */
     @Operation(
+        operationId = "linkTagsToInode",
         summary = "Link tags to inode",
         description = "Binds tags with a given inode. Lookup can be done via tag name or ID. If tag name matches multiple tags, all matching tags will be bound. Use tag ID for specific binding."
     )
@@ -753,6 +835,7 @@ public class TagResource {
      * specified Inode.
      */
     @Operation(
+        operationId = "getTagsByInode",
         summary = "Get tags by inode",
         description = "Retrieves all tags associated with a given inode. Returns tag-inode relationships for the specified content."
     )
@@ -805,6 +888,7 @@ public class TagResource {
      * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
      */
     @Operation(
+        operationId = "deleteTagInodeAssociations",
         summary = "Delete tag-inode associations",
         description = "Breaks the link between an inode and all its associated tags. Removes all tag associations for the specified content but does not delete the tags themselves."
     )
@@ -889,6 +973,7 @@ public class TagResource {
      *                              perform this operation.
      */
     @Operation(
+        operationId = "importTags",
         summary = "Import tags from CSV file",
         description = "Imports tags from a CSV file with row-level error reporting. Returns detailed statistics and error information for each failed row."
     )
@@ -936,6 +1021,7 @@ public class TagResource {
         final Map<String, Object> stats = Map.of(
             "totalRows", result.totalRows,
             "successCount", result.successCount,
+            "duplicateCount", result.duplicateCount,
             "failureCount", result.errors.size(),
             "success", result.errors.isEmpty()
         );
@@ -966,6 +1052,7 @@ public class TagResource {
      * @throws DotSecurityException The specified user does not have the required permissions.
      */
     @Operation(
+        operationId = "exportTags",
         summary = "Export tags",
         description = "Export tags to CSV or JSON format. Supports the same filtering as list/search endpoint with configurable export format."
     )
@@ -1032,6 +1119,7 @@ public class TagResource {
      * @param response The current instance of the {@link HttpServletResponse}.
      */
     @Operation(
+        operationId = "downloadTagImportTemplate",
         summary = "Download tag import template",
         description = "Download a CSV template file with headers and example data for tag imports. No parameters required."
     )

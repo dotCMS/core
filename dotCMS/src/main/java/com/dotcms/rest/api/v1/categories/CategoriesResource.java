@@ -48,6 +48,7 @@ import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -382,6 +383,7 @@ public class CategoriesResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
+            operationId = "getCategoryHierarchy",
             summary = "Get category hierarchy for multiple categories",
             description = "Retrieves the parent hierarchy for a set of categories specified by their keys. Returns parent lists for each category, starting from the top-level parent down to the direct parent. Categories that don't exist are ignored."
     )
@@ -693,7 +695,7 @@ public class CategoriesResource {
     public final Response delete(@Context final HttpServletRequest httpRequest,
                                  @Context final HttpServletResponse httpResponse,
                                  @RequestBody(description = "JSON payload containing a list of the inodes of categories to delete.", required = true,
-                                         content = @Content( schema = @Schema(type="array", implementation = String.class))
+                                         content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class)))
                                  ) final List<String> categoriesToDelete) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)

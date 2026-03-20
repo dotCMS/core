@@ -136,6 +136,7 @@ public class ContentResource {
 
 
     @Operation(
+            operationId = "getContentletPushHistory",
             summary = "Contentlet Push History",
             description = "Returns the push history of a contentlet"
     )
@@ -430,6 +431,7 @@ public class ContentResource {
      * @return The {@link ResponseEntityCountView}
      */
     @Operation(
+        operationId = "getContentletReferencesCount",
         summary = "Get contentlet references count",
         description = "Retrieves the total number of references to a specific contentlet by its identifier"
     )
@@ -480,6 +482,7 @@ public class ContentResource {
      * @return The {@link ResponseEntityView<List<ContentReferenceView>>}
      */
     @Operation(
+        operationId = "getContentletReferences",
         summary = "Get contentlet references",
         description = "Retrieves all references to a specific contentlet, including pages, containers, and personas that reference it"
     )
@@ -909,6 +912,7 @@ public class ContentResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("related")
     @Operation(
+        operationId = "pullRelatedContent",
         summary = "Pull Related Content",
         description = "Retrieves related content for a contentlet based on relationship field configuration and query conditions"
     )
@@ -1002,6 +1006,7 @@ public class ContentResource {
      * @throws DotDataException An error occurred when interacting with the database.
      */
     @Operation(
+        operationId = "checkContentLanguageVersions",
         summary = "Check content language versions",
         description = "Retrieves all available languages for a contentlet and indicates which languages have content versions"
     )

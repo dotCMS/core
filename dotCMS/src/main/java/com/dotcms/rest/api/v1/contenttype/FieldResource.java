@@ -76,6 +76,7 @@ public class FieldResource implements Serializable {
 
 
 	@Operation(
+		operationId = "updateContentTypeFieldsV1",
 		summary = "Update content type fields (deprecated)",
 		description = "Updates multiple fields for a content type. Use v2 API instead."
 	)
@@ -143,6 +144,7 @@ public class FieldResource implements Serializable {
 	}
 
 	@Operation(
+		operationId = "createContentTypeFieldV1",
 		summary = "Create content type field (deprecated)",
 		description = "Creates a new field for a content type. Use v2 API instead."
 	)
@@ -215,6 +217,7 @@ public class FieldResource implements Serializable {
 	}
 
 	@Operation(
+		operationId = "getContentTypeFieldsV1",
 		summary = "Get content type fields (deprecated)",
 		description = "Retrieves all fields for a specific content type. Use v2 API instead for new implementations."
 	)
@@ -272,6 +275,7 @@ public class FieldResource implements Serializable {
 
 
 	@Operation(
+		operationId = "getContentTypeFieldByIdV1",
 		summary = "Get content type field by ID (deprecated)",
 		description = "Retrieves a specific field from a content type by its unique field ID. Use v2 API instead for new implementations."
 	)
@@ -325,6 +329,7 @@ public class FieldResource implements Serializable {
 	}
 
 	@Operation(
+		operationId = "getContentTypeFieldByVariableV1",
 		summary = "Get content type field by variable name (deprecated)",
 		description = "Retrieves a specific field from a content type by its variable name. Use v2 API instead for new implementations."
 	)
@@ -379,6 +384,7 @@ public class FieldResource implements Serializable {
 
 
 	@Operation(
+		operationId = "updateContentTypeFieldByIdV1",
 		summary = "Update content type field by ID (deprecated)",
 		description = "Updates a specific field in a content type by its field ID. Use v2 API instead for new implementations."
 	)
@@ -459,6 +465,7 @@ public class FieldResource implements Serializable {
 	}
 
 	@Operation(
+		operationId = "updateContentTypeFieldByVariableV1",
 		summary = "Update content type field by variable name (deprecated)",
 		description = "Updates a specific field in a content type by its variable name. Use v2 API instead for new implementations."
 	)
@@ -540,6 +547,7 @@ public class FieldResource implements Serializable {
 
 
 	@Operation(
+		operationId = "deleteContentTypeFieldsV1",
 		summary = "Delete multiple fields (deprecated)",
 		description = "Deletes multiple fields from a content type by their field IDs. Use v2 API instead for new implementations."
 	)
@@ -605,6 +613,7 @@ public class FieldResource implements Serializable {
 	}
 
 	@Operation(
+		operationId = "deleteContentTypeFieldByIdV1",
 		summary = "Delete content type field by ID (deprecated)",
 		description = "Deletes a specific field from a content type by its field ID. Use v2 API instead for new implementations."
 	)
@@ -663,6 +672,7 @@ public class FieldResource implements Serializable {
 	}
 
 	@Operation(
+		operationId = "deleteContentTypeFieldByVariableV1",
 		summary = "Delete content type field by variable name (deprecated)",
 		description = "Deletes a specific field from a content type by its variable name. Use v2 API instead for new implementations."
 	)
