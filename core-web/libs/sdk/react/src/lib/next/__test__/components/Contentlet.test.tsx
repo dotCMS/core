@@ -70,8 +70,7 @@ describe('Contentlet', () => {
             mode: 'development',
             userComponents: {
                 'test-type': CustomComponentMock
-            },
-            slots: {}
+            }
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
