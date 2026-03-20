@@ -270,6 +270,7 @@ function createLockOptions(
         lockedBy: string;
         canLock: boolean;
         isLockedByCurrentUser: boolean;
+        shouldShowButton: boolean;
     }> = {}
 ) {
     return {
@@ -278,6 +279,7 @@ function createLockOptions(
         lockedBy: '',
         canLock: true,
         isLockedByCurrentUser: false,
+        shouldShowButton: true,
         ...overrides
     };
 }
@@ -856,9 +858,8 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('toggle lock button', () => {
-            it('should not display toggle lock button when feature is disabled', () => {
-                $lockFeatureEnabledSignal.set(false);
-                baseUVEState.$lockOptions.set(createLockOptions());
+            it('should not display toggle lock button when shouldShowButton is false', () => {
+                baseUVEState.$lockOptions.set(createLockOptions({ shouldShowButton: false }));
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('toggle-lock-button'))).toBeNull();
@@ -1660,6 +1661,8 @@ describe('DotUveToolbarComponent', () => {
                         isLocked: false,
                         isLockedByCurrentUser: false,
                         canLock: true,
+                        lockedBy: '',
+                        shouldShowButton: true,
                         loading: false,
                         disabled: false,
                         message: 'editpage.toolbar.page.release.lock.locked.by.user',

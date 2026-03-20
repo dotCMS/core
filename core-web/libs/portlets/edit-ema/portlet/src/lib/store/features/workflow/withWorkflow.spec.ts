@@ -5,7 +5,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { signalStore, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -23,7 +23,7 @@ import { withWorkflow } from './withWorkflow';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
+import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../shared/mocks';
 import { UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
 import { withFlags } from '../flags/withFlags';
@@ -190,6 +190,72 @@ describe('withLoad', () => {
             expect(options?.isLocked).toBe(false);
             expect(options?.canLock).toBe(true);
             expect(options?.lockedBy).toBe('');
+        });
+
+        describe('$lockOptions.shouldShowButton', () => {
+            it('should be false when page is not locked and feature flag is disabled', () => {
+                store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+                spectator.flushEffects();
+
+                expect(store.$lockOptions()?.shouldShowButton).toBe(false);
+            });
+
+            it('should be true when feature flag is enabled regardless of lock state', () => {
+                patchState(store, { flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true } });
+                store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+                spectator.flushEffects();
+
+                expect(store.$lockOptions()?.shouldShowButton).toBe(true);
+            });
+
+            it('should be true when page is locked by the current user (feature flag disabled)', () => {
+                patchState(store, { uveCurrentUser: mockCurrentUser });
+                store.setPageAPIResponse({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: mockCurrentUser.userId,
+                        lockedByName: mockCurrentUser.givenName,
+                        canLock: true
+                    }
+                });
+                spectator.flushEffects();
+
+                expect(store.$lockOptions()?.shouldShowButton).toBe(true);
+            });
+
+            it('should be true when page is locked and canLock is true (admin can unlock, feature flag disabled)', () => {
+                store.setPageAPIResponse({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'another-user',
+                        lockedByName: 'Another User',
+                        canLock: true
+                    }
+                });
+                spectator.flushEffects();
+
+                expect(store.$lockOptions()?.shouldShowButton).toBe(true);
+            });
+
+            it('should be false when page is locked by another user with no canLock (feature flag disabled)', () => {
+                store.setPageAPIResponse({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'another-user',
+                        lockedByName: 'Another User',
+                        canLock: false
+                    }
+                });
+                spectator.flushEffects();
+
+                expect(store.$lockOptions()?.shouldShowButton).toBe(false);
+            });
         });
     });
 

@@ -114,6 +114,7 @@ import {
     TREE_NODE_MOCK,
     UVE_PAGE_RESPONSE_MAP,
     dotPropertiesServiceMock,
+    mockCurrentUser,
     newContentlet
 } from '../shared/mocks';
 import { ActionPayload } from '../shared/models';
@@ -835,6 +836,107 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     expect(spectator.component.$pageURL()).toBe('https://example.com/about-us');
+                });
+            });
+
+            describe('$showLockOverlay', () => {
+                const lockedByAnotherUser = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'another-user',
+                        lockedByName: 'Another User',
+                        canLock: true
+                    }
+                };
+
+                describe('with feature flag enabled', () => {
+                    beforeEach(() => {
+                        patchState(store, { flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: true } });
+                    });
+
+                    it('should show overlay when page is not locked', () => {
+                        patchState(store, {
+                            pageAssetResponse: { pageAsset: MOCK_RESPONSE_HEADLESS }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(true);
+                    });
+
+                    it('should hide overlay when page is locked', () => {
+                        patchState(store, {
+                            pageAssetResponse: { pageAsset: lockedByAnotherUser }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(false);
+                    });
+                });
+
+                describe('with feature flag disabled', () => {
+                    beforeEach(() => {
+                        patchState(store, { flags: { FEATURE_FLAG_UVE_TOGGLE_LOCK: false } });
+                    });
+
+                    it('should hide overlay when page is not locked', () => {
+                        patchState(store, {
+                            pageAssetResponse: { pageAsset: MOCK_RESPONSE_HEADLESS }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(false);
+                    });
+
+                    it('should show overlay when page is locked by another user', () => {
+                        patchState(store, {
+                            pageAssetResponse: { pageAsset: lockedByAnotherUser }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(true);
+                    });
+
+                    it('should hide overlay when page is locked by the current user with canLock', () => {
+                        patchState(store, {
+                            uveCurrentUser: mockCurrentUser,
+                            pageAssetResponse: {
+                                pageAsset: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockCurrentUser.userId,
+                                        lockedByName: mockCurrentUser.givenName,
+                                        canLock: true
+                                    }
+                                }
+                            }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(false);
+                    });
+
+                    it('should show overlay when page is locked and canLock is false', () => {
+                        patchState(store, {
+                            pageAssetResponse: {
+                                pageAsset: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: 'another-user',
+                                        canLock: false
+                                    }
+                                }
+                            }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(true);
+                    });
+                });
+
+                it('should return false when no page is loaded', () => {
+                    patchState(store, { pageAssetResponse: null });
+
+                    expect(spectator.component.$showLockOverlay()).toBe(false);
                 });
             });
         });
