@@ -1,6 +1,6 @@
 import { Params } from '@angular/router';
 
-import { isValidTab, paramsToTimeRange } from './filters.utils';
+import { getComparisonLabel, isValidTab, paramsToTimeRange } from './filters.utils';
 
 import { DASHBOARD_TABS, TIME_RANGE_OPTIONS } from '../constants';
 
@@ -9,6 +9,7 @@ describe('Filters Utils', () => {
         it('should return true for valid tab values', () => {
             expect(isValidTab(DASHBOARD_TABS.pageview)).toBe(true);
             expect(isValidTab(DASHBOARD_TABS.conversions)).toBe(true);
+            expect(isValidTab(DASHBOARD_TABS.engagement)).toBe(true);
         });
 
         it('should return false for invalid tab values', () => {
@@ -96,6 +97,36 @@ describe('Filters Utils', () => {
             const result = paramsToTimeRange(params);
 
             expect(result).toBe(TIME_RANGE_OPTIONS.last7days);
+        });
+    });
+
+    describe('getComparisonLabel', () => {
+        it('should return i18n key with days arg for last7days range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.last7days)).toEqual({
+                key: 'analytics.metrics.comparison.previous-days',
+                args: ['7']
+            });
+        });
+
+        it('should return i18n key with days arg for last30days range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.last30days)).toEqual({
+                key: 'analytics.metrics.comparison.previous-days',
+                args: ['30']
+            });
+        });
+
+        it('should return previous-range key for custom date range array', () => {
+            expect(getComparisonLabel(['2024-01-01', '2024-01-31'])).toEqual({
+                key: 'analytics.metrics.comparison.previous-range',
+                args: []
+            });
+        });
+
+        it('should return previous-range key for custom string range', () => {
+            expect(getComparisonLabel(TIME_RANGE_OPTIONS.custom)).toEqual({
+                key: 'analytics.metrics.comparison.previous-range',
+                args: []
+            });
         });
     });
 });

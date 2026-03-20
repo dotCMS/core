@@ -36,14 +36,12 @@ describe('DotAnalyticsMetricComponent', () => {
 
     describe('Component Inputs', () => {
         it('should display metric value and subtitle', () => {
-            // Arrange
             spectator.setInput('value', 12345);
             spectator.setInput('subtitle', 'analytics.metrics.subtitle');
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            // Act & Assert
             const value = spectator.query(byTestId('metric-value'));
             const subtitle = spectator.query(byTestId('metric-subtitle'));
 
@@ -52,65 +50,107 @@ describe('DotAnalyticsMetricComponent', () => {
         });
 
         it('should format large numbers with locale separators', () => {
-            // Arrange
             spectator.setInput('value', 1234567);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            // Act & Assert
             const value = spectator.query(byTestId('metric-value'));
             expect(value).toHaveText('1,234,567');
         });
 
         it('should display icon when provided', () => {
-            // Arrange
-
             spectator.setInput('value', 100);
             spectator.setInput('icon', 'pi-eye');
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            // Act & Assert
             const icon = spectator.query(byTestId('metric-icon'));
             expect(icon).toBeTruthy();
             expect(icon).toHaveClass('pi-eye');
         });
 
         it('should not display icon when not provided', () => {
-            // Arrange
-
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            // Act & Assert
             const icon = spectator.query(byTestId('metric-icon'));
             expect(icon).toBeFalsy();
         });
 
         it('should not display subtitle when not provided', () => {
-            // Arrange
-
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            // Act & Assert
             const subtitle = spectator.query(byTestId('metric-subtitle'));
             expect(subtitle).toBeFalsy();
         });
     });
 
+    describe('Format Input', () => {
+        it('should format value as percentage when format is "percentage"', () => {
+            spectator.setInput('value', 45.2);
+            spectator.setInput('format', 'percentage');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const value = spectator.query(byTestId('metric-value'));
+            expect(value).toHaveText('45.2%');
+        });
+
+        it('should format value as time when format is "time"', () => {
+            spectator.setInput('value', 154);
+            spectator.setInput('format', 'time');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const value = spectator.query(byTestId('metric-value'));
+            expect(value).toHaveText('2m 34s');
+        });
+
+        it('should format value as locale number by default', () => {
+            spectator.setInput('value', 45000);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const value = spectator.query(byTestId('metric-value'));
+            expect(value).toHaveText('45,000');
+        });
+
+        it('should display 0 seconds as "0m 0s" for time format', () => {
+            spectator.setInput('value', 0);
+            spectator.setInput('format', 'time');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const value = spectator.query(byTestId('metric-value'));
+            expect(value).toHaveText('0m 0s');
+        });
+
+        it('should display 0% for percentage format with value 0', () => {
+            spectator.setInput('value', 0);
+            spectator.setInput('format', 'percentage');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const value = spectator.query(byTestId('metric-value'));
+            expect(value).toHaveText('0%');
+        });
+    });
+
     describe('Component States', () => {
         it('should show loading state with skeletons when status is INIT', () => {
-            // Arrange
-
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
 
-            // Act & Assert
             const skeletons = spectator.queryAll('p-skeleton');
             const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
@@ -121,13 +161,10 @@ describe('DotAnalyticsMetricComponent', () => {
         });
 
         it('should show loading state with skeletons when status is LOADING', () => {
-            // Arrange
-
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            // Act & Assert
             const skeletons = spectator.queryAll('p-skeleton');
             const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
@@ -138,13 +175,10 @@ describe('DotAnalyticsMetricComponent', () => {
         });
 
         it('should show error state when status is ERROR', () => {
-            // Arrange
-
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
-            // Act & Assert
             const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
             const errorMessage = spectator.query('.state-message');
             const value = spectator.query(byTestId('metric-value'));
@@ -155,13 +189,10 @@ describe('DotAnalyticsMetricComponent', () => {
         });
 
         it('should show normal content when status is LOADED', () => {
-            // Arrange
-
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            // Act & Assert
             const value = spectator.query(byTestId('metric-value'));
             const skeletons = spectator.queryAll('p-skeleton');
             const errorIcon = spectator.query('.pi-exclamation-triangle');
@@ -199,27 +230,21 @@ describe('DotAnalyticsMetricComponent', () => {
             expect(spectator.query('.pi.pi-exclamation-triangle')).toBeFalsy();
         });
 
-        it('should apply empty class for null/undefined/empty-string values but not for 0', () => {
+        it('should show empty state for null values but not for 0', () => {
             spectator.setInput('value', 0);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('metric-value'))).not.toHaveClass(
-                'metric-value--empty'
-            );
+            // 0 shows loaded state, not empty
+            expect(spectator.query(byTestId('metric-value'))).toHaveText('0');
 
             spectator.setInput('value', null);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('metric-value'))).toHaveClass('metric-value--empty');
-
-            spectator.setInput('value', '');
-            spectator.detectChanges();
-            expect(spectator.query(byTestId('metric-value'))).toHaveClass('metric-value--empty');
+            // null shows dash (empty state)
+            expect(spectator.query(byTestId('metric-value'))).toHaveText('—');
 
             spectator.setInput('value', 100);
             spectator.detectChanges();
-            expect(spectator.query(byTestId('metric-value'))).not.toHaveClass(
-                'metric-value--empty'
-            );
+            expect(spectator.query(byTestId('metric-value'))).toHaveText('100');
         });
 
         it('should render icon element with correct classes when icon is provided', () => {
@@ -258,21 +283,7 @@ describe('DotAnalyticsMetricComponent', () => {
 
             expect(value).toExist();
             expect(value).toHaveText('—');
-            expect(value).toHaveClass('metric-value--empty');
-            expect(subtitle).toExist();
-        });
-
-        it('should show dash and subtitle when value is empty string', () => {
-            spectator.setInput('value', '');
-            spectator.setInput('status', ComponentStatus.LOADED);
-            spectator.detectChanges();
-
-            const value = spectator.query(byTestId('metric-value'));
-            const subtitle = spectator.query(byTestId('metric-subtitle'));
-
-            expect(value).toExist();
-            expect(value).toHaveText('—');
-            expect(value).toHaveClass('metric-value--empty');
+            expect(value).toHaveClass('text-gray-400');
             expect(subtitle).toExist();
         });
 
@@ -340,17 +351,50 @@ describe('DotAnalyticsMetricComponent', () => {
         });
     });
 
+    describe('Comparison Label', () => {
+        it('should display comparison label when provided with trend data', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('comparisonLabel', 'from previous 7 days');
+            spectator.setInput('trend', 15);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const comparison = spectator.query(byTestId('metric-comparison'));
+            expect(comparison).toExist();
+            expect(comparison).toHaveText('from previous 7 days');
+        });
+
+        it('should not display comparison label when not provided', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const comparison = spectator.query(byTestId('metric-comparison'));
+            expect(comparison).toBeFalsy();
+        });
+
+        it('should show no-prior-data message when comparisonLabel is set but no trend data', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('comparisonLabel', 'from previous 7 days');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
+            spectator.detectChanges();
+
+            const noPrior = spectator.query(byTestId('metric-no-prior'));
+            expect(noPrior).toExist();
+        });
+    });
+
     describe('Accessibility', () => {
         it('should have proper test ids for testing', () => {
-            // Arrange
-
             spectator.setInput('value', 100);
             spectator.setInput('subtitle', 'test.subtitle');
             spectator.setInput('icon', 'pi-eye');
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            // Act & Assert
             expect(spectator.query(byTestId('metric-card'))).toBeTruthy();
             expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
             expect(spectator.query(byTestId('metric-subtitle'))).toBeTruthy();
@@ -360,37 +404,27 @@ describe('DotAnalyticsMetricComponent', () => {
 
     describe('Animations', () => {
         it('should have animation triggers configured', () => {
-            // Arrange & Act
-
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            // Assert - Since we're using NoopAnimationsModule, we can't test the actual animation behavior
-            // but we can verify the component renders correctly with animations configured
             expect(spectator.component).toBeTruthy();
             expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
         });
 
         it('should render correctly during state transitions with animations', () => {
-            // Arrange - Start with loading state
-
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
 
-            // Assert loading state
             expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
 
-            // Act - Change to loaded state
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            // Assert loaded state - verify the actual content is showing
             const metricValue = spectator.query(byTestId('metric-value'));
             expect(metricValue).toBeTruthy();
             expect(metricValue).toHaveText('100');
-            // Verify we're showing actual content, not skeletons
             expect(metricValue).toBeVisible();
         });
     });
@@ -447,6 +481,7 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
         spectator.detectChanges();
 
         const container = spectator.query(byTestId('metric-projected-content'));
-        expect(container).toHaveClass('metric-projected-content--hidden');
+        expect(container).toHaveClass('invisible');
+        expect(container).toHaveClass('pointer-events-none');
     });
 });

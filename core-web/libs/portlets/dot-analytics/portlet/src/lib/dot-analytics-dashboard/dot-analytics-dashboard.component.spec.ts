@@ -84,19 +84,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render pageview report component', () => {
-            const pageviewReport = spectator.query('dot-analytics-pageview-report');
-            expect(pageviewReport).toExist();
-        });
-
-        it('should render line chart component', () => {
-            const timelineChart = spectator.query(byTestId('analytics-timeline-chart'));
-            expect(timelineChart).toExist();
-        });
-
-        it('should render pageview report when pageview tab is active', () => {
-            const pageviewReport = spectator.query('dot-analytics-pageview-report');
-            expect(pageviewReport).toExist();
+        it('should render engagement report component by default', () => {
+            const engagementReport = spectator.query('dot-analytics-engagement-report');
+            expect(engagementReport).toExist();
         });
 
         it('should render tab panels for each report type', () => {
@@ -234,7 +224,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         it('should call addNewBreadcrumb with the default tab on initialization', () => {
             expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
-                expect.objectContaining({ id: 'analytics-pageview', label: 'Pageview' })
+                expect.objectContaining({ id: 'analytics-engagement', label: 'Engagement' })
             );
         });
 
@@ -248,13 +238,13 @@ describe('DotAnalyticsDashboardComponent', () => {
             );
         });
 
-        it('should call addNewBreadcrumb with engagement tab when switched', () => {
+        it('should call addNewBreadcrumb with pageview tab when switched', () => {
             jest.clearAllMocks();
-            store.setCurrentTab('engagement');
+            store.setCurrentTab('pageview');
             TestBed.flushEffects();
 
             expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
-                expect.objectContaining({ id: 'analytics-engagement', label: 'Engagement' })
+                expect.objectContaining({ id: 'analytics-pageview', label: 'Pageview' })
             );
         });
     });
