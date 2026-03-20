@@ -15,7 +15,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
-import graphql.language.Field;
 import graphql.schema.DataFetchingEnvironment;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -111,7 +110,7 @@ public class RelationshipFieldDataFetcherTest {
         Mockito.when(environment.getContext()).thenReturn(
                 DotGraphQLContext.createServletContext().with(anonymousUser).build());
         Mockito.when(environment.getSource()).thenReturn(parentContentlet);
-        Mockito.when(environment.getField()).thenReturn(new Field(relationshipField.variable()));
+        Mockito.when(environment.getField()).thenReturn(new graphql.language.Field(relationshipField.variable()));
         Mockito.when(environment.getArgument("query")).thenReturn(null);
         Mockito.when(environment.getArgument("limit")).thenReturn(null);
         Mockito.when(environment.getArgument("offset")).thenReturn(null);
