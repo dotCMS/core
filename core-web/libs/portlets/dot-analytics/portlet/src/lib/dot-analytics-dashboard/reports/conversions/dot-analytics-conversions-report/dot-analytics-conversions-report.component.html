@@ -6,6 +6,7 @@
                 <dot-analytics-metric
                     [title]="metric.name"
                     [value]="metric.value"
+                    [format]="metric.format ?? 'number'"
                     [subtitle]="metric.subtitle"
                     [icon]="metric.icon"
                     [status]="metric.status"

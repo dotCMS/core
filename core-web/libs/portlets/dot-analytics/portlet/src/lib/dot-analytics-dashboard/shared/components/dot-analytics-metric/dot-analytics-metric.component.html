@@ -1,5 +1,6 @@
 @let metricIcon = $icon();
 @let metricSubtitle = $subtitle();
+@let comparisonLabel = $comparisonLabel();
 @let metricTitle = $title();
 @let isLoadingState = $isLoading();
 @let isErrorState = $isError();
@@ -7,6 +8,7 @@
 @let hasIcon = !!metricIcon;
 @let hasTitle = !!metricTitle;
 @let hasSubtitle = !!metricSubtitle;
+@let hasComparisonLabel = !!comparisonLabel;
 @let formattedValue = $formattedValue();
 @let iconClasses = $iconClasses();
 @let trendData = $trendData();
@@ -29,14 +31,18 @@
         <!-- Empty state: dash preserves card layout -->
         <div class="metric-fade-in flex flex-col justify-between h-full gap-2">
             <div class="flex justify-between items-start gap-1">
-                <div class="metric-value metric-value--empty" data-testid="metric-value">
+                <div
+                    class="text-[2rem] font-bold text-gray-400 m-0 leading-tight"
+                    data-testid="metric-value">
                     &mdash;
                 </div>
                 @if (hasIcon) {
-                    <i [class]="iconClasses" class="metric-icon pi" data-testid="metric-icon"></i>
+                    <i [class]="iconClasses" class="shrink-0 pi" data-testid="metric-icon"></i>
                 }
             </div>
-            <div class="metric-subtitle" data-testid="metric-subtitle">
+            <div
+                class="text-sm text-gray-600 m-0 flex items-center gap-2"
+                data-testid="metric-subtitle">
                 {{ 'analytics.metrics.empty.no-activity' | dm }}
             </div>
         </div>
@@ -61,71 +67,63 @@
             @let animated = $animated();
             @let duration = $animationDuration();
             <div class="metric-fade-in flex justify-between items-start gap-1">
-                <div class="flex flex-col gap-1">
-                    @if ($isFraction()) {
-                        @let fractionParts = $fractionParts();
-                        <div class="metric-value metric-value--fraction" data-testid="metric-value">
-                            <span class="metric-value__numerator">
-                                @if (fractionParts && animated) {
-                                    <span
-                                        [dotCountUp]="fractionParts.numeratorValue"
-                                        [duration]="duration"></span>
-                                } @else {
-                                    {{ fractionParts?.numerator }}
-                                }
-                            </span>
-                            <span class="metric-value__separator">/</span>
-                            <span class="metric-value__denominator">
-                                @if (fractionParts && animated) {
-                                    <span
-                                        [dotCountUp]="fractionParts.denominatorValue"
-                                        [duration]="duration"></span>
-                                } @else {
-                                    {{ fractionParts?.denominator }}
-                                }
-                            </span>
-                        </div>
+                @let numericVal = $numericValue();
+                <div
+                    class="metric-value text-[2rem] font-bold text-gray-900 m-0 leading-tight"
+                    data-testid="metric-value">
+                    @if (numericVal !== null && animated) {
+                        <span
+                            [dotCountUp]="numericVal.value"
+                            [duration]="duration"
+                            [suffix]="numericVal.suffix"
+                            [format]="numericVal.format"></span>
                     } @else {
-                        @let numericVal = $numericValue();
-                        <div class="metric-value" data-testid="metric-value">
-                            @if (numericVal !== null && animated) {
-                                <span
-                                    [dotCountUp]="numericVal.value"
-                                    [duration]="duration"
-                                    [suffix]="numericVal.suffix"
-                                    [format]="numericVal.format"></span>
-                            } @else {
-                                {{ formattedValue }}
-                            }
-                        </div>
+                        {{ formattedValue }}
                     }
                 </div>
                 @if (hasIcon) {
-                    <i [class]="iconClasses" class="metric-icon pi" data-testid="metric-icon"></i>
+                    <i [class]="iconClasses" class="shrink-0 pi" data-testid="metric-icon"></i>
                 }
             </div>
-
-            <!-- Subtítulo -->
-            @if (hasSubtitle || trendData) {
-                <div class="metric-fade-in metric-subtitle" data-testid="metric-subtitle">
+            @if (hasSubtitle || trendData || hasComparisonLabel) {
+                <div
+                    class="metric-fade-in text-sm text-gray-600 m-0 flex items-center gap-2"
+                    data-testid="metric-subtitle">
                     @if (trendData) {
-                        <span [class]="trendData.class">
+                        <span
+                            class="inline-flex items-center gap-1 text-sm font-semibold px-1 rounded-md"
+                            [class]="trendData.colorClasses">
+                            @if (!trendData.isNeutral) {
+                                <i
+                                    class="pi text-sm w-4"
+                                    [class]="
+                                        trendData.isPositive ? 'pi-arrow-up' : 'pi-arrow-down'
+                                    "></i>
+                            }
                             {{ trendData.prefix }}{{ trendData.value }}%
-                            <i
-                                [class]="
-                                    trendData.isPositive ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
-                                "></i>
+                        </span>
+                        @if (hasComparisonLabel) {
+                            <span class="text-xs text-gray-500" data-testid="metric-comparison">
+                                {{ comparisonLabel }}
+                            </span>
+                        }
+                    } @else if (hasComparisonLabel) {
+                        <span class="text-xs text-gray-400 italic" data-testid="metric-no-prior">
+                            {{ 'analytics.metrics.no-prior-data' | dm }}
                         </span>
                     }
-                    {{ metricSubtitle | dm }}
+                    @if (hasSubtitle) {
+                        {{ metricSubtitle | dm }}
+                    }
                 </div>
             }
         </div>
     }
 
     <div
-        class="metric-projected-content"
-        [class.metric-projected-content--hidden]="isErrorState"
+        class="flex flex-col flex-1 w-full mt-3 empty:hidden"
+        [class.invisible]="isErrorState"
+        [class.pointer-events-none]="isErrorState"
         data-testid="metric-projected-content">
         <ng-content />
     </div>

@@ -69,8 +69,8 @@ import {
 import {
     AIContentNode,
     ContentletBlock,
+    createGridColumn,
     GridBlock,
-    GridColumn,
     ImageNode,
     LoaderNode,
     VideoNode
@@ -645,7 +645,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             }),
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef),
-            GridColumn
+            createGridColumn(this.allowedBlocks.length > 1 ? this.allowedBlocks : [])
         ];
 
         if (isAIPluginInstalled) {

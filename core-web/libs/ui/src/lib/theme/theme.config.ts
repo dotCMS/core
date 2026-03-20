@@ -34,9 +34,17 @@ export const CustomLaraPreset = definePreset(Lara, {
             }
         },
         card: {
+            root: {
+                shadow: 'none'
+            },
             body: {
                 padding: '1rem'
-            }
+            },
+            css: `
+                .p-card {
+                    border: 1px solid dt('gray.300');
+                }
+            `
         },
         toolbar: {
             root: {
