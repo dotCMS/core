@@ -48,12 +48,10 @@ export class DotESContentService {
 
         const queryParams = this.getESQuery(params, this.getObjectFromMap(this._extraParams));
 
-        return this.http
-            .post<DotCMSResponse<ESContent>>(this._url, JSON.stringify(queryParams))
-            .pipe(
-                map((response) => response.entity),
-                take(1)
-            );
+        return this.http.post<DotCMSResponse<ESContent>>(this._url, queryParams).pipe(
+            map((response) => response.entity),
+            take(1)
+        );
     }
 
     private setExtraParams(name: string, value?: string | number): void {
