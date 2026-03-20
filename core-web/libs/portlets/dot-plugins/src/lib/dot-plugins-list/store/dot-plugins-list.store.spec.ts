@@ -1,15 +1,33 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { Subject, of, throwError } from 'rxjs';
 
+import { fakeAsync, tick } from '@angular/core/testing';
+
 import {
+    BundleMap,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
     DotOsgiService
 } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotCMSAPIResponse } from '@dotcms/dotcms-models';
 
 import { DotPluginsListStore } from './dot-plugins-list.store';
+
+const MOCK_DOTCMS_API_FIELDS: Pick<
+    DotCMSAPIResponse<unknown>,
+    'errors' | 'messages' | 'permissions' | 'i18nMessagesMap'
+> = {
+    errors: [],
+    messages: [],
+    permissions: [],
+    i18nMessagesMap: {}
+};
+
+function mockDotCMSResponse<T>(entity: T): DotCMSAPIResponse<T> {
+    return { ...MOCK_DOTCMS_API_FIELDS, entity };
+}
 
 const MOCK_BUNDLES = [
     {
@@ -20,6 +38,34 @@ const MOCK_BUNDLES = [
         isSystem: false
     }
 ];
+
+/**
+ * Spectator's mockProvider reuses the same jest.fn() instances across tests.
+ * Tests that call jest.spyOn(...).mockReturnValue(...) otherwise leak those
+ * implementations into later examples (breaking forkJoin / optional callbacks).
+ */
+function resetOsgiServiceMocks(osgi: DotOsgiService): void {
+    jest.mocked(osgi.getInstalledBundles).mockReset();
+    jest.mocked(osgi.getInstalledBundles).mockReturnValue(
+        of(mockDotCMSResponse(MOCK_BUNDLES as BundleMap[]))
+    );
+    jest.mocked(osgi.getAvailablePlugins).mockReset();
+    jest.mocked(osgi.getAvailablePlugins).mockReturnValue(of(mockDotCMSResponse(['a.jar'])));
+    jest.mocked(osgi.uploadBundles).mockReset();
+    jest.mocked(osgi.uploadBundles).mockReturnValue(of(mockDotCMSResponse({})));
+    jest.mocked(osgi.deploy).mockReset();
+    jest.mocked(osgi.deploy).mockReturnValue(of(mockDotCMSResponse({})));
+    jest.mocked(osgi.start).mockReset();
+    jest.mocked(osgi.start).mockReturnValue(of(mockDotCMSResponse({})));
+    jest.mocked(osgi.stop).mockReset();
+    jest.mocked(osgi.stop).mockReturnValue(of(mockDotCMSResponse({})));
+    jest.mocked(osgi.undeploy).mockReset();
+    jest.mocked(osgi.undeploy).mockReturnValue(of(mockDotCMSResponse({})));
+    jest.mocked(osgi.processExports).mockReset();
+    jest.mocked(osgi.processExports).mockReturnValue(of(mockDotCMSResponse({})));
+    jest.mocked(osgi.restart).mockReset();
+    jest.mocked(osgi.restart).mockReturnValue(of(mockDotCMSResponse({})));
+}
 
 describe('DotPluginsListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotPluginsListStore>>;
@@ -34,15 +80,17 @@ describe('DotPluginsListStore', () => {
         service: DotPluginsListStore,
         providers: [
             mockProvider(DotOsgiService, {
-                getInstalledBundles: jest.fn().mockReturnValue(of({ entity: MOCK_BUNDLES })),
-                getAvailablePlugins: jest.fn().mockReturnValue(of({ entity: ['a.jar'] })),
-                uploadBundles: jest.fn().mockReturnValue(of({})),
-                deploy: jest.fn().mockReturnValue(of({})),
-                start: jest.fn().mockReturnValue(of({})),
-                stop: jest.fn().mockReturnValue(of({})),
-                undeploy: jest.fn().mockReturnValue(of({})),
-                processExports: jest.fn().mockReturnValue(of({})),
-                restart: jest.fn().mockReturnValue(of({}))
+                getInstalledBundles: jest
+                    .fn()
+                    .mockReturnValue(of(mockDotCMSResponse(MOCK_BUNDLES as BundleMap[]))),
+                getAvailablePlugins: jest.fn().mockReturnValue(of(mockDotCMSResponse(['a.jar']))),
+                uploadBundles: jest.fn().mockReturnValue(of(mockDotCMSResponse({}))),
+                deploy: jest.fn().mockReturnValue(of(mockDotCMSResponse({}))),
+                start: jest.fn().mockReturnValue(of(mockDotCMSResponse({}))),
+                stop: jest.fn().mockReturnValue(of(mockDotCMSResponse({}))),
+                undeploy: jest.fn().mockReturnValue(of(mockDotCMSResponse({}))),
+                processExports: jest.fn().mockReturnValue(of(mockDotCMSResponse({}))),
+                restart: jest.fn().mockReturnValue(of(mockDotCMSResponse({})))
             }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
@@ -64,7 +112,12 @@ describe('DotPluginsListStore', () => {
         store = spectator.service;
         osgiService = spectator.inject(DotOsgiService);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
+        jest.mocked(httpErrorManager.handle).mockClear();
         spectator.flushEffects();
+    });
+
+    afterEach(() => {
+        resetOsgiServiceMocks(osgiService);
     });
 
     describe('init', () => {
@@ -101,7 +154,7 @@ describe('DotPluginsListStore', () => {
 
         it('should fall back symbolicName to jarFile when symbolicName is empty', () => {
             jest.spyOn(osgiService, 'getInstalledBundles').mockReturnValue(
-                of({ entity: [{ ...MOCK_BUNDLES[0], symbolicName: '' }] })
+                of(mockDotCMSResponse([{ ...(MOCK_BUNDLES[0] as BundleMap), symbolicName: '' }]))
             );
             store.loadBundles();
             expect(store.rows()[0].symbolicName).toBe('test.jar');
@@ -128,19 +181,31 @@ describe('DotPluginsListStore', () => {
     });
 
     describe('uploadBundles', () => {
-        it('should upload files and reload bundles and available jars on success', () => {
+        it('should upload files and reload bundles and available jars on success', fakeAsync(() => {
             const files = [new File(['content'], 'plugin.jar')];
-            store.uploadBundles(files);
-            expect(osgiService.uploadBundles).toHaveBeenCalledWith(files);
-            expect(osgiService.getInstalledBundles).toHaveBeenCalled();
-            expect(osgiService.getAvailablePlugins).toHaveBeenCalled();
-        });
+            const installedCallsBefore = (osgiService.getInstalledBundles as jest.Mock).mock.calls
+                .length;
+            const pluginsCallsBefore = (osgiService.getAvailablePlugins as jest.Mock).mock.calls
+                .length;
 
-        it('should invoke optional callback on success', () => {
+            store.uploadBundles(files);
+            tick();
+
+            expect(osgiService.uploadBundles).toHaveBeenCalledWith(files);
+            expect(
+                (osgiService.getInstalledBundles as jest.Mock).mock.calls.length
+            ).toBeGreaterThan(installedCallsBefore);
+            expect(
+                (osgiService.getAvailablePlugins as jest.Mock).mock.calls.length
+            ).toBeGreaterThan(pluginsCallsBefore);
+        }));
+
+        it('should invoke optional callback on success', fakeAsync(() => {
             const callback = jest.fn();
             store.uploadBundles([new File(['content'], 'plugin.jar')], callback);
+            tick();
             expect(callback).toHaveBeenCalled();
-        });
+        }));
 
         it('should handle upload error', () => {
             const error = new Error('Upload failed');
@@ -234,14 +299,25 @@ describe('DotPluginsListStore', () => {
     });
 
     describe('restart', () => {
-        it('should reload bundles and available jars after restart', () => {
+        it('should set status to restarting immediately, then reload after delay', fakeAsync(() => {
             const callback = jest.fn();
             store.restart(callback);
+
             expect(osgiService.restart).toHaveBeenCalled();
-            expect(osgiService.getInstalledBundles).toHaveBeenCalled();
+            expect(store.status()).toBe('restarting');
+            expect(callback).not.toHaveBeenCalled();
+
+            const installedCallsBefore = (osgiService.getInstalledBundles as jest.Mock).mock.calls
+                .length;
+
+            tick(5000);
+
+            expect(
+                (osgiService.getInstalledBundles as jest.Mock).mock.calls.length
+            ).toBeGreaterThan(installedCallsBefore);
             expect(osgiService.getAvailablePlugins).toHaveBeenCalled();
             expect(callback).toHaveBeenCalled();
-        });
+        }));
 
         it('should handle restart error', () => {
             const error = new Error('Restart failed');
@@ -268,10 +344,10 @@ describe('DotPluginsListStore', () => {
         it('should reload bundles after OSGI_BUNDLES_LOADED with 5s debounce', () => {
             const getInstalledBundlesSpy = jest
                 .spyOn(osgiService, 'getInstalledBundles')
-                .mockReturnValue(of({ entity: [] }));
+                .mockReturnValue(of(mockDotCMSResponse([] as BundleMap[])));
             const getAvailablePluginsSpy = jest
                 .spyOn(osgiService, 'getAvailablePlugins')
-                .mockReturnValue(of({ entity: [] }));
+                .mockReturnValue(of(mockDotCMSResponse([] as string[])));
 
             osgiBundlesLoadedSubject.next();
             jest.advanceTimersByTime(5000);

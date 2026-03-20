@@ -128,8 +128,7 @@ export class DotPluginsListComponent {
     }
 
     refresh(): void {
-        this.store.loadBundles();
-        this.store.loadAvailablePlugins();
+        this.store.loadAll();
     }
 
     openUploadDialog(): void {
@@ -143,8 +142,7 @@ export class DotPluginsListComponent {
         });
         ref?.onClose.pipe(take(1)).subscribe((result) => {
             if (result) {
-                this.store.loadBundles();
-                this.store.loadAvailablePlugins();
+                this.store.loadAll();
             }
         });
     }
@@ -161,7 +159,7 @@ export class DotPluginsListComponent {
         });
         ref?.onClose.pipe(take(1)).subscribe((result) => {
             if (result === 'restart') {
-                this.confirmRestart();
+                this.store.restart();
             }
         });
     }

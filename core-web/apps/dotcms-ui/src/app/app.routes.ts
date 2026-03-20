@@ -166,6 +166,7 @@ const PORTLETS_ANGULAR: Route[] = [
         // canActivate: [MenuGuardService],
         // canActivateChild: [MenuGuardService],
         path: 'plugins',
+
         data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-plugins/portlet').then((m) => m.dotPluginsRoutes)
