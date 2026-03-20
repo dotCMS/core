@@ -11,7 +11,12 @@ import { TextareaModule } from 'primeng/textarea';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService, DotOsgiService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotOsgiService,
+    OSGI_EXTRA_PACKAGES_RESET
+} from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
@@ -89,7 +94,7 @@ export class DotPluginsExtraPackagesComponent implements OnInit {
     #doReset(): void {
         this.resetting.set(true);
         this.#osgiService
-            .updateExtraPackages('RESET')
+            .updateExtraPackages(OSGI_EXTRA_PACKAGES_RESET)
             .pipe(
                 take(1),
                 catchError((error) => {

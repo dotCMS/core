@@ -79,9 +79,9 @@ export const DotPluginsListStore = signalStore(
         const osgiService = inject(DotOsgiService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
 
-        /** Fetches installed bundles only; sets `loading` then `loaded` or `error`. */
+        /** Fetches installed bundles only; sets `refreshing` then `loaded` or `error`. */
         function loadBundles() {
-            patchState(store, { status: 'loading' });
+            patchState(store, { status: 'refreshing' });
             osgiService
                 .getInstalledBundles(true)
                 .pipe(

@@ -3,6 +3,13 @@
  * @see dotCMS OSGIResource ResponseEntityBundleListView
  */
 
+/**
+ * Sentinel value accepted by the backend's extra-packages PUT endpoint to reset
+ * the exported-packages list to its installation defaults.
+ * @see OSGIResource#updateExtraPackages
+ */
+export const OSGI_EXTRA_PACKAGES_RESET = 'RESET';
+
 /** OSGi bundle states (org.osgi.framework.Bundle constants). */
 export const BUNDLE_STATE = {
     UNINSTALLED: 1,
