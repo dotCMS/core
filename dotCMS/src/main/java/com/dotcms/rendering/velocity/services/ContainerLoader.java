@@ -352,6 +352,11 @@ public class ContainerLoader implements DotLoader {
                         .append("\"$CONTENT_TYPE_ID\"")
                         .append(" data-dot-has-page-lang-version=")
                         .append("\"$HAVE_A_VERSION\"")
+                        // Append dotStyleProperties
+                        .append("#if($dotContentMap.dotStyleProperties)")
+                            .append(" data-dot-style-properties=")
+                            .append("\"$esc.html($json.generate($dotContentMap.dotStyleProperties))\"")
+                        .append("#end")
                         .append(">");
                 }
                 
