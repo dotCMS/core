@@ -38,6 +38,7 @@ export const graphqlToPageEntity = (page: DotCMSGraphQLPage): DotCMSPageAsset | 
         host,
         vanityUrl,
         runningExperimentId,
+        numberContents,
         _map,
         ...pageAsset
     } = page;
@@ -63,6 +64,7 @@ export const graphqlToPageEntity = (page: DotCMSGraphQLPage): DotCMSPageAsset | 
         layout,
         template,
         viewAs,
+        numberContents,
         vanityUrl,
         runningExperimentId,
         site: host,

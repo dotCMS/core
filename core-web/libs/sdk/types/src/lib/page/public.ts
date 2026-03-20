@@ -1117,6 +1117,7 @@ export interface DotCMSGraphQLPage {
     statusIcons: string;
     runningExperimentId?: string;
     canSeeRules?: boolean;
+    numberContents?: number;
     // Language information
     conLanguage: {
         id: number;

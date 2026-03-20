@@ -104,7 +104,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.factories.MultiTreeAPITest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
-        InterceptorHandlerTest.class
+        InterceptorHandlerTest.class,
+        com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class
 })
 public class MainSuite2a {
 
