@@ -318,21 +318,10 @@ public class ContainerLoader implements DotLoader {
                     .append("#set($CONTENT_VARIANT = '')")
                     .append("#set($ON_NUMBER_OF_PAGES = '')");
 
-                if (mode == PageMode.EDIT_MODE) {
-                    velocityCodeBuilder.append("#set($dotStyleProperties='')");
-                }
-
                     // read in the content
                     velocityCodeBuilder
                     .append("#if($contentletId != '')")
-                      .append("#contentDetail($contentletId)");
-
-                if (mode == PageMode.EDIT_MODE) {
-                    velocityCodeBuilder
-                      .append("#set($dotStyleProperties=$containerAPI.getContentletStyleProperties(\"$!HTMLPAGE_IDENTIFIER\",\"$!CONTAINER_IDENTIFIER\",\"$!CONTAINER_UNIQUE_ID\",$contentletId))");
-                }
-
-                    velocityCodeBuilder
+                      .append("#contentDetail($contentletId)")
                     .append("#end");
 
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
@@ -363,8 +352,11 @@ public class ContainerLoader implements DotLoader {
                         .append("\"$CONTENT_TYPE_ID\"")
                         .append(" data-dot-has-page-lang-version=")
                         .append("\"$HAVE_A_VERSION\"")
-                        .append(" data-dot-style-properties=")
-                        .append("\"$esc.html($json.generate($dotStyleProperties))\"")
+                        // Append dotStyleProperties
+                        .append("#if($dotContentMap.dotStyleProperties)")
+                            .append(" data-dot-style-properties=")
+                            .append("\"$esc.html($json.generate($dotContentMap.dotStyleProperties))\"")
+                        .append("#end")
                         .append(">");
                 }
                 

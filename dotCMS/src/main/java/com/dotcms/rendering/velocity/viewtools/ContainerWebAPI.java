@@ -175,54 +175,6 @@ public class ContainerWebAPI implements ViewTool {
 		}
 	}
 
-    /**
-     * Returns the style properties for a specific contentlet within a container instance.
-     * The style properties come from the {@link com.dotmarketing.beans.MultiTree} relationship
-     * and are stored in the Velocity context by {@link com.dotcms.rendering.velocity.services.PageRenderUtil}.
-     *
-     * @param pageId      the page identifier
-     * @param containerId the container identifier
-     * @param uuid        the container instance UUID
-     * @param contentletId the contentlet identifier
-     * @return the style properties map for the contentlet, or an empty map if none exist
-     */
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> getContentletStyleProperties(final String pageId, final String containerId,
-                                                             final String uuid, final String contentletId) {
-
-        final Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
-                ? Try.of(() -> getPageById(pageId)).getOrElse(ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT))
-                : ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT);
-
-        String pTag = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request);
-        pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
-
-        final PageMode pageMode = PageMode.get(request);
-
-        Map<String, Map<String, Object>> stylePropertiesMap = getStylePropertiesMapByUUID(containerId, pTag, uuid, pageMode);
-
-        if (stylePropertiesMap == null || !stylePropertiesMap.containsKey(contentletId)) {
-            return Map.of();
-        }
-
-        return stylePropertiesMap.get(contentletId);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Map<String, Object>> getStylePropertiesMapByUUID(final String containerId, final String pTag,
-                                                                          final String uuid, final PageMode pageMode) {
-
-        if (pageMode != PageMode.EDIT_MODE && pageMode != PageMode.PREVIEW_MODE) {
-            final Map<String, Map<String, Object>> result =
-                    (Map<String, Map<String, Object>>) ctx.get("stylePropertiesMap" + containerId + uuid + pTag.replace(":", ""));
-            if (result != null) {
-                return result;
-            }
-        }
-
-        return (Map<String, Map<String, Object>>) ctx.get("stylePropertiesMap" + containerId + uuid + pTag);
-    }
-
 	private List<String> getContentsIdByUUID(final String containerId, final String pTag, final String uuid, final PageMode pageMode) {
 
 		List<String> contentlets = null;

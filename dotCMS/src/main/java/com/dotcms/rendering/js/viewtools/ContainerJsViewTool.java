@@ -47,18 +47,6 @@ public class ContainerJsViewTool implements JsViewTool, JsViewContextAware {
 
     @HostAccess.Export
     /**
-     * Returns the style properties for a specific contentlet within a container instance.
-     * @see ContainerWebAPI#getContentletStyleProperties
-     */
-    public Object getContentletStyleProperties(final String pageId, final String containerId,
-                                               final String uuid, final String contentletId) {
-
-        return JsProxyFactory.createProxy(
-                this.containerWebAPI.getContentletStyleProperties(pageId, containerId, uuid, contentletId));
-    }
-
-    @HostAccess.Export
-    /**
      * This method checks if the logged in user (frontend) has the required permission over
      * the passed container id
      */
