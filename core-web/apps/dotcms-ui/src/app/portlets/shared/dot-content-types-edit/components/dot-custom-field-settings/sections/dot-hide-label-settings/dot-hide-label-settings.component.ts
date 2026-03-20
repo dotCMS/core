@@ -34,8 +34,8 @@ import { FieldSettingsSection } from '../field-settings-section';
 export class DotHideLabelSettingsComponent implements OnInit, FieldSettingsSection {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    form!: FormGroup;
-    readonly isValid = signal(true);
+    form: FormGroup | undefined;
+    readonly $isValid = signal(true);
 
     get isDirty(): boolean {
         return this.form?.dirty ?? false;

@@ -93,6 +93,6 @@ export class DotCustomFieldSettingsComponent {
     #canSave(): boolean {
         const sections = this.#activeSections();
 
-        return sections.some((s) => s.isDirty) && sections.every((s) => s.isValid());
+        return sections.some((s) => s.isDirty) && sections.every((s) => s.$isValid());
     }
 }

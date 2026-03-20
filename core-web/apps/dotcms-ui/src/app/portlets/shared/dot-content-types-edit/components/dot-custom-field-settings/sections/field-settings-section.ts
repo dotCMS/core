@@ -15,7 +15,7 @@ export interface FieldSettingsSection {
     isDirty: boolean;
 
     /** Signal that reflects current form validity. */
-    isValid: Signal<boolean>;
+    $isValid: Signal<boolean>;
 
     /** Emits on every form value change — used to refresh the Save button state. */
     valueChanges$: Observable<unknown>;

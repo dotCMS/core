@@ -37,8 +37,8 @@ import { FieldSettingsSection } from '../field-settings-section';
 export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsSection {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    form!: FormGroup;
-    readonly isValid = signal(true);
+    form: FormGroup | undefined;
+    readonly $isValid = signal(true);
     protected readonly $showAsModal = signal(false);
 
     readonly #fb = inject(FormBuilder);
@@ -85,7 +85,7 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
 
         this.form.statusChanges
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => this.isValid.set(this.form.valid));
+            .subscribe(() => this.$isValid.set(this.form.valid));
 
         this.form.controls['showAsModal'].valueChanges
             .pipe(startWith(initialShowAsModal), takeUntilDestroyed(this.#destroyRef))
@@ -96,7 +96,7 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
     }
 
     save(field: DotCMSContentTypeField): Observable<DotFieldVariable> {
-        const value = this.form.getRawValue();
+        const value = this.form?.getRawValue();
         const fieldVariable: DotFieldVariable = {
             ...(this.#fieldVariableRef || {}),
             clazz: DotCMSClazzes.FIELD_VARIABLE,
