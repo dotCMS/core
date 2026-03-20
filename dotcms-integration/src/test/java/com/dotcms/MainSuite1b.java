@@ -61,6 +61,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.graphql.datafetcher.page.VanityURLFetcherTest.class,
         com.dotcms.graphql.datafetcher.page.RunningExperimentFetcherTest.class,
         com.dotcms.graphql.datafetcher.CategoryFieldDataFetcherTest.class,
+        com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.FolderCollectionDataFetcherTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
         com.dotcms.rest.api.v2.tags.TagResourceIntegrationTest.class,
