@@ -188,7 +188,7 @@ public class DotCMSInitDb {
         if(UtilMethods.isSet(preSetPassword)){
             return Tuple.of(false, preSetPassword);
         }
-        final PasswordGenerator passwordGenerator = new PasswordGenerator.Builder().withDefaultValues().build();
+        final PasswordGenerator passwordGenerator = new PasswordGenerator.Builder().withRegExpToolkitValues().build();
         return Tuple.of(true, passwordGenerator.nextPassword());
     }
 

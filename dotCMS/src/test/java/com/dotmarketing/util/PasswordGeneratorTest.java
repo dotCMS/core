@@ -5,6 +5,10 @@ import static com.dotmarketing.util.PasswordGenerator.Builder.NUMBER_CHARS;
 import static com.dotmarketing.util.PasswordGenerator.Builder.SPECIAL_CHARS;
 import static com.dotmarketing.util.PasswordGenerator.Builder.UPPER_CASE_LETTERS_CHARS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
@@ -22,6 +26,21 @@ public class PasswordGeneratorTest {
             );
 
     /**
+     * Escapes characters that have special meaning inside a Java regex character class
+     * ({@code [...]}).  Required when SPECIAL_CHARS contains {@code -}, {@code [}, or {@code ]}.
+     */
+    private static String escapeForCharClass(final String chars) {
+        return chars.replace("\\", "\\\\")   // must be first
+                    .replace("[",  "\\[")
+                    .replace("]",  "\\]")
+                    .replace("-",  "\\-");
+    }
+
+    // Default portal.properties pattern (passwords.regexptoolkit.pattern) after the ? fix
+    static final String DEFAULT_REGEXP_PATTERN =
+            "/^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$/";
+
+    /**
      * Simply test we're getting back chars that match our charsets with the required minimum number of chars
      * Method to test: {@link PasswordGenerator#nextPassword()}
      */
@@ -33,7 +52,7 @@ public class PasswordGeneratorTest {
         final Set<String> generatedPasswords = new HashSet<>(100);
 
         for (final String acceptablePasswordChar : ACCEPTABLE_PASSWORD_CHARS) {
-            final String acceptableCharsPattern = "[" + String.join("", acceptablePasswordChar) + "]";
+            final String acceptableCharsPattern = "[" + escapeForCharClass(acceptablePasswordChar) + "]";
             final Pattern pattern = Pattern.compile(acceptableCharsPattern);
             //Lets do this a few times just to be sure
             for (int i = 0; i <= 100; i++) {
@@ -43,6 +62,468 @@ public class PasswordGeneratorTest {
                 assertTrue(generatedPasswords.add(password));
             }
         }
+    }
+
+    /**
+     * extractMinLength should return the {n,} minimum from the pattern, or 0 when absent.
+     */
+    @Test
+    public void Test_ExtractMinLength_Returns_Correct_Value() {
+        assertEquals(8,  PasswordGenerator.Builder.extractMinLength(DEFAULT_REGEXP_PATTERN));
+        assertEquals(6,  PasswordGenerator.Builder.extractMinLength("/((?=.*\\d).{6,})/"));
+        assertEquals(10, PasswordGenerator.Builder.extractMinLength("/^[A-Z]{10,20}$/"));
+        assertEquals(0,  PasswordGenerator.Builder.extractMinLength(null));
+        assertEquals(0,  PasswordGenerator.Builder.extractMinLength(""));
+        assertEquals(0,  PasswordGenerator.Builder.extractMinLength("/^[A-Z]+$/"));
+    }
+
+    /**
+     * extractCharset should return null for null, empty, or complex lookahead patterns.
+     */
+    @Test
+    public void Test_ExtractCharset_Returns_Null_For_Invalid_Or_Complex_Patterns() {
+        assertNull(PasswordGenerator.Builder.extractCharset(null));
+        assertNull(PasswordGenerator.Builder.extractCharset(""));
+        // Complex lookahead pattern — no extractable character class
+        assertNull(PasswordGenerator.Builder.extractCharset(
+                "/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/"));
+    }
+
+    /**
+     * extractCharClass must handle both open {n,} and bounded {n,m} quantifiers.
+     * A bounded quantifier like {8,20} was previously unrecognised, causing a silent
+     * fallback to withDefaultValues() — issue #2 from PR #34989.
+     */
+    @Test
+    public void Test_ExtractCharClass_Handles_Both_Open_And_Bounded_Quantifiers() {
+        // Open quantifier {n,} — baseline
+        assertNotNull("Open quantifier {n,} must be recognised",
+                PasswordGenerator.Builder.extractCharClass(DEFAULT_REGEXP_PATTERN));
+
+        // Bounded quantifier {n,m}
+        final String bounded = "/^[A-Za-z0-9!@#$%]{8,20}$/";
+        final String charClass = PasswordGenerator.Builder.extractCharClass(bounded);
+        assertNotNull("Bounded quantifier {n,m} must be recognised", charClass);
+        assertTrue(charClass.startsWith("["));
+        assertTrue(charClass.endsWith("]"));
+
+        // extractCharset must also work for {n,m} patterns
+        assertNotNull("extractCharset must succeed for {n,m} pattern",
+                PasswordGenerator.Builder.extractCharset(bounded));
+    }
+
+    /**
+     * extractCharClass and extractMinLength must also handle exact-length quantifiers {n}
+     * (no comma) — issue #2 from the second review of PR #34989.
+     */
+    @Test
+    public void Test_ExtractCharClass_And_MinLength_Handle_Exact_Quantifier() {
+        final String exactPattern = "/^[A-Za-z0-9]{8}$/";
+
+        // extractCharClass must recognise {n}
+        final String charClass = PasswordGenerator.Builder.extractCharClass(exactPattern);
+        assertNotNull("extractCharClass must succeed for {n} pattern", charClass);
+        assertTrue(charClass.startsWith("["));
+        assertTrue(charClass.endsWith("]"));
+
+        // extractCharset must also succeed
+        assertNotNull("extractCharset must succeed for {n} pattern",
+                PasswordGenerator.Builder.extractCharset(exactPattern));
+
+        // extractMinLength must return the exact value
+        assertEquals(8, PasswordGenerator.Builder.extractMinLength(exactPattern));
+
+        // Verify that {n,} and {n,m} still work alongside {n}
+        assertEquals(10, PasswordGenerator.Builder.extractMinLength("/^[A-Z]{10}$/"));
+        assertEquals(8,  PasswordGenerator.Builder.extractMinLength("/^[A-Z]{8,}$/"));
+        assertEquals(8,  PasswordGenerator.Builder.extractMinLength("/^[A-Z]{8,20}$/"));
+    }
+
+    /**
+     * withRegExpToolkitValues() happy path: when the toolkit is RegExpToolkit and the
+     * pattern is extractable, passwords must comply with the pattern and carry per-group
+     * guarantees identical to withDefaultValues().
+     * Uses the package-private overload to bypass PropsUtil.
+     */
+    @Test
+    public void Test_WithRegExpToolkitValues_HappyPath_Produces_Pattern_Compliant_Passwords() {
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withRegExpToolkitValues("com.liferay.portal.pwd.RegExpToolkit", DEFAULT_REGEXP_PATTERN)
+                .build();
+
+        final Pattern validator = Pattern.compile(
+                "^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$");
+        final Pattern hasSpecial = Pattern.compile("[" + escapeForCharClass(SPECIAL_CHARS) + "]");
+        final Pattern hasUpper   = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasLower   = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasDigit   = Pattern.compile("[" + NUMBER_CHARS + "]");
+
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be 16 chars", 16, password.length());
+            assertTrue("Password must match backend pattern: " + password,
+                    validator.matcher(password).matches());
+            assertTrue("Must have special char", hasSpecial.matcher(password).find());
+            assertTrue("Must have uppercase",    hasUpper.matcher(password).find());
+            assertTrue("Must have lowercase",    hasLower.matcher(password).find());
+            assertTrue("Must have digit",        hasDigit.matcher(password).find());
+        }
+    }
+
+    /**
+     * buildJsCharPattern() happy path: when the toolkit is RegExpToolkit and the pattern is
+     * extractable, returns a safe JS regex literal; falls back to "null" otherwise.
+     * Uses the package-private overload to bypass PropsUtil.
+     */
+    @Test
+    public void Test_BuildJsCharPattern_HappyPath_Returns_Js_Literal_For_RegExpToolkit() {
+        final String result = PasswordGenerator.Builder.buildJsCharPattern(
+                "com.liferay.portal.pwd.RegExpToolkit", DEFAULT_REGEXP_PATTERN);
+        assertTrue("Must start with /",   result.startsWith("/"));
+        assertTrue("Must end with /",     result.endsWith("/"));
+        assertNotEquals("Must not be the null sentinel", "null", result);
+        // Angle brackets must be escaped — not raw in the HTML output
+        assertFalse("Must not contain raw '<'", result.contains("<"));
+        assertFalse("Must not contain raw '>'", result.contains(">"));
+
+        // Non-RegExp toolkit → sentinel "null"
+        assertEquals("null", PasswordGenerator.Builder.buildJsCharPattern(
+                "com.liferay.portal.pwd.DefaultPasswordToolkit", DEFAULT_REGEXP_PATTERN));
+        assertEquals("null", PasswordGenerator.Builder.buildJsCharPattern(null, null));
+    }
+
+    /**
+     * buildJsRegexLiteral must escape characters that are unsafe inside an HTML {@code <script>}
+     * block: '/' is escaped as '\/' to prevent premature JS literal termination; '<' and '>' are
+     * escaped as '\u003c' / '\u003e' (JS-valid Unicode escapes) to prevent angle brackets from
+     * appearing raw in HTML output — issue #3 and issue #5 from PR #34989.
+     */
+    @Test
+    public void Test_BuildJsRegexLiteral_Escapes_Special_Html_Chars() {
+        // No special chars — should pass through unchanged (most common case)
+        assertEquals("/[A-Za-z0-9!@#]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z0-9!@#]"));
+
+        // Single slash inside the class — must be escaped as \/
+        assertEquals("/[A-Za-z0-9\\/]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z0-9/]"));
+
+        // Multiple slashes — all must be escaped
+        assertEquals("/[A-Z\\/a-z\\/0-9]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Z/a-z/0-9]"));
+
+        // '<' and '>' must be escaped as \u003c / \u003e (defense-in-depth against HTML injection)
+        assertEquals("/[A-Za-z\\u003c\\u003e]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z<>]"));
+
+        // Combined: slash + angle brackets all escaped together
+        assertEquals("/[A-Za-z0-9\\/\\u003c\\u003e]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z0-9/<>]"));
+
+        // Line terminators (\r, \n) must be escaped to prevent breaking the JS literal
+        assertEquals("/[A-Za-z\\r\\n]/",
+                PasswordGenerator.Builder.buildJsRegexLiteral("[A-Za-z\r\n]"));
+    }
+
+    /**
+     * extractCharClass must capture '/' as a literal character inside a character class.
+     * Combined with buildJsRegexLiteral's escaping this prevents JS syntax errors.
+     */
+    @Test
+    public void Test_ExtractCharClass_Captures_ForwardSlash_In_Char_Class() {
+        final String patternWithSlash = "/^[A-Za-z0-9/]{8,}$/";
+        final String charClass = PasswordGenerator.Builder.extractCharClass(patternWithSlash);
+        assertNotNull("Pattern with '/' in char class must be extractable", charClass);
+        assertTrue("Extracted char class must contain '/'", charClass.contains("/"));
+
+        // buildJsRegexLiteral must then produce a safe JS literal
+        final String jsLiteral = PasswordGenerator.Builder.buildJsRegexLiteral(charClass);
+        assertTrue("JS literal must not contain unescaped '/' inside the class",
+                jsLiteral.matches("/\\[.*\\\\/.*\\]/"));
+    }
+
+    /**
+     * extractCharset should return a non-empty string of allowed characters for the default pattern.
+     * Every character in the result must match the extracted character class.
+     */
+    @Test
+    public void Test_ExtractCharset_Returns_Allowed_Chars_For_Default_Pattern() {
+        final String allowedChars = PasswordGenerator.Builder.extractCharset(DEFAULT_REGEXP_PATTERN);
+        assertNotNull(allowedChars);
+        assertTrue("Charset should not be empty", allowedChars.length() > 0);
+
+        // Every char returned must match the backend validation pattern
+        final Pattern validator = Pattern.compile(
+                "^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]+$");
+        assertTrue("All extracted chars must be accepted by the backend pattern",
+                validator.matcher(allowedChars).matches());
+
+        // '?' must be present — it was the root cause of issue #34616
+        assertTrue("'?' must be in the extracted charset", allowedChars.contains("?"));
+    }
+
+    /**
+     * extractCharClass should return the raw [CharClass] token from the default pattern.
+     */
+    @Test
+    public void Test_ExtractCharClass_Returns_Char_Class_For_Default_Pattern() {
+        final String charClass = PasswordGenerator.Builder.extractCharClass(DEFAULT_REGEXP_PATTERN);
+        assertNotNull(charClass);
+        assertTrue("Char class must start with '['", charClass.startsWith("["));
+        assertTrue("Char class must end with ']'", charClass.endsWith("]"));
+        // '?' must survive extraction — it was the root cause of issue #34616
+        assertTrue("'?' must be in the char class", charClass.contains("?"));
+    }
+
+    /**
+     * extractCharClass should return null for null, empty, or complex lookahead patterns.
+     */
+    @Test
+    public void Test_ExtractCharClass_Returns_Null_For_Invalid_Or_Complex_Patterns() {
+        assertNull(PasswordGenerator.Builder.extractCharClass(null));
+        assertNull(PasswordGenerator.Builder.extractCharClass(""));
+        assertNull(PasswordGenerator.Builder.extractCharClass(
+                "/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/"));
+    }
+
+    /**
+     * withFilteredValues() must produce passwords that:
+     * - contain at least one character from each default group (special, upper, lower, digit)
+     * - contain ONLY characters from the allowed set
+     * - are 16 characters long (default length)
+     */
+    @Test
+    public void Test_WithFilteredValues_Produces_Strong_Passwords_Within_Allowed_Set() {
+        final String allowedChars = PasswordGenerator.Builder.extractCharset(DEFAULT_REGEXP_PATTERN);
+        assertNotNull(allowedChars);
+
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withFilteredValues(allowedChars).build();
+
+        // Backend validator: only chars from the default pattern are allowed
+        final Pattern validator = Pattern.compile(
+                "^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$");
+
+        // Per-group patterns — filtered defaults must still land at least one char per group
+        final Pattern hasSpecial   = Pattern.compile("[" + escapeForCharClass(SPECIAL_CHARS) + "]");
+        final Pattern hasUpper     = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasLower     = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasDigit     = Pattern.compile("[" + NUMBER_CHARS + "]");
+
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be 16 chars", 16, password.length());
+            assertTrue("Password must match backend pattern: " + password,
+                    validator.matcher(password).matches());
+            assertTrue("Password must contain at least one special char", hasSpecial.matcher(password).find());
+            assertTrue("Password must contain at least one uppercase letter", hasUpper.matcher(password).find());
+            assertTrue("Password must contain at least one lowercase letter", hasLower.matcher(password).find());
+            assertTrue("Password must contain at least one digit", hasDigit.matcher(password).find());
+        }
+    }
+
+    /**
+     * withFilteredValues() must remove characters not permitted by the allowed set.
+     * When the allowed set excludes all of a group's chars the group is simply omitted
+     * rather than causing an error.
+     */
+    @Test
+    public void Test_WithFilteredValues_Removes_Disallowed_Chars() {
+        // Allow only lowercase letters — special chars, uppercase and digits are excluded
+        final String onlyLower = LOWER_CASE_LETTERS_CHARS;
+
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withFilteredValues(onlyLower).build();
+
+        final Pattern onlyLowerPattern = Pattern.compile("^[a-z]+$");
+        for (int i = 0; i < 50; i++) {
+            final String password = generator.nextPassword();
+            assertTrue("Password must contain only lowercase letters: " + password,
+                    onlyLowerPattern.matcher(password).matches());
+        }
+    }
+
+    /**
+     * Issue 1 regression: when filtering leaves exactly 1 char in a group the per-group
+     * minimum guarantee must still hold.  Previously Math.min(desiredMin, 1-1)=0 silently
+     * dropped the guarantee.
+     */
+    @Test
+    public void Test_WithFilteredValues_Preserves_Minimum_Guarantee_For_Single_Char_Group() {
+        // Allow only one special char ('!') plus all lowercase letters
+        final String restrictive = "!" + LOWER_CASE_LETTERS_CHARS;
+
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withFilteredValues(restrictive).build();
+
+        final Pattern hasExclamation = Pattern.compile("!");
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertTrue("Password must contain '!' even when it is the only allowed special char: " + password,
+                    hasExclamation.matcher(password).find());
+        }
+    }
+
+    /**
+     * withRegExpToolkitValues() must fall back gracefully to withDefaultValues() when
+     * PropsUtil cannot provide a RegExpToolkit configuration (e.g. in unit-test environments
+     * where no Liferay context is active).  The resulting generator must meet the same
+     * per-group guarantees as withDefaultValues().
+     *
+     * <p>In a non-Liferay context PropsUtil.get() returns null, so the toolkit check
+     * fails and the method delegates to withDefaultValues().</p>
+     */
+    @Test
+    public void Test_WithRegExpToolkitValues_FallsBack_To_DefaultValues_When_Toolkit_Not_Configured() {
+        // PropsUtil returns null in unit-test scope → toolkit check fails → withDefaultValues()
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withRegExpToolkitValues().build();
+
+        final Pattern hasSpecial = Pattern.compile("[" + escapeForCharClass(SPECIAL_CHARS) + "]");
+        final Pattern hasUpper   = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasLower   = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasDigit   = Pattern.compile("[" + NUMBER_CHARS + "]");
+
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be 16 chars", 16, password.length());
+            assertTrue("Must contain special char",  hasSpecial.matcher(password).find());
+            assertTrue("Must contain uppercase",     hasUpper.matcher(password).find());
+            assertTrue("Must contain lowercase",     hasLower.matcher(password).find());
+            assertTrue("Must contain digit",         hasDigit.matcher(password).find());
+        }
+    }
+
+    /**
+     * Issue 3 — fallback behaviour: when withFilteredValues receives the complete set of
+     * default characters (no filtering needed), the resulting generator must meet the same
+     * per-group guarantees as withDefaultValues().  This mirrors the production path where
+     * withRegExpToolkitValues() falls back to withDefaultValues() when the toolkit is not
+     * RegExpToolkit.
+     */
+    @Test
+    public void Test_WithFilteredValues_With_All_Default_Chars_Has_Same_Guarantees_As_WithDefaultValues() {
+        final String allDefaults = SPECIAL_CHARS + UPPER_CASE_LETTERS_CHARS
+                + LOWER_CASE_LETTERS_CHARS + NUMBER_CHARS;
+
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withFilteredValues(allDefaults).build();
+
+        final Pattern hasSpecial = Pattern.compile("[" + escapeForCharClass(SPECIAL_CHARS) + "]");
+        final Pattern hasUpper   = Pattern.compile("[" + UPPER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasLower   = Pattern.compile("[" + LOWER_CASE_LETTERS_CHARS + "]");
+        final Pattern hasDigit   = Pattern.compile("[" + NUMBER_CHARS + "]");
+
+        for (int i = 0; i < 100; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be 16 chars", 16, password.length());
+            assertTrue("Must contain special char",  hasSpecial.matcher(password).find());
+            assertTrue("Must contain uppercase",     hasUpper.matcher(password).find());
+            assertTrue("Must contain lowercase",     hasLower.matcher(password).find());
+            assertTrue("Must contain digit",         hasDigit.matcher(password).find());
+        }
+    }
+
+    // ------------------------------------------------------------------ Issue 1 (exact quantifier)
+
+    /**
+     * extractMaxLength must return n for {n}, m for {n,m}, MAX_VALUE for {n,} and unrecognised.
+     */
+    @Test
+    public void Test_ExtractMaxLength_Returns_Correct_Value() {
+        assertEquals(8,                   PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{8}$/"));
+        assertEquals(20,                  PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{8,20}$/"));
+        assertEquals(Integer.MAX_VALUE,   PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{8,}$/"));
+        assertEquals(Integer.MAX_VALUE,   PasswordGenerator.Builder.extractMaxLength(null));
+        assertEquals(Integer.MAX_VALUE,   PasswordGenerator.Builder.extractMaxLength(""));
+        assertEquals(Integer.MAX_VALUE,   PasswordGenerator.Builder.extractMaxLength("/^[A-Z]+$/"));
+    }
+
+    /**
+     * Issue 1: withRegExpToolkitValues with an exact {n} pattern where n < 16 must honour
+     * the exact length instead of bloating the password to 16 chars (which would fail the
+     * backend's strict ^[...]{n}$ validator).
+     */
+    @Test
+    public void Test_WithRegExpToolkitValues_Exact_Quantifier_Honours_Pattern_Length() {
+        // {10} — exact length of 10, still below our usual 16-char floor
+        final String exactPattern = "/^[A-Za-z0-9!@#$%]{10}$/";
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withRegExpToolkitValues("com.liferay.portal.pwd.RegExpToolkit", exactPattern)
+                .build();
+
+        for (int i = 0; i < 50; i++) {
+            final String password = generator.nextPassword();
+            assertEquals("Password must be exactly 10 chars for {10} pattern", 10, password.length());
+        }
+    }
+
+    // ------------------------------------------------------------------ Issue 2 (charset accumulation)
+
+    /**
+     * Issue 2: calling withXxx methods in sequence must not accumulate charsets.
+     * withFilteredValues() after withDefaultValues() should replace, not append, the charsets —
+     * otherwise the minimum sum would exceed the default length and build() would throw.
+     */
+    @Test
+    public void Test_Chained_WithXxx_Calls_Do_Not_Accumulate_Charsets() {
+        // Previously: withDefaultValues() (min=8) + withFilteredValues() (min=8) = min=16+,
+        // causing build() to throw IllegalArgumentException for length=16.
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withDefaultValues()
+                .withFilteredValues(SPECIAL_CHARS + UPPER_CASE_LETTERS_CHARS
+                        + LOWER_CASE_LETTERS_CHARS + NUMBER_CHARS)
+                .build(); // must NOT throw
+
+        // withFilteredValues replaced withDefaultValues — result should be 16 chars
+        assertEquals(16, generator.nextPassword().length());
+    }
+
+    // ------------------------------------------------------------------ Issue 4 (buildJsGroupsJson)
+
+    /**
+     * buildJsGroupsJson happy path: when RegExpToolkit is active with an extractable pattern,
+     * returns a JSON array of per-group char strings; angle brackets must be escaped.
+     * Uses the package-private overload to bypass PropsUtil.
+     */
+    @Test
+    public void Test_BuildJsGroupsJson_HappyPath_Returns_Json_Array_For_RegExpToolkit() {
+        final String result = PasswordGenerator.Builder.buildJsGroupsJson(
+                "com.liferay.portal.pwd.RegExpToolkit", DEFAULT_REGEXP_PATTERN);
+        assertTrue("Must start with [",  result.startsWith("["));
+        assertTrue("Must end with ]",    result.endsWith("]"));
+        assertNotEquals("Must not be null sentinel", "null", result);
+        // Angle brackets must be escaped — not raw in HTML output
+        assertFalse("Must not contain raw '<'", result.contains("<"));
+        assertFalse("Must not contain raw '>'", result.contains(">"));
+    }
+
+    /**
+     * buildJsGroupsJson fallback: when the toolkit is not RegExpToolkit, returns a JSON array
+     * based on the full default groups (still usable for per-group JS generation).
+     */
+    @Test
+    public void Test_BuildJsGroupsJson_Returns_Default_Groups_When_Toolkit_Not_RegExp() {
+        final String result = PasswordGenerator.Builder.buildJsGroupsJson(null, null);
+        assertTrue("Non-RegExp toolkit must still return a JSON array", result.startsWith("["));
+        assertTrue("Non-RegExp toolkit must still return a JSON array", result.endsWith("]"));
+        assertNotEquals("Must not be null sentinel", "null", result);
+    }
+
+    /**
+     * buildJsGroupsJson must fall back to default groups — not return "null" — when the
+     * toolkit is RegExpToolkit but the pattern is a complex lookahead that cannot be extracted.
+     * This ensures the JS side always has a valid per-group character set.
+     */
+    @Test
+    public void Test_BuildJsGroupsJson_Falls_Back_To_Default_Groups_When_Pattern_Not_Extractable() {
+        // Complex lookahead — extractCharset returns null for this pattern
+        final String complexPattern = "/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/";
+        final String result = PasswordGenerator.Builder.buildJsGroupsJson(
+                "com.liferay.portal.pwd.RegExpToolkit", complexPattern);
+        assertTrue("Must start with [",  result.startsWith("["));
+        assertTrue("Must end with ]",    result.endsWith("]"));
+        assertNotEquals("Must not return null sentinel for unextractable pattern", "null", result);
     }
 
 }
