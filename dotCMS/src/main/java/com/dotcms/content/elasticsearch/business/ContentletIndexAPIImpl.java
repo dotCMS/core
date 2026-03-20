@@ -86,7 +86,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import org.elasticsearch.ElasticsearchException;
 
 /**
  * Phase-aware router implementation of {@link ContentletIndexAPI}.
@@ -409,7 +408,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public synchronized boolean createContentIndex(String indexName)
-            throws ElasticsearchException, IOException {
+            throws IOException {
         boolean result = createContentIndex(indexName, 0);
         ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 
@@ -418,7 +417,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     @Override
     public synchronized boolean createContentIndex(final String indexName, final int shards)
-            throws ElasticsearchException, IOException {
+            throws IOException {
         // Each provider loads its own settings file and applies its own mapping,
         // so the router can fan out uniformly without knowing which backend is active.
         boolean result = true;
@@ -434,10 +433,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * and /live_TIMESTAMP with (aliases live_read, live_write, workinglive)
      *
      * @return the timestamp string used as suffix for indices
-     * @throws ElasticsearchException if Murphy comes around
      * @throws DotDataException
      */
-    private synchronized String initIndex() throws ElasticsearchException, DotDataException {
+    private synchronized String initIndex() throws DotDataException {
         if (indexReady()) {
             return "";
         }
@@ -479,7 +477,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     .addCustomMapping(info.getWorking(), info.getLive());
             return timeStamp;
         } catch (Exception e) {
-            throw new ElasticsearchException(e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 
@@ -495,7 +493,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final String liveName    = IndexType.LIVE.getPrefix()    + "_" + timeStamp;
 
         try {
-            //createContentIndex()
             indexAPI.createIndex(workingName, 0);
             indexAPI.createIndex(liveName, 0);
         } catch (final Exception e) {
@@ -572,10 +569,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *
      * @return the timestamp string used as suffix for indices
      * @throws DotDataException
-     * @throws ElasticsearchException
      */
     @WrapInTransaction
-    public synchronized String fullReindexStart() throws ElasticsearchException, DotDataException {
+    public synchronized String fullReindexStart() throws DotDataException {
         if (indexReady() && !isInFullReindex()) {
             try {
 
@@ -609,7 +605,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
                 return timeStamp;
             } catch (Exception e) {
-                throw new ElasticsearchException(e.getMessage(), e);
+                throw new DotRuntimeException(e.getMessage(), e);
             }
         } else {
             return initIndex();
@@ -1663,7 +1659,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             legacyIndiciesAPI.point(newinfo);
         } catch (Exception e) {
-            throw new ElasticsearchException(e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 
