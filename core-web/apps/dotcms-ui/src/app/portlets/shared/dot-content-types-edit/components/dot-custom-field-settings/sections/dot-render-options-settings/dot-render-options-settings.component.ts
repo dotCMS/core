@@ -36,15 +36,16 @@ import { FieldSettingsSection } from '../field-settings-section';
 })
 export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsSection {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
-
+    readonly defaultWidth = 398;
+    readonly defaultHeight = 400;
     readonly #fb = inject(FormBuilder);
     readonly #fieldVariablesService = inject(DotFieldVariablesService);
     readonly #destroyRef = inject(DestroyRef);
 
     form: FormGroup = this.#fb.group({
         showAsModal: [false],
-        customFieldWidth: [398, [Validators.required, Validators.min(1)]],
-        customFieldHeight: [400, [Validators.required, Validators.min(1)]]
+        customFieldWidth: [this.defaultWidth, [Validators.required, Validators.min(1)]],
+        customFieldHeight: [this.defaultHeight, [Validators.required, Validators.min(1)]]
     });
     readonly $isValid = signal(true);
     protected readonly $showAsModal = signal(false);
@@ -75,14 +76,11 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
 
         const initialShowAsModal = !!options['showAsModal'];
 
-        this.form.patchValue(
-            {
-                showAsModal: initialShowAsModal,
-                customFieldWidth: this.#parsePxToNumber(options.width, 398),
-                customFieldHeight: this.#parsePxToNumber(options.height, 400)
-            },
-            { emitEvent: false }
-        );
+        this.form.patchValue({
+            showAsModal: initialShowAsModal,
+            customFieldWidth: this.#parsePxToNumber(options.width, this.defaultWidth),
+            customFieldHeight: this.#parsePxToNumber(options.height, this.defaultHeight)
+        });
         this.form.markAsPristine();
 
         this.form.statusChanges
@@ -105,8 +103,8 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
             key: CUSTOM_FIELD_OPTIONS_KEY,
             value: JSON.stringify({
                 showAsModal: value.showAsModal ?? false,
-                width: `${value.customFieldWidth ?? 398}px`,
-                height: `${value.customFieldHeight ?? 400}px`
+                width: `${value.customFieldWidth ?? this.defaultWidth}px`,
+                height: `${value.customFieldHeight ?? this.defaultHeight}px`
             })
         };
 
