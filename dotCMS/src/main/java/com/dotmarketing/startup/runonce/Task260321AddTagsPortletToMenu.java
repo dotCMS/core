@@ -4,7 +4,6 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
@@ -59,7 +58,7 @@ public class Task260321AddTagsPortletToMenu implements StartupTask {
                     .addParam(TAGS.toString())
                     .getInt("count");
             return tagsCount == 0;
-        } catch (final DotDataException | DotRuntimeException e) {
+        } catch (final DotDataException e) {
             Logger.error(this, String.format("An error occurred when checking the 'Tags' portlet. " +
                     "Please verify manually: %s", ExceptionUtil.getErrorMessage(e)), e);
         }
