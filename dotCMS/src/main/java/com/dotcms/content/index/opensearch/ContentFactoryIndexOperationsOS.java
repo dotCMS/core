@@ -9,6 +9,7 @@ import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.content.index.IndexConfigHelper;
@@ -62,8 +63,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     private final OSClientProvider clientProvider;
 
     public ContentFactoryIndexOperationsOS() {
-        this.queryCache = new OSQueryCache();
-        this.clientProvider = CDIUtils.getBeanThrows(OSClientProvider.class);
+        this(CacheLocator.getOSQueryCache(), CDIUtils.getBeanThrows(OSClientProvider.class));
     }
 
     public ContentFactoryIndexOperationsOS(OSQueryCache queryCache, OSClientProvider clientProvider) {

@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldFactory;
@@ -66,7 +67,7 @@ import java.util.stream.Collectors;
 public class ESMappingUtilHelper {
 
     private ContentTypeAPI contentTypeAPI;
-    private ESMappingAPIImpl esMappingAPI;
+    private ContentIndexMappingAPI mappingAPI;
     private RelationshipAPI relationshipAPI;
 
     private static class SingletonHolder {
@@ -80,7 +81,7 @@ public class ESMappingUtilHelper {
 
     private ESMappingUtilHelper() {
         contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-        esMappingAPI = new ESMappingAPIImpl();
+        mappingAPI = APILocator.getContentMappingAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
     }
 
@@ -159,7 +160,7 @@ public class ESMappingUtilHelper {
                     final String message =
                             "Error updating index mapping for relationship " + relationshipName
                                     + ". This custom mapping will be ignored for index(es) "
-                                    + Arrays.stream(indexes).collect(Collectors.joining(","));
+                                    + String.join(",", indexes);
                     Logger.warn(ESMappingUtilHelper.class, message, e);
                 }
             }
@@ -182,7 +183,7 @@ public class ESMappingUtilHelper {
                                 + "\"type\":  \"keyword\",\n"
                                 + "\"ignore_above\": 8191\n"
                                 + "}")));
-        esMappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString());
+        mappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString());
     }
 
     /**
@@ -454,7 +455,7 @@ public class ESMappingUtilHelper {
                         .put("properties", mappingForFields));
 
         properties.put("properties", jsonObject);
-        esMappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString());
+        mappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString());
     }
 
 
