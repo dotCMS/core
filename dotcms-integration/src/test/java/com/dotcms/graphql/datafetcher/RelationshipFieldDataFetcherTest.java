@@ -1,6 +1,6 @@
 package com.dotcms.graphql.datafetcher;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -116,11 +116,12 @@ public class RelationshipFieldDataFetcherTest {
         Mockito.when(environment.getArgument("offset")).thenReturn(null);
         Mockito.when(environment.getArgument("sort")).thenReturn(null);
 
-        // Should NOT throw DotRuntimeException wrapping DotSecurityException
+        // Should NOT throw DotRuntimeException wrapping DotSecurityException.
+        // MANY_TO_MANY cardinality always returns a List (empty when no related content exists).
         final Object result = fetcher.get(environment);
 
-        // Result is either null (one-to-one with no related content) or an empty list
-        assertNotNull("Fetcher should return a non-null result for anonymous user "
-                + "when CMS Anonymous has READ permission on the content type", result);
+        assertTrue("Fetcher should return a List for anonymous user "
+                + "when CMS Anonymous has READ permission on the content type",
+                result instanceof java.util.List);
     }
 }
