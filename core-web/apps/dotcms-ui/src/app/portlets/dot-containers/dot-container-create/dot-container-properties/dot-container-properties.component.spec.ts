@@ -62,8 +62,12 @@ import {
     createFakeContentType,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
+    monacoMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).monaco = monacoMock;
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 

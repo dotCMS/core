@@ -123,9 +123,8 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUveWorkflowActionsComponent,
+        providers: [provideHttpClient(), provideHttpClientTesting()],
         componentProviders: [
-            provideHttpClient(),
-            provideHttpClientTesting(),
             DotWizardService,
             DotWorkflowEventHandlerService,
             DotWorkflowActionsFireService,

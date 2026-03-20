@@ -89,7 +89,7 @@ describe('PushPublishService', () => {
 
         spectator
             .expectOne('/api/environment/loadenvironments/roleId/1234', HttpMethod.GET)
-            .flush(response);
+            .flush({ bodyJsonObject: response });
     });
 
     it('should do a post request and push publish an asset', () => {

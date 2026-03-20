@@ -265,11 +265,21 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should execute "delete" event from dot-persona-selector-option', async () => {
+        spectator.component.personas = [mockDotPersona];
+        spectator.component.totalRecords = 1;
+        spectator.detectChanges();
         await spectator.fixture.whenStable();
 
         jest.spyOn(spectator.component.delete, 'emit');
         openOverlay();
-        spectator.triggerEventHandler('dot-persona-selector-option', 'delete', defaultPersona);
+        await spectator.fixture.whenStable();
+        spectator.detectChanges();
+
+        const personaOptionDebugElement = spectator.debugElement.query(
+            (el) => el.name === 'dot-persona-selector-option'
+        );
+        expect(personaOptionDebugElement).toBeTruthy();
+        personaOptionDebugElement.triggerEventHandler('delete', defaultPersona);
         expect(spectator.component.delete.emit).toHaveBeenCalledWith({
             ...defaultPersona,
             label: 'Global Investor'

@@ -5,7 +5,12 @@ import { inject, Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { DotAddLanguage, DotCMSResponse, DotLanguage, DotLanguagesISO } from '@dotcms/dotcms-models';
+import {
+    DotAddLanguage,
+    DotCMSResponse,
+    DotLanguage,
+    DotLanguagesISO
+} from '@dotcms/dotcms-models';
 
 export const LANGUAGE_API_URL = '/api/v2/languages';
 export const LANGUAGE_API_URL_WITH_VARS = '/api/v2/languages?countLangVars=true';
