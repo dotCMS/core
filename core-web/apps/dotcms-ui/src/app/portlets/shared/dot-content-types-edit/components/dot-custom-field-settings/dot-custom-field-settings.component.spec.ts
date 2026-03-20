@@ -206,47 +206,6 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
     });
 
-    describe('$changeControls output', () => {
-        it('should emit dialogActions with Save and Cancel labels when isVisible becomes true', () => {
-            jest.spyOn(component.$changeControls, 'emit');
-
-            spectator.setInput('isVisible', true);
-
-            expect(component.$changeControls.emit).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    cancel: expect.objectContaining({ label: 'Cancel' }),
-                    accept: expect.objectContaining({ label: 'Save' })
-                })
-            );
-        });
-
-        it('should not emit $changeControls when isVisible is false', () => {
-            jest.spyOn(component.$changeControls, 'emit');
-
-            spectator.setInput('isVisible', false);
-
-            expect(component.$changeControls.emit).not.toHaveBeenCalled();
-        });
-
-        it('should not emit $changeControls when isVisible changes from true to false', () => {
-            spectator.setInput('isVisible', true);
-
-            jest.spyOn(component.$changeControls, 'emit');
-            spectator.setInput('isVisible', false);
-
-            expect(component.$changeControls.emit).not.toHaveBeenCalled();
-        });
-
-        it('should emit accept action with disabled: true when no section is dirty', () => {
-            jest.spyOn(component.$changeControls, 'emit');
-
-            spectator.setInput('isVisible', true);
-
-            const emitted = (component.$changeControls.emit as jest.Mock).mock.calls[0][0];
-            expect(emitted.accept.disabled).toBe(true);
-        });
-    });
-
     describe('saveSettings()', () => {
         it('should not call DotFieldVariablesService.save when no section is dirty', () => {
             component.saveSettings();

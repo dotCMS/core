@@ -4,7 +4,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    effect,
     inject,
     input,
     output,
@@ -14,10 +13,9 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
 import { catchError, switchMap, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
-    DotDialogActions,
     DotRenderModes,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
@@ -40,7 +38,6 @@ export class DotCustomFieldSettingsComponent {
 
     readonly $save = output<void>();
     readonly $valid = output<boolean>();
-    readonly $changeControls = output<DotDialogActions>();
 
     protected readonly $isIframeMode = computed(() => {
         const liveMode = this.$renderMode();
@@ -59,16 +56,9 @@ export class DotCustomFieldSettingsComponent {
     private readonly renderOptions = viewChild(DotRenderOptionsSettingsComponent);
     private readonly hideLabel = viewChild(DotHideLabelSettingsComponent);
 
-    readonly #dotMessageService = inject(DotMessageService);
     readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     constructor() {
-        effect(() => {
-            if (this.$isVisible()) {
-                this.$changeControls.emit(this.#dialogActions());
-            }
-        });
-
         merge(
             toObservable(this.renderOptions).pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY)),
             toObservable(this.hideLabel).pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY))
@@ -104,18 +94,5 @@ export class DotCustomFieldSettingsComponent {
         const sections = this.#activeSections();
 
         return sections.some((s) => s.isDirty) && sections.every((s) => s.isValid());
-    }
-
-    #dialogActions(): DotDialogActions {
-        return {
-            cancel: {
-                label: this.#dotMessageService.get('contenttypes.dropzone.action.cancel')
-            },
-            accept: {
-                action: () => this.saveSettings(),
-                disabled: !this.#canSave(),
-                label: this.#dotMessageService.get('contenttypes.dropzone.action.save')
-            }
-        };
     }
 }

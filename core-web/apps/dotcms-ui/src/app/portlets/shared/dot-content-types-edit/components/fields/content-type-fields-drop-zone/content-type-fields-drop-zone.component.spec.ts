@@ -14,7 +14,7 @@ import {
     Renderer2
 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
@@ -97,10 +97,14 @@ class TestContentTypeFieldsRowComponent {
 class TestContentTypeFieldsPropertiesFormComponent {
     @Output()
     saveField: EventEmitter<any> = new EventEmitter();
+    @Output()
+    valid: EventEmitter<boolean> = new EventEmitter();
     @Input()
     formFieldData: DotCMSContentTypeField;
     @Input()
     contentType: DotCMSContentType;
+
+    form = new FormGroup({});
 
     public destroy(): void {
         return;
@@ -978,58 +982,68 @@ describe('Load fields and drag and drop', () => {
         });
     });
 
-    it('should restore the default dialogActions on Overview Tab', async () => {
+    it('should restore the default dialogActions when switching back to Overview Tab', () => {
         fixture.detectChanges();
-        const newDialogActions = {
+
+        // Simulate arbitrary dialogActions being set (e.g. by a Settings tab)
+        comp.dialogActions = {
             accept: {
-                action: () => {
-                    /* */
-                },
+                action: () => { /* settings save */ },
                 label: 'Save',
-                disabled: true
+                disabled: false
             },
             cancel: {
                 label: 'Cancel'
             }
         };
 
-        // Changes Dialog Actions
-        comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual({
-            ...newDialogActions,
-            cancel: comp.defaultDialogActions.cancel
-        });
-
-        // Change to Overview Tab
+        // Switching back to Overview resets to defaultDialogActions (disabled since nothing changed)
         comp.handleTabChange(0);
         expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
     });
 
-    it('should restore the default dialogActions on Overview Tab', async () => {
+    it('should keep Save button enabled when switching to Settings tab and back to Overview after making changes', () => {
         fixture.detectChanges();
-        const newDialogActions = {
-            accept: {
-                action: () => {
-                    /* */
-                },
-                label: 'Save',
-                disabled: true
-            },
-            cancel: {
-                label: 'Cancel'
-            }
-        };
 
-        // Changes Dialog Actions
-        comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual({
-            ...newDialogActions,
-            cancel: comp.defaultDialogActions.cancel
-        });
+        // Simulate Overview form change (e.g. user typed in a field)
+        comp.activeTab = comp.OVERVIEW_TAB_INDEX;
+        comp.setDialogOkButtonState(true);
+        expect(comp.dialogActions.accept.disabled).toBe(false);
 
-        // Change to Overview Tab
-        comp.handleTabChange(0);
-        expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
+        // Switch to Settings tab — overviewFormChanged should be preserved internally
+        comp.handleTabChange(comp.BLOCK_EDITOR_SETTINGS_TAB_INDEX);
+
+        // Switch back to Overview — Save button must still be enabled
+        comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+        expect(comp.dialogActions.accept.disabled).toBe(false);
+    });
+
+    it('should keep Save button disabled when switching to Settings tab and back to Overview with no changes', () => {
+        fixture.detectChanges();
+
+        // No changes made — overviewFormChanged stays false
+        comp.activeTab = comp.OVERVIEW_TAB_INDEX;
+        comp.setDialogOkButtonState(false);
+
+        comp.handleTabChange(comp.BLOCK_EDITOR_SETTINGS_TAB_INDEX);
+        comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+
+        expect(comp.dialogActions.accept.disabled).toBe(true);
+    });
+
+    it('should reset overviewFormChanged after dialog closes and reopens', () => {
+        fixture.detectChanges();
+
+        // Mark form as changed
+        comp.activeTab = comp.OVERVIEW_TAB_INDEX;
+        comp.setDialogOkButtonState(true);
+
+        // Close the dialog (toggleDialog resets overviewFormChanged)
+        comp.removeFieldsWithoutId();
+
+        // Re-open and tab switch — Save should be disabled (fresh state)
+        comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+        expect(comp.dialogActions.accept.disabled).toBe(true);
     });
 
     describe('Edit Field Dialog', () => {

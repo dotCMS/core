@@ -67,8 +67,12 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     hideButtons = false;
     activeTab = 0;
 
+    private overviewFormChanged = false;
+
     readonly $propertiesForm =
         viewChild.required<ContentTypeFieldsPropertiesFormComponent>('fieldPropertiesForm');
+
+    readonly $settingsComponent = viewChild<{ saveSettings(): void }>('settingsComponent');
 
     readonly $layout = input<DotCMSContentTypeLayoutRow[]>(undefined, { alias: 'layout' });
     readonly $contentType = input<DotCMSContentType>(undefined, { alias: 'contentType' });
@@ -378,6 +382,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     setDialogOkButtonState(formChanged: boolean): void {
+        if (this.activeTab === this.OVERVIEW_TAB_INDEX) {
+            this.overviewFormChanged = formChanged;
+        }
+
         this.dialogActions = {
             ...this.dialogActions,
             accept: {
@@ -394,7 +402,22 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     handleTabChange(index: number): void {
         if (index === this.OVERVIEW_TAB_INDEX) {
-            this.dialogActions = this.defaultDialogActions;
+            this.dialogActions = {
+                ...this.defaultDialogActions,
+                accept: {
+                    ...this.defaultDialogActions.accept,
+                    disabled: !this.overviewFormChanged
+                }
+            };
+        } else if (index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isFieldWithSettings) {
+            this.dialogActions = {
+                ...this.defaultDialogActions,
+                accept: {
+                    ...this.defaultDialogActions.accept,
+                    disabled: true,
+                    action: () => this.$settingsComponent()?.saveSettings()
+                }
+            };
         }
 
         this.hideButtons =
@@ -418,7 +441,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
-     * Change dialogActions
+     * Change dialogActions (used by block-editor and binary settings tabs)
      *
      * @param {DotDialogActions} controls
      * @memberof ContentTypeFieldsDropZoneComponent
@@ -439,6 +462,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     protected toggleDialog(): void {
         this.dialogActions = this.defaultDialogActions;
         this.activeTab = this.OVERVIEW_TAB_INDEX;
+        this.overviewFormChanged = false;
         this.displayDialog = !this.displayDialog;
     }
 

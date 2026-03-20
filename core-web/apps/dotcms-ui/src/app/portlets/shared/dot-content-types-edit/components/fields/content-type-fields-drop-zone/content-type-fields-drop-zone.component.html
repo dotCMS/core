@@ -91,17 +91,17 @@
                         }
                         @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
                             <dot-binary-settings
+                                ($changeControls)="changesDialogActions($event)"
                                 ($save)="toggleDialog()"
                                 ($valid)="setDialogOkButtonState($event)"
-                                ($changeControls)="changesDialogActions($event)"
                                 [field]="currentField"
                                 [isVisible]="activeTab === 1"></dot-binary-settings>
                         }
                         @case ('com.dotcms.contenttype.model.field.ImmutableCustomField') {
                             <dot-custom-field-settings
+                                #settingsComponent
                                 ($save)="toggleDialog()"
                                 ($valid)="setDialogOkButtonState($event)"
-                                ($changeControls)="changesDialogActions($event)"
                                 [field]="currentField"
                                 [isVisible]="activeTab === 1"
                                 [renderMode]="fieldPropertiesForm.form?.get('newRenderMode')?.value"></dot-custom-field-settings>
