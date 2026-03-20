@@ -369,7 +369,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
     final ContentType type = this.contentTypeFactory.find(inodeOrVar);
 
-    if (perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+    if (perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, user)) {
 
       return type;
     }

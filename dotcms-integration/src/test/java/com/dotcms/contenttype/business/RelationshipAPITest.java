@@ -18,12 +18,9 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotValidationException;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -459,24 +456,25 @@ public class RelationshipAPITest extends IntegrationTestBase {
 
     /**
      * Given two content types where the parent has a relationship field pointing to the child,
-     * and the CMS Anonymous role has READ permission on the parent content type,
-     * When getRelationshipFromField() is called with the anonymous user,
-     * Then the Relationship should be returned without throwing DotSecurityException.
+     * When getRelationshipFromField() is called with systemUser,
+     * Then the Relationship should be returned correctly.
      * <p>
      * Regression test for: https://github.com/dotCMS/core/issues/35037
-     * getRelationshipFromField() was using getContentTypeAPI(user) (respectFrontendRoles=false),
-     * preventing anonymous users from resolving relationships even with proper permissions set.
+     * RelationshipFieldDataFetcher was passing the request user (e.g. anonymous) to
+     * getRelationshipFromField(), causing a DotSecurityException during the internal ContentType
+     * metadata lookup. The fix uses systemUser for this structural lookup since content access
+     * is enforced separately by pullRelatedField.
      */
     @Test
-    public void testGetRelationshipFromField_anonymousUser_shouldSucceedWhenCmsAnonymousHasReadPermission()
+    public void testGetRelationshipFromField_withSystemUser_shouldResolveRelationship()
             throws DotDataException, DotSecurityException {
 
         final long now = System.currentTimeMillis();
         ContentType parentType = null;
         ContentType childType = null;
         try {
-            childType = createContentType("AnonRelChild" + now);
-            parentType = createContentType("AnonRelParent" + now);
+            childType = createContentType("RelChild" + now);
+            parentType = createContentType("RelParent" + now);
 
             // Add a relationship field on parent pointing to child
             final Field relField = FieldBuilder.builder(RelationshipField.class)
@@ -487,25 +485,17 @@ public class RelationshipAPITest extends IntegrationTestBase {
                     .build();
             contentTypeFieldAPI.save(relField, user);
 
-            // Grant CMS Anonymous READ permission on the parent content type
-            final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
-            final Permission readPermission = new Permission(
-                    parentType.getPermissionId(),
-                    anonymousRole.getId(),
-                    PermissionAPI.PERMISSION_READ,
-                    true
-            );
-            APILocator.getPermissionAPI().save(readPermission, parentType, user, false);
-
             // Reload the field after save
             final Field savedField = contentTypeFieldAPI.byContentTypeAndVar(
-                    APILocator.getContentTypeAPI(user).find(parentType.id()), "relatedChild");
+                    contentTypeAPI.find(parentType.id()), "relatedChild");
 
-            // Call getRelationshipFromField with anonymous user — should NOT throw
-            final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
-            final Relationship relationship = relationshipAPI.getRelationshipFromField(savedField, anonymousUser);
+            // Resolving the relationship with systemUser should always succeed
+            final Relationship relationship = relationshipAPI.getRelationshipFromField(
+                    savedField, APILocator.systemUser());
 
-            assertNotNull("Relationship should be resolved for anonymous user with proper permissions", relationship);
+            assertNotNull("Relationship should be resolved using systemUser", relationship);
+            assertTrue("Relationship type value should contain parent variable",
+                    relationship.getRelationTypeValue().contains(parentType.variable()));
         } finally {
             if (parentType != null) {
                 contentTypeAPI.delete(parentType);

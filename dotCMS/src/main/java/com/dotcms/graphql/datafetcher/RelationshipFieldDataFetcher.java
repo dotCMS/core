@@ -45,8 +45,10 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             try {
                 user = ((DotGraphQLContext) environment.getContext()).getUser();
+                // Use systemUser to resolve the relationship metadata — this is a structural lookup,
+                // not an access control check. Content access is enforced separately via pullRelatedField.
                 relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
-                    user);
+                    APILocator.systemUser());
             } catch (DotDataException | DotSecurityException e) {
                 throw new DotRuntimeException(e);
             }

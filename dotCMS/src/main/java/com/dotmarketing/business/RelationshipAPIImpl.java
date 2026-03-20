@@ -389,7 +389,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     public Relationship getRelationshipFromField(final Field field, final User user)
             throws DotDataException, DotSecurityException {
 
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 
         final String contentTypeVar    = contentTypeAPI.find(field.getStructureInode()).variable();
         final String fieldRelationType = field.getFieldRelationType();
@@ -406,7 +406,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     public Relationship getRelationshipFromField(final com.dotcms.contenttype.model.field.Field field, final User user)
             throws DotDataException, DotSecurityException {
 
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user, true);
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
 
         final String contentTypeVar    = contentTypeAPI.find(field.contentTypeId()).variable();
 
