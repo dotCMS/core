@@ -15,6 +15,7 @@ public enum PortletID {
     DIRECTOR,
     DYNAMIC_PLUGINS,
     PLUGINS,
+    PLUGINS_LEGACY("plugins-legacy"),
     ES_SEARCH,
     EVENTS,
     EVENTS_APPROVAL,
