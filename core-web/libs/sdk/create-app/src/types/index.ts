@@ -70,6 +70,9 @@ export type DotCmsCliOptions = {
     url?: string;
     username?: string;
     password?: string;
+
+    // local-only
+    starter?: string;
 };
 
 export interface FinalStepsOptions {
