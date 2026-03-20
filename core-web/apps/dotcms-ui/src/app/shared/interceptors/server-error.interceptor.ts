@@ -3,7 +3,7 @@ import { throwError } from 'rxjs';
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 
-import { catchError, switchMap, take } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
@@ -17,10 +17,9 @@ export const serverErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
     return next(req).pipe(
         catchError((error: HttpErrorResponse) => {
-            return httpErrorManagerService.handle(error).pipe(
-                take(1),
-                switchMap(() => throwError(() => error))
-            );
+            httpErrorManagerService.handle(error).pipe(take(1)).subscribe();
+
+            return throwError(() => error);
         })
     );
 };
