@@ -26,13 +26,14 @@ import com.dotcms.util.CollectionsUtils;
 - Versions only in `bom/application/pom.xml`. Dependencies in `dotCMS/pom.xml` without versions.
 
 ## Java
-- Core: Java 11 syntax. CLI: Java 21 ok. Runtime: Java 21.
+- Core: Java 11 release compatibility. CLI: Java 21 ok. Runtime: Java 21. Migrating to Java 25 (parallel CI workflows validate forward compatibility).
 
 ## Build
 ```bash
-./mvnw install -pl :dotcms-core -DskipTests
-./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
+just build                           # full build (~8-15 min)
+just build-quicker                   # core only (~2-3 min)
+just dev-run                         # start the stack
+just dev-restart                     # restart after rebuild
 ```
 
 ## On-demand

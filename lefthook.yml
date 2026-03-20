@@ -1,0 +1,272 @@
+# lefthook - Git hooks manager for dotCMS
+# https://github.com/evilmartians/lefthook
+#
+# Installed via mise: mise install (adds lefthook binary)
+# Hooks wired by: prepare.js → .git/hooks/ (smart dispatcher, branch-aware)
+# Skip hooks: LEFTHOOK=0 git commit / git push
+
+min_version: 2.0.0
+
+# --- Pre-commit: fast checks on staged frontend files ---
+pre-commit:
+  parallel: true
+  commands:
+    frontend-lint:
+      glob: "core-web/**/*.{ts,js,tsx,jsx}"
+      stage_fixed: true
+      run: |
+        cd core-web
+        files=$(printf '%s\n' {staged_files} | sed 's|^core-web/||' | paste -sd, -)
+        # NX_DAEMON=false avoids daemon race condition when commands run in parallel
+        [ -n "$files" ] && NX_DAEMON=false mise exec -- yarn nx affected -t lint --exclude='tag:skip:lint' --fix --files="$files"
+
+    frontend-format:
+      glob: "core-web/**/*.{ts,js,tsx,jsx,json,html,css,scss}"
+      stage_fixed: true
+      run: |
+        cd core-web
+        files=$(printf '%s\n' {staged_files} | sed 's|^core-web/||' | paste -sd, -)
+        # NX_DAEMON=false avoids daemon race condition when commands run in parallel
+        [ -n "$files" ] && NX_DAEMON=false mise exec -- yarn nx format:write --files="$files"
+
+    yarn-lock-sync:
+      glob: "core-web/{package.json,.nvmrc}"
+      stage_fixed: true
+      run: |
+        cd core-web
+        # Dep changes or Node version bumps can make yarn.lock stale.
+        # stage_fixed auto-stages any lockfile diff.
+        mise exec -- yarn install
+
+
+# --- Post-merge: catch formatting issues from merges/cherry-picks that skip pre-commit ---
+post-merge:
+  commands:
+    frontend-format-check:
+      glob: "core-web/**/*.{ts,js,tsx,jsx,json,html,css,scss}"
+      run: |
+        cd core-web
+        # Find frontend files changed by the merge (comparing HEAD to pre-merge)
+        files=$(git diff --name-only HEAD@{1} HEAD -- '*.ts' '*.js' '*.tsx' '*.jsx' '*.json' '*.html' '*.css' '*.scss' 2>/dev/null \
+          | grep '^core-web/' | sed 's|^core-web/||' | paste -sd, -)
+        [ -z "$files" ] && exit 0
+        echo "Checking formatting on merged files..."
+        NX_DAEMON=false mise exec -- yarn nx format:write --files="$files"
+        # If format:write changed anything, tell the user
+        if ! git diff --quiet -- . 2>/dev/null; then
+          echo ""
+          echo "Formatting fixes applied to merged files."
+          echo "Review and commit: git add -u core-web && git commit -m 'style: format merged files'"
+        fi
+
+# --- Pre-push: heavier checks that would slow down commits ---
+pre-push:
+  commands:
+    java-compile-check:
+      glob: "dotCMS/**/*.java"
+      run: |
+        # Quick staleness check (~70ms) — only prompt if build is outdated.
+        ref_class="dotCMS/target/classes/com/dotcms/rest/api/v1/browser/BrowserResource.class"
+
+        if [ ! -f "$ref_class" ]; then
+          echo "WARNING: No compiled classes found — compilation not verified"
+          echo "Run 'just build' or './mvnw install -DskipTests' before pushing"
+          if (exec < /dev/tty) 2>/dev/null; then
+            printf "Continue anyway? [y/N] " >&2
+            read -r answer < /dev/tty
+            case "$answer" in [yY]*) exit 0 ;; *) exit 1 ;; esac
+          else
+            echo "(non-interactive — skipping compile check)"
+            exit 0
+          fi
+        fi
+
+        # Check if any Java source files are newer than the last build
+        stale_files=$(find dotCMS/src/main/java -name '*.java' -newer "$ref_class" 2>/dev/null | head -10)
+
+        if [ -z "$stale_files" ]; then
+          echo "Java classes up to date with source"
+          exit 0
+        fi
+
+        stale_count=$(echo "$stale_files" | wc -l | tr -d ' ')
+        echo ""
+        echo "WARNING: $stale_count Java source file(s) modified since last build:"
+        echo "$stale_files" | sed 's|^|  |'
+        [ "$stale_count" -ge 10 ] && echo "  ... (showing first 10)"
+        echo ""
+
+        if ! (exec < /dev/tty) 2>/dev/null; then
+          echo "(non-interactive — skipping compile check)"
+          exit 0
+        fi
+
+        printf "Run compile check before push? [Y/n] " >&2
+        read -r answer < /dev/tty
+
+        case "$answer" in
+          [nN]*)
+            echo "Skipping compile — push continues"
+            exit 0
+            ;;
+          *)
+            echo "Compiling dotcms-core (~37s)..."
+            if mise exec -- ./mvnw compile -pl :dotcms-core -Dmaven.build.cache.enabled=false -q; then
+              echo "Compilation successful"
+            else
+              echo ""
+              echo "ERROR: Compilation failed — fix errors before pushing"
+              echo "Run: ./mvnw compile -pl :dotcms-core --am"
+              exit 1
+            fi
+            ;;
+        esac
+
+    openapi-freshness:
+      glob: "dotCMS/**/*.java"
+      run: |
+        openapi="dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml"
+
+        # Find the last commit that updated the OpenAPI spec
+        last_spec_sha=$(git log -1 --format=%H -- "$openapi" 2>/dev/null)
+
+        if [ -z "$last_spec_sha" ]; then
+          echo "OpenAPI spec has never been committed — running compile"
+        else
+          # Find Java files changed since the last spec update
+          changed_java=$(git diff --name-only "$last_spec_sha"..HEAD -- 'dotCMS/src/main/java/**/*.java' 2>/dev/null)
+
+          if [ -z "$changed_java" ]; then
+            echo "No Java files changed since last OpenAPI spec update — skipping compile"
+            exit 0
+          fi
+
+          # Check if any changed files affect the REST API
+          needs_compile=false
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            # DotRestApplication.java registers REST resources — always triggers
+            case "$f" in *DotRestApplication.java) needs_compile=true; break ;; esac
+            if [ -f "$f" ]; then
+              grep -qE '@Path|@GET|@POST|@PUT|@DELETE|@Operation' "$f" 2>/dev/null && needs_compile=true && break
+            else
+              # Deleted file — check content at the last spec commit
+              git show "$last_spec_sha:$f" 2>/dev/null | grep -qE '@Path|@GET|@POST|@PUT|@DELETE|@Operation' && needs_compile=true && break
+            fi
+          done <<< "$changed_java"
+
+          if [ "$needs_compile" = false ]; then
+            echo "No REST API changes since last spec update — skipping compile"
+            exit 0
+          fi
+        fi
+
+        # Check if an initial build has been done (compiled classes + installed deps)
+        if [ ! -d "dotCMS/target/classes" ]; then
+          echo "No compiled classes found — run 'just build' or './mvnw install -DskipTests' first"
+          exit 1
+        fi
+
+        echo "REST API files modified since last spec update — regenerating OpenAPI spec"
+
+        # If classes are already compiled, run just the swagger plugin (~6s).
+        # Otherwise fall back to full compile (~37s).
+        rest_class="dotCMS/target/classes/com/dotcms/rest/api/v1/browser/BrowserResource.class"
+        if [ -f "$rest_class" ]; then
+          # Check if any source is newer than compiled classes
+          stale_classes=false
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            [ -f "$f" ] && [ "$f" -nt "$rest_class" ] && stale_classes=true && break
+          done <<< "$changed_java"
+
+          if [ "$stale_classes" = true ]; then
+            echo "Source files newer than compiled classes — running compile + swagger (~37s)"
+            mise exec -- ./mvnw compile -pl :dotcms-core -Dmaven.build.cache.enabled=false -q
+          else
+            echo "Classes up to date — running swagger resolve only (~6s)"
+            mise exec -- ./mvnw io.swagger.core.v3:swagger-maven-plugin:resolve -pl :dotcms-core -Dmaven.build.cache.enabled=false -q
+          fi
+        else
+          echo "Running compile + swagger (~37s)"
+          mise exec -- ./mvnw compile -pl :dotcms-core -Dmaven.build.cache.enabled=false -q
+        fi
+
+        # Check if the spec changed but wasn't committed
+        if [ -f "$openapi" ] && ! git diff --quiet "$openapi" 2>/dev/null; then
+          echo ""
+          echo "OpenAPI spec is out of date — regenerated file differs from committed version."
+
+          if (exec < /dev/tty) 2>/dev/null; then
+            printf "Auto-commit the updated spec? [Y/n] " >&2
+            read -r answer < /dev/tty
+          else
+            echo "(non-interactive — auto-committing updated spec)"
+            answer="y"
+          fi
+
+          case "$answer" in
+            [nN]*)
+              echo ""
+              echo "Fix manually with:"
+              echo "  git add $openapi"
+              echo "  git commit -m 'chore: regenerate OpenAPI spec'"
+              echo "  git push"
+              exit 1
+              ;;
+            *)
+              git add "$openapi"
+              git commit -m "chore: regenerate OpenAPI spec"
+              echo ""
+              echo "OpenAPI spec committed. Push aborted — run 'git push' again to include it."
+              # Exit non-zero because git already resolved the push refs before this hook ran.
+              # The new commit isn't in the current push payload. A second push picks it up.
+              # Use exit 2 so agents can distinguish "retry needed" from a real failure.
+              exit 2
+              ;;
+          esac
+        fi
+
+        echo "OpenAPI spec is up to date"
+
+    frontend-format-verify:
+      glob: "core-web/**/*.{ts,js,tsx,jsx,json,html,css,scss}"
+      run: |
+        cd core-web
+        # Safety net: verify formatting on all pushed frontend files.
+        # Catches anything that bypassed pre-commit (merges, cherry-picks, --no-verify).
+        base_branch=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo "origin/main")
+        files=$(git diff --name-only "$(git merge-base HEAD "$base_branch")" HEAD -- 'core-web/**/*.ts' 'core-web/**/*.js' 'core-web/**/*.tsx' 'core-web/**/*.jsx' 'core-web/**/*.json' 'core-web/**/*.html' 'core-web/**/*.css' 'core-web/**/*.scss' 2>/dev/null \
+          | sed 's|^core-web/||' | paste -sd, -)
+        [ -z "$files" ] && exit 0
+        # Dry-run format check — list files that would change
+        NX_DAEMON=false mise exec -- yarn nx format:check --files="$files" 2>&1 || {
+          echo ""
+          echo "ERROR: Unformatted files detected. Run:"
+          echo "  cd core-web && yarn nx format:write"
+          echo "  git add -u && git commit -m 'style: format files'"
+          exit 1
+        }
+
+    sdk-uve-check:
+      glob: "core-web/**/sdk-uve/**"
+      run: |
+        cd core-web
+        if ! mise exec -- yarn nx run sdk-uve:build:js 2>&1; then
+          echo "WARNING: sdk-uve build failed — check your environment"
+          echo "Continuing push (build failure is non-blocking)"
+        fi
+        cd ..
+
+        # Clean up generated package.json only if it's untracked (build artifact)
+        pkg_json="dotCMS/src/main/webapp/ext/uve/package.json"
+        if [ -f "$pkg_json" ] && ! git ls-files --error-unmatch "$pkg_json" >/dev/null 2>&1; then
+          rm "$pkg_json"
+        fi
+
+        # Check if dot-uve.js changed but wasn't committed
+        uve_js="dotCMS/src/main/webapp/ext/uve/dot-uve.js"
+        if [ -f "$uve_js" ] && ! git diff --quiet "$uve_js" 2>/dev/null; then
+          echo "ERROR: dot-uve.js is out of date. Run 'cd core-web && yarn nx run sdk-uve:build:js' and commit the result."
+          exit 1
+        fi

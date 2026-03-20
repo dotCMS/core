@@ -39,8 +39,9 @@ Follow these steps to install and set up the dotCMS Core project:
 	```
 3. **Install dependencies**:
 	```sh
-	just install-all-mac-deps
+	just setup
 	```
+	This installs [mise](https://mise.jdx.dev), configures your shell, and installs all required tools (Java, Node, lefthook, etc.). Restart your shell after running. See `docs/infrastructure/DEV_ENVIRONMENT_SETUP.md` for details.
 4. **Import the project into IntelliJ**:
 	- Open IntelliJ IDEA.
 	- Select "Open" and navigate to the `pom.xml` file in the `core` directory to import the project.
@@ -82,10 +83,10 @@ After compiling the project, the next step is to run it. This section provides d
 
 	| Action | Just | Maven |
 	|--|--|--|
-	| start | `just dev-start-on-port 8080`| `./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080`  |
+	| start | `just dev-run 8080`| `./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080`  |
 	| stop | `just dev-stop`| `./mvnw -pl :dotcms-core -Pdocker-stop`  |
 	
-	> 💡**Tip**:  If you don't provide any port the command `just dev-start-on-port` will run on port  _**8082**_ by default. You can also start the application up on a random port running the command `just dev-start`.
+	> 💡**Tip**:  If you don't provide any port the command `just dev-run` will run on port  _**8082**_ by default. You can also start the application up on a random port running the command `just dev-start`.
 	
 	> ℹ️ **Note**: The project runs in a Docker container by default, so local installation of **PostgreSQL** or **Elasticsearch** is not necessary. However, external configuration of these resources is possible if needed.
 

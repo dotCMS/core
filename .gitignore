@@ -2,6 +2,8 @@
 ######################
 bin/*.sh
 *.log
+.frontend.pid
+.dev-port
 .classpath
 .settings/*
 .project
@@ -215,3 +217,11 @@ __pycache__/
 *.egg-info/
 dist/
 *.egg
+
+# Python virtual environment (created by mise)
+.venv/
+
+# Per-developer mise overrides and secrets
+.mise.local.toml
+.env.local
+dotcms-dev-services-workspace/
