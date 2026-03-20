@@ -15,6 +15,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import type { SparklineDataPoint } from '@dotcms/portlets/dot-analytics/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     createAnimationState,
@@ -71,7 +72,7 @@ export interface SparklineDataset {
  */
 @Component({
     selector: 'dot-analytics-sparkline',
-    imports: [ChartModule, UIChart, SkeletonModule],
+    imports: [ChartModule, UIChart, SkeletonModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @if ($isLoading()) {
@@ -102,24 +103,49 @@ export interface SparklineDataset {
                                 <span
                                     class="sparkline-tooltip__dot"
                                     [style.background]="item.color"></span>
-                                <span>{{ item.label }}: {{ item.value }}</span>
+                                <span>{{ item.label | dm }}: {{ item.value }}</span>
                             </div>
                         }
                     </div>
                 }
             </div>
+            @if ($legendItems().length) {
+                <div class="sparkline-legend" data-testid="sparkline-legend">
+                    @for (item of $legendItems(); track item.label) {
+                        <div class="sparkline-legend__item">
+                            @if (item.dashed) {
+                                <svg class="sparkline-legend__svg" viewBox="0 0 20 2">
+                                    <line
+                                        x1="0"
+                                        y1="1"
+                                        x2="20"
+                                        y2="1"
+                                        [attr.stroke]="item.color"
+                                        stroke-width="2"
+                                        stroke-dasharray="4,3" />
+                                </svg>
+                            } @else {
+                                <span
+                                    class="sparkline-legend__line"
+                                    [style.background]="item.color"></span>
+                            }
+                            <span class="sparkline-legend__label">{{ item.label | dm }}</span>
+                        </div>
+                    }
+                </div>
+            }
         }
     `,
     styles: `
         :host {
-            display: block;
+            display: flex;
+            flex-direction: column;
             width: 100%;
-            height: var(--sparkline-height, 6rem);
         }
 
         .sparkline-skeleton {
             width: 100%;
-            height: 100%;
+            height: var(--sparkline-height, 6rem);
 
             ::ng-deep .p-skeleton {
                 border-radius: 0.5rem;
@@ -128,7 +154,7 @@ export interface SparklineDataset {
 
         .sparkline-empty {
             width: 100%;
-            height: 100%;
+            height: var(--sparkline-height, 6rem);
             display: flex;
             align-items: center;
         }
@@ -141,7 +167,7 @@ export interface SparklineDataset {
         .sparkline-container {
             position: relative;
             width: 100%;
-            height: 100%;
+            height: var(--sparkline-height, 6rem);
             overflow: visible;
         }
 
@@ -181,6 +207,42 @@ export interface SparklineDataset {
             height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
+        }
+
+        .sparkline-legend {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem -1rem -1rem;
+            border-top: 1px solid var(--p-gray-200, #e5e7eb);
+            background: var(--p-gray-50, #f9fafb);
+            border-radius: 0 0 var(--p-card-border-radius, 0.375rem)
+                var(--p-card-border-radius, 0.375rem);
+        }
+
+        .sparkline-legend__item {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .sparkline-legend__line {
+            display: inline-block;
+            width: 1.25rem;
+            height: 2px;
+            border-radius: 1px;
+        }
+
+        .sparkline-legend__svg {
+            width: 1.25rem;
+            height: 2px;
+            flex-shrink: 0;
+        }
+
+        .sparkline-legend__label {
+            font-size: 0.75rem;
+            color: var(--p-gray-500, #6b7280);
         }
     `
 })
@@ -233,6 +295,20 @@ export class DotAnalyticsSparklineComponent {
     protected readonly $isLoading = computed(() => {
         const status = this.$status();
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Legend items derived from datasets (label, color, dashed) */
+    protected readonly $legendItems = computed(() => {
+        const datasets = this.$datasets();
+        if (!datasets?.length) return [];
+
+        return datasets
+            .filter((ds) => !!ds.label)
+            .map((ds) => ({
+                label: ds.label ?? '',
+                color: ds.color ?? this.$color(),
+                dashed: ds.dashed ?? false
+            }));
     });
 
     /** Whether there is no data to display */
