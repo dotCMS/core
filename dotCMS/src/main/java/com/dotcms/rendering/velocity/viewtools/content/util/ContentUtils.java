@@ -650,8 +650,9 @@ public class ContentUtils {
 					final List<Contentlet> filteredList = relatedContent.stream().filter(c->results.contains(c.getIdentifier()))
 							.collect(Collectors.toList());
 
-					offset = offset >=0 ? offset : 0;
-					return filteredList.subList(offset, (limit <= 0 || limit >= filteredList.size() ) ? filteredList.size() : offset+limit);
+					final int safeOffset = Math.max(offset, 0);
+					final int end = (limit <= 0) ? filteredList.size() : Math.min(safeOffset + limit, filteredList.size());
+					return filteredList.subList(Math.min(safeOffset, filteredList.size()), end);
                 } 
                 
                 //pulling parents
