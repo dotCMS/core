@@ -1,7 +1,7 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
 
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import {
@@ -18,7 +18,6 @@ import { NGFACES_MODULES } from './modules';
 import { ENV_PROVIDERS } from './providers';
 import { DotCustomReuseStrategyService } from './shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 import { DotDirectivesModule } from './shared/dot-directives.module';
-import { serverErrorInterceptor } from './shared/interceptors/server-error.interceptor';
 import { SharedModule } from './shared/shared.module';
 import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
 
@@ -27,7 +26,7 @@ export const appConfig: ApplicationConfig = {
         // Core Angular providers
         provideAnimations(),
         provideDotCMSTheme(),
-        provideHttpClient(withInterceptors([serverErrorInterceptor])),
+        provideHttpClient(withFetch()),
         provideRouter(
             appRoutes,
             withHashLocation(),

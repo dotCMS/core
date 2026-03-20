@@ -92,10 +92,24 @@ describe('DotCrudService', () => {
             req.flush({ entity: {} });
         });
 
-        it('should preserve absolute URLs starting with /', () => {
+        it('should prepend /api to absolute URLs missing /api/ prefix', () => {
             service.postData('/custom/endpoint', {}).subscribe();
-            const req = httpMock.expectOne('/custom/endpoint');
-            expect(req.request.url).toBe('/custom/endpoint');
+            const req = httpMock.expectOne('/api/custom/endpoint');
+            expect(req.request.url).toBe('/api/custom/endpoint');
+            req.flush({ entity: {} });
+        });
+
+        it('should prepend /api to /v1/ absolute path', () => {
+            service.postData('/v1/contenttype', {}).subscribe();
+            const req = httpMock.expectOne('/api/v1/contenttype');
+            expect(req.request.url).toBe('/api/v1/contenttype');
+            req.flush({ entity: {} });
+        });
+
+        it('should not double-prefix a URL that already starts with /api/', () => {
+            service.postData('/api/v1/contenttype', {}).subscribe();
+            const req = httpMock.expectOne('/api/v1/contenttype');
+            expect(req.request.url).toBe('/api/v1/contenttype');
             req.flush({ entity: {} });
         });
 

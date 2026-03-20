@@ -31,6 +31,15 @@ export class NotificationsService {
         };
     }
 
+    /*
+     * The notification API returns a two-level envelope:
+     *   { bodyJsonObject: { entity: DotNotificationResponse, errors: [], ... } }
+     *
+     * DotCMSResponseJsonObject models the outer `bodyJsonObject` wrapper,
+     * DotCMSResponse models the inner standard payload (`entity`, `errors`, etc.).
+     * The `map` below unwraps the outer layer so callers receive a flat DotCMSResponse.
+     */
+
     getLastNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
         return this.http
             .get<

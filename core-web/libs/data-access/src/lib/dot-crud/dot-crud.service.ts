@@ -84,14 +84,20 @@ export class DotCrudService {
     }
 
     /**
-     * Normalizes URL to ensure it starts with /api/ if needed.
-     * Absolute paths (starting with /) are returned as-is;
-     * relative paths get /api/ prepended.
+     * Normalizes URL to ensure it starts with /api/.
+     *
+     * - Already prefixed with /api/ → returned as-is
+     * - Absolute but missing /api/ (e.g. /v1/foo) → /api is prepended
+     * - Relative (e.g. v1/foo) → /api/ is prepended
      * @private
      */
     private normalizeUrl(url: string): string {
-        if (url.startsWith('/')) {
+        if (url.startsWith('/api/')) {
             return url;
+        }
+
+        if (url.startsWith('/')) {
+            return `/api${url}`;
         }
 
         return `/api/${url}`;
