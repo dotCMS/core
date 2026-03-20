@@ -751,9 +751,16 @@ public class PageRenderUtil implements Serializable {
                 return contentletOpt.get();
             }
 
-            // If not found with language fallback, try to find in any language with the specified variant
-            // This allows pages to show content from other languages when the content type allows fallback
-            // but the content doesn't exist in the page's language or default language
+            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled the contract is strict:
+            // serve the requested language or fall back to the default language only.
+            // Returning a version from any other language would cause entity.containers.uuid to
+            // include contentlets that render() intentionally omits for the requested language.
+            if (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) {
+                return null;
+            }
+
+            // For content types that explicitly declare language fallback (languageFallback()=true),
+            // return the first available version in any language as a last resort.
             try {
                 final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
                         contentletIdentifier, variantName);

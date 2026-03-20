@@ -759,7 +759,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         final String uniqueId = UUIDGenerator.shorty();
 
-        final MultiTree multiTreeContentEN =new MultiTreeDataGen()
+        final MultiTree multiTreeContentEN = new MultiTreeDataGen()
                 .setPage(page)
                 .setContainer(container)
                 .setContentlet(enContentlet)
@@ -777,13 +777,292 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setTreeOrder(2)
                 .nextPersisted();
 
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page.getIdentifier(),
+                DOT_PERSONALIZATION_DEFAULT,
+                list(multiTreeContentEN, multiTreeContentES),
+                Optional.of(defaultLanguage.getId())
+        );
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is edited in the <b>default
+     * language</b> (EN), and the page already has an EN-only entry and an ES-only entry in the DB.
+     * Since the requested language is the default language, a single-language DELETE is performed
+     * (scoped to EN). The client only re-submits the EN contentlet.
+     * Should: Delete only the EN entry (has EN version), preserve the ES entry (has no EN version),
+     * and re-insert the EN entry — leaving exactly 2 entries in the DB.
+     */
+    @Test
+    public void test_overridesMultitrees_withFallback_defaultLangEdit_preservesEsOnlyContent() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        // EN-only contentlet (no ES version)
+        final Contentlet enContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        // ES-only contentlet (no EN version)
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // The render() re-submits only the EN contentlet.
+        final MultiTree multiTreeContentEN = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier())
+                .setInstanceId(uniqueId)
+                .setTreeOrder(1);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeContentEN),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN entry re-inserted + ES entry preserved = 2 entries", 2, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES-only contentlet should be preserved", resultIds.contains(espContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is edited in a
+     * <b>non-default language</b> (ES), and the page already has three entries: EN-only, ES-only,
+     * and FR-only. {@code render()} in ES mode returns: the EN contentlet (fallback to default
+     * language) and the ES contentlet (direct match); the FR-only contentlet is excluded because it
+     * has no version in either ES or the default language (EN). The client re-submits EN + ES.
+     * Should: Execute a two-language DELETE (ES OR EN), removing the EN-only and ES-only entries
+     * but leaving the FR-only entry untouched. After re-inserting EN + ES the page has 3 entries.
+     */
+    @Test
+    public void test_overridesMultitrees_withFallback_nonDefaultLangEdit_deletesTwoLangs_preservesThirdLang() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+        final Language frLanguage  = new LanguageDataGen().country("FRA").languageCode("fra").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+        final Contentlet frContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(frLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(3).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(frContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3).nextPersisted();
+
+        // render() in ES returns EN (fallback to default) + ES (direct match).
+        // FR-only is excluded because it has no version in ES or EN.
+        final MultiTree multiTreeEN  = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(1);
+        final MultiTree multiTreeES  = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(espContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(2);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeEN, multiTreeES),
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN + ES re-inserted + FR preserved = 3 entries", 3, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should be on the page", resultIds.contains(espContentlet.getIdentifier()));
+        assertTrue("FR-only contentlet should be preserved", resultIds.contains(frContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=false}, the page is edited in a non-default
+     * language (ES), and the page already has an EN-only entry and an ES-only entry. Without the
+     * fallback flag, {@code render()} in ES mode does not include the EN-only contentlet (no EN
+     * version exists). The client re-submits only the ES contentlet.
+     * Should: Execute a single-language DELETE (ES), removing only the ES entry. The EN-only entry
+     * has no ES version, so it is untouched. After re-inserting the ES entry the page has 2 entries.
+     */
+    @Test
+    public void test_overridesMultitrees_withoutFallback_nonDefaultLangEdit_preservesEnOnlyContent() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // render() in ES without fallback returns only the ES contentlet; EN-only is excluded.
+        final MultiTree multiTreeES = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(espContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(2);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeES),
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN preserved + ES re-inserted = 2 entries", 2, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN-only contentlet should be preserved", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should be on the page", resultIds.contains(espContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: No language context is provided ({@code languageIdOpt} is empty), so the full DELETE
+     * path is taken. The page already has an EN entry and an ES entry, but the client submits only
+     * the EN contentlet.
+     * Should: Delete all existing entries for the page and re-insert only the submitted EN entry,
+     * leaving exactly 1 entry in the DB.
+     */
+    @Test
+    public void test_overridesMultitrees_noLanguage_fullDeleteAndReinsert() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // Full-DELETE path: no language is provided, so all existing entries are removed first.
+        final MultiTree multiTreeEN = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(1);
 
         APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                 page.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
-                list(multiTreeContentEN,multiTreeContentES),
-                Optional.of(defaultLanguage.getId())
+                list(multiTreeEN),
+                Optional.empty(),
+                VariantAPI.DEFAULT_VARIANT.name()
         );
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Full DELETE then re-insert: only 1 entry should remain", 1, result.size());
+        assertEquals("EN contentlet should be the sole entry", enContentlet.getIdentifier(),
+                result.get(0).getContentlet());
     }
 
     /**
