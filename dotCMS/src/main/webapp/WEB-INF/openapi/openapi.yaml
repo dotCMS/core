@@ -4591,6 +4591,13 @@ paths:
         \ parameter controls the import strategy: 'replace' deletes existing categories\
         \ before importing, 'merge' adds or updates without removing existing ones."
       operationId: importCategories
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CategoryImportFormSchema"
+        description: CSV file containing categories to be imported.
+        required: true
       responses:
         "200":
           content:
@@ -22749,6 +22756,26 @@ components:
           format: int32
       required:
       - categoryName
+    CategoryImportFormSchema:
+      type: object
+      description: Category import form data with CSV file and processing parameters
+      properties:
+        contextInode:
+          type: string
+          description: Context category inode to import into
+        exportType:
+          type: string
+          description: Import behavior
+          enum:
+          - replace
+          - merge
+        file:
+          type: string
+          format: binary
+          description: CSV file containing categories to import
+        filter:
+          type: string
+          description: Filter pattern for categories
     CategoryKeysForm:
       type: object
       properties:
@@ -35663,3 +35690,7 @@ components:
             type: string
           variable:
             type: string
+    file:
+      type: object
+      format: binary
+      description: CSV file containing categories to import
