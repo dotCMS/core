@@ -17,6 +17,8 @@ For the full migration rules, all code examples, the DaisyUI styling section, an
 | `DotCustomFieldApi.get('id')` | `DotCustomFieldApi.getField('id').getValue()` |
 | `DotCustomFieldApi.set('id', val)` | `DotCustomFieldApi.getField('id').setValue(val)` |
 | `DotCustomFieldApi.onChangeField('id', cb)` | `DotCustomFieldApi.getField('id').onChange(cb)` |
+| Manual DOM show/hide of a field | `DotCustomFieldApi.getField('id').show()` / `.hide()` |
+| Manual DOM enable/disable of a field | `DotCustomFieldApi.getField('id').enable()` / `.disable()` |
 | `dojo.ready(fn)` | `DotCustomFieldApi.ready(fn)` |
 | `dojo.byId('el')` | `document.getElementById('el')` |
 | `dijit.byId('id')` | `DotCustomFieldApi.getField('id')` |
@@ -106,6 +108,34 @@ DotCustomFieldApi.ready(() => {
 });
 ```
 
+**Field visibility and state control:**
+```js
+DotCustomFieldApi.ready(() => {
+  const mediaField = DotCustomFieldApi.getField('media');
+  const mediaFileField = DotCustomFieldApi.getField('mediafile');
+
+  // Show/hide based on current value
+  if (mediaField.getValue() === 'upload') {
+    mediaFileField.show();
+  } else {
+    mediaFileField.hide();
+  }
+
+  // React to changes
+  mediaField.onChange((value) => {
+    if (value === 'upload') {
+      mediaFileField.show();
+    } else {
+      mediaFileField.hide();
+    }
+  });
+
+  // Enable/disable a field
+  mediaFileField.disable(); // blocks editing, applies disabled styling
+  mediaFileField.enable();  // restores interactivity
+});
+```
+
 **Multiple onChange for the same field** → combine into one handler:
 ```js
 // Old: two separate onChangeField calls for 'title'
@@ -158,6 +188,8 @@ Verify the migration passes this checklist (details in `references/migration-gui
 - [ ] Styling uses DaisyUI components where applicable (buttons, inputs, selects, modals, links) and Tailwind for layout; no inline styles unless necessary
 - [ ] All field access inside `DotCustomFieldApi.ready()`
 - [ ] All `getField()` calls stored in variables and reused
+- [ ] Field visibility uses `field.show()` / `field.hide()` instead of manual DOM manipulation
+- [ ] Field state uses `field.enable()` / `field.disable()` instead of manual DOM attribute changes
 - [ ] VTL variables unchanged
 - [ ] Business logic unchanged
 
