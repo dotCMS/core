@@ -41,7 +41,7 @@ export class DotTemplatesService {
      * @returns Observable<DotTemplate[]>
      * @memberof DotTemplatesService
      */
-    get(): Observable<DotTemplate[]> {
+    get(): Observable<DotTemplate[] | null> {
         return this.http.get<DotCMSResponse<DotTemplate[]>>(TEMPLATE_API_URL).pipe(
             map((response) => response.entity),
             catchError((error: HttpErrorResponse) => this.handleError<DotTemplate[]>(error))
@@ -56,7 +56,7 @@ export class DotTemplatesService {
      * @returns {Observable<DotTemplate>}
      * @memberof DotTemplatesService
      */
-    getById(id: string, version = 'working'): Observable<DotTemplate> {
+    getById(id: string, version = 'working'): Observable<DotTemplate | null> {
         const url = `${TEMPLATE_API_URL}${id}/${version}`;
 
         return this.http.get<DotCMSResponse<DotTemplate>>(url).pipe(
@@ -81,15 +81,16 @@ export class DotTemplatesService {
         const orderby = options.orderby ?? DEFAULT_ORDERBY;
         const direction = options.direction ?? DEFAULT_DIRECTION;
         const archive = options.archive ?? DEFAULT_ARCHIVE;
-        const filter = options.filter;
-
-        const params = new HttpParams()
+        let params = new HttpParams()
             .set('per_page', per_page.toString())
             .set('page', page.toString())
             .set('orderby', orderby.toString())
             .set('direction', direction.toString())
-            .set('archive', archive.toString())
-            .set('filter', filter.toString());
+            .set('archive', archive.toString());
+
+        if (options.filter != null) {
+            params = params.set('filter', options.filter);
+        }
 
         return this.http
             .get<{ entity: DotTemplate[]; pagination: { totalEntries: number } }>(url, {
@@ -120,7 +121,7 @@ export class DotTemplatesService {
      * @return Observable<DotTemplate>
      * @memberof DotTemplatesService
      */
-    create(values: DotTemplate): Observable<DotTemplate> {
+    create(values: DotTemplate): Observable<DotTemplate | null> {
         return this.http.post<DotCMSResponse<DotTemplate>>(TEMPLATE_API_URL, values).pipe(
             map((response) => response.entity),
             catchError((error: HttpErrorResponse) => this.handleError<DotTemplate>(error))
@@ -132,7 +133,7 @@ export class DotTemplatesService {
      * @returns Observable<DotTemplate>
      * @memberof DotTemplatesService
      */
-    update(values: DotTemplate): Observable<DotTemplate> {
+    update(values: DotTemplate): Observable<DotTemplate | null> {
         return this.http.put<DotCMSResponse<DotTemplate>>(TEMPLATE_API_URL, values).pipe(
             map((response) => response.entity),
             catchError((error: HttpErrorResponse) => this.handleError<DotTemplate>(error))
@@ -145,7 +146,7 @@ export class DotTemplatesService {
      * @returns Observable<DotTemplate>
      * @memberof DotTemplatesService
      */
-    saveAndPublish(values: DotTemplate): Observable<DotTemplate> {
+    saveAndPublish(values: DotTemplate): Observable<DotTemplate | null> {
         return this.http
             .put<DotCMSResponse<DotTemplate>>(`${TEMPLATE_API_URL}_savepublish`, values)
             .pipe(
@@ -160,7 +161,7 @@ export class DotTemplatesService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotTemplatesService
      */
-    delete(identifiers: string[]): Observable<DotActionBulkResult> {
+    delete(identifiers: string[]): Observable<DotActionBulkResult | null> {
         return this.http
             .delete<DotCMSResponse<DotActionBulkResult>>(TEMPLATE_API_URL, {
                 body: identifiers
@@ -179,7 +180,7 @@ export class DotTemplatesService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotTemplatesService
      */
-    unArchive(identifiers: string[]): Observable<DotActionBulkResult> {
+    unArchive(identifiers: string[]): Observable<DotActionBulkResult | null> {
         const url = `${TEMPLATE_API_URL}_unarchive`;
 
         return this.http.put<DotCMSResponse<DotActionBulkResult>>(url, identifiers).pipe(
@@ -194,7 +195,7 @@ export class DotTemplatesService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotTemplatesService
      */
-    archive(identifiers: string[]): Observable<DotActionBulkResult> {
+    archive(identifiers: string[]): Observable<DotActionBulkResult | null> {
         const url = `${TEMPLATE_API_URL}_archive`;
 
         return this.http.put<DotCMSResponse<DotActionBulkResult>>(url, identifiers).pipe(
@@ -209,7 +210,7 @@ export class DotTemplatesService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotTemplatesService
      */
-    unPublish(identifiers: string[]): Observable<DotActionBulkResult> {
+    unPublish(identifiers: string[]): Observable<DotActionBulkResult | null> {
         const url = `${TEMPLATE_API_URL}_unpublish`;
 
         return this.http.put<DotCMSResponse<DotActionBulkResult>>(url, identifiers).pipe(
@@ -224,7 +225,7 @@ export class DotTemplatesService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotTemplatesService
      */
-    publish(identifiers: string[]): Observable<DotActionBulkResult> {
+    publish(identifiers: string[]): Observable<DotActionBulkResult | null> {
         const url = `${TEMPLATE_API_URL}_publish`;
 
         return this.http.put<DotCMSResponse<DotActionBulkResult>>(url, identifiers).pipe(
@@ -239,7 +240,7 @@ export class DotTemplatesService {
      * @returns Observable<DotTemplate>
      * @memberof DotTemplatesService
      */
-    copy(identifier: string): Observable<DotTemplate> {
+    copy(identifier: string): Observable<DotTemplate | null> {
         const url = `${TEMPLATE_API_URL}${identifier}/_copy`;
 
         return this.http.put<DotCMSResponse<DotTemplate>>(url, {}).pipe(
@@ -248,7 +249,7 @@ export class DotTemplatesService {
         );
     }
 
-    private handleError<T>(error: HttpErrorResponse): Observable<T> {
+    private handleError<T>(error: HttpErrorResponse): Observable<T | null> {
         return this.httpErrorManagerService.handle(error).pipe(
             take(1),
             map(() => null)

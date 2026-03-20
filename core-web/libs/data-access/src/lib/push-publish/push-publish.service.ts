@@ -8,6 +8,7 @@ import { filter, map, mergeMap, toArray } from 'rxjs/operators';
 import { ApiRoot } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
+    DotCMSResponseJsonObject,
     DotCurrentUser,
     DotEnvironment,
     DotPushPublishData
@@ -15,11 +16,6 @@ import {
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
-
-// Response type for endpoints that return bodyJsonObject
-interface DotBodyJsonResponse<T> {
-    bodyJsonObject: T;
-}
 
 /**
  * Provide method to push publish to content types
@@ -55,7 +51,7 @@ export class PushPublishService {
             mergeMap((user: DotCurrentUser) => {
                 return this.http
                     .get<
-                        DotBodyJsonResponse<DotEnvironment[]>
+                        DotCMSResponseJsonObject<DotEnvironment[]>
                     >(`${this.pushEnvironementsUrl}/${user.roleId}`)
                     .pipe(map((response) => response.bodyJsonObject));
             }),

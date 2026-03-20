@@ -32,7 +32,7 @@ export class DotContainersService {
      * @returns Observable<DotContainer[]>
      * @memberof DotContainersService
      */
-    get(): Observable<DotContainerEntity[]> {
+    get(): Observable<DotContainerEntity[] | null> {
         return this.http.get<DotCMSResponse<DotContainerEntity[]>>(CONTAINER_API_URL).pipe(
             map((response) => response.entity),
             catchError((error: HttpErrorResponse) => this.handleError<DotContainerEntity[]>(error))
@@ -51,7 +51,7 @@ export class DotContainersService {
         id: string,
         version = 'working',
         includeContentType = false
-    ): Observable<DotContainerEntity> {
+    ): Observable<DotContainerEntity | null> {
         const url = `${CONTAINER_API_URL}${version}?containerId=${id}${
             includeContentType ? `&includeContentType=${includeContentType}` : ''
         }`;
@@ -69,7 +69,7 @@ export class DotContainersService {
      * @returns {Observable<DotContainerEntity>}
      * @memberof DotContainersService
      */
-    getFiltered(filter: string): Observable<DotContainerEntity[]> {
+    getFiltered(filter: string): Observable<DotContainerEntity[] | null> {
         const url = `${CONTAINER_API_URL}?filter=${filter}`;
 
         return this.http.get<DotCMSResponse<DotContainerEntity[]>>(url).pipe(
@@ -84,7 +84,7 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    create(values: DotContainerPayload): Observable<DotContainerEntity> {
+    create(values: DotContainerPayload): Observable<DotContainerEntity | null> {
         return this.http.post<DotCMSResponse<DotContainerEntity>>(CONTAINER_API_URL, values).pipe(
             map((response) => response.entity),
             catchError((error: HttpErrorResponse) => this.handleError<DotContainerEntity>(error))
@@ -98,7 +98,7 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    update(values: DotContainerPayload): Observable<DotContainerEntity> {
+    update(values: DotContainerPayload): Observable<DotContainerEntity | null> {
         return this.http.put<DotCMSResponse<DotContainerEntity>>(CONTAINER_API_URL, values).pipe(
             map((response) => response.entity),
             catchError((error: HttpErrorResponse) => this.handleError<DotContainerEntity>(error))
@@ -111,7 +111,7 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    saveAndPublish(values: DotContainerEntity): Observable<DotContainerEntity> {
+    saveAndPublish(values: DotContainerEntity): Observable<DotContainerEntity | null> {
         return this.http
             .put<DotCMSResponse<DotContainerEntity>>(`${CONTAINER_API_URL}_savepublish`, values)
             .pipe(
@@ -128,7 +128,7 @@ export class DotContainersService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
-    delete(identifiers: string[]): Observable<DotActionBulkResult> {
+    delete(identifiers: string[]): Observable<DotActionBulkResult | null> {
         return this.http
             .delete<DotCMSResponse<DotActionBulkResult>>(`${CONTAINER_API_URL}_bulkdelete`, {
                 body: identifiers
@@ -147,7 +147,7 @@ export class DotContainersService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
-    unArchive(identifiers: string[]): Observable<DotActionBulkResult> {
+    unArchive(identifiers: string[]): Observable<DotActionBulkResult | null> {
         const url = `${CONTAINER_API_URL}_bulkunarchive`;
 
         return this.http.put<DotCMSResponse<DotActionBulkResult>>(url, identifiers).pipe(
@@ -162,7 +162,7 @@ export class DotContainersService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
-    archive(identifiers: string[]): Observable<DotActionBulkResult> {
+    archive(identifiers: string[]): Observable<DotActionBulkResult | null> {
         const url = `${CONTAINER_API_URL}_bulkarchive`;
 
         return this.http.put<DotCMSResponse<DotActionBulkResult>>(url, identifiers).pipe(
@@ -177,7 +177,7 @@ export class DotContainersService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
-    unPublish(identifiers: string[]): Observable<DotActionBulkResult> {
+    unPublish(identifiers: string[]): Observable<DotActionBulkResult | null> {
         const url = `${CONTAINER_API_URL}_bulkunpublish`;
 
         return this.http.put<DotCMSResponse<DotActionBulkResult>>(url, identifiers).pipe(
@@ -192,7 +192,7 @@ export class DotContainersService {
      * @returns Observable<DotActionBulkResult>
      * @memberof DotContainersService
      */
-    publish(identifiers: string[]): Observable<DotActionBulkResult> {
+    publish(identifiers: string[]): Observable<DotActionBulkResult | null> {
         const url = `${CONTAINER_API_URL}_bulkpublish`;
 
         return this.http.put<DotCMSResponse<DotActionBulkResult>>(url, identifiers).pipe(
@@ -207,7 +207,7 @@ export class DotContainersService {
      * @returns Observable<DotContainer>
      * @memberof DotContainersService
      */
-    copy(identifier: string): Observable<DotContainer> {
+    copy(identifier: string): Observable<DotContainer | null> {
         const url = `${CONTAINER_API_URL}${identifier}/_copy`;
 
         return this.http.put<DotCMSResponse<DotContainer>>(url, {}).pipe(
@@ -216,7 +216,7 @@ export class DotContainersService {
         );
     }
 
-    private handleError<T>(error: HttpErrorResponse): Observable<T> {
+    private handleError<T>(error: HttpErrorResponse): Observable<T | null> {
         return this.httpErrorManagerService.handle(error).pipe(
             take(1),
             map(() => null)

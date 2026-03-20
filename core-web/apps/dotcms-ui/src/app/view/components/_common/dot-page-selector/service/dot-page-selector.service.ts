@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, map } from 'rxjs/operators';
@@ -68,10 +68,13 @@ export class DotPageSelectorService {
     }
 
     getPages(path: string): Observable<DotPageSelectorItem[]> {
+        const params = new HttpParams()
+            .set('path', path)
+            .set('onlyLiveSites', 'true')
+            .set('live', 'false');
+
         return this.http
-            .get<
-                DotCMSResponse<DotPageAsset[]>
-            >(`/api/v1/page/search?path=${path}&onlyLiveSites=true&live=false`)
+            .get<DotCMSResponse<DotPageAsset[]>>('/api/v1/page/search', { params })
             .pipe(
                 map((response) => response.entity),
                 map((pages: DotPageAsset[]) => {
