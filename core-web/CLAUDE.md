@@ -145,6 +145,25 @@ New portlets go in `libs/portlets/`. For full patterns, architecture, testing, a
 - Use `jest.useFakeTimers()` in `beforeEach`, `jest.useRealTimers()` in `afterEach`
 - Advance with `jest.advanceTimersByTime(300)` to trigger debounced actions
 
+### Writing Good Tests
+
+- **Test through the DOM, not the implementation** — use `spectator.click()`, `spectator.triggerEventHandler()`, `spectator.typeInElement()` instead of calling `component.onSomeClick()` directly. If the method is only reachable via an event, test it that way.
+- **Never access private or protected members via bracket notation** — `component['privateField']` is a test smell. If you need it, you're testing implementation details; expose a public API or assert via DOM output instead.
+- **Name tests by behavior, not method** — `it('should show error banner when save fails')` not `it('should call handleError')`. A failing test name should tell you what broke without reading the body.
+- **Extract repeated setup into helper functions** — if the same multi-step setup (event chains, state priming) appears in more than two tests, move it into a local `function setup(...)` or a nested `beforeEach`. If the setup is complex enough to warrant a helper, also reconsider whether the component API is too hard to use.
+- **Use `it.each()` for data-driven cases** — when the same assertion holds for multiple inputs, use `it.each()` instead of copy-pasting tests:
+  ```typescript
+  it.each([
+    ['admin',  true],
+    ['editor', false],
+    ['viewer', false],
+  ])('should show delete button only for %s role', (role, expected) => {
+    spectator.setInput('role', role);
+    spectator.detectChanges();
+    expect(spectator.query(byTestId('delete-btn'))).toBe(expected ? expect.anything() : null);
+  });
+  ```
+
 ## Backend Integration
 
 - Dev proxy: `proxy-dev.conf.mjs` routes `/api/*` to port 8080
