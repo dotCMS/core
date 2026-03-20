@@ -41,11 +41,9 @@ export class NotificationsService {
      */
 
     getLastNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
-        return this.http
-            .get<
-                DotCMSResponseJsonObject<DotCMSResponse<DotNotificationResponse>>
-            >(this.urls.getLastNotificationsUrl)
-            .pipe(map((response) => response.bodyJsonObject));
+        return this.http.get<DotCMSResponse<DotNotificationResponse>>(
+            this.urls.getLastNotificationsUrl
+        );
     }
 
     getAllNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {

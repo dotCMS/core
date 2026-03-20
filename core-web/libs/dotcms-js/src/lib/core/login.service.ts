@@ -1,7 +1,7 @@
 import { Observable, of, Subject, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, tap } from 'rxjs/operators';
 
@@ -157,13 +157,11 @@ export class LoginService {
     getLoginFormInfo(language: string, i18nKeys: Array<string>): Observable<DotLoginInformation> {
         this.setLanguage(language);
 
-        return this.http
-            .post<{ bodyJsonObject: DotLoginInformation }>(this.urls.serverInfo, {
-                messagesKey: i18nKeys,
-                language: this.lang,
-                country: this.country
-            })
-            .pipe(map((response) => response.bodyJsonObject));
+        return this.http.post<DotLoginInformation>(this.urls.serverInfo, {
+            messagesKey: i18nKeys,
+            language: this.lang,
+            country: this.country
+        });
     }
 
     /**
