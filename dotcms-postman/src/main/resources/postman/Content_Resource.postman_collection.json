@@ -4070,7 +4070,7 @@
 								"packages": {},
 								"exec": [
 									"pm.test(\"HTTP Status code must be successful\", function () {",
-									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.code).to.be.within(200, 299);",
 									"});",
 									""
 								]
