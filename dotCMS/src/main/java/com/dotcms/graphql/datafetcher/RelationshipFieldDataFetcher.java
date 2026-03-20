@@ -2,6 +2,7 @@ package com.dotcms.graphql.datafetcher;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -15,6 +16,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import graphql.execution.DataFetcherResult;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Collections;
@@ -36,20 +38,25 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
 
             final String fieldVar = environment.getField().getName();
 
-            final Field
-                field =
-                APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentlet.getContentTypeId(), fieldVar);
+            final Field field = APILocator.getContentTypeFieldAPI()
+                    .byContentTypeIdAndVar(contentlet.getContentTypeId(), fieldVar);
 
-            Relationship relationship;
-            User user;
+            final User user = ((DotGraphQLContext) environment.getContext()).getUser();
 
+            final Relationship relationship;
             try {
-                user = ((DotGraphQLContext) environment.getContext()).getUser();
-                // Use systemUser to resolve the relationship metadata — this is a structural lookup,
-                // not an access control check. Content access is enforced separately via pullRelatedField.
-                relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field,
-                    APILocator.systemUser());
-            } catch (DotDataException | DotSecurityException e) {
+                relationship = APILocator.getRelationshipAPI().getRelationshipFromField(field, user);
+            } catch (DotSecurityException e) {
+                Logger.debug(this, () -> "User '" + user.getUserId()
+                        + "' does not have permission to resolve relationship metadata for field '"
+                        + fieldVar + "'");
+                return DataFetcherResult.newResult()
+                        .data(null)
+                        .error(new PermissionDeniedGraphQLException(
+                                "You do not have permission to access the related content type for field '"
+                                        + fieldVar + "'"))
+                        .build();
+            } catch (DotDataException e) {
                 throw new DotRuntimeException(e);
             }
 
@@ -77,7 +84,7 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
                     .pullRelatedField(relationship, contentlet.getIdentifier(),
                             query, limit, offset, sort, user, null, pullParents,
                             nonCachedContentlet.getLanguageId(), nonCachedContentlet.isLive());
-            
+
             if (UtilMethods.isSet(relatedContent)) {
                 final DotContentletTransformer transformer = new DotTransformerBuilder()
                         .graphQLDataFetchOptions().content(relatedContent).build();
