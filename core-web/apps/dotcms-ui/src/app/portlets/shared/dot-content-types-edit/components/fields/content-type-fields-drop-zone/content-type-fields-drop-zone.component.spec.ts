@@ -59,8 +59,6 @@ import {
 import { ContentTypeFieldsDropZoneComponent } from '.';
 
 import { DotActionButtonComponent } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.component';
-import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
-import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { ContentTypeFieldsAddRowComponent } from '../content-type-fields-add-row/content-type-fields-add-row.component';
 import { DotContentTypeFieldsVariablesComponent } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 import { FieldPropertyService } from '../service/field-properties.service';
@@ -170,6 +168,23 @@ class TestDotLoadingIndicatorService {
     }
 }
 
+@Component({
+    selector: 'dot-convert-to-block-info',
+    template: ''
+})
+class DotConvertToBlockInfoStubComponent {
+    @Input() currentFieldType: unknown;
+    @Input() currentField: unknown;
+}
+
+@Component({
+    selector: 'dot-convert-wysiwyg-to-block',
+    template: ''
+})
+class DotConvertWysiwygToBlockStubComponent {
+    @Input() currentFieldType: unknown;
+}
+
 function becomeNewField(field) {
     delete field.id;
     delete field.sortOrder;
@@ -211,10 +226,12 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         dragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsDropZoneComponent],
+            declarations: [
+                ContentTypeFieldsDropZoneComponent,
+                DotConvertToBlockInfoStubComponent,
+                DotConvertWysiwygToBlockStubComponent
+            ],
             imports: [
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
@@ -505,10 +522,13 @@ describe('Load fields and drag and drop', () => {
         testFieldDragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsDropZoneComponent, TestHostComponent],
+            declarations: [
+                ContentTypeFieldsDropZoneComponent,
+                TestHostComponent,
+                DotConvertToBlockInfoStubComponent,
+                DotConvertWysiwygToBlockStubComponent
+            ],
             imports: [
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
