@@ -19294,6 +19294,14 @@ rollup-plugin-postcss@4.0.2, rollup-plugin-postcss@^4.0.2:
     safe-identifier "^0.4.2"
     style-inject "^0.3.0"
 
+rollup-plugin-preserve-directives@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.npmjs.org/rollup-plugin-preserve-directives/-/rollup-plugin-preserve-directives-0.4.0.tgz#5e22f448a49b8aa28898d151e7a707b0eab15a6e"
+  integrity sha512-gx4nBxYm5BysmEQS+e2tAMrtFxrGvk+Pe5ppafRibQi0zlW7VYAbEGk6IKDw9sJGPdFWgVTE0o4BU4cdG0Fylg==
+  dependencies:
+    "@rollup/pluginutils" "^5.1.0"
+    magic-string "^0.30.5"
+
 rollup-plugin-typescript2@^0.36.0:
   version "0.36.0"
   resolved "https://registry.npmjs.org/rollup-plugin-typescript2/-/rollup-plugin-typescript2-0.36.0.tgz#309564eb70d710412f5901344ca92045e180ed53"

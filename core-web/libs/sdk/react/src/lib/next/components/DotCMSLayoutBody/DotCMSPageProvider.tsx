@@ -11,6 +11,7 @@ interface DotCMSPageProviderProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     components: Record<string, React.ComponentType<any>>;
     mode: DotCMSPageRendererMode;
+    slots: Record<string, ReactNode>;
     children: ReactNode;
 }
 
@@ -21,9 +22,9 @@ interface DotCMSPageProviderProps {
  * Keeping this separate from DotCMSLayoutBody allows the layout to remain
  * a server component while only the context provider runs on the client.
  */
-export function DotCMSPageProvider({ page, components, mode, children }: DotCMSPageProviderProps) {
+export function DotCMSPageProvider({ page, components, mode, slots, children }: DotCMSPageProviderProps) {
     return (
-        <DotCMSPageContext.Provider value={{ pageAsset: page, userComponents: components, mode }}>
+        <DotCMSPageContext.Provider value={{ pageAsset: page, userComponents: components, mode, slots }}>
             {children}
         </DotCMSPageContext.Provider>
     );
