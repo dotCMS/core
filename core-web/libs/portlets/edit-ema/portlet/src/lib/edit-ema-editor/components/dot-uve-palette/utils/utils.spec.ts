@@ -15,11 +15,14 @@ import {
     buildPaletteContent,
     buildPaletteFavorite,
     buildPaletteMenuItems,
+    extractContentletPropertiesFromPageAsset,
     filterFormValues,
     getPaletteState,
-    getSortActiveClass
+    getSortActiveClass,
+    updateContentletPropertiesInPageAsset
 } from './index';
 
+import { ActionPayload } from '../../../../shared/models';
 import { DotPaletteListStatus } from '../models';
 
 describe('Dot UVE Palette Utils', () => {
@@ -877,6 +880,209 @@ describe('Dot UVE Palette Utils', () => {
             const result = filterFormValues(input);
 
             expect(result).toEqual({});
+        });
+    });
+
+    describe('updateContentletPropertiesInPageAsset', () => {
+        const makePayload = (overrides: Partial<ActionPayload> = {}): ActionPayload =>
+            ({
+                container: {
+                    identifier: 'test-container',
+                    uuid: 'test-uuid',
+                    acceptTypes: 'any',
+                    maxContentlets: 1
+                },
+                contentlet: {
+                    identifier: 'test-contentlet-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'Blog'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'page-1',
+                ...overrides
+            }) as unknown as ActionPayload;
+
+        const makePageAsset = (extraProps: Record<string, unknown> = {}) =>
+            ({
+                page: { identifier: 'page-1', title: 'Test Page' },
+                containers: {
+                    'test-container': {
+                        contentlets: {
+                            'uuid-test-uuid': [
+                                {
+                                    identifier: 'test-contentlet-id',
+                                    inode: 'test-inode',
+                                    title: 'Test',
+                                    contentType: 'Blog',
+                                    ...extraProps
+                                }
+                            ]
+                        }
+                    }
+                }
+            }) as unknown as import('@dotcms/types').DotCMSPageAsset;
+
+        it('should update properties on the matching contentlet', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            updateContentletPropertiesInPageAsset(pageAsset, payload, { color: 'red', size: 14 });
+
+            const contentlet =
+                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            expect(contentlet['color']).toBe('red');
+            expect(contentlet['size']).toBe(14);
+        });
+
+        it('should not modify contentlets that do not match the identifier', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload({
+                contentlet: {
+                    identifier: 'other-id',
+                    inode: 'other-inode',
+                    title: 'Other',
+                    contentType: 'Blog'
+                } as unknown as ActionPayload['contentlet']
+            });
+
+            updateContentletPropertiesInPageAsset(pageAsset, payload, { color: 'blue' });
+
+            const contentlet =
+                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            expect(contentlet['color']).toBeUndefined();
+        });
+
+        it('should mutate the pageAsset in place and return the same reference', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = updateContentletPropertiesInPageAsset(pageAsset, payload, {
+                foo: 'bar'
+            });
+
+            expect(result).toBe(pageAsset);
+        });
+
+        it('should overwrite existing properties', () => {
+            const pageAsset = makePageAsset({ dotStyleProperties: { 'font-size': 12 } });
+            const payload = makePayload();
+
+            updateContentletPropertiesInPageAsset(pageAsset, payload, {
+                dotStyleProperties: { 'font-size': 20 }
+            });
+
+            const contentlet =
+                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            expect(contentlet['dotStyleProperties']).toEqual({ 'font-size': 20 });
+        });
+    });
+
+    describe('extractContentletPropertiesFromPageAsset', () => {
+        const makePayload = (): ActionPayload =>
+            ({
+                container: {
+                    identifier: 'test-container',
+                    uuid: 'test-uuid',
+                    acceptTypes: 'any',
+                    maxContentlets: 1
+                },
+                contentlet: {
+                    identifier: 'test-contentlet-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'Blog'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'page-1'
+            }) as unknown as ActionPayload;
+
+        const makePageAsset = () =>
+            ({
+                page: { identifier: 'page-1', title: 'Test Page' },
+                containers: {
+                    'test-container': {
+                        contentlets: {
+                            'uuid-test-uuid': [
+                                {
+                                    identifier: 'test-contentlet-id',
+                                    inode: 'test-inode',
+                                    title: 'Test',
+                                    contentType: 'Blog',
+                                    dotStyleProperties: { 'font-size': 16, color: 'red' },
+                                    customProp: 'hello'
+                                }
+                            ]
+                        }
+                    }
+                }
+            }) as unknown as import('@dotcms/types').DotCMSPageAsset;
+
+        it('should extract the requested properties from the matching contentlet', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
+                'dotStyleProperties'
+            ]);
+
+            expect(result).toEqual({ dotStyleProperties: { 'font-size': 16, color: 'red' } });
+        });
+
+        it('should extract multiple properties at once', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
+                'dotStyleProperties',
+                'customProp'
+            ]);
+
+            expect(result).toEqual({
+                dotStyleProperties: { 'font-size': 16, color: 'red' },
+                customProp: 'hello'
+            });
+        });
+
+        it('should return undefined for properties that do not exist on the contentlet', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
+                'nonExistentProp'
+            ]);
+
+            expect(result).toEqual({ nonExistentProp: undefined });
+        });
+
+        it('should return empty object when no properties are requested', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, []);
+
+            expect(result).toEqual({});
+        });
+
+        it('should return object with undefined values when contentlet is not found', () => {
+            const pageAsset = makePageAsset();
+            const payload = {
+                ...makePayload(),
+                contentlet: {
+                    identifier: 'nonexistent-id',
+                    inode: 'x',
+                    title: 'X',
+                    contentType: 'Y'
+                }
+            } as unknown as ActionPayload;
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
+                'dotStyleProperties'
+            ]);
+
+            expect(result).toEqual({ dotStyleProperties: undefined });
         });
     });
 });

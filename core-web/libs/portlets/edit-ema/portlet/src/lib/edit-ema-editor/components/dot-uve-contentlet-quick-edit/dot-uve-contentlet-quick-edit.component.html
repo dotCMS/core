@@ -131,12 +131,14 @@
         <div class="flex justify-end gap-2 shrink-0 border-t border-gray-200 p-4">
             <p-button
                 type="button"
+                data-testid="quick-edit-cancel-btn"
                 [label]="'dot.common.cancel' | dm"
                 [outlined]="true"
                 (click)="handleCancel()"
                 [disabled]="loading()" />
             <p-button
                 type="button"
+                data-testid="quick-edit-save-btn"
                 [label]="'dot.common.save' | dm"
                 [disabled]="!$contentletForm()?.valid || loading()"
                 [loading]="loading()"

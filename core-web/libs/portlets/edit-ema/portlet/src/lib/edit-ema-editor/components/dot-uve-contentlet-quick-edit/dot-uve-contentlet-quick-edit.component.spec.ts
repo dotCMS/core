@@ -171,7 +171,10 @@ describe('DotUveContentletQuickEditComponent', () => {
         spectator.typeInElement('test value', input);
         spectator.detectChanges();
 
-        spectator.click('button[type="submit"]');
+        const saveBtn = spectator
+            .query('[data-testid="quick-edit-save-btn"]')
+            ?.querySelector('button');
+        spectator.click(saveBtn as HTMLElement);
         spectator.detectChanges();
 
         expect(emittedData).toBeDefined();
@@ -182,12 +185,11 @@ describe('DotUveContentletQuickEditComponent', () => {
         let cancelEmitted = false;
         spectator.component.cancel.subscribe(() => (cancelEmitted = true));
 
-        const cancelButton = spectator.query('button[type="button"]');
-        expect(cancelButton).toBeTruthy();
-
-        if (cancelButton) {
-            spectator.click(cancelButton);
-        }
+        const cancelBtn = spectator
+            .query('[data-testid="quick-edit-cancel-btn"]')
+            ?.querySelector('button');
+        expect(cancelBtn).toBeTruthy();
+        spectator.click(cancelBtn as HTMLElement);
 
         expect(cancelEmitted).toBe(true);
     });
@@ -196,8 +198,12 @@ describe('DotUveContentletQuickEditComponent', () => {
         fixture.componentRef.setInput('loading', true);
         spectator.detectChanges();
 
-        const cancelButton = spectator.query('button[type="button"]') as HTMLButtonElement;
-        const submitButton = spectator.query('button[type="submit"]') as HTMLButtonElement;
+        const cancelButton = spectator
+            .query('[data-testid="quick-edit-cancel-btn"]')
+            ?.querySelector('button') as HTMLButtonElement;
+        const submitButton = spectator
+            .query('[data-testid="quick-edit-save-btn"]')
+            ?.querySelector('button') as HTMLButtonElement;
 
         expect(cancelButton.disabled).toBe(true);
         expect(submitButton.disabled).toBe(true);
@@ -315,8 +321,11 @@ describe('DotUveContentletQuickEditComponent', () => {
 
         const input = spectator.query('input[formcontrolname="testField"]') as HTMLInputElement;
         spectator.typeInElement('', input); // Clear required field to make form invalid
+        spectator.detectChanges();
 
-        const submitButton = spectator.query('button[type="submit"]') as HTMLButtonElement;
+        const submitButton = spectator
+            .query('[data-testid="quick-edit-save-btn"]')
+            ?.querySelector('button') as HTMLButtonElement;
         expect(submitButton.disabled).toBe(true); // Should be disabled when form is invalid
 
         expect(emittedData).toBeUndefined();

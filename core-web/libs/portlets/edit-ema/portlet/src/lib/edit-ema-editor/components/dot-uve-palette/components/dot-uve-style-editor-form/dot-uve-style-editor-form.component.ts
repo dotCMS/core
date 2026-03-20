@@ -22,7 +22,7 @@ import { ButtonModule } from 'primeng/button';
 import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSPageAsset, StyleEditorProperties } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './components/uve-style-editor-field-checkbox-group/uve-style-editor-field-checkbox-group.component';
@@ -30,10 +30,6 @@ import { UveStyleEditorFieldDropdownComponent } from './components/uve-style-edi
 import { UveStyleEditorFieldInputComponent } from './components/uve-style-editor-field-input/uve-style-editor-field-input.component';
 import { UveStyleEditorFieldRadioComponent } from './components/uve-style-editor-field-radio/uve-style-editor-field-radio.component';
 import { StyleEditorFormBuilderService } from './services/style-editor-form-builder.service';
-import {
-    extractStylePropertiesFromGraphQL,
-    updateStylePropertiesInGraphQL
-} from './utils/style-editor-graphql.utils';
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
@@ -41,7 +37,11 @@ import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { PageType } from '../../../../../store/models';
-import { filterFormValues } from '../../utils';
+import {
+    extractContentletPropertiesFromPageAsset,
+    updateContentletPropertiesInPageAsset,
+    filterFormValues
+} from '../../utils';
 
 @Component({
     selector: 'dot-uve-style-editor-form',
@@ -155,15 +155,17 @@ export class DotUveStyleEditorFormComponent {
             delete rolledBackAsset.requestMetadata;
             delete rolledBackAsset.clientResponse;
             // Extract style properties from the rolled-back state using utility function
-            const styleProperties = extractStylePropertiesFromGraphQL(
+            const extracted = extractContentletPropertiesFromPageAsset(
                 rolledBackAsset,
-                activeContentlet
+                activeContentlet,
+                ['dotStyleProperties']
             );
+            const styleProperties = extracted?.dotStyleProperties as StyleEditorProperties;
 
             // Rebuild the ENTIRE form with rolled-back values
             // This causes the #form signal to change, which triggers switchMap in #listenToFormChanges
             // to cancel the old subscription (including any pending debounced saves)
-            const restoredForm = this.#formBuilder.buildForm(schema, styleProperties || undefined);
+            const restoredForm = this.#formBuilder.buildForm(schema, styleProperties);
             this.#form.set(restoredForm);
         } catch (error) {
             console.error('Error restoring form from rollback:', error);
@@ -259,10 +261,12 @@ export class DotUveStyleEditorFormComponent {
             const clonedResponse = structuredClone(internalAsset);
 
             // Update the cloned response (mutates the clone in place)
-            const updatedInternalResponse = updateStylePropertiesInGraphQL(
+            const updatedInternalResponse = updateContentletPropertiesInPageAsset(
                 clonedResponse,
                 activeContentlet,
-                formValues
+                {
+                    dotStyleProperties: formValues
+                }
             );
 
             // Optimistic update: Update state WITHOUT saving to history
@@ -275,6 +279,7 @@ export class DotUveStyleEditorFormComponent {
             if (!updatedCustomResponse) {
                 return;
             }
+
             this.#iframeMessenger.sendPageData(updatedCustomResponse);
         } catch (error) {
             console.error('Error updating iframe:', error);
