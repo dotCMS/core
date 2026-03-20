@@ -217,8 +217,8 @@ export class DojoFormBridge implements FormBridge {
                 this.set(fieldId, value);
             },
 
-            onChange: (callback: (value: FormFieldValue) => void): void => {
-                this.onChangeField(fieldId, callback);
+            onChange: (callback: (value: FormFieldValue) => void): (() => void) => {
+                return this.onChangeField(fieldId, callback);
             },
 
             enable: (): void => {
@@ -248,6 +248,30 @@ export class DojoFormBridge implements FormBridge {
                     }
                 } catch (error) {
                     console.warn('Error disabling field:', error);
+                }
+            },
+
+            show: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    const container = element?.closest('.field');
+                    if (container instanceof HTMLElement) {
+                        container.style.display = '';
+                    }
+                } catch (error) {
+                    console.warn('Error showing field:', error);
+                }
+            },
+
+            hide: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    const container = element?.closest('.field');
+                    if (container instanceof HTMLElement) {
+                        container.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.warn('Error hiding field:', error);
                 }
             }
         };
