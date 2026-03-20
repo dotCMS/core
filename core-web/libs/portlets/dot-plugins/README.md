@@ -1,7 +1,11 @@
-# portlet
+# dot-plugins portlet
 
-This library was generated with [Nx](https://nx.dev).
+Plugins admin UI (OSGi bundles list, upload, exported packages).
 
-## Running unit tests
+## Tests
 
-Run `nx test portlet` to execute the unit tests.
+```bash
+yarn nx run portlets-dot-plugins-portlet:test
+```
+
+Entry: `@dotcms/portlets/dot-plugins/portlet` → `dotPluginsRoutes` (`DotPluginsShellComponent`).
