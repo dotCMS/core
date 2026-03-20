@@ -1,3 +1,5 @@
+'use client';
+
 import { useContext, useMemo, useRef } from 'react';
 
 import { DotCMSBasicContentlet } from '@dotcms/types';
@@ -91,14 +93,7 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
  * @internal
  */
 function CustomComponent({ contentlet }: CustomComponentProps) {
-    const { userComponents, slots } = useContext(DotCMSPageContext);
-
-    const slotNode = slots[contentlet?.identifier];
-
-    if (slotNode !== undefined) {
-        return <>{slotNode}</>;
-    }
-
+    const { userComponents } = useContext(DotCMSPageContext);
     const UserComponent = userComponents[contentlet?.contentType];
 
     if (UserComponent) {

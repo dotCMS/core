@@ -47,8 +47,7 @@ describe('Contentlet', () => {
     test('should render fallback component when no custom component exists', () => {
         const contextValue = {
             mode: 'development',
-            userComponents: {},
-            slots: {}
+            userComponents: {}
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
@@ -84,8 +83,7 @@ describe('Contentlet', () => {
     test('should apply empty style when isDevMode is false', () => {
         const contextValue = {
             mode: 'production',
-            userComponents: {},
-            slots: {}
+            userComponents: {}
         };
 
         const { container } = renderContentlet(contextValue, {
@@ -107,8 +105,7 @@ describe('Contentlet', () => {
 
         const contextValue = {
             mode: 'development',
-            userComponents: {},
-            slots: {}
+            userComponents: {}
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
@@ -120,8 +117,7 @@ describe('Contentlet', () => {
     test('should always apply UVE attributes in production', () => {
         const contextValue = {
             mode: 'production',
-            userComponents: {},
-            slots: {}
+            userComponents: {}
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
@@ -133,8 +129,7 @@ describe('Contentlet', () => {
     test('should always apply UVE attributes even when isDevMode is false', () => {
         const contextValue = {
             mode: 'production',
-            userComponents: {},
-            slots: {}
+            userComponents: {}
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
@@ -146,8 +141,7 @@ describe('Contentlet', () => {
     test('should always apply UVE attributes in development mode (UVE)', () => {
         const contextValue = {
             mode: 'development',
-            userComponents: {},
-            slots: {}
+            userComponents: {}
         };
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });

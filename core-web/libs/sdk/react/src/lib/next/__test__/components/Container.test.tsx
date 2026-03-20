@@ -32,8 +32,7 @@ jest.mock('@dotcms/uve/internal', () => ({
 const DEFAULT_CONTEXT_VALUE: DotCMSPageContextProps = {
     pageAsset: MOCK_PAGE_ASSET,
     mode: 'production',
-    userComponents: {},
-    slots: {}
+    userComponents: {}
 };
 
 describe('Container', () => {
