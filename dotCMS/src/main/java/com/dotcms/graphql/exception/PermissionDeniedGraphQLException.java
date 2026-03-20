@@ -29,6 +29,6 @@ public class PermissionDeniedGraphQLException extends CustomGraphQLException {
 
     @Override
     public Map<String, Object> getExtensions() {
-        return Map.of("code", "PERMISSION_DENIED");
+        return Map.of("code", "PERMISSION_DENIED", "status", 403);
     }
 }

@@ -2,6 +2,7 @@ package com.dotcms.graphql.datafetcher.page;
 
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
+import com.dotcms.graphql.exception.ResourceNotFoundException;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -159,8 +160,8 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 pageUrl = APILocator.getHTMLPageAssetRenderedAPI()
                         .getHtmlPageAsset(pageContext, request);
             } catch (HTMLPageAssetNotFoundException e) {
-                Logger.error(this, e.getMessage());
-                return null;
+                throw new ResourceNotFoundException(
+                        "Page not found: " + resolvedUri, "Page", resolvedUri);
             } catch (DotSecurityException e) {
                 if(mode.equals(PageMode.WORKING)) {
                     throw new PermissionDeniedGraphQLException(

@@ -226,9 +226,9 @@ describe('PageClient', () => {
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
-                    expect(error.message).toBe(
-                        "Page request failed for URL '/graphql-page': Page /graphql-page not found. Check the page URL and permissions."
-                    );
+                    expect(error.message).toBe('Page /graphql-page not found');
+                    expect(error.status).toBe(404);
+                    expect(error.code).toBe('NOT_FOUND');
                     expect(error.graphql).toBeDefined();
                     expect(error.graphql?.query).toContain('containers');
                 }
@@ -275,8 +275,9 @@ describe('PageClient', () => {
             });
         });
 
-        it('should throw errors from GraphQL', async () => {
+        it('should throw BAD_REQUEST error when data is null (bad query)', async () => {
             mockRequest.mockResolvedValue({
+                data: null,
                 errors: [{ message: 'GraphQL error' }]
             });
 
@@ -298,10 +299,28 @@ describe('PageClient', () => {
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
-                    expect(error.message).toBe(
-                        "Page request failed for URL '/page': Cannot read properties of undefined (reading 'page')"
-                    );
+                    expect(error.message).toBe('GraphQL error');
+                    expect(error.status).toBe(400);
+                    expect(error.code).toBe('BAD_REQUEST');
                     expect(error.graphql).toBeDefined();
+                }
+            }
+        });
+
+        it('should throw BAD_REQUEST error when data is undefined (bad query)', async () => {
+            mockRequest.mockResolvedValue({
+                errors: [{ message: 'GraphQL validation error' }]
+            });
+
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+            try {
+                await pageClient.get('/page');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe('GraphQL validation error');
+                    expect(error.status).toBe(400);
+                    expect(error.code).toBe('BAD_REQUEST');
                 }
             }
         });
@@ -332,6 +351,8 @@ describe('PageClient', () => {
                     expect(error.message).toBe(
                         "Page request failed for URL '/page': Page not found"
                     );
+                    expect(error.status).toBe(404);
+                    expect(error.code).toBe('UNKNOWN');
                     expect(error.httpError).toBe(httpError);
                     expect(error.graphql).toBeDefined();
                     expect(error.graphql?.query).toBeDefined();
@@ -349,7 +370,7 @@ describe('PageClient', () => {
             }
         });
 
-        it('should throw Bad Request error when GraphQL returns DotPage errors', async () => {
+        it('should throw PERMISSION_DENIED error when extensions.code is PERMISSION_DENIED', async () => {
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
             const graphQLOptions = {
                 graphql: {
@@ -360,33 +381,31 @@ describe('PageClient', () => {
 
             mockRequest.mockResolvedValue({
                 data: {
-                    page: {
-                        title: 'Some Page'
-                    }
+                    page: null
                 },
                 errors: [
-                    { message: 'Some other error' },
-                    { message: 'DotPage entity error: Invalid page configuration' }
+                    {
+                        message:
+                            'Permission denied: You do not have permission to access this resource.',
+                        extensions: { code: 'PERMISSION_DENIED', status: 403 }
+                    }
                 ]
             });
 
             try {
-                await pageClient.get('/bad-page', graphQLOptions);
+                await pageClient.get('/restricted-page', graphQLOptions);
                 fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
                     expect(error.message).toBe(
-                        "Page request failed for URL '/bad-page': GraphQL query failed for URL '/bad-page': DotPage entity error: Invalid page configuration"
+                        'Permission denied: You do not have permission to access this resource.'
                     );
-                    // The httpError should be set from the thrown DotHttpError
+                    expect(error.status).toBe(403);
+                    expect(error.code).toBe('PERMISSION_DENIED');
                     expect(error.httpError).toBeInstanceOf(DotHttpError);
                     if (error.httpError) {
-                        expect(error.httpError.status).toBe(400);
-                        expect(error.httpError.statusText).toBe('Bad Request');
-                        expect(error.httpError.message).toBe(
-                            "GraphQL query failed for URL '/bad-page': DotPage entity error: Invalid page configuration"
-                        );
+                        expect(error.httpError.status).toBe(403);
                     }
                     expect(error.graphql).toBeDefined();
                     expect(error.graphql?.query).toBeDefined();
@@ -394,7 +413,67 @@ describe('PageClient', () => {
             }
         });
 
-        it('should throw 404 error with httpError when page is not found', async () => {
+        it('should throw NOT_FOUND error when extensions.code is NOT_FOUND', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+            mockRequest.mockResolvedValue({
+                data: {
+                    page: null
+                },
+                errors: [
+                    {
+                        message: 'Page not found: /missing',
+                        extensions: {
+                            code: 'NOT_FOUND',
+                            status: 404,
+                            resourceType: 'Page',
+                            resourceId: '/missing'
+                        }
+                    }
+                ]
+            });
+
+            try {
+                await pageClient.get('/missing');
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.message).toBe('Page not found: /missing');
+                    expect(error.status).toBe(404);
+                    expect(error.code).toBe('NOT_FOUND');
+                }
+            }
+        });
+
+        it('should infer status from code when extensions.status is missing', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+            mockRequest.mockResolvedValue({
+                data: {
+                    page: null
+                },
+                errors: [
+                    {
+                        message: 'Permission denied',
+                        extensions: { code: 'PERMISSION_DENIED' }
+                    }
+                ]
+            });
+
+            try {
+                await pageClient.get('/page');
+                fail('Should have thrown an error');
+            } catch (error: unknown) {
+                expect(error).toBeInstanceOf(DotErrorPage);
+                if (error instanceof DotErrorPage) {
+                    expect(error.status).toBe(403);
+                    expect(error.code).toBe('PERMISSION_DENIED');
+                }
+            }
+        });
+
+        it('should throw 404 error with httpError when page is null with no structured errors', async () => {
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
             const graphQLOptions = {
                 graphql: {
@@ -416,17 +495,13 @@ describe('PageClient', () => {
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
-                    expect(error.message).toBe(
-                        "Page request failed for URL '/missing-page': Page /missing-page not found. Check the page URL and permissions."
-                    );
-                    // The httpError should be set from the thrown DotHttpError
+                    expect(error.message).toBe('Page /missing-page not found');
+                    expect(error.status).toBe(404);
+                    expect(error.code).toBe('NOT_FOUND');
                     expect(error.httpError).toBeInstanceOf(DotHttpError);
                     if (error.httpError) {
                         expect(error.httpError.status).toBe(404);
                         expect(error.httpError.statusText).toBe('Not Found');
-                        expect(error.httpError.message).toBe(
-                            'Page /missing-page not found. Check the page URL and permissions.'
-                        );
                     }
                     expect(error.graphql).toBeDefined();
                     expect(error.graphql?.query).toBeDefined();
@@ -456,6 +531,8 @@ describe('PageClient', () => {
                     expect(error.message).toBe(
                         "Page request failed for URL '/error-page': Network timeout"
                     );
+                    expect(error.status).toBe(500);
+                    expect(error.code).toBe('UNKNOWN');
                     expect(error.httpError).toBeUndefined();
                     expect(error.graphql).toBeDefined();
                     expect(error.graphql?.query).toBeDefined();
@@ -478,6 +555,8 @@ describe('PageClient', () => {
                     expect(error.message).toBe(
                         "Page request failed for URL '/unknown-error-page': Unknown error"
                     );
+                    expect(error.status).toBe(500);
+                    expect(error.code).toBe('UNKNOWN');
                     expect(error.httpError).toBeUndefined();
                     expect(error.graphql).toBeDefined();
                 }
@@ -526,6 +605,44 @@ describe('PageClient', () => {
                     });
                 }
             }
+        });
+
+        it('should surface partial errors in successful response', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+            const partialErrors = [
+                {
+                    message: 'Permission denied for Blog content type',
+                    extensions: { classification: 'DataFetchingException' }
+                }
+            ];
+
+            mockRequest.mockResolvedValue({
+                data: {
+                    page: {
+                        title: 'GraphQL Page',
+                        url: '/graphql-page',
+                        layout: { header: { title: 'Header' } },
+                        viewAs: { visitor: { persona: { title: 'Visitor Persona' } } },
+                        containers: []
+                    }
+                },
+                errors: partialErrors
+            });
+
+            const result = await pageClient.get('/graphql-page');
+
+            expect(result.pageAsset).toBeDefined();
+            expect(result.errors).toEqual(partialErrors);
+        });
+
+        it('should not include errors when there are none', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+            const result = await pageClient.get('/graphql-page');
+
+            expect(result.pageAsset).toBeDefined();
+            expect(result.errors).toBeUndefined();
         });
 
         it('should use default values for languageId and mode if not provided', async () => {
