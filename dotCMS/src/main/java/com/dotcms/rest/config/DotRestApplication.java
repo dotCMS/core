@@ -8,7 +8,12 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.security.SecuritySchemes;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
@@ -32,6 +37,28 @@ import org.glassfish.jersey.server.ResourceConfig;
  */
 
 @ApplicationPath("/api")
+@SecuritySchemes({
+		@SecurityScheme(
+				name = "ApiToken",
+				type = SecuritySchemeType.HTTP,
+				scheme = "bearer",
+				bearerFormat = "JWT",
+				description = "JWT API token. Obtain via POST /api/v1/apitoken or POST /api/v1/authentication"
+		),
+		@SecurityScheme(
+				name = "BasicAuth",
+				type = SecuritySchemeType.HTTP,
+				scheme = "basic",
+				description = "HTTP Basic authentication with dotCMS username and password"
+		),
+		@SecurityScheme(
+				name = "DotAuth",
+				type = SecuritySchemeType.APIKEY,
+				in = SecuritySchemeIn.HEADER,
+				paramName = "DOTAUTH",
+				description = "Base64-encoded username:password in the DOTAUTH header"
+		)
+})
 @OpenAPIDefinition(
 		info = @Info(
 				title = "dotCMS REST API",
@@ -39,6 +66,10 @@ import org.glassfish.jersey.server.ResourceConfig;
 		servers = @Server(
 						description = "dotCMS Server",
 						url = "/"),
+		security = {
+				@SecurityRequirement(name = "ApiToken"),
+				@SecurityRequirement(name = "BasicAuth")
+		},
 		tags = {
 				@Tag(name = "Accessibility Checker", description = "Web accessibility checking and compliance"),
 				@Tag(name = "Administration", description = "System administration and management tools"),
