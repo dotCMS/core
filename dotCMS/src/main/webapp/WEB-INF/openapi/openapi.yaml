@@ -17265,7 +17265,7 @@ paths:
       responses:
         "200":
           content:
-            MediaType.APPLICATION_JSON:
+            application/json:
               example:
                 entity:
                   results:

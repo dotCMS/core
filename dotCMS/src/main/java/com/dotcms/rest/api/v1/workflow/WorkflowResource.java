@@ -3442,7 +3442,7 @@ public class WorkflowResource {
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet(s) modified successfully",
-                            content = @Content(mediaType = "MediaType.APPLICATION_JSON",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
                                     schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
