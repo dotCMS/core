@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
@@ -25,29 +25,17 @@ export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVari
 
     const variantId = viewAs?.variantId;
 
-    // By default, wait for the variant
-    const [shouldWaitForVariant, setShouldWaitForVariant] = useState<boolean>(true);
-
-    useEffect(() => {
+    // Derive shouldWaitForVariant synchronously using useMemo to avoid
+    // synchronous setState calls inside useEffect (set-state-in-effect rule).
+    const shouldWaitForVariant = useMemo(() => {
         const isInsideEditor = getUVEState()?.mode === UVE_MODE.EDIT;
 
         if (isInsideEditor || !runningExperimentId) {
-            setShouldWaitForVariant(false);
-
-            return;
+            return false;
         }
 
-        // If variantId is not provided, show content and warn
         if (!variantId) {
-            // eslint-disable-next-line no-console
-            console.warn(
-                '[DotExperiments] variantId is required but missing. ' +
-                    'Please ensure the page data includes variantId in viewAs. ' +
-                    'Showing content to prevent blank screen.'
-            );
-            setShouldWaitForVariant(false);
-
-            return;
+            return false;
         }
 
         const location = typeof window !== 'undefined' ? window.location : undefined;
@@ -57,12 +45,24 @@ export const useExperimentVariant = (data: DotCMSPageAsset): { shouldWaitForVari
 
             if (variantAssigned && variantId === variantAssigned.name) {
                 // the data requested and the variant assigned is the correct no need to wait
-                setShouldWaitForVariant(false);
-
-                return;
+                return false;
             }
         }
-    }, [dotExperimentInstance, data, variantId, runningExperimentId]);
+
+        return true;
+    }, [dotExperimentInstance, variantId, runningExperimentId]);
+
+    // Emit warning as a side effect (separate from the memoized computation)
+    useEffect(() => {
+        if (runningExperimentId && !variantId) {
+            // eslint-disable-next-line no-console
+            console.warn(
+                '[DotExperiments] variantId is required but missing. ' +
+                    'Please ensure the page data includes variantId in viewAs. ' +
+                    'Showing content to prevent blank screen.'
+            );
+        }
+    }, [runningExperimentId, variantId]);
 
     return { shouldWaitForVariant };
 };
