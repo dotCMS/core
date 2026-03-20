@@ -447,7 +447,14 @@ public class TagResource {
                 String.format("Site with ID '%s' does not exist", tagForm.getSiteId())
             );
         }
-        targetSiteId = helper.resolveTagStorageHost(targetHost.getIdentifier());
+        // Only resolve tagStorage when moving to a different site. If the client passes back
+        // the tag's current hostId directly (e.g. a no-op edit after a chain resolution on
+        // create), skip re-resolution to prevent double-hop through the tagStorage chain.
+        if (targetHost.getIdentifier().equals(existingTag.getHostId())) {
+            targetSiteId = existingTag.getHostId();
+        } else {
+            targetSiteId = helper.resolveTagStorageHost(targetHost.getIdentifier());
+        }
 
         // 5. Check for duplicate if name or site is changing
         if (!existingTag.getTagName().equals(tagForm.getName()) ||
@@ -671,7 +678,6 @@ public class TagResource {
         for (final String tagId : tagIds) {
             final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
             if (tag == null) {
-                skippedCount++;
                 continue;
             }
             try {
