@@ -5,6 +5,7 @@ import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotmarketing.exception.DotDataException;
+import java.io.IOException;
 
 /**
  * Vendor-neutral contract for the <em>write side</em> of the contentlet index pipeline.
@@ -104,6 +105,24 @@ public interface ContentletIndexOperations {
      * @param docId     document id to delete
      */
     void addDeleteOpToProcessor(IndexBulkProcessor proc, String indexName, String docId);
+
+    // =========================================================================
+    // Index lifecycle
+    // =========================================================================
+
+    /**
+     * Creates a search index with the provider-specific default settings and content mapping.
+     *
+     * <p>Each implementation loads its own settings file ({@code es-content-settings.json} or
+     * {@code os-content-settings.json}) and applies the corresponding content mapping, so the
+     * router does not need to know which backend is being targeted.</p>
+     *
+     * @param indexName the fully-qualified index name (with cluster prefix)
+     * @param shards    number of primary shards; {@code 0} means "use provider default"
+     * @return {@code true} if the index was created and the mapping applied successfully
+     * @throws IOException if index creation or mapping application fails
+     */
+    boolean createContentIndex(String indexName, int shards) throws IOException;
 
     // =========================================================================
     // Other write operations

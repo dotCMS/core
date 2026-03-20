@@ -2,7 +2,13 @@ package com.dotcms.content.index.opensearch;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexOperationsES;
+import com.dotcms.content.elasticsearch.business.MappingOperationsES;
 import com.dotcms.content.index.ContentletIndexOperations;
+import com.dotcms.content.index.domain.CreateIndexStatus;
+import java.io.IOException;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.DateUtil;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import com.dotcms.content.index.VersionedIndices;
@@ -55,21 +61,34 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
 
     private static final ObjectMapper OBJECT_MAPPER = DotObjectMapperProvider.createDefaultMapper();
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
+    private static final String OS_SETTINGS_FILE = "os-content-settings.json";
+    /** OpenSearch accepts the same content mapping format as Elasticsearch. */
+    private static final String CONTENT_MAPPING_FILE = "es-content-mapping.json";
 
     @Inject
     private OSClientProvider clientProvider;
 
+    @Inject
+    private OSIndexAPIImpl osIndexAPI;
+
+    @Inject
+    private MappingOperationsOS mappingOps;
+
     /**
      * No-arg constructor required by CDI for proxy creation.
-     * {@code clientProvider} is injected via field injection after construction.
+     * All fields are injected via CDI field injection after construction.
      */
     public ContentletIndexOperationsOS() {
         // CDI no-arg constructor
     }
 
     /** Package-private constructor for testing. */
-    ContentletIndexOperationsOS(final OSClientProvider clientProvider) {
+    ContentletIndexOperationsOS(final OSClientProvider clientProvider,
+            final OSIndexAPIImpl osIndexAPI,
+            final MappingOperationsOS mappingOps) {
         this.clientProvider = clientProvider;
+        this.osIndexAPI     = osIndexAPI;
+        this.mappingOps     = mappingOps;
     }
 
     private OSClientProvider getClientProvider() {
@@ -173,6 +192,35 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
         public void close() throws Exception {
             flush();
         }
+    }
+
+    // =========================================================================
+    // Index lifecycle
+    // =========================================================================
+
+    @Override
+    public boolean createContentIndex(final String indexName, final int shards)
+            throws IOException {
+        String settings = null;
+        try {
+            settings = JsonUtil.getJsonFileContentAsString(OS_SETTINGS_FILE);
+        } catch (Exception e) {
+            Logger.error(this, "cannot load " + OS_SETTINGS_FILE + ", skipping", e);
+        }
+
+        final String mapping = JsonUtil.getJsonFileContentAsString(CONTENT_MAPPING_FILE);
+        final CreateIndexStatus status = osIndexAPI.createIndex(indexName, settings, shards);
+
+        int i = 0;
+        while (!status.acknowledged()) {
+            DateUtil.sleep(100);
+            if (i++ > 300) {
+                throw new IOException("OS index creation timed out for: " + indexName);
+            }
+        }
+
+        mappingOps.putMapping(CollectionsUtils.list(indexName), mapping);
+        return true;
     }
 
     // =========================================================================

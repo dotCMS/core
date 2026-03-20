@@ -5,7 +5,7 @@ import static com.dotcms.content.index.opensearch.ConfigurableOpenSearchProvider
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.index.IndexAPI;
-import com.dotmarketing.util.Config;
+import com.dotcms.content.index.IndexManagerAPIImpl;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
 import javax.inject.Inject;
@@ -53,7 +53,7 @@ import org.opensearch.client.opensearch.indices.IndexSettings;
  *
  * <p>This class implements all index management operations using the OpenSearch Java client.
  * Methods that are not yet fully implemented log an info message and return safe defaults —
- * the {@link com.dotcms.content.index.IndexAPIImpl} router delegates to
+ * the {@link IndexManagerAPIImpl} router delegates to
  * {@link com.dotcms.content.elasticsearch.business.ESIndexAPI} by default,
  * so these stubs will not be called in production until OS routing is enabled.</p>
  *

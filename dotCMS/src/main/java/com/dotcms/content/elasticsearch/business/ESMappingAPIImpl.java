@@ -20,8 +20,8 @@ import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexMappingRestOperations;
+import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.opensearch.MappingOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
@@ -114,7 +114,7 @@ import org.apache.commons.lang.time.FastDateFormat;
  * @author root
  * @since Mar 22nd, 2012
  */
-@IndexRouter(access = IndexAccess.READ_WRITE)
+@IndexRouter(access = {IndexAccess.READ, IndexAccess.WRITE})
 @IndexLibraryIndependent
 public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 
@@ -177,8 +177,12 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 	private final Supplier<WorkflowAPI> workflowAPI;
 
     // ---- Vendor-specific REST delegates ----
+    /** ES implementation — receives writes in phases 0, 1, 2; reads in phases 0, 1. */
     private final IndexMappingRestOperations esOps;
+    /** OS implementation — receives writes in phases 1, 2, 3; reads in phases 2, 3. */
     private final IndexMappingRestOperations osOps;
+    /** Routes all REST mapping operations to the correct provider(s) based on migration phase. */
+    private final PhaseRouter<IndexMappingRestOperations> router;
 
 	@VisibleForTesting
 	public ESMappingAPIImpl(
@@ -239,6 +243,7 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 		this.workflowAPI = workflowAPI;
 		this.esOps = esOps;
 		this.osOps = osOps;
+		this.router = new PhaseRouter<>(esOps, osOps);
 	}
 
 	/**
@@ -289,15 +294,6 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 	}
 
     /**
-     * Returns the active mapping REST provider based on the current migration phase.
-     * Defaults to the ES implementation.
-     */
-    private IndexMappingRestOperations getProvider() {
-
-        return IndexConfigHelper.isMigrationComplete() ? osOps : esOps;
-    }
-
-    /**
      * Accessor for the ES mapping operations — exposed for testing.
      * @return ES mapping operations delegate
      */
@@ -313,9 +309,26 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
         return osOps;
     }
 
+    // -------------------------------------------------------------------------
+    // REST mapping operations — phase-aware via PhaseRouter<IndexMappingRestOperations>
+    //
+    // putMapping is a WRITE: fans out to all write providers in dual-write phases
+    //   (both ES and OS must receive the mapping for schema consistency).
+    //   Returns AND of all results — all providers must succeed.
+    //   Note: PhaseRouter has no writeBooleanChecked, so fan-out is manual here.
+    //
+    // getMapping / getFieldMappingAsMap are READs: routed to the single read
+    //   provider via router.readChecked().
+    // -------------------------------------------------------------------------
+
     @Override
     public boolean putMapping(final List<String> indexes, final String mapping) throws IOException {
-        return getProvider().putMapping(indexes, mapping);
+        // Manual fan-out: AND of all write-provider results.
+        boolean result = true;
+        for (final IndexMappingRestOperations ops : router.writeProviders()) {
+            result &= ops.putMapping(indexes, mapping);
+        }
+        return result;
     }
 
     @Override
@@ -325,13 +338,25 @@ public class ESMappingAPIImpl implements ContentIndexMappingAPI {
 
     @Override
     public String getMapping(final String index) throws IOException {
-        return getProvider().getMapping(index);
+        try {
+            return router.readChecked(impl -> impl.getMapping(index));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
+        }
     }
 
     @Override
     public Map<String, Object> getFieldMappingAsMap(final String index,
             final String fieldName) throws IOException {
-        return getProvider().getFieldMappingAsMap(index, fieldName);
+        try {
+            return router.readChecked(impl -> impl.getFieldMappingAsMap(index, fieldName));
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException(e.getMessage(), e);
+        }
     }
 
 	@SuppressWarnings("unchecked")

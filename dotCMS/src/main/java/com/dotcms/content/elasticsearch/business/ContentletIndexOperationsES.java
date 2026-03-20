@@ -5,8 +5,13 @@ import static com.dotmarketing.common.reindex.ReindexThread.BULK_PROCESSOR_AWAIT
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 
 import com.dotcms.content.index.ContentletIndexOperations;
+import com.dotcms.content.index.domain.CreateIndexStatus;
+import java.io.IOException;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.JsonUtil;
+import com.dotmarketing.util.DateUtil;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
@@ -64,6 +69,23 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
  */
 public class ContentletIndexOperationsES implements ContentletIndexOperations {
 
+    private static final String ES_SETTINGS_FILE = "es-content-settings.json";
+    private static final String ES_MAPPING_FILE  = "es-content-mapping.json";
+
+    private final ESIndexAPI esIndexAPI;
+    private final MappingOperationsES mappingOps;
+
+    public ContentletIndexOperationsES() {
+        this(new ESIndexAPI(), new MappingOperationsES());
+    }
+
+    /** Package-private constructor for testing. */
+    ContentletIndexOperationsES(final ESIndexAPI esIndexAPI,
+            final MappingOperationsES mappingOps) {
+        this.esIndexAPI  = esIndexAPI;
+        this.mappingOps  = mappingOps;
+    }
+
     // =========================================================================
     // Inner wrappers — vendor types stay inside this class
     // =========================================================================
@@ -96,6 +118,35 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
         public void close() throws Exception {
             delegate.awaitClose(awaitTimeoutSeconds, java.util.concurrent.TimeUnit.SECONDS);
         }
+    }
+
+    // =========================================================================
+    // Index lifecycle
+    // =========================================================================
+
+    @Override
+    public boolean createContentIndex(final String indexName, final int shards)
+            throws IOException {
+        String settings = null;
+        try {
+            settings = JsonUtil.getJsonFileContentAsString(ES_SETTINGS_FILE);
+        } catch (Exception e) {
+            Logger.error(this, "cannot load " + ES_SETTINGS_FILE + ", skipping", e);
+        }
+
+        final String mapping = JsonUtil.getJsonFileContentAsString(ES_MAPPING_FILE);
+        final CreateIndexStatus status = esIndexAPI.createIndex(indexName, settings, shards);
+
+        int i = 0;
+        while (!status.acknowledged()) {
+            DateUtil.sleep(100);
+            if (i++ > 300) {
+                throw new IOException("ES index creation timed out for: " + indexName);
+            }
+        }
+
+        mappingOps.putMapping(CollectionsUtils.list(indexName), mapping);
+        return true;
     }
 
     // =========================================================================
