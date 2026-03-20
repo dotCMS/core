@@ -464,6 +464,37 @@ describe('DotCustomEventHandlerService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['content/123']);
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
+
+        it('should edit a host using new editor', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-host',
+                        data: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
+        });
+
+        it('should create a host using new editor', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-host',
+                        data: { url: 'hello.world.com' }
+                    }
+                })
+            );
+
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/Host']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('edit content 2 is enabled and contentTypes are limited', () => {
@@ -533,6 +564,43 @@ describe('DotCustomEventHandlerService', () => {
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
+        it('should edit a host using new editor when metadata flag is enabled', () => {
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                of({ metadata } as DotCMSContentType)
+            );
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-host',
+                        data: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
+            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
+        });
+
+        it('should create a host using new editor when metadata flag is enabled', () => {
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                of({ metadata } as DotCMSContentType)
+            );
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-host',
+                        data: { url: 'hello.world.com' }
+                    }
+                })
+            );
+
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/Host']);
+            expect(router.navigate).toHaveBeenCalledTimes(1);
+        });
+
         it('should not create a contentlet', () => {
             jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                 of({ metadata: metadata2 } as DotCMSContentType)
@@ -587,6 +655,42 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
             expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should not edit a host with new editor when metadata flag is disabled', () => {
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                of({ metadata: metadata2 } as DotCMSContentType)
+            );
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'edit-host',
+                        data: {
+                            inode: '123'
+                        }
+                    }
+                })
+            );
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
+            expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
+        });
+
+        it('should not create a host with new editor when metadata flag is disabled', () => {
+            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                of({ metadata: metadata2 } as DotCMSContentType)
+            );
+            jest.spyOn(dotContentletEditorService, 'create');
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-host',
+                        data: { url: 'hello.world.com' }
+                    }
+                })
+            );
+            expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Host');
+            expect(router.navigate).not.toHaveBeenCalledWith(['content/new/Host']);
         });
     });
 });
