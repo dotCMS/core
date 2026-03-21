@@ -95,7 +95,7 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
 function CustomComponent({ contentlet }: CustomComponentProps) {
     const { userComponents, slots } = useContext(DotCMSPageContext);
 
-    const slotNode = slots[contentlet?.identifier];
+    const slotNode = slots?.[contentlet?.identifier];
 
     if (slotNode !== undefined) {
         return <>{slotNode}</>;

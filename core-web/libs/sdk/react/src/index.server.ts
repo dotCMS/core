@@ -10,12 +10,15 @@ export { useEditableDotCMSPage } from './lib/next/hooks/useEditableDotCMSPage';
 
 export {
     DotCMSBlockEditorRenderer,
+    CustomRenderer
+} from './lib/next/components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
+
+export type {
     BlockEditorRendererProps,
-    CustomRenderer,
     CustomRendererProps
 } from './lib/next/components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
 
-export { DotCMSLayoutBodyProps } from './lib/next/components/DotCMSLayoutBody/DotCMSLayoutBody';
+export type { DotCMSLayoutBodyProps } from './lib/next/components/DotCMSLayoutBody/DotCMSLayoutBody';
 
 export { useAISearch } from './lib/next/hooks/useAISearch';
 

@@ -14,10 +14,18 @@ function patchPackageJsonPlugin(outputDir) {
             const pkgPath = path.join(outputDir, 'package.json');
             if (!fs.existsSync(pkgPath)) return;
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-            if (pkg.exports && pkg.exports['.']) {
+            const mainExport = pkg.exports && pkg.exports['.'];
+
+            if (mainExport && typeof mainExport === 'object' && !Array.isArray(mainExport)) {
                 pkg.exports['.'] = {
                     'react-server': './index.server.esm.js',
-                    ...pkg.exports['.']
+                    ...mainExport
+                };
+                fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+            } else if (typeof mainExport === 'string') {
+                pkg.exports['.'] = {
+                    'react-server': './index.server.esm.js',
+                    import: mainExport
                 };
                 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             }
@@ -31,7 +39,9 @@ module.exports = (options) => {
     // Add server entry point alongside the default entry
     if (options.input && typeof options.input === 'object' && options.input.index) {
         const mainEntry = options.input.index;
-        const serverEntry = mainEntry.replace('/index.ts', '/index.server.ts');
+        const parsed = path.parse(mainEntry);
+        const serverFileName = `${parsed.name}.server${parsed.ext}`;
+        const serverEntry = parsed.dir ? path.join(parsed.dir, serverFileName) : serverFileName;
         options.input['index.server'] = serverEntry;
     }
 
@@ -47,22 +57,21 @@ module.exports = (options) => {
     }
 
     // Determine output directory for package.json patching
-    const outputDir = Array.isArray(options.output)
-        ? options.output[0]?.dir
-        : options.output?.dir;
+    const outputDir = Array.isArray(options.output) ? options.output[0]?.dir : options.output?.dir;
 
     // Append preserveDirectives and package.json patcher as the last plugins
     options.plugins = [
         ...(Array.isArray(options.plugins) ? options.plugins : []),
         preserveDirectives(),
-        ...(outputDir ? [patchPackageJsonPlugin(outputDir)] : []),
+        ...(outputDir ? [patchPackageJsonPlugin(outputDir)] : [])
     ];
 
-    // Suppress MODULE_LEVEL_DIRECTIVE warnings from rollup
+    // Suppress MODULE_LEVEL_DIRECTIVE warnings from rollup, composing with any existing handler
+    const originalOnWarn = options.onwarn;
     options.onwarn = (warning, warn) => {
-        if (warning.code !== 'MODULE_LEVEL_DIRECTIVE') {
-            warn(warning);
-        }
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        if (typeof originalOnWarn === 'function') return originalOnWarn(warning, warn);
+        warn(warning);
     };
 
     return options;

@@ -18,7 +18,7 @@ export interface DotCMSPageContextProps {
     pageAsset: DotCMSPageAsset;
     mode: DotCMSPageRendererMode;
     userComponents: Record<string, React.ComponentType<DotCMSBasicContentlet>>;
-    slots: Record<string, ReactNode>;
+    slots?: Record<string, ReactNode>;
 }
 
 /**
