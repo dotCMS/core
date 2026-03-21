@@ -58,7 +58,7 @@ public class Task260321AddTagsPortletToMenu implements StartupTask {
                     .addParam(TAGS.toString())
                     .getInt("count");
             return tagsCount == 0;
-        } catch (final DotDataException e) {
+        } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when checking the 'Tags' portlet. " +
                     "Please verify manually: %s", ExceptionUtil.getErrorMessage(e)), e);
         }

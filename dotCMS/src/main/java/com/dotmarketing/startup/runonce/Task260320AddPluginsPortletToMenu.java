@@ -43,7 +43,7 @@ public class Task260320AddPluginsPortletToMenu implements StartupTask {
                     .addParam(PLUGINS.toString())
                     .getInt("count");
             return pluginsCount == 0;
-        } catch (final DotDataException e) {
+        } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when checking the 'Plugins' portlet. " +
                     "Please verify manually: %s", ExceptionUtil.getErrorMessage(e)), e);
         }
