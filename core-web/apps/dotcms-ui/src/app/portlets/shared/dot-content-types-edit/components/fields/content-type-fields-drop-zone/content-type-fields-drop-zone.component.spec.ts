@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
@@ -7,10 +5,8 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
     Component,
     DebugElement,
-    EventEmitter,
-    Injectable,
-    Input,
-    Output,
+    input,
+    output,
     Renderer2
 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
@@ -80,12 +76,9 @@ const fakeContentType: DotCMSContentType = {
     template: ''
 })
 class TestContentTypeFieldsRowComponent {
-    @Input()
-    fieldRow: DotCMSContentTypeLayoutRow;
-    @Output()
-    editField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-    @Output()
-    removeField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
+    fieldRow = input<DotCMSContentTypeLayoutRow>();
+    editField = output<DotCMSContentTypeField>();
+    removeField = output<DotCMSContentTypeField>();
 }
 
 @Component({
@@ -93,20 +86,14 @@ class TestContentTypeFieldsRowComponent {
     template: ''
 })
 class TestContentTypeFieldsPropertiesFormComponent {
-    @Output()
-    saveField: EventEmitter<any> = new EventEmitter();
-    @Output()
-    valid: EventEmitter<boolean> = new EventEmitter();
-    @Input()
-    formFieldData: DotCMSContentTypeField;
-    @Input()
-    contentType: DotCMSContentType;
+    saveField = output<DotCMSContentTypeField>();
+    valid = output<boolean>();
+    formFieldData = input<DotCMSContentTypeField>();
+    contentType = input<DotCMSContentType>();
 
     form = new FormGroup({});
 
     public destroy(): void {
-        return;
-
         return;
     }
 }
@@ -116,13 +103,9 @@ class TestContentTypeFieldsPropertiesFormComponent {
     template: ''
 })
 class TestDotContentTypeFieldsTabComponent {
-    @Input()
-    fieldTab: DotCMSContentTypeLayoutRow;
-
-    @Output()
-    editTab: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-    @Output()
-    removeTab: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
+    fieldTab = input<DotCMSContentTypeLayoutRow>();
+    editTab = output<DotCMSContentTypeField>();
+    removeTab = output<DotCMSContentTypeLayoutRow>();
 }
 
 @Component({
@@ -130,25 +113,23 @@ class TestDotContentTypeFieldsTabComponent {
     template: ''
 })
 class TestDotLoadingIndicatorComponent {
-    @Input()
-    fullscreen: boolean;
+    fullscreen = input<boolean>();
 }
 
-@Injectable()
 class TestFieldDragDropService {
-    _fieldDropFromSource: Subject<any> = new Subject();
-    _fieldDropFromTarget: Subject<any> = new Subject();
-    _fieldRowDropFromTarget: Subject<any> = new Subject();
+    _fieldDropFromSource = new Subject<unknown>();
+    _fieldDropFromTarget = new Subject<unknown>();
+    _fieldRowDropFromTarget = new Subject<unknown>();
 
-    get fieldDropFromSource$(): Observable<any> {
+    get fieldDropFromSource$(): Observable<unknown> {
         return this._fieldDropFromSource.asObservable();
     }
 
-    get fieldDropFromTarget$(): Observable<any> {
+    get fieldDropFromTarget$(): Observable<unknown> {
         return this._fieldDropFromTarget.asObservable();
     }
 
-    get fieldRowDropFromTarget$(): Observable<any> {
+    get fieldRowDropFromTarget$(): Observable<unknown> {
         return this._fieldRowDropFromTarget.asObservable();
     }
 
@@ -157,7 +138,6 @@ class TestFieldDragDropService {
     }
 }
 
-@Injectable()
 class TestDotLoadingIndicatorService {
     show(): void {
         return;
@@ -173,8 +153,8 @@ class TestDotLoadingIndicatorService {
     template: ''
 })
 class DotConvertToBlockInfoStubComponent {
-    @Input() currentFieldType: unknown;
-    @Input() currentField: unknown;
+    currentFieldType = input<unknown>();
+    currentField = input<unknown>();
 }
 
 @Component({
@@ -182,7 +162,7 @@ class DotConvertToBlockInfoStubComponent {
     template: ''
 })
 class DotConvertWysiwygToBlockStubComponent {
-    @Input() currentFieldType: unknown;
+    currentFieldType = input<unknown>();
 }
 
 @Component({
@@ -190,11 +170,11 @@ class DotConvertWysiwygToBlockStubComponent {
     template: ''
 })
 class DotBlockEditorSettingsStubComponent {
-    @Input() field: DotCMSContentTypeField;
-    @Input() isVisible = false;
-    @Output() $changeControls = new EventEmitter<DotDialogActions>();
-    @Output() $valid = new EventEmitter<boolean>();
-    @Output() $save = new EventEmitter<DotFieldVariable[]>();
+    field = input<DotCMSContentTypeField>();
+    isVisible = input(false);
+    $changeControls = output<DotDialogActions>();
+    $valid = output<boolean>();
+    $save = output<DotFieldVariable[]>();
 }
 
 @Component({
@@ -202,11 +182,11 @@ class DotBlockEditorSettingsStubComponent {
     template: ''
 })
 class DotBinarySettingsStubComponent {
-    @Input() field: DotCMSContentTypeField;
-    @Input() isVisible = false;
-    @Output() $changeControls = new EventEmitter<DotDialogActions>();
-    @Output() $valid = new EventEmitter<boolean>();
-    @Output() $save = new EventEmitter<DotFieldVariable[]>();
+    field = input<DotCMSContentTypeField>();
+    isVisible = input(false);
+    $changeControls = output<DotDialogActions>();
+    $valid = output<boolean>();
+    $save = output<DotFieldVariable[]>();
 }
 
 @Component({
@@ -214,15 +194,15 @@ class DotBinarySettingsStubComponent {
     template: ''
 })
 class DotCustomFieldSettingsStubComponent {
-    @Input() field: DotCMSContentTypeField;
-    @Input() isVisible = false;
-    @Input() renderMode: string;
-    @Output() $changeControls = new EventEmitter<DotDialogActions>();
-    @Output() $valid = new EventEmitter<boolean>();
-    @Output() $save = new EventEmitter<void>();
+    field = input<DotCMSContentTypeField>();
+    isVisible = input(false);
+    renderMode = input<string>();
+    $changeControls = output<DotDialogActions>();
+    $valid = output<boolean>();
+    $save = output<void>();
 }
 
-function becomeNewField(field) {
+function becomeNewField(field: Partial<DotCMSContentTypeField>) {
     delete field.id;
     delete field.sortOrder;
 }
@@ -357,7 +337,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const contentTypeFieldsPropertyForm = de.query(
             By.css('dot-content-type-fields-properties-form')
         );
-        expect(contentTypeFieldsPropertyForm.componentInstance.contentType.name).toBe(
+        expect(contentTypeFieldsPropertyForm.componentInstance.contentType()?.name).toBe(
             'ContentTypeName'
         );
     });
@@ -488,10 +468,6 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
 class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
     loading: boolean;
-
-    constructor() {
-        return;
-    }
 }
 
 // TODO: Upgrade tests to use FieldDragDropService (without mocking) and mocking DragulaService
@@ -507,19 +483,6 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     contentTypeId: '12b'
 };
 
-@Component({
-    selector: 'dot-block-editor-settings',
-    template: ''
-})
-class TestDotBlockEditorSettingsComponent {
-    @Output() $changeControls = new EventEmitter<DotDialogActions>();
-    @Output() $valid = new EventEmitter<boolean>();
-    @Output() $save = new EventEmitter<DotFieldVariable[]>();
-
-    @Input() field: DotCMSContentTypeField;
-    @Input() isVisible = false;
-}
-
 describe('Load fields and drag and drop', () => {
     const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService =
         new TestDotLoadingIndicatorService();
@@ -528,7 +491,7 @@ describe('Load fields and drag and drop', () => {
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let scrollIntoViewSpy;
+    let scrollIntoViewSpy: jest.Mock;
 
     const mockRouter = {
         navigate: jest.fn()
@@ -566,7 +529,7 @@ describe('Load fields and drag and drop', () => {
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
                 TestDotLoadingIndicatorComponent,
-                TestDotBlockEditorSettingsComponent,
+                DotBlockEditorSettingsStubComponent,
                 DotConvertToBlockInfoStubComponent,
                 DotConvertWysiwygToBlockStubComponent,
                 DotBinarySettingsStubComponent,
@@ -874,11 +837,11 @@ describe('Load fields and drag and drop', () => {
         // - 1 because one Mock Fields has not columns
         expect(fakeFields.length - 1).toEqual(fieldRows.length);
 
-        expect(2).toEqual(fieldRows[0].componentInstance.fieldRow.columns.length);
-        expect(1).toEqual(fieldRows[0].componentInstance.fieldRow.columns[0].fields.length);
+        expect(2).toEqual(fieldRows[0].componentInstance.fieldRow()?.columns.length);
+        expect(1).toEqual(fieldRows[0].componentInstance.fieldRow()?.columns[0].fields.length);
 
-        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns.length);
-        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns[0].fields.length);
+        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow()?.columns.length);
+        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow()?.columns[0].fields.length);
     });
 
     it('should set dropped field if a drop event happen from source', () => {
@@ -1158,7 +1121,7 @@ describe('Load fields and drag and drop', () => {
         describe('BLOCK EDITOR field', () => {
             let fieldBoxComponent;
             let BLOCK_EDITOR_SETTINGS: DebugElement;
-            let blockEditorComponent: TestDotBlockEditorSettingsComponent;
+            let blockEditorComponent: DotBlockEditorSettingsStubComponent;
 
             beforeEach(() => {
                 fixture.detectChanges();
@@ -1174,14 +1137,14 @@ describe('Load fields and drag and drop', () => {
             it('should create dot-block-editor-settings', () => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 expect(BLOCK_EDITOR_SETTINGS).toBeTruthy();
-                expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD);
+                expect(blockEditorComponent.field()).toEqual(BLOCK_EDITOR_FIELD);
                 expect(panels.length).toBe(3);
             });
 
             it('should emit changeControls and update dialogActions', () => {
                 const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
                 const blockEditorComponent =
-                    BLOCK_EDITOR_SETTINGS.componentInstance as TestDotBlockEditorSettingsComponent;
+                    BLOCK_EDITOR_SETTINGS.componentInstance as DotBlockEditorSettingsStubComponent;
                 const newDialogActions = {
                     accept: {
                         action: () => {
@@ -1284,7 +1247,7 @@ describe('Load fields and drag and drop', () => {
 
             const dotLoadingIndicator = de.query(By.css('dot-loading-indicator'));
             expect(dotLoadingIndicator).not.toBeNull();
-            expect(dotLoadingIndicator.componentInstance.fullscreen).toBe(true);
+            expect(dotLoadingIndicator.componentInstance.fullscreen()).toBe(true);
         });
 
         it('Should show dot-loading-indicator when loading is set to true', fakeAsync(() => {
