@@ -32,7 +32,7 @@
     [style]="{ width: '45rem' }"
     (visibleChange)="handleDialogVisibleChange($event)">
     <p-tabs
-        (onChange)="handleTabChange($event.value)"
+        (valueChange)="handleTabChange($event)"
         [(value)]="activeTab"
         [tabindex]="-1"
         class="-mx-6">
@@ -42,7 +42,7 @@
             </p-tab>
             @if (!!currentField?.id && isFieldWithSettings) {
                 <p-tab [value]="1" [disabled]="!currentField?.id">
-                    {{ 'Settings' | dm }}
+                    {{ 'contenttypes.dropzone.tab.settings' | dm }}
                 </p-tab>
             }
             <p-tab
@@ -91,11 +91,22 @@
                         }
                         @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
                             <dot-binary-settings
+                                ($changeControls)="changesDialogActions($event)"
                                 ($save)="toggleDialog()"
                                 ($valid)="setDialogOkButtonState($event)"
-                                ($changeControls)="changesDialogActions($event)"
                                 [field]="currentField"
                                 [isVisible]="activeTab === 1"></dot-binary-settings>
+                        }
+                        @case ('com.dotcms.contenttype.model.field.ImmutableCustomField') {
+                            <dot-custom-field-settings
+                                ($changeControls)="changesDialogActions($event)"
+                                ($save)="toggleDialog()"
+                                ($valid)="setDialogOkButtonState($event)"
+                                [field]="currentField"
+                                [isVisible]="activeTab === 1"
+                                [renderMode]="
+                                    fieldPropertiesForm.form?.get('newRenderMode')?.value
+                                "></dot-custom-field-settings>
                         }
                     }
                 </p-tabpanel>

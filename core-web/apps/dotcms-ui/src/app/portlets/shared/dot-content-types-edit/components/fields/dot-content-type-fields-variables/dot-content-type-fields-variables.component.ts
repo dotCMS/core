@@ -1,12 +1,27 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnChanges, OnDestroy, SimpleChanges, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnChanges,
+    OnDestroy,
+    SimpleChanges,
+    inject,
+    input,
+    signal
+} from '@angular/core';
 
 import { take, takeUntil } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import {
+    CUSTOM_FIELD_OPTIONS_KEY,
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotFieldVariable,
+    HIDE_LABEL_VARIABLE_KEY
+} from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
@@ -17,11 +32,12 @@ import { DotKeyValue } from '../../../../../../shared/models/dot-key-value-ng/do
     selector: 'dot-content-type-fields-variables',
     templateUrl: './dot-content-type-fields-variables.component.html',
     imports: [DotKeyValueComponent],
-    providers: [DotFieldVariablesService]
+    providers: [DotFieldVariablesService],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-    private fieldVariablesService = inject(DotFieldVariablesService);
+    private $fieldVariablesService = inject(DotFieldVariablesService);
 
     readonly $field = input<DotCMSContentTypeField>(undefined, { alias: 'field' });
     readonly $showTable = input<boolean>(true, { alias: 'showTable' });
@@ -29,7 +45,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     /** Local copy of field for access */
     field: DotCMSContentTypeField;
 
-    fieldVariables: DotFieldVariable[] = [];
+    $fieldVariables = signal<DotFieldVariable[]>([]);
+
     blackList = {
         'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
             allowedBlocks: true
@@ -38,6 +55,10 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         'com.dotcms.contenttype.model.field.ImmutableBinaryField': {
             accept: true,
             systemOptions: true
+        },
+        [DotCMSClazzes.CUSTOM_FIELD]: {
+            [CUSTOM_FIELD_OPTIONS_KEY]: true,
+            [HIDE_LABEL_VARIABLE_KEY]: true
         }
     };
 
@@ -61,19 +82,21 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * @memberof DotContentTypeFieldsVariablesComponent
      */
     deleteFieldVariable(variable: DotKeyValue): void {
-        this.fieldVariablesService
+        this.$fieldVariablesService
             .delete(this.field, variable)
             .pipe(take(1))
-            .subscribe(
-                () => {
-                    this.fieldVariables = this.fieldVariables.filter(
-                        (item: DotFieldVariable) => item.key !== variable.key
+            .subscribe({
+                next: () => {
+                    this.$fieldVariables.set(
+                        this.$fieldVariables().filter(
+                            (item: DotFieldVariable) => item.key !== variable.key
+                        )
                     );
                 },
-                (err: HttpErrorResponse) => {
+                error: (err: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
                 }
-            );
+            });
     }
 
     /**
@@ -82,53 +105,54 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * @memberof DotContentTypeFieldsVariablesComponent
      */
     updateFieldVariable(variable: DotKeyValue): void {
-        this.fieldVariablesService
+        this.$fieldVariablesService
             .save(this.field, variable)
             .pipe(take(1))
-            .subscribe(
-                (savedVariable: DotFieldVariable) => {
-                    this.fieldVariables = this.updateVariableCollection(savedVariable);
+            .subscribe({
+                next: (savedVariable: DotFieldVariable) => {
+                    this.$fieldVariables.set(this.updateVariableCollection(savedVariable));
                 },
-                (err: HttpErrorResponse) => {
+                error: (err: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
                 }
-            );
+            });
     }
 
     private initTableData(): void {
         if (!this.field?.contentTypeId || !this.field?.id) {
-            this.fieldVariables = [];
+            this.$fieldVariables.set([]);
             return;
         }
 
-        this.fieldVariablesService
+        this.$fieldVariablesService
             .load(this.field)
             .pipe(takeUntil(this.destroy$))
-            .subscribe((fieldVariables: DotFieldVariable[]) => {
-                this.fieldVariables = fieldVariables.filter((item) => {
-                    const fieldBlackList = this.blackList[this.field.clazz];
-                    if (fieldBlackList) {
-                        return !fieldBlackList[item?.key];
-                    }
+            .subscribe(($fieldVariables: DotFieldVariable[]) => {
+                this.$fieldVariables.set(
+                    $fieldVariables.filter((item) => {
+                        const fieldBlackList = this.blackList[this.field.clazz];
+                        if (fieldBlackList) {
+                            return !fieldBlackList[item?.key];
+                        }
 
-                    return true;
-                });
+                        return true;
+                    })
+                );
             });
     }
 
     private updateVariableCollection(savedVariable: DotFieldVariable): DotFieldVariable[] {
-        const variableExist = this.fieldVariables.find(
-            (item: DotKeyValue) => item.key === savedVariable.key
-        );
+        const current = this.$fieldVariables();
+        const variableExist = current.find((item: DotKeyValue) => item.key === savedVariable.key);
 
         return variableExist
-            ? this.fieldVariables.map((item: DotFieldVariable) => {
+            ? current.map((item: DotFieldVariable) => {
                   if (item.key === savedVariable.key) {
                       item = savedVariable;
                   }
 
                   return item;
               })
-            : [savedVariable, ...this.fieldVariables];
+            : [savedVariable, ...current];
     }
 }

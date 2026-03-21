@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
@@ -7,14 +5,12 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
     Component,
     DebugElement,
-    EventEmitter,
-    Injectable,
-    Input,
-    Output,
+    input,
+    output,
     Renderer2
 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
@@ -59,8 +55,6 @@ import {
 import { ContentTypeFieldsDropZoneComponent } from '.';
 
 import { DotActionButtonComponent } from '../../../../../../view/components/_common/dot-action-button/dot-action-button.component';
-import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
-import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { ContentTypeFieldsAddRowComponent } from '../content-type-fields-add-row/content-type-fields-add-row.component';
 import { DotContentTypeFieldsVariablesComponent } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.component';
 import { FieldPropertyService } from '../service/field-properties.service';
@@ -82,12 +76,9 @@ const fakeContentType: DotCMSContentType = {
     template: ''
 })
 class TestContentTypeFieldsRowComponent {
-    @Input()
-    fieldRow: DotCMSContentTypeLayoutRow;
-    @Output()
-    editField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-    @Output()
-    removeField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
+    fieldRow = input<DotCMSContentTypeLayoutRow>();
+    editField = output<DotCMSContentTypeField>();
+    removeField = output<DotCMSContentTypeField>();
 }
 
 @Component({
@@ -95,16 +86,14 @@ class TestContentTypeFieldsRowComponent {
     template: ''
 })
 class TestContentTypeFieldsPropertiesFormComponent {
-    @Output()
-    saveField: EventEmitter<any> = new EventEmitter();
-    @Input()
-    formFieldData: DotCMSContentTypeField;
-    @Input()
-    contentType: DotCMSContentType;
+    saveField = output<DotCMSContentTypeField>();
+    valid = output<boolean>();
+    formFieldData = input<DotCMSContentTypeField>();
+    contentType = input<DotCMSContentType>();
+
+    form = new FormGroup({});
 
     public destroy(): void {
-        return;
-
         return;
     }
 }
@@ -114,13 +103,9 @@ class TestContentTypeFieldsPropertiesFormComponent {
     template: ''
 })
 class TestDotContentTypeFieldsTabComponent {
-    @Input()
-    fieldTab: DotCMSContentTypeLayoutRow;
-
-    @Output()
-    editTab: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-    @Output()
-    removeTab: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
+    fieldTab = input<DotCMSContentTypeLayoutRow>();
+    editTab = output<DotCMSContentTypeField>();
+    removeTab = output<DotCMSContentTypeLayoutRow>();
 }
 
 @Component({
@@ -128,25 +113,23 @@ class TestDotContentTypeFieldsTabComponent {
     template: ''
 })
 class TestDotLoadingIndicatorComponent {
-    @Input()
-    fullscreen: boolean;
+    fullscreen = input<boolean>();
 }
 
-@Injectable()
 class TestFieldDragDropService {
-    _fieldDropFromSource: Subject<any> = new Subject();
-    _fieldDropFromTarget: Subject<any> = new Subject();
-    _fieldRowDropFromTarget: Subject<any> = new Subject();
+    _fieldDropFromSource = new Subject<unknown>();
+    _fieldDropFromTarget = new Subject<unknown>();
+    _fieldRowDropFromTarget = new Subject<unknown>();
 
-    get fieldDropFromSource$(): Observable<any> {
+    get fieldDropFromSource$(): Observable<unknown> {
         return this._fieldDropFromSource.asObservable();
     }
 
-    get fieldDropFromTarget$(): Observable<any> {
+    get fieldDropFromTarget$(): Observable<unknown> {
         return this._fieldDropFromTarget.asObservable();
     }
 
-    get fieldRowDropFromTarget$(): Observable<any> {
+    get fieldRowDropFromTarget$(): Observable<unknown> {
         return this._fieldRowDropFromTarget.asObservable();
     }
 
@@ -155,7 +138,6 @@ class TestFieldDragDropService {
     }
 }
 
-@Injectable()
 class TestDotLoadingIndicatorService {
     show(): void {
         return;
@@ -166,7 +148,61 @@ class TestDotLoadingIndicatorService {
     }
 }
 
-function becomeNewField(field) {
+@Component({
+    selector: 'dot-convert-to-block-info',
+    template: ''
+})
+class DotConvertToBlockInfoStubComponent {
+    currentFieldType = input<unknown>();
+    currentField = input<unknown>();
+}
+
+@Component({
+    selector: 'dot-convert-wysiwyg-to-block',
+    template: ''
+})
+class DotConvertWysiwygToBlockStubComponent {
+    currentFieldType = input<unknown>();
+}
+
+@Component({
+    selector: 'dot-block-editor-settings',
+    template: ''
+})
+class DotBlockEditorSettingsStubComponent {
+    field = input<DotCMSContentTypeField>();
+    isVisible = input(false);
+    $changeControls = output<DotDialogActions>();
+    $valid = output<boolean>();
+    $save = output<DotFieldVariable[]>();
+}
+
+@Component({
+    selector: 'dot-binary-settings',
+    template: ''
+})
+class DotBinarySettingsStubComponent {
+    field = input<DotCMSContentTypeField>();
+    isVisible = input(false);
+    $changeControls = output<DotDialogActions>();
+    $valid = output<boolean>();
+    $save = output<DotFieldVariable[]>();
+}
+
+@Component({
+    selector: 'dot-custom-field-settings',
+    template: ''
+})
+class DotCustomFieldSettingsStubComponent {
+    field = input<DotCMSContentTypeField>();
+    isVisible = input(false);
+    renderMode = input<string>();
+    $changeControls = output<DotDialogActions>();
+    $valid = output<boolean>();
+    $save = output<void>();
+}
+
+function becomeNewField(field: Partial<DotCMSContentTypeField>) {
     delete field.id;
     delete field.sortOrder;
 }
@@ -209,8 +245,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         TestBed.configureTestingModule({
             declarations: [ContentTypeFieldsDropZoneComponent],
             imports: [
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
@@ -236,7 +270,12 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotIconComponent,
                 DotActionButtonComponent,
                 TableModule,
-                CheckboxModule
+                CheckboxModule,
+                DotConvertToBlockInfoStubComponent,
+                DotConvertWysiwygToBlockStubComponent,
+                DotBlockEditorSettingsStubComponent,
+                DotBinarySettingsStubComponent,
+                DotCustomFieldSettingsStubComponent
             ],
             providers: [
                 { provide: Router, useValue: mockRouter },
@@ -298,7 +337,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         const contentTypeFieldsPropertyForm = de.query(
             By.css('dot-content-type-fields-properties-form')
         );
-        expect(contentTypeFieldsPropertyForm.componentInstance.contentType.name).toBe(
+        expect(contentTypeFieldsPropertyForm.componentInstance.contentType()?.name).toBe(
             'ContentTypeName'
         );
     });
@@ -429,10 +468,6 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
 class TestHostComponent {
     layout: DotCMSContentTypeLayoutRow[];
     loading: boolean;
-
-    constructor() {
-        return;
-    }
 }
 
 // TODO: Upgrade tests to use FieldDragDropService (without mocking) and mocking DragulaService
@@ -448,19 +483,6 @@ const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     contentTypeId: '12b'
 };
 
-@Component({
-    selector: 'dot-block-editor-settings',
-    template: ''
-})
-class TestDotBlockEditorSettingsComponent {
-    @Output() $changeControls = new EventEmitter<DotDialogActions>();
-    @Output() $valid = new EventEmitter<boolean>();
-    @Output() $save = new EventEmitter<DotFieldVariable[]>();
-
-    @Input() field: DotCMSContentTypeField;
-    @Input() isVisible = false;
-}
-
 describe('Load fields and drag and drop', () => {
     const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService =
         new TestDotLoadingIndicatorService();
@@ -469,7 +491,7 @@ describe('Load fields and drag and drop', () => {
     let comp: ContentTypeFieldsDropZoneComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let scrollIntoViewSpy;
+    let scrollIntoViewSpy: jest.Mock;
 
     const mockRouter = {
         navigate: jest.fn()
@@ -503,13 +525,15 @@ describe('Load fields and drag and drop', () => {
         TestBed.configureTestingModule({
             declarations: [ContentTypeFieldsDropZoneComponent, TestHostComponent],
             imports: [
-                DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent,
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
                 TestDotLoadingIndicatorComponent,
-                TestDotBlockEditorSettingsComponent,
+                DotBlockEditorSettingsStubComponent,
+                DotConvertToBlockInfoStubComponent,
+                DotConvertWysiwygToBlockStubComponent,
+                DotBinarySettingsStubComponent,
+                DotCustomFieldSettingsStubComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
@@ -813,11 +837,11 @@ describe('Load fields and drag and drop', () => {
         // - 1 because one Mock Fields has not columns
         expect(fakeFields.length - 1).toEqual(fieldRows.length);
 
-        expect(2).toEqual(fieldRows[0].componentInstance.fieldRow.columns.length);
-        expect(1).toEqual(fieldRows[0].componentInstance.fieldRow.columns[0].fields.length);
+        expect(2).toEqual(fieldRows[0].componentInstance.fieldRow()?.columns.length);
+        expect(1).toEqual(fieldRows[0].componentInstance.fieldRow()?.columns[0].fields.length);
 
-        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns.length);
-        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow.columns[0].fields.length);
+        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow()?.columns.length);
+        expect(1).toEqual(fieldRows[1].componentInstance.fieldRow()?.columns[0].fields.length);
     });
 
     it('should set dropped field if a drop event happen from source', () => {
@@ -958,23 +982,6 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should change the dialogActions', () => {
-        const newDialogActions = {
-            accept: {
-                action: () => {
-                    /* */
-                },
-                label: 'Save',
-                disabled: true
-            },
-            cancel: {
-                label: 'Cancel'
-            }
-        };
-        comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
-    });
-
-    it('should restore the default dialogActions on Overview Tab', async () => {
         fixture.detectChanges();
         const newDialogActions = {
             accept: {
@@ -988,38 +995,77 @@ describe('Load fields and drag and drop', () => {
                 label: 'Cancel'
             }
         };
-
-        // Changes Dialog Actions
         comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
-
-        // Change to Overview Tab
-        comp.handleTabChange(0);
-        expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
+        expect(comp.dialogActions).toEqual({
+            ...newDialogActions,
+            cancel: comp.defaultDialogActions.cancel
+        });
     });
 
-    it('should restore the default dialogActions on Overview Tab', async () => {
+    it('should restore the default dialogActions when switching back to Overview Tab', () => {
         fixture.detectChanges();
-        const newDialogActions = {
+
+        // Simulate arbitrary dialogActions being set (e.g. by a Settings tab)
+        comp.dialogActions = {
             accept: {
                 action: () => {
-                    /* */
+                    /* settings save */
                 },
                 label: 'Save',
-                disabled: true
+                disabled: false
             },
             cancel: {
                 label: 'Cancel'
             }
         };
 
-        // Changes Dialog Actions
-        comp.changesDialogActions(newDialogActions);
-        expect(comp.dialogActions).toEqual(newDialogActions);
-
-        // Change to Overview Tab
+        // Switching back to Overview resets to defaultDialogActions (disabled since nothing changed)
         comp.handleTabChange(0);
         expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
+    });
+
+    it('should keep Save button enabled when switching to Settings tab and back to Overview after making changes', () => {
+        fixture.detectChanges();
+
+        // Simulate Overview form change (e.g. user typed in a field)
+        comp.activeTab = comp.OVERVIEW_TAB_INDEX;
+        comp.setDialogOkButtonState(true);
+        expect(comp.dialogActions.accept.disabled).toBe(false);
+
+        // Switch to Settings tab — overviewFormChanged should be preserved internally
+        comp.handleTabChange(comp.BLOCK_EDITOR_SETTINGS_TAB_INDEX);
+
+        // Switch back to Overview — Save button must still be enabled
+        comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+        expect(comp.dialogActions.accept.disabled).toBe(false);
+    });
+
+    it('should keep Save button disabled when switching to Settings tab and back to Overview with no changes', () => {
+        fixture.detectChanges();
+
+        // No changes made — overviewFormChanged stays false
+        comp.activeTab = comp.OVERVIEW_TAB_INDEX;
+        comp.setDialogOkButtonState(false);
+
+        comp.handleTabChange(comp.BLOCK_EDITOR_SETTINGS_TAB_INDEX);
+        comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+
+        expect(comp.dialogActions.accept.disabled).toBe(true);
+    });
+
+    it('should reset overviewFormChanged after dialog closes and reopens', () => {
+        fixture.detectChanges();
+
+        // Mark form as changed
+        comp.activeTab = comp.OVERVIEW_TAB_INDEX;
+        comp.setDialogOkButtonState(true);
+
+        // Close the dialog (toggleDialog resets overviewFormChanged)
+        comp.removeFieldsWithoutId();
+
+        // Re-open and tab switch — Save should be disabled (fresh state)
+        comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+        expect(comp.dialogActions.accept.disabled).toBe(true);
     });
 
     describe('Edit Field Dialog', () => {
@@ -1075,7 +1121,7 @@ describe('Load fields and drag and drop', () => {
         describe('BLOCK EDITOR field', () => {
             let fieldBoxComponent;
             let BLOCK_EDITOR_SETTINGS: DebugElement;
-            let blockEditorComponent: TestDotBlockEditorSettingsComponent;
+            let blockEditorComponent: DotBlockEditorSettingsStubComponent;
 
             beforeEach(() => {
                 fixture.detectChanges();
@@ -1091,14 +1137,14 @@ describe('Load fields and drag and drop', () => {
             it('should create dot-block-editor-settings', () => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 expect(BLOCK_EDITOR_SETTINGS).toBeTruthy();
-                expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD);
+                expect(blockEditorComponent.field()).toEqual(BLOCK_EDITOR_FIELD);
                 expect(panels.length).toBe(3);
             });
 
             it('should emit changeControls and update dialogActions', () => {
                 const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
                 const blockEditorComponent =
-                    BLOCK_EDITOR_SETTINGS.componentInstance as TestDotBlockEditorSettingsComponent;
+                    BLOCK_EDITOR_SETTINGS.componentInstance as DotBlockEditorSettingsStubComponent;
                 const newDialogActions = {
                     accept: {
                         action: () => {
@@ -1201,7 +1247,7 @@ describe('Load fields and drag and drop', () => {
 
             const dotLoadingIndicator = de.query(By.css('dot-loading-indicator'));
             expect(dotLoadingIndicator).not.toBeNull();
-            expect(dotLoadingIndicator.componentInstance.fullscreen).toBe(true);
+            expect(dotLoadingIndicator.componentInstance.fullscreen()).toBe(true);
         });
 
         it('Should show dot-loading-indicator when loading is set to true', fakeAsync(() => {

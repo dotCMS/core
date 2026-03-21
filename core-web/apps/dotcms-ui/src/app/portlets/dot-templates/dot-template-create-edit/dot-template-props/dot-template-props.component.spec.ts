@@ -14,13 +14,15 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
     DotThemeComponent
 } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotcmsEventsServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
@@ -114,6 +116,10 @@ describe('DotTemplatePropsComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
+                },
+                {
+                    provide: DotcmsEventsService,
+                    useValue: new DotcmsEventsServiceMock()
                 },
                 {
                     provide: DynamicDialogRef,

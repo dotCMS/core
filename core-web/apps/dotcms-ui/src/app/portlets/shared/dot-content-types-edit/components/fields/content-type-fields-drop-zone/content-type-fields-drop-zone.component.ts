@@ -67,6 +67,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     hideButtons = false;
     activeTab = 0;
 
+    private overviewFormChanged = false;
+
     readonly $propertiesForm =
         viewChild.required<ContentTypeFieldsPropertiesFormComponent>('fieldPropertiesForm');
 
@@ -88,10 +90,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     readonly $loading = input<boolean>(false, { alias: 'loading' });
 
     get isFieldWithSettings() {
-        return [
-            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-            'com.dotcms.contenttype.model.field.ImmutableBinaryField'
-        ].includes(this.currentFieldType?.clazz);
+        return (
+            [
+                DotCMSClazzes.BLOCK_EDITOR,
+                DotCMSClazzes.BINARY,
+                DotCMSClazzes.CUSTOM_FIELD
+            ] as string[]
+        ).includes(this.currentFieldType?.clazz);
     }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
@@ -379,6 +384,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     setDialogOkButtonState(formChanged: boolean): void {
+        if (this.activeTab === this.OVERVIEW_TAB_INDEX) {
+            this.overviewFormChanged = formChanged;
+        }
+
         this.dialogActions = {
             ...this.dialogActions,
             accept: {
@@ -395,7 +404,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     handleTabChange(index: number): void {
         if (index === this.OVERVIEW_TAB_INDEX) {
-            this.dialogActions = this.defaultDialogActions;
+            this.dialogActions = {
+                ...this.defaultDialogActions,
+                accept: {
+                    ...this.defaultDialogActions.accept,
+                    disabled: !this.overviewFormChanged
+                }
+            };
         }
 
         this.hideButtons =
@@ -419,13 +434,16 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
-     * Change dialogActions
+     * Change dialogActions (used by block-editor and binary settings tabs)
      *
      * @param {DotDialogActions} controls
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     changesDialogActions(controls: DotDialogActions) {
-        this.dialogActions = controls;
+        this.dialogActions = {
+            ...controls,
+            cancel: this.defaultDialogActions.cancel
+        };
     }
 
     handleDialogVisibleChange(isVisible: boolean): void {
@@ -437,6 +455,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     protected toggleDialog(): void {
         this.dialogActions = this.defaultDialogActions;
         this.activeTab = this.OVERVIEW_TAB_INDEX;
+        this.overviewFormChanged = false;
         this.displayDialog = !this.displayDialog;
     }
 

@@ -1,0 +1,76 @@
+<div class="field my-4" [formGroup]="form">
+    <p class="font-semibold mb-2">{{ 'contenttypes.field.properties.renderOptions.title' | dm }}</p>
+    <div class="flex flex-col gap-3 mt-2 border border-gray-300 rounded p-4 bg-primary-50">
+        <div class="flex items-start justify-between gap-4">
+            <div class="flex flex-col gap-1 flex-1 min-w-0">
+                <div class="font-bold">
+                    {{ 'contenttypes.field.properties.renderOptions.showAsModal.label' | dm }}
+                </div>
+                <div class="text-sm">
+                    {{ 'contenttypes.field.properties.renderOptions.showAsModal.helper' | dm }}
+                </div>
+            </div>
+            <p-toggleswitch
+                id="showAsModal"
+                formControlName="showAsModal"
+                class="shrink-0"
+                data-testid="render-options-show-as-modal" />
+        </div>
+        @if ($showAsModal()) {
+            <div class="flex gap-4 flex-wrap pt-2 border-t border-gray-200">
+                <div class="field flex-1 min-w-0">
+                    <label for="customFieldWidth" class="block text-sm font-bold mb-1">
+                        {{ 'contenttypes.field.properties.renderOptions.width' | dm }}
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input
+                            id="customFieldWidth"
+                            type="number"
+                            min="1"
+                            formControlName="customFieldWidth"
+                            pInputText
+                            class="flex-1"
+                            data-testid="render-options-width" />
+                        <span class="text-sm shrink-0">px</span>
+                    </div>
+                    @if (
+                        form.get('customFieldWidth')?.invalid &&
+                        form.get('customFieldWidth')?.touched
+                    ) {
+                        <small
+                            class="text-red-500 mt-1 block"
+                            data-testid="render-options-width-error">
+                            {{ 'contenttypes.field.properties.renderOptions.width.error' | dm }}
+                        </small>
+                    }
+                </div>
+                <div class="field flex-1 min-w-0">
+                    <label for="customFieldHeight" class="block text-sm font-bold mb-1">
+                        {{ 'contenttypes.field.properties.renderOptions.height' | dm }}
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input
+                            id="customFieldHeight"
+                            type="number"
+                            min="1"
+                            formControlName="customFieldHeight"
+                            pInputText
+                            class="flex-1"
+                            data-testid="render-options-height" />
+                        <span class="text-sm shrink-0">px</span>
+                    </div>
+                    @if (
+                        form.get('customFieldHeight')?.invalid &&
+                        form.get('customFieldHeight')?.touched
+                    ) {
+                        <small
+                            class="text-red-500 mt-1 block"
+                            data-testid="render-options-height-error">
+                            {{ 'contenttypes.field.properties.renderOptions.height.error' | dm }}
+                        </small>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
