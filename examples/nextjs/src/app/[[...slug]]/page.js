@@ -2,6 +2,7 @@ import NotFound from "@/app/not-found";
 import { Page } from "@/views/Page";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
+
 export async function generateMetadata(props) {
     const params = await props.params;
     try {
