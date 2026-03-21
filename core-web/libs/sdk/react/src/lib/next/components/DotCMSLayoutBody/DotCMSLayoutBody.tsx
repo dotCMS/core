@@ -32,7 +32,7 @@ export interface DotCMSLayoutBodyProps<
      * <DotCMSLayoutBody page={pageAsset} components={pageComponents} slots={slots} />
      * ```
      */
-    slots?: Record<string, ReactNode>;
+    slots?: Record<string, ReactNode | Promise<ReactNode>>;
 }
 
 /**

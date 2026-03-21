@@ -12,13 +12,13 @@ import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '
  * @property {DotCMSPageAsset} pageAsset - The DotCMS page asset
  * @property {RendererMode} mode - The renderer mode
  * @property {Record<string, React.ComponentType<DotCMSContentlet>>} userComponents - The user components
- * @property {Record<string, ReactNode>} slots - Pre-rendered server component nodes keyed by contentlet identifier
+ * @property {Record<string, ReactNode | Promise<ReactNode>>} [slots] - Pre-rendered server component nodes keyed by contentlet identifier
  */
 export interface DotCMSPageContextProps {
     pageAsset: DotCMSPageAsset;
     mode: DotCMSPageRendererMode;
     userComponents: Record<string, React.ComponentType<DotCMSBasicContentlet>>;
-    slots?: Record<string, ReactNode>;
+    slots?: Record<string, ReactNode | Promise<ReactNode>>;
 }
 
 /**

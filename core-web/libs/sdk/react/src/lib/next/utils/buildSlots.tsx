@@ -25,20 +25,20 @@ import { DotCMSBasicContentlet, DotCMSPageAssetContainers } from '@dotcms/types'
  */
 export function buildSlots(
     containers: DotCMSPageAssetContainers,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    serverComponents: Record<string, React.ComponentType<any>>
-): Record<string, ReactNode> {
-    const slots: Record<string, ReactNode> = {};
+    serverComponents: Record<
+        string,
+        (props: DotCMSBasicContentlet) => ReactNode | Promise<ReactNode>
+    >
+): Record<string, ReactNode | Promise<ReactNode>> {
+    const slots: Record<string, ReactNode | Promise<ReactNode>> = {};
 
     for (const { contentlets } of Object.values(containers)) {
         for (const contentletList of Object.values(contentlets)) {
             for (const contentlet of contentletList) {
                 const Component = serverComponents[contentlet.contentType];
 
-                if (Component) {
-                    slots[contentlet.identifier] = (
-                        <Component {...(contentlet as DotCMSBasicContentlet)} />
-                    );
+                if (Component && contentlet.identifier) {
+                    slots[contentlet.identifier] = Component(contentlet as DotCMSBasicContentlet);
                 }
             }
         }

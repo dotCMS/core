@@ -11,7 +11,7 @@ interface DotCMSPageProviderProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     components: Record<string, React.ComponentType<any>>;
     mode: DotCMSPageRendererMode;
-    slots: Record<string, ReactNode>;
+    slots: Record<string, ReactNode | Promise<ReactNode>>;
     children: ReactNode;
 }
 
