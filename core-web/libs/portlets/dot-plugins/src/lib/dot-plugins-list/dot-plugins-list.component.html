@@ -1,0 +1,215 @@
+<div
+    class="flex flex-col h-full min-h-0 relative"
+    (dragenter)="onDragEnter($event)"
+    (dragleave)="onDragLeave($event)"
+    (dragover)="onDragOver($event)"
+    (drop)="onDrop($event)">
+    @if (isDragging()) {
+        <div
+            class="absolute inset-0 z-10 pointer-events-none rounded-lg"
+            data-testid="plugins-drop-overlay">
+            <div
+                class="absolute inset-0 bg-primary-50 opacity-90 rounded-lg border-2 border-dashed border-primary"></div>
+            <div class="relative h-full flex flex-col items-center justify-center gap-4">
+                <i class="pi pi-upload text-primary text-6xl!" aria-hidden="true"></i>
+                <p class="text-primary text-xl font-semibold m-0">
+                    {{ 'plugins.drag-and-drop.drop-here' | dm }}
+                </p>
+            </div>
+        </div>
+    }
+    <p-toolbar class="gap-1 px-3 justify-start border-none! flex-shrink-0">
+        <div class="flex w-full items-center gap-4 py-3">
+            <p-iconfield iconPosition="left" class="flex-1 max-w-xs">
+                <p-inputicon class="pi pi-search" />
+                <input
+                    #searchInput
+                    pInputText
+                    type="text"
+                    autocomplete="off"
+                    class="w-full"
+                    [placeholder]="'plugins.search' | dm"
+                    [disabled]="store.rows().length === 0"
+                    (input)="filterTable(searchInput.value)"
+                    data-testid="plugins-search-input" />
+            </p-iconfield>
+            <div class="flex gap-3 ml-auto items-center">
+                <p-button
+                    [label]="'plugins.refresh-table' | dm"
+                    icon="pi pi-refresh"
+                    severity="secondary"
+                    [text]="true"
+                    (onClick)="refresh()"
+                    data-testid="plugins-refresh-btn" />
+                <p-button
+                    [label]="'plugins.extra-packages' | dm"
+                    [outlined]="true"
+                    (onClick)="openExtraPackagesDialog()"
+                    data-testid="plugins-extra-packages-btn" />
+                <p-button
+                    [label]="'plugins.upload' | dm"
+                    (onClick)="openUploadDialog()"
+                    data-testid="plugins-upload-btn" />
+                <p-button
+                    icon="pi pi-ellipsis-v"
+                    [rounded]="true"
+                    [outlined]="true"
+                    (onClick)="onToolbarMenuToggle($event)"
+                    data-testid="plugins-toolbar-menu-btn"
+                    [attr.aria-label]="'plugins.more-actions' | dm" />
+            </div>
+        </div>
+    </p-toolbar>
+
+    <div class="flex-1 min-h-0 flex flex-col overflow-hidden" data-testid="plugins-table-wrapper">
+        @if (store.status() === 'restarting') {
+            <div
+                class="flex-1 flex flex-col items-center justify-center gap-4"
+                data-testid="plugins-restarting-state">
+                <i class="pi pi-sync pi-spin text-primary text-6xl!" aria-hidden="true"></i>
+                <div class="flex flex-col text-center">
+                    <h3 class="m-0 text-lg font-medium text-gray-800">
+                        {{ 'plugins.restarting.title' | dm }}
+                    </h3>
+                    <p class="m-0 text-[var(--text-color)] text-base leading-6">
+                        {{ 'plugins.restarting.description' | dm }}
+                    </p>
+                </div>
+            </div>
+        } @else if (store.rows().length === 0 && store.status() === 'loaded') {
+            <div
+                class="flex-1 flex flex-col items-center justify-center gap-4"
+                data-testid="plugins-empty-state">
+                <i class="pi pi-box text-[var(--surface-500)] text-6xl!" aria-hidden="true"></i>
+                <div class="flex flex-col text-center">
+                    <h3 class="m-0 text-lg font-medium text-gray-800">
+                        {{ 'plugins.empty.state.title' | dm }}
+                    </h3>
+                    <p class="m-0 text-[var(--text-color)] text-base leading-6">
+                        {{ 'plugins.empty.state.description' | dm }}
+                    </p>
+                </div>
+            </div>
+        } @else {
+            <p-table
+                #dt
+                [value]="store.rows()"
+                [paginator]="true"
+                [rows]="25"
+                [rowsPerPageOptions]="[10, 25, 50]"
+                [loading]="store.status() === 'loading' || store.status() === 'refreshing'"
+                [scrollable]="true"
+                scrollHeight="flex"
+                [globalFilterFields]="['symbolicName', 'jarFile']"
+                class="flex-1 min-h-0"
+                data-testid="plugins-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="symbolicName">
+                            {{ 'plugins.table.name' | dm }}
+                            <p-sortIcon field="symbolicName" />
+                        </th>
+                        <th pSortableColumn="state" style="white-space: nowrap; width: 1%">
+                            {{ 'plugins.table.state' | dm }}
+                            <p-sortIcon field="state" />
+                        </th>
+                        <th>{{ 'plugins.table.jar' | dm }}</th>
+                        <th style="width: 7rem"></th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-bundle>
+                    <tr
+                        class="group"
+                        data-testid="plugin-row"
+                        (contextmenu)="onContextMenu($event, bundle)">
+                        <td data-testid="plugin-name">{{ bundle.symbolicName }}</td>
+                        <td data-testid="plugin-state">
+                            @switch (bundle.state) {
+                                @case (BUNDLE_STATE.ACTIVE) {
+                                    <p-chip
+                                        class="bg-green-100! text-green-700! border-green-100! text-xs"
+                                        [label]="'plugins.state.active' | dm" />
+                                }
+                                @case (BUNDLE_STATE.STARTING) {
+                                    <p-chip
+                                        class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                                        [label]="'plugins.state.starting' | dm" />
+                                }
+                                @case (BUNDLE_STATE.STOPPING) {
+                                    <p-chip
+                                        class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                                        [label]="'plugins.state.stopping' | dm" />
+                                }
+                                @case (BUNDLE_STATE.RESOLVED) {
+                                    <p-chip
+                                        class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
+                                        [label]="'plugins.state.resolved' | dm" />
+                                }
+                                @case (BUNDLE_STATE.INSTALLED) {
+                                    <p-chip
+                                        class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
+                                        [label]="'plugins.state.installed' | dm" />
+                                }
+                                @case (BUNDLE_STATE.UNINSTALLED) {
+                                    <p-chip
+                                        class="bg-gray-100! text-gray-600! border-gray-100! text-xs"
+                                        [label]="'plugins.state.uninstalled' | dm" />
+                                }
+                                @default {
+                                    <p-chip
+                                        class="bg-gray-100! text-gray-600! border-gray-100! text-xs"
+                                        [label]="'plugins.state.undeployed' | dm" />
+                                }
+                            }
+                        </td>
+                        <td data-testid="plugin-jar">{{ bundle.jarFile }}</td>
+                        <td data-testid="plugin-actions" style="width: 7rem">
+                            <p-button
+                                class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                icon="pi pi-ellipsis-v"
+                                [text]="true"
+                                [rounded]="true"
+                                size="small"
+                                (onClick)="onContextMenu($event, bundle)"
+                                data-testid="plugin-actions-btn"
+                                [attr.aria-label]="'plugins.table.actions' | dm" />
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="emptymessage">
+                    <tr class="hover:bg-transparent!">
+                        <td colspan="4" class="border-none p-0">
+                            <div
+                                class="flex flex-col items-center justify-center gap-4 py-24"
+                                data-testid="plugins-filter-empty-state">
+                                <i
+                                    class="pi pi-search text-[var(--surface-500)] text-6xl!"
+                                    aria-hidden="true"></i>
+                                <div class="flex flex-col text-center">
+                                    <h3 class="m-0 text-lg font-medium text-gray-800">
+                                        {{ 'plugins.empty.filter.title' | dm }}
+                                    </h3>
+                                    <p class="m-0 text-[var(--text-color)] text-base leading-6">
+                                        {{ 'plugins.empty.filter.description' | dm }}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        }
+    </div>
+</div>
+
+<p-confirmDialog [draggable]="false" />
+
+<p-contextMenu #contextMenu [model]="contextMenuItems()" appendTo="body" />
+
+<p-menu #toolbarMenu [model]="toolbarMenuItems()" [popup]="true" appendTo="body" />
+
+@if (addToBundleIdentifier()) {
+    <dot-add-to-bundle
+        [assetIdentifier]="addToBundleIdentifier()!"
+        (cancel)="addToBundleIdentifier.set(null)" />
+}

@@ -157,8 +157,18 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'tags',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
+    },
+    {
+        path: 'plugins',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-plugins/portlet').then((m) => m.dotPluginsRoutes)
     },
     {
         path: '',

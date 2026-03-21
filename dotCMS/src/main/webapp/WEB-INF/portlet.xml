@@ -270,13 +270,19 @@
     </portlet>
 
     <portlet>
-        <portlet-name>dynamic-plugins</portlet-name>
-        <display-name>OSGI Manager</display-name>
+        <portlet-name>plugins-legacy</portlet-name>
+        <display-name>Plugins Legacy</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
             <name>view-jsp</name>
             <value>/portlet/ext/osgi/main.jsp</value>
         </init-param>
+    </portlet>
+
+    <portlet>
+        <portlet-name>plugins</portlet-name>
+        <display-name>Plugins</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
     <portlet>

@@ -72,3 +72,5 @@ export * from './lib/dot-page-contenttype/dot-page-contenttype.service';
 export * from './lib/dot-favorite-contenttype/dot-favorite-contenttype.service';
 export * from './lib/dot-content-drive/dot-content-drive.service';
 export * from './lib/dot-usage/dot-usage.service';
+export * from './lib/dot-osgi/bundle-map.model';
+export * from './lib/dot-osgi/dot-osgi.service';
