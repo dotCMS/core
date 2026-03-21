@@ -185,6 +185,43 @@ class DotConvertWysiwygToBlockStubComponent {
     @Input() currentFieldType: unknown;
 }
 
+@Component({
+    selector: 'dot-block-editor-settings',
+    template: ''
+})
+class DotBlockEditorSettingsStubComponent {
+    @Input() field: DotCMSContentTypeField;
+    @Input() isVisible = false;
+    @Output() $changeControls = new EventEmitter<DotDialogActions>();
+    @Output() $valid = new EventEmitter<boolean>();
+    @Output() $save = new EventEmitter<DotFieldVariable[]>();
+}
+
+@Component({
+    selector: 'dot-binary-settings',
+    template: ''
+})
+class DotBinarySettingsStubComponent {
+    @Input() field: DotCMSContentTypeField;
+    @Input() isVisible = false;
+    @Output() $changeControls = new EventEmitter<DotDialogActions>();
+    @Output() $valid = new EventEmitter<boolean>();
+    @Output() $save = new EventEmitter<DotFieldVariable[]>();
+}
+
+@Component({
+    selector: 'dot-custom-field-settings',
+    template: ''
+})
+class DotCustomFieldSettingsStubComponent {
+    @Input() field: DotCMSContentTypeField;
+    @Input() isVisible = false;
+    @Input() renderMode: string;
+    @Output() $changeControls = new EventEmitter<DotDialogActions>();
+    @Output() $valid = new EventEmitter<boolean>();
+    @Output() $save = new EventEmitter<void>();
+}
+
 function becomeNewField(field) {
     delete field.id;
     delete field.sortOrder;
@@ -226,11 +263,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         dragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsDropZoneComponent,
-                DotConvertToBlockInfoStubComponent,
-                DotConvertWysiwygToBlockStubComponent
-            ],
+            declarations: [ContentTypeFieldsDropZoneComponent],
             imports: [
                 RouterTestingModule.withRoutes([
                     {
@@ -257,7 +290,12 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 DotIconComponent,
                 DotActionButtonComponent,
                 TableModule,
-                CheckboxModule
+                CheckboxModule,
+                DotConvertToBlockInfoStubComponent,
+                DotConvertWysiwygToBlockStubComponent,
+                DotBlockEditorSettingsStubComponent,
+                DotBinarySettingsStubComponent,
+                DotCustomFieldSettingsStubComponent
             ],
             providers: [
                 { provide: Router, useValue: mockRouter },
@@ -522,18 +560,17 @@ describe('Load fields and drag and drop', () => {
         testFieldDragDropService = new TestFieldDragDropService();
 
         TestBed.configureTestingModule({
-            declarations: [
-                ContentTypeFieldsDropZoneComponent,
-                TestHostComponent,
-                DotConvertToBlockInfoStubComponent,
-                DotConvertWysiwygToBlockStubComponent
-            ],
+            declarations: [ContentTypeFieldsDropZoneComponent, TestHostComponent],
             imports: [
                 TestContentTypeFieldsRowComponent,
                 TestContentTypeFieldsPropertiesFormComponent,
                 TestDotContentTypeFieldsTabComponent,
                 TestDotLoadingIndicatorComponent,
                 TestDotBlockEditorSettingsComponent,
+                DotConvertToBlockInfoStubComponent,
+                DotConvertWysiwygToBlockStubComponent,
+                DotBinarySettingsStubComponent,
+                DotCustomFieldSettingsStubComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: ContentTypeFieldsDropZoneComponent,
