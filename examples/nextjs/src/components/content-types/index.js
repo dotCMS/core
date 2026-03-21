@@ -7,7 +7,6 @@ import CallToAction from "./CallToAction";
 import CategoryFilter from "./CategoryFilter";
 import SimpleWidget from "./SimpleWidget";
 import ImageComponent from "./Image";
-import PageForm from "./PageForm";
 import Product from "./Product";
 import StoreProductList from "./StoreProductList";
 import VtlInclude from "./VtlInclude";
@@ -23,7 +22,6 @@ export const pageComponents = {
     CategoryFilter: CategoryFilter,
     CustomNoComponent: CustomNoComponent,
     Image: ImageComponent,
-    PageForm: PageForm,
     Product: Product,
     SimpleWidget: SimpleWidget,
     StoreProductList: StoreProductList,

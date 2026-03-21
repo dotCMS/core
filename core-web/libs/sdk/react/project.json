@@ -23,7 +23,7 @@
                 "project": "libs/sdk/react/package.json",
                 "entryFile": "libs/sdk/react/src/index.ts",
                 "external": ["react/jsx-runtime"],
-                "rollupConfig": "@nx/react/plugins/bundle-rollup",
+                "rollupConfig": "libs/sdk/react/rollup.config.js",
                 "compiler": "babel",
                 "format": ["esm"],
                 "extractCss": false,

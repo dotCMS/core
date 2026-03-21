@@ -255,6 +255,7 @@
         "react-test-renderer": "18.2.0",
         "rollup": "4.14.0",
         "rollup-plugin-postcss": "4.0.2",
+        "rollup-plugin-preserve-directives": "0.4.0",
         "sass": "1.56.2",
         "storybook": "10.2.9",
         "ts-jest": "29.4.6",

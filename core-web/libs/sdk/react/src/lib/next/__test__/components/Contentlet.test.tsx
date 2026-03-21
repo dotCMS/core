@@ -148,4 +148,53 @@ describe('Contentlet', () => {
         // UVE attributes should always be called
         expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
     });
+
+    test('should render slot node when present for contentlet identifier', () => {
+        const slotNode = <div data-testid="slot-node">Server rendered slot</div>;
+        const contextValue = {
+            mode: 'production',
+            userComponents: {},
+            slots: { 'slot-id': slotNode }
+        };
+
+        renderContentlet(contextValue, {
+            contentlet: { ...dummyContentlet, identifier: 'slot-id' },
+            container: 'container-1'
+        });
+
+        expect(screen.getByTestId('slot-node')).toBeInTheDocument();
+        expect(screen.getByTestId('slot-node')).toHaveTextContent('Server rendered slot');
+    });
+
+    test('should fall back to userComponents when no slot exists for identifier', () => {
+        const CustomComponentMock = () => <div data-testid="custom">Custom</div>;
+        const contextValue = {
+            mode: 'production',
+            userComponents: { 'test-type': CustomComponentMock },
+            slots: { 'other-id': <div>Other slot</div> }
+        };
+
+        renderContentlet(contextValue, {
+            contentlet: { ...dummyContentlet, identifier: 'no-slot-id' },
+            container: 'container-1'
+        });
+
+        expect(screen.getByTestId('custom')).toBeInTheDocument();
+    });
+
+    test('should not crash when slots is omitted from context', () => {
+        const contextValue = {
+            mode: 'production',
+            userComponents: {}
+        };
+
+        expect(() =>
+            renderContentlet(contextValue, {
+                contentlet: { ...dummyContentlet, identifier: 'some-id' },
+                container: 'container-1'
+            })
+        ).not.toThrow();
+
+        expect(screen.getByTestId('fallback')).toBeInTheDocument();
+    });
 });
