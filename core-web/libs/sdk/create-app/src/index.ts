@@ -102,9 +102,9 @@ program
             const projectNameFinal = projectName ?? (await askProjectName());
             const directoryInput = options.directory ?? (await askDirectory());
             const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
-            const selectedFramework = validatedFramework ?? (await askFramework());
+            const starterOnlyMode = Boolean(options.starter);
             // `--starter` only applies to local Docker mode, so treat it as an implicit local selection.
-            const isLocalModeRequested = options.local === true || Boolean(options.starter);
+            const isLocalModeRequested = options.local === true || starterOnlyMode;
             const isCloudInstanceSelected = isLocalModeRequested
                 ? false
                 : await askCloudOrLocalInstance();
@@ -204,6 +204,8 @@ program
                         `Retrieved default site (${defaultSite.val.entity.identifier})`
                     );
                 }
+
+                const selectedFramework = validatedFramework ?? (await askFramework());
 
                 const setUpUVE = await DotCMSApi.setupUVEConfig({
                     payload: {
@@ -311,6 +313,18 @@ program
             }
             spinner.succeed('dotCMS is running locally at http://localhost:8082');
             spinner.succeed('Default credentials: admin@dotcms.com / admin');
+
+            if (starterOnlyMode) {
+                console.log(chalk.white(`✅ Project setup complete!`));
+                console.log(
+                    chalk.gray(
+                        'Skipped frontend scaffolding and dotCMS UVE setup because --starter was provided.'
+                    )
+                );
+                return;
+            }
+
+            const selectedFramework = validatedFramework ?? (await askFramework());
 
             const dotcmsToken = await DotCMSApi.getAuthToken({
                 payload: {
