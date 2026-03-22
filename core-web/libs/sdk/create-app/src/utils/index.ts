@@ -2,7 +2,6 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { execa } from 'execa';
 import fs from 'fs-extra';
-import { Err, Ok, type Result } from '../result';
 
 import https from 'https';
 import net from 'net';
@@ -20,6 +19,7 @@ import {
     NEXTJS_DEPENDENCIES,
     NEXTJS_DEPENDENCIES_DEV
 } from '../constants';
+import { Err, Ok, type Result } from '../result';
 
 import type { SupportedFrontEndFrameworks } from '../types';
 

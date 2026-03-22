@@ -3,7 +3,6 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import { execa } from 'execa';
 import ora, { Ora } from 'ora';
-import { type Result, Ok, Err } from './result';
 
 import { DotCMSApi } from './api';
 import {
@@ -29,6 +28,7 @@ import {
     moveDockerComposeBack,
     moveDockerComposeOneLevelUp
 } from './git';
+import { type Result, Ok, Err } from './result';
 import {
     checkDockerAvailability,
     checkPortsAvailability,
