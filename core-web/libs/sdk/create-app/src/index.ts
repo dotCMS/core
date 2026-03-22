@@ -118,7 +118,7 @@ program
                 const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
                 const emaConfigApiURL =
                     getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
-                const demoSiteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_DEMO_SITE;
+                const siteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_SITE_API;
                 const tokenApiUrl = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_TOKEN_API;
 
                 const spinner = ora(`⏳ Connecting to dotCMS...`).start();
@@ -191,18 +191,17 @@ program
                     process.exit(1);
                 }
 
-                const demoSite = await DotCMSApi.getDemoSiteIdentifier({
-                    siteName: 'demo.dotcms.com',
+                const defaultSite = await DotCMSApi.getDefaultSite({
                     authenticationToken: dotcmsToken.val,
-                    url: demoSiteApiURL
+                    url: siteApiURL
                 });
 
-                if (!demoSite.ok) {
-                    spinner.fail('Failed to get demo site identifier from Dotcms.');
+                if (!defaultSite.ok) {
+                    spinner.fail('Failed to get default site identifier from Dotcms.');
                     process.exit(1);
                 } else {
                     spinner.succeed(
-                        `Retrieved site: Demo Site (${demoSite.val.entity.identifier})`
+                        `Retrieved default site (${defaultSite.val.entity.identifier})`
                     );
                 }
 
@@ -215,7 +214,7 @@ program
                             )
                         }
                     },
-                    siteId: demoSite.val.entity.identifier,
+                    siteId: defaultSite.val.entity.identifier,
                     authenticationToken: dotcmsToken.val,
                     url: emaConfigApiURL
                 });
@@ -233,7 +232,7 @@ program
                     host: urlDotcmsInstance,
                     relativePath,
                     token: dotcmsToken.val,
-                    siteId: demoSite.val.entity.identifier,
+                    siteId: defaultSite.val.entity.identifier,
                     selectedFramework: selectedFramework
                 });
                 return; // Successful completion - exit code 0
@@ -328,15 +327,14 @@ program
                 spinner.succeed('Generated API authentication token');
             }
 
-            const demoSite = await DotCMSApi.getDemoSiteIdentifier({
-                siteName: 'demo.dotcms.com',
+            const defaultSite = await DotCMSApi.getDefaultSite({
                 authenticationToken: dotcmsToken.val
             });
-            if (!demoSite.ok) {
-                spinner.fail('Failed to get demo site identifier from Dotcms.');
+            if (!defaultSite.ok) {
+                spinner.fail('Failed to get default site identifier from Dotcms.');
                 process.exit(1);
             } else {
-                spinner.succeed(`Retrieved site: Demo Site (${demoSite.val.entity.identifier})`);
+                spinner.succeed(`Retrieved default site (${defaultSite.val.entity.identifier})`);
             }
 
             const setUpUVE = await DotCMSApi.setupUVEConfig({
@@ -348,7 +346,7 @@ program
                         )
                     }
                 },
-                siteId: demoSite.val.entity.identifier,
+                siteId: defaultSite.val.entity.identifier,
                 authenticationToken: dotcmsToken.val
             });
 
@@ -368,7 +366,7 @@ program
                 host: 'http://localhost:8082',
                 relativePath,
                 token: dotcmsToken.val,
-                siteId: demoSite.val.entity.identifier,
+                siteId: defaultSite.val.entity.identifier,
                 selectedFramework: selectedFramework
             });
         } catch (error) {

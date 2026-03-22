@@ -152,7 +152,7 @@ export function getDotcmsApisByBaseUrl(baseUrl: string) {
         DOTCMS_HEALTH_API: `${baseUrl}/api/v1/appconfiguration`,
         DOTCMS_TOKEN_API: `${baseUrl}/api/v1/authentication/api-token`,
         DOTCMS_EMA_CONFIG_API: `${baseUrl}/api/v1/apps/dotema-config-v2/`,
-        DOTCMS_DEMO_SITE: `${baseUrl}/api/v1/site/`
+        DOTCMS_SITE_API: `${baseUrl}/api/v1/site/`
     };
 }
 

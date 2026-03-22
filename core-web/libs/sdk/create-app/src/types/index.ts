@@ -29,7 +29,7 @@ export interface UVEConfigResponse {
     entity: 'Ok';
 }
 
-export interface DemoSiteResponse {
+export interface DefaultSiteResponse {
     entity: {
         addThis: string;
         aliases: string;
