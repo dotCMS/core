@@ -2,7 +2,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { execa } from 'execa';
 import fs from 'fs-extra';
-import { Err, Ok, Result } from 'ts-results';
+import { Err, Ok, type Result } from '../result';
 
 import https from 'https';
 import net from 'net';

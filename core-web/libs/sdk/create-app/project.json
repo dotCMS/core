@@ -14,24 +14,47 @@
     "tags": [],
     "targets": {
         "build": {
-            "executor": "@nx/rollup:rollup",
+            "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
             "options": {
+                "platform": "node",
                 "outputPath": "dist/libs/sdk/create-app",
-                "tsConfig": "libs/sdk/create-app/tsconfig.lib.json",
-                "project": "libs/sdk/create-app/package.json",
+                "format": ["esm"],
+                "bundle": true,
+                "thirdParty": true,
+                "external": ["ora", "chalk", "inquirer", "execa", "cfonts", "axios", "fs-extra", "commander"],
                 "main": "libs/sdk/create-app/src/index.ts",
-                "format": ["cjs"],
-                "compiler": "tsc",
-                "generateExportsField": false,
-                "preserveModules": false,
+                "tsConfig": "libs/sdk/create-app/tsconfig.lib.json",
                 "assets": [
                     {
                         "input": "libs/sdk/create-app",
-                        "output": ".",
-                        "glob": "*.md"
+                        "glob": "README.md",
+                        "output": "."
+                    },
+                    {
+                        "input": "libs/sdk/create-app",
+                        "glob": "package.json",
+                        "output": "."
                     }
-                ]
+                ],
+                "esbuildOptions": {
+                    "sourcemap": true,
+                    "outExtension": {
+                        ".js": ".js"
+                    },
+                }
+            },
+            "configurations": {
+                "development": {},
+                "production": {
+                    "esbuildOptions": {
+                        "sourcemap": false,
+                        "banner": {
+                            "js": "#!/usr/bin/env node"
+                        }
+                    }
+                }
             }
         },
         "nx-release-publish": {

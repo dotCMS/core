@@ -1,11 +1,9 @@
-#!/usr/bin/env node
-
 import cfonts from 'cfonts';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { execa } from 'execa';
 import ora, { Ora } from 'ora';
-import { Result, Ok, Err } from 'ts-results';
+import { type Result, Ok, Err } from './result';
 
 import { DotCMSApi } from './api';
 import {

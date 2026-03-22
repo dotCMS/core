@@ -1,6 +1,6 @@
 import axios from 'axios';
 import chalk from 'chalk';
-import { Ok, type Result, Err } from 'ts-results';
+import { Ok, type Result, Err } from '../result';
 
 import { DOTCMS_DEMO_SITE, DOTCMS_EMA_CONFIG_API, DOTCMS_TOKEN_API } from '../constants';
 import { FailedToGetDemoSiteIdentifierError, FailedToSetUpUVEConfig } from '../errors';
