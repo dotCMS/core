@@ -14,17 +14,25 @@
     "tags": [],
     "targets": {
         "build": {
-            "executor": "@nx/js:tsc",
+            "executor": "@nx/rollup:rollup",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/sdk/create-app",
                 "tsConfig": "libs/sdk/create-app/tsconfig.lib.json",
-                "packageJson": "libs/sdk/create-app/package.json",
+                "project": "libs/sdk/create-app/package.json",
                 "main": "libs/sdk/create-app/src/index.ts",
-                "assets": ["libs/sdk/create-app/*.md"]
-            },
-            "updateBuildableProjectDepsInPackageJson": true,
-            "buildableProjectDepsInPackageJsonType": "dependencies"
+                "format": ["cjs"],
+                "compiler": "tsc",
+                "generateExportsField": false,
+                "preserveModules": false,
+                "assets": [
+                    {
+                        "input": "libs/sdk/create-app",
+                        "output": ".",
+                        "glob": "*.md"
+                    }
+                ]
+            }
         },
         "nx-release-publish": {
             "options": {

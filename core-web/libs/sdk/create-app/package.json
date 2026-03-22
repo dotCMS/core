@@ -1,13 +1,14 @@
 {
     "name": "@dotcms/create-app",
     "version": "1.0.0",
-    "type": "commonjs",
-    "main": "./src/index.js",
-    "types": "./src/index.d.ts",
+    "main": "./index.cjs.js",
+    "types": "./index.d.ts",
     "bin": {
-        "create-dotcms-app": "./src/index.js"
+        "create-dotcms-app": "./index.cjs.js"
     },
     "files": [
+        "*.js",
+        "*.d.ts",
         "src",
         "README.md"
     ],
