@@ -23,7 +23,6 @@ import {
 } from '@dotcms/ui';
 import { DotcmsEventsServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-
 import { DotTemplatePropsComponent } from './dot-template-props.component';
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
 

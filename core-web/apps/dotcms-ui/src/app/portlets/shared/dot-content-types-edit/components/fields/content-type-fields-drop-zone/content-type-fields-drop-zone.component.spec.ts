@@ -2,13 +2,7 @@ import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import {
-    Component,
-    DebugElement,
-    input,
-    output,
-    Renderer2
-} from '@angular/core';
+import { Component, DebugElement, input, output, Renderer2 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
