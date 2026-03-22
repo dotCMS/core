@@ -28,6 +28,11 @@ function patchPackageJsonPlugin(outputDir) {
                     import: mainExport
                 };
                 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+            } else {
+                console.warn(
+                    '[patchPackageJsonPlugin] Unrecognized exports["."] shape — react-server condition was NOT added. ' +
+                        'SSR builds may pull in TinyMCE. Check the generated package.json exports field.'
+                );
             }
         }
     };
@@ -43,6 +48,11 @@ module.exports = (options) => {
         const serverFileName = `${parsed.name}.server${parsed.ext}`;
         const serverEntry = parsed.dir ? path.join(parsed.dir, serverFileName) : serverFileName;
         options.input['index.server'] = serverEntry;
+    } else {
+        console.warn(
+            '[rollup.config.js] Could not find options.input.index — server entry (index.server.ts) was NOT registered. ' +
+                'The react-server export condition will point to a missing file.'
+        );
     }
 
     // Enable preserveModules on all outputs
