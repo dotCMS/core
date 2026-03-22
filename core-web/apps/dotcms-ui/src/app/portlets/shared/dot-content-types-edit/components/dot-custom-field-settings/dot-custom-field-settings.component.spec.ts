@@ -11,6 +11,7 @@ import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-acce
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
+    DotDialogActions,
     DotFieldVariable,
     DotRenderModes,
     NEW_RENDER_MODE_VARIABLE_KEY
@@ -108,11 +109,9 @@ describe('DotCustomFieldSettingsComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: MOCK_FIELD
-            } as unknown
-        });
+        jest.clearAllMocks();
+        spectator = createComponent();
+        spectator.setInput('field', MOCK_FIELD);
         dotFieldVariablesService = spectator.inject(DotFieldVariablesService);
         dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
         component = spectator.component;
@@ -349,7 +348,7 @@ describe('DotCustomFieldSettingsComponent', () => {
             const emitSpy = jest.spyOn(component.$changeControls, 'emit');
             spectator.setInput('isVisible', true);
 
-            const emitted = emitSpy.mock.calls[0][0] as ReturnType<typeof Object.assign>;
+            const emitted = emitSpy.mock.calls[0][0] as DotDialogActions;
             expect(emitted.accept.disabled).toBe(false);
         });
 

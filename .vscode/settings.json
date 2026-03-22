@@ -66,8 +66,5 @@
         "**/node_modules": true,
         "**/dist": true
     },
-    "java.compile.nullAnalysis.mode": "disabled",
-    "chat.tools.terminal.autoApprove": {
-        "npx nx": true
-    }
+    "java.compile.nullAnalysis.mode": "disabled"
 }

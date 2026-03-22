@@ -77,9 +77,9 @@ describe('DotHideLabelSettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: { field: MOCK_FIELD_BASE } as unknown
-            });
+            jest.clearAllMocks();
+            spectator = createComponent();
+            spectator.setInput('field', MOCK_FIELD_BASE);
             dotFieldVariablesService = spectator.inject(DotFieldVariablesService);
             component = spectator.component;
             spectator.detectChanges();
@@ -140,13 +140,11 @@ describe('DotHideLabelSettingsComponent', () => {
             });
 
             it('should update fieldVariableRef after successful save (POST becomes PUT)', () => {
-                const saveSpy = jest.fn(() => of(MOCK_SAVED_VARIABLE));
-                jest.spyOn(dotFieldVariablesService, 'save').mockImplementation(saveSpy);
-
                 component.save(MOCK_FIELD_BASE).subscribe();
                 component.save(MOCK_FIELD_BASE).subscribe();
 
-                const secondCallArg = saveSpy.mock.calls[1][1] as DotFieldVariable;
+                const secondCallArg = (dotFieldVariablesService.save as jest.Mock).mock
+                    .calls[1][1] as DotFieldVariable;
                 expect(secondCallArg.id).toBe(MOCK_SAVED_VARIABLE.id);
             });
 
@@ -191,9 +189,8 @@ describe('DotHideLabelSettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: { field: fieldWithVariable } as unknown
-            });
+            spectator = createComponent();
+            spectator.setInput('field', fieldWithVariable);
             dotFieldVariablesService = spectator.inject(DotFieldVariablesService);
             component = spectator.component;
             spectator.detectChanges();
@@ -240,9 +237,8 @@ describe('DotHideLabelSettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: { field: fieldWithFalseVariable } as unknown
-            });
+            spectator = createComponent();
+            spectator.setInput('field', fieldWithFalseVariable);
             component = spectator.component;
             spectator.detectChanges();
         });

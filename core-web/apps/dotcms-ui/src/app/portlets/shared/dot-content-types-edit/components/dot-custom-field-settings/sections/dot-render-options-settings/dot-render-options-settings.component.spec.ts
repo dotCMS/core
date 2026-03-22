@@ -100,11 +100,9 @@ describe('DotRenderOptionsSettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    field: MOCK_FIELD_BASE
-                } as unknown
-            });
+            jest.clearAllMocks();
+            spectator = createComponent();
+            spectator.setInput('field', MOCK_FIELD_BASE);
             dotFieldVariablesService = spectator.inject(DotFieldVariablesService);
             component = spectator.component;
             spectator.detectChanges();
@@ -237,15 +235,13 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should update fieldVariableRef after successful save (POST becomes PUT)', () => {
-                const saveSpy = jest.fn(() => of(MOCK_SAVED_VARIABLE));
-                jest.spyOn(dotFieldVariablesService, 'save').mockImplementation(saveSpy);
-
                 component.save(MOCK_FIELD_BASE).subscribe();
 
                 // Call save again — it should now carry the id from the first save
                 component.save(MOCK_FIELD_BASE).subscribe();
 
-                const secondCallArg = (saveSpy.mock.calls as unknown[][])[1][1] as DotFieldVariable;
+                const secondCallArg = (dotFieldVariablesService.save as jest.Mock).mock
+                    .calls[1][1] as DotFieldVariable;
                 expect(secondCallArg.id).toBe(MOCK_SAVED_VARIABLE.id);
             });
 
@@ -343,11 +339,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent({
-                props: {
-                    field: fieldWithVariable
-                } as unknown
-            });
+            spectator = createComponent();
+            spectator.setInput('field', fieldWithVariable);
             dotFieldVariablesService = spectator.inject(DotFieldVariablesService);
             component = spectator.component;
             spectator.detectChanges();
@@ -413,9 +406,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
         });
 
         it('should fall back to defaults without throwing', () => {
-            const spectator = createComponent({
-                props: { field: fieldWithBadJson } as unknown
-            });
+            const spectator = createComponent();
+            spectator.setInput('field', fieldWithBadJson);
             spectator.detectChanges();
             const comp = spectator.component;
 
