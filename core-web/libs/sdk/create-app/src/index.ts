@@ -2,7 +2,10 @@ import cfonts from 'cfonts';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { execa } from 'execa';
+import fs from 'fs-extra';
 import ora, { Ora } from 'ora';
+
+import path from 'path';
 
 import { DotCMSApi } from './api';
 import {
@@ -100,8 +103,11 @@ program
             const directoryInput = options.directory ?? (await askDirectory());
             const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
             const selectedFramework = validatedFramework ?? (await askFramework());
-            const isCloudInstanceSelected =
-                options.local === undefined ? await askCloudOrLocalInstance() : !options.local;
+            // `--starter` only applies to local Docker mode, so treat it as an implicit local selection.
+            const isLocalModeRequested = options.local === true || Boolean(options.starter);
+            const isCloudInstanceSelected = isLocalModeRequested
+                ? false
+                : await askCloudOrLocalInstance();
 
             if (isCloudInstanceSelected) {
                 const urlInput = options.url ?? (await askDotcmsCloudUrl());
@@ -440,6 +446,10 @@ async function runDockerCompose({
     try {
         // console.log(chalk.cyan("🐳 Starting Docker containers... (This might take some time)"));
 
+        if (starterUrl) {
+            await updateDockerComposeStarterUrl({ directory, starterUrl });
+        }
+
         const env = starterUrl ? { ...process.env, CUSTOM_STARTER_URL: starterUrl } : process.env;
 
         await execa('docker', ['compose', 'up', '-d'], { cwd: directory, env });
@@ -451,6 +461,29 @@ async function runDockerCompose({
     } catch (err) {
         return Err(err as Error);
     }
+}
+
+async function updateDockerComposeStarterUrl({
+    directory,
+    starterUrl
+}: {
+    directory: string;
+    starterUrl: string;
+}): Promise<void> {
+    const composePath = path.join(directory, 'docker-compose.yml');
+    const composeContents = await fs.readFile(composePath, 'utf-8');
+    const updatedContents = composeContents.replace(
+        /^(\s*["']?CUSTOM_STARTER_URL["']?\s*:\s*).+$/m,
+        `$1"${starterUrl}"`
+    );
+
+    if (updatedContents === composeContents) {
+        throw new Error(
+            'CUSTOM_STARTER_URL entry not found in docker-compose.yml. Unable to apply --starter value.'
+        );
+    }
+
+    await fs.writeFile(composePath, updatedContents);
 }
 
 async function isDotcmsRunning(url?: string, retries = 60): Promise<Result<boolean, string>> {

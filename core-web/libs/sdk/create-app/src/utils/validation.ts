@@ -326,7 +326,8 @@ export function escapeShellPath(filePath: string): string {
  * @param options - CLI options to validate
  */
 export function validateConflictingParameters(options: DotCmsCliOptions): void {
-    const isLocalSet = options.local === true;
+    // `--starter` is a local-only option and should be treated as local mode intent.
+    const isLocalSet = options.local === true || Boolean(options.starter);
 
     if (!isLocalSet) return; // No conflict possible
 
