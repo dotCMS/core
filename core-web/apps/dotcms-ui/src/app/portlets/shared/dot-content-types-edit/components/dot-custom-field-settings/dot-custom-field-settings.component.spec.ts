@@ -252,8 +252,8 @@ describe('DotCustomFieldSettingsComponent', () => {
             expect(component.$save.emit).toHaveBeenCalled();
         });
 
-        it('should handle errors via DotHttpErrorManagerService and still emit $save after recovery', () => {
-            jest.spyOn(dotFieldVariablesService, 'save').mockReturnValue(
+        it('should handle errors via DotHttpErrorManagerService and NOT emit $save on error', () => {
+            jest.spyOn(dotFieldVariablesService, 'save').mockReturnValueOnce(
                 throwError(() => new Error('Network error'))
             );
             jest.spyOn(component.$save, 'emit');
@@ -265,10 +265,8 @@ describe('DotCustomFieldSettingsComponent', () => {
 
             component.saveSettings();
 
-            // catchError recovers via handle() which returns of(null),
-            // so the subscribe callback runs and $save IS emitted
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
-            expect(component.$save.emit).toHaveBeenCalled();
+            expect(component.$save.emit).not.toHaveBeenCalled();
         });
 
         it('should call save on the hideLabel section when it is dirty', () => {

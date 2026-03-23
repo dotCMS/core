@@ -1027,7 +1027,7 @@ describe('Load fields and drag and drop', () => {
         expect(comp.dialogActions.accept.disabled).toBe(false);
 
         // Switch to Settings tab — overviewFormChanged should be preserved internally
-        comp.handleTabChange(comp.BLOCK_EDITOR_SETTINGS_TAB_INDEX);
+        comp.handleTabChange(comp.SETTINGS_TAB_INDEX);
 
         // Switch back to Overview — Save button must still be enabled
         comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
@@ -1041,7 +1041,7 @@ describe('Load fields and drag and drop', () => {
         comp.activeTab = comp.OVERVIEW_TAB_INDEX;
         comp.setDialogOkButtonState(false);
 
-        comp.handleTabChange(comp.BLOCK_EDITOR_SETTINGS_TAB_INDEX);
+        comp.handleTabChange(comp.SETTINGS_TAB_INDEX);
         comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
 
         expect(comp.dialogActions.accept.disabled).toBe(true);

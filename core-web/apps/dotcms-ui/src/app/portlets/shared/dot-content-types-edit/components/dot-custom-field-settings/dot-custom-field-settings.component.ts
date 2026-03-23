@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 
-import { catchError, switchMap, take } from 'rxjs/operators';
+import { switchMap, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -88,11 +88,12 @@ export class DotCustomFieldSettingsComponent implements OnChanges {
         }
 
         forkJoin(saveActions)
-            .pipe(
-                take(1),
-                catchError((err) => this.#dotHttpErrorManagerService.handle(err).pipe(take(1)))
-            )
-            .subscribe(() => this.$save.emit());
+            .pipe(take(1))
+            .subscribe({
+                next: () => this.$save.emit(),
+                error: (err) =>
+                    this.#dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe()
+            });
     }
 
     #activeSections(): FieldSettingsSection[] {

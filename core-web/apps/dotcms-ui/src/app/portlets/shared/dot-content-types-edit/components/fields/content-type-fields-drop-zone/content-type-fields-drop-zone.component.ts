@@ -56,7 +56,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     private rendered = inject(Renderer2);
 
     readonly OVERVIEW_TAB_INDEX = 0;
-    readonly BLOCK_EDITOR_SETTINGS_TAB_INDEX = 1;
+    readonly SETTINGS_TAB_INDEX = 1;
 
     displayDialog = false;
     currentField: DotCMSContentTypeField;
@@ -97,6 +97,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 DotCMSClazzes.CUSTOM_FIELD
             ] as string[]
         ).includes(this.currentFieldType?.clazz);
+    }
+
+    get variablesTabIndex(): number {
+        return !!this.currentField?.id && this.isFieldWithSettings ? 2 : 1;
     }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
@@ -415,7 +419,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
         this.hideButtons =
             index !== this.OVERVIEW_TAB_INDEX &&
-            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isFieldWithSettings);
+            !(index === this.SETTINGS_TAB_INDEX && this.isFieldWithSettings);
     }
 
     /**
