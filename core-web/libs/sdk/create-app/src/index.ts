@@ -94,11 +94,14 @@ program
             // ✅ VALIDATE ALL CLI FLAGS IMMEDIATELY - BEFORE ANY INTERACTIVE PROMPTS
             const validatedFramework = validateAndNormalizeFramework(options.framework);
             validateUrl(options.starter);
+            validateUrl(options.url);
             validateConflictingParameters(options);
             validateProjectName(projectName); // Validate CLI flag if provided
             const starterOnlyMode = Boolean(options.starter);
             // `--starter` only applies to local Docker mode, so treat it as an implicit local selection.
             const isLocalModeRequested = options.local === true || starterOnlyMode;
+            // `--url` implies cloud mode — skip the interactive prompt when it's provided.
+            const isCloudExplicit = Boolean(options.url) && !isLocalModeRequested;
 
             // Get project name from CLI or prompt (prompt has built-in validation)
             const projectNameFinal = projectName ?? (await askProjectName());
@@ -106,7 +109,7 @@ program
             const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
             const isCloudInstanceSelected = isLocalModeRequested
                 ? false
-                : await askCloudOrLocalInstance();
+                : isCloudExplicit || (await askCloudOrLocalInstance());
 
             if (isCloudInstanceSelected) {
                 const urlInput = options.url ?? (await askDotcmsCloudUrl());
