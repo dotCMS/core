@@ -38,7 +38,9 @@ setup:
     fi
 
     SHELL_NAME=$(basename "$SHELL")
+    SHELL_CONFIG_CHANGED=0
 
+    # Returns 0 if a line was appended, 1 if it was already present.
     add_line_if_missing() {
         local file="$1"
         local line="$2"
@@ -47,8 +49,10 @@ setup:
         if ! grep -qF "$line" "$file"; then
             echo "$line" >> "$file"
             echo "  ✓ Added to $file"
+            return 0
         else
             echo "  ↩ Already present in $file"
+            return 1
         fi
     }
 
@@ -56,20 +60,20 @@ setup:
 
     case "$SHELL_NAME" in
         zsh)
-            add_line_if_missing ~/.zprofile 'eval "$(mise activate zsh --shims)"'
-            add_line_if_missing ~/.zshrc    'eval "$(mise activate zsh)"'
+            if add_line_if_missing ~/.zprofile 'eval "$(mise activate zsh --shims)"'; then SHELL_CONFIG_CHANGED=1; fi
+            if add_line_if_missing ~/.zshrc 'eval "$(mise activate zsh)"'; then SHELL_CONFIG_CHANGED=1; fi
             ;;
         bash)
-            add_line_if_missing ~/.bash_profile 'eval "$(mise activate bash --shims)"'
-            add_line_if_missing ~/.bashrc       'eval "$(mise activate bash)"'
+            if add_line_if_missing ~/.bash_profile 'eval "$(mise activate bash --shims)"'; then SHELL_CONFIG_CHANGED=1; fi
+            if add_line_if_missing ~/.bashrc 'eval "$(mise activate bash)"'; then SHELL_CONFIG_CHANGED=1; fi
             ;;
         fish)
-            add_line_if_missing ~/.config/fish/config.fish 'mise activate fish --shims | source'
-            add_line_if_missing ~/.config/fish/config.fish 'mise activate fish | source'
+            if add_line_if_missing ~/.config/fish/config.fish 'mise activate fish --shims | source'; then SHELL_CONFIG_CHANGED=1; fi
+            if add_line_if_missing ~/.config/fish/config.fish 'mise activate fish | source'; then SHELL_CONFIG_CHANGED=1; fi
             ;;
         *)
             echo "Unknown shell: $SHELL_NAME, falling back to ~/.profile"
-            add_line_if_missing ~/.profile 'export PATH="$HOME/.local/share/mise/shims:$PATH"'
+            if add_line_if_missing ~/.profile 'export PATH="$HOME/.local/share/mise/shims:$PATH"'; then SHELL_CONFIG_CHANGED=1; fi
             ;;
     esac
 
@@ -106,7 +110,25 @@ setup:
     fi
 
     echo ""
-    echo "✓ Done. Restart your shell to apply changes."
+    echo "✓ Done."
+    if [ "$SHELL_CONFIG_CHANGED" -eq 1 ]; then
+        echo ""
+        echo "Shell startup files were updated. Open a new terminal, or load the changes in this session:"
+        case "$SHELL_NAME" in
+            zsh)
+                echo "  source ~/.zprofile && source ~/.zshrc"
+                ;;
+            bash)
+                echo "  source ~/.bash_profile && source ~/.bashrc"
+                ;;
+            fish)
+                echo "  source ~/.config/fish/config.fish"
+                ;;
+            *)
+                echo "  source ~/.profile"
+                ;;
+        esac
+    fi
 
 # Initializes a worktree after creation. Depends on `setup` (prior dependency — see
 # https://just.systems/man/en/dependencies.html); avoids recursive `just` (same manual warns that
