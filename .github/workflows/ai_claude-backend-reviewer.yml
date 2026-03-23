@@ -89,7 +89,7 @@ jobs:
       enable_mention_detection: false
       claude_args: >-
         --allowedTools
-        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat *),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn*),Bash(gh pr comment*),Bash(gh pr edit*)"
+        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*)"
       prompt: |
         You are the orchestrator of a dotCMS backend code review pipeline.
         Your job is to coordinate specialized sub-agents, collect their findings,
@@ -203,10 +203,14 @@ jobs:
 
         ## STEP 5 — Post a single PR comment
 
-        gh pr comment ${{ github.event.pull_request.number }} --body "$(cat <<'REVIEW_BODY'
+        Write the full review body to a temp file, then post it with --body-file.
+        This avoids any risk of shell injection from delimiter collisions.
+
+        Write findings to /tmp/dotcms_review_body.md using this format:
+
         ## 🔍 dotCMS Backend Review
 
-        <findings go here — one block per issue in this format>
+        <one block per issue>
 
         **[🔴 Critical / 🟠 High / 🟡 Medium]** `path/to/File.java:LINE`
         > What the problem is and why it matters in the dotCMS context.
@@ -221,11 +225,14 @@ jobs:
         - 🔴 / 🟠 Fix locally and push — these need your judgment
         - 🟡 You can ask me to handle mechanical fixes inline: `@claude fix <issue description> in <File.java>`
         - Every new push triggers a fresh review automatically
-        REVIEW_BODY
-        )"
+
+        Then post it — edit the existing review comment if one exists, otherwise create a new one:
+          gh pr comment ${{ github.event.pull_request.number }} --edit-last --body-file /tmp/dotcms_review_body.md \
+            || gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
 
         If ALL agents returned NO_FINDINGS, post instead:
-        gh pr comment ${{ github.event.pull_request.number }} --body "✅ **dotCMS Backend Review**: no issues found."
+          gh pr comment ${{ github.event.pull_request.number }} --edit-last --body "✅ **dotCMS Backend Review**: no issues found." \
+            || gh pr comment ${{ github.event.pull_request.number }} --body "✅ **dotCMS Backend Review**: no issues found."
 
         Rules:
         - One block per issue — do not combine multiple issues
