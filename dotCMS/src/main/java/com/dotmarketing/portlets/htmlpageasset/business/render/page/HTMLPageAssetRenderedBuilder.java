@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -87,6 +88,11 @@ public class HTMLPageAssetRenderedBuilder {
             "}" +
             "</script>" +
             "<script src=\"/ext/uve/dot-uve.js\" onload=\"initDotUVE()\"></script>";
+
+    /**
+     * Prefix of the inline init function — referenced by {@code UVE_SCRIPT_BLOCK_PATTERN} in HTMLPageAssetRenderedAPIImpl.
+     */
+    public static final String UVE_INIT_FUNCTION_PREFIX = "<script>function initDotUVE()";
 
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
@@ -409,7 +415,7 @@ public class HTMLPageAssetRenderedBuilder {
         final List<Object> schemas = containers.stream()
                 .flatMap(container -> container.getContentlets().values().stream())
                 .flatMap(List::stream)
-                .map(Contentlet::getContentType)
+                .map(contentlet -> Try.of(contentlet::getContentType).getOrNull())
                 .filter(contentType -> contentType != null && UtilMethods.isSet(contentType.variable()))
                 .collect(Collectors.toMap(
                         ContentType::variable,
@@ -426,12 +432,16 @@ public class HTMLPageAssetRenderedBuilder {
             return Optional.empty();
         }
 
-        final String schemasJson = Try.of(() -> DotObjectMapperProvider.getInstance()
-                .getDefaultObjectMapper()
-                .writeValueAsString(schemas))
-                .getOrElse("[]");
+        final Optional<String> schemasJson = Try.of(() -> Optional.of(
+                DotObjectMapperProvider.getInstance()
+                        .getDefaultObjectMapper()
+                        .writeValueAsString(schemas)
+                        .replace("</script>", "<\\/script>")))
+                .onFailure(e -> Logger.error(HTMLPageAssetRenderedBuilder.class,
+                        "Failed to serialize STYLE_EDITOR_SCHEMA, falling back to plain script tag", e))
+                .getOrElse(Optional.empty());
 
-        return Optional.of(String.format(UVE_SCRIPTS_TEMPLATE, schemasJson));
+        return schemasJson.map(json -> String.format(UVE_SCRIPTS_TEMPLATE, json));
     }
 
 }

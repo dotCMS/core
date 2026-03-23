@@ -67,8 +67,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     // Matches either the full UVE script block (init function + <script src> with onload)
     // or the plain SDK script tag injected when no schemas are found.
+    // The prefix literal is sourced from HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX
+    // to keep the pattern in sync with the template — update both together if the template changes.
     private static final Pattern UVE_SCRIPT_BLOCK_PATTERN = Pattern.compile(
-            "(?:<script>function initDotUVE\\(\\).*?</script>" +
+            "(?:" + Pattern.quote(HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX) + ".*?</script>" +
             "<script src=\"/ext/uve/dot-uve\\.js\"[^>]*></script>" +
             "|" + Pattern.quote(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE) + ")",
             Pattern.DOTALL);
