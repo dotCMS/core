@@ -404,7 +404,7 @@ public class HTMLPageAssetRenderedBuilder {
      * {@code dotUVE.registerStyleEditorSchemas(schemas)}, followed by a {@code <script src>} tag
      * that triggers it on load.
      * <p>
-     * Schemas are extracted from {@code contentType.metadata().get("STYLE_EDITOR_SCHEMA")} for each
+     * Schemas are extracted from {@code contentType.metadata().get("DOT_STYLE_EDITOR_SCHEMA")} for each
      * distinct ContentType. ContentTypes without a {@code SCHEMA} entry are excluded.
      *
      * @param containers The rendered containers to extract ContentType schemas from.
@@ -423,7 +423,7 @@ public class HTMLPageAssetRenderedBuilder {
                         (existing, replacement) -> existing))
                 .values().stream()
                 .map(ct -> Optional.ofNullable(ct.metadata())
-                        .map(meta -> meta.get("STYLE_EDITOR_SCHEMA"))
+                        .map(meta -> meta.get("DOT_STYLE_EDITOR_SCHEMA"))
                         .orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
@@ -438,7 +438,7 @@ public class HTMLPageAssetRenderedBuilder {
                         .writeValueAsString(schemas)
                         .replace("</script>", "<\\/script>")))
                 .onFailure(e -> Logger.error(HTMLPageAssetRenderedBuilder.class,
-                        "Failed to serialize STYLE_EDITOR_SCHEMA, falling back to plain script tag", e))
+                        "Failed to serialize DOT_STYLE_EDITOR_SCHEMA, falling back to plain script tag", e))
                 .getOrElse(Optional.empty());
 
         return schemasJson.map(json -> String.format(UVE_SCRIPTS_TEMPLATE, json));

@@ -3208,7 +3208,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered}
-     * Given Scenario: A page has a contentlet whose ContentType has {@code STYLE_EDITOR_SCHEMA}
+     * Given Scenario: A page has a contentlet whose ContentType has {@code DOT_STYLE_EDITOR_SCHEMA}
      * in its metadata.
      * When: The page is rendered in ADMIN_MODE.
      * Should: Inject the {@code UVE_SCRIPTS_TEMPLATE} containing the {@code initDotUVE()} function
@@ -3228,7 +3228,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final User systemUser = APILocator.systemUser();
         final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
 
-        // Create ContentType and add STYLE_EDITOR_SCHEMA to its metadata
+        // Create ContentType and add DOT_STYLE_EDITOR_SCHEMA to its metadata
         ContentType contentType = new ContentTypeDataGen()
                 .field(new FieldDataGen().velocityVarName("title").next())
                 .nextPersisted();
@@ -3238,7 +3238,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         schema.put("sections", List.of());
 
         contentType = ContentTypeBuilder.builder(contentType)
-                .metadata(Map.of("STYLE_EDITOR_SCHEMA", schema))
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
                 .build();
         contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
 

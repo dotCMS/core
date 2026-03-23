@@ -2476,7 +2476,7 @@
                   "};",
                   "",
                   "pm.test(\"Append SCHEMA in the contentType metadata\", function () {",
-                  "    const contentTypeInfo = { ...entity, metadata: { \"STYLE_EDITOR_SCHEMA\": SCHEMA } };",
+                  "    const contentTypeInfo = { ...entity, metadata: { \"DOT_STYLE_EDITOR_SCHEMA\": SCHEMA } };",
                   "    pm.collectionVariables.set(\"contentTypeInfo\", JSON.stringify(contentTypeInfo));",
                   "});"
                 ],
@@ -2532,10 +2532,10 @@
                   "});",
                   "",
                   "pm.test(\"Should have the correct content type schema\", function () {",
-                  "    const schema = JSON.parse(contentTypeInfo).metadata[\"STYLE_EDITOR_SCHEMA\"];",
+                  "    const schema = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
                   "",
-                  "    pm.expect(entity.metadata[\"STYLE_EDITOR_SCHEMA\"].contentType).to.eql(contentTypeName);",
-                  "    pm.expect(entity.metadata[\"STYLE_EDITOR_SCHEMA\"]).to.deep.equal(schema);",
+                  "    pm.expect(entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"].contentType).to.eql(contentTypeName);",
+                  "    pm.expect(entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"]).to.deep.equal(schema);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -3081,8 +3081,8 @@
                   "};",
                   "",
                   "pm.test(\"Append SCHEMA in the contentType metadata\", function () {",
-                  "    const contentTypeInfo = { ...entity, metadata: { \"STYLE_EDITOR_SCHEMA\": SCHEMA } };",
-                  "    pm.expect(contentTypeInfo.metadata.STYLE_EDITOR_SCHEMA).to.deep.equal(SCHEMA);",
+                  "    const contentTypeInfo = { ...entity, metadata: { \"DOT_STYLE_EDITOR_SCHEMA\": SCHEMA } };",
+                  "    pm.expect(contentTypeInfo.metadata.DOT_STYLE_EDITOR_SCHEMA).to.deep.equal(SCHEMA);",
                   "    pm.collectionVariables.set(\"contentTypeInfo_2\", JSON.stringify(contentTypeInfo));",
                   "});"
                 ],
@@ -3138,10 +3138,10 @@
                   "});",
                   "",
                   "pm.test(\"Should have the correct content type schema\", function () {",
-                  "    const schema = JSON.parse(contentTypeInfo).metadata[\"STYLE_EDITOR_SCHEMA\"];",
+                  "    const schema = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
                   "",
-                  "    pm.expect(entity.metadata[\"STYLE_EDITOR_SCHEMA\"].contentType).to.eql(contentTypeName);",
-                  "    pm.expect(entity.metadata[\"STYLE_EDITOR_SCHEMA\"]).to.deep.equal(schema);",
+                  "    pm.expect(entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"].contentType).to.eql(contentTypeName);",
+                  "    pm.expect(entity.metadata[\"DOT_STYLE_EDITOR_SCHEMA\"]).to.deep.equal(schema);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -3450,7 +3450,8 @@
           },
           "response": []
         }
-      ]
+      ],
+      "description": "## Traditional Style Editor\n\nThis folder covers the end-to-end workflow for creating and managing content types SCHEMAS, and associating contentlets with pages using the traditional style editor approach.\n\n- Build and Save Contetn Type Schema\n    \n- Save content in a Page using the same Cotent Type\n    \n- Check `registerStyleEditorSchemas` only has 1 Content Type Schema.\n    \n- Create a new Content Type and it's schema; use it in a new Contentlet\n    \n- Save content in a Page with two different Content Types\n    \n- Check `registerStyleEditorSchemas` has 2 Content Type Schemas.\n    \n\nAlso covers that Traditional Style properties are applied at the page level and verified through rendered output, allowing developers to validate that `data-dot-style-properties` are correctly reflected in the page response.\n\n- Validates that `data-dot-style-properties` is present only for Contentlets that have Style properties defined."
     }
   ],
   "auth": {
