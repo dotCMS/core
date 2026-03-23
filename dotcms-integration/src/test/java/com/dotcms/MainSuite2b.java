@@ -251,6 +251,7 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 
+
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         Task220825CreateVariantFieldTest.class,
