@@ -78,7 +78,8 @@ jobs:
       group: claude-backend-review-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     permissions:
-      contents: read
+      contents: write
+      id-token: write
       pull-requests: write
       issues: write
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v2.0.0
@@ -89,7 +90,7 @@ jobs:
       enable_mention_detection: false
       claude_args: >-
         --allowedTools
-        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*)"
+        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*)"
       prompt: |
         You are the orchestrator of a dotCMS backend code review pipeline.
         Your job is to coordinate specialized sub-agents, collect their findings,
@@ -226,7 +227,10 @@ jobs:
         - 🟡 You can ask me to handle mechanical fixes inline: `@claude fix <issue description> in <File.java>`
         - Every new push triggers a fresh review automatically
 
-        Then post it — edit the existing review comment if one exists, otherwise create a new one:
+        Then post it — edit the existing review comment if one exists, otherwise create a new one.
+        Note: --edit-last targets the bot's most recent comment on the PR. If another workflow
+        posts a bot comment between two review runs, that comment may be overwritten instead.
+        Accepted limitation for the pilot — use gh api with a marker ID for a robust fix.
           gh pr comment ${{ github.event.pull_request.number }} --edit-last --body-file /tmp/dotcms_review_body.md \
             || gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
 
