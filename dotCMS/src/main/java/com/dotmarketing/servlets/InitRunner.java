@@ -161,7 +161,10 @@ public class InitRunner implements Runnable {
     private List<String> getHostnames() {
         Set<String> hostNames = new HashSet<>();
         for (Map<String, Object> map : findAllHostNames.get()) {
-            hostNames.add((String) map.get("hostname"));
+            String hostname = (String) map.get("hostname");
+            if (UtilMethods.isSet(hostname)) {
+                hostNames.add(hostname);
+            }
             String aliases = (String) map.get("aliases");
             if (UtilMethods.isEmpty(aliases)) {
                 continue;
