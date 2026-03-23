@@ -598,8 +598,8 @@ public class TaskLocatorUtil {
         .add(Task251103AddStylePropertiesColumnInMultiTree.class)
         .add(Task251212AddVersionColumnIndicesTable.class)
         .add(Task260206AddUsagePortletToMenu.class)
-        .add(Task260321AddTagsPortletToMenu.class)
         .add(Task260320AddPluginsPortletToMenu.class)
+		.add(Task260321AddTagsPortletToMenu.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
