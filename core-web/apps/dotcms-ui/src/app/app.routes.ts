@@ -171,6 +171,16 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-plugins/portlet').then((m) => m.dotPluginsRoutes)
     },
     {
+        // Compatibility alias for fresh installs where the starter still has 'dynamic-plugins'
+        // in the layout. Once the starter is updated this route can be removed.
+        path: 'dynamic-plugins',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-plugins/portlet').then((m) => m.dotPluginsRoutes)
+    },
+    {
         path: '',
         canActivate: [MenuGuardService],
         children: []

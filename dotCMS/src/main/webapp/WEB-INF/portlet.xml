@@ -289,7 +289,6 @@
         <portlet-name>dynamic-plugins</portlet-name>
         <display-name>Plugins</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-        <portlet-url>plugins</portlet-url>
     </portlet>
 
     <portlet>
