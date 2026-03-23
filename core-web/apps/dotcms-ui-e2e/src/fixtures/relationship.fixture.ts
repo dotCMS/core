@@ -2,6 +2,7 @@ import { test as base, type Page, type APIRequestContext, expect } from '@playwr
 import { LoginPage } from '@pages';
 import { admin1 } from '../tests/login/credentialsData';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
+import { createFieldVariable } from '../requests/field-variables';
 
 /**
  * Represents a content type created for relationship tests.
@@ -10,6 +11,7 @@ export interface TestContentType {
     id: string;
     name: string;
     variable: string;
+    fields: { id: string; variable: string; clazz: string }[];
 }
 
 /**
@@ -51,7 +53,8 @@ async function createContentTypeWithFields(
     return {
         id: entity.id,
         name: entity.name,
-        variable: entity.variable
+        variable: entity.variable,
+        fields: entity.fields ?? []
     };
 }
 
@@ -152,7 +155,7 @@ async function enableNewEditor(
 /**
  * SystemWorkflow ID — standard across all dotCMS instances.
  */
-const SYSTEM_WORKFLOW_ID = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2';
+export const SYSTEM_WORKFLOW_ID = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2';
 
 // ─── Content Type Payloads ───────────────────────────────────────
 
@@ -276,6 +279,7 @@ export const test = base.extend<{
         authorPayload: (suffix: string) => Record<string, unknown>;
         tagPayload: (suffix: string) => Record<string, unknown>;
         blogPayload: (suffix: string, name: string, variable: string, relatedCt: string, relField: string, cardinality: number) => Record<string, unknown>;
+        addFieldVariable: (contentTypeId: string, fieldId: string, key: string, value: string) => Promise<void>;
         CARDINALITY: typeof CARDINALITY;
     };
 }>({
@@ -315,6 +319,8 @@ export const test = base.extend<{
                 relField: string,
                 cardinality: number
             ) => blogContentTypePayload(suffix, name, variable, relatedCt, relField, cardinality, workflowId),
+            addFieldVariable: (contentTypeId, fieldId, key, value) =>
+                createFieldVariable(request, contentTypeId, fieldId, key, value),
             CARDINALITY
         });
     }

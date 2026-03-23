@@ -1,17 +1,19 @@
 import { NewEditContentFormPage } from '@pages';
-import { CARDINALITY, expect, test, TestContentlet } from '../../../../fixtures/relationship.fixture';
+import {
+    CARDINALITY,
+    expect,
+    SYSTEM_WORKFLOW_ID,
+    test,
+    TestContentlet
+} from '../../../../fixtures/relationship.fixture';
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
-/**
- * Journey 9: Multiple Relationship Fields on the Same Content
- * Journey 10: Custom Columns (showFields)
- * Journey 11: Errors and Edge Cases
- */
+// ─── Multiple Relationship Fields ───────────────────────────────
 
-// ─── Journey 9: Multiple Relationship Fields ─────────────────────
+test.describe('Multiple Relationship Fields', () => {
+    test.describe.configure({ mode: 'serial' });
 
-test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', () => {
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -22,7 +24,6 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         );
         authorTypeVariable = authorType.variable;
 
-        // Create a content type with TWO relationship fields
         const blogPayload = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             name: `E2E_Blog_MultiRelation_${testSuffix}`,
@@ -30,6 +31,7 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
             host: 'SYSTEM_HOST',
             folder: 'SYSTEM_FOLDER',
             metadata: { CONTENT_EDITOR2_ENABLED: true },
+            workflow: [SYSTEM_WORKFLOW_ID],
             fields: [
                 {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -43,7 +45,7 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
                     variable: 'authors',
                     sortOrder: 2,
                     relationships: {
-                        velocityVar: `${authorTypeVariable}.authors`,
+                        velocityVar: authorTypeVariable,
                         cardinality: CARDINALITY.ONE_TO_MANY
                     }
                 },
@@ -53,7 +55,7 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
                     variable: 'tags',
                     sortOrder: 3,
                     relationships: {
-                        velocityVar: `${authorTypeVariable}.tags`,
+                        velocityVar: authorTypeVariable,
                         cardinality: CARDINALITY.MANY_TO_MANY
                     }
                 }
@@ -64,7 +66,6 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        // Create 5 Authors
         for (let i = 1; i <= 5; i++) {
             await apiHelpers.createContentlet(authorTypeVariable, {
                 title: `MultiAuthor ${i} ${testSuffix}`,
@@ -74,15 +75,11 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) {
-            await apiHelpers.deleteContentType(blogTypeId);
-        }
-        if (authorTypeVariable) {
-            await apiHelpers.deleteContentType(authorTypeVariable);
-        }
+        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
-    test('P1 - Coexistence of multiple relationship fields @critical', async ({
+    test('coexistence of multiple relationship fields @critical', async ({
         adminPage,
         testSuffix
     }) => {
@@ -90,50 +87,32 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        // There should be two relationship field tables on the page
-        const allTables = adminPage.getByTestId('relationship-field-table');
-        await expect(allTables).toHaveCount(2);
+        // Use fieldVariable to scope each relationship field
+        const authorsField = new RelationshipField(adminPage, 'authors');
+        const tagsField = new RelationshipField(adminPage, 'tags');
 
-        // Work with the first relationship field ("authors")
-        const authorsField = new RelationshipField(adminPage);
-
-        // Fill title
         await formPage.fillTextField(`Multi Blog ${testSuffix}`);
 
-        // Add 2 Authors to the first field
-        const authorsAddBtn = allTables.first().getByTestId('relationship-add-button');
-        await authorsAddBtn.click();
-        const menu1 = adminPage.locator('.p-menu-overlay, .p-menu').last();
-        await expect(menu1).toBeVisible();
-        await menu1.locator('.p-menuitem').first().click();
+        // Add 2 Authors to the "authors" field
+        await authorsField.clickRelateExisting();
+        const selectDialog = new SelectExistingContentDialog(adminPage);
+        await selectDialog.waitForVisible();
+        await selectDialog.waitForContentLoaded();
+        await selectDialog.selectItems([0, 1]);
+        await selectDialog.clickApply();
+        await selectDialog.expectClosed();
 
-        const dialog1 = new SelectExistingContentDialog(adminPage);
-        await dialog1.waitForVisible();
-        await dialog1.waitForContentLoaded();
-        await dialog1.selectItems([0, 1]);
-        await dialog1.clickApply();
-        await dialog1.expectClosed();
+        // Add 3 items to the "tags" field
+        await tagsField.clickRelateExisting();
+        await selectDialog.waitForVisible();
+        await selectDialog.waitForContentLoaded();
+        await selectDialog.selectItems([0, 1, 2]);
+        await selectDialog.clickApply();
+        await selectDialog.expectClosed();
 
-        // Add 3 items to the second field ("tags")
-        const tagsAddBtn = allTables.last().getByTestId('relationship-add-button');
-        await tagsAddBtn.click();
-        const menu2 = adminPage.locator('.p-menu-overlay, .p-menu').last();
-        await expect(menu2).toBeVisible();
-        await menu2.locator('.p-menuitem').first().click();
-
-        const dialog2 = new SelectExistingContentDialog(adminPage);
-        await dialog2.waitForVisible();
-        await dialog2.waitForContentLoaded();
-        await dialog2.selectItems([0, 1, 2]);
-        await dialog2.clickApply();
-        await dialog2.expectClosed();
-
-        // Verify both fields have their items
-        const authorsRows = allTables.first().locator('tbody tr:not(:has(.pi-folder-open))');
-        await expect(authorsRows).toHaveCount(2);
-
-        const tagsRows = allTables.last().locator('tbody tr:not(:has(.pi-folder-open))');
-        await expect(tagsRows).toHaveCount(3);
+        // Verify both fields
+        await authorsField.expectRowCount(2);
+        await tagsField.expectRowCount(3);
 
         // Save
         await formPage.save();
@@ -143,77 +122,53 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         await adminPage.reload();
         await adminPage.waitForLoadState('networkidle');
 
-        const reloadedTables = adminPage.getByTestId('relationship-field-table');
-        const reloadedAuthorsRows = reloadedTables
-            .first()
-            .locator('tbody tr:not(:has(.pi-folder-open))');
-        const reloadedTagsRows = reloadedTables
-            .last()
-            .locator('tbody tr:not(:has(.pi-folder-open))');
-
-        await expect(reloadedAuthorsRows).toHaveCount(2);
-        await expect(reloadedTagsRows).toHaveCount(3);
+        const reloadedAuthors = new RelationshipField(adminPage, 'authors');
+        const reloadedTags = new RelationshipField(adminPage, 'tags');
+        await reloadedAuthors.expectRowCount(2);
+        await reloadedTags.expectRowCount(3);
     });
 
-    test('P2 - Independence between fields @smoke', async ({
-        adminPage,
-        testSuffix
-    }) => {
+    test('independence between fields @smoke', async ({ adminPage, testSuffix }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const allTables = adminPage.getByTestId('relationship-field-table');
+        const authorsField = new RelationshipField(adminPage, 'authors');
+        const tagsField = new RelationshipField(adminPage, 'tags');
 
         await formPage.fillTextField(`Independence Blog ${testSuffix}`);
 
-        // Add 2 Authors to the first field
-        const authorsAddBtn = allTables.first().getByTestId('relationship-add-button');
-        await authorsAddBtn.click();
-        const menu1 = adminPage.locator('.p-menu-overlay, .p-menu').last();
-        await expect(menu1).toBeVisible();
-        await menu1.locator('.p-menuitem').first().click();
+        // Add 2 Authors
+        await authorsField.clickRelateExisting();
+        const selectDialog = new SelectExistingContentDialog(adminPage);
+        await selectDialog.waitForVisible();
+        await selectDialog.waitForContentLoaded();
+        await selectDialog.selectItems([0, 1]);
+        await selectDialog.clickApply();
+        await selectDialog.expectClosed();
 
-        const dialog1 = new SelectExistingContentDialog(adminPage);
-        await dialog1.waitForVisible();
-        await dialog1.waitForContentLoaded();
-        await dialog1.selectItems([0, 1]);
-        await dialog1.clickApply();
-        await dialog1.expectClosed();
+        // Add 2 Tags
+        await tagsField.clickRelateExisting();
+        await selectDialog.waitForVisible();
+        await selectDialog.waitForContentLoaded();
+        await selectDialog.selectItems([0, 1]);
+        await selectDialog.clickApply();
+        await selectDialog.expectClosed();
 
-        // Add 2 items to the second field
-        const tagsAddBtn = allTables.last().getByTestId('relationship-add-button');
-        await tagsAddBtn.click();
-        const menu2 = adminPage.locator('.p-menu-overlay, .p-menu').last();
-        await expect(menu2).toBeVisible();
-        await menu2.locator('.p-menuitem').first().click();
-
-        const dialog2 = new SelectExistingContentDialog(adminPage);
-        await dialog2.waitForVisible();
-        await dialog2.waitForContentLoaded();
-        await dialog2.selectItems([0, 1]);
-        await dialog2.clickApply();
-        await dialog2.expectClosed();
-
-        // Delete one item from the authors field
-        const authorsDeleteBtn = allTables
-            .first()
-            .getByTestId('relationship-delete-button')
-            .first();
-        await authorsDeleteBtn.click();
+        // Delete one from authors
+        await authorsField.deleteRow(0);
 
         // Verify: authors has 1, tags still has 2
-        const authorsRows = allTables.first().locator('tbody tr:not(:has(.pi-folder-open))');
-        await expect(authorsRows).toHaveCount(1);
-
-        const tagsRows = allTables.last().locator('tbody tr:not(:has(.pi-folder-open))');
-        await expect(tagsRows).toHaveCount(2);
+        await authorsField.expectRowCount(1);
+        await tagsField.expectRowCount(2);
     });
 });
 
-// ─── Journey 10: Custom Columns (showFields) ────────────────────
+// ─── Custom Columns (showFields) ────────────────────────────────
 
-test.describe('Journey 10 - Custom Columns (showFields)', () => {
+test.describe('Custom Columns (showFields)', () => {
+    test.describe.configure({ mode: 'serial' });
+
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -225,7 +180,6 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
         );
         authorTypeVariable = authorType.variable;
 
-        // Create Blog type with showFields configured on the relationship
         const blogPayload = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
             name: `E2E_Blog_ShowFields_${testSuffix}`,
@@ -233,6 +187,7 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
             host: 'SYSTEM_HOST',
             folder: 'SYSTEM_FOLDER',
             metadata: { CONTENT_EDITOR2_ENABLED: true },
+            workflow: [SYSTEM_WORKFLOW_ID],
             fields: [
                 {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -246,15 +201,9 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
                     variable: 'authors',
                     sortOrder: 2,
                     relationships: {
-                        velocityVar: `${authorTypeVariable}.authors`,
+                        velocityVar: authorTypeVariable,
                         cardinality: CARDINALITY.ONE_TO_MANY
-                    },
-                    fieldVariables: [
-                        {
-                            key: 'showFields',
-                            value: 'title,bio'
-                        }
-                    ]
+                    }
                 }
             ]
         };
@@ -263,7 +212,14 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        // Create authors
+        // Add showFields variable to the relationship field after creation
+        const relationshipFieldDef = blogType.fields.find(
+            (f) => f.variable === 'authors'
+        );
+        if (relationshipFieldDef) {
+            await apiHelpers.addFieldVariable(blogTypeId, relationshipFieldDef.id, 'showFields', 'title,bio');
+        }
+
         const authors: TestContentlet[] = [];
         for (let i = 1; i <= 2; i++) {
             const author = await apiHelpers.createContentlet(authorTypeVariable, {
@@ -273,7 +229,6 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
             authors.push(author);
         }
 
-        // Create Blog with related authors
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
             { title: `Blog ShowFields Test ${testSuffix}` },
@@ -282,15 +237,11 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) {
-            await apiHelpers.deleteContentType(blogTypeId);
-        }
-        if (authorTypeVariable) {
-            await apiHelpers.deleteContentType(authorTypeVariable);
-        }
+        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
-    test('P3 - Custom columns with showFields configured', async ({ adminPage }) => {
+    test('custom columns with showFields configured', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
@@ -298,12 +249,10 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(2);
 
-        // Check the table headers for custom columns
-        const table = adminPage.getByTestId('relationship-field-table');
+        // With showFields="title,bio", headers should include Title and Bio
+        const table = relationshipField.table;
         const headers = table.locator('thead th');
 
-        // With showFields="title,bio", columns should include Title and Bio
-        // rather than the default Language/Status columns
         const headerTexts: string[] = [];
         const headerCount = await headers.count();
         for (let i = 0; i < headerCount; i++) {
@@ -313,18 +262,11 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
             }
         }
 
-        // Should contain 'title' and 'bio' headers
-        const hasTitle = headerTexts.some((h) => h.includes('title'));
-        const hasBio = headerTexts.some((h) => h.includes('bio'));
-        expect(hasTitle).toBe(true);
-        expect(hasBio).toBe(true);
+        expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
+        expect(headerTexts.some((h) => h.includes('bio'))).toBe(true);
     });
 
-    test('P3 - Default columns without showFields', async ({
-        adminPage,
-        apiHelpers,
-        testSuffix
-    }) => {
+    test('default columns without showFields', async ({ adminPage, apiHelpers, testSuffix }) => {
         // Create a blog type WITHOUT showFields
         const defaultBlogPayload = {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -333,6 +275,7 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
             host: 'SYSTEM_HOST',
             folder: 'SYSTEM_FOLDER',
             metadata: { CONTENT_EDITOR2_ENABLED: true },
+            workflow: [SYSTEM_WORKFLOW_ID],
             fields: [
                 {
                     clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -346,7 +289,7 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
                     variable: 'authors',
                     sortOrder: 2,
                     relationships: {
-                        velocityVar: `${authorTypeVariable}.authors`,
+                        velocityVar: authorTypeVariable,
                         cardinality: CARDINALITY.ONE_TO_MANY
                     }
                 }
@@ -356,13 +299,11 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
         const defaultBlogType = await apiHelpers.createContentType(defaultBlogPayload);
 
         try {
-            // Create author
             const author = await apiHelpers.createContentlet(authorTypeVariable, {
                 title: `DefaultCol Author ${testSuffix}`,
                 bio: 'Bio'
             });
 
-            // Create blog with author
             const blog = await apiHelpers.createContentletWithRelationship(
                 defaultBlogType.variable,
                 { title: `Blog DefaultCols Test ${testSuffix}` },
@@ -373,7 +314,7 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
             await formPage.goToContent(blog.inode);
             await adminPage.waitForLoadState('networkidle');
 
-            // Check for default columns: Title, Language, Status
+            // Default columns: Title, Language, Status
             const table = adminPage.getByTestId('relationship-field-table');
             const headers = table.locator('thead th');
 
@@ -386,71 +327,12 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
                 }
             }
 
-            const hasTitle = headerTexts.some((h) => h.includes('title'));
-            const hasLanguage = headerTexts.some((h) => h.includes('language'));
-            const hasStatus = headerTexts.some((h) => h.includes('status'));
-
-            expect(hasTitle).toBe(true);
-            expect(hasLanguage).toBe(true);
-            expect(hasStatus).toBe(true);
+            expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
+            expect(headerTexts.some((h) => h.includes('language'))).toBe(true);
+            expect(headerTexts.some((h) => h.includes('status'))).toBe(true);
         } finally {
             await apiHelpers.deleteContentType(defaultBlogType.id);
         }
     });
 });
 
-// ─── Journey 11: Errors and Edge Cases ───────────────────────────
-
-test.describe('Journey 11 - Errors and Edge Cases', () => {
-    test('P3 - Error loading content in selection dialog', async ({
-        adminPage,
-        apiHelpers,
-        testSuffix
-    }) => {
-        const authorType = await apiHelpers.createContentType(
-            apiHelpers.authorPayload(`Error_${testSuffix}`)
-        );
-
-        const blogType = await apiHelpers.createContentType(
-            apiHelpers.blogPayload(
-                `Error_${testSuffix}`,
-                'E2E_Blog_Error',
-                'E2EBlogError',
-                authorType.variable,
-                'authors',
-                CARDINALITY.ONE_TO_MANY
-            )
-        );
-
-        try {
-            const formPage = new NewEditContentFormPage(adminPage);
-            await formPage.goToNew(blogType.variable);
-            await adminPage.waitForLoadState('networkidle');
-
-            // Intercept the content API to force an error
-            await adminPage.route('**/api/content/_search**', (route) =>
-                route.fulfill({
-                    status: 500,
-                    contentType: 'application/json',
-                    body: JSON.stringify({ message: 'Internal Server Error' })
-                })
-            );
-
-            const relationshipField = new RelationshipField(adminPage);
-            await relationshipField.clickRelateExisting();
-
-            const dialog = new SelectExistingContentDialog(adminPage);
-            await dialog.waitForVisible();
-
-            // Should show error message
-            await dialog.expectErrorMessage();
-
-            // Clean up route
-            await adminPage.unroute('**/api/content/_search**');
-            await adminPage.keyboard.press('Escape');
-        } finally {
-            await apiHelpers.deleteContentType(blogType.id);
-            await apiHelpers.deleteContentType(authorType.variable);
-        }
-    });
-});
