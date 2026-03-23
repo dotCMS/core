@@ -3160,6 +3160,8 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final String html = ((HTMLPageAssetRendered) pageView).getHtml();
 
         assertTrue("UVE script tag should be present in rendered HTML", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
+        assertTrue("UVE script tag should be appended at the end when no </body> tag exists",
+                html.endsWith(SDK_EDITOR_SCRIPT_SOURCE));
         assertFalse("initDotUVE must NOT be injected when no schema is present", html.contains("initDotUVE"));
     }
 
