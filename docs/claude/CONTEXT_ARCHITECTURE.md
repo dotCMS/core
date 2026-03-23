@@ -289,6 +289,8 @@ The concepts above map to different file names, directories, and frontmatter acr
 | Skills / workflows | `.claude/skills/*/SKILL.md` | -- | -- | -- | -- |
 | Inline imports | `@path` in CLAUDE.md | -- | -- | -- | -- |
 
+> **Note:** Claude Code merged slash commands (`.claude/commands/*.md`) into skills. Do not create new command files — use skills instead. Existing command files in this repo are legacy stubs that delegate to their skill equivalents.
+
 **Cross-agent compatibility** at the root level requires either symlinks (`CLAUDE.md -> AGENTS.md`) or maintaining both files. Sub-directory files need separate `CLAUDE.md` and `AGENTS.md` for full cross-agent coverage.
 
 ### Tools with Single-File Constraints (Copilot)
