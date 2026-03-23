@@ -19,7 +19,7 @@ import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-tes
 import { withView } from './toolbar/withView';
 import { withEditor } from './withEditor';
 
-import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
 import { EDITOR_STATE } from '../../../shared/enums';
 import {

@@ -36,7 +36,7 @@ import {
     convertClientParamsToPageParams,
     createReorderMenuURL
 } from '../../utils';
-import { DotPageApiService } from '../dot-page-api.service';
+import { DotPageApiService } from '../dot-page-api/dot-page-api.service';
 import { InlineEditService } from '../inline-edit/inline-edit.service';
 
 export interface ActionsHandlerDependencies {

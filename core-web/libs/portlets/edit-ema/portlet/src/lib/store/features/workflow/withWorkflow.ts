@@ -24,7 +24,7 @@ import {
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { computeIsPageLocked } from '../../../utils';
 import { UVEState } from '../../models';
@@ -50,6 +50,7 @@ export interface WorkflowLockComputed {
     $lockIsPageLocked: Signal<boolean>;
     $lockFeatureEnabled: Signal<boolean>;
     $lockOptions: Signal<WorkflowLockOptions | null>;
+    $inode: Signal<string | undefined>;
 }
 
 /**
@@ -147,10 +148,15 @@ export function withWorkflow() {
                 };
             });
 
+            const $inode = computed(() => store.pageAsset()?.page?.inode, {
+                equal: (a, b) => a === b
+            });
+
             return {
                 $lockIsPageLocked,
                 $lockFeatureEnabled,
-                $lockOptions
+                $lockOptions,
+                $inode
             } satisfies WorkflowLockComputed;
         }),
         withMethods((store) => {
@@ -324,11 +330,11 @@ export function withWorkflow() {
              */
             onInit(store) {
                 effect(() => {
-                    const inode = store.pageAsset()?.page?.inode;
+                    const inode = store.$inode();
                     if (inode) {
                         untracked(() => store.workflowFetch(inode));
                     }
-                });
+                }, {});
             }
         })
     );

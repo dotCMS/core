@@ -1,4 +1,3 @@
-import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, forkJoin, of, pipe, throwError } from 'rxjs';
@@ -12,12 +11,13 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import {
     DotExperimentsService,
     DotLanguagesService,
-    DotPageLayoutService
+    DotPageLayoutService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import {
@@ -45,6 +45,9 @@ export interface WithPageApiMethods {
     saveStyleEditor: (
         payload: SaveStylePropertiesPayload
     ) => ReturnType<DotPageApiService['saveStyleProperties']>;
+    saveQuickEditFields: (
+        fieldValues: Record<string, string>
+    ) => ReturnType<DotWorkflowActionsFireService['saveContentlet']>;
 }
 
 /**
@@ -117,6 +120,7 @@ export function withPageApi(deps: WithPageApiDeps) {
             const dotExperimentsService = inject(DotExperimentsService);
             const dotPageLayoutService = inject(DotPageLayoutService);
             const iframeMessenger = inject(UveIframeMessengerService);
+            const dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
 
             return {
                 /**
@@ -438,7 +442,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                       map((response) => response.pageAsset)
                                                   );
                                     }),
-                                    tapResponse(
+                                    tap(
                                         () => {
                                             patchState(store, {
                                                 uveStatus: UVE_STATUS.LOADED
@@ -475,6 +479,34 @@ export function withPageApi(deps: WithPageApiDeps) {
                  */
                 saveStyleEditor: (payload: SaveStylePropertiesPayload) => {
                     return dotPageApiService.saveStyleProperties(payload).pipe(
+                        tap(() => {
+                            deps.resetHistoryToCurrent();
+                        }),
+                        catchError((error) => {
+                            const rolledBack = deps.rollbackPageAssetResponse();
+
+                            if (rolledBack) {
+                                const rolledBackResponse = deps.pageAsset()?.clientResponse;
+                                if (rolledBackResponse) {
+                                    iframeMessenger.sendPageData(rolledBackResponse);
+                                }
+                            }
+
+                            return throwError(() => error);
+                        })
+                    );
+                },
+
+                /**
+                 * Saves quick-edit contentlet field values via the EDIT workflow action.
+                 * Resets history to current on success; rolls back the optimistic page asset
+                 * update and re-sends the previous state to the iframe on failure.
+                 *
+                 * @param fieldValues - Flat record of field variable → value, must include inode
+                 * @returns Observable that emits on success or errors on failure
+                 */
+                saveQuickEditFields: (fieldValues: Record<string, string>) => {
+                    return dotWorkflowActionsFireService.saveContentlet(fieldValues).pipe(
                         tap(() => {
                             deps.resetHistoryToCurrent();
                         }),

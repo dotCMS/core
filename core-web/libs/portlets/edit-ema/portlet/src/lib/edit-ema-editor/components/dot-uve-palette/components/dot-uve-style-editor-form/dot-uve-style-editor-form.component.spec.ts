@@ -19,7 +19,7 @@ import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.component';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';

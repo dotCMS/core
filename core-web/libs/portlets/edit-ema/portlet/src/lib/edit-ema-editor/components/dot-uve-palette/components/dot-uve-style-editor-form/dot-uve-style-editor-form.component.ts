@@ -22,7 +22,7 @@ import { ButtonModule } from 'primeng/button';
 import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSPageAsset, StyleEditorProperties } from '@dotcms/types';
+import { StyleEditorProperties } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './components/uve-style-editor-field-checkbox-group/uve-style-editor-field-checkbox-group.component';
@@ -32,16 +32,13 @@ import { UveStyleEditorFieldRadioComponent } from './components/uve-style-editor
 import { StyleEditorFormBuilderService } from './services/style-editor-form-builder.service';
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
+import { UveOptimisticSaveService } from '../../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { PageType } from '../../../../../store/models';
-import {
-    extractContentletPropertiesFromPageAsset,
-    updateContentletPropertiesInPageAsset,
-    filterFormValues
-} from '../../utils';
+import { filterFormValues } from '../../utils';
 
 @Component({
     selector: 'dot-uve-style-editor-form',
@@ -56,6 +53,7 @@ import {
         UveStyleEditorFieldCheckboxGroupComponent,
         UveStyleEditorFieldRadioComponent
     ],
+    providers: [UveOptimisticSaveService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'block h-full w-full'
@@ -68,6 +66,7 @@ export class DotUveStyleEditorFormComponent {
     readonly #form = signal<FormGroup | null>(null);
     readonly #uveStore = inject(UVEStore);
     readonly #iframeMessenger = inject(UveIframeMessengerService);
+    readonly #optimisticSave = inject(UveOptimisticSaveService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -138,33 +137,10 @@ export class DotUveStyleEditorFormComponent {
         }
 
         try {
-            // Use the internal pageAssetResponse signal directly (it's already been rolled back)
-            // This ensures we get the rolled-back state, not the computed wrapper
-            const rolledBackPage = this.#uveStore.pageAsset();
-
-            if (!rolledBackPage) {
-                return;
-            }
-
-            const rolledBackAsset = { ...rolledBackPage } as DotCMSPageAsset & {
-                content?: unknown;
-                requestMetadata?: unknown;
-                clientResponse?: unknown;
-            };
-            delete rolledBackAsset.content;
-            delete rolledBackAsset.requestMetadata;
-            delete rolledBackAsset.clientResponse;
-            // Extract style properties from the rolled-back state using utility function
-            const extracted = extractContentletPropertiesFromPageAsset(
-                rolledBackAsset,
-                activeContentlet,
-                ['dotStyleProperties']
-            );
+            const extracted = this.#optimisticSave.extractFromRollback(activeContentlet, [
+                'dotStyleProperties'
+            ]);
             const styleProperties = extracted?.dotStyleProperties as StyleEditorProperties;
-
-            // Rebuild the ENTIRE form with rolled-back values
-            // This causes the #form signal to change, which triggers switchMap in #listenToFormChanges
-            // to cancel the old subscription (including any pending debounced saves)
             const restoredForm = this.#formBuilder.buildForm(schema, styleProperties);
             this.#form.set(restoredForm);
         } catch (error) {
@@ -210,7 +186,9 @@ export class DotUveStyleEditorFormComponent {
                         tap(({ formValues, activeContentlet, isTraditionalPage }) => {
                             // Traditional pages do not support instant iframe updates.
                             if (!isTraditionalPage) {
-                                this.#updateIframeOptimistically(formValues, activeContentlet);
+                                this.#optimisticSave.updateIframeOptimistically(activeContentlet, {
+                                    dotStyleProperties: formValues
+                                });
                             }
                         }),
                         // Traditional: emit immediately (of(0) completes right away).
@@ -227,63 +205,6 @@ export class DotUveStyleEditorFormComponent {
             .subscribe(({ formValues, activeContentlet, isTraditionalPage }) => {
                 this.#saveStyleProperties(formValues, activeContentlet, isTraditionalPage);
             });
-    }
-
-    /**
-     * Immediately updates the iframe with new form values (no debounce)
-     * Uses optimistic updates WITHOUT saving to history (history is saved only on API calls)
-     */
-    #updateIframeOptimistically(
-        formValues: Record<string, unknown>,
-        activeContentlet: ActionPayload | null
-    ): void {
-        if (!activeContentlet) {
-            return;
-        }
-
-        try {
-            // Get the internal pageAssetResponse for optimistic update
-            const internalPage = this.#uveStore.pageAsset();
-            if (!internalPage) {
-                return;
-            }
-
-            const internalAsset = { ...internalPage } as DotCMSPageAsset & {
-                content?: unknown;
-                requestMetadata?: unknown;
-                clientResponse?: unknown;
-            };
-            delete internalAsset.content;
-            delete internalAsset.requestMetadata;
-            delete internalAsset.clientResponse;
-            // Deep clone the pageAssetResponse before mutating to prevent affecting history entries
-            // This ensures that mutations don't affect the stored state in history
-            const clonedResponse = structuredClone(internalAsset);
-
-            // Update the cloned response (mutates the clone in place)
-            const updatedInternalResponse = updateContentletPropertiesInPageAsset(
-                clonedResponse,
-                activeContentlet,
-                {
-                    dotStyleProperties: formValues
-                }
-            );
-
-            // Optimistic update: Update state WITHOUT saving to history
-            // History is only saved when we actually call the API (in #saveStyleProperties)
-            this.#uveStore.setPageAsset({ pageAsset: updatedInternalResponse });
-
-            // Send updated response to iframe immediately for instant feedback
-            // Get the updated custom response (computed will reflect the changes)
-            const updatedCustomResponse = this.#uveStore.pageAsset()?.clientResponse;
-            if (!updatedCustomResponse) {
-                return;
-            }
-
-            this.#iframeMessenger.sendPageData(updatedCustomResponse);
-        } catch (error) {
-            console.error('Error updating iframe:', error);
-        }
     }
 
     /**

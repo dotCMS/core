@@ -15,7 +15,7 @@ import { UVE_MODE } from '@dotcms/types';
 
 import { withPageApi } from './withPageApi';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';

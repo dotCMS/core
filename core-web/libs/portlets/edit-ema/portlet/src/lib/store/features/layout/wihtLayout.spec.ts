@@ -9,7 +9,7 @@ import { DotPropertiesService } from '@dotcms/data-access';
 
 import { withLayout } from './withLayout';
 
-import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';

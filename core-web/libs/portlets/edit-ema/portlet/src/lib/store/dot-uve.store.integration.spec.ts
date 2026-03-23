@@ -31,7 +31,7 @@ import {
 import { UVEStore } from './dot-uve.store';
 import { Orientation } from './models';
 
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import {
     ACTION_MOCK,

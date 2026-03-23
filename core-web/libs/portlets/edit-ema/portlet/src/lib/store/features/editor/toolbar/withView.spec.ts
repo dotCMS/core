@@ -13,7 +13,7 @@ import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing'
 
 import { withView } from './withView';
 
-import { DotPageApiService } from '../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';

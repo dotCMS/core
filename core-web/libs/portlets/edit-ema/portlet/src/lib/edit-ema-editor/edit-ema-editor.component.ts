@@ -77,7 +77,7 @@ import { getQuickEditFields, parseFieldValues } from './utils';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
@@ -264,8 +264,60 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly iframeMessenger = inject(UveIframeMessengerService);
     #iframeResizeObserver: ResizeObserver | null = null;
 
-    readonly #isSubmitting = signal<boolean>(false);
-    readonly $isSubmitting = computed(() => this.#isSubmitting());
+    /**
+     * Copy-check effect: fires once when a new contentlet opens for quick-edit.
+     * If the contentlet is on more than one page, shows a copy dialog. On copy,
+     * updates the active contentlet to the copy before auto-save begins.
+     */
+    readonly #copyCheckEffect = effect(() => {
+        const activeContentlet = this.uveStore.editorActiveContentlet();
+
+        if (!activeContentlet) {
+            return;
+        }
+
+        const onNumberOfPages = Number(activeContentlet.contentlet?.onNumberOfPages || '1');
+
+        if (onNumberOfPages <= 1) {
+            return;
+        }
+
+        untracked(() => {
+            const { container, contentlet } = this.$contentletEditData();
+            const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
+
+            this.dotCopyContentModalService
+                .open()
+                .pipe(
+                    switchMap(({ shouldCopy }) => {
+                        if (!shouldCopy) {
+                            return of(contentlet);
+                        }
+
+                        this.dialog.showLoadingIframe(contentlet.title);
+                        return this.handleCopyContent(currentTreeNode);
+                    }),
+                    catchError(() => EMPTY)
+                )
+                .subscribe((resultContentlet: DotCMSContentlet) => {
+                    if (resultContentlet.inode !== contentlet.inode) {
+                        const newContentletPayload: ContentletPayload = {
+                            identifier: resultContentlet.identifier,
+                            inode: resultContentlet.inode,
+                            title: resultContentlet.title,
+                            contentType: resultContentlet.contentType,
+                            onNumberOfPages: 1
+                        };
+                        this.uveStore.setActiveContentlet(
+                            this.uveStore.getPageSavePayload({
+                                container,
+                                contentlet: newContentletPayload
+                            })
+                        );
+                    }
+                });
+        });
+    });
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -486,84 +538,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         patchState(this.#rightSidebarTabState, { currentTab });
     }
 
-    /**
-     * Save the contentlet form with the given form data
-     *
-     * @private
-     * @param {Record<string, unknown>} formData - The form data to save
-     * @memberof EditEmaEditorComponent
-     */
-    private saveContentletForm(formData: Record<string, unknown>): void {
-        this.#isSubmitting.set(true);
-        this.dotWorkflowActionsFireService
-            .saveContentlet(formData as Record<string, string>)
-            .subscribe({
-                next: () => {
-                    this.#isSubmitting.set(false);
-                    this.reloadPage();
-                },
-                error: () => {
-                    this.#isSubmitting.set(false);
-                }
-            });
-    }
-
-    protected onFormSubmit(formData: Record<string, unknown>): void {
-        const { container, contentlet } = this.$contentletEditData();
-
-        const onNumberOfPages = Number(contentlet.onNumberOfPages || '1');
-
-        // If the contentlet is on only one page, we can save it directly
-        if (onNumberOfPages <= 1) {
-            this.saveContentletForm(formData);
-            return;
-        }
-
-        const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
-
-        this.dotCopyContentModalService
-            .open()
-            .pipe(
-                switchMap(({ shouldCopy }) => {
-                    if (!shouldCopy) {
-                        return of(contentlet);
-                    }
-
-                    this.dialog.showLoadingIframe(contentlet.title);
-                    return this.handleCopyContent(currentTreeNode);
-                })
-            )
-            .subscribe((resultContentlet: DotCMSContentlet) => {
-                // Only update active contentlet if content was actually copied (new inode)
-                if (resultContentlet.inode !== contentlet.inode) {
-                    const newContentletPayload: ContentletPayload = {
-                        identifier: resultContentlet.identifier,
-                        inode: resultContentlet.inode,
-                        title: resultContentlet.title,
-                        contentType: resultContentlet.contentType,
-                        onNumberOfPages: 1 // Because we just copied the contentlet to the same page
-                    };
-                    this.uveStore.setActiveContentlet(
-                        this.uveStore.getPageSavePayload({
-                            container,
-                            contentlet: newContentletPayload
-                        })
-                    );
-                }
-
-                // Update formData with the new inode if content was copied
-                const updatedFormData = {
-                    ...formData,
-                    inode: resultContentlet.inode
-                };
-                this.saveContentletForm(updatedFormData);
-            });
-    }
-
-    protected onCancel(): void {
-        this.uveStore.cancelContentletEdit();
-    }
-
     ngOnInit(): void {
         // Initialization happens in ngAfterViewInit when ViewChild references are available
         // This lifecycle hook satisfies OnInit interface requirement
@@ -732,6 +706,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     onIframePageLoad(): void {
+        this.iframeMessenger.setIframeWindow(
+            this.iframe?.nativeElement.contentWindow ?? null
+        );
+
         if (this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }

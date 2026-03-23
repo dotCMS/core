@@ -4,7 +4,7 @@ import { UVE_MODE } from '@dotcms/types';
 
 import { DotPageApiService } from './dot-page-api.service';
 
-import { PERSONA_KEY } from '../shared/consts';
+import { PERSONA_KEY } from '../../shared/consts';
 
 describe('DotPageApiService', () => {
     let spectator: SpectatorHttp<DotPageApiService>;

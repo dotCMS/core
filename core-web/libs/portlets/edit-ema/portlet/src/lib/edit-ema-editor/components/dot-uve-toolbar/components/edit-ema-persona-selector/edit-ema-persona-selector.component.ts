@@ -28,7 +28,7 @@ import { DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 
 interface PersonaSelector {
     items: DotPersona[];

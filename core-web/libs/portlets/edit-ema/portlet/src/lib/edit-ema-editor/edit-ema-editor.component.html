@@ -226,9 +226,7 @@
                     @if ($editorPanelActiveTab() === 0) {
                         <dot-uve-contentlet-quick-edit
                             [data]="$contentletEditData()"
-                            [loading]="$isSubmitting() || $isIframeLoading()"
-                            (submit)="onFormSubmit($event)"
-                            (cancel)="onCancel()" />
+                            [loading]="$isIframeLoading()" />
                     }
                 </p-tabpanel>
                 @if ($showStyleEditorTab()) {
