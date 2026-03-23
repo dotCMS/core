@@ -181,7 +181,7 @@ public class InitRunner implements Runnable {
     }
 
 
-    private boolean sendData() throws Exception {
+    private boolean runTask() throws Exception {
         if (!Config.getBooleanProperty("dotcms.pingbacks.enabled", true)) {
             return false;
         }
@@ -230,7 +230,7 @@ public class InitRunner implements Runnable {
     @Override
     public void run() {
         try {
-            sendData();
+            runTask();
         } catch (Throwable e) {
             logError(e);
         }
