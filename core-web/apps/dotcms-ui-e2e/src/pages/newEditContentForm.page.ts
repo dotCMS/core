@@ -22,15 +22,16 @@ export class NewEditContentFormPage {
     async clickNewContentFromList() {
         const frame = getLegacyFrame(this.page);
 
-        // Click the Dojo "+" dropdown button
-        const addButton = frame.locator('#dijit_form_DropDownButton_0');
+        // Click the Dojo "+" dropdown button (use role instead of fragile ID)
+        const addButton = frame.locator('.dijitDropDownButton [role="button"]').first();
         await addButton.waitFor({ state: 'visible', timeout: 15000 });
         await addButton.click();
 
-        // The dropdown menu renders in the iframe as well
+        // The dropdown menu renders inside the iframe.
+        // Use force:true because Dojo menus can flicker during animation.
         const addNewOption = frame.locator('.dijitMenuItemLabel', { hasText: 'Add New Content' });
-        await addNewOption.waitFor({ state: 'visible', timeout: 5000 });
-        await addNewOption.click();
+        await addNewOption.waitFor({ state: 'visible', timeout: 10000 });
+        await addNewOption.click({ force: true });
 
         await this.page.waitForLoadState('networkidle');
     }

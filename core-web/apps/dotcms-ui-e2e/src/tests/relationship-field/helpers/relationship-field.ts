@@ -50,7 +50,7 @@ export class RelationshipFieldComponent {
      */
     async clickCreateNew(): Promise<void> {
         await this.addButton.click();
-        const createNewOption = this.page.getByLabel('Create New').locator('a');
+        const createNewOption = this.page.getByRole('menuitem', { name: 'New Content' });
         await createNewOption.waitFor({ state: 'visible', timeout: 5000 });
         await createNewOption.click();
     }
@@ -76,7 +76,7 @@ export class RelationshipFieldComponent {
      * Gets the "Create New" menu item locator from an open menu.
      */
     getCreateNewMenuItem(menu: Locator): Locator {
-        return menu.getByLabel('Create New');
+        return menu.getByLabel('New Content');
     }
 
     // ─── Table Interactions ──────────────────────────────────────────
@@ -160,8 +160,7 @@ export class RelationshipFieldComponent {
      * Asserts the "+" button is enabled.
      */
     async expectAddButtonEnabled(): Promise<void> {
-        const btn = this.addButton.locator('button');
-        await expect(btn).toBeEnabled();
+        await expect(this.addButton).toBeEnabled();
     }
 
     // ─── Drag Handles ────────────────────────────────────────────────

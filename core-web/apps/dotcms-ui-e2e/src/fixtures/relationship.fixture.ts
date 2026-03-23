@@ -41,6 +41,10 @@ async function createContentTypeWithFields(
         data: payload,
         headers: authHeaders()
     });
+    if (response.status() !== 200) {
+        const errorBody = await response.json().catch(() => response.statusText());
+        console.error('createContentType failed:', JSON.stringify(errorBody, null, 2));
+    }
     expect(response.status()).toBe(200);
     const data = await response.json();
     const entity = data.entity[0] ?? data.entity;

@@ -437,25 +437,25 @@ test.describe('Journey 2 - Create Related Content Inline (Create New)', () => {
         const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
         await expect(createDialog).toBeVisible({ timeout: 10000 });
 
-        // Fill in the Author fields in the nested form
+        // Fill in the Author title in the nested form
         const titleInput = createDialog.getByTestId('title').first();
-        if (await titleInput.isVisible()) {
-            await titleInput.fill(`Inline Author ${testSuffix}`);
-        }
+        await titleInput.waitFor({ state: 'visible', timeout: 10000 });
+        await titleInput.fill(`Inline Author ${testSuffix}`);
 
-        // Save the inline content
-        const saveButton = createDialog.getByRole('button', { name: 'Save' });
-        if (await saveButton.isVisible()) {
-            const responsePromise = adminPage.waitForResponse(
-                (response) =>
-                    response.status() === 200 &&
-                    response.url().includes('/api/v1/workflow/actions/')
-            );
-            await saveButton.click();
-            await responsePromise;
-        }
+        // Save the inline content — wait for API response BEFORE clicking
+        const responsePromise = adminPage.waitForResponse(
+            (response) => response.url().includes('/api/v1/workflow/actions/')
+        );
+        const saveButton = createDialog.getByRole('button', { name: /Save/ });
+        await saveButton.waitFor({ state: 'visible', timeout: 5000 });
+        await saveButton.click();
+        const saveResponse = await responsePromise;
 
-        // Wait for dialog to close
+        // After save, the dialog stays open showing the saved content.
+        // Close it via the X button.
+        const closeButton = createDialog.locator('.p-dialog-header-close, button[aria-label="Close"]');
+        await closeButton.waitFor({ state: 'visible', timeout: 5000 });
+        await closeButton.click();
         await expect(createDialog).toBeHidden({ timeout: 10000 });
 
         // Verify the new Author appears in the relationship table
