@@ -23,6 +23,10 @@
     aria-label="Select tag storage host"
     #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled #end
   >
+    #set($hasSelection = $UtilMethods.isSet($tagStorage) || $UtilMethods.isSet($tagStorageFromURL))
+    <option value="" #if(!$hasSelection) selected #end>
+      #if($text && $UtilMethods.isSet($text.get("tag-select-host")))$esc.html($text.get("tag-select-host"))#{else}Select host#end
+    </option>
     #foreach($c in $tagStorageHostList)
       #if($c.isSystemHost)
         #set($optionLabel = "")
@@ -53,12 +57,14 @@
       if (!select) return;
 
       const currentValue = field ? (field.getValue() || "") : "";
-      if (currentValue && !select.value) {
-        select.value = currentValue;
-      }
 
-      if (field) {
-        field.setValue(select.value || "");
+      if (currentValue) {
+        select.value = currentValue;
+        if (field && select.value !== currentValue) {
+          field.setValue(select.value);
+        }
+      } else {
+        select.value = "";
       }
 
       select.addEventListener("change", function () {
