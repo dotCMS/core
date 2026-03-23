@@ -14,7 +14,7 @@ This skill is the **authoritative source** for worktree operations in this repos
 **Never use Claude Code's built-in `EnterWorktree` tool** in this repository. It creates worktrees in `.claude/worktrees/` without running worktrunk's post-create hooks, resulting in:
 - No build artifacts copied (requires full ~15 min rebuild)
 - No `yarn install` (frontend broken)
-- No lefthook hooks (git hooks missing)
+- No git hooks (`yarn` prepare / `core-web/prepare.js` never ran)
 - No `mise trust` (tool versions not resolved)
 
 **Always use `wt switch --create` via Bash instead.** This runs the project's `.config/wt.toml` hooks and produces a ready-to-use worktree.
@@ -214,7 +214,7 @@ cursor <worktree-path>              # or code, idea
 ```
 
 After creation, confirm what happened:
-- Which post-create hooks ran (mise trust, copy-ignored, yarn install, lefthook)
+- Which post-create hooks ran (mise trust, copy-ignored, yarn install → prepare.js / git hooks)
 - The worktree path
 - How to open it: editor command or `wt switch <name>`
 
@@ -299,7 +299,7 @@ Extract a short, recognizable portion of the parent branch name rather than usin
 The project config `.config/wt.toml` runs `post-create` hooks (blocking — all complete before you can work):
 
 1. **`wt step copy-ignored --from <base>`** — copies Nx/Angular caches via reflink (near-zero disk cost on APFS/btrfs). Scoped by `.worktreeinclude` — copies caches only, NOT `node_modules`.
-2. **`just worktree-init`** — installs mise tools, runs `yarn install` (fresh, matching lockfile), builds Stencil webcomponents, wires lefthook git hooks.
+2. **`just worktree-init`** — declares **`setup`** as a [prior dependency](https://just.systems/man/en/dependencies.html) (mise, shell integration, `prepare.js` git hooks — idempotent), then `mise trust` for this path, `yarn install` (fresh lockfile; `prepare` runs again via package.json), builds Stencil webcomponents.
 3. **Docker image re-tag** — tags the source worktree's image for the new branch so `just dev-run` works immediately.
 4. **Port assignment** — writes a deterministic port (10000-19999 range, derived from branch name via `hash_port`) to `.dev-port`.
 

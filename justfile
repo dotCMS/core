@@ -4,7 +4,7 @@ home_dir := env_var('HOME')
 #
 # Getting started:
 #   brew install just          # or: mise install (if you have mise)
-#   just setup                 # installs mise, configures shell, installs all tools
+#   just setup                 # installs mise, configures shell, installs all tools, wires git hooks
 #   just build                 # full build (~8-15 min)
 #   just dev-run 8080          # start the stack
 #
@@ -20,6 +20,7 @@ default:
     @just --list --unsorted --justfile {{ justfile() }}
 
 # Installs mise, configures shell for interactive + non-interactive sessions, and installs all tools.
+# Idempotent — safe to run multiple times (shell lines are deduped; mise install / prepare.js are no-ops when already current).
 setup:
     #!/usr/bin/env bash
     set -e
@@ -72,6 +73,14 @@ setup:
             ;;
     esac
 
+    # Project tools and hooks always run from the repo root so .mise.toml applies even if
+    # `just setup` was invoked from another directory.
+    REPO_ROOT="$(cd "$(dirname "{{ justfile() }}")" && pwd)"
+    cd "$REPO_ROOT" || {
+        echo "Error: could not cd to repo root: $REPO_ROOT" >&2
+        exit 1
+    }
+
     echo ""
     echo "Installing tools..."
     "$MISE" install
@@ -82,22 +91,39 @@ setup:
             echo "  ✓ worktrunk shell integration installed" || true
     fi
 
+    # Git hooks — core-web/prepare.js writes branch-aware wrappers (no yarn install required).
+    if [ -f "$REPO_ROOT/core-web/prepare.js" ]; then
+        echo ""
+        echo "Wiring git hooks..."
+        (
+            cd "$REPO_ROOT" || exit 0
+            env -u CI "$MISE" exec -- node core-web/prepare.js
+        ) 2>/dev/null || (
+            cd "$REPO_ROOT" || exit 0
+            export PATH="$HOME/.local/share/mise/shims:$PATH"
+            env -u CI node core-web/prepare.js
+        ) 2>/dev/null || true
+    fi
+
     echo ""
     echo "✓ Done. Restart your shell to apply changes."
 
-# Initializes a worktree after creation: tools, deps, hooks, Stencil build.
+# Initializes a worktree after creation. Depends on `setup` (prior dependency — see
+# https://just.systems/man/en/dependencies.html); avoids recursive `just` (same manual warns that
+# child invocations recalculate state and can duplicate work). Recipe cwd is the justfile directory.
 # Called by wt.toml post-create hook — keeps logic in one place instead of duplicating in wt.toml.
 # Also safe to run manually to fix a broken worktree.
-worktree-init:
+worktree-init: setup
     #!/usr/bin/env bash
     set -euo pipefail
     echo "Initializing worktree..."
 
-    # 1. Tools — ensure mise tools match this branch's .mise.toml
-    command -v mise >/dev/null 2>&1 && mise trust 2>/dev/null && mise install --quiet 2>/dev/null || true
+    # New worktrees may need this path trusted for mise config (harmless if already trusted).
+    command -v mise >/dev/null 2>&1 && mise trust 2>/dev/null || true
 
-    # 2. Frontend deps — yarn install reconciles node_modules against lockfile.
-    #    No --frozen-lockfile: copied caches may be from a different branch.
+    # Frontend deps — yarn install reconciles node_modules against lockfile
+    # (no --frozen-lockfile: copied caches may be from a different branch).
+    echo ""
     echo "Installing frontend dependencies..."
     cd core-web && yarn install && cd ..
 
@@ -109,14 +135,13 @@ worktree-init:
         echo ""
     fi
 
-    # 3. Stencil webcomponents — the only non-Angular library that needs pre-building.
-    #    nx serve dotcms-ui imports @dotcms/dotcms-webcomponents/loader which is a build artifact.
+    # Stencil webcomponents — the only non-Angular library that needs pre-building.
+    # nx serve dotcms-ui imports @dotcms/dotcms-webcomponents/loader which is a build artifact.
     echo "Building dotcms-webcomponents (Stencil)..."
     cd core-web && NX_DAEMON=false yarn nx build dotcms-webcomponents && cd ..
 
-    # 4. Git hooks — lefthook, after unsetting any stale husky hooksPath
-    git config --unset core.hooksPath 2>/dev/null || true
-    command -v lefthook >/dev/null 2>&1 && lefthook install 2>/dev/null || true
+    # Git hooks: yarn install (step 2) already ran core-web/prepare.js — do not run
+    # lefthook install here; it would replace branch-aware wrappers with machine-specific scripts.
 
     echo "✓ Worktree ready"
 
