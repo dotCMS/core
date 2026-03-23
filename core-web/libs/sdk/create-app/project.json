@@ -23,7 +23,16 @@
                 "format": ["esm"],
                 "bundle": true,
                 "thirdParty": true,
-                "external": ["ora", "chalk", "inquirer", "execa", "cfonts", "axios", "fs-extra", "commander"],
+                "external": [
+                    "ora",
+                    "chalk",
+                    "inquirer",
+                    "execa",
+                    "cfonts",
+                    "axios",
+                    "fs-extra",
+                    "commander"
+                ],
                 "main": "libs/sdk/create-app/src/index.ts",
                 "tsConfig": "libs/sdk/create-app/tsconfig.lib.json",
                 "assets": [
@@ -42,7 +51,7 @@
                     "sourcemap": true,
                     "outExtension": {
                         ".js": ".js"
-                    },
+                    }
                 }
             },
             "configurations": {
