@@ -172,7 +172,7 @@ public class InitRunner implements Runnable {
             String[] x = aliases.split("[\\r\\n,]+");
             for (String y : x) {
                 y = y.trim();
-                if (UtilMethods.isSet(y) && !y.contains("dotcms.com") || !"host".equals(y)) {
+                if (UtilMethods.isSet(y) && !y.contains("dotcms.com") && !"host".equals(y)) {
                     hostNames.add(y);
                 }
             }
