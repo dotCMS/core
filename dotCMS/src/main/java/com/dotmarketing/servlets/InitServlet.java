@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.rest.api.v1.maintenance.ClusterManagementTopic;
+import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -20,7 +21,6 @@ import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -30,7 +30,6 @@ import com.liferay.portal.util.ReleaseInfo;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.HttpURLConnection;
@@ -41,6 +40,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
@@ -50,7 +50,6 @@ import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.felix.framework.OSGISystem;
 import org.apache.felix.framework.OSGIUtil;
 import org.apache.lucene.search.BooleanQuery;
@@ -148,10 +147,7 @@ public class InitServlet extends HttpServlet {
         Logger.info(InitServlet.class, "Startup completed - early shutdown hook registered");
 
 
-        // runs the InitThread
 
-        InitThread it = new InitThread();
-        it.start();
 
         //Ensure the system host is in the system
         try {
@@ -183,11 +179,7 @@ public class InitServlet extends HttpServlet {
             }
             Logger.info(this, "");
         }
-        
-        
-        
-        
-        
+
 
         /*
          * SHOULD BE LAST THING THAT HAPPENS
@@ -267,6 +259,9 @@ public class InitServlet extends HttpServlet {
         }
 
         Logger.info(this,"InitServlet init Completed");
+
+        DotConcurrentFactory.getScheduledThreadPoolExecutor()
+                .schedule(new InitRunner(), Config.getIntProperty("dotcms.pingbacks.delay.sec", 300), TimeUnit.SECONDS);
 
     }
 
