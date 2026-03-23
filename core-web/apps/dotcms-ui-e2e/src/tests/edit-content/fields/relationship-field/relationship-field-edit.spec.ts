@@ -1,8 +1,7 @@
-import { test, expect } from '../../fixtures/relationship.fixture';
 import { NewEditContentFormPage } from '@pages';
-import { RelationshipFieldComponent } from './helpers/relationship-field';
-import { SelectExistingContentDialogComponent } from './helpers/select-existing-content-dialog';
-import { CARDINALITY, TestContentlet } from '../../fixtures/relationship.fixture';
+import { CARDINALITY, expect, test, TestContentlet } from '../../../../fixtures/relationship.fixture';
+import { RelationshipField } from './helpers/relationship-field';
+import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 /**
  * Journey 3: Edit Existing Content - Add More Relations
@@ -76,7 +75,7 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(2);
     });
 
@@ -87,8 +86,8 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-        const dialog = new SelectExistingContentDialogComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
+        const dialog = new SelectExistingContentDialog(adminPage);
 
         // Verify initial state: 2 authors
         await relationshipField.expectRowCount(2);
@@ -112,7 +111,7 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
         await adminPage.reload();
         await adminPage.waitForLoadState('networkidle');
 
-        const reloadedField = new RelationshipFieldComponent(adminPage);
+        const reloadedField = new RelationshipField(adminPage);
         await reloadedField.expectRowCount(3);
     });
 
@@ -193,7 +192,7 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
 
         // Verify initial: 3 authors
         await relationshipField.expectRowCount(3);
@@ -210,7 +209,7 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
 
         // Delete one
@@ -223,7 +222,7 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
         await adminPage.reload();
         await adminPage.waitForLoadState('networkidle');
 
-        const reloadedField = new RelationshipFieldComponent(adminPage);
+        const reloadedField = new RelationshipField(adminPage);
         await reloadedField.expectRowCount(2);
     });
 
@@ -232,7 +231,7 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
 
         // Delete all 3 items (always delete the first since list shifts)
@@ -308,8 +307,8 @@ test.describe('Journey 4 - Delete in Single Mode and Re-add', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-        const dialog = new SelectExistingContentDialogComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
+        const dialog = new SelectExistingContentDialog(adminPage);
 
         // Verify 1 author
         await relationshipField.expectRowCount(1);

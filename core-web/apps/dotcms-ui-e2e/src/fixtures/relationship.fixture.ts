@@ -264,14 +264,14 @@ export const test = base.extend<{
     adminPage: Page;
     testSuffix: string;
     apiHelpers: {
-        createContentType: typeof createContentTypeWithFields;
-        deleteContentType: typeof deleteContentTypeById;
-        createContentlet: typeof fireContentlet;
-        createContentletWithRelationship: typeof fireContentletWithRelationship;
-        enableNewEditor: typeof enableNewEditor;
-        authorPayload: typeof authorContentTypePayload;
-        tagPayload: typeof tagContentTypePayload;
-        blogPayload: typeof blogContentTypePayload;
+        createContentType: (payload: Record<string, unknown>) => Promise<TestContentType>;
+        deleteContentType: (idOrVar: string) => Promise<void>;
+        createContentlet: (ct: string, fields: Record<string, unknown>) => Promise<TestContentlet>;
+        createContentletWithRelationship: (ct: string, fields: Record<string, unknown>, rels: Record<string, string>) => Promise<TestContentlet>;
+        enableNewEditor: (ctVar: string) => Promise<void>;
+        authorPayload: (suffix: string) => Record<string, unknown>;
+        tagPayload: (suffix: string) => Record<string, unknown>;
+        blogPayload: (suffix: string, name: string, variable: string, relatedCt: string, relField: string, cardinality: number) => Record<string, unknown>;
         CARDINALITY: typeof CARDINALITY;
     };
 }>({

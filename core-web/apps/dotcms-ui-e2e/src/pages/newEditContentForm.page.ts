@@ -22,9 +22,13 @@ export class NewEditContentFormPage {
     async clickNewContentFromList() {
         const frame = getLegacyFrame(this.page);
 
-        // Click the Dojo "+" dropdown button (use role instead of fragile ID)
+        // Wait for the Dojo iframe to fully load and widgets to initialize
+        await frame.locator('.dijitDropDownButton').first().waitFor({ state: 'visible', timeout: 15000 });
+        // Small delay for Dojo widget initialization after DOM is visible
+        await this.page.waitForTimeout(500);
+
+        // Click the Dojo "+" dropdown button
         const addButton = frame.locator('.dijitDropDownButton [role="button"]').first();
-        await addButton.waitFor({ state: 'visible', timeout: 15000 });
         await addButton.click();
 
         // The dropdown menu renders inside the iframe.

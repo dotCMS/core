@@ -1,116 +1,87 @@
 import { NewEditContentFormPage } from '@pages';
-import { CARDINALITY, expect, test } from '../../fixtures/relationship.fixture';
-import { RelationshipFieldComponent } from './helpers/relationship-field';
-import { SelectExistingContentDialogComponent } from './helpers/select-existing-content-dialog';
+import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fixture';
+import { RelationshipField } from './helpers/relationship-field';
+import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
-/**
- * Journey 1 & 2: Create New Content and Relate to Existing Content + Create Related Content Inline
- *
- * Covers selecting existing content, creating new content inline,
- * and dialog dismissal behaviors across all cardinalities.
- */
 
-// ─── Journey 1: Single Selection (ONE_TO_ONE, MANY_TO_ONE) ──────
+// ─── Single Selection (ONE_TO_ONE, MANY_TO_ONE) ─────────────────
 
-test.describe('Journey 1 - Single Selection Mode (1:1 / M:1)', () => {
+test.describe('Single Selection (1:1 / M:1)', () => {
     const cardinalities = [
         { name: 'ONE_TO_ONE', value: CARDINALITY.ONE_TO_ONE, fieldVar: 'mainAuthor' },
         { name: 'MANY_TO_ONE', value: CARDINALITY.MANY_TO_ONE, fieldVar: 'mainAuthor' }
     ] as const;
 
     for (const cardinality of cardinalities) {
-        test.describe(`Cardinality: ${cardinality.name}`, () => {
+        test.describe(`${cardinality.name}`, () => {
             let blogTypeId: string;
             let authorTypeVariable: string;
             let blogTypeVariable: string;
 
-            test.beforeEach(
-                async ({ adminPage, apiHelpers, testSuffix }) => {
-                    // Create the Author content type
-                    const authorType = await apiHelpers.createContentType(
-                        apiHelpers.authorPayload(`${cardinality.name}_${testSuffix}`)
-                    );
-                    authorTypeVariable = authorType.variable;
+            test.beforeEach(async ({ adminPage, apiHelpers, testSuffix }) => {
+                const authorType = await apiHelpers.createContentType(
+                    apiHelpers.authorPayload(`${cardinality.name}_${testSuffix}`)
+                );
+                authorTypeVariable = authorType.variable;
 
-                    // Create the Blog content type with single-mode relationship
-                    const blogType = await apiHelpers.createContentType(
-                        apiHelpers.blogPayload(
-                            `${cardinality.name}_${testSuffix}`,
-                            `E2E_Blog_${cardinality.name}`,
-                            `E2EBlog${cardinality.name}`,
-                            authorTypeVariable,
-                            cardinality.fieldVar,
-                            cardinality.value
-                        )
-                    );
-                    blogTypeId = blogType.id;
-                    blogTypeVariable = blogType.variable;
+                const blogType = await apiHelpers.createContentType(
+                    apiHelpers.blogPayload(
+                        `${cardinality.name}_${testSuffix}`,
+                        `E2E_Blog_${cardinality.name}`,
+                        `E2EBlog${cardinality.name}`,
+                        authorTypeVariable,
+                        cardinality.fieldVar,
+                        cardinality.value
+                    )
+                );
+                blogTypeId = blogType.id;
+                blogTypeVariable = blogType.variable;
 
-                    // Create seed Authors
-                    for (let i = 1; i <= 3; i++) {
-                        await apiHelpers.createContentlet(authorTypeVariable, {
-                            title: `Author ${cardinality.name} ${i} ${testSuffix}`,
-                            bio: `Bio for author ${i}`
-                        });
-                    }
-                }
-            );
-
-            test.afterEach(async ({ apiHelpers }) => {
-                // Cleanup content types (cascades content)
-                if (blogTypeVariable) {
-                    await apiHelpers.deleteContentType(blogTypeId);
-                }
-                if (authorTypeVariable) {
-                    await apiHelpers.deleteContentType(authorTypeVariable);
+                for (let i = 1; i <= 3; i++) {
+                    await apiHelpers.createContentlet(authorTypeVariable, {
+                        title: `Author ${cardinality.name} ${i} ${testSuffix}`,
+                        bio: `Bio for author ${i}`
+                    });
                 }
             });
 
-            test(`P1 - Open selection dialog in single mode and select item @critical`, async ({
-                adminPage
-            }) => {
+            test.afterEach(async ({ apiHelpers }) => {
+                if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+                if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
+            });
+
+            test('select and apply item @critical', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
-                // Open the selection dialog
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                // Assert radio buttons are shown (single mode)
                 await dialog.expectRadioButtons();
 
-                // Select one item and apply
                 await dialog.selectSingleItem(0);
                 await dialog.clickApply();
                 await dialog.expectClosed();
 
-                // Verify the relationship table shows 1 item
                 await relationshipField.expectRowCount(1);
-
-                // In single mode, "Existing Content" should be disabled
                 await relationshipField.expectRelateExistingDisabled();
             });
 
-            test(`P1 - Save and verify persistence @critical`, async ({
-                adminPage,
-                testSuffix
-            }) => {
+            test('save and verify persistence @critical', async ({ adminPage, testSuffix }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
-                // Fill title
                 await formPage.fillTextField(`Blog ${cardinality.name} ${testSuffix}`);
 
-                // Open dialog and select
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
@@ -119,188 +90,161 @@ test.describe('Journey 1 - Single Selection Mode (1:1 / M:1)', () => {
                 await dialog.expectClosed();
                 await relationshipField.expectRowCount(1);
 
-                // Save the content
                 await formPage.save();
 
-                // Wait a moment for navigation then reload to verify persistence
                 await adminPage.waitForTimeout(1000);
                 await adminPage.reload();
                 await adminPage.waitForLoadState('networkidle');
 
-                // Verify the relationship field still shows the selected Author
-                const reloadedField = new RelationshipFieldComponent(adminPage);
+                const reloadedField = new RelationshipField(adminPage);
                 await reloadedField.expectRowCount(1);
             });
 
-            test('P2 - Apply button disabled with no selection @smoke', async ({
-                adminPage
-            }) => {
+            test('apply button disabled with no selection @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                // Apply button should be disabled when nothing is selected
                 await dialog.expectApplyDisabled();
 
-                // Select an item, apply becomes enabled
                 await dialog.selectSingleItem(0);
                 await dialog.expectApplyEnabled();
 
-                // Cancel to close
                 await dialog.clickCancel();
             });
 
-            test('P2 - Cancel discards selection @smoke', async ({ adminPage }) => {
+            test('cancel discards selection @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                // Select an item then cancel
                 await dialog.selectSingleItem(0);
                 await dialog.clickCancel();
                 await dialog.expectClosed();
 
-                // Relationship field should remain empty
                 await relationshipField.expectEmpty();
             });
 
-            test('P2 - Dismiss dialog via ESC key @smoke', async ({ adminPage }) => {
+            test('dismiss dialog via ESC key @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                // Select an item then press ESC
                 await dialog.selectSingleItem(0);
                 await dialog.closeViaEsc();
 
-                // Relationship field should remain empty
                 await relationshipField.expectEmpty();
             });
         });
     }
 });
 
-// ─── Journey 1: Multiple Selection (ONE_TO_MANY, MANY_TO_MANY) ──
+// ─── Multiple Selection (ONE_TO_MANY, MANY_TO_MANY) ─────────────
 
-test.describe('Journey 1 - Multiple Selection Mode (1:M / M:M)', () => {
+test.describe('Multiple Selection (1:M / M:M)', () => {
     const cardinalities = [
         { name: 'ONE_TO_MANY', value: CARDINALITY.ONE_TO_MANY, fieldVar: 'authors' },
         { name: 'MANY_TO_MANY', value: CARDINALITY.MANY_TO_MANY, fieldVar: 'tags' }
     ] as const;
 
     for (const cardinality of cardinalities) {
-        test.describe(`Cardinality: ${cardinality.name}`, () => {
+        test.describe(`${cardinality.name}`, () => {
             let blogTypeId: string;
             let authorTypeVariable: string;
             let blogTypeVariable: string;
 
-            test.beforeEach(
-                async ({ adminPage, apiHelpers, testSuffix }) => {
-                    const authorType = await apiHelpers.createContentType(
-                        apiHelpers.authorPayload(`${cardinality.name}_${testSuffix}`)
-                    );
-                    authorTypeVariable = authorType.variable;
+            test.beforeEach(async ({ adminPage, apiHelpers, testSuffix }) => {
+                const authorType = await apiHelpers.createContentType(
+                    apiHelpers.authorPayload(`${cardinality.name}_${testSuffix}`)
+                );
+                authorTypeVariable = authorType.variable;
 
-                    const blogType = await apiHelpers.createContentType(
-                        apiHelpers.blogPayload(
-                            `${cardinality.name}_${testSuffix}`,
-                            `E2E_Blog_${cardinality.name}`,
-                            `E2EBlog${cardinality.name}`,
-                            authorTypeVariable,
-                            cardinality.fieldVar,
-                            cardinality.value
-                        )
-                    );
-                    blogTypeId = blogType.id;
-                    blogTypeVariable = blogType.variable;
+                const blogType = await apiHelpers.createContentType(
+                    apiHelpers.blogPayload(
+                        `${cardinality.name}_${testSuffix}`,
+                        `E2E_Blog_${cardinality.name}`,
+                        `E2EBlog${cardinality.name}`,
+                        authorTypeVariable,
+                        cardinality.fieldVar,
+                        cardinality.value
+                    )
+                );
+                blogTypeId = blogType.id;
+                blogTypeVariable = blogType.variable;
 
-                    // Create 3 seed Authors
-                    for (let i = 1; i <= 3; i++) {
-                        await apiHelpers.createContentlet(authorTypeVariable, {
-                            title: `Author ${cardinality.name} ${i} ${testSuffix}`,
-                            bio: `Bio for author ${i}`
-                        });
-                    }
-                }
-            );
-
-            test.afterEach(async ({ apiHelpers }) => {
-                if (blogTypeVariable) {
-                    await apiHelpers.deleteContentType(blogTypeId);
-                }
-                if (authorTypeVariable) {
-                    await apiHelpers.deleteContentType(authorTypeVariable);
+                for (let i = 1; i <= 3; i++) {
+                    await apiHelpers.createContentlet(authorTypeVariable, {
+                        title: `Author ${cardinality.name} ${i} ${testSuffix}`,
+                        bio: `Bio for author ${i}`
+                    });
                 }
             });
 
-            test(`P1 - Open selection dialog in multiple mode @critical`, async ({
-                adminPage
-            }) => {
+            test.afterEach(async ({ apiHelpers }) => {
+                if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+                if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
+            });
+
+            test('open dialog shows checkboxes @critical', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                // Assert checkboxes are shown (multiple mode)
                 await dialog.expectCheckboxes();
                 await dialog.expectHeaderCheckbox();
 
-                // Cancel to close
                 await dialog.clickCancel();
             });
 
-            test(`P1 - Select multiple items and apply @critical`, async ({ adminPage }) => {
+            test('select multiple items and apply @critical', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                // Select 3 Authors
                 await dialog.selectItems([0, 1, 2]);
                 await dialog.clickApply();
                 await dialog.expectClosed();
 
-                // Verify the relationship table shows 3 items
                 await relationshipField.expectRowCount(3);
-
-                // In multiple mode, the add button should remain enabled
                 await relationshipField.expectAddButtonEnabled();
             });
 
-            test(`P1 - Save and verify persistence with multiple relations @critical`, async ({
+            test('save and verify persistence with multiple relations @critical', async ({
                 adminPage,
                 testSuffix
             }) => {
@@ -308,13 +252,11 @@ test.describe('Journey 1 - Multiple Selection Mode (1:M / M:M)', () => {
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
-                // Fill title
                 await formPage.fillTextField(`Blog ${cardinality.name} Multi ${testSuffix}`);
 
-                // Open dialog and select 3 items
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
@@ -323,50 +265,43 @@ test.describe('Journey 1 - Multiple Selection Mode (1:M / M:M)', () => {
                 await dialog.expectClosed();
                 await relationshipField.expectRowCount(3);
 
-                // Save
                 await formPage.save();
 
-                // Reload and verify
                 await adminPage.waitForTimeout(1000);
                 await adminPage.reload();
                 await adminPage.waitForLoadState('networkidle');
 
-                const reloadedField = new RelationshipFieldComponent(adminPage);
+                const reloadedField = new RelationshipField(adminPage);
                 await reloadedField.expectRowCount(3);
             });
 
-            test('P2 - Select all with header checkbox @smoke', async ({ adminPage }) => {
+            test('select all with header checkbox @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
 
-                const relationshipField = new RelationshipFieldComponent(adminPage);
-                const dialog = new SelectExistingContentDialogComponent(adminPage);
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new SelectExistingContentDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                // Click header checkbox to select all
                 await dialog.toggleSelectAll();
-
-                // Apply should be enabled
                 await dialog.expectApplyEnabled();
 
-                // Apply selection
                 await dialog.clickApply();
                 await dialog.expectClosed();
 
-                // Should have all 3 authors
                 await relationshipField.expectRowCount(3);
             });
         });
     }
 });
 
-// ─── Journey 2: Create Related Content Inline (Create New) ──────
+// ─── Create New Inline ──────────────────────────────────────────
 
-test.describe('Journey 2 - Create Related Content Inline (Create New)', () => {
+test.describe('Create New Inline', () => {
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -392,77 +327,58 @@ test.describe('Journey 2 - Create Related Content Inline (Create New)', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) {
-            await apiHelpers.deleteContentType(blogTypeId);
-        }
-        if (authorTypeVariable) {
-            await apiHelpers.deleteContentType(authorTypeVariable);
-        }
+        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
-    test('P1 - Create New enabled when related content type has new editor @critical', async ({
-        adminPage
-    }) => {
+    test('new content option is visible when editor enabled @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-
-        // Open the add menu
+        const relationshipField = new RelationshipField(adminPage);
         const menu = await relationshipField.openAddMenu();
-
-        // "Create New" should be available
         const createNewItem = relationshipField.getCreateNewMenuItem(menu);
         await expect(createNewItem).toBeVisible();
 
-        // Close the menu
         await adminPage.keyboard.press('Escape');
     });
 
-    test('P1 - Create inline and add to relationship @critical', async ({
-        adminPage,
-        testSuffix
-    }) => {
+    test('create inline and add to relationship @critical', async ({ adminPage, testSuffix }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-
-        // Click Create New
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        // Wait for the create new dialog to appear
         const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
         await expect(createDialog).toBeVisible({ timeout: 10000 });
 
-        // Fill in the Author title in the nested form
         const titleInput = createDialog.getByTestId('title').first();
         await titleInput.waitFor({ state: 'visible', timeout: 10000 });
         await titleInput.fill(`Inline Author ${testSuffix}`);
 
-        // Save the inline content — wait for API response BEFORE clicking
-        const responsePromise = adminPage.waitForResponse(
-            (response) => response.url().includes('/api/v1/workflow/actions/')
+        const responsePromise = adminPage.waitForResponse((response) =>
+            response.url().includes('/api/v1/workflow/actions/')
         );
         const saveButton = createDialog.getByRole('button', { name: /Save/ });
         await saveButton.waitFor({ state: 'visible', timeout: 5000 });
         await saveButton.click();
-        const saveResponse = await responsePromise;
+        await responsePromise;
 
-        // After save, the dialog stays open showing the saved content.
-        // Close it via the X button.
-        const closeButton = createDialog.locator('.p-dialog-header-close, button[aria-label="Close"]');
+        // Dialog stays open after save — close via X button
+        const closeButton = createDialog.locator(
+            '.p-dialog-header-close, button[aria-label="Close"]'
+        );
         await closeButton.waitFor({ state: 'visible', timeout: 5000 });
         await closeButton.click();
         await expect(createDialog).toBeHidden({ timeout: 10000 });
 
-        // Verify the new Author appears in the relationship table
         await relationshipField.expectRowCount(1);
     });
 
-    test('P1 - Cancel inline creation preserves outer form @critical', async ({
+    test('cancel inline creation preserves outer form @critical', async ({
         adminPage,
         testSuffix
     }) => {
@@ -470,50 +386,40 @@ test.describe('Journey 2 - Create Related Content Inline (Create New)', () => {
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        // Fill the outer form title first
         const outerTitle = `Blog Outer Title ${testSuffix}`;
         await formPage.fillTextField(outerTitle);
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-
-        // Click Create New
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        // Wait for the create new dialog
         const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
         await expect(createDialog).toBeVisible({ timeout: 10000 });
 
-        // Close the dialog via ESC
         await adminPage.keyboard.press('Escape');
         await expect(createDialog).toBeHidden({ timeout: 5000 });
 
-        // Verify the outer form title is preserved
         const textField = adminPage.getByTestId('title');
         await expect(textField).toHaveValue(outerTitle);
-
-        // Verify relationship field remains empty
         await relationshipField.expectEmpty();
     });
 
-    test('P2 - Dismiss Create New dialog via X button @smoke', async ({ adminPage }) => {
+    test('dismiss create dialog via X button @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
         const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
         await expect(createDialog).toBeVisible({ timeout: 10000 });
 
-        // Close via X button
         const closeButton = createDialog.locator(
             '.p-dialog-header-close, .p-dialog-close-button'
         );
         if ((await closeButton.count()) > 0) {
             await closeButton.click();
         } else {
-            // Fallback to ESC
             await adminPage.keyboard.press('Escape');
         }
 
@@ -522,15 +428,14 @@ test.describe('Journey 2 - Create Related Content Inline (Create New)', () => {
     });
 });
 
-// ─── Journey 2: Create New Disabled for Legacy Editor ────────────
+// ─── New Content Disabled (No New Editor) ───────────────────────
 
-test.describe('Journey 2 - Create New Disabled (No New Editor)', () => {
+test.describe('New Content Disabled (No New Editor)', () => {
     let blogTypeId: string;
     let tagTypeVariable: string;
     let blogTypeVariable: string;
 
     test.beforeEach(async ({ adminPage, apiHelpers, testSuffix }) => {
-        // Create E2E_Tag WITHOUT new editor enabled
         const tagType = await apiHelpers.createContentType(
             apiHelpers.tagPayload(`NoEditor_${testSuffix}`)
         );
@@ -551,31 +456,25 @@ test.describe('Journey 2 - Create New Disabled (No New Editor)', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) {
-            await apiHelpers.deleteContentType(blogTypeId);
-        }
-        if (tagTypeVariable) {
-            await apiHelpers.deleteContentType(tagTypeVariable);
-        }
+        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (tagTypeVariable) await apiHelpers.deleteContentType(tagTypeVariable);
     });
 
-    test('P1 - Create New disabled when related content type lacks new editor @critical', async ({
+    test('new content disabled when related type lacks new editor @critical', async ({
         adminPage
     }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-
-        // "New Content" should be disabled (related type lacks new editor)
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectNewContentDisabled();
     });
 });
 
-// ─── Journey 2: Create New Disabled in Single Mode (Already Has Item) ──
+// ─── Menu Disabled in Single Mode (Item Already Exists) ─────────
 
-test.describe('Journey 2 - Create New Disabled When Single Item Exists', () => {
+test.describe('Menu Disabled When Single Item Exists', () => {
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -599,7 +498,6 @@ test.describe('Journey 2 - Create New Disabled When Single Item Exists', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        // Create seed author
         await apiHelpers.createContentlet(authorTypeVariable, {
             title: `Author SingleFull ${testSuffix}`,
             bio: 'Bio'
@@ -607,15 +505,11 @@ test.describe('Journey 2 - Create New Disabled When Single Item Exists', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) {
-            await apiHelpers.deleteContentType(blogTypeId);
-        }
-        if (authorTypeVariable) {
-            await apiHelpers.deleteContentType(authorTypeVariable);
-        }
+        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
-    test('P2 - Buttons disabled in single mode when item already exists @smoke', async ({
+    test('existing content disabled after selecting item @smoke', async ({
         adminPage,
         testSuffix
     }) => {
@@ -623,10 +517,9 @@ test.describe('Journey 2 - Create New Disabled When Single Item Exists', () => {
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-        const dialog = new SelectExistingContentDialogComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
+        const dialog = new SelectExistingContentDialog(adminPage);
 
-        // First add an author
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();
         await dialog.waitForContentLoaded();
@@ -634,7 +527,6 @@ test.describe('Journey 2 - Create New Disabled When Single Item Exists', () => {
         await dialog.clickApply();
         await dialog.expectClosed();
 
-        // Now the menu options should be disabled
         await relationshipField.expectRelateExistingDisabled();
     });
 });

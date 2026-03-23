@@ -1,8 +1,7 @@
-import { test, expect } from '../../fixtures/relationship.fixture';
 import { NewEditContentFormPage } from '@pages';
-import { RelationshipFieldComponent } from './helpers/relationship-field';
-import { SelectExistingContentDialogComponent } from './helpers/select-existing-content-dialog';
-import { CARDINALITY, TestContentlet } from '../../fixtures/relationship.fixture';
+import { CARDINALITY, expect, test, TestContentlet } from '../../../../fixtures/relationship.fixture';
+import { RelationshipField } from './helpers/relationship-field';
+import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 /**
  * Journey 9: Multiple Relationship Fields on the Same Content
@@ -96,7 +95,7 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         await expect(allTables).toHaveCount(2);
 
         // Work with the first relationship field ("authors")
-        const authorsField = new RelationshipFieldComponent(adminPage);
+        const authorsField = new RelationshipField(adminPage);
 
         // Fill title
         await formPage.fillTextField(`Multi Blog ${testSuffix}`);
@@ -108,7 +107,7 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         await expect(menu1).toBeVisible();
         await menu1.locator('.p-menuitem').first().click();
 
-        const dialog1 = new SelectExistingContentDialogComponent(adminPage);
+        const dialog1 = new SelectExistingContentDialog(adminPage);
         await dialog1.waitForVisible();
         await dialog1.waitForContentLoaded();
         await dialog1.selectItems([0, 1]);
@@ -122,7 +121,7 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         await expect(menu2).toBeVisible();
         await menu2.locator('.p-menuitem').first().click();
 
-        const dialog2 = new SelectExistingContentDialogComponent(adminPage);
+        const dialog2 = new SelectExistingContentDialog(adminPage);
         await dialog2.waitForVisible();
         await dialog2.waitForContentLoaded();
         await dialog2.selectItems([0, 1, 2]);
@@ -175,7 +174,7 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         await expect(menu1).toBeVisible();
         await menu1.locator('.p-menuitem').first().click();
 
-        const dialog1 = new SelectExistingContentDialogComponent(adminPage);
+        const dialog1 = new SelectExistingContentDialog(adminPage);
         await dialog1.waitForVisible();
         await dialog1.waitForContentLoaded();
         await dialog1.selectItems([0, 1]);
@@ -189,7 +188,7 @@ test.describe('Journey 9 - Multiple Relationship Fields on the Same Content', ()
         await expect(menu2).toBeVisible();
         await menu2.locator('.p-menuitem').first().click();
 
-        const dialog2 = new SelectExistingContentDialogComponent(adminPage);
+        const dialog2 = new SelectExistingContentDialog(adminPage);
         await dialog2.waitForVisible();
         await dialog2.waitForContentLoaded();
         await dialog2.selectItems([0, 1]);
@@ -296,7 +295,7 @@ test.describe('Journey 10 - Custom Columns (showFields)', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(2);
 
         // Check the table headers for custom columns
@@ -437,10 +436,10 @@ test.describe('Journey 11 - Errors and Edge Cases', () => {
                 })
             );
 
-            const relationshipField = new RelationshipFieldComponent(adminPage);
+            const relationshipField = new RelationshipField(adminPage);
             await relationshipField.clickRelateExisting();
 
-            const dialog = new SelectExistingContentDialogComponent(adminPage);
+            const dialog = new SelectExistingContentDialog(adminPage);
             await dialog.waitForVisible();
 
             // Should show error message

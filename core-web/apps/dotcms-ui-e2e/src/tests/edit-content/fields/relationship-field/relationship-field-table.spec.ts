@@ -1,8 +1,7 @@
-import { test, expect } from '../../fixtures/relationship.fixture';
 import { NewEditContentFormPage } from '@pages';
-import { RelationshipFieldComponent } from './helpers/relationship-field';
-import { SelectExistingContentDialogComponent } from './helpers/select-existing-content-dialog';
-import { CARDINALITY, TestContentlet } from '../../fixtures/relationship.fixture';
+import { CARDINALITY, expect, test, TestContentlet } from '../../../../fixtures/relationship.fixture';
+import { RelationshipField } from './helpers/relationship-field';
+import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 /**
  * Journey 5: Reorder Relations (Drag & Drop)
@@ -72,7 +71,7 @@ test.describe('Journey 5 - Reorder Relations (Drag & Drop)', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
         await relationshipField.expectDragHandlesVisible();
     });
@@ -82,7 +81,7 @@ test.describe('Journey 5 - Reorder Relations (Drag & Drop)', () => {
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
 
         // Get the initial title of the first row
@@ -177,8 +176,8 @@ test.describe('Journey 6 - Search and Filter in Selection Dialog', () => {
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-        const dialog = new SelectExistingContentDialogComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
+        const dialog = new SelectExistingContentDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();
@@ -207,8 +206,8 @@ test.describe('Journey 6 - Search and Filter in Selection Dialog', () => {
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-        const dialog = new SelectExistingContentDialogComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
+        const dialog = new SelectExistingContentDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();
@@ -237,8 +236,8 @@ test.describe('Journey 6 - Search and Filter in Selection Dialog', () => {
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-        const dialog = new SelectExistingContentDialogComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
+        const dialog = new SelectExistingContentDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();
@@ -315,8 +314,8 @@ test.describe('Journey 6 - Pagination in Selection Dialog (>50 items)', () => {
         await formPage.goToNew(blogTypeVariable);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
-        const dialog = new SelectExistingContentDialogComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
+        const dialog = new SelectExistingContentDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();
@@ -403,7 +402,7 @@ test.describe('Journey 8 - Pagination in Main Relationship Table', () => {
         await formPage.goToContent(blog.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
 
         // Table shows first 6 items
         await relationshipField.expectRowCount(6);
@@ -444,7 +443,7 @@ test.describe('Journey 8 - Pagination in Main Relationship Table', () => {
         await formPage.goToContent(blog.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        const relationshipField = new RelationshipFieldComponent(adminPage);
+        const relationshipField = new RelationshipField(adminPage);
 
         // Table shows all 5 items
         await relationshipField.expectRowCount(5);

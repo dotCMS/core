@@ -1,11 +1,11 @@
 import { type Locator, type Page, expect } from '@playwright/test';
 
 /**
- * Page Object Model for the Relationship Field component.
+ * Locator helper for the Relationship Field.
  * Encapsulates interactions with the main relationship table, add menu,
  * delete buttons, drag handles, and pagination.
  */
-export class RelationshipFieldComponent {
+export class RelationshipField {
     readonly root: Locator;
     readonly table: Locator;
     readonly addButton: Locator;

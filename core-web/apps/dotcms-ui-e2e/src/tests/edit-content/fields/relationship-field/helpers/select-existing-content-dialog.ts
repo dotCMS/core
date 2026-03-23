@@ -1,11 +1,11 @@
 import { type Locator, type Page, expect } from '@playwright/test';
 
 /**
- * Page Object Model for the "Select Existing Content" dialog.
+ * Locator helper for the "Select Existing Content" dialog.
  * Encapsulates interactions with the selection dialog for relationship fields,
  * including search, filtering, pagination, and item selection.
  */
-export class SelectExistingContentDialogComponent {
+export class SelectExistingContentDialog {
     readonly dialog: Locator;
     readonly table: Locator;
     readonly rows: Locator;
