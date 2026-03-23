@@ -781,46 +781,98 @@ public class FolderFactoryImpl extends FolderFactory {
   protected boolean renameFolder(final Folder folder, final String newName, final User user,
       final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
-    final MutableBoolean successOperation = new MutableBoolean(true);
-    final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     final Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
-    final User systemUser = APILocator.systemUser();
     final String parentPath = ident.getParentPath();
-    final String identifierHostId = ident.getHostId();
+    final String hostId = ident.getHostId();
+    final String oldPath = parentPath + folder.getName() + "/";
+    final String newPath = parentPath + newName + (newName.endsWith("/") ? "" : "/");
 
-    StringBuilder newPath = new StringBuilder(parentPath).append(newName);
-    if (!newName.endsWith("/")) {
-      newPath.append("/"); // Folders must end with '/'
-    }
-    Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
-    Folder newFolder = findFolderByPath(newPath.toString(), host);
-
-    if (UtilMethods.isSet(newFolder.getInode()) && !folder.getIdentifier().equals(newFolder.getIdentifier())) {
-			return false;
+    // Check for name collision with a different existing folder
+    final Host host = APILocator.getHostAPI().find(folder.getHostId(), user, respectFrontEndPermissions);
+    final Folder existing = findFolderByPath(newPath, host);
+    if (UtilMethods.isSet(existing.getInode()) && !folder.getIdentifier().equals(existing.getIdentifier())) {
+      return false;
     }
 
-    final List<Folder> subFolders = this.getSubFoldersTitleSort(folder);
-    final List links = this.getChildrenClass(folder, Link.class);
-    final List<Contentlet> contentlets = contentletAPI.
-        findContentletsByFolder(folder, systemUser, false);
-
+    //Update folder record in-place
     folder.setName(newName);
-    newFolder = getNewFolderRecord(folder, systemUser,
-        parentPath, identifierHostId);
+    save(folder);
 
-    this.moveLinks(newFolder, links);
-    this.moveChildContentlets(newFolder, systemUser, contentlets);
+    // Update identifier asset_name in-place
+    ident.setAssetName(newName);
+    APILocator.getIdentifierAPI().save(ident);
 
-    successOperation.setValue(this.moveChildFolders(newFolder, subFolders));
+    // Bulk-update every child identifier's parent_path, level by level.
+    // Unindexed items are never missed.
+    updateChildPathsRecursively(oldPath, newPath, hostId);
 
-    if (successOperation.getValue()) {
-      //update permission and structure references
-      updateOtherFolderReferences(newFolder.getInode(), folder.getInode());
+    // Flush folder path-based cache
+    folderCache.clearCache();
 
-      delete(folder);
+    // Evict identifier cache for every identifier moved to the new subtree
+    clearIdentifierCacheForSubtree(newPath, hostId);
+
+    // Nav cache cleanup
+    CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+    CacheLocator.getNavToolCache().removeNavByPath(hostId, parentPath);
+
+    return true;
+  }
+
+  /**
+   * Recursively updates the {@code parent_path} column of every identifier whose
+   * {@code parent_path} equals {@code oldPath} to {@code newPath}, then descends
+   * into each sub-folder found at the new path.
+   * <p>
+   * Processing level-by-level ensures the {@code identifier_parent_path_trigger} can
+   * verify that each row's new parent path already exists as a folder before the
+   * trigger runs for that row's children.
+   */
+  private void updateChildPathsRecursively(final String oldPath, final String newPath,
+      final String hostId) throws DotDataException {
+
+    new DotConnect()
+        .setSQL("UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?")
+        .addParam(newPath)
+        .addParam(oldPath)
+        .addParam(hostId)
+        .loadResult();
+
+    final List<Map<String, Object>> subFolderRows = new DotConnect()
+        .setSQL("SELECT asset_name FROM identifier WHERE asset_type = 'folder'"
+            + " AND parent_path = ? AND host_inode = ?")
+        .addParam(newPath)
+        .addParam(hostId)
+        .loadResults();
+
+    for (final Map<String, Object> row : subFolderRows) {
+      final String assetName = (String) row.get("asset_name");
+      updateChildPathsRecursively(
+          oldPath + assetName + "/",
+          newPath + assetName + "/",
+          hostId);
     }
+  }
 
-    return successOperation.getValue();
+  /**
+   * Evicts from the identifier cache every identifier whose {@code parent_path} starts
+   * with {@code rootPath} (direct children and all nested descendants).
+   * A single prefix query is used to avoid per-level round-trips.
+   */
+  private void clearIdentifierCacheForSubtree(final String rootPath, final String hostId)
+      throws DotDataException {
+
+    // LIKE 'rootPath%' matches rootPath itself and every nested sub-path.
+    // rootPath always ends with '/', so it cannot accidentally match sibling paths.
+    final List<Map<String, Object>> rows = new DotConnect()
+        .setSQL("SELECT id FROM identifier WHERE parent_path LIKE ? AND host_inode = ?")
+        .addParam(rootPath + "%")
+        .addParam(hostId)
+        .loadResults();
+
+    for (final Map<String, Object> row : rows) {
+      CacheLocator.getIdentifierCache().removeFromCacheByIdentifier((String) row.get("id"));
+    }
   }
 
   protected boolean matchFilter(Folder folder, String fileName) {
