@@ -51,14 +51,14 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.time.LocalDateTime;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.bulk.BulkRequest;
+import com.dotcms.content.index.domain.IndexBulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -600,7 +600,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         SiteSearchAPI siteSearchAPI = APILocator.getSiteSearchAPI();
 
         String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_"
-                + ContentletIndexAPIImpl.timestampFormatter.format(new Date());
+                + ContentletIndexAPIImpl.timestampFormatter.format(LocalDateTime.now());
         APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, null, 1);
         APILocator.getSiteSearchAPI().activateIndex(indexName);
 
@@ -1078,7 +1078,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         if (indexName == null) {
             indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_"
-                    + ContentletIndexAPIImpl.timestampFormatter.format(new Date());
+                    + ContentletIndexAPIImpl.timestampFormatter.format(LocalDateTime.now());
             APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, null, 1);
             APILocator.getSiteSearchAPI().activateIndex(indexName);
         }
@@ -1205,8 +1205,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         Map<String, ReindexEntry> entries = APILocator.getReindexQueueAPI().findContentToReindex();
 
-        final BulkRequest bulk = indexAPI.createBulkRequest();
-        bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+        final IndexBulkRequest bulk = indexAPI.createBulkRequest();
+        indexAPI.setRefreshPolicy(bulk, IndexBulkRequest.RefreshPolicy.IMMEDIATE);
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);
 

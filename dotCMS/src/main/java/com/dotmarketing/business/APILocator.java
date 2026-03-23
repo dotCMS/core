@@ -26,15 +26,17 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
+import com.dotcms.content.business.ContentIndexMappingAPI;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.content.index.IndexAPI;
-import com.dotcms.content.index.IndexAPIImpl;
+import com.dotcms.content.index.IndexManagerAPIImpl;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -728,14 +730,6 @@ public class APILocator extends Locator<APIIndex> {
         return (VersionedIndicesAPI)getInstance(APIIndex.VERSIONED_INDICES_API);
     }
 
-    /**
-     * Vendor-neutral Index API router (currently routes to Elasticsearch).
-     * @return {@link IndexAPI}
-     */
-    public static IndexAPI getIndexAPI(){
-        return (IndexAPI) getInstance(APIIndex.INDEX_API);
-    }
-
 	/**
 	 * Creates a single instance of the {@link ContentletIndexAPI} class.
 	 *
@@ -746,12 +740,21 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
-	 * Returns the vendor-neutral {@link IndexAPI} instance backed by {@link IndexAPIImpl}.
+	 * Returns the vendor-neutral {@link IndexAPI} instance backed by {@link IndexManagerAPIImpl}.
 	 *
 	 * @return The {@link IndexAPI} instance.
 	 */
 	public static IndexAPI getESIndexAPI() {
 	    return (IndexAPI) getInstance(APIIndex.ES_INDEX_API);
+	}
+
+	/**
+	 * Returns the singleton {@link ContentIndexMappingAPI} instance.
+	 *
+	 * @return The {@link ContentIndexMappingAPI} instance.
+	 */
+	public static ContentIndexMappingAPI getContentMappingAPI() {
+	    return (ContentIndexMappingAPI) getInstance(APIIndex.CONTENT_MAPPING_API);
 	}
 
 	/**
@@ -1432,7 +1435,7 @@ enum APIIndex
     ANALYTICS_CUSTOM_ATTRIBUTE_API,
     VERSIONED_INDICES_API,
     OPENSEARCH_INDEX_API,
-    INDEX_API
+    CONTENT_MAPPING_API
     ;
 
 	Object create() {
@@ -1472,7 +1475,7 @@ enum APIIndex
     		case TAG_API: return new TagAPIImpl();
     		case INDICIES_API: return new IndiciesAPIImpl();
     		case CONTENLET_INDEX_API: return new ContentletIndexAPIImpl();
-    		case ES_INDEX_API: return new IndexAPIImpl();
+    		case ES_INDEX_API: return new IndexManagerAPIImpl();
     		case PUBLISHER_API: return new PublisherAPIImpl();
     		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
     		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
@@ -1535,7 +1538,7 @@ enum APIIndex
             case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
             case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
             case OPENSEARCH_INDEX_API: return new OSIndexAPIImpl();
-            case INDEX_API: return new IndexAPIImpl();
+            case CONTENT_MAPPING_API: return new ESMappingAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

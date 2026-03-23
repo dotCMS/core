@@ -22,6 +22,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -123,7 +124,8 @@ public class IndexAjaxAction extends AjaxAction {
 
 
 		final boolean live = map.get("live") != null;
-		final String indexName=((live) ? "live_" : "working_" ) + APILocator.getContentletIndexAPI().timestampFormatter.format(new Date());
+		final String indexName=((live) ? "live_" : "working_" ) + ContentletIndexAPI.timestampFormatter.format(
+                LocalDateTime.now());
 
 		APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
         ESMappingUtilHelper.getInstance().addCustomMapping(indexName);

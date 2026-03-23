@@ -1,8 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
-import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
-import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
@@ -18,6 +16,7 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.IndexContentletScroll;
+import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOS;
@@ -129,9 +128,7 @@ import org.apache.commons.lang.StringUtils;
  */
 
 @IndexLibraryIndependent
-@IndexRouter(
-        access = IndexAccess.READ_ONLY
-)
+@IndexRouter(access = IndexAccess.READ)
 public class ESContentFactoryImpl implements ContentletFactory {
 
     private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
@@ -230,8 +227,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
-    private final ContentFactoryIndexOperations indexOperationsES;
-    private final ContentFactoryIndexOperations indexOperationsOS;
+    /** Routes all search-read operations to the correct provider based on migration phase. */
+    private final PhaseRouter<ContentFactoryIndexOperations> router;
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
@@ -259,17 +256,11 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public ESContentFactoryImpl() {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
-        this.indexOperationsOS = new ContentFactoryIndexOperationsOS();
-        this.indexOperationsES = new ContentFactoryIndexOperationsES(CacheLocator.getESQueryCache());
+        ContentFactoryIndexOperations indexOperationsOS = new ContentFactoryIndexOperationsOS();
+        ContentFactoryIndexOperations indexOperationsES = new ContentFactoryIndexOperationsES(
+                CacheLocator.getESQueryCache());
+        this.router = new PhaseRouter<>(indexOperationsES, indexOperationsOS);
 	}
-
-    /**
-     * Migration-phase-aware Operations delegate
-     * @return {@link ContentFactoryIndexOperations}
-     */
-    ContentFactoryIndexOperations indexOperationsDelegate(){
-        return isMigrationComplete() || isReadEnabled() ? indexOperationsOS : indexOperationsES ;
-    }
 
 	@Override
 	public Object loadField(String inode, String fieldContentlet) throws DotDataException {
@@ -326,7 +317,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 
 	@Override
 	public void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
-	    StringBuffer sql = new StringBuffer("update contentlet set " );
+	    StringBuilder sql = new StringBuilder("update contentlet set " );
         if(field.getFieldContentlet().contains("float")){
         	if(DbConnectionFactory.isMySql())
        		 	sql.append(field.getFieldContentlet() + " = ");
@@ -1322,7 +1313,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public List<Contentlet> findContentletsByHost(final String hostId, final int limit,
             final int offset) {
 		try {
-            final List<String> inodes = indexOperationsDelegate().search("+conhost:" + hostId, limit, offset);
+            final List<String> inodes = router.read(impl -> impl.search("+conhost:" + hostId, limit, offset));
             return findContentlets(inodes);
 		} catch (Exception e) {
 			throw new RuntimeException(e.getMessage(), e);
@@ -1577,7 +1568,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-        return indexOperationsDelegate().indexCount(qq);
+        return router.read(impl -> impl.indexCount(qq));
     }
 
     @Override
@@ -1586,8 +1577,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        return indexOperationsDelegate().searchHits(
-                formattedQuery, limit, offset, sortBy);
+        return router.read(impl -> impl.searchHits(formattedQuery, limit, offset, sortBy));
 
     }
 
@@ -1604,7 +1594,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @return PaginatedArrayList containing all search results
      */
     PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
-       return indexOperationsDelegate().indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get());
+       return router.read(impl -> impl.indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get()));
     }
 
     /**
@@ -1639,7 +1629,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
                                                   final boolean respectFrontendRoles, final int batchSize,
                                                   final String sortBy) {
-       return indexOperationsDelegate().createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+       return router.read(impl -> impl.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy));
     }
 
     /**

@@ -1,128 +1,140 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.content.index.domain.IndexBulkProcessor;
+import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotmarketing.common.reindex.BulkProcessorListener;
+import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.io.IOException;
 import java.sql.Connection;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.bulk.BulkProcessor;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
 
+/**
+ * Vendor-neutral API for contentlet indexing operations.
+ *
+ * <p>No Elasticsearch or OpenSearch types appear in any method signature.
+ * Bulk-write callers use the opaque {@link IndexBulkRequest} and
+ * {@link IndexBulkProcessor} handles returned by this interface.</p>
+ */
 public interface ContentletIndexAPI {
-    public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
 
-    public void getRidOfOldIndex() throws DotDataException;
+    /** Thread-safe formatter for index timestamp suffixes ({@code yyyyMMddHHmmss}). */
+    DateTimeFormatter timestampFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-    /**
-     * Inits the indexs
-     */
-    public void checkAndInitialiazeIndex();
+    /** Inits the indexes */
+    void checkAndInitializeIndex();
 
-    public boolean createContentIndex(String indexName) throws DotIndexException, IOException;
+    boolean createContentIndex(String indexName) throws DotIndexException, IOException;
 
-    public boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
+    boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
 
     /**
-     * creates new working and live indexes with reading aliases pointing to old index and write aliases
-     * pointing to both old and new indexes
+     * Creates new working and live indexes with reading aliases pointing to old index and write
+     * aliases pointing to both old and new indexes.
      *
      * @return the timestamp string used as suffix for indices
      * @throws DotDataException
      * @throws DotIndexException
      */
-    public String fullReindexStart() throws DotIndexException, DotDataException;
+    String fullReindexStart() throws DotIndexException, DotDataException;
 
     /**
-     * returns if the system is in a full reindex
-     * 
-     * @return
+     * Returns {@code true} if the system is currently in a full reindex.
+     *
      * @throws DotDataException
      */
-    public boolean isInFullReindex() throws DotDataException;
+    boolean isInFullReindex() throws DotDataException;
 
     /**
-     * This will drop old index and will point read aliases to new index. If you pass forceSwitch=true
-     * then this method will force a switch, otherwise, it will check to make sure that we are in a 
-     * reindex and that it is the lucky server in the cluster to switch
-     * after call to {@link #setUpFullReindex()}
-     *
-     * @return
+     * Drops the old index and points read aliases to the new index.
+     * Pass {@code forceSwitch=true} to override the lucky-server check.
      */
-    public boolean fullReindexSwitchover(final boolean forceSwitch);
+    boolean fullReindexSwitchover(final boolean forceSwitch);
 
-    public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch);
+    boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch);
 
     /**
-     * deletes an elasticsearch index by name
-     * 
+     * Deletes an index by name.
+     *
      * @param indexName
      * @return
      */
     boolean delete(String indexName);
 
     /**
-     * optimizes shards for a list of elasticsearch indicies
-     * 
+     * Optimizes shards for a list of indices.
+     *
      * @param indexNames
      * @return
      */
     boolean optimize(List<String> indexNames);
 
-    public void removeContentFromIndex(final Contentlet content) throws DotDataException;
+    void removeContentFromIndex(final Contentlet content) throws DotDataException;
 
-    public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotDataException;
+    void removeContentFromIndex(final Contentlet content, final boolean onlyLive)
+            throws DotDataException;
 
-    public void removeContentFromLiveIndex(final Contentlet content) throws DotDataException;
+    void removeContentFromLiveIndex(final Contentlet content) throws DotDataException;
 
-    public void removeContentFromIndexByStructureInode(String structureInode)
+    void removeContentFromIndexByStructureInode(String structureInode)
             throws DotDataException, DotSecurityException;
 
-    public void removeContentFromIndexByContentType(final ContentType contentType)
+    void removeContentFromIndexByContentType(final ContentType contentType)
             throws DotDataException;
 
     void fullReindexAbort();
 
-    public boolean isDotCMSIndexName(String indexName);
+    boolean isDotCMSIndexName(String indexName);
 
     /**
-     * Returns a list of dotcms working and live indices.
+     * Returns a list of dotCMS working and live indices.
      *
      * @return
      */
-    public List<String> listDotCMSIndices();
+    List<String> listDotCMSIndices();
 
     void activateIndex(String indexName) throws DotDataException;
 
     void deactivateIndex(String indexName) throws DotDataException, IOException;
 
     /**
-     * Gets the document count of a given index. In case the index does not exist, a runtime exception
-     * is thrown
+     * Gets the document count of a given index.
+     * Throws a runtime exception if the index does not exist.
+     *
      * @param indexName
      * @return Documents count - long
      */
     long getIndexDocumentCount(String indexName);
 
-    public List<String> getCurrentIndex() throws DotDataException;
+    List<String> getCurrentIndex() throws DotDataException;
 
-    public List<String> getNewIndex() throws DotDataException;
+    List<String> getNewIndex() throws DotDataException;
 
-    public List<String> listDotCMSClosedIndices();
+    List<String> listDotCMSClosedIndices();
 
-    public String getActiveIndexName(String type) throws DotDataException;
+    String getActiveIndexName(String type) throws DotDataException;
 
-    void putToIndex(BulkRequest bulkRequest, ActionListener<BulkResponse> listener);
+    /**
+     * Sets the refresh policy on a bulk batch before submission.
+     *
+     * @param bulkRequest the batch to configure
+     * @param policy      one of {@code "NONE"}, {@code "WAIT_FOR"}, or {@code "IMMEDIATE"}
+     */
+    void setRefreshPolicy(IndexBulkRequest bulkRequest, IndexBulkRequest.RefreshPolicy policy);
 
-    void putToIndex(BulkRequest bulkRequest);
+    /**
+     * Submits a bulk batch synchronously. The batch is obtained from
+     * {@link #createBulkRequest()} and populated via {@link #appendBulkRequest}.
+     *
+     * @param bulkRequest the batch to submit — no-op if empty
+     */
+    void putToIndex(IndexBulkRequest bulkRequest);
 
     void addContentToIndex(List<Contentlet> contentToIndex) throws DotDataException;
 
@@ -130,13 +142,23 @@ public interface ContentletIndexAPI {
 
     void addContentToIndex(Contentlet content, boolean deps) throws DotDataException;
 
-    BulkRequest createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException;
+    /**
+     * Creates a batch pre-populated with the given contentlets.
+     *
+     * @param contentToIndex list of contentlets to index
+     * @return a populated {@link IndexBulkRequest}
+     * @throws DotDataException
+     */
+    IndexBulkRequest createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException;
 
-    BulkRequest createBulkRequest();
+    /** Creates an empty batch. */
+    IndexBulkRequest createBulkRequest();
 
-    BulkRequest appendBulkRequest(BulkRequest bulkRequest, Collection<ReindexEntry> idxs) throws DotDataException;
+    IndexBulkRequest appendBulkRequest(IndexBulkRequest bulkRequest,
+            Collection<ReindexEntry> idxs) throws DotDataException;
 
-    BulkRequest appendBulkRequest(BulkRequest bulkRequest, ReindexEntry idx) throws DotDataException;
+    IndexBulkRequest appendBulkRequest(IndexBulkRequest bulkRequest,
+            ReindexEntry idx) throws DotDataException;
 
     Optional<String> reindexTimeElapsed();
 
@@ -146,9 +168,17 @@ public interface ContentletIndexAPI {
 
     void stopFullReindexation() throws DotDataException;
 
-    BulkRequest appendBulkRemoveRequest(BulkRequest bulkRequest, final ReindexEntry entry) throws DotDataException;
+    IndexBulkRequest appendBulkRemoveRequest(IndexBulkRequest bulkRequest,
+            final ReindexEntry entry) throws DotDataException;
 
-    BulkProcessor createBulkProcessor(BulkProcessorListener bulkListener);
+    /**
+     * Creates a self-flushing async bulk processor for high-throughput reindexing.
+     *
+     * @param bulkListener receives batch-completion and failure callbacks
+     * @return a new {@link IndexBulkProcessor}
+     */
+    IndexBulkProcessor createBulkProcessor(IndexBulkListener bulkListener);
 
-    void appendToBulkProcessor(final BulkProcessor bulk, final Collection<ReindexEntry> idxs) throws DotDataException;
+    void appendToBulkProcessor(final IndexBulkProcessor bulk,
+            final Collection<ReindexEntry> idxs) throws DotDataException;
 }

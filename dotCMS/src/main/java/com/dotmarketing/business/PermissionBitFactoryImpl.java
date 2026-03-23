@@ -10,7 +10,6 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -79,10 +78,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.client.RequestOptions;
 import java.util.stream.Collectors;
-import org.elasticsearch.common.unit.TimeValue;
 
 
 /**
@@ -2537,17 +2533,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 throw new RuntimeException(e);
             }
 
-			BulkRequest bulkRequest=indexAPI.createBulkRequest();
-			bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-
 			for(Contentlet cont : contentlets) {
 			    permissionCache.remove(cont.getPermissionId());
 			    cont.setIndexPolicy(IndexPolicy.DEFER);
 			    indexAPI.addContentToIndex(cont, false);
-			}
-			if(bulkRequest.numberOfActions()>0) {
-				Sneaky.sneak(()-> RestHighLevelClientProvider.getInstance().getClient()
-						.bulk(bulkRequest, RequestOptions.DEFAULT));
 			}
 
 			offset=offset+limit;

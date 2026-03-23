@@ -37,6 +37,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -720,8 +721,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         indicesToRemove.removeAll(listOfIndicesWithAlias);
 
         //Remove Indices which were created in the last day from the list of indicesToRemove
-        final Date yesterdayDate = Date.from(Instant.now().minus(Duration.ofDays(1)));
-        final String yesterdayDateTimestamp = ContentletIndexAPIImpl.timestampFormatter.format(yesterdayDate);
+        //final Date yesterdayDate = Date.from(Instant.now().minus(Duration.ofDays(1)));
+        final LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+        final String yesterdayDateTimestamp = ContentletIndexAPIImpl.timestampFormatter.format(yesterday);
         final long yesterdayDateLong = Long.parseLong(yesterdayDateTimestamp);
 
         final List<String> listOfIndicesCreatedInTheLast24Hours = new ArrayList<>();
