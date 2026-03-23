@@ -66,7 +66,7 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
         );
         this.#fieldVariableRef = optionsVar ?? null;
 
-        let options: Record<string, string> = {};
+        let options: Record<string, unknown> = {};
 
         try {
             options = optionsVar?.value ? JSON.parse(optionsVar.value) : {};
@@ -78,8 +78,8 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
 
         this.form.patchValue({
             showAsModal: initialShowAsModal,
-            customFieldWidth: this.#parsePxToNumber(options.width, this.defaultWidth),
-            customFieldHeight: this.#parsePxToNumber(options.height, this.defaultHeight)
+            customFieldWidth: this.#parsePxToNumber(options['width'], this.defaultWidth),
+            customFieldHeight: this.#parsePxToNumber(options['height'], this.defaultHeight)
         });
         this.form.markAsPristine();
 
@@ -124,10 +124,18 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
         }
     }
 
-    #parsePxToNumber(value: string | undefined, defaultValue: number): number {
+    /** Pixels only: `123`, `123px`, or JSON number. Rejects `%`, `vh`, etc. */
+    #parsePxToNumber(value: unknown, defaultValue: number): number {
         if (value == null || value === '') return defaultValue;
-        const parsed = parseInt(String(value).replace(/px$/i, '').trim(), 10);
-
-        return Number.isNaN(parsed) ? defaultValue : parsed;
+        if (typeof value === 'number') {
+            const n = Math.round(value);
+            return Number.isFinite(value) && n >= 1 ? n : defaultValue;
+        }
+        const m = String(value)
+            .trim()
+            .match(/^(\d+(?:\.\d+)?)(px)?$/i);
+        if (!m) return defaultValue;
+        const n = Math.round(parseFloat(m[1]));
+        return n >= 1 ? n : defaultValue;
     }
 }

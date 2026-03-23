@@ -372,6 +372,104 @@ describe('DotRenderOptionsSettingsComponent', () => {
         });
     });
 
+    describe('with non-px width/height in field variable (legacy %, vh, etc.)', () => {
+        const fieldWithPercentSizes: DotCMSContentTypeField = {
+            ...MOCK_FIELD_BASE,
+            fieldVariables: [
+                {
+                    clazz: DotCMSClazzes.FIELD_VARIABLE,
+                    fieldId: 'field-id-456',
+                    id: 'var-id-pct',
+                    key: CUSTOM_FIELD_OPTIONS_KEY,
+                    value: JSON.stringify({
+                        showAsModal: true,
+                        width: '80%',
+                        height: '70%'
+                    })
+                }
+            ]
+        };
+
+        const createComponent = createComponentFactory({
+            component: DotRenderOptionsSettingsComponent,
+            imports: [
+                FormsModule,
+                ReactiveFormsModule,
+                InputTextModule,
+                ToggleSwitchModule,
+                DotMessagePipe
+            ],
+            providers: [
+                FormBuilder,
+                mockProvider(DotFieldVariablesService, {
+                    save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
+                }),
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ],
+            detectChanges: false
+        });
+
+        it('should fall back to default width/height when values are not in pixels', () => {
+            const spectatorPct = createComponent();
+            spectatorPct.setInput('field', fieldWithPercentSizes);
+            spectatorPct.detectChanges();
+            const comp = spectatorPct.component;
+
+            expect(comp.form.getRawValue().customFieldWidth).toBe(398);
+            expect(comp.form.getRawValue().customFieldHeight).toBe(400);
+        });
+
+        it('should fall back for vh/em and mixed invalid width', () => {
+            const fieldVh: DotCMSContentTypeField = {
+                ...MOCK_FIELD_BASE,
+                fieldVariables: [
+                    {
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        fieldId: 'field-id-456',
+                        id: 'var-vh',
+                        key: CUSTOM_FIELD_OPTIONS_KEY,
+                        value: JSON.stringify({
+                            showAsModal: true,
+                            width: '50vh',
+                            height: '10em'
+                        })
+                    }
+                ]
+            };
+            const spectatorVh = createComponent();
+            spectatorVh.setInput('field', fieldVh);
+            spectatorVh.detectChanges();
+
+            expect(spectatorVh.component.form.getRawValue().customFieldWidth).toBe(398);
+            expect(spectatorVh.component.form.getRawValue().customFieldHeight).toBe(400);
+        });
+
+        it('should accept numeric width/height from JSON as pixels', () => {
+            const fieldNums: DotCMSContentTypeField = {
+                ...MOCK_FIELD_BASE,
+                fieldVariables: [
+                    {
+                        clazz: DotCMSClazzes.FIELD_VARIABLE,
+                        fieldId: 'field-id-456',
+                        id: 'var-num',
+                        key: CUSTOM_FIELD_OPTIONS_KEY,
+                        value: JSON.stringify({
+                            showAsModal: true,
+                            width: 500,
+                            height: 600
+                        })
+                    }
+                ]
+            };
+            const spectatorNum = createComponent();
+            spectatorNum.setInput('field', fieldNums);
+            spectatorNum.detectChanges();
+
+            expect(spectatorNum.component.form.getRawValue().customFieldWidth).toBe(500);
+            expect(spectatorNum.component.form.getRawValue().customFieldHeight).toBe(600);
+        });
+    });
+
     describe('with malformed JSON in field variable', () => {
         const fieldWithBadJson: DotCMSContentTypeField = {
             ...MOCK_FIELD_BASE,
