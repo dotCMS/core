@@ -12,7 +12,7 @@
         lockWarningMessage ||
         showSelectWorkflowWarning;
     <div
-        class="edit-content-layout__topBar flex flex-col [grid-area:topBar] [&_.p-message]:mb-2"
+        class="edit-content-layout__topBar flex flex-col [grid-area:topBar]"
         [ngClass]="{ 'border-b border-(--gray-300)': topBarHasMessages }"
         data-testId="edit-content-layout__topBar">
         @if (isEnabledNewContentEditor && showBetaMessage) {

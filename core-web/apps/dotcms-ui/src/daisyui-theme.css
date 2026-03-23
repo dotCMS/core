@@ -86,8 +86,7 @@ dot-native-field {
             border-color var(--p-inputtext-transition-duration),
             outline-color var(--p-inputtext-transition-duration),
             box-shadow var(--p-inputtext-transition-duration);
-        &:focus,
-        &:focus-within {
+        &:focus {
             box-shadow: var(--p-inputtext-focus-ring-shadow);
             border-color: var(--p-inputtext-focus-border-color);
             outline: var(--p-inputtext-focus-ring-width) var(--p-inputtext-focus-ring-style)
@@ -99,9 +98,7 @@ dot-native-field {
         }
     }
     :is(.select, .select select) option:not(:disabled) {
-        &:focus,
-        &:checked,
-        &:hover {
+        &:checked {
             background: var(--p-select-option-hover-background);
             color: var(--p-select-option-hover-color);
         }

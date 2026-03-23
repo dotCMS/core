@@ -60,8 +60,8 @@
 
       if (currentValue) {
         select.value = currentValue;
-        if (field && select.value !== currentValue) {
-          field.setValue(select.value);
+        if (select.value !== currentValue) {
+          select.value = "";
         }
       } else {
         select.value = "";
