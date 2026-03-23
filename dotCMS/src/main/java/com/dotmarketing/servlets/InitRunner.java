@@ -1,5 +1,6 @@
 package com.dotmarketing.servlets;
 
+import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -25,12 +26,14 @@ import java.net.http.HttpResponse;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.Arrays;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -104,15 +107,46 @@ public class InitRunner implements Runnable {
         }
     });
 
+    Lazy<List<Server>> aliveServers = Lazy.of(() -> {
+        try {
+            return APILocator.getServerAPI().getAliveServers()
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .filter(s -> s.getLastHeartBeat()
+                            .toInstant()
+                            .isAfter(Instant.now()
+                                    .minus(1, ChronoUnit.MINUTES)
+                            )
+                    )
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logError(e);
+            return List.of();
+        }
+
+    });
+
+
     private int getServerNumber() {
-        String serverId = APILocator.getServerAPI().readServerId();
-        return Try.of(() -> Arrays.binarySearch(APILocator.getServerAPI().getAliveServersIds(), serverId))
-                .onFailure(e -> logError(e)).getOrElse(0);
+        try {
+            String serverId = APILocator.getServerAPI().readServerId();
+            List<Server> servers = aliveServers.get();
+            ;
+            for (int i = 0; i < servers.size(); i++) {
+
+                if (servers.get(i).getServerId().equals(serverId)) {
+                    return i;
+                }
+            }
+        } catch (Exception e) {
+            logError(e);
+        }
+        return 0;
+
     }
 
     private int getClusterNodeNumber() {
-        return Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).onFailure(e -> logError(e))
-                .getOrElse(0);
+        return aliveServers.get().size();
     }
 
 
@@ -176,7 +210,15 @@ public class InitRunner implements Runnable {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         logInfo("Pingback response: " + response.statusCode());
 
-        return response.statusCode() >= 200 && response.statusCode() < 300;
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+
+            String error = response.body();
+            if (UtilMethods.isSet(error)) {
+                logInfo("Pingback error: " + error);
+            }
+            return false;
+        }
+        return true;
 
 
     }
