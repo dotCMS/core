@@ -13,7 +13,7 @@
         showSelectWorkflowWarning;
     <div
         class="edit-content-layout__topBar flex flex-col [grid-area:topBar] [&_.p-message]:mb-2"
-        [ngClass]="{ 'border-b border-[var(--gray-300)]': topBarHasMessages }"
+        [ngClass]="{ 'border-b border-(--gray-300)': topBarHasMessages }"
         data-testId="edit-content-layout__topBar">
         @if (isEnabledNewContentEditor && showBetaMessage) {
             <p-message
