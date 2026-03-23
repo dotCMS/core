@@ -17,7 +17,9 @@ export class LoginPage {
 
         const userNameInputLocator = this.page.getByTestId('userNameInput');
         await userNameInputLocator.waitFor({ state: 'visible', timeout: 10000 });
+        await userNameInputLocator.click();
         await userNameInputLocator.fill(username);
+        await userNameInputLocator.press('Tab');
 
         const passwordInputLocator = this.page.getByTestId('password');
         await passwordInputLocator.waitFor({ state: 'visible', timeout: 10000 });

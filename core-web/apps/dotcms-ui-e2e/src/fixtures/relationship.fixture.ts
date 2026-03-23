@@ -141,9 +141,14 @@ async function enableNewEditor(
     // Might be 200 or 400 depending on API version; the system-table flags are the critical ones
 }
 
+/**
+ * SystemWorkflow ID — standard across all dotCMS instances.
+ */
+const SYSTEM_WORKFLOW_ID = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2';
+
 // ─── Content Type Payloads ───────────────────────────────────────
 
-function authorContentTypePayload(suffix: string) {
+function authorContentTypePayload(suffix: string, workflowId?: string) {
     return {
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
         name: `E2E_Author_${suffix}`,
@@ -151,6 +156,7 @@ function authorContentTypePayload(suffix: string) {
         host: 'SYSTEM_HOST',
         folder: 'SYSTEM_FOLDER',
         metadata: { CONTENT_EDITOR2_ENABLED: true },
+        ...(workflowId && { workflow: [workflowId] }),
         fields: [
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -168,13 +174,14 @@ function authorContentTypePayload(suffix: string) {
     };
 }
 
-function tagContentTypePayload(suffix: string) {
+function tagContentTypePayload(suffix: string, workflowId?: string) {
     return {
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
         name: `E2E_Tag_${suffix}`,
         variable: `E2ETag${suffix}`,
         host: 'SYSTEM_HOST',
         folder: 'SYSTEM_FOLDER',
+        ...(workflowId && { workflow: [workflowId] }),
         // No new editor metadata — intentionally left out
         fields: [
             {
@@ -193,7 +200,8 @@ function blogContentTypePayload(
     variable: string,
     relatedContentTypeVariable: string,
     relationshipFieldVariable: string,
-    cardinality: number
+    cardinality: number,
+    workflowId?: string
 ) {
     return {
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -202,6 +210,7 @@ function blogContentTypePayload(
         host: 'SYSTEM_HOST',
         folder: 'SYSTEM_FOLDER',
         metadata: { CONTENT_EDITOR2_ENABLED: true },
+        ...(workflowId && { workflow: [workflowId] }),
         fields: [
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
@@ -216,7 +225,7 @@ function blogContentTypePayload(
                 variable: relationshipFieldVariable,
                 sortOrder: 2,
                 relationships: {
-                    velocityVar: `${relatedContentTypeVariable}.${relationshipFieldVariable}`,
+                    velocityVar: relatedContentTypeVariable,
                     cardinality
                 }
             }
@@ -279,6 +288,8 @@ export const test = base.extend<{
     },
 
     apiHelpers: async ({ request }, use) => {
+        const workflowId = SYSTEM_WORKFLOW_ID;
+
         await use({
             createContentType: (payload) => createContentTypeWithFields(request, payload),
             deleteContentType: (id) => deleteContentTypeById(request, id),
@@ -286,9 +297,16 @@ export const test = base.extend<{
             createContentletWithRelationship: (ct, fields, rels) =>
                 fireContentletWithRelationship(request, ct, fields, rels),
             enableNewEditor: (ctVar) => enableNewEditor(request, ctVar),
-            authorPayload: authorContentTypePayload,
-            tagPayload: tagContentTypePayload,
-            blogPayload: blogContentTypePayload,
+            authorPayload: (suffix: string) => authorContentTypePayload(suffix, workflowId),
+            tagPayload: (suffix: string) => tagContentTypePayload(suffix, workflowId),
+            blogPayload: (
+                suffix: string,
+                name: string,
+                variable: string,
+                relatedCt: string,
+                relField: string,
+                cardinality: number
+            ) => blogContentTypePayload(suffix, name, variable, relatedCt, relField, cardinality, workflowId),
             CARDINALITY
         });
     }

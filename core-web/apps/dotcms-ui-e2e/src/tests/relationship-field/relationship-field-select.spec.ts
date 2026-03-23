@@ -438,7 +438,7 @@ test.describe('Journey 2 - Create Related Content Inline (Create New)', () => {
         await expect(createDialog).toBeVisible({ timeout: 10000 });
 
         // Fill in the Author fields in the nested form
-        const titleInput = createDialog.getByTestId('textField').first();
+        const titleInput = createDialog.getByTestId('title').first();
         if (await titleInput.isVisible()) {
             await titleInput.fill(`Inline Author ${testSuffix}`);
         }
@@ -488,7 +488,7 @@ test.describe('Journey 2 - Create Related Content Inline (Create New)', () => {
         await expect(createDialog).toBeHidden({ timeout: 5000 });
 
         // Verify the outer form title is preserved
-        const textField = adminPage.getByTestId('textField');
+        const textField = adminPage.getByTestId('title');
         await expect(textField).toHaveValue(outerTitle);
 
         // Verify relationship field remains empty
@@ -568,16 +568,8 @@ test.describe('Journey 2 - Create New Disabled (No New Editor)', () => {
 
         const relationshipField = new RelationshipFieldComponent(adminPage);
 
-        // Open the add menu
-        const menu = await relationshipField.openAddMenu();
-
-        // "Create New" should be disabled
-        const createNewItem = relationshipField.getCreateNewMenuItem(menu);
-        const isDisabled = await createNewItem.locator('[class*="disabled"]').count();
-        expect(isDisabled).toBeGreaterThanOrEqual(0); // At least the class or aria attribute
-
-        // Close the menu
-        await adminPage.keyboard.press('Escape');
+        // "New Content" should be disabled (related type lacks new editor)
+        await relationshipField.expectNewContentDisabled();
     });
 });
 
@@ -642,7 +634,7 @@ test.describe('Journey 2 - Create New Disabled When Single Item Exists', () => {
         await dialog.clickApply();
         await dialog.expectClosed();
 
-        // Now the add button should be disabled
-        await relationshipField.expectAddButtonDisabled();
+        // Now the menu options should be disabled
+        await relationshipField.expectRelateExistingDisabled();
     });
 });
