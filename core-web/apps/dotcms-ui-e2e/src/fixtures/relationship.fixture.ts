@@ -107,6 +107,10 @@ async function fireContentletWithRelationship(
             headers: authHeaders()
         }
     );
+    if (response.status() !== 200) {
+        const errorBody = await response.json().catch(() => response.statusText());
+        console.error('fireContentletWithRelationship failed:', JSON.stringify({ contentType, fields, relationships, error: errorBody }, null, 2));
+    }
     expect(response.status()).toBe(200);
     const data = await response.json();
     return data.entity as TestContentlet;

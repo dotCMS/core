@@ -63,18 +63,21 @@ export class NewEditContentFormPage {
         return textContent;
     }
 
+    /**
+     * Clicks the primary workflow action button (Save or Publish) and waits for the API response.
+     * New content shows "Save", existing content shows "Publish".
+     */
     async save() {
-        const saveButtonLocator = this.page.getByRole('button', {
-            name: 'Save'
-        });
-        await expect(saveButtonLocator).toBeVisible();
+        // Match either Save or Publish — the primary action button
+        const actionButton = this.page.getByRole('button', { name: /^(Save|Publish)$/ });
+        await expect(actionButton).toBeVisible();
 
         const responsePromise = this.page.waitForResponse((response) => {
             return (
                 response.status() === 200 && response.url().includes('/api/v1/workflow/actions/')
             );
         });
-        await saveButtonLocator.click();
+        await actionButton.click();
         await responsePromise;
     }
 
