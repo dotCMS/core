@@ -61,7 +61,8 @@
                     size="small"
                     icon="pi pi-plus"
                     [text]="true"
-                    [disabled]="isDisabled" />
+                    [disabled]="isDisabled"
+                    data-testid="relationship-add-button" />
             </th>
         </tr>
     </ng-template>
@@ -86,7 +87,7 @@
             [class.cursor-not-allowed]="isDisabled">
             <td class="w-12 min-w-12">
                 @if (!isDisabled) {
-                    <span class="pi pi-bars text-[var(--gray-600)]" pReorderableRowHandle></span>
+                    <span class="pi pi-bars text-[var(--gray-600)]" pReorderableRowHandle data-testid="relationship-drag-handle"></span>
                 } @else {
                     <span class="pi pi-bars text-[var(--gray-600)] cursor-not-allowed"></span>
                 }
@@ -143,7 +144,8 @@
                     severity="secondary"
                     [text]="true"
                     [disabled]="isDisabled"
-                    (onClick)="deleteItem(item.inode)" />
+                    (onClick)="deleteItem(item.inode)"
+                    data-testid="relationship-delete-button" />
             </td>
         </tr>
     </ng-template>
@@ -170,6 +172,7 @@
                 }
                 @if (showPagination) {
                     <dot-pagination
+                        data-testid="relationship-table-pagination"
                         [currentPageReportLayout]="'center'"
                         (nextPage)="store.nextPage()"
                         (previousPage)="store.previousPage()"

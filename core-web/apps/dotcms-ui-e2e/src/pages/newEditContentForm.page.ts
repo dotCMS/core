@@ -1,10 +1,43 @@
 import { expect, Page } from '@playwright/test';
 
+import { getLegacyFrame } from '@utils/iframe';
+import { Portlet } from '@utils/portlets';
+
 export class NewEditContentFormPage {
     constructor(private page: Page) {}
 
+    /**
+     * Navigates to the Content portlet filtered by content type.
+     * URL: /dotAdmin/#/c/content?filter=ContentTypeName
+     */
+    async goToContentList(contentTypeVariable: string) {
+        await this.page.goto(`${Portlet.Content}?filter=${contentTypeVariable}`);
+        await this.page.waitForLoadState('networkidle');
+    }
+
+    /**
+     * From the content listing (Dojo portlet inside iframe), clicks the "+"
+     * dropdown and selects "Add New Content" to open the new content form.
+     */
+    async clickNewContentFromList() {
+        const frame = getLegacyFrame(this.page);
+
+        // Click the Dojo "+" dropdown button
+        const addButton = frame.locator('#dijit_form_DropDownButton_0');
+        await addButton.waitFor({ state: 'visible', timeout: 15000 });
+        await addButton.click();
+
+        // The dropdown menu renders in the iframe as well
+        const addNewOption = frame.locator('.dijitMenuItemLabel', { hasText: 'Add New Content' });
+        await addNewOption.waitFor({ state: 'visible', timeout: 5000 });
+        await addNewOption.click();
+
+        await this.page.waitForLoadState('networkidle');
+    }
+
     async fillTextField(text: string) {
-        const textFieldLocator = this.page.getByTestId('textField');
+        const textFieldLocator = this.page.getByTestId('title');
+        await textFieldLocator.waitFor({ state: 'visible', timeout: 10000 });
         await textFieldLocator.fill(text);
     }
 
@@ -40,11 +73,25 @@ export class NewEditContentFormPage {
         await responsePromise;
     }
 
+    /**
+     * Navigates to edit an existing contentlet.
+     * Goes through the Content portlet first to initialize the Dojo app,
+     * then navigates to the specific content.
+     */
     async goToContent(id: string) {
+        await this.page.goto(Portlet.Content);
+        await this.page.waitForLoadState('networkidle');
         await this.page.goto(`/dotAdmin/#/content/${id}`);
+        await this.page.waitForLoadState('networkidle');
     }
 
+    /**
+     * Navigates to create new content of the given type.
+     * Goes to the Content portlet filtered by content type (Dojo listing),
+     * then clicks the "+" dropdown → "Add New Content".
+     */
     async goToNew(contentType: string) {
-        await this.page.goto(`/dotAdmin/#c/content/new/${contentType}`);
+        await this.goToContentList(contentType);
+        await this.clickNewContentFromList();
     }
 }

@@ -1,0 +1,297 @@
+import { test as base, type Page, type APIRequestContext, expect } from '@playwright/test';
+import { LoginPage } from '@pages';
+import { admin1 } from '../tests/login/credentialsData';
+import { generateBase64Credentials } from '@utils/generateBase64Credential';
+
+/**
+ * Represents a content type created for relationship tests.
+ */
+export interface TestContentType {
+    id: string;
+    name: string;
+    variable: string;
+}
+
+/**
+ * Represents a contentlet created for relationship tests.
+ */
+export interface TestContentlet {
+    identifier: string;
+    inode: string;
+    title: string;
+    [key: string]: unknown;
+}
+
+// ─── API Helpers ─────────────────────────────────────────────────
+
+function authHeaders() {
+    return {
+        Authorization: generateBase64Credentials(admin1.username, admin1.password)
+    };
+}
+
+/**
+ * Creates a content type with fields via the v3 content type API.
+ */
+async function createContentTypeWithFields(
+    request: APIRequestContext,
+    payload: Record<string, unknown>
+): Promise<TestContentType> {
+    const response = await request.post('/api/v1/contenttype', {
+        data: payload,
+        headers: authHeaders()
+    });
+    expect(response.status()).toBe(200);
+    const data = await response.json();
+    const entity = data.entity[0] ?? data.entity;
+    return {
+        id: entity.id,
+        name: entity.name,
+        variable: entity.variable
+    };
+}
+
+/**
+ * Deletes a content type by its id or variable name.
+ */
+async function deleteContentTypeById(
+    request: APIRequestContext,
+    idOrVar: string
+): Promise<void> {
+    const response = await request.delete(`/api/v1/contenttype/id/${idOrVar}`, {
+        headers: authHeaders()
+    });
+    // Accept 200 or 404 (already cleaned up)
+    expect([200, 404]).toContain(response.status());
+}
+
+/**
+ * Creates a contentlet via the workflow fire/PUBLISH endpoint.
+ */
+async function fireContentlet(
+    request: APIRequestContext,
+    contentType: string,
+    fields: Record<string, unknown>
+): Promise<TestContentlet> {
+    const response = await request.put(
+        '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
+        {
+            data: { contentlet: { contentType, ...fields } },
+            headers: authHeaders()
+        }
+    );
+    expect(response.status()).toBe(200);
+    const data = await response.json();
+    return data.entity as TestContentlet;
+}
+
+/**
+ * Saves a contentlet and sets its relationships via the workflow PUBLISH endpoint.
+ */
+async function fireContentletWithRelationship(
+    request: APIRequestContext,
+    contentType: string,
+    fields: Record<string, unknown>,
+    relationships: Record<string, string>
+): Promise<TestContentlet> {
+    const response = await request.put(
+        '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
+        {
+            data: {
+                contentlet: { contentType, ...fields, ...relationships }
+            },
+            headers: authHeaders()
+        }
+    );
+    expect(response.status()).toBe(200);
+    const data = await response.json();
+    return data.entity as TestContentlet;
+}
+
+/**
+ * Enables the new content editor feature flag for a specific content type.
+ */
+async function enableNewEditor(
+    request: APIRequestContext,
+    contentTypeVariable: string
+): Promise<void> {
+    // Enable the global feature flag
+    await request.post('/api/v1/system-table/', {
+        data: { key: 'DOT_CONTENT_EDITOR2_ENABLED', value: true },
+        headers: authHeaders()
+    });
+    // Set the content type pattern
+    await request.post('/api/v1/system-table/', {
+        data: { key: 'DOT_CONTENT_EDITOR2_CONTENT_TYPE', value: '*' },
+        headers: authHeaders()
+    });
+    // Enable the new editor in the content type's metadata
+    const response = await request.put(
+        `/api/v1/contenttype/id/${contentTypeVariable}`,
+        {
+            data: {
+                contentType: {
+                    variable: contentTypeVariable,
+                    metadata: { CONTENT_EDITOR2_ENABLED: true }
+                }
+            },
+            headers: authHeaders()
+        }
+    );
+    // Might be 200 or 400 depending on API version; the system-table flags are the critical ones
+}
+
+// ─── Content Type Payloads ───────────────────────────────────────
+
+function authorContentTypePayload(suffix: string) {
+    return {
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        name: `E2E_Author_${suffix}`,
+        variable: `E2EAuthor${suffix}`,
+        host: 'SYSTEM_HOST',
+        folder: 'SYSTEM_FOLDER',
+        metadata: { CONTENT_EDITOR2_ENABLED: true },
+        fields: [
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                name: 'Title',
+                variable: 'title',
+                sortOrder: 1
+            },
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                name: 'Bio',
+                variable: 'bio',
+                sortOrder: 2
+            }
+        ]
+    };
+}
+
+function tagContentTypePayload(suffix: string) {
+    return {
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        name: `E2E_Tag_${suffix}`,
+        variable: `E2ETag${suffix}`,
+        host: 'SYSTEM_HOST',
+        folder: 'SYSTEM_FOLDER',
+        // No new editor metadata — intentionally left out
+        fields: [
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                name: 'Name',
+                variable: 'name',
+                sortOrder: 1
+            }
+        ]
+    };
+}
+
+function blogContentTypePayload(
+    suffix: string,
+    name: string,
+    variable: string,
+    relatedContentTypeVariable: string,
+    relationshipFieldVariable: string,
+    cardinality: number
+) {
+    return {
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        name: `${name}_${suffix}`,
+        variable: `${variable}${suffix}`,
+        host: 'SYSTEM_HOST',
+        folder: 'SYSTEM_FOLDER',
+        metadata: { CONTENT_EDITOR2_ENABLED: true },
+        fields: [
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                name: 'Title',
+                variable: 'title',
+                sortOrder: 1
+            },
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+                name: relationshipFieldVariable.charAt(0).toUpperCase() +
+                    relationshipFieldVariable.slice(1),
+                variable: relationshipFieldVariable,
+                sortOrder: 2,
+                relationships: {
+                    velocityVar: `${relatedContentTypeVariable}.${relationshipFieldVariable}`,
+                    cardinality
+                }
+            }
+        ]
+    };
+}
+
+// ─── Cardinality Constants ───────────────────────────────────────
+
+/**
+ * Cardinality values as defined in RELATIONSHIP_OPTIONS:
+ *   0 → ONE_TO_MANY, 1 → MANY_TO_MANY, 2 → ONE_TO_ONE, 3 → MANY_TO_ONE
+ */
+export const CARDINALITY = {
+    ONE_TO_MANY: 0,
+    MANY_TO_MANY: 1,
+    ONE_TO_ONE: 2,
+    MANY_TO_ONE: 3
+} as const;
+
+// ─── Test Data Interface ─────────────────────────────────────────
+
+export interface RelationshipTestData {
+    suffix: string;
+    authorType: TestContentType;
+    authors: TestContentlet[];
+}
+
+// ─── Fixture ─────────────────────────────────────────────────────
+
+export const test = base.extend<{
+    adminPage: Page;
+    testSuffix: string;
+    apiHelpers: {
+        createContentType: typeof createContentTypeWithFields;
+        deleteContentType: typeof deleteContentTypeById;
+        createContentlet: typeof fireContentlet;
+        createContentletWithRelationship: typeof fireContentletWithRelationship;
+        enableNewEditor: typeof enableNewEditor;
+        authorPayload: typeof authorContentTypePayload;
+        tagPayload: typeof tagContentTypePayload;
+        blogPayload: typeof blogContentTypePayload;
+        CARDINALITY: typeof CARDINALITY;
+    };
+}>({
+    adminPage: async ({ browser }, use) => {
+        const context = await browser.newContext();
+        const page = await context.newPage();
+
+        // Login via UI — same flow as LoginPage.login()
+        const loginPage = new LoginPage(page);
+        await loginPage.login(admin1.username, admin1.password);
+
+        await use(page);
+        await context.close();
+    },
+
+    testSuffix: async ({}, use) => {
+        await use(`${Date.now()}`);
+    },
+
+    apiHelpers: async ({ request }, use) => {
+        await use({
+            createContentType: (payload) => createContentTypeWithFields(request, payload),
+            deleteContentType: (id) => deleteContentTypeById(request, id),
+            createContentlet: (ct, fields) => fireContentlet(request, ct, fields),
+            createContentletWithRelationship: (ct, fields, rels) =>
+                fireContentletWithRelationship(request, ct, fields, rels),
+            enableNewEditor: (ctVar) => enableNewEditor(request, ctVar),
+            authorPayload: authorContentTypePayload,
+            tagPayload: tagContentTypePayload,
+            blogPayload: blogContentTypePayload,
+            CARDINALITY
+        });
+    }
+});
+
+export { expect } from '@playwright/test';
