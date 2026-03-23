@@ -62,7 +62,7 @@ import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 const program = new Command();
 
 program
-    .name('dotcms-create-app')
+    .name('create-dotcms-app')
     .description('dotCMS CLI for creating applications')
     .version('0.1.0-beta');
 
@@ -93,18 +93,17 @@ program
         try {
             // ✅ VALIDATE ALL CLI FLAGS IMMEDIATELY - BEFORE ANY INTERACTIVE PROMPTS
             const validatedFramework = validateAndNormalizeFramework(options.framework);
-            validateUrl(options.url);
             validateUrl(options.starter);
             validateConflictingParameters(options);
             validateProjectName(projectName); // Validate CLI flag if provided
+            const starterOnlyMode = Boolean(options.starter);
+            // `--starter` only applies to local Docker mode, so treat it as an implicit local selection.
+            const isLocalModeRequested = options.local === true || starterOnlyMode;
 
             // Get project name from CLI or prompt (prompt has built-in validation)
             const projectNameFinal = projectName ?? (await askProjectName());
             const directoryInput = options.directory ?? (await askDirectory());
             const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
-            const starterOnlyMode = Boolean(options.starter);
-            // `--starter` only applies to local Docker mode, so treat it as an implicit local selection.
-            const isLocalModeRequested = options.local === true || starterOnlyMode;
             const isCloudInstanceSelected = isLocalModeRequested
                 ? false
                 : await askCloudOrLocalInstance();

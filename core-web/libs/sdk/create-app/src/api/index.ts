@@ -12,6 +12,26 @@ import type {
     UVEConfigRequest,
     UVEConfigResponse
 } from '../types';
+
+function getSafeErrorDetails(err: unknown): string {
+    if (axios.isAxiosError(err)) {
+        const details = [
+            err.response?.status ? `status=${err.response.status}` : null,
+            err.response?.statusText ? `statusText=${err.response.statusText}` : null,
+            err.code ? `code=${err.code}` : null,
+            err.message ? `message=${err.message}` : null
+        ].filter(Boolean);
+
+        return details.length > 0 ? details.join(', ') : 'Axios request failed';
+    }
+
+    if (err instanceof Error) {
+        return err.message;
+    }
+
+    return String(err);
+}
+
 export class DotCMSApi {
     private static defaultTokenApi = DOTCMS_TOKEN_API;
     private static defaultSiteApi = DOTCMS_SITE_API;
@@ -81,7 +101,7 @@ export class DotCMSApi {
             });
             return Ok(res.data);
         } catch (err) {
-            console.error('failed to get default site identifier : ' + JSON.stringify(err));
+            console.error(`failed to get default site identifier: ${getSafeErrorDetails(err)}`);
             return Err(new FailedToGetDefaultSiteError());
         }
     }
@@ -105,7 +125,7 @@ export class DotCMSApi {
             });
             return Ok(res.data.entity);
         } catch (err) {
-            console.error('failed to setup UVE config' + JSON.stringify(err));
+            console.error(`failed to setup UVE config: ${getSafeErrorDetails(err)}`);
             return Err(new FailedToSetUpUVEConfig());
         }
     }
