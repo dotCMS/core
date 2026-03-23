@@ -2805,8 +2805,6 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "const cheerio = require('cheerio');",
-                  "",
                   "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
                   "const contentlet2 = pm.collectionVariables.get(\"Contentlet_2\");",
                   "const entity = pm.response.json().entity;",
