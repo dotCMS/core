@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useState } from 'react';
 
 /**
  * Compares two objects and returns true if they are equal, false otherwise.
@@ -34,16 +34,29 @@ function shallowEqual<T>(objA: T, objB: T): boolean {
 
 /**
  * Memoizes an object and returns the memoized object.
- * Mantaing the same reference if the object is the same independently if is called inside any component.
+ * Maintaining the same reference if the object is shallowly equal, independently of
+ * whether it is called inside any component.
+ *
+ * Uses React's "derived state" pattern (calling setState during rendering) to avoid
+ * reading/writing `ref.current` during render, which violates the `react-hooks/refs` rule.
+ *
+ * React explicitly supports calling `setState` during rendering to update derived state.
+ * @see https://react.dev/reference/react/useState#storing-information-from-previous-renders
+ *
  * @param object
  * @returns
  */
 export function useMemoizedObject<T extends object>(object: T): T {
-    const ref = useRef<T>(object);
+    const [memoized, setMemoized] = useState<T>(object);
 
-    if (!shallowEqual(ref.current, object)) {
-        ref.current = object;
+    // React-approved pattern: calling setState synchronously during render triggers an
+    // immediate re-render (React batches it) and avoids reading/writing ref.current during
+    // render (which violates the react-hooks/refs rule).
+    if (!shallowEqual(memoized, object)) {
+        setMemoized(object);
+
+        return object;
     }
 
-    return ref.current;
+    return memoized;
 }

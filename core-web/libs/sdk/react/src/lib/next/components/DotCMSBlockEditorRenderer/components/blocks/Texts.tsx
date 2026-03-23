@@ -119,10 +119,13 @@ export const TextBlock = (props: TextNodeProps = {}) => {
     const textProps = { ...props, marks: marks.slice(1) };
     const Component = nodeMarks[mark?.type];
 
-    // In React, class is not a valid attribute name, so we need to rename it to className
+    // In React, class is not a valid attribute name, so we need to rename it to className.
+    // Clone attrs to avoid direct mutation of the original mark object.
+    let finalAttrs: Record<string, unknown> | undefined;
+
     if (mark.attrs) {
-        mark.attrs.className = mark.attrs.class;
-        delete mark.attrs.class;
+        const { class: className, ...rest } = mark.attrs as Record<string, unknown>;
+        finalAttrs = className !== undefined ? { ...rest, className } : { ...rest };
     }
 
     if (!Component) {
@@ -130,7 +133,7 @@ export const TextBlock = (props: TextNodeProps = {}) => {
     }
 
     return (
-        <Component type={mark.type} attrs={mark.attrs}>
+        <Component type={mark.type} attrs={finalAttrs}>
             <TextBlock {...textProps} />
         </Component>
     );

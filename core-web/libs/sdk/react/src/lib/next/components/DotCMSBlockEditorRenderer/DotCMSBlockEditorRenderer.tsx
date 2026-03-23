@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
 import { BlockEditorNode } from '@dotcms/types';
-import { BlockEditorState } from '@dotcms/types/internal';
 import { isValidBlocks } from '@dotcms/uve/internal';
 
 import { BlockEditorBlock } from './components/BlockEditorBlock';
@@ -73,27 +72,18 @@ export const DotCMSBlockEditorRenderer = ({
     className,
     customRenderers
 }: BlockEditorRendererProps) => {
-    const [blockEditorState, setBlockEditorState] = useState<BlockEditorState>({ error: null });
     const isDevMode = useIsDevMode();
 
     /**
-     * Validates the blocks structure and updates the block editor state.
+     * Validates the blocks structure and derives the block editor state.
      *
-     * This effect:
+     * Uses useMemo to avoid synchronous setState in useEffect:
      * 1. Validates that blocks have the correct structure (doc type, content array, etc)
-     * 2. Updates the block editor state with validation result
-     * 3. Logs any validation errors to console
+     * 2. Derives the block editor state with validation result
      *
      * @dependency {Block} blocks - The content blocks to validate
      */
-    useEffect(() => {
-        const validationResult = isValidBlocks(blocks);
-        setBlockEditorState(validationResult);
-
-        if (validationResult.error) {
-            console.error(validationResult.error);
-        }
-    }, [blocks]);
+    const blockEditorState = useMemo(() => isValidBlocks(blocks), [blocks]);
 
     if (blockEditorState.error) {
         console.error(blockEditorState.error);

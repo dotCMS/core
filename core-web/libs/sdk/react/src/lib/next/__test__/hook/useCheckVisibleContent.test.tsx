@@ -1,28 +1,17 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { useRef } from 'react';
 
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 
-const MOCK_DOM_RECT = {
-    height: 0,
-    width: 0,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    x: 0,
-    y: 0,
-    toJSON: jest.fn()
-};
+type MockResizeObserverCallback = (entries: Partial<ResizeObserverEntry>[]) => void;
 
-const TestComponent = ({ height }: { height: number }) => {
+let resizeObserverCallback: MockResizeObserverCallback;
+const mockObserve = jest.fn();
+const mockDisconnect = jest.fn();
+
+const TestComponent = () => {
     const ref = useRef<HTMLDivElement>(null);
     const haveContent = useCheckVisibleContent(ref);
-
-    jest.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
-        ...MOCK_DOM_RECT,
-        height
-    });
 
     return (
         <div data-testid="container" ref={ref}>
@@ -32,7 +21,23 @@ const TestComponent = ({ height }: { height: number }) => {
 };
 
 describe('useCheckVisibleContent hook', () => {
-    test('should return false if ref is null (container not rendered)', async () => {
+    beforeEach(() => {
+        global.ResizeObserver = jest.fn((callback: MockResizeObserverCallback) => {
+            resizeObserverCallback = callback;
+
+            return {
+                observe: mockObserve,
+                disconnect: mockDisconnect,
+                unobserve: jest.fn()
+            };
+        }) as unknown as typeof ResizeObserver;
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test('should return false if ref is null (container not rendered)', () => {
         const TestComponentWithNullRef = () => {
             const haveContent = useCheckVisibleContent({ current: null });
 
@@ -43,17 +48,35 @@ describe('useCheckVisibleContent hook', () => {
 
         const result = screen.getByTestId('result');
         expect(result.textContent).toBe('false');
+        // ResizeObserver should not be set up when ref is null
+        expect(mockObserve).not.toHaveBeenCalled();
     });
 
-    test('should return false if height is 0', async () => {
-        render(<TestComponent height={0} />);
-        const result = await screen.findByTestId('result');
-        await waitFor(() => expect(result.textContent).toBe('false'));
+    test('should return false if height is 0', () => {
+        render(<TestComponent />);
+
+        act(() => {
+            resizeObserverCallback([{ contentRect: { height: 0 } as DOMRectReadOnly }]);
+        });
+
+        const result = screen.getByTestId('result');
+        expect(result.textContent).toBe('false');
     });
 
-    test('should return true if height is greater than 0', async () => {
-        render(<TestComponent height={10} />);
-        const result = await screen.findByTestId('result');
-        await waitFor(() => expect(result.textContent).toBe('true'));
+    test('should return true if height is greater than 0', () => {
+        render(<TestComponent />);
+
+        act(() => {
+            resizeObserverCallback([{ contentRect: { height: 10 } as DOMRectReadOnly }]);
+        });
+
+        const result = screen.getByTestId('result');
+        expect(result.textContent).toBe('true');
+    });
+
+    test('should disconnect ResizeObserver on unmount', () => {
+        const { unmount } = render(<TestComponent />);
+        unmount();
+        expect(mockDisconnect).toHaveBeenCalled();
     });
 });
