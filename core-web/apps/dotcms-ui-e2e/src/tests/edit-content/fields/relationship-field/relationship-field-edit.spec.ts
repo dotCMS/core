@@ -3,17 +3,11 @@ import { CARDINALITY, expect, test, TestContentlet } from '../../../../fixtures/
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
-/**
- * Journey 3: Edit Existing Content - Add More Relations
- * Journey 4: Edit Existing Content - Remove Relations
- *
- * Covers loading existing relationships, adding more relations,
- * deleting relations, and verifying persistence across save/reopen.
- */
+// ─── Add More Relations ─────────────────────────────────────────
 
-// ─── Journey 3: Add More Relations ───────────────────────────────
+test.describe('Add More Relations', () => {
+    test.describe.configure({ mode: 'serial' });
 
-test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -21,13 +15,11 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
     let authors: TestContentlet[];
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
-        // Create Author content type
         const authorType = await apiHelpers.createContentType(
             apiHelpers.authorPayload(`Edit_${testSuffix}`)
         );
         authorTypeVariable = authorType.variable;
 
-        // Create Blog content type with 1:M relationship
         const blogType = await apiHelpers.createContentType(
             apiHelpers.blogPayload(
                 `Edit_${testSuffix}`,
@@ -41,7 +33,6 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        // Create 5 Authors
         authors = [];
         for (let i = 1; i <= 5; i++) {
             const author = await apiHelpers.createContentlet(authorTypeVariable, {
@@ -51,7 +42,6 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
             authors.push(author);
         }
 
-        // Create a Blog Post with 2 pre-related Authors
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
             { title: `Blog Edit Test ${testSuffix}` },
@@ -60,17 +50,11 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) {
-            await apiHelpers.deleteContentType(blogTypeId);
-        }
-        if (authorTypeVariable) {
-            await apiHelpers.deleteContentType(authorTypeVariable);
-        }
+        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
-    test('P1 - Load existing relationships on edit @critical', async ({
-        adminPage
-    }) => {
+    test('load existing relationships on edit @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
@@ -79,33 +63,26 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
         await relationshipField.expectRowCount(2);
     });
 
-    test('P1 - Add more relations to existing content @critical', async ({
-        adminPage
-    }) => {
+    test('add more relations to existing content @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
-        const dialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new SelectExistingContentDialog(adminPage);
 
-        // Verify initial state: 2 authors
         await relationshipField.expectRowCount(2);
 
-        // Add 1 more author
         await relationshipField.clickRelateExisting();
-        await dialog.waitForVisible();
-        await dialog.waitForContentLoaded();
+        await selectDialog.waitForVisible();
+        await selectDialog.waitForContentLoaded();
 
-        // Select the first available (non-already-related) item
-        await dialog.selectItem(0);
-        await dialog.clickApply();
-        await dialog.expectClosed();
+        await selectDialog.selectItem(0);
+        await selectDialog.clickApply();
+        await selectDialog.expectClosed();
 
-        // Should now show 3 authors
         await relationshipField.expectRowCount(3);
 
-        // Save and verify persistence
         await formPage.save();
         await adminPage.waitForTimeout(1000);
         await adminPage.reload();
@@ -115,24 +92,23 @@ test.describe('Journey 3 - Edit Existing Content: Add More Relations', () => {
         await reloadedField.expectRowCount(3);
     });
 
-    test('P3 - Thumbnail rendering in relationship table', async ({
-        adminPage
-    }) => {
+    test.fixme('thumbnail rendering in relationship table', async ({ adminPage }) => {
+        // TODO: Thumbnails only render for content types with image fields. E2E_Author has text fields only.
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
-        // Thumbnails render via dot-contentlet-thumbnail component
         const thumbnails = adminPage.getByTestId('contentlet-thumbnail');
-        const count = await thumbnails.count();
-        // At least 2 thumbnails for the 2 related authors
-        expect(count).toBeGreaterThanOrEqual(2);
+        // 2 related authors = 2 thumbnails
+        await expect(thumbnails).toHaveCount(2);
     });
 });
 
-// ─── Journey 4: Remove Relations ─────────────────────────────────
+// ─── Remove Relations ───────────────────────────────────────────
 
-test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
+test.describe('Remove Relations', () => {
+    test.describe.configure({ mode: 'serial' });
+
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -158,7 +134,6 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        // Create 3 Authors
         authors = [];
         for (let i = 1; i <= 3; i++) {
             const author = await apiHelpers.createContentlet(authorTypeVariable, {
@@ -168,43 +143,31 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
             authors.push(author);
         }
 
-        // Create Blog with 3 related Authors
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
             { title: `Blog Delete Test ${testSuffix}` },
-            {
-                authors: authors.map((a) => a.identifier).join(',')
-            }
+            { authors: authors.map((a) => a.identifier).join(',') }
         );
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) {
-            await apiHelpers.deleteContentType(blogTypeId);
-        }
-        if (authorTypeVariable) {
-            await apiHelpers.deleteContentType(authorTypeVariable);
-        }
+        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
-    test('P1 - Delete a single relation @critical', async ({ adminPage }) => {
+    test('delete a single relation @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
 
-        // Verify initial: 3 authors
         await relationshipField.expectRowCount(3);
-
-        // Delete the first author
         await relationshipField.deleteRow(0);
-
-        // Should now show 2
         await relationshipField.expectRowCount(2);
     });
 
-    test('P1 - Delete and verify persistence @critical', async ({ adminPage }) => {
+    test('delete and verify persistence @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
@@ -212,11 +175,9 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
 
-        // Delete one
         await relationshipField.deleteRow(0);
         await relationshipField.expectRowCount(2);
 
-        // Save
         await formPage.save();
         await adminPage.waitForTimeout(1000);
         await adminPage.reload();
@@ -226,7 +187,7 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
         await reloadedField.expectRowCount(2);
     });
 
-    test('P2 - Delete all items @smoke', async ({ adminPage }) => {
+    test('delete all items @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
@@ -234,22 +195,18 @@ test.describe('Journey 4 - Edit Existing Content: Remove Relations', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
 
-        // Delete all 3 items (always delete the first since list shifts)
         await relationshipField.deleteRow(0);
         await relationshipField.deleteRow(0);
         await relationshipField.deleteRow(0);
 
-        // Table should be empty
         await relationshipField.expectEmpty();
-
-        // Add button should be enabled again
         await relationshipField.expectAddButtonEnabled();
     });
 });
 
-// ─── Journey 4: Delete and Re-add in Single Mode ────────────────
+// ─── Delete and Re-add in Single Mode ───────────────────────────
 
-test.describe('Journey 4 - Delete in Single Mode and Re-add', () => {
+test.describe('Delete and Re-add (Single Mode)', () => {
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -275,7 +232,6 @@ test.describe('Journey 4 - Delete in Single Mode and Re-add', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        // Create 2 Authors
         authors = [];
         for (let i = 1; i <= 2; i++) {
             const author = await apiHelpers.createContentlet(authorTypeVariable, {
@@ -285,7 +241,6 @@ test.describe('Journey 4 - Delete in Single Mode and Re-add', () => {
             authors.push(author);
         }
 
-        // Create Blog with 1 related Author
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
             { title: `Blog SingleDel Test ${testSuffix}` },
@@ -294,38 +249,32 @@ test.describe('Journey 4 - Delete in Single Mode and Re-add', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) {
-            await apiHelpers.deleteContentType(blogTypeId);
-        }
-        if (authorTypeVariable) {
-            await apiHelpers.deleteContentType(authorTypeVariable);
-        }
+        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
-    test('P3 - Delete in single mode and re-add', async ({ adminPage }) => {
+    test('delete and re-add in single mode', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
         await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
-        const dialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new SelectExistingContentDialog(adminPage);
 
-        // Verify 1 author
         await relationshipField.expectRowCount(1);
-        await relationshipField.expectAddButtonDisabled();
+        // In single mode, menu options are disabled when item exists
+        await relationshipField.expectRelateExistingDisabled();
 
-        // Delete the author
         await relationshipField.deleteRow(0);
         await relationshipField.expectEmpty();
         await relationshipField.expectAddButtonEnabled();
 
-        // Add a different author
         await relationshipField.clickRelateExisting();
-        await dialog.waitForVisible();
-        await dialog.waitForContentLoaded();
-        await dialog.selectSingleItem(0);
-        await dialog.clickApply();
-        await dialog.expectClosed();
+        await selectDialog.waitForVisible();
+        await selectDialog.waitForContentLoaded();
+        await selectDialog.selectSingleItem(0);
+        await selectDialog.clickApply();
+        await selectDialog.expectClosed();
 
         await relationshipField.expectRowCount(1);
     });
