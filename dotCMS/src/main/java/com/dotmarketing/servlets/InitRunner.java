@@ -25,6 +25,7 @@ import java.net.http.HttpResponse;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -102,6 +103,18 @@ public class InitRunner implements Runnable {
             return List.of();
         }
     });
+
+    private int getServerNumber() {
+        String serverId = APILocator.getServerAPI().readServerId();
+        return Try.of(() -> Arrays.binarySearch(APILocator.getServerAPI().getAliveServersIds(), serverId))
+                .onFailure(e -> logError(e)).getOrElse(0);
+    }
+
+    private int getClusterNodeNumber() {
+        return Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).onFailure(e -> logError(e))
+                .getOrElse(0);
+    }
+
 
     private String getDefaultHostname() {
         return findAllHostNames.get()
@@ -193,6 +206,7 @@ public class InitRunner implements Runnable {
     total_sites     INTEGER,
     active_sites    INTEGER,
     cluster_nodes   INTEGER,
+    server_number   INTEGER,
     num_folders     INTEGER,
     workflows       INTEGER,
     uve_enabled     BOOLEAN,
@@ -226,7 +240,8 @@ public class InitRunner implements Runnable {
                 .put("recentlyEditedContent", getInt(RECENTLY_EDITED_CONTENT))
                 .put("totalLanguages", getInt(TOTAL_LANGUAGES))
                 .put("numFolders", getInt(TOTAL_FOLDERS))
-                .put("clusterNodes", Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(-1))
+                .put("serverNumber", getServerNumber())
+                .put("clusterNodes", getClusterNodeNumber())
                 .put("workflows", getInt(TOTAL_WORKFLOWS))
                 .put("uveEnabled", isUveEnabled())
                 .put("jvmInfo", getJVMInfo())
@@ -286,7 +301,6 @@ public class InitRunner implements Runnable {
 
         long jvmStartTime = ManagementFactory.getRuntimeMXBean().getStartTime();
 
-        String duration = DateUtil.prettyDateSince(new Date(jvmStartTime));
         resultMap.put("maxMemory", UtilMethods.prettyByteify(Runtime.getRuntime().maxMemory()));
         resultMap.put("allocatedMemory", UtilMethods.prettyByteify(Runtime.getRuntime().totalMemory()));
         resultMap.put("freeMemory", UtilMethods.prettyByteify(Runtime.getRuntime().freeMemory()));
@@ -294,7 +308,7 @@ public class InitRunner implements Runnable {
         resultMap.put("vmName", ManagementFactory.getRuntimeMXBean().getVmName());
         resultMap.put("vmVendor", ManagementFactory.getRuntimeMXBean().getVmVendor());
         resultMap.put("vmVersion", ManagementFactory.getRuntimeMXBean().getVmVersion());
-        resultMap.put("started", duration);
+        resultMap.put("started", DateUtil.prettyDateSince(new Date(jvmStartTime)));
         resultMap.put("startUpTime", new Date(jvmStartTime).toString());
 
         return resultMap;
