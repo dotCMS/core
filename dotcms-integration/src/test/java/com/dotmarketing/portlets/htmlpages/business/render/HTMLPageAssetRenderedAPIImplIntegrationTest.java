@@ -16,6 +16,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -74,6 +75,7 @@ import com.liferay.util.StringPool;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
@@ -3116,6 +3118,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         assertTrue("UVE script tag should be present in rendered HTML", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
         assertTrue("UVE script tag should appear before </body>",
                 html.indexOf(SDK_EDITOR_SCRIPT_SOURCE) < html.indexOf("</body>"));
+        assertFalse("initDotUVE must NOT be injected when no schema is present", html.contains("initDotUVE"));
     }
 
     /**
@@ -3157,8 +3160,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final String html = ((HTMLPageAssetRendered) pageView).getHtml();
 
         assertTrue("UVE script tag should be present in rendered HTML", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
-        assertTrue("UVE script tag should be appended at the end when no </body> tag exists",
-                html.endsWith(SDK_EDITOR_SCRIPT_SOURCE));
+        assertFalse("initDotUVE must NOT be injected when no schema is present", html.contains("initDotUVE"));
     }
 
     /**
@@ -3200,5 +3202,70 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final String html = ((HTMLPageAssetRendered) pageView).getHtml();
 
         assertFalse("UVE script tag must NOT be injected in LIVE mode", html.contains(SDK_EDITOR_SCRIPT_SOURCE));
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered}
+     * Given Scenario: A page has a contentlet whose ContentType has {@code STYLE_EDITOR_SCHEMA}
+     * in its metadata.
+     * When: The page is rendered in ADMIN_MODE.
+     * Should: Inject the {@code UVE_SCRIPTS_TEMPLATE} containing the {@code initDotUVE()} function
+     * and {@code registerStyleEditorSchemas()} call, instead of the plain SDK script tag.
+     */
+    @Test
+    public void shouldInjectUVEScriptsTemplateWhenContentTypeHasStyleEditorSchema()
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        final HttpSession mockSession = mock(HttpSession.class);
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        when(mockRequest.getSession(false)).thenReturn(mockSession);
+        when(mockRequest.getSession(true)).thenReturn(mockSession);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final Host site = sharedHost;
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        // Create ContentType and add STYLE_EDITOR_SCHEMA to its metadata
+        ContentType contentType = new ContentTypeDataGen()
+                .field(new FieldDataGen().velocityVarName("title").next())
+                .nextPersisted();
+
+        final Map<String, Object> schema = new HashMap<>();
+        schema.put("contentType", contentType.variable());
+        schema.put("sections", List.of());
+
+        contentType = ContentTypeBuilder.builder(contentType)
+                .metadata(Map.of("STYLE_EDITOR_SCHEMA", schema))
+                .build();
+        contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
+
+        // Create container, template and page
+        final Container container = createAndPublishContainer(site, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, site, container);
+
+        // Create contentlet and add to page
+        final Contentlet contentlet = createContentlet(language, site, contentType);
+        addToPage(container, page, contentlet);
+
+        when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        when(mockRequest.getRequestURI()).thenReturn(page.getURI());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+
+        final HTMLPageAssetRenderedAPIImpl api = new HTMLPageAssetRenderedAPIImpl();
+        final PageView pageView = api.getPageRendered(
+                mockRequest, mockResponse, systemUser, page.getURI(), PageMode.ADMIN_MODE);
+
+        final String html = ((HTMLPageAssetRendered) pageView).getHtml();
+
+        assertTrue("initDotUVE function should be injected when schema is present",
+                html.contains("initDotUVE"));
+        assertTrue("registerStyleEditorSchemas should be called with schema data",
+                html.contains("registerStyleEditorSchemas"));
+        assertTrue("ContentType variable should be serialized into the schema JSON",
+                html.contains(contentType.variable()));
+        assertFalse("Plain SDK script tag must NOT be injected when schema template is used",
+                html.contains(SDK_EDITOR_SCRIPT_SOURCE));
     }
 }
