@@ -43,6 +43,24 @@ public interface MetricType {
 
     Optional<Object> getValue();
 
+    /**
+     * Returns the qualified name for this metric, combining feature and name
+     * to produce a unique identifier (e.g., {@code CONTENTLETS_COUNT}).
+     *
+     * <p>This is the unique key used internally for caching, map keys, name filtering,
+     * and i18n lookups. The wire format ({@link #getName()} and {@link #getFeature()}
+     * as separate fields) is intentionally left unchanged.</p>
+     *
+     * <p>The downstream telemetry reporting layer already derives keys using
+     * {@code lower(feature) + '_' + lower(name)}, so this method aligns the
+     * internal representation with the external contract.</p>
+     *
+     * @return the qualified metric name in the format {@code FEATURE_NAME}
+     */
+    default String getQualifiedName() {
+        return getFeature().name() + "_" + getName();
+    }
+
     default Metric getMetric() {
         return new Metric.Builder()
                 .name(getName())

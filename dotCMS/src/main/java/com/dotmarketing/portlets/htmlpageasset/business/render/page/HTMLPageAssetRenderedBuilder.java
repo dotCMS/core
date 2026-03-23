@@ -71,6 +71,8 @@ public class HTMLPageAssetRenderedBuilder {
     private Experiment runningExperiment;
     private VanityURLView vanityUrl;
 
+    public static final String SDK_EDITOR_SCRIPT_SOURCE = "<script src=\"/ext/uve/dot-uve.js\"></script>";
+
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
      */
@@ -192,7 +194,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = this.getPageHTML(mode);
+            final String pageHTML = mode != PageMode.LIVE
+                    ? injectUVEScript(this.getPageHTML(mode))
+                    : this.getPageHTML(mode);
 
             transformLegacyContainerUUIDs(layout);
 
@@ -319,7 +323,7 @@ public class HTMLPageAssetRenderedBuilder {
     /**
      * Transforms legacy container UUIDs (LEGACY_RELATION_TYPE) to "1" throughout the template layout
      * to ensure consistency between layout and rendered container fields in the API response.
-     * 
+     *
      * @param layout The template layout to transform
      */
     private void transformLegacyContainerUUIDs(TemplateLayout layout) {
@@ -348,6 +352,24 @@ public class HTMLPageAssetRenderedBuilder {
                     .filter(container -> ContainerUUID.UUID_LEGACY_VALUE.equals(container.getUUID()))
                     .forEach(container -> container.setUuid(ContainerUUID.UUID_START_VALUE));
         }
+    }
+
+    /**
+     * Injects the UVE script tag before the closing {@code </body>} tag in the given HTML string.
+     * If no {@code </body>} tag is found, the script is appended at the end.
+     *
+     * @param html The rendered HTML content of the page.
+     * @return The HTML content with the UVE script injected.
+     */
+    private String injectUVEScript(final String html) {
+        if (!UtilMethods.isSet(html)) {
+            return html;
+        }
+        final int closingBodyIndex = html.toLowerCase().lastIndexOf("</body>");
+        if (closingBodyIndex != -1) {
+            return html.substring(0, closingBodyIndex) + SDK_EDITOR_SCRIPT_SOURCE + html.substring(closingBodyIndex);
+        }
+        return html + SDK_EDITOR_SCRIPT_SOURCE;
     }
 
 }
