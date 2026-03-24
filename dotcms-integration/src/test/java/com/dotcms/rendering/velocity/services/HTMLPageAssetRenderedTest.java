@@ -1665,7 +1665,6 @@ public class HTMLPageAssetRenderedTest {
                             "</div>";
 
             assertTrue(html.matches(regexExpected));
-
         } finally {
             Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE,
                     defaultContentToDefaultLangOriginalValue);
@@ -1908,7 +1907,6 @@ public class HTMLPageAssetRenderedTest {
             assertTrue("Page Mode: " + testCase.pageMode + " html: " + html,
                     html.contains(preExecuteCode));
         } finally {
-
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
                     defaultContentToDefaultLangOriginalValue);
         }
