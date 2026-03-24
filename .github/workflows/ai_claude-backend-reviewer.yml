@@ -201,6 +201,9 @@ jobs:
         2. Remove exact duplicates (same file + line flagged by two agents — keep the higher severity)
         3. Sort by severity: 🔴 Critical first, then 🟠 High, then 🟡 Medium
         4. If ALL four sub-agents returned NO_FINDINGS, the review is clean
+        5. If a sub-agent errored, returned empty output, or returned unparseable content,
+           do NOT treat it as NO_FINDINGS. Instead include a warning in the comment:
+           ⚠️ **<Domain> review unavailable** — sub-agent failed, manual review required for this area.
 
         ## STEP 5 — Post a single PR comment
 
