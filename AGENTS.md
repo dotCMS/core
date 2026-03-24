@@ -21,8 +21,8 @@ Tool versions (Java, Node) are read from `.sdkmanrc` and `.nvmrc` via [mise](htt
 just build                                         # full build (~8-15 min)
 just build-quicker                                 # core only (~2-3 min, uses cached frontend WAR)
 just dev                                           # start backend + frontend + wait for both
-just dev-run                                       # start backend on worktree's port (.dev-port, else 8082)
-just dev-stop                                      # stop current worktree's containers
+just dev-run                                       # start backend on project's port (.dev-port, else 8082)
+just dev-stop                                      # stop current project's containers
 just dev-restart                                   # stop + restart — use after a rebuild
 just dev-urls                                      # print live URLs (dotAdmin, REST API, health)
 just dev-health                                    # check server health
@@ -30,7 +30,7 @@ just dev-health                                    # check server health
 
 Run `just --list` for all available commands. For dev lifecycle details (shared services, modes, port resolution, frontend dev server, command chaining), see the `/dotcms-dev-services` skill.
 
-> **Dev loop:** `just build` → `just dev` → edit code → `just build-quicker` → `just dev-restart`. Port resolution: explicit arg > `.dev-port` file (set by `wt switch --create`) > 8082. The management port is always dynamic — use `just dev-urls`.
+> **Dev loop:** `just build` → `just dev` → edit code → `just build-quicker` → `just dev-restart`. Port resolution: explicit arg > `.dev-port` file > 8082. The management port is always dynamic — use `just dev-urls`.
 
 ### Testing
 
@@ -56,23 +56,12 @@ Tests are **silently skipped** without explicit `skip=false` flags: `-Dcoreit.te
 - `docs/infrastructure/DEV_ENVIRONMENT_SETUP.md` — mise/just setup, shell configuration, CI/CD
 - `docs/claude/CONTEXT_ARCHITECTURE.md` — where to place new instructions for AI agents
 
-## Worktrees
-
-Use [worktrunk](https://worktrunk.dev) (`wt`) to create isolated worktrees — **do not use Claude Code's built-in `EnterWorktree`**, which bypasses the project's post-create hooks and produces cold-start worktrees (no deps, no hooks, no port assignment).
-
-```bash
-wt switch --create feature-x                       # branch from main → own PR
-wt switch --create sub-task --base current-branch   # branch from current → merge back
-```
-
-New worktrees start warm — `.config/wt.toml` hooks run `just worktree-init`, re-tag the Docker image, and assign a deterministic port. Ready to `just dev` immediately. See the `/dotcms-worktree` skill for full workflow patterns.
-
 ## Gotchas
 
 - **Git hooks require mise** — run `mise install` to set up lefthook, or `LEFTHOOK=0 git commit` to skip
 - **Frontend memory** — standalone Nx builds may OOM; set `NODE_OPTIONS="--max_old_space_size=4096"`
 - **Frontend changes only show via `nx serve`** — `core-web/` edits are served live by `just dev-start-frontend`. They do NOT appear at the backend's `/dotAdmin`, which serves the Angular WAR from the Docker image. If changes are invisible, check which URL you're using.
-- **`build-quicker` shares `.m2` across worktrees** — `just build-quicker` uses the frontend WAR last installed by any worktree's `just build`. The recipe detects and warns when the WAR is from a different branch. Use `nx serve` for frontend dev, or `just build` for a consistent image.
+- **`build-quicker` shares `.m2` across projects** — `just build-quicker` uses the frontend WAR last installed by any project's `just build`. The recipe detects and warns when the WAR is from a different branch. Use `nx serve` for frontend dev, or `just build` for a consistent image.
 - **Docker image build fails with stale SHA** — run `docker builder prune -f` then retry
 - **Tests are silently skipped** — integration, postman, karate, and E2E tests all require explicit `-Dskip=false` flags or nothing runs
 - **Pre-push hook may auto-commit and exit 2** — if REST API Java files changed, the `openapi-freshness` hook regenerates the OpenAPI spec, auto-commits it, and exits 2 (not 1) to signal "retry needed". Agents must re-push after this; the second push will succeed.

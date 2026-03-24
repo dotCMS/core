@@ -11,9 +11,6 @@ lefthook = "latest"
 # Command runner for build/dev tasks
 just = "latest"
 
-# Git worktree manager for parallel AI agent sessions
-"github:max-sixty/worktrunk" = "latest"
-
 # GitHub CLI for issue/PR management
 gh = "latest"
 

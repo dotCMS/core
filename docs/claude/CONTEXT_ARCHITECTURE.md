@@ -237,7 +237,7 @@ Build commands, architecture decisions, and conventions belong in instruction fi
 
 ### Documenting raw commands instead of aliases
 
-Writing `./mvnw install -pl :dotcms-core -DskipTests -Ddocker.version.tag=$(just _worktree-slug)` instead of `just build-quicker`. The raw command consumes more tokens, breaks when flags change, and forces you to update documentation alongside implementation.
+Writing `./mvnw install -pl :dotcms-core -DskipTests -Ddocker.version.tag=$(just _project-slug)` instead of `just build-quicker`. The raw command consumes more tokens, breaks when flags change, and forces you to update documentation alongside implementation.
 
 ### Hard-coding values that the alias resolves
 
@@ -382,7 +382,6 @@ How these concepts are applied in this monorepo.
     rules/                      # Claude Code path-scoped rules (8 files)
     skills/                     # Claude Code skills
       dotcms-dev-services/      #   Dev lifecycle (start, stop, shared services)
-      dotcms-worktree/          #   Worktree management
       ...
   .cursor/
     rules/                      # Cursor path-scoped rules (6 files)
@@ -401,7 +400,6 @@ How these concepts are applied in this monorepo.
 | Setup commands | Root AGENTS.md | Always |
 | Core dev loop | Root AGENTS.md | Always |
 | Critical gotchas | Root AGENTS.md | Always |
-| "Don't use EnterWorktree" | Root AGENTS.md | Always |
 | Test skip flags warning | Root AGENTS.md | Always |
 | Cross-platform shell rules | Path-scoped rule (`justfile`, `*.sh`) | When editing scripts |
 | Java patterns (Config, Logger) | Path-scoped rule (`**/*.java`) | When editing Java |
@@ -410,7 +408,6 @@ How these concepts are applied in this monorepo.
 | Frontend Angular conventions | `core-web/AGENTS.md` | When reading core-web/ files |
 | Test patterns (Spectator, Jest) | Path-scoped rule (`**/*.spec.ts`) | When editing tests |
 | Dev lifecycle (dev-run, shared services) | Skill (`dotcms-dev-services`) | On demand |
-| Worktree management | Skill (`dotcms-worktree`) | On demand |
 | Detailed Java standards | `docs/backend/JAVA_STANDARDS.md` | Referenced from rules |
 | Detailed Angular standards | `docs/frontend/ANGULAR_STANDARDS.md` | Referenced from rules |
 

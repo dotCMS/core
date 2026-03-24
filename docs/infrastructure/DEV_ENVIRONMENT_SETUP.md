@@ -51,7 +51,6 @@ The primary configuration file, committed to the repository. Declares all tool v
 Key tools managed:
 - `lefthook` — git hooks manager (replaces husky + lint-staged)
 - `just` — command runner for build/dev tasks
-- `github:max-sixty/worktrunk` — git worktree manager for parallel AI agent sessions
 - `gh` — GitHub CLI
 - `python` — for automation scripts and CI diagnostics
 - `actionlint` + `shellcheck` — GitHub Actions and shell linting
@@ -60,7 +59,7 @@ Java and Node versions are **not** declared in `.mise.toml` — they are read fr
 
 ### `justfile`
 
-Defines the `setup` task and all build/dev/test commands. The setup recipe installs mise if not present, configures the developer's shell for both interactive and non-interactive sessions, installs all tools, and sets up worktrunk shell integration.
+Defines the `setup` task and all build/dev/test commands. The setup recipe installs mise if not present, configures the developer's shell for both interactive and non-interactive sessions, and installs all tools.
 
 ### `.gitignore`
 
@@ -88,14 +87,14 @@ The setup script writes two lines per developer based on their detected shell. T
 
 | File | Line added | Purpose |
 |---|---|---|
-| `~/.zprofile` / `~/.bash_profile` | `eval "$(mise activate zsh --shims)"` | Non-interactive sessions |
+| `~/.zprofile` / `~/.bash_profile` | `export PATH="$HOME/.local/share/mise/shims:$PATH"` | Non-interactive sessions (Claude Code, git hooks, cron) |
 | `~/.zshrc` / `~/.bashrc` | `eval "$(mise activate zsh)"` | Interactive terminal sessions |
 
 When an interactive shell starts, `mise activate` automatically removes the shims directory from PATH and replaces it with direct tool paths, so there is no duplication or conflict between the two lines.
 
 ### Why two files matter for Claude Code
 
-Tools like Claude Code spawn non-interactive shells that never source `.zshrc`, so `mise activate` never runs in those processes. By placing `mise activate --shims` in the profile file — which is sourced by all login shells — the shims directory is on PATH for every child process, including those spawned by Claude Code, without requiring any further activation.
+Tools like Claude Code spawn non-interactive shells that never source `.zshrc`, so `mise activate` never runs in those processes. By adding the mise shims directory directly to PATH in the profile file — which is sourced by all login shells — tools resolve for every child process, including those spawned by Claude Code, without requiring the mise binary itself to be on PATH or any eval activation.
 
 ```
 Login shell starts
@@ -124,77 +123,6 @@ java=21.0.8-ms
 Mise reads these automatically and uses them as the version source when no version is specified in `[tools]`. Developers already using nvm or sdkman do not need to change or remove their existing setup — both tools read the same version files and resolve to the same version. If both are active in the same shell, mise wins because `mise activate` re-runs on every prompt. The only practical side effect is that both tools maintain their own separate installation of the same version, resulting in duplicate disk usage but no functional conflict.
 
 Note that not all sdkman Java vendors are supported by mise. The following are **not** supported: `bsg` (Bisheng), `graal` (GraalVM), `nik` (Liberica NIK). If your project requires one of these, manual installation is needed for those developers.
-
----
-
-## Worktrunk (`wt`)
-
-[Worktrunk](https://worktrunk.dev) is a CLI for Git worktree management designed for running AI agents in parallel. It makes it trivial to give each Claude Code session its own isolated branch and working directory.
-
-It is installed automatically via mise using the GitHub backend:
-
-```toml
-[tools]
-"github:max-sixty/worktrunk" = "latest"
-```
-
-The `just setup` script runs `wt config shell install` after tool installation to enable the shell integration required for `wt switch` to `cd` automatically.
-
-### Warm starts — no rebuild needed
-
-When `wt switch --create` creates a new worktree, the project config (`.config/wt.toml`) runs `post-create` hooks that:
-
-1. **Trust mise** — so tool versions resolve immediately
-2. **Copy build artifacts** from the source worktree via `wt step copy-ignored` — uses copy-on-write (reflink) on APFS/btrfs, copying ~6GB in ~20s with near-zero disk cost
-3. **Run `yarn install`** — fast no-op if `node_modules/` was copied and the lockfile matches
-4. **Install lefthook** — wires up git hooks in the new worktree
-
-What gets copied is scoped by `.worktreeinclude`:
-
-| Pattern | Size | Why |
-|---------|------|-----|
-| `target/` | ~3GB | Maven build output — avoids full rebuild |
-| `core-web/node_modules/` | ~2.8GB | Frontend dependencies |
-| `core-web/.nx/` | varies | Nx build cache |
-| `core-web/.angular/cache` | varies | Angular compilation cache |
-| `.cache/` | varies | Maven build cache |
-| `.venv/` | small | Python virtual environment |
-
-The net effect: a new worktree is ready to `just dev-run` immediately after creation — no build step required unless the branch changes Java or frontend code that invalidates the copied artifacts.
-
-### Core workflow
-
-```sh
-# Create a new branch and worktree, launch Claude Code in it
-wt switch --create feature-auth -x claude
-
-# Run multiple agents in parallel
-wt switch -x claude -c feature-a -- 'Add user authentication'
-wt switch -x claude -c feature-b -- 'Fix the pagination bug'
-wt switch -x claude -c feature-c -- 'Write tests for the API'
-
-# Check status across all worktrees
-wt list
-
-# Merge completed work
-wt merge main
-```
-
-### Project config (`.config/wt.toml`)
-
-The project config is committed and shared with the team. It defines lifecycle hooks:
-
-```toml
-[post-create]
-mise = "command -v mise >/dev/null 2>&1 && mise trust || true"
-copy = "wt step copy-ignored --from {{ base }}"
-deps = "cd core-web && yarn install --frozen-lockfile"
-hooks = "lefthook install 2>/dev/null || true"
-```
-
-All `post-create` hooks are **blocking** — they complete before any `--execute` command runs, ensuring the worktree is fully ready for use.
-
-> **Windows note:** `wt` conflicts with Windows Terminal's command. Windows developers should use `git-wt` instead, or disable the Windows Terminal alias via Settings → Privacy & security → For developers → App Execution Aliases.
 
 ---
 
