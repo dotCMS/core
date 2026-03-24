@@ -186,7 +186,11 @@ export function reportIframeHeight(): { destroyHeightReporter: () => void } {
             document.body?.scrollHeight ?? 0,
             document.documentElement?.scrollHeight ?? 0
         );
-        window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
+
+        sendMessageToUVE({
+            action: DotCMSUVEAction.IFRAME_HEIGHT,
+            payload: { height }
+        });
     };
 
     let rafOuter: number | null = null;

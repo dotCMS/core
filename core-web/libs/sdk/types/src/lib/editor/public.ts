@@ -154,6 +154,10 @@ export enum DotCMSUVEAction {
      */
     REGISTER_STYLE_SCHEMAS = 'register-style-schemas',
     /**
+     * Tell the editor to report the iframe height
+     */
+    IFRAME_HEIGHT = 'iframe-height',
+    /**
      * Tell the editor to do nothing
      */
     NOOP = 'noop'

@@ -9,8 +9,7 @@ import {
     effect,
     inject,
     input,
-    output,
-    signal
+    output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -76,7 +75,7 @@ export class DotUveIframeComponent {
      * Current height of the iframe document content.
      * @type {Signal<number>}
      */
-    readonly $iframeDocHeight = signal<number>(0);
+    readonly $iframeDocHeight = this.uveStore.$viewIframeDocHeight;
 
     /**
      * Emits on every iframe load to cancel the previous click listener subscription.

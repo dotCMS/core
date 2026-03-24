@@ -553,7 +553,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         // Bridge service handles message events - needs iframe which is available now
-        const messageStream = this.bridgeService.initialize(this.iframe, this.uveStore);
+        const messageStream = this.bridgeService.initialize(this.iframe);
 
         messageStream.subscribe((event) => {
             this.bridgeService.handleMessage(

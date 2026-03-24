@@ -264,6 +264,9 @@ export class DotUveActionsHandlerService {
             },
             [DotCMSUVEAction.GET_PAGE_DATA]: () => {
                 /* Get page data - handled by bridge service */
+            },
+            [DotCMSUVEAction.IFRAME_HEIGHT]: (payload: { height: number }) => {
+                uveStore.viewSetIframeDocHeight(payload.height);
             }
         };
 
