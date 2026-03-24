@@ -1,6 +1,8 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
@@ -9,9 +11,11 @@ import { patchState, signalState } from '@ngrx/signals';
 import {
     DotCrudService,
     DotHttpErrorManagerService,
-    DotMessageDisplayService
+    DotMessageDisplayService,
+    DotMessageService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 import {
     StyleEditorField,
     StyleEditorFieldSchema,
@@ -21,9 +25,28 @@ import {
 } from '@dotcms/uve';
 
 import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
-import { BuilderField, BuilderSection, createField, createSection } from './models';
+import { BuilderField, BuilderSection, createField, createSection, fieldHasErrors } from './models';
 
 const STYLE_EDITOR_SCHEMA_KEY = 'styleEditorSchema';
+
+/** A single button action within a confirmation dialog. */
+interface ConfirmAction {
+    label: string;
+    /** Render as text-only (no border/background). */
+    text?: boolean;
+    /** Render with an outline border. */
+    outlined?: boolean;
+    /** PrimeNG button severity. Defaults to 'primary'. */
+    severity?: 'primary' | 'secondary' | 'danger' | 'contrast';
+    callback: () => void;
+}
+
+/** Configuration for the single shared confirmation dialog. */
+interface ConfirmDialogConfig {
+    header: string;
+    message: string;
+    actions: ConfirmAction[];
+}
 
 /** Internal reactive state for the style editor builder. */
 interface DotStyleEditorBuilderState {
@@ -35,13 +58,20 @@ interface DotStyleEditorBuilderState {
 
 @Component({
     selector: 'dot-style-editor-builder',
-    imports: [ButtonModule, DotStyleEditorSectionComponent],
+    imports: [
+        ButtonModule,
+        DialogModule,
+        TooltipModule,
+        DotMessagePipe,
+        DotStyleEditorSectionComponent
+    ],
     templateUrl: './dot-style-editor-builder.component.html'
 })
 export class DotStyleEditorBuilderComponent {
     readonly #crudService = inject(DotCrudService);
     readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     /** Signal state holding sections and saving status. */
     readonly #state = signalState<DotStyleEditorBuilderState>({ sections: [], saving: false });
@@ -75,6 +105,26 @@ export class DotStyleEditorBuilderComponent {
      */
     readonly $isDirty = computed(() => JSON.stringify(this.$sections()) !== this.#formSnapshot());
 
+    /** Config for the shared confirmation dialog. Null means the dialog is closed. */
+    readonly #confirmState = signal<ConfirmDialogConfig | null>(null);
+
+    /** Becomes true after the first save attempt; drives error display in child components. */
+    readonly #saveAttempted = signal(false);
+
+    /** Public read-only signal consumed by the template to thread showErrors into sections. */
+    readonly $saveAttempted = this.#saveAttempted.asReadonly();
+
+    /**
+     * True when every field in every section passes all validation rules.
+     * Evaluated after each state change so it is always current.
+     */
+    readonly $isFormValid = computed(() =>
+        this.$sections().every((section) => section.fields.every((f) => !fieldHasErrors(f)))
+    );
+
+    /** Public read-only view of the confirmation dialog state for template binding. */
+    readonly $confirmState = this.#confirmState.asReadonly();
+
     constructor() {
         // Load the schema from metadata once, when the content type is first available.
         // Subsequent saves update $sections in-place, so we don't reload on every input change.
@@ -97,6 +147,11 @@ export class DotStyleEditorBuilderComponent {
      * entirely rather than saving an empty schema, keeping the metadata clean.
      */
     save(): void {
+        // Always mark save as attempted so validation errors become visible
+        this.#saveAttempted.set(true);
+
+        if (!this.$isFormValid()) return;
+
         const contentType = this.$contentType();
         if (!contentType) return;
 
@@ -116,7 +171,10 @@ export class DotStyleEditorBuilderComponent {
                     fields: section.fields.map((field) => this.#toStyleEditorField(field))
                 }))
             });
-            updatedMetadata = { ...existingMetadata, [STYLE_EDITOR_SCHEMA_KEY]: JSON.stringify(schema) };
+            updatedMetadata = {
+                ...existingMetadata,
+                [STYLE_EDITOR_SCHEMA_KEY]: JSON.stringify(schema)
+            };
         }
 
         // `systemActionMappings` contains full workflow-action objects that the API
@@ -135,10 +193,13 @@ export class DotStyleEditorBuilderComponent {
             .subscribe({
                 next: () => {
                     patchState(this.#state, { saving: false });
+                    this.#saveAttempted.set(false);
                     this.#formSnapshot.set(JSON.stringify(this.$sections()));
                     this.#dotMessageDisplayService.push({
                         life: 3000,
-                        message: 'Style Editor schema saved successfully',
+                        message: this.#dotMessageService.get(
+                            'style.editor.form.builder.saved.message'
+                        ),
                         severity: DotMessageSeverity.SUCCESS,
                         type: DotMessageType.SIMPLE_MESSAGE
                     });
@@ -210,7 +271,11 @@ export class DotStyleEditorBuilderComponent {
             ).map((o) =>
                 field.type === 'checkboxGroup'
                     ? { label: o.label, key: o.key ?? '' }
-                    : { label: o.label, value: o.value ?? '', ...(o.imageURL ? { imageURL: o.imageURL } : {}) }
+                    : {
+                          label: o.label,
+                          value: o.value ?? '',
+                          ...(o.imageURL ? { imageURL: o.imageURL } : {})
+                      }
             )
         };
     }
@@ -263,11 +328,130 @@ export class DotStyleEditorBuilderComponent {
         }
     }
 
+    /** Closes the confirmation dialog without taking any action. */
+    closeConfirm(): void {
+        this.#confirmState.set(null);
+    }
+
+    /**
+     * Shows an "Unsaved Changes" confirmation before discarding edits.
+     * Triggered by the Cancel button in the bottom action bar.
+     */
+    requestCancel(): void {
+        this.#confirmState.set({
+            header: this.#dotMessageService.get('style.editor.form.builder.dialog.unsaved.header'),
+            message: this.#dotMessageService.get(
+                'style.editor.form.builder.dialog.unsaved.message'
+            ),
+            actions: [
+                {
+                    label: this.#dotMessageService.get('style.editor.form.builder.dialog.cancel'),
+                    text: true,
+                    callback: () => this.#confirmState.set(null)
+                },
+                {
+                    label: this.#dotMessageService.get('style.editor.form.builder.dialog.leave'),
+                    outlined: true,
+                    callback: () => {
+                        this.#confirmState.set(null);
+                        this.#discardChanges();
+                    }
+                },
+                {
+                    label: this.#dotMessageService.get(
+                        'style.editor.form.builder.dialog.save.close'
+                    ),
+                    callback: () => {
+                        this.#confirmState.set(null);
+                        this.save();
+                    }
+                }
+            ]
+        });
+    }
+
+    /**
+     * Shows a "Delete Section" confirmation before removing the section.
+     *
+     * @param index - Zero-based position of the section to delete.
+     */
+    requestRemoveSection(index: number): void {
+        const section = this.$sections()[index];
+        this.#confirmState.set({
+            header: this.#dotMessageService.get(
+                'style.editor.form.builder.dialog.delete.section.header'
+            ),
+            message: this.#dotMessageService.get(
+                'style.editor.form.builder.dialog.delete.section.message',
+                section.title
+            ),
+            actions: [
+                {
+                    label: this.#dotMessageService.get('style.editor.form.builder.dialog.cancel'),
+                    text: true,
+                    callback: () => this.#confirmState.set(null)
+                },
+                {
+                    label: this.#dotMessageService.get('style.editor.form.builder.dialog.delete'),
+                    callback: () => {
+                        this.#confirmState.set(null);
+                        this.removeSection(index);
+                    }
+                }
+            ]
+        });
+    }
+
+    /**
+     * Shows a "Delete Field" confirmation before removing the field.
+     *
+     * @param sectionIndex - Zero-based position of the parent section.
+     * @param fieldUid - Unique identifier of the field to delete.
+     */
+    requestRemoveField(sectionIndex: number, fieldUid: string): void {
+        const field = this.$sections()[sectionIndex]?.fields.find((f) => f.uid === fieldUid);
+        this.#confirmState.set({
+            header: this.#dotMessageService.get(
+                'style.editor.form.builder.dialog.delete.field.header'
+            ),
+            message: this.#dotMessageService.get(
+                'style.editor.form.builder.dialog.delete.field.message',
+                field?.label || this.#dotMessageService.get('style.editor.form.builder.field.new')
+            ),
+            actions: [
+                {
+                    label: this.#dotMessageService.get('style.editor.form.builder.dialog.cancel'),
+                    text: true,
+                    callback: () => this.#confirmState.set(null)
+                },
+                {
+                    label: this.#dotMessageService.get('style.editor.form.builder.dialog.delete'),
+                    callback: () => {
+                        this.#confirmState.set(null);
+                        this.removeField(sectionIndex, fieldUid);
+                    }
+                }
+            ]
+        });
+    }
+
+    /** Resets the form back to the last saved/loaded snapshot, discarding all unsaved changes. */
+    #discardChanges(): void {
+        const sections = JSON.parse(this.#formSnapshot()) as BuilderSection[];
+        patchState(this.#state, { sections });
+    }
+
     /**
      * Appends a new empty section at the end of the sections list.
      */
     addSection(): void {
-        patchState(this.#state, ({ sections }) => ({ sections: [...sections, createSection()] }));
+        const title = this.#dotMessageService.get(
+            'style.editor.form.builder.section.default.title'
+        );
+        const fieldLabel = this.#dotMessageService.get('style.editor.form.builder.field.new');
+        patchState(this.#state, ({ sections }) => ({
+            sections: [...sections, createSection(title, fieldLabel)]
+        }));
     }
 
     /**
@@ -332,11 +516,12 @@ export class DotStyleEditorBuilderComponent {
      * @param sectionIndex - Zero-based position of the parent section.
      */
     addField(sectionIndex: number): void {
+        const fieldLabel = this.#dotMessageService.get('style.editor.form.builder.field.new');
         patchState(this.#state, ({ sections }) => {
             const updated = [...sections];
             updated[sectionIndex] = {
                 ...updated[sectionIndex],
-                fields: [...updated[sectionIndex].fields, createField()]
+                fields: [...updated[sectionIndex].fields, createField(fieldLabel)]
             };
 
             return { sections: updated };

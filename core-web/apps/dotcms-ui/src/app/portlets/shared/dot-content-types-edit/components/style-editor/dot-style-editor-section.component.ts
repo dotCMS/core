@@ -1,47 +1,89 @@
-import { Component, effect, input, output, signal, untracked } from '@angular/core';
+import {
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    output,
+    signal,
+    untracked
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { PanelModule } from 'primeng/panel';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotStyleEditorFieldFormComponent } from './dot-style-editor-field-form.component';
-import { BuilderField, BuilderSection } from './models';
+import { BuilderField, BuilderSection, fieldHasErrors } from './models';
 
 @Component({
     selector: 'dot-style-editor-section',
-    imports: [FormsModule, InputTextModule, DotStyleEditorFieldFormComponent],
+    imports: [
+        FormsModule,
+        InputTextModule,
+        PanelModule,
+        ButtonModule,
+        TooltipModule,
+        DotMessagePipe,
+        DotStyleEditorFieldFormComponent
+    ],
     templateUrl: './dot-style-editor-section.component.html'
 })
 export class DotStyleEditorSectionComponent {
-    /** The section data passed from the builder. */
+    readonly #dotMessageService = inject(DotMessageService);
     readonly $section = input.required<BuilderSection>({ alias: 'section' });
-    /** Whether this is the first section in the list (disables move-up). */
     readonly $isFirst = input<boolean>(false, { alias: 'isFirst' });
-    /** Whether this is the last section in the list (disables move-down). */
     readonly $isLast = input<boolean>(false, { alias: 'isLast' });
+    readonly $showErrors = input<boolean>(false, { alias: 'showErrors' });
 
-    /** Emits when the user clicks move-up for this section. */
     readonly moveUp = output<void>();
-    /** Emits when the user clicks move-down for this section. */
     readonly moveDown = output<void>();
-    /** Emits when the user clicks delete for this section. */
     readonly delete = output<void>();
-    /** Emits the new title string whenever the user edits the section title. */
     readonly titleChange = output<string>();
-    /** Emits when the user clicks the "Add Field" button. */
     readonly addField = output<void>();
-    /** Emits the UID of the field the user wants to remove. */
     readonly removeField = output<string>();
-    /** Emits the UID of the field the user wants to move up. */
     readonly moveFieldUp = output<string>();
-    /** Emits the UID of the field the user wants to move down. */
     readonly moveFieldDown = output<string>();
-    /** Emits the updated `BuilderField` whenever any field form changes. */
     readonly fieldChange = output<BuilderField>();
 
-    /** Local title signal to prevent cursor jumping on re-render. */
     readonly $title = signal('New Section');
 
-    /** UID of the last rendered section — used to detect when a different section is shown. */
+    readonly $isCollapsed = signal(false);
+
+    readonly $addFieldLabel = computed(() =>
+        this.#dotMessageService.get('style.editor.form.builder.section.add.field', this.$title())
+    );
+
+    readonly $hasFieldErrors = computed(
+        () => this.$showErrors() && this.$section().fields.some(fieldHasErrors)
+    );
+
+    readonly $panelPT = computed(() => ({
+        root: {
+            class: [
+                'w-full',
+                'rounded-[16px]',
+                '!shadow-none',
+                'overflow-hidden',
+                this.$hasFieldErrors() ? '!border-red-300' : ''
+            ]
+        },
+        header: {
+            class: ['!min-h-[4.786rem]', '!transition-colors', '!bg-slate-50']
+        },
+        content: {
+            class: ['!bg-white']
+        },
+        pcToggleButton: {
+            root: { class: '!hidden' }
+        }
+    }));
+
     #lastSectionUid = '';
 
     constructor() {
@@ -56,11 +98,6 @@ export class DotStyleEditorSectionComponent {
         });
     }
 
-    /**
-     * Updates the local title signal and notifies the parent of the new value.
-     *
-     * @param value - The new section title entered by the user.
-     */
     setTitle(value: string): void {
         this.$title.set(value);
         this.titleChange.emit(value);

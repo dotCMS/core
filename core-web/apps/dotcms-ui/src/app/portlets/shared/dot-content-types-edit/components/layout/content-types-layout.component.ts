@@ -5,6 +5,7 @@ import {
     Component,
     ElementRef,
     OnInit,
+    computed,
     effect,
     inject,
     input,
@@ -15,6 +16,7 @@ import {
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabsModule } from 'primeng/tabs';
 
@@ -22,25 +24,21 @@ import { take } from 'rxjs/operators';
 
 import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import {
-    DotApiLinkComponent,
-    DotAutofocusDirective,
-    DotCopyButtonComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotAutofocusDirective, DotMessagePipe, DotClipboardUtil } from '@dotcms/ui';
 
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
-import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor-builder.component';
 import { ContentTypesFieldsListComponent } from '../fields/content-types-fields-list';
 import { FieldDragDropService } from '../fields/service';
+import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor-builder.component';
 
 @Component({
     selector: 'dot-content-type-layout',
     templateUrl: 'content-types-layout.component.html',
+    providers: [DotClipboardUtil],
     imports: [
         CommonModule,
         AsyncPipe,
@@ -48,9 +46,7 @@ import { FieldDragDropService } from '../fields/service';
         SplitButtonModule,
         ButtonModule,
         InputTextModule,
-        InputTextModule,
-        DotApiLinkComponent,
-        DotCopyButtonComponent,
+        MenuModule,
         DotMessagePipe,
         DotAutofocusDirective,
         DotInlineEditComponent,
@@ -67,6 +63,7 @@ export class ContentTypesLayoutComponent implements OnInit {
     private fieldDragDropService = inject(FieldDragDropService);
     private dotEventsService = inject(DotEventsService);
     private dotCurrentUserService = inject(DotCurrentUserService);
+    private dotClipboardUtil = inject(DotClipboardUtil);
 
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
     openEditDialog = output<unknown>();
@@ -82,6 +79,37 @@ export class ContentTypesLayoutComponent implements OnInit {
     addToMenuContentType = false;
 
     actions: MenuItem[];
+
+    /** Context menu items derived from the current content type. */
+    readonly $menuItems = computed<MenuItem[]>(() => {
+        const ct = this.$contentType();
+
+        return [
+            {
+                label: this.dotMessageService.get('contenttypes.content.add_to_menu'),
+                icon: 'pi pi-plus-circle',
+                command: () => this.addContentInMenu()
+            },
+            {
+                label: this.dotMessageService.get('contenttypes.content.open.api'),
+                icon: 'pi pi-external-link',
+                command: () => window.open(`/api/v1/contenttype/id/${ct.id}`, '_blank')
+            },
+            {
+                label: this.dotMessageService.get('contenttypes.content.copy.id'),
+                icon: 'pi pi-copy',
+                command: () => this.dotClipboardUtil.copy(ct.id)
+            },
+            {
+                label: this.dotMessageService.get(
+                    'contenttypes.content.copy.variable',
+                    ct.variable
+                ),
+                icon: 'pi pi-copy',
+                command: () => this.dotClipboardUtil.copy(ct.variable)
+            }
+        ];
+    });
 
     ngOnInit(): void {
         this.showPermissionsTab = this.dotCurrentUserService.hasAccessToPortlet('permissions');

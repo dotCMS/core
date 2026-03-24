@@ -1,66 +1,88 @@
-import { Component, effect, input, output, untracked } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-
 import { patchState, signalState } from '@ngrx/signals';
 
-import { StyleEditorFieldType } from '@dotcms/uve';
-
 import {
-    BuilderField,
-    BuilderOption,
-    FIELD_TYPE_OPTIONS,
-    toLabelIdentifier
-} from './models';
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    output,
+    signal,
+    untracked
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { PanelModule } from 'primeng/panel';
+import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { StyleEditorFieldType } from '@dotcms/uve';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { BuilderField, BuilderOption, FIELD_TYPE_OPTIONS, toLabelIdentifier } from './models';
+
+/** Per-option validation error messages. */
+interface OptionErrors {
+    label: string;
+    value: string;
+    key: string;
+    imageURL: string;
+}
 
 /** Reactive form state for a single style editor field. */
 interface FieldFormState {
-    /** The field widget type. */
     type: StyleEditorFieldType;
-    /** Human-readable label shown above the field. */
     label: string;
-    /** Unique CSS-friendly identifier for the field. */
     identifier: string;
-    /** Whether the user has manually edited the identifier, breaking the auto-link from label. */
     identifierTouched: boolean;
-    /** Placeholder text shown inside input fields. */
     placeholder: string;
-    /** HTML input type for `input` fields. */
     inputType: 'text' | 'number';
-    /** Number of columns for radio button layouts. */
     columns: 1 | 2;
-    /** Configurable options for dropdown, radio, and checkboxGroup fields. */
     options: BuilderOption[];
+    /** Tracks which option values have been manually edited (breaks auto-compute from label). */
+    optionValueTouched: boolean[];
 }
 
 @Component({
     selector: 'dot-style-editor-field-form',
-    imports: [FormsModule, InputTextModule, SelectModule],
+    imports: [
+        FormsModule,
+        InputTextModule,
+        SelectModule,
+        PanelModule,
+        ButtonModule,
+        SelectButtonModule,
+        DotMessagePipe
+    ],
     templateUrl: './dot-style-editor-field-form.component.html'
 })
 export class DotStyleEditorFieldFormComponent {
-    /** The field data passed from the parent section. */
+    readonly #dotMessageService = inject(DotMessageService);
     readonly $field = input.required<BuilderField>({ alias: 'field' });
-    /** Whether this is the first field in the section (disables move-up). */
     readonly $isFirst = input<boolean>(false, { alias: 'isFirst' });
-    /** Whether this is the last field in the section (disables move-down). */
     readonly $isLast = input<boolean>(false, { alias: 'isLast' });
+    readonly $showErrors = input<boolean>(false, { alias: 'showErrors' });
 
-    /** Emits the updated field value whenever any form control changes. */
     readonly fieldChange = output<BuilderField>();
-    /** Emits when the user clicks the delete button for this field. */
     readonly delete = output<void>();
-    /** Emits when the user clicks move-up. */
     readonly moveUp = output<void>();
-    /** Emits when the user clicks move-down. */
     readonly moveDown = output<void>();
 
-    /** Available field type options shown in the type dropdown. */
-    readonly fieldTypes = FIELD_TYPE_OPTIONS;
+    readonly fieldTypes = FIELD_TYPE_OPTIONS.map((opt) => ({
+        value: opt.value,
+        label: this.#dotMessageService.get(opt.labelKey)
+    }));
 
-    /** Internal reactive state for all form controls. */
+    readonly $isCollapsed = signal(false);
+
+    readonly columnOptions = [
+        { label: '1', value: 1 },
+        { label: '2', value: 2 }
+    ] as const;
+
     readonly #state = signalState<FieldFormState>({
         type: 'input',
         label: 'New Field',
@@ -69,27 +91,122 @@ export class DotStyleEditorFieldFormComponent {
         placeholder: '',
         inputType: 'text',
         columns: 1,
-        options: [{ label: '', value: '' }]
+        options: [{ label: '', value: '' }],
+        optionValueTouched: [false]
     });
 
-    /** UID of the last rendered field — used to detect when a different field is shown. */
     #lastUid = '';
 
-    // Expose individual state signals for template binding
-    /** Current field type signal. */
     readonly $type = this.#state.type;
-    /** Current label signal. */
     readonly $label = this.#state.label;
-    /** Current identifier signal. */
     readonly $identifier = this.#state.identifier;
-    /** Whether the identifier has been manually edited. */
     readonly $identifierTouched = this.#state.identifierTouched;
-    /** Current placeholder signal. */
     readonly $placeholder = this.#state.placeholder;
-    /** Current columns signal. */
     readonly $columns = this.#state.columns;
-    /** Current options signal. */
     readonly $options = this.#state.options;
+
+    // ── Validation signals ────────────────────────────────────────────────
+
+    readonly $labelError = computed(() =>
+        this.$showErrors() && !this.$label().trim()
+            ? this.#dotMessageService.get('style.editor.form.builder.field.error.label.required')
+            : ''
+    );
+
+    readonly $identifierError = computed(() =>
+        this.$showErrors() && !this.$identifier().trim()
+            ? this.#dotMessageService.get(
+                  'style.editor.form.builder.field.error.identifier.required'
+              )
+            : ''
+    );
+
+    readonly $optionsCountError = computed(() => {
+        if (!this.$showErrors() || this.$type() === 'input') return '';
+
+        return this.$options().length === 0
+            ? this.#dotMessageService.get('style.editor.form.builder.field.error.options.required')
+            : '';
+    });
+
+    readonly $optionErrors = computed((): OptionErrors[] => {
+        const type = this.$type();
+        const showErrors = this.$showErrors();
+
+        return this.$options().map((opt) => ({
+            label:
+                showErrors && !opt.label?.trim()
+                    ? this.#dotMessageService.get(
+                          'style.editor.form.builder.field.error.option.label.required'
+                      )
+                    : '',
+            value:
+                showErrors && type !== 'checkboxGroup' && !opt.value?.trim()
+                    ? this.#dotMessageService.get(
+                          'style.editor.form.builder.field.error.option.value.required'
+                      )
+                    : '',
+            key:
+                showErrors && type === 'checkboxGroup' && !opt.key?.trim()
+                    ? this.#dotMessageService.get(
+                          'style.editor.form.builder.field.error.option.key.required'
+                      )
+                    : '',
+            imageURL:
+                showErrors &&
+                type === 'radio' &&
+                opt.imageURL !== undefined &&
+                !opt.imageURL?.trim()
+                    ? this.#dotMessageService.get(
+                          'style.editor.form.builder.field.error.option.image.required'
+                      )
+                    : ''
+        }));
+    });
+
+    readonly $hasErrors = computed(() => {
+        if (!this.$showErrors()) return false;
+        if (!this.$label().trim() || !this.$identifier().trim()) return true;
+        if (this.$type() === 'input') return false;
+
+        const opts = this.$options();
+        if (opts.length === 0) return true;
+
+        const type = this.$type();
+
+        return opts.some((opt) => {
+            if (!opt.label?.trim()) return true;
+            if (type === 'checkboxGroup') return !opt.key?.trim();
+            if (!opt.value?.trim()) return true;
+            if (type === 'radio' && opt.imageURL !== undefined && !opt.imageURL?.trim())
+                return true;
+
+            return false;
+        });
+    });
+
+    readonly $panelPT = computed(() => ({
+        root: {
+            class: [
+                'w-full',
+                'rounded-[12px]',
+                '!shadow-none',
+                'overflow-hidden',
+                'group/field',
+                this.$hasErrors() ? '!border-red-300' : ''
+            ]
+        },
+        header: {
+            style: 'background-color: #fbfcfd',
+            class: ['!min-h-[4.214rem]', 'border-b', '!border-gray-200']
+        },
+        content: {
+            class: ['!bg-white']
+        },
+        pcToggleButton: {
+            root: { class: '!hidden' }
+        }
+    }));
 
     constructor() {
         effect(() => {
@@ -105,19 +222,14 @@ export class DotStyleEditorFieldFormComponent {
                         placeholder: field.placeholder ?? '',
                         inputType: field.inputType,
                         columns: field.columns,
-                        options: [...field.options]
+                        options: [...field.options],
+                        optionValueTouched: field.options.map(() => false)
                     });
                 });
             }
         });
     }
 
-    /**
-     * Updates the label and, if the identifier has not been manually touched,
-     * auto-derives the identifier from the new label value. Emits the change.
-     *
-     * @param value - The new label string entered by the user.
-     */
     setLabel(value: string): void {
         if (!this.#state.identifierTouched()) {
             patchState(this.#state, { label: value, identifier: toLabelIdentifier(value) });
@@ -128,21 +240,11 @@ export class DotStyleEditorFieldFormComponent {
         this.#emitChange();
     }
 
-    /**
-     * Updates the identifier and marks it as manually touched so that
-     * further label changes no longer auto-update it. Emits the change.
-     *
-     * @param value - The new identifier string entered by the user.
-     */
     setIdentifier(value: string): void {
         patchState(this.#state, { identifier: value, identifierTouched: true });
         this.#emitChange();
     }
 
-    /**
-     * Resets the identifier back to the auto-generated value derived from
-     * the current label and clears the touched flag. Emits the change.
-     */
     resetIdentifier(): void {
         patchState(this.#state, {
             identifier: toLabelIdentifier(this.#state.label()),
@@ -151,102 +253,62 @@ export class DotStyleEditorFieldFormComponent {
         this.#emitChange();
     }
 
-    /**
-     * Updates the field type. Emits the change.
-     *
-     * @param value - The new `StyleEditorFieldType` value.
-     */
     setType(value: StyleEditorFieldType): void {
         patchState(this.#state, { type: value });
         this.#emitChange();
     }
 
-    /**
-     * Updates the placeholder text for `input`-type fields. Emits the change.
-     *
-     * @param value - The new placeholder string.
-     */
     setPlaceholder(value: string): void {
         patchState(this.#state, { placeholder: value });
         this.#emitChange();
     }
 
-    /**
-     * Updates the number of columns for `radio`-type fields. Emits the change.
-     *
-     * @param value - Either `1` or `2` columns.
-     */
     setColumns(value: 1 | 2): void {
         patchState(this.#state, { columns: value });
         this.#emitChange();
     }
 
-    /**
-     * Appends a new blank option row to the options list.
-     * Creates a `{ label, key }` shape for checkboxGroup fields and
-     * a `{ label, value }` shape for all other option-based types.
-     * Emits the change.
-     */
     addOption(): void {
         const isCheckbox = this.#state.type() === 'checkboxGroup';
-        patchState(this.#state, ({ options }) => ({
-            options: [...options, isCheckbox ? { label: '', key: '' } : { label: '', value: '' }]
+        patchState(this.#state, ({ options, optionValueTouched }) => ({
+            options: [...options, isCheckbox ? { label: '', key: '' } : { label: '', value: '' }],
+            optionValueTouched: [...optionValueTouched, false]
         }));
         this.#emitChange();
     }
 
-    /**
-     * Removes the option at the given index. Emits the change.
-     *
-     * @param index - Zero-based position of the option to remove.
-     */
     removeOption(index: number): void {
-        patchState(this.#state, ({ options }) => ({
-            options: options.filter((_, i) => i !== index)
+        patchState(this.#state, ({ options, optionValueTouched }) => ({
+            options: options.filter((_, i) => i !== index),
+            optionValueTouched: optionValueTouched.filter((_, i) => i !== index)
         }));
         this.#emitChange();
     }
 
-    /**
-     * Updates the label of the option at the given index. Emits the change.
-     *
-     * @param index - Zero-based position of the option.
-     * @param label - New label string for the option.
-     */
     updateOptionLabel(index: number, label: string): void {
-        patchState(this.#state, ({ options }) => {
+        patchState(this.#state, ({ options, optionValueTouched }) => {
             const updated = [...options];
-            updated[index] = { ...updated[index], label };
+            updated[index] = optionValueTouched[index]
+                ? { ...updated[index], label }
+                : { ...updated[index], label, value: toLabelIdentifier(label) };
 
             return { options: updated };
         });
         this.#emitChange();
     }
 
-    /**
-     * Updates the value of the option at the given index. Emits the change.
-     *
-     * @param index - Zero-based position of the option.
-     * @param value - New value string for the option.
-     */
     updateOptionValue(index: number, value: string): void {
-        patchState(this.#state, ({ options }) => {
+        patchState(this.#state, ({ options, optionValueTouched }) => {
             const updated = [...options];
             updated[index] = { ...updated[index], value };
+            const updatedTouched = [...optionValueTouched];
+            updatedTouched[index] = true;
 
-            return { options: updated };
+            return { options: updated, optionValueTouched: updatedTouched };
         });
         this.#emitChange();
     }
 
-    /**
-     * Updates the `key` of the option at the given index (checkboxGroup only).
-     * The key is the identifier used to retrieve the boolean checked/unchecked value
-     * at runtime. Emits the change.
-     *
-     * @param index - Zero-based position of the option.
-     * @param key - New key string for the option.
-     */
     updateOptionKey(index: number, key: string): void {
         patchState(this.#state, ({ options }) => {
             const updated = [...options];
@@ -257,12 +319,6 @@ export class DotStyleEditorFieldFormComponent {
         this.#emitChange();
     }
 
-    /**
-     * Updates the imageURL of the option at the given index. Emits the change.
-     *
-     * @param index - Zero-based position of the option.
-     * @param imageURL - New image URL string for the option.
-     */
     updateOptionImageURL(index: number, imageURL: string): void {
         patchState(this.#state, ({ options }) => {
             const updated = [...options];
@@ -273,13 +329,6 @@ export class DotStyleEditorFieldFormComponent {
         this.#emitChange();
     }
 
-    /**
-     * Toggles the presence of the `imageURL` property on the option at the
-     * given index — adds an empty string when absent, removes the key when present.
-     * Emits the change.
-     *
-     * @param index - Zero-based position of the option.
-     */
     toggleOptionImageURL(index: number): void {
         patchState(this.#state, ({ options }) => {
             const updated = [...options];
@@ -296,10 +345,6 @@ export class DotStyleEditorFieldFormComponent {
         this.#emitChange();
     }
 
-    /**
-     * Constructs and emits a `BuilderField` from the current form state to
-     * notify the parent section that the field has been updated.
-     */
     #emitChange(): void {
         this.fieldChange.emit({
             uid: this.$field().uid,

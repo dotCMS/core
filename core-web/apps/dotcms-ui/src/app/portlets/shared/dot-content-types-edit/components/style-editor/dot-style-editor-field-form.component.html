@@ -1,45 +1,58 @@
-<div class="border border-gray-200 rounded-lg bg-white overflow-hidden">
-    <!-- Field header -->
-    <div
-        class="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-        <span class="text-sm font-medium text-gray-700 truncate">
-            {{ $identifier() || 'newField' }}
-        </span>
-        <div class="flex items-center gap-1 shrink-0 ml-2">
-            <button
-                type="button"
-                (click)="moveUp.emit()"
-                [disabled]="$isFirst()"
-                title="Move up"
-                class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                <i class="pi pi-chevron-up text-xs text-gray-500"></i>
-            </button>
-            <button
-                type="button"
-                (click)="moveDown.emit()"
-                [disabled]="$isLast()"
-                title="Move down"
-                class="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                <i class="pi pi-chevron-down text-xs text-gray-500"></i>
-            </button>
-            <div class="w-px h-4 bg-gray-300 mx-1"></div>
-            <button
-                type="button"
-                (click)="delete.emit()"
-                title="Delete field"
-                class="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
-                <i class="pi pi-trash text-xs"></i>
-            </button>
+<p-panel
+    [toggleable]="true"
+    [collapsed]="$isCollapsed()"
+    (collapsedChange)="$isCollapsed.set($event)"
+    [pt]="$panelPT()">
+    <ng-template pTemplate="header">
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+            <p-button
+                [icon]="$isCollapsed() ? 'pi pi-chevron-right' : 'pi pi-chevron-down'"
+                [text]="true"
+                size="small"
+                (onClick)="$isCollapsed.set(!$isCollapsed())" />
+            <span class="text-sm font-medium text-gray-700 truncate">
+                {{ $label() || ('style.editor.form.builder.field.new' | dm) }}
+            </span>
         </div>
-    </div>
+    </ng-template>
 
-    <!-- Form body -->
-    <div class="p-4 flex flex-col gap-4">
+    <ng-template pTemplate="icons">
+        <div class="flex items-center gap-0.5 invisible group-hover/field:visible">
+            <p-button
+                data-testid="delete-field-btn"
+                icon="pi pi-trash"
+                [text]="true"
+                severity="secondary"
+                size="small"
+                [title]="'style.editor.form.builder.field.delete.title' | dm"
+                (onClick)="delete.emit()" />
+            <span class="inline-block w-px h-4 bg-gray-300 mx-0.5 self-center"></span>
+            <p-button
+                data-testid="move-up-btn"
+                icon="pi pi-chevron-up"
+                [text]="true"
+                size="small"
+                [title]="'style.editor.form.builder.field.move.up.title' | dm"
+                [disabled]="$isFirst()"
+                (onClick)="moveUp.emit()" />
+            <p-button
+                data-testid="move-down-btn"
+                icon="pi pi-chevron-down"
+                [text]="true"
+                size="small"
+                [title]="'style.editor.form.builder.field.move.down.title' | dm"
+                [disabled]="$isLast()"
+                (onClick)="moveDown.emit()" />
+        </div>
+    </ng-template>
+
+    <div class="flex flex-col gap-4">
         <!-- Row 1: Type / Label / Identifier -->
         <div class="grid grid-cols-3 gap-3">
+            <!-- Type -->
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Type
+                <label class="text-xs font-semibold text-gray-500 tracking-wide">
+                    {{ 'style.editor.form.builder.field.type.label' | dm }}
                 </label>
                 <p-select
                     [ngModel]="$type()"
@@ -47,224 +60,280 @@
                     [options]="fieldTypes"
                     optionLabel="label"
                     optionValue="value"
+                    appendTo="body"
                     styleClass="w-full" />
             </div>
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Label
+
+            <!-- Label -->
+            <div class="flex flex-col gap-1">
+                <label
+                    class="text-xs font-semibold tracking-wide"
+                    [class.text-red-500]="!!$labelError()"
+                    [class.text-gray-500]="!$labelError()">
+                    {{ 'style.editor.form.builder.field.label.label' | dm }}
                 </label>
                 <input
                     pInputText
                     [ngModel]="$label()"
                     (ngModelChange)="setLabel($event)"
-                    placeholder="New Field"
-                    class="w-full" />
+                    [placeholder]="'style.editor.form.builder.field.new' | dm"
+                    class="w-full"
+                    [class.ng-invalid]="!!$labelError()"
+                    [class.ng-dirty]="!!$labelError()" />
+                @if ($labelError()) {
+                    <small class="text-red-500 text-xs">{{ $labelError() }}</small>
+                }
             </div>
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Identifier
+
+            <!-- Identifier -->
+            <div class="flex flex-col gap-1">
+                <label
+                    class="text-xs font-semibold tracking-wide"
+                    [class.text-red-500]="!!$identifierError()"
+                    [class.text-gray-500]="!$identifierError()">
+                    {{ 'style.editor.form.builder.field.identifier.label' | dm }}
                 </label>
                 <div class="flex items-center gap-1">
                     <input
                         pInputText
                         [ngModel]="$identifier()"
                         (ngModelChange)="setIdentifier($event)"
-                        placeholder="fieldId"
+                        [placeholder]="
+                            'style.editor.form.builder.field.identifier.placeholder' | dm
+                        "
                         class="flex-1 min-w-0 font-mono text-sm"
                         [class.text-gray-400]="!$identifierTouched()"
-                        [class.bg-gray-50]="!$identifierTouched()" />
+                        [class.bg-gray-50]="!$identifierTouched()"
+                        [class.ng-invalid]="!!$identifierError()"
+                        [class.ng-dirty]="!!$identifierError()" />
                     @if ($identifierTouched()) {
-                        <button
-                            type="button"
-                            (click)="resetIdentifier()"
-                            title="Reset to auto-generated"
-                            class="p-1.5 rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors shrink-0">
-                            <i class="pi pi-sync text-xs"></i>
-                        </button>
+                        <p-button
+                            data-testid="reset-identifier-btn"
+                            icon="pi pi-sync"
+                            [text]="true"
+                            size="small"
+                            [title]="'style.editor.form.builder.field.identifier.reset.title' | dm"
+                            (onClick)="resetIdentifier()" />
                     }
                 </div>
+                @if ($identifierError()) {
+                    <small class="text-red-500 text-xs">{{ $identifierError() }}</small>
+                }
             </div>
         </div>
 
         <!-- Input-specific: placeholder -->
         @if ($type() === 'input') {
             <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Placeholder
+                <label class="text-xs font-semibold text-gray-500 tracking-wide">
+                    {{ 'style.editor.form.builder.field.description.label' | dm }}
                     <span class="normal-case font-normal text-gray-400 ml-1">
-                        (optional)
+                        {{ 'style.editor.form.builder.field.description.optional' | dm }}
                     </span>
                 </label>
                 <input
                     pInputText
                     [ngModel]="$placeholder()"
                     (ngModelChange)="setPlaceholder($event)"
-                    placeholder="e.g. Enter your text here..."
+                    [placeholder]="'style.editor.form.builder.field.description.placeholder' | dm"
                     class="w-full" />
-            </div>
-        }
-
-        <!-- Input-specific: preview -->
-        @if ($type() === 'input') {
-            <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Preview
-                </label>
-                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <textarea
-                        class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-400 bg-white resize-none"
-                        rows="3"
-                        [placeholder]="$placeholder() || 'User will enter text here...'"
-                        disabled></textarea>
-                </div>
             </div>
         }
 
         <!-- Options-based types: dropdown, radio, checkboxGroup -->
         @if ($type() !== 'input') {
             <div class="flex flex-col gap-2">
-                <!-- Options header: label + columns toggle for radio -->
+                <!-- Options header: label + columns toggle for radio + count error -->
                 <div class="flex items-center justify-between">
-                    <label
-                        class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Options
-                    </label>
+                    <div class="flex items-center gap-2">
+                        <label
+                            class="text-xs font-semibold tracking-wide"
+                            [class.text-red-500]="!!$optionsCountError()"
+                            [class.text-gray-500]="!$optionsCountError()">
+                            {{ 'style.editor.form.builder.field.options.label' | dm }}
+                        </label>
+                        @if ($optionsCountError()) {
+                            <small class="text-red-500 text-xs">{{ $optionsCountError() }}</small>
+                        }
+                    </div>
                     @if ($type() === 'radio') {
                         <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500">Columns:</span>
+                            <span class="text-xs text-gray-500">
+                                {{ 'style.editor.form.builder.field.columns.label' | dm }}
+                            </span>
+                            <p-selectbutton
+                                [options]="columnOptions"
+                                [ngModel]="$columns()"
+                                (ngModelChange)="setColumns($event)"
+                                optionLabel="label"
+                                optionValue="value"
+                                size="small" />
+                        </div>
+                    }
+                </div>
+
+                <!-- Options card -->
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col gap-2">
+                    <!-- Column headers -->
+                    <div
+                        class="grid grid-cols-2 gap-2 text-xs font-medium text-gray-400 pl-6 pr-16">
+                        <span>
+                            {{ 'style.editor.form.builder.field.option.label.column' | dm }}
+                        </span>
+                        <span>
+                            {{
+                                $type() === 'checkboxGroup'
+                                    ? ('style.editor.form.builder.field.option.key.column' | dm)
+                                    : ('style.editor.form.builder.field.option.value.column' | dm)
+                            }}
+                        </span>
+                    </div>
+
+                    <!-- Option rows -->
+                    <div class="flex flex-col gap-3">
+                        @for (opt of $options(); track $index; let i = $index) {
                             <div
-                                class="flex border border-gray-300 rounded-md overflow-hidden text-sm">
-                                <button
-                                    type="button"
-                                    (click)="setColumns(1)"
-                                    class="w-8 h-7 font-semibold transition-colors"
-                                    [class]="
-                                        $columns() === 1
-                                            ? 'bg-gray-900 text-white'
-                                            : 'bg-white text-gray-600 hover:bg-gray-50'
-                                    ">
-                                    1
-                                </button>
-                                <button
-                                    type="button"
-                                    (click)="setColumns(2)"
-                                    class="w-8 h-7 font-semibold transition-colors border-l border-gray-300"
-                                    [class]="
-                                        $columns() === 2
-                                            ? 'bg-gray-900 text-white'
-                                            : 'bg-white text-gray-600 hover:bg-gray-50'
-                                    ">
-                                    2
-                                </button>
-                            </div>
-                        </div>
-                    }
-                </div>
-
-                <!-- Column headers -->
-                <div class="grid grid-cols-2 gap-2 text-xs font-medium text-gray-400 pl-6 pr-16">
-                    <span>Label</span>
-                    <span>{{ $type() === 'checkboxGroup' ? 'Key' : 'Value' }}</span>
-                </div>
-
-                <!-- Option rows -->
-                <div class="flex flex-col gap-2">
-                    @for (opt of $options(); track $index; let i = $index) {
-                        <div class="flex flex-col gap-1">
-                            <div class="flex items-center gap-2">
-                                <!-- Decorative icon -->
-                                <div class="w-4 shrink-0 flex justify-center">
+                                class="grid gap-x-2 gap-y-3 items-center group/option [grid-template-columns:1rem_1fr_auto]">
+                                <!-- Col 1: decorative icon -->
+                                <div class="flex justify-center">
                                     @if ($type() === 'radio') {
-                                        <input
-                                            type="radio"
-                                            disabled
-                                            class="accent-gray-400" />
+                                        <input type="radio" disabled class="accent-gray-400" />
                                     } @else if ($type() === 'checkboxGroup') {
-                                        <input
-                                            type="checkbox"
-                                            disabled
-                                            class="accent-gray-400" />
+                                        <input type="checkbox" disabled class="accent-gray-400" />
                                     }
                                 </div>
 
-                                <!-- Label + Value/Key inputs -->
-                                <div class="flex-1 grid grid-cols-2 gap-2">
-                                    <input
-                                        pInputText
-                                        [ngModel]="opt.label"
-                                        (ngModelChange)="updateOptionLabel(i, $event)"
-                                        placeholder="Label"
-                                        class="w-full" />
+                                <!-- Col 2: Label + Value/Key inputs -->
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="flex flex-col gap-0.5">
+                                        <input
+                                            pInputText
+                                            [ngModel]="opt.label"
+                                            (ngModelChange)="updateOptionLabel(i, $event)"
+                                            [placeholder]="
+                                                'style.editor.form.builder.field.option.label.placeholder'
+                                                    | dm
+                                            "
+                                            class="w-full"
+                                            [class.ng-invalid]="!!$optionErrors()[i]?.label"
+                                            [class.ng-dirty]="!!$optionErrors()[i]?.label" />
+                                        @if ($optionErrors()[i]?.label) {
+                                            <small class="text-red-500 text-xs">
+                                                {{ $optionErrors()[i]?.label }}
+                                            </small>
+                                        }
+                                    </div>
                                     @if ($type() === 'checkboxGroup') {
-                                        <input
-                                            pInputText
-                                            [ngModel]="opt.key"
-                                            (ngModelChange)="updateOptionKey(i, $event)"
-                                            placeholder="key"
-                                            class="w-full font-mono text-sm" />
+                                        <div class="flex flex-col gap-0.5">
+                                            <input
+                                                pInputText
+                                                [ngModel]="opt.key"
+                                                (ngModelChange)="updateOptionKey(i, $event)"
+                                                [placeholder]="
+                                                    'style.editor.form.builder.field.option.key.placeholder'
+                                                        | dm
+                                                "
+                                                class="w-full font-mono text-sm"
+                                                [class.ng-invalid]="!!$optionErrors()[i]?.key"
+                                                [class.ng-dirty]="!!$optionErrors()[i]?.key" />
+                                            @if ($optionErrors()[i]?.key) {
+                                                <small class="text-red-500 text-xs">
+                                                    {{ $optionErrors()[i]?.key }}
+                                                </small>
+                                            }
+                                        </div>
                                     } @else {
+                                        <div class="flex flex-col gap-0.5">
+                                            <input
+                                                pInputText
+                                                [ngModel]="opt.value"
+                                                (ngModelChange)="updateOptionValue(i, $event)"
+                                                [placeholder]="
+                                                    'style.editor.form.builder.field.option.value.placeholder'
+                                                        | dm
+                                                "
+                                                class="w-full font-mono text-sm"
+                                                [class.ng-invalid]="!!$optionErrors()[i]?.value"
+                                                [class.ng-dirty]="!!$optionErrors()[i]?.value" />
+                                            @if ($optionErrors()[i]?.value) {
+                                                <small class="text-red-500 text-xs">
+                                                    {{ $optionErrors()[i]?.value }}
+                                                </small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Col 3: action buttons -->
+                                <div class="flex items-center gap-1">
+                                    @if ($type() === 'radio') {
+                                        <p-button
+                                            icon="pi pi-image"
+                                            [text]="true"
+                                            size="small"
+                                            [title]="
+                                                opt.imageURL !== undefined
+                                                    ? ('style.editor.form.builder.field.option.image.remove.title'
+                                                      | dm)
+                                                    : ('style.editor.form.builder.field.option.image.add.title'
+                                                      | dm)
+                                            "
+                                            [severity]="
+                                                opt.imageURL !== undefined ? 'info' : 'secondary'
+                                            "
+                                            (onClick)="toggleOptionImageURL(i)" />
+                                    }
+                                    <p-button
+                                        data-testid="remove-option-btn"
+                                        class="invisible group-hover/option:visible"
+                                        icon="pi pi-times"
+                                        [text]="true"
+                                        severity="secondary"
+                                        size="small"
+                                        [title]="
+                                            'style.editor.form.builder.field.option.remove.title'
+                                                | dm
+                                        "
+                                        (onClick)="removeOption(i)" />
+                                </div>
+
+                                <!-- Row 2: imageURL input (cols 1+2+3 as 3 direct grid children) -->
+                                @if ($type() === 'radio' && opt.imageURL !== undefined) {
+                                    <div></div>
+                                    <div class="flex flex-col gap-1">
                                         <input
                                             pInputText
-                                            [ngModel]="opt.value"
-                                            (ngModelChange)="updateOptionValue(i, $event)"
-                                            placeholder="value"
-                                            class="w-full font-mono text-sm" />
-                                    }
-                                </div>
-
-                                <!-- Action buttons -->
-                                <div class="flex items-center gap-1 shrink-0">
-                                    @if ($type() === 'radio') {
-                                        <button
-                                            type="button"
-                                            (click)="toggleOptionImageURL(i)"
-                                            title="{{
-                                                opt.imageURL !== undefined
-                                                    ? 'Remove image URL'
-                                                    : 'Add image URL'
-                                            }}"
-                                            class="p-1.5 rounded transition-colors"
-                                            [class]="
-                                                opt.imageURL !== undefined
-                                                    ? 'text-indigo-500 bg-indigo-50 hover:bg-indigo-100'
-                                                    : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
-                                            ">
-                                            <i class="pi pi-image text-xs"></i>
-                                        </button>
-                                    }
-                                    <button
-                                        type="button"
-                                        (click)="removeOption(i)"
-                                        title="Remove option"
-                                        class="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
-                                        <i class="pi pi-times text-xs"></i>
-                                    </button>
-                                </div>
+                                            [ngModel]="opt.imageURL"
+                                            (ngModelChange)="updateOptionImageURL(i, $event)"
+                                            [placeholder]="
+                                                'style.editor.form.builder.field.option.image.placeholder'
+                                                    | dm
+                                            "
+                                            class="w-full text-sm"
+                                            [class.ng-invalid]="!!$optionErrors()[i]?.imageURL"
+                                            [class.ng-dirty]="!!$optionErrors()[i]?.imageURL" />
+                                        @if ($optionErrors()[i]?.imageURL) {
+                                            <small class="text-red-500 text-xs">
+                                                {{ $optionErrors()[i]?.imageURL }}
+                                            </small>
+                                        }
+                                    </div>
+                                    <div></div>
+                                }
                             </div>
-
-                            <!-- ImageURL input for radio (toggleable) -->
-                            @if ($type() === 'radio' && opt.imageURL !== undefined) {
-                                <div class="flex items-center gap-2 pl-6">
-                                    <i class="pi pi-image text-xs text-indigo-400 shrink-0"></i>
-                                    <input
-                                        pInputText
-                                        [ngModel]="opt.imageURL"
-                                        (ngModelChange)="updateOptionImageURL(i, $event)"
-                                        placeholder="https://example.com/image.png"
-                                        class="flex-1 text-sm" />
-                                </div>
-                            }
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
 
-                <button
-                    type="button"
-                    (click)="addOption()"
-                    class="self-start text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors mt-1">
-                    + Add Option
-                </button>
+                <p-button
+                    data-testid="add-option-btn"
+                    [text]="true"
+                    icon="pi pi-plus"
+                    [label]="'style.editor.form.builder.field.option.add' | dm"
+                    size="small"
+                    styleClass="self-start"
+                    (onClick)="addOption()" />
             </div>
         }
     </div>
-</div>
+</p-panel>

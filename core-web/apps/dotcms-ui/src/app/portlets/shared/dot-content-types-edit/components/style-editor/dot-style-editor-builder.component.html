@@ -1,73 +1,94 @@
-<div class="h-full overflow-y-auto bg-gray-100 p-6">
-    <div class="max-w-3xl mx-auto">
-        <!-- Header -->
-        <div class="flex items-start justify-between mb-6">
-            <div>
+<div class="h-full flex flex-col">
+    <!-- Scrollable content -->
+    <div class="flex-1 min-h-0 overflow-y-auto p-6 [scrollbar-gutter:stable]">
+        <div class="max-w-3xl mx-auto">
+            <!-- Header -->
+            <div class="mb-6">
                 <h2 class="text-xl font-semibold text-gray-900 m-0">
-                    Style Editor Form Generator
+                    {{ 'style.editor.form.builder.header' | dm }}
                 </h2>
                 <p class="text-sm text-gray-500 mt-1 mb-0">
-                    Create and organize the tools available in the style editor for this
-                    content type.
+                    {{ 'style.editor.form.builder.subtitle' | dm }}
                 </p>
             </div>
-            <div class="flex gap-2 shrink-0 ml-4 pt-1">
-                <!-- <p-button
-                    label="Cancel"
-                    [outlined]="true"
-                    severity="secondary"
-                    [disabled]="$saving()" /> -->
+
+            <!-- Sections list -->
+            <div class="flex flex-col gap-4">
+                @for (section of $sections(); track section.uid; let i = $index) {
+                    <dot-style-editor-section
+                        [section]="section"
+                        [isFirst]="i === 0"
+                        [isLast]="i === $sections().length - 1"
+                        [showErrors]="$saveAttempted()"
+                        (moveUp)="moveSectionUp(i)"
+                        (moveDown)="moveSectionDown(i)"
+                        (delete)="requestRemoveSection(i)"
+                        (titleChange)="updateSectionTitle(i, $event)"
+                        (addField)="addField(i)"
+                        (removeField)="requestRemoveField(i, $event)"
+                        (moveFieldUp)="moveFieldUp(i, $event)"
+                        (moveFieldDown)="moveFieldDown(i, $event)"
+                        (fieldChange)="updateField(i, $event)" />
+                }
+            </div>
+
+            <!-- Add New Section button -->
+            <div class="mt-4">
                 <p-button
-                    label="Save"
-                    [loading]="$saving()"
-                    [disabled]="!$isDirty()"
-                    (onClick)="save()" />
+                    data-testid="add-section-btn"
+                    [text]="true"
+                    icon="pi pi-plus"
+                    [label]="'style.editor.form.builder.add.section' | dm"
+                    styleClass="w-full border-2 border-dashed border-gray-300 rounded-[16px] justify-center bg-white py-6 hover:border-gray-400"
+                    (onClick)="addSection()"
+                    [pTooltip]="'style.editor.form.builder.add.section.tooltip' | dm"
+                    tooltipPosition="top" />
             </div>
-        </div>
-
-        <!-- Empty state -->
-        <!-- @if ($sections().length === 0) {
-            <div
-                class="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-gray-300 rounded-xl bg-white mb-4">
-                <div
-                    class="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <i class="pi pi-table text-2xl text-gray-400"></i>
-                </div>
-                <h3 class="text-base font-medium text-gray-700 m-0">No sections yet</h3>
-                <p class="text-sm text-gray-500 mt-2 mb-0">
-                    Add a section to start building your style editor form.
-                </p>
-            </div>
-        } -->
-
-        <!-- Sections list -->
-        <div class="flex flex-col gap-4">
-            @for (section of $sections(); track section.uid; let i = $index) {
-                <dot-style-editor-section
-                    [section]="section"
-                    [isFirst]="i === 0"
-                    [isLast]="i === $sections().length - 1"
-                    (moveUp)="moveSectionUp(i)"
-                    (moveDown)="moveSectionDown(i)"
-                    (delete)="removeSection(i)"
-                    (titleChange)="updateSectionTitle(i, $event)"
-                    (addField)="addField(i)"
-                    (removeField)="removeField(i, $event)"
-                    (moveFieldUp)="moveFieldUp(i, $event)"
-                    (moveFieldDown)="moveFieldDown(i, $event)"
-                    (fieldChange)="updateField(i, $event)" />
-            }
-        </div>
-
-        <!-- Add New Section button -->
-        <div class="mt-4">
-            <button
-                type="button"
-                (click)="addSection()"
-                class="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 font-medium text-sm transition-colors bg-white py-6">
-                <i class="pi pi-plus text-sm"></i>
-                Add New Section
-            </button>
         </div>
     </div>
+
+    <!-- Bottom action bar -->
+    <div
+        class="shrink-0 border-t border-gray-200 bg-white flex items-center justify-end gap-3 px-6 py-3">
+        @if ($isDirty()) {
+            <p-button
+                data-testid="cancel-btn"
+                [text]="true"
+                [label]="'style.editor.form.builder.cancel' | dm"
+                (onClick)="requestCancel()"
+                severity="secondary"
+                size="small" />
+        }
+        <p-button
+            data-testid="save-btn"
+            [label]="'style.editor.form.builder.save' | dm"
+            [loading]="$saving()"
+            (onClick)="save()" />
+    </div>
 </div>
+
+<!-- Shared confirmation dialog -->
+<p-dialog
+    [visible]="$confirmState() !== null"
+    [header]="$confirmState()?.header ?? ''"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '36rem' }"
+    (onHide)="closeConfirm()">
+    <p class="text-sm text-gray-600 m-0">{{ $confirmState()?.message }}</p>
+    <ng-template pTemplate="footer">
+        <div class="flex items-center justify-end gap-2">
+            @for (action of $confirmState()?.actions; track $index) {
+                <p-button
+                    [label]="action.label"
+                    [text]="action.text ?? false"
+                    [outlined]="action.outlined ?? false"
+                    [severity]="action.severity ?? 'primary'"
+                    (onClick)="action.callback()" />
+            }
+        </div>
+    </ng-template>
+</p-dialog>

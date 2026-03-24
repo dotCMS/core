@@ -27,12 +27,12 @@ export interface BuilderSection {
     fields: BuilderField[];
 }
 
-export function createField(): BuilderField {
+export function createField(label = 'New Field'): BuilderField {
     return {
         uid: crypto.randomUUID(),
         type: 'input',
-        label: 'New Field',
-        identifier: 'newField',
+        label,
+        identifier: toLabelIdentifier(label),
         inputType: 'text',
         placeholder: '',
         columns: 1,
@@ -43,11 +43,11 @@ export function createField(): BuilderField {
     };
 }
 
-export function createSection(): BuilderSection {
+export function createSection(title = 'New Section', fieldLabel = 'New Field'): BuilderSection {
     return {
         uid: crypto.randomUUID(),
-        title: 'New Section',
-        fields: [createField()]
+        title,
+        fields: [createField(fieldLabel)]
     };
 }
 
@@ -61,9 +61,30 @@ export function toLabelIdentifier(label: string): string {
     return camel || 'field';
 }
 
-export const FIELD_TYPE_OPTIONS: { label: string; value: StyleEditorFieldType }[] = [
-    { label: 'Short Text', value: 'input' },
-    { label: 'Dropdown', value: 'dropdown' },
-    { label: 'Radio Buttons', value: 'radio' },
-    { label: 'Checkbox Group', value: 'checkboxGroup' }
+/**
+ * Returns true if a BuilderField has any validation error.
+ * Used by the builder (form-level validity) and section (header error indicator).
+ */
+export function fieldHasErrors(field: BuilderField): boolean {
+    if (!field.label?.trim() || !field.identifier?.trim()) return true;
+    if (field.type === 'input') return false;
+
+    if (field.options.length === 0) return true;
+
+    return field.options.some((opt) => {
+        if (!opt.label?.trim()) return true;
+        if (field.type === 'checkboxGroup') return !opt.key?.trim();
+        if (!opt.value?.trim()) return true;
+        if (field.type === 'radio' && opt.imageURL !== undefined && !opt.imageURL?.trim())
+            return true;
+
+        return false;
+    });
+}
+
+export const FIELD_TYPE_OPTIONS: { labelKey: string; value: StyleEditorFieldType }[] = [
+    { labelKey: 'style.editor.form.builder.field.type.short.text', value: 'input' },
+    { labelKey: 'style.editor.form.builder.field.type.dropdown', value: 'dropdown' },
+    { labelKey: 'style.editor.form.builder.field.type.radio', value: 'radio' },
+    { labelKey: 'style.editor.form.builder.field.type.checkbox.group', value: 'checkboxGroup' }
 ];
