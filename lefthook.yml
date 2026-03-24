@@ -139,6 +139,9 @@ pre-commit:
           needs_compile=false
           while IFS= read -r f; do
             [ -z "$f" ] && continue
+            # DotRestApplication.java registers REST resources — changes here affect the spec
+            # even without @Path/@GET annotations. If this file is renamed, the annotation grep
+            # below still catches most cases; this is just a fast-path for the registration file.
             case "$f" in *DotRestApplication.java) needs_compile=true; break ;; esac
             if [ -f "$f" ]; then
               grep -qE '@Path|@GET|@POST|@PUT|@DELETE|@Operation' "$f" 2>/dev/null && needs_compile=true && break
