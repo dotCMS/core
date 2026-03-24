@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: dotcms
     ports:
-      - "15432:5432"
+      - "127.0.0.1:15432:5432"
     volumes:
       - shared-db-data:/var/lib/postgresql
     networks:
@@ -34,7 +34,7 @@ services:
       DISABLE_SECURITY_PLUGIN: "true"
       OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g -XX:-UseContainerSupport"
     ports:
-      - "19200:9200"
+      - "127.0.0.1:19200:9200"
     volumes:
       - shared-es-data:/usr/share/opensearch/data
     networks:
@@ -59,7 +59,7 @@ services:
       DISABLE_SECURITY_PLUGIN: "true"
       OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m -XX:-UseContainerSupport"
     ports:
-      - "19201:9200"
+      - "127.0.0.1:19201:9200"
     volumes:
       - shared-os-upgrade-data:/usr/share/opensearch/data
     networks:

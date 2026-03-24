@@ -134,7 +134,7 @@ pre-push:
           echo "OpenAPI spec has never been committed — running compile"
         else
           # Find Java files changed since the last spec update
-          changed_java=$(git diff --name-only "$last_spec_sha"..HEAD -- 'dotCMS/src/main/java/**/*.java' 2>/dev/null)
+          changed_java=$(git diff --name-only "$last_spec_sha"..HEAD -- 'dotCMS/src/main/java/' 2>/dev/null | grep '\.java$')
 
           if [ -z "$changed_java" ]; then
             echo "No Java files changed since last OpenAPI spec update — skipping compile"

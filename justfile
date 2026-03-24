@@ -170,9 +170,13 @@ init: setup
 
 # Derives a Docker-safe slug from the project folder name (used for image tags and container namespaces)
 _project-slug:
-    @basename "$(pwd)" \
-        | sed 's/[^a-zA-Z0-9._-]/-/g; s/^[.-]*//' | cut -c1-64 \
-        || echo "default"
+    #!/usr/bin/env bash
+    SLUG=$(basename "$(pwd)" | sed 's/[^a-zA-Z0-9._-]/-/g; s/^[.-]*//' | cut -c1-64)
+    if [ -z "$SLUG" ]; then
+        echo "Error: could not derive project slug from $(pwd)" >&2
+        exit 1
+    fi
+    echo "$SLUG"
 
 # Image tag: slug + short commit hash (e.g., "my-project-a1b2c3d4")
 _project-image-tag:
@@ -576,14 +580,18 @@ dev port="" fe-port="4200":
     echo "→ Starting backend..."
     just dev-run {{ port }}
 
-    # 2. Frontend
+    # 2. Wait for backend to be healthy before starting frontend proxy
+    echo "→ Waiting for backend..."
+    just dev-wait
+
+    # 3. Frontend
     echo "→ Starting frontend on :{{ fe-port }}..."
     just dev-start-frontend {{ fe-port }}
 
-    # 3. Wait for frontend
+    # 4. Wait for frontend
     just dev-frontend-wait
 
-    # 4. Summary
+    # 5. Summary
     just dev-urls
     echo ""
     echo "  Frontend → http://localhost:{{ fe-port }}/dotAdmin (live reload)"
@@ -668,7 +676,7 @@ dev-stop-all:
     #!/usr/bin/env bash
     CONTAINERS=$(docker ps --filter "name=dotbuild_" -q)
     [ -z "$CONTAINERS" ] && echo "No dotCMS containers running" && exit 0
-    echo "$CONTAINERS" | xargs docker stop && echo "$CONTAINERS" | xargs docker rm
+    echo "$CONTAINERS" | xargs docker rm -f
     echo "Stopped all dotCMS dev containers"
 
 # Starts the dotCMS application in a Tomcat container on port 8087, running in the foreground
