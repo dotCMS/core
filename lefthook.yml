@@ -32,6 +32,36 @@
 # Rule of thumb: if the hook changes files → pre-commit.
 #                if it only reads/checks → pre-push.
 #                if it catches merge gaps → post-merge.
+#
+# ─── Keep hooks fast and targeted ─────────────────────────────────────
+#
+# A slow pre-commit hook trains developers to skip it. Every hook
+# should feel instant for the common case and tolerable for the worst.
+#
+# 1. Scope with `glob:` — lefthook skips the hook entirely if no
+#    staged files match the pattern. A Java-only hook should never
+#    run when editing TypeScript. Cost: 0ms when irrelevant.
+#
+# 2. Guard with early exits — check whether work is actually needed
+#    before doing it. "No REST annotations changed → exit 0" costs
+#    ~100ms vs ~37s for an unnecessary recompile.
+#
+# 3. Use the narrowest tool — `swagger-maven-plugin:resolve` (~6s)
+#    instead of full `mvn compile` (~37s) when classes are current.
+#    `nx format:write --files=` on changed files, not the whole tree.
+#
+# 4. Run in parallel — `parallel: true` on the hook group lets
+#    independent commands overlap (lint + format + lockfile sync).
+#
+# 5. Target staged files, not the branch — pre-commit hooks get
+#    `{staged_files}`. Use them. Checking all files on every commit
+#    punishes small changes.
+#
+# Budget: pre-commit should complete in <3s for typical commits.
+# The worst case (REST API change triggering swagger) is ~6-37s —
+# acceptable because it only fires when the glob + guards both match.
+# If a hook regularly exceeds 5s for common changes, it needs
+# rethinking — either tighter guards or move to pre-push (read-only).
 # ──────────────────────────────────────────────────────────────────────
 
 min_version: 2.0.0
