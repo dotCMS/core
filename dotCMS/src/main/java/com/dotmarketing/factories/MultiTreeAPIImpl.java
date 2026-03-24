@@ -713,7 +713,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 pageId, personalization, multiTrees));
 
         if (multiTrees == null) {
-            throw new DotDataException("empty list passed in");
+            Logger.debug(MultiTreeAPIImpl.class, () -> "empty list passed in");
+            return;
         }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
@@ -874,13 +875,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     .addParam(copiedMultiTreeVariantId);
             final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
             if(contentExist != 0){
-                // The contentlet already exists in this container for the given page, personalization,
-                // and variant. This can happen when DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled
-                // and a fallback-language entry was not removed by a language-scoped DELETE.
-                Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
-                        "Content [%s] already exists in Container '%s', skipping.",
-                        tree.getContentlet(), tree.getContainer()));
-                continue;
+                final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
+                final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
+                                                              "'%s'", contentletTitle, tree.getContentlet(),
+                        tree.getContainer());
+                Logger.debug(MultiTreeAPIImpl.class, errorMsg);
+                throw new IllegalArgumentException(errorMsg);
             }
 
             final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
