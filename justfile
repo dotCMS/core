@@ -194,9 +194,15 @@ _project-id:
     HASH=${HASH%% *}
     echo "${PREFIX}_${HASH:0:8}"
 
-# Returns 0 if shared services are running
+# Returns 0 if shared services (DB + OpenSearch) are all running.
+# Checks both — if Postgres is up but OpenSearch crashed, dev-run should not enter shared mode.
 _shared-services-running:
-    @docker inspect dotcms-shared-db --format '{{ "{{.State.Running}}" }}' 2>/dev/null | grep -q true
+    #!/usr/bin/env bash
+    for container in dotcms-shared-db dotcms-shared-es; do
+        if ! docker inspect "$container" --format '{{ "{{.State.Running}}" }}' 2>/dev/null | grep -q true; then
+            exit 1
+        fi
+    done
 
 # Derives a PostgreSQL-safe database name for the given module and context.
 # Format: <module>_<project-id> — unique and within PostgreSQL's 63-char limit.
