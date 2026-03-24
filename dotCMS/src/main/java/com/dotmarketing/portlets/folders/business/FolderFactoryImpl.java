@@ -799,10 +799,17 @@ public class FolderFactoryImpl extends FolderFactory {
     // Snapshot sub-folder old-path data BEFORE any update so targeted cache eviction is possible
     final List<Map<String, Object>> subFolderSnapshot = loadSubFolderSnapshot(oldPath, hostId);
 
-    // Update the folder record in-place (save() evicts its own old cache entries)
+    // Update the folder record in-place.
+    // save() internally calls APILocator.getIdentifierAPI().find() to get the identifier for
+    // FolderCache eviction. At this point the identifier cache still holds asset_name=oldName, so
+    // save() correctly evicts the old path-keyed cache entry. The identifier cache is evicted on
+    // the next line, AFTER save() reads it, preserving the correct ordering.
     folder.setName(newName);
     save(folder);
 
+    // Evict old identifier URI cache entry BEFORE mutating asset_name: removeFromCacheByIdentifier
+    // looks up the identifier by ID from cache (still holds old URI) and evicts by that key.
+    // After save(ident), the new URI key is stored normally.
     CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
     ident.setAssetName(newName);
     APILocator.getIdentifierAPI().save(ident);
@@ -823,9 +830,6 @@ public class FolderFactoryImpl extends FolderFactory {
     for (final Map<String, Object> row : subFolderSnapshot) {
       CacheLocator.getNavToolCache().removeNav(hostId, (String) row.get("inode"));
     }
-
-    // Queue async ES reindex for all content under the renamed folder so path data stays current
-    APILocator.getContentletAPI().refreshContentUnderFolder(folder);
 
     return true;
   }

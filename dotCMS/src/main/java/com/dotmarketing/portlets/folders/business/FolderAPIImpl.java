@@ -168,9 +168,15 @@ public class FolderAPIImpl implements FolderAPI  {
 		try {
 			validateFolderName(folder, newName);
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
-			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-			Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
+			// Nav cache eviction for the folder and sub-tree is handled inside the factory.
+			// Trigger ES reindex AFTER the transaction commits so a transient ES failure
+			// does not roll back a successful DB rename.
+			try {
+				contentletAPI.refreshContentUnderFolder(folder);
+			} catch (final Exception e) {
+				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder '"
+						+ folder.getPath() + "' to '" + newName + "': " + e.getMessage());
+			}
 			return renamed;
 		} catch (InvalidFolderNameException e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"

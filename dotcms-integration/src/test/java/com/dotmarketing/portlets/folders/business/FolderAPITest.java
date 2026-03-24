@@ -57,6 +57,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -293,10 +294,19 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		assertEquals("Folder found by new path must have the same identifier UUID",
 				parentIdentifierId, foundByNewPath.getIdentifier());
 
-		// Old path no longer resolves to a folder
-		final Folder foundByOldPath = folderAPI.findFolderByPath("/" + originalName + "/", site, user, false);
-		assertTrue("Old path must no longer resolve to a valid folder",
-				foundByOldPath == null || !UtilMethods.isSet(foundByOldPath.getInode()));
+		// Old path no longer resolves to a folder — verified via DB to avoid a stale cache hit.
+		// A DB query for asset_name=originalName under parentPath='/' must return no folder row.
+		final List<Map<String, Object>> oldPathRows = new DotConnect()
+				.setSQL("SELECT i.id FROM identifier i"
+						+ " WHERE i.asset_type = 'folder'"
+						+ " AND i.asset_name = ?"
+						+ " AND i.parent_path = '/'"
+						+ " AND i.host_inode = ?")
+				.addParam(originalName)
+				.addParam(site.getIdentifier())
+				.loadResults();
+		assertTrue("No identifier with the old folder name must exist in the DB after rename",
+				oldPathRows.isEmpty());
 	}
 
 	/**
