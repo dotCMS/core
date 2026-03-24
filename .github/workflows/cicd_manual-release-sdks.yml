@@ -28,7 +28,7 @@ jobs:
   release-sdks:
     name: 'Release SDK Packages'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 'Checkout repository'
         uses: actions/checkout@v4
@@ -42,25 +42,52 @@ jobs:
           echo "Version type: ${{ inputs.version-type }}"
           echo "Custom version: ${{ inputs.custom-version }}"
           echo "Branch: ${{ inputs.ref }}"
-          
-          # Validate that custom-version is provided when version-type is custom
+
           if [ "${{ inputs.version-type }}" = "custom" ]; then
             if [ -z "${{ inputs.custom-version }}" ]; then
-              echo "::error::Custom version must be provided when version-type is 'custom'"
-              echo "Please provide a valid semantic version (e.g., 1.3.4, 2.0.0, 1.2.1)"
+              echo "::error::custom-version must be provided when version-type is 'custom'"
               exit 1
             fi
-            
-            # Basic semver validation
             if [[ ! "${{ inputs.custom-version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
               echo "::error::Invalid custom version format: '${{ inputs.custom-version }}'"
-              echo "Version must follow semantic versioning format: major.minor.patch (e.g., 1.3.4)"
               exit 1
             fi
-            
             echo "✅ Custom version '${{ inputs.custom-version }}' is valid"
           fi
           echo "::endgroup::"
+
+      - name: 'Bump VERSION file'
+        id: bump_version
+        run: |
+          echo "::group::Bump VERSION file"
+          CURRENT=$(cat core-web/libs/sdk/VERSION | tr -d '[:space:]')
+          echo "Current version: $CURRENT"
+
+          IFS='.' read -ra PARTS <<< "$CURRENT"
+          MAJOR=${PARTS[0]}; MINOR=${PARTS[1]}; PATCH=${PARTS[2]}
+
+          case "${{ inputs.version-type }}" in
+            major)  MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor)  MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch)  PATCH=$((PATCH + 1)) ;;
+            custom) MAJOR=0; MINOR=0; PATCH=0
+                    IFS='.' read -ra CPARTS <<< "${{ inputs.custom-version }}"
+                    MAJOR=${CPARTS[0]}; MINOR=${CPARTS[1]}; PATCH=${CPARTS[2]} ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "$NEW_VERSION" > core-web/libs/sdk/VERSION
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+
+      - name: 'Commit and push VERSION bump'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add core-web/libs/sdk/VERSION
+          git commit -m "chore(sdk): bump SDK version to ${{ steps.bump_version.outputs.new_version }}"
+          git push
 
       - name: 'Deploy JavaScript SDK'
         id: deploy-javascript-sdk
