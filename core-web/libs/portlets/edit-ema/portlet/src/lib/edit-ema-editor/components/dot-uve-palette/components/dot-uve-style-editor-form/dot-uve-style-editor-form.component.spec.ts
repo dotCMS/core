@@ -21,7 +21,7 @@ import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.comp
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
-import { STYLE_EDITOR_DEBOUNCE_TIME } from '../../../../../shared/consts';
+import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
@@ -96,6 +96,7 @@ describe('DotUveStyleEditorFormComponent', () => {
         addHistory: jest.Mock;
         setGraphqlResponse: jest.Mock;
         setUveStatus: jest.Mock;
+        reloadCurrentPage: jest.Mock;
     };
     let mockIframeMessenger: { reloadPage: jest.Mock; sendPageData: jest.Mock };
 
@@ -171,7 +172,8 @@ describe('DotUveStyleEditorFormComponent', () => {
             setGraphqlResponse: jest.fn((response: DotCMSPageAsset | null) => {
                 graphqlResponseSignal.set(response);
             }),
-            setUveStatus: jest.fn()
+            setUveStatus: jest.fn(),
+            reloadCurrentPage: jest.fn()
         };
 
         spectator = createComponent({
@@ -567,7 +569,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockUveStore.graphqlResponse.set(createMockGraphQLResponse(16));
         });
 
-        it('should save immediately without debounce when form changes', fakeAsync(() => {
+        it('should save after debounce time when form changes', fakeAsync(() => {
             spectator = createComponent({
                 props: {
                     ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
@@ -582,9 +584,10 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             const form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
-
-            // Traditional: save is immediate, no need to wait for debounce
             spectator.detectChanges();
+
+            // Traditional: save fires after debounce time
+            tick(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME);
 
             expect(mockUveStore.saveStyleEditor).toHaveBeenCalledTimes(1);
             expect(mockUveStore.saveStyleEditor).toHaveBeenCalledWith(
@@ -596,7 +599,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             );
         }));
 
-        it('should call setUveStatus(LOADING) before save and reloadPage on success', fakeAsync(() => {
+        it('should call setUveStatus(LOADING) before save and reloadCurrentPage on success', fakeAsync(() => {
             spectator = createComponent({
                 props: {
                     ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
@@ -608,11 +611,12 @@ describe('DotUveStyleEditorFormComponent', () => {
             spectator.detectChanges();
 
             mockUveStore.setUveStatus.mockClear();
-            mockIframeMessenger.reloadPage.mockClear();
 
             const form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
             spectator.detectChanges();
+
+            tick(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME);
 
             expect(mockUveStore.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADING);
 
@@ -620,8 +624,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             tick(0);
             spectator.detectChanges();
 
-            expect(mockIframeMessenger.reloadPage).toHaveBeenCalled();
-            expect(mockUveStore.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADED);
+            expect(mockUveStore.reloadCurrentPage).toHaveBeenCalled();
         }));
 
         it('should NOT call updateHeadlessIframeOptimistically (no optimistic update)', fakeAsync(() => {
@@ -640,6 +643,8 @@ describe('DotUveStyleEditorFormComponent', () => {
             const form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
             spectator.detectChanges();
+
+            tick(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME);
 
             // Traditional pages do not use optimistic iframe update; setGraphqlResponse
             // is only called from updateHeadlessIframeOptimistically (headless path)
@@ -669,6 +674,7 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             const form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
+            tick(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME); // Wait for debounce
             tick(0); // Let error handler run
             spectator.detectChanges();
 
