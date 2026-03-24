@@ -387,7 +387,7 @@ export class DotUveContentletQuickEditComponent {
                     this.#savedSnapshot = { ...filteredFormValues };
 
                     if (isTraditionalPage) {
-                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                        this.#uveStore.pageReload();
                     }
 
                     this.#messageService.add({

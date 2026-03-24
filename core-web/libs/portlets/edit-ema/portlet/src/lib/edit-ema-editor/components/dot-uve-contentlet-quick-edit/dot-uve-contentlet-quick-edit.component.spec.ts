@@ -173,6 +173,7 @@ describe('DotUveContentletQuickEditComponent', () => {
                 pageType: jest.fn().mockReturnValue(PageType.HEADLESS),
                 addCurrentPageToHistory: jest.fn(),
                 setUveStatus: jest.fn(),
+                pageReload: jest.fn(),
                 saveQuickEditFields: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(MessageService),

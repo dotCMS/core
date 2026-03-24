@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { EMPTY, Observable, of } from 'rxjs';
+import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
@@ -9,6 +9,7 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    DestroyRef,
     ElementRef,
     OnDestroy,
     OnInit,
@@ -20,7 +21,7 @@ import {
     signal,
     untracked
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -79,7 +80,6 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
-import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
@@ -170,7 +170,6 @@ const MESSAGE_KEY = {
         DotHttpErrorManagerService,
         DotContentletService,
         DotTempFileUploadService,
-        DotUveBridgeService,
         DotUveActionsHandlerService,
         DotUveDragDropService
     ]
@@ -258,7 +257,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
-    private readonly bridgeService = inject(DotUveBridgeService);
+    private readonly destroyRef = inject(DestroyRef);
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
@@ -514,10 +513,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.bridgeService.sendMessageToIframe(
-            { name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS },
-            this.host
-        );
+        this.sendMessageToIframe({ name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS }, this.host);
         this.iframeMessenger.requestBounds();
     });
 
@@ -552,16 +548,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        // Bridge service handles message events - needs iframe which is available now
-        const messageStream = this.bridgeService.initialize(this.iframe);
-
-        messageStream.subscribe((event) => {
-            this.bridgeService.handleMessage(
-                event,
-                (message) => this.handleUveMessage(message),
-                () => this.#clampScrollWithinBounds()
-            );
-        });
+        fromEvent<MessageEvent>(this.window, 'message')
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((event) => {
+                const data = event.data;
+                if (this.#isUvePostMessage(data)) {
+                    this.handleUveMessage(data);
+                    if (data.action === DotCMSUVEAction.IFRAME_HEIGHT) {
+                        this.#clampScrollWithinBounds();
+                    }
+                }
+            });
 
         this.setupDragDrop();
     }
@@ -933,7 +930,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 }
 
                 if (clientAction === DotCMSUVEAction.EDIT_CONTENTLET) {
-                    this.bridgeService.sendMessageToIframe(
+                    this.sendMessageToIframe(
                         {
                             name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
                         },
@@ -1016,7 +1013,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
                 // This is a temporary solution to "reload" the content by reloading the window
                 // we should change this with a new SDK reload strategy
-                this.bridgeService.sendMessageToIframe(
+                this.sendMessageToIframe(
                     {
                         name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
                     },
@@ -1078,13 +1075,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof DotEmaComponent
      */
     reloadIframeContent(): void {
-        this.bridgeService.sendMessageToIframe(
+        this.sendMessageToIframe(
             {
                 name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA,
                 payload: this.#clientPayload()
             },
             this.host
         );
+    }
+
+    private sendMessageToIframe(message: unknown, host = '*'): void {
+        this.iframe?.nativeElement.contentWindow?.postMessage(message, host);
+    }
+
+    #isUvePostMessage(data: unknown): data is PostMessage {
+        return !!data && typeof data === 'object' && 'action' in data;
     }
 
     private handleDuplicatedContentlet() {

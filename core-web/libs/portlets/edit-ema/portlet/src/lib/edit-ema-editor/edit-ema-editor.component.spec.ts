@@ -7,7 +7,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { EMPTY, Observable, of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, EventEmitter, Input, Output, signal, Component } from '@angular/core';
@@ -99,7 +99,6 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
-import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
@@ -160,12 +159,6 @@ const messagesMock = {
 const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com'),
     loggedUser: signal(CurrentUserDataMock)
-};
-
-const mockDotUveBridgeService = {
-    initialize: jest.fn(() => EMPTY),
-    handleMessage: jest.fn(),
-    sendMessageToIframe: jest.fn()
 };
 
 const mockDotUveActionsHandlerService = {
@@ -327,10 +320,6 @@ const createRouting = () =>
             {
                 provide: DotUveActionsHandlerService,
                 useValue: mockDotUveActionsHandlerService
-            },
-            {
-                provide: DotUveBridgeService,
-                useValue: mockDotUveBridgeService
             },
             {
                 provide: DotUveDragDropService,
