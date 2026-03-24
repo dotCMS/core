@@ -4,7 +4,7 @@ home_dir := env_var('HOME')
 #
 # Getting started:
 #   brew install just          # or: mise install (if you have mise)
-#   just setup                 # installs mise, configures shell, installs all tools
+#   just setup                 # installs mise, configures shell, installs all tools, wires git hooks
 #   just build                 # full build (~8-15 min)
 #   just dev-run 8080          # start the stack
 #
@@ -58,30 +58,22 @@ setup:
 
     echo "Detected shell: $SHELL_NAME"
 
-    # Profile files (.zprofile, .bash_profile) are sourced by all login shells, including
-    # non-interactive ones (Claude Code, git hooks, cron). We add the shims directory to
-    # PATH directly — no eval, no mise binary lookup — so tools resolve regardless of how
-    # mise was installed (curl, Homebrew, apt, etc.).
-    # Interactive rc files (.zshrc, .bashrc) then replace shims with direct tool paths via
-    # full `mise activate`.
-    SHIMS_LINE='export PATH="$HOME/.local/share/mise/shims:$PATH"'
-
     case "$SHELL_NAME" in
         zsh)
-            if add_line_if_missing ~/.zprofile "$SHIMS_LINE"; then SHELL_CONFIG_CHANGED=1; fi
+            if add_line_if_missing ~/.zprofile 'eval "$(mise activate zsh --shims)"'; then SHELL_CONFIG_CHANGED=1; fi
             if add_line_if_missing ~/.zshrc 'eval "$(mise activate zsh)"'; then SHELL_CONFIG_CHANGED=1; fi
             ;;
         bash)
-            if add_line_if_missing ~/.bash_profile "$SHIMS_LINE"; then SHELL_CONFIG_CHANGED=1; fi
+            if add_line_if_missing ~/.bash_profile 'eval "$(mise activate bash --shims)"'; then SHELL_CONFIG_CHANGED=1; fi
             if add_line_if_missing ~/.bashrc 'eval "$(mise activate bash)"'; then SHELL_CONFIG_CHANGED=1; fi
             ;;
         fish)
-            if add_line_if_missing ~/.config/fish/config.fish 'set -gx PATH $HOME/.local/share/mise/shims $PATH'; then SHELL_CONFIG_CHANGED=1; fi
+            if add_line_if_missing ~/.config/fish/config.fish 'mise activate fish --shims | source'; then SHELL_CONFIG_CHANGED=1; fi
             if add_line_if_missing ~/.config/fish/config.fish 'mise activate fish | source'; then SHELL_CONFIG_CHANGED=1; fi
             ;;
         *)
             echo "Unknown shell: $SHELL_NAME, falling back to ~/.profile"
-            if add_line_if_missing ~/.profile "$SHIMS_LINE"; then SHELL_CONFIG_CHANGED=1; fi
+            if add_line_if_missing ~/.profile 'export PATH="$HOME/.local/share/mise/shims:$PATH"'; then SHELL_CONFIG_CHANGED=1; fi
             ;;
     esac
 
@@ -96,6 +88,12 @@ setup:
     echo ""
     echo "Installing tools..."
     "$MISE" install
+
+    # Install worktrunk shell integration if available
+    if command -v wt &>/dev/null || [ -f "$HOME/.local/share/mise/shims/wt" ]; then
+        "$MISE" exec -- wt config shell install 2>/dev/null && \
+            echo "  ✓ worktrunk shell integration installed" || true
+    fi
 
     # Git hooks — core-web/prepare.js writes branch-aware wrappers (no yarn install required).
     if [ -f "$REPO_ROOT/core-web/prepare.js" ]; then
@@ -132,16 +130,17 @@ setup:
         esac
     fi
 
-# Initializes a project after cloning or creating a worktree. Depends on `setup` (prior dependency —
-# see https://just.systems/man/en/dependencies.html); avoids recursive `just` (same manual warns that
+# Initializes a worktree after creation. Depends on `setup` (prior dependency — see
+# https://just.systems/man/en/dependencies.html); avoids recursive `just` (same manual warns that
 # child invocations recalculate state and can duplicate work). Recipe cwd is the justfile directory.
-# Safe to run manually to fix a broken environment.
-init: setup
+# Called by wt.toml post-create hook — keeps logic in one place instead of duplicating in wt.toml.
+# Also safe to run manually to fix a broken worktree.
+worktree-init: setup
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "Initializing project..."
+    echo "Initializing worktree..."
 
-    # Fresh checkouts may need this path trusted for mise config (harmless if already trusted).
+    # New worktrees may need this path trusted for mise config (harmless if already trusted).
     command -v mise >/dev/null 2>&1 && mise trust 2>/dev/null || true
 
     # Frontend deps — yarn install reconciles node_modules against lockfile
@@ -150,7 +149,7 @@ init: setup
     echo "Installing frontend dependencies..."
     cd core-web && yarn install && cd ..
 
-    # Warn if yarn.lock drifted (copied cache from another branch can cause this)
+    # Warn if yarn.lock drifted (cross-branch cache can cause this)
     if ! git diff --quiet -- core-web/yarn.lock 2>/dev/null; then
         echo ""
         echo "WARNING: yarn.lock changed after install (cross-branch cache drift)."
@@ -166,24 +165,24 @@ init: setup
     # Git hooks: yarn install (step 2) already ran core-web/prepare.js — do not run
     # lefthook install here; it would replace branch-aware wrappers with machine-specific scripts.
 
-    echo "✓ Project ready"
+    echo "✓ Worktree ready"
 
-# Derives a Docker-safe slug from the project folder name (used for image tags and container namespaces)
-_project-slug:
-    @basename "$(pwd)" \
+# Derives a Docker-safe slug from the current branch name (used for image tags and container namespaces)
+_worktree-slug:
+    @git rev-parse --abbrev-ref HEAD 2>/dev/null \
         | sed 's/[^a-zA-Z0-9._-]/-/g; s/^[.-]*//' | cut -c1-64 \
         || echo "default"
 
-# Image tag: slug + short commit hash (e.g., "my-project-a1b2c3d4")
-_project-image-tag:
-    @echo "$(just _project-slug)-$(git rev-parse --short=8 HEAD 2>/dev/null || echo unknown)"
+# Image tag: slug + short commit hash (e.g., "my-feature-a1b2c3d4")
+_worktree-image-tag:
+    @echo "$(just _worktree-slug)-$(git rev-parse --short=8 HEAD 2>/dev/null || echo unknown)"
 
-# Derives a short, unique, human-readable identifier from the project slug.
-# Format: <prefix_24>_<sha256_8> — e.g., "core_baseline_cursor_dev_0e809b4d"
+# Derives a short, unique, human-readable identifier from the worktree slug.
+# Format: <prefix_24>_<sha256_8> — e.g., "cursor_development_envir_0e809b4d"
 # Guarantees uniqueness (hash) while remaining identifiable (prefix).
-_project-id:
+_worktree-id:
     #!/usr/bin/env bash
-    SLUG=$(just _project-slug)
+    SLUG=$(just _worktree-slug)
     PREFIX=$(echo "$SLUG" | sed 's/[^a-zA-Z0-9_]/_/g' | cut -c1-24)
     HASH=$(printf '%s' "$SLUG" | shasum -a 256 2>/dev/null || printf '%s' "$SLUG" | sha256sum)
     HASH=${HASH%% *}
@@ -194,14 +193,14 @@ _shared-services-running:
     @docker inspect dotcms-shared-db --format '{{ "{{.State.Running}}" }}' 2>/dev/null | grep -q true
 
 # Derives a PostgreSQL-safe database name for the given module and context.
-# Format: <module>_<project-id> — unique and within PostgreSQL's 63-char limit.
+# Format: <module>_<worktree-id> — unique and within PostgreSQL's 63-char limit.
 _shared-dbname module="dotcms-core":
     #!/usr/bin/env bash
     MODULE=$(echo '{{ module }}' | sed 's/[^a-zA-Z0-9_]/_/g')
-    WTID=$(just _project-id)
+    WTID=$(just _worktree-id)
     echo "${MODULE}_${WTID}"
 
-# Creates per-project database in shared PostgreSQL if it doesn't exist
+# Creates per-worktree database in shared PostgreSQL if it doesn't exist
 _ensure-shared-db module="dotcms-core":
     #!/usr/bin/env bash
     DB_NAME=$(just _shared-dbname {{ module }})
@@ -213,12 +212,12 @@ _ensure-shared-db module="dotcms-core":
     fi
 
 # Full build without tests — filters output to phase transitions and errors. Full log saved to /tmp.
-# Tags the image with project slug + commit SHA, plus mutable aliases.
+# Tags the image with worktree slug + commit SHA, plus mutable aliases.
 build:
     #!/usr/bin/env bash
     set -o pipefail
-    WTAG=$(just _project-image-tag)
-    WSLUG=$(just _project-slug)
+    WTAG=$(just _worktree-image-tag)
+    WSLUG=$(just _worktree-slug)
     LOG=$(mktemp /tmp/dotcms-build.XXXXXX)
     echo "Building dotCMS (full) — image: dotcms/dotcms-test:${WTAG} — log: $LOG"
     ./mvnw -DskipTests clean install \
@@ -255,10 +254,10 @@ build-quick:
     ./mvnw -DskipTests install
 
 # Builds dotcms-core incrementally, showing phase/error progress. Full log saved to /tmp.
-# Tags the image with project slug + commit SHA, plus mutable aliases.
+# Tags the image with worktree slug + commit SHA, plus mutable aliases.
 #
 # WARNING: Only builds dotcms-core (-pl :dotcms-core). Dependencies like core-web are pulled
-# from ~/.m2/repository/ — whatever was last installed by ANY project's `just build`.
+# from ~/.m2/repository/ — whatever was last installed by ANY worktree's `just build`.
 # The embedded frontend WAR may be from a different branch. This is fine when:
 #   - Testing backend-only changes with `nx serve` at :4200 (frontend comes from source)
 #   - The .m2 WAR is recent and from the same branch
@@ -266,8 +265,8 @@ build-quick:
 build-quicker:
     #!/usr/bin/env bash
     set -o pipefail
-    WTAG=$(just _project-image-tag)
-    WSLUG=$(just _project-slug)
+    WTAG=$(just _worktree-image-tag)
+    WSLUG=$(just _worktree-slug)
     LOG=$(mktemp /tmp/dotcms-build.XXXXXX)
 
     # Check if the .m2 core-web WAR is from this branch (warn if not)
@@ -335,19 +334,19 @@ build-select-module module="dotcms-core":
 build-select-module-deps module=":dotcms-core":
     ./mvnw install -pl {{ module }} --am -DskipTests=true
 
-# Starts dotCMS on the given port. Defaults to current project's image.
-# port=""         → read from .dev-port file, else 8082
-# image=""        → auto-detect from project (dotcms/dotcms-test:{slug})
+# Starts dotCMS on the given port. Defaults to current worktree's image.
+# port=""         → read from .dev-port (set by `wt switch --create` via hash_port), else 8082
+# image=""        → auto-detect from worktree (dotcms/dotcms-test:{slug})
 # image="default" → use stock 1.0.0-SNAPSHOT (no build needed — for frontend devs)
-# image="<full>"  → use as-is (e.g., another project's tag)
+# image="<full>"  → use as-is (e.g., another worktree's tag)
 # mode=""         → auto-detect (shared if running, else local)
 # mode="shared"   → force shared services (error if not running)
-# mode="local"    → force local sidecars via fabric8
+# mode="local"    → force per-worktree sidecars via fabric8
 dev-run port="" image="" mode="":
     #!/usr/bin/env bash
     set -euo pipefail
     just dev-stop 2>/dev/null || true
-    WSLUG=$(just _project-slug)
+    WSLUG=$(just _worktree-slug)
     # --- Resolve port: explicit > .dev-port > default 8082 ---
     PORT="{{ port }}"
     if [ -z "$PORT" ] && [ -f .dev-port ]; then
@@ -359,7 +358,7 @@ dev-run port="" image="" mode="":
     if [ -z "{{ image }}" ]; then
         IMG="dotcms/dotcms-test:${WSLUG}"
         if ! docker image inspect "$IMG" >/dev/null 2>&1; then
-            echo "No image for this project (${WSLUG}). Trying 1.0.0-SNAPSHOT..."
+            echo "No image for this worktree (${WSLUG}). Trying 1.0.0-SNAPSHOT..."
             IMG="dotcms/dotcms-test:1.0.0-SNAPSHOT"
         fi
     elif [ "{{ image }}" = "default" ]; then
@@ -382,7 +381,7 @@ dev-run port="" image="" mode="":
 
     if [ "$USE_SHARED" = "true" ]; then
         DB_NAME=$(just _shared-dbname dotcms-core)
-        CLUSTER_ID=$(just _project-id)
+        CLUSTER_ID=$(just _worktree-id)
         just _ensure-shared-db dotcms-core
         echo "Starting $IMG on :${PORT} (shared services, db: ${DB_NAME}, namespace: ${WSLUG})"
         ./mvnw -pl :dotcms-core -Pdocker-start,shared-services \
@@ -424,11 +423,11 @@ dev-urls:
     echo "  Health    → http://localhost:${MGMT}/dotmgt/livez"
     echo ""
 
-# Stops current project's dev containers. In shared mode, stops only the app container.
+# Stops current worktree's dev containers. In shared mode, stops only the app container.
 # In local mode, stops app + sidecars. Safe no-op if not running.
 dev-stop:
     #!/usr/bin/env bash
-    WSLUG=$(just _project-slug)
+    WSLUG=$(just _worktree-slug)
     CONTAINER="dotbuild_dotcms-core_${WSLUG}_dotcms"
     # Direct stop handles shared-mode containers (not fabric8-managed)
     if docker inspect "$CONTAINER" >/dev/null 2>&1; then
@@ -445,7 +444,7 @@ dev-restart port="" image="" mode="":
     just dev-run {{ port }} {{ image }} {{ mode }}
 
 # Starts the Angular frontend dev server on :4200. Discovers backend port from Docker; falls back to :8080.
-# port=""  → 4200 (default). Use a different port for parallel projects (e.g., 4201, 4202).
+# port=""  → 4200 (default). Use a different port for parallel worktrees (e.g., 4201, 4202).
 dev-start-frontend port="4200":
     #!/usr/bin/env bash
     set -euo pipefail
@@ -454,8 +453,8 @@ dev-start-frontend port="4200":
         exit 0
     fi
     # Discover the backend app port from Docker. Falls back to 8080 if no container is running.
-    # 3-stage discovery: prefer current project's container, fall back to any.
-    WSLUG=$(just _project-slug)
+    # 3-stage discovery: prefer current worktree's container, fall back to any.
+    WSLUG=$(just _worktree-slug)
     CONTAINER=$(docker ps --filter "status=running" \
                           --format '{{ "{{.Names}}" }}' \
                           | grep -E "^dotbuild_dotcms-core_${WSLUG}_dotcms$" | head -1 || true)
@@ -478,7 +477,7 @@ dev-start-frontend port="4200":
     cd core-web
     # DOTCMS_HOST is read by proxy-dev.conf.mjs to set the proxy target.
     # export ensures it's visible to the nohup child process.
-    # NX_DAEMON=false prevents the Nx daemon from serializing parallel builds.
+    # NX_DAEMON=false prevents the Nx daemon from serializing parallel worktree builds.
     export DOTCMS_HOST
     export NX_DAEMON=false
     NODE_OPTIONS="--max_old_space_size=4096" nohup yarn nx serve dotcms-ui --port="$FE_PORT" > ../.frontend.log 2>&1 &
@@ -588,12 +587,12 @@ dev port="" fe-port="4200":
     echo ""
     echo "  Frontend → http://localhost:{{ fe-port }}/dotAdmin (live reload)"
 
-# Internal helper: finds the running dotCMS container. Prefers current project, falls back to any.
-# 3-stage discovery: 1) exact project match, 2) any dotcms-test image, 3) name pattern.
+# Internal helper: finds the running dotCMS container. Prefers current worktree, falls back to any.
+# 3-stage discovery: 1) exact worktree match, 2) any dotcms-test image, 3) name pattern.
 _dotcms-container:
     #!/usr/bin/env bash
-    WSLUG=$(just _project-slug)
-    # Stage 1: exact match for current project's container
+    WSLUG=$(just _worktree-slug)
+    # Stage 1: exact match for current worktree's container
     NAMES=$(docker ps --filter "status=running" \
                       --format '{{ "{{.Names}}" }}' \
                       | grep -E "^dotbuild_dotcms-core_${WSLUG}_dotcms$" || true)
@@ -649,21 +648,21 @@ dev-wait:
     echo ""
     just dev-health
 
-# Cleans up Docker volumes associated with the current project's development environment
+# Cleans up Docker volumes associated with the current worktree's development environment
 dev-clean-volumes:
     #!/usr/bin/env bash
-    WSLUG=$(just _project-slug)
+    WSLUG=$(just _worktree-slug)
     ./mvnw -pl :dotcms-core -Pdocker-clean-volumes -Dcontext.name="$WSLUG"
 
 # Lists locally built dotCMS images with tag, size, and age
 dev-images:
     @docker images dotcms/dotcms-test --format 'table {{ "{{.Tag}}\t{{.Size}}\t{{.CreatedSince}}" }}'
 
-# Lists all running dotCMS containers across projects
+# Lists all running dotCMS containers across worktrees
 dev-containers:
     @docker ps --filter "name=dotbuild_" --format 'table {{ "{{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}" }}'
 
-# Stops ALL dotCMS dev containers across all projects
+# Stops ALL dotCMS dev containers across all worktrees
 dev-stop-all:
     #!/usr/bin/env bash
     CONTAINERS=$(docker ps --filter "name=dotbuild_" -q)
@@ -695,10 +694,10 @@ dev-run-jmx-debug-glowroot:
     ./mvnw -pl :dotcms-core -Pdocker-start,jmx-debug,glowroot -Djmx.debug.enable=true -Ddocker.glowroot.enabled=true
 
 ###########################################################
-# Shared Services (parallel development)
+# Shared Services (multi-worktree)
 ###########################################################
 
-# Starts shared DB + OpenSearch for parallel development. Run once, use from all project folders.
+# Starts shared DB + OpenSearch for multi-worktree development. Run once, use from all worktrees.
 dev-shared-start:
     docker compose -f docker/docker-compose-shared-services.yml -p dotcms-shared up -d --wait
     @echo ""
@@ -707,7 +706,7 @@ dev-shared-start:
     @echo "  OpenSearch → localhost:19200"
     @echo "  OS Upgrade → localhost:19201"
     @echo ""
-    @echo "Now run 'just dev-run <port>' in any project folder."
+    @echo "Now run 'just dev-run <port>' in any worktree."
     @echo ""
     @echo "NOTE: These containers auto-restart on boot (~3GB RAM)."
     @echo "Run 'just dev-shared-stop' when you no longer need them."
@@ -724,24 +723,24 @@ dev-shared-status:
 dev-shared-clean:
     docker compose -f docker/docker-compose-shared-services.yml -p dotcms-shared down -v
 
-# Drops current project's database from shared PostgreSQL
+# Drops current worktree's database from shared PostgreSQL
 dev-shared-drop-db module="dotcms-core":
     #!/usr/bin/env bash
     DB_NAME=$(just _shared-dbname {{ module }})
     echo "Dropping database ${DB_NAME}..."
     docker exec dotcms-shared-db dropdb -U postgres --if-exists "${DB_NAME}"
 
-# Lists all project databases in shared PostgreSQL
+# Lists all worktree databases in shared PostgreSQL
 dev-shared-list-dbs:
     @docker exec dotcms-shared-db psql -U postgres -c \
         "SELECT datname, pg_size_pretty(pg_database_size(datname)) AS size FROM pg_database WHERE datname NOT IN ('postgres','template0','template1','dotcms') ORDER BY datname"
 
-# Deletes OpenSearch indexes for the current project from both shared instances.
-# Index prefix: cluster_<project-id>.* (see ESIndexAPI.java:152)
+# Deletes OpenSearch indexes for the current worktree from both shared instances.
+# Index prefix: cluster_<worktree-id>.* (see ESIndexAPI.java:152)
 dev-shared-drop-indexes:
     #!/usr/bin/env bash
     set -euo pipefail
-    WTID=$(just _project-id)
+    WTID=$(just _worktree-id)
     PREFIX="cluster_${WTID}."
     echo "Deleting indexes matching ${PREFIX}* from shared OpenSearch instances..."
     for container in dotcms-shared-es dotcms-shared-os-upgrade; do
@@ -759,20 +758,20 @@ dev-shared-drop-indexes:
         fi
     done
 
-# Removes all shared data for the current project: database + OpenSearch indexes.
-# Safe to run while shared services are still serving other projects.
-dev-shared-drop-project:
+# Removes all shared data for the current worktree: database + OpenSearch indexes.
+# Safe to run while shared services are still serving other worktrees.
+dev-shared-drop-worktree:
     just dev-shared-drop-db
     just dev-shared-drop-indexes
-    @echo "Project data cleaned from shared services."
+    @echo "Worktree data cleaned from shared services."
 
 # Returns 0 if any dotCMS app containers are using shared services
 _shared-services-in-use:
     @docker network inspect dotcms-shared --format '{{ "{{range .Containers}}{{.Name}} {{end}}" }}' 2>/dev/null \
         | grep -q 'dotbuild_'
 
-# Stops shared services only if no app containers are connected.
-# Use from automation/agents — safe no-op if other projects are still running.
+# Stops shared services only if no worktree app containers are connected.
+# Use from automation/agents — safe no-op if other worktrees are still running.
 dev-shared-stop-if-idle:
     #!/usr/bin/env bash
     if just _shared-services-in-use 2>/dev/null; then
@@ -781,7 +780,7 @@ dev-shared-stop-if-idle:
             | tr ' ' '\n' | grep 'dotbuild_' | sed 's/^/  /'
         echo "Not stopping. Use 'just dev-shared-stop' to force."
     else
-        echo "No projects using shared services. Stopping..."
+        echo "No worktrees using shared services. Stopping..."
         just dev-shared-stop
     fi
 

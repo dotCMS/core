@@ -1,4 +1,4 @@
-# Shared services for parallel development.
+# Shared services for parallel worktree development.
 # Start once: just dev-shared-start
 # Then each worktree: just dev-run 8080 (auto-detects shared services)
 services:
