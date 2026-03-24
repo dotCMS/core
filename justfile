@@ -511,7 +511,10 @@ dev-stop-frontend:
         fi
         rm -f "$PID_FILE"
     else
-        # No PID file — try to find the process by scanning common frontend ports
+        # No PID file — best-effort fallback: scan common frontend ports.
+        # Tries lsof (macOS + most Linux), ss (modern Linux), fuser (POSIX).
+        # Not all are available on every system — each falls through silently.
+        # This path only fires if .frontend.pid was manually deleted.
         for port in 4200 4201 4202 4203 4204; do
             PID=$(lsof -ti :"$port" 2>/dev/null \
                   || ss -Htlnp "sport = :$port" 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' \
