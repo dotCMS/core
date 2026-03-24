@@ -12,7 +12,7 @@ export const DOTCMS_USER = {
 export const DOTCMS_HEALTH_API = `${DOTCMS_HOST}/api/v1/appconfiguration`;
 export const DOTCMS_TOKEN_API = `${DOTCMS_HOST}/api/v1/authentication/api-token`;
 export const DOTCMS_EMA_CONFIG_API = `${DOTCMS_HOST}/api/v1/apps/dotema-config-v2/`;
-export const DOTCMS_DEMO_SITE = `${DOTCMS_HOST}/api/v1/site/`;
+export const DOTCMS_SITE_API = `${DOTCMS_HOST}/api/v1/site/`;
 
 // Health check configuration
 export const CLOUD_HEALTH_CHECK_RETRIES = 5; // Retries for cloud instances (faster expected startup)
