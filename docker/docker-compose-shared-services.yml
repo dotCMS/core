@@ -13,7 +13,7 @@ services:
     ports:
       - "127.0.0.1:15432:5432"
     volumes:
-      - shared-db-data:/var/lib/postgresql
+      - shared-db-data:/var/lib/postgresql/data
     networks:
       - dotcms-shared
     healthcheck:
