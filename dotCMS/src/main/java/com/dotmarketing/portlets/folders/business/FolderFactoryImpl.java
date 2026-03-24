@@ -803,11 +803,11 @@ public class FolderFactoryImpl extends FolderFactory {
     folder.setName(newName);
     save(folder);
 
-    //  Update the folder's identifier asset_name in-place
+    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
     ident.setAssetName(newName);
     APILocator.getIdentifierAPI().save(ident);
 
-    // Bulk-update every child identifier's parent_path, level by level (iterative — no recursion).
+    // Bulk-update every child identifier's parent_path depth-first (iterative — no recursion).
     //    Pure SQL, no Elasticsearch dependency, so unindexed items are never missed.
     updateChildPaths(oldPath, newPath, hostId);
 
@@ -817,9 +817,12 @@ public class FolderFactoryImpl extends FolderFactory {
     // Evict identifier cache for every identifier moved to the new subtree
     clearIdentifierCacheForSubtree(newPath, hostId);
 
-    // Nav cache cleanup
+    // Nav cache cleanup — evict the renamed folder, its parent, and every sub-folder in the tree
     CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
     CacheLocator.getNavToolCache().removeNavByPath(hostId, parentPath);
+    for (final Map<String, Object> row : subFolderSnapshot) {
+      CacheLocator.getNavToolCache().removeNav(hostId, (String) row.get("inode"));
+    }
 
     // Queue async ES reindex for all content under the renamed folder so path data stays current
     APILocator.getContentletAPI().refreshContentUnderFolder(folder);
@@ -835,24 +838,26 @@ public class FolderFactoryImpl extends FolderFactory {
   private List<Map<String, Object>> loadSubFolderSnapshot(final String oldPath, final String hostId)
       throws DotDataException {
 
-    // LIKE 'oldPath%' covers the direct children path (/old/) and all nested sub-paths (/old/sub/).
+    // LIKE 'oldPath%' covers direct children (/old/) and all nested sub-paths (/old/sub/).
+    // Escape '%' and '_' so folder names containing those characters do not widen the match.
+    final String likeParam = escapeLikeParam(oldPath) + "%";
     return new DotConnect()
         .setSQL("SELECT f.inode, i.parent_path, i.asset_name"
             + " FROM identifier i JOIN folder f ON f.identifier = i.id"
-            + " WHERE i.parent_path LIKE ? AND i.asset_type = 'folder' AND i.host_inode = ?")
-        .addParam(oldPath + "%")
+            + " WHERE i.parent_path LIKE ? ESCAPE '\\' AND i.asset_type = 'folder' AND i.host_inode = ?")
+        .addParam(likeParam)
         .addParam(hostId)
         .loadResults();
   }
 
   /**
    * Iteratively updates the {@code parent_path} column for the full sub-tree rooted at
-   * {@code startOldPath}, processing one folder level at a time.
+   * {@code startOldPath} using a depth-first traversal.
    * <p>
-   * Processing level-by-level (parent before children) satisfies the
-   * {@code identifier_parent_path_trigger}, which verifies that each row's new parent path already
-   * exists as a folder identifier at update time. An iterative approach with an explicit
-   * {@link Deque} is used instead of recursion to avoid stack overflow on deeply nested trees.
+   * Each folder level is processed before its children are pushed onto the stack, which satisfies
+   * the {@code identifier_parent_path_trigger} requirement that a row's new parent path must
+   * already exist as a folder identifier at update time. An explicit {@link Deque} is used instead
+   * of recursion to avoid stack overflow on deeply nested trees.
    */
   private void updateChildPaths(final String startOldPath, final String startNewPath,
       final String hostId) throws DotDataException {
@@ -916,15 +921,26 @@ public class FolderFactoryImpl extends FolderFactory {
       throws DotDataException {
 
     // rootPath always ends with '/' so it cannot accidentally match sibling folder paths.
+    // Escape '%' and '_' so folder names containing those characters do not widen the match.
+    final String likeParam = escapeLikeParam(rootPath) + "%";
     final List<Map<String, Object>> rows = new DotConnect()
-        .setSQL("SELECT id FROM identifier WHERE parent_path LIKE ? AND host_inode = ?")
-        .addParam(rootPath + "%")
+        .setSQL("SELECT id FROM identifier WHERE parent_path LIKE ? ESCAPE '\\' AND host_inode = ?")
+        .addParam(likeParam)
         .addParam(hostId)
         .loadResults();
 
     for (final Map<String, Object> row : rows) {
       CacheLocator.getIdentifierCache().removeFromCacheByIdentifier((String) row.get("id"));
     }
+  }
+
+  /**
+   * Escapes {@code %} and {@code _} in a SQL LIKE pattern parameter so that folder names
+   * containing those characters do not unintentionally widen the match.
+   * Use in conjunction with {@code ESCAPE '\\'} in the LIKE clause.
+   */
+  private static String escapeLikeParam(final String value) {
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
   }
 
   protected boolean matchFilter(Folder folder, String fileName) {
