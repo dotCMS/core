@@ -171,9 +171,9 @@ test.describe('Search and Filter', () => {
         expect(initialCount).toBeGreaterThanOrEqual(5);
 
         await selectDialog.search('John');
-        await adminPage.waitForTimeout(1000);
 
         // "John" matches: John Smith, John Doe, Alice Johnson = 3 results
+        // expectRowCount uses toHaveCount which auto-retries until results update
         await selectDialog.expectRowCount(3);
 
         await selectDialog.clickCancel();
@@ -194,14 +194,15 @@ test.describe('Search and Filter', () => {
         const initialCount = await selectDialog.getRowCount();
 
         await selectDialog.search('John');
-        await adminPage.waitForTimeout(1000);
+        await selectDialog.expectRowCount(3);
 
         await selectDialog.openFilters();
         await selectDialog.clearSearch();
-        await adminPage.waitForTimeout(1000);
 
-        const resetCount = await selectDialog.getRowCount();
-        expect(resetCount).toBeGreaterThanOrEqual(initialCount);
+        // Use polling assertion — getRowCount() is a snapshot, not auto-retrying
+        await expect
+            .poll(() => selectDialog.getRowCount(), { timeout: 10000 })
+            .toBeGreaterThanOrEqual(initialCount);
 
         await selectDialog.clickCancel();
     });
@@ -221,13 +222,12 @@ test.describe('Search and Filter', () => {
         await selectDialog.selectItems([0, 1]);
 
         await selectDialog.toggleShowSelected();
-        await adminPage.waitForTimeout(500);
         await selectDialog.expectRowCount(2);
 
         await selectDialog.toggleShowSelected();
-        await adminPage.waitForTimeout(500);
-        const allCount = await selectDialog.getRowCount();
-        expect(allCount).toBeGreaterThanOrEqual(5);
+        await expect
+            .poll(() => selectDialog.getRowCount(), { timeout: 10000 })
+            .toBeGreaterThanOrEqual(5);
 
         await selectDialog.clickCancel();
     });

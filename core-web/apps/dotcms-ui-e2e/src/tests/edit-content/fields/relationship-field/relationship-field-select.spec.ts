@@ -134,7 +134,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await relationshipField.expectEmpty();
             });
 
-            test('dismiss dialog via ESC key @smoke', async ({ adminPage }) => {
+            test('ESC key does not dismiss select existing dialog @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');
@@ -149,6 +149,11 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await dialog.selectSingleItem(0);
                 await dialog.closeViaEsc();
 
+                // Dialog has closeOnEscape: false — ESC should NOT close it
+                await dialog.waitForVisible();
+
+                await dialog.clickCancel();
+                await dialog.expectClosed();
                 await relationshipField.expectEmpty();
             });
         });

@@ -93,9 +93,8 @@ export class SelectExistingContentDialog {
 
     async closeViaXButton(): Promise<void> {
         const closeButton = this.dialog.locator('.p-dialog-header-close, .p-dialog-close-button');
-        if ((await closeButton.count()) > 0) {
-            await closeButton.click();
-        }
+        await expect(closeButton).toBeVisible({ timeout: 5000 });
+        await closeButton.click();
     }
 
     async closeViaEsc(): Promise<void> {
