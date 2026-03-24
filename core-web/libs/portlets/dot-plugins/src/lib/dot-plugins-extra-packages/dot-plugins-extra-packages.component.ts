@@ -1,6 +1,7 @@
 import { EMPTY } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
@@ -19,6 +20,8 @@ import {
 } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+export const EXTRA_PACKAGES_RESET_RESULT = 'restart' as const;
+
 @Component({
     selector: 'dot-plugins-extra-packages',
     standalone: true,
@@ -27,31 +30,26 @@ import { DotMessagePipe } from '@dotcms/ui';
     providers: [ConfirmationService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotPluginsExtraPackagesComponent implements OnInit {
+export class DotPluginsExtraPackagesComponent {
     readonly #ref = inject(DynamicDialogRef);
     readonly #osgiService = inject(DotOsgiService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    extraPackages = signal('');
+    readonly #packagesResponse = toSignal(
+        this.#osgiService.getExtraPackages().pipe(
+            take(1),
+            catchError((error) => {
+                this.#httpErrorManager.handle(error);
+                return EMPTY;
+            })
+        )
+    );
+
+    extraPackages = linkedSignal(() => this.#packagesResponse()?.entity ?? '');
     saving = signal(false);
     resetting = signal(false);
-
-    ngOnInit(): void {
-        this.#osgiService
-            .getExtraPackages()
-            .pipe(
-                take(1),
-                catchError((error) => {
-                    this.#httpErrorManager.handle(error);
-                    return EMPTY;
-                })
-            )
-            .subscribe((response) => {
-                this.extraPackages.set(response.entity ?? '');
-            });
-    }
 
     save(): void {
         const text = this.extraPackages();
@@ -105,7 +103,7 @@ export class DotPluginsExtraPackagesComponent implements OnInit {
             )
             .subscribe(() => {
                 this.resetting.set(false);
-                this.#ref.close('restart');
+                this.#ref.close(EXTRA_PACKAGES_RESET_RESULT);
             });
     }
 }

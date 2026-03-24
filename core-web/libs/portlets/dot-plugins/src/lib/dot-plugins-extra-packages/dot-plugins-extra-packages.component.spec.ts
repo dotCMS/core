@@ -67,7 +67,7 @@ describe('DotPluginsExtraPackagesComponent', () => {
         jest.mocked(httpErrorManager.handle).mockClear();
     });
 
-    describe('ngOnInit', () => {
+    describe('initialization', () => {
         it('should load and populate extra packages on init', () => {
             expect(osgiService.getExtraPackages).toHaveBeenCalled();
             expect(component.extraPackages()).toBe('pkg1\npkg2');
@@ -77,8 +77,8 @@ describe('DotPluginsExtraPackagesComponent', () => {
             osgiServiceMock.getExtraPackages.mockReturnValue(
                 of({ entity: null as unknown as string })
             );
-            component.ngOnInit();
-            expect(component.extraPackages()).toBe('');
+            const s = createComponent();
+            expect(s.component.extraPackages()).toBe('');
         });
 
         it('should handle load error', () => {
@@ -86,8 +86,8 @@ describe('DotPluginsExtraPackagesComponent', () => {
             osgiServiceMock.getExtraPackages.mockReturnValue(
                 new Observable((subscriber) => subscriber.error(error))
             );
-            component.ngOnInit();
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            const s = createComponent();
+            expect(s.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
         });
     });
 

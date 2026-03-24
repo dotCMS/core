@@ -29,7 +29,7 @@ describe('DotPluginsListComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotPluginsListComponent,
-        providers: [
+        componentProviders: [
             DotPluginsListStore,
             mockProvider(DialogService),
             mockProvider(DotMessageService, { get: (key: string) => key }),
@@ -41,7 +41,7 @@ describe('DotPluginsListComponent', () => {
                 processExports: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(ConfirmationService),
+            ConfirmationService,
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
             mockProvider(DotcmsEventsService, { subscribeTo: jest.fn().mockReturnValue(EMPTY) })
         ],

@@ -17,6 +17,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
+import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -33,7 +34,10 @@ import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPluginsListStore } from './store/dot-plugins-list.store';
 
-import { DotPluginsExtraPackagesComponent } from '../dot-plugins-extra-packages/dot-plugins-extra-packages.component';
+import {
+    DotPluginsExtraPackagesComponent,
+    EXTRA_PACKAGES_RESET_RESULT
+} from '../dot-plugins-extra-packages/dot-plugins-extra-packages.component';
 import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upload.component';
 
 @Component({
@@ -42,6 +46,7 @@ import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upl
     imports: [
         MenuModule,
         TableModule,
+        SkeletonModule,
         ButtonModule,
         ChipModule,
         ConfirmDialogModule,
@@ -61,9 +66,10 @@ import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upl
 export class DotPluginsListComponent {
     readonly store = inject(DotPluginsListStore);
     protected readonly BUNDLE_STATE = BUNDLE_STATE;
+    readonly skeletonRows = Array(10).fill(null);
     isDragging = signal(false);
     private dragCounter = 0;
-    private selectedBundle = signal<PluginRow | null>(null);
+    private readonly selectedBundle = signal<PluginRow | null>(null);
     readonly addToBundleIdentifier = signal<string | null>(null);
     readonly contextMenu = viewChild<ContextMenu>('contextMenu');
     readonly toolbarMenu = viewChild.required<Menu>('toolbarMenu');
@@ -158,7 +164,7 @@ export class DotPluginsListComponent {
             draggable: false
         });
         ref?.onClose.pipe(take(1)).subscribe((result) => {
-            if (result === 'restart') {
+            if (result === EXTRA_PACKAGES_RESET_RESULT) {
                 this.store.restart();
             }
         });

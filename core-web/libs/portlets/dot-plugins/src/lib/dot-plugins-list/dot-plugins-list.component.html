@@ -76,7 +76,10 @@
                     </p>
                 </div>
             </div>
-        } @else if (store.rows().length === 0 && store.status() === 'loaded') {
+        } @else if (
+            store.rows().length === 0 &&
+            (store.status() === 'loaded' || store.status() === 'refreshing')
+        ) {
             <div
                 class="flex-1 flex flex-col items-center justify-center gap-4"
                 data-testid="plugins-empty-state">
@@ -93,11 +96,15 @@
         } @else {
             <p-table
                 #dt
-                [value]="store.rows()"
+                [value]="
+                    store.status() === 'init' || store.status() === 'loading'
+                        ? skeletonRows
+                        : store.rows()
+                "
                 [paginator]="true"
                 [rows]="25"
                 [rowsPerPageOptions]="[10, 25, 50]"
-                [loading]="store.status() === 'loading' || store.status() === 'refreshing'"
+                [loading]="store.status() === 'refreshing'"
                 [scrollable]="true"
                 scrollHeight="flex"
                 [globalFilterFields]="['symbolicName', 'jarFile']"
@@ -118,63 +125,74 @@
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-bundle>
-                    <tr
-                        class="group"
-                        data-testid="plugin-row"
-                        (contextmenu)="onContextMenu($event, bundle)">
-                        <td data-testid="plugin-name">{{ bundle.symbolicName }}</td>
-                        <td data-testid="plugin-state">
-                            @switch (bundle.state) {
-                                @case (BUNDLE_STATE.ACTIVE) {
-                                    <p-chip
-                                        class="bg-green-100! text-green-700! border-green-100! text-xs"
-                                        [label]="'plugins.state.active' | dm" />
+                    @if (store.status() === 'init' || store.status() === 'loading') {
+                        <tr
+                            class="cursor-default h-13 hover:bg-transparent!"
+                            data-testid="plugin-skeleton-row">
+                            <td><p-skeleton height="1.5rem" /></td>
+                            <td style="width: 8rem"><p-skeleton height="1.5rem" width="5rem" /></td>
+                            <td><p-skeleton height="1.5rem" /></td>
+                            <td style="width: 7rem"></td>
+                        </tr>
+                    } @else {
+                        <tr
+                            class="group"
+                            data-testid="plugin-row"
+                            (contextmenu)="onContextMenu($event, bundle)">
+                            <td data-testid="plugin-name">{{ bundle.symbolicName }}</td>
+                            <td data-testid="plugin-state">
+                                @switch (bundle.state) {
+                                    @case (BUNDLE_STATE.ACTIVE) {
+                                        <p-chip
+                                            class="bg-green-100! text-green-700! border-green-100! text-xs"
+                                            [label]="'plugins.state.active' | dm" />
+                                    }
+                                    @case (BUNDLE_STATE.STARTING) {
+                                        <p-chip
+                                            class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                                            [label]="'plugins.state.starting' | dm" />
+                                    }
+                                    @case (BUNDLE_STATE.STOPPING) {
+                                        <p-chip
+                                            class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                                            [label]="'plugins.state.stopping' | dm" />
+                                    }
+                                    @case (BUNDLE_STATE.RESOLVED) {
+                                        <p-chip
+                                            class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
+                                            [label]="'plugins.state.resolved' | dm" />
+                                    }
+                                    @case (BUNDLE_STATE.INSTALLED) {
+                                        <p-chip
+                                            class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
+                                            [label]="'plugins.state.installed' | dm" />
+                                    }
+                                    @case (BUNDLE_STATE.UNINSTALLED) {
+                                        <p-chip
+                                            class="bg-gray-100! text-gray-600! border-gray-100! text-xs"
+                                            [label]="'plugins.state.uninstalled' | dm" />
+                                    }
+                                    @default {
+                                        <p-chip
+                                            class="bg-gray-100! text-gray-600! border-gray-100! text-xs"
+                                            [label]="'plugins.state.undeployed' | dm" />
+                                    }
                                 }
-                                @case (BUNDLE_STATE.STARTING) {
-                                    <p-chip
-                                        class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
-                                        [label]="'plugins.state.starting' | dm" />
-                                }
-                                @case (BUNDLE_STATE.STOPPING) {
-                                    <p-chip
-                                        class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
-                                        [label]="'plugins.state.stopping' | dm" />
-                                }
-                                @case (BUNDLE_STATE.RESOLVED) {
-                                    <p-chip
-                                        class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
-                                        [label]="'plugins.state.resolved' | dm" />
-                                }
-                                @case (BUNDLE_STATE.INSTALLED) {
-                                    <p-chip
-                                        class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
-                                        [label]="'plugins.state.installed' | dm" />
-                                }
-                                @case (BUNDLE_STATE.UNINSTALLED) {
-                                    <p-chip
-                                        class="bg-gray-100! text-gray-600! border-gray-100! text-xs"
-                                        [label]="'plugins.state.uninstalled' | dm" />
-                                }
-                                @default {
-                                    <p-chip
-                                        class="bg-gray-100! text-gray-600! border-gray-100! text-xs"
-                                        [label]="'plugins.state.undeployed' | dm" />
-                                }
-                            }
-                        </td>
-                        <td data-testid="plugin-jar">{{ bundle.jarFile }}</td>
-                        <td data-testid="plugin-actions" style="width: 7rem">
-                            <p-button
-                                class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                                icon="pi pi-ellipsis-v"
-                                [text]="true"
-                                [rounded]="true"
-                                size="small"
-                                (onClick)="onContextMenu($event, bundle)"
-                                data-testid="plugin-actions-btn"
-                                [attr.aria-label]="'plugins.table.actions' | dm" />
-                        </td>
-                    </tr>
+                            </td>
+                            <td data-testid="plugin-jar">{{ bundle.jarFile }}</td>
+                            <td data-testid="plugin-actions" style="width: 7rem">
+                                <p-button
+                                    class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                    icon="pi pi-ellipsis-v"
+                                    [text]="true"
+                                    [rounded]="true"
+                                    size="small"
+                                    (onClick)="onContextMenu($event, bundle)"
+                                    data-testid="plugin-actions-btn"
+                                    [attr.aria-label]="'plugins.table.actions' | dm" />
+                            </td>
+                        </tr>
+                    }
                 </ng-template>
                 <ng-template pTemplate="emptymessage">
                     <tr class="hover:bg-transparent!">

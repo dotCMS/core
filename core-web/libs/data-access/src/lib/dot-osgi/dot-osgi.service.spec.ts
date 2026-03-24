@@ -52,22 +52,6 @@ describe('DotOsgiService', () => {
         });
     });
 
-    describe('getDotSystemBundles', () => {
-        it('should GET dotsystem with ignoresystembundles=false by default', () => {
-            spectator.service.getDotSystemBundles().subscribe();
-            spectator
-                .expectOne('/api/v1/osgi/dotsystem?ignoresystembundles=false', HttpMethod.GET)
-                .flush({});
-        });
-
-        it('should GET dotsystem with ignoresystembundles=true when requested', () => {
-            spectator.service.getDotSystemBundles(true).subscribe();
-            spectator
-                .expectOne('/api/v1/osgi/dotsystem?ignoresystembundles=true', HttpMethod.GET)
-                .flush({});
-        });
-    });
-
     describe('getAvailablePlugins', () => {
         it('should GET available-plugins', () => {
             const entity = ['plugin1.jar', 'plugin2.jar'];

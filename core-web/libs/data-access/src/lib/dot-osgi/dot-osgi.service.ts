@@ -20,13 +20,6 @@ export class DotOsgiService {
         return this.#http.get<DotCMSAPIResponse<BundleMap[]>>(OSGI_BASE, { params });
     }
 
-    getDotSystemBundles(ignoreSystemBundles = false): Observable<DotCMSAPIResponse<BundleMap[]>> {
-        const params = new HttpParams().set('ignoresystembundles', String(ignoreSystemBundles));
-        return this.#http.get<DotCMSAPIResponse<BundleMap[]>>(`${OSGI_BASE}/dotsystem`, {
-            params
-        });
-    }
-
     getAvailablePlugins(): Observable<DotCMSAPIResponse<string[]>> {
         return this.#http.get<DotCMSAPIResponse<string[]>>(`${OSGI_BASE}/available-plugins`);
     }
