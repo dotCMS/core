@@ -249,9 +249,11 @@ public class InitServlet extends HttpServlet {
         }
 
         Logger.info(this,"InitServlet init Completed");
-
-        DotConcurrentFactory.getScheduledThreadPoolExecutor()
-                .schedule(new InitRunner(), Config.getIntProperty("dotcms.pingbacks.delay.sec", 300), TimeUnit.SECONDS);
+        long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 300000);
+        if(runInitThread > 0) {
+            DotConcurrentFactory.getScheduledThreadPoolExecutor()
+                    .schedule(new InitRunner(), runInitThread, TimeUnit.MILLISECONDS);
+        }
 
     }
 
