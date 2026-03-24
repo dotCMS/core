@@ -17,7 +17,7 @@ if (!isCi) {
     try {
         const gitCommonDir = execSync('git rev-parse --git-common-dir', {
             cwd: repoRoot,
-            encoding: 'utf8',
+            encoding: 'utf8'
         }).trim();
         // git-common-dir is absolute in linked worktrees; path.join(repo, absPath) is wrong on Node.
         gitHooksDir = path.isAbsolute(gitCommonDir)
