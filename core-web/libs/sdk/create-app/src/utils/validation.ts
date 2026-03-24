@@ -326,9 +326,11 @@ export function escapeShellPath(filePath: string): string {
  * @param options - CLI options to validate
  */
 export function validateConflictingParameters(options: DotCmsCliOptions): void {
-    const isLocalSet = options.local === true;
+    // `--starter` is a local-only option and should be treated as local mode intent.
+    const isLocalSet = options.local === true || Boolean(options.starter);
 
     if (!isLocalSet) return; // No conflict possible
+    const localModeSource = options.local ? '--local' : '--starter';
 
     // Check for cloud parameters
     const cloudParams: string[] = [];
@@ -340,14 +342,12 @@ export function validateConflictingParameters(options: DotCmsCliOptions): void {
     if (cloudParams.length > 0) {
         console.warn(
             chalk.yellow('\n⚠️  Warning: Conflicting parameters detected\n') +
-                chalk.white('You provided ') +
-                chalk.cyan('--local') +
-                chalk.white(' flag along with cloud parameters: ') +
+                chalk.white('You enabled local mode using ') +
+                chalk.cyan(localModeSource) +
+                chalk.white(' along with cloud parameters: ') +
                 chalk.cyan(cloudParams.join(', ')) +
                 '\n\n' +
-                chalk.gray('The ') +
-                chalk.gray.bold('--local') +
-                chalk.gray(' flag will be used (Docker deployment)') +
+                chalk.gray('Local mode selection will be used (Docker deployment)') +
                 '\n' +
                 chalk.gray('Cloud parameters will be ignored\n')
         );

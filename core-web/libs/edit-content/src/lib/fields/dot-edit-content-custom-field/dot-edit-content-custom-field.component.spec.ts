@@ -10,6 +10,7 @@ import { IframeFieldComponent } from './components/iframe-field/iframe-field.com
 import { NativeFieldComponent } from './components/native-field/native-field.component';
 import { DotEditContentCustomFieldComponent } from './dot-edit-content-custom-field.component';
 
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 
@@ -43,6 +44,12 @@ describe('DotEditContentCustomFieldComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            {
+                provide: DotEditContentStore,
+                useValue: {
+                    setFieldVisibility: jest.fn()
+                }
             }
         ]
     });

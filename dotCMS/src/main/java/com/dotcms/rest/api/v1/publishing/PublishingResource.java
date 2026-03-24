@@ -203,17 +203,15 @@ public class PublishingResource {
             )
             @QueryParam("filter") final String filter,
             @Parameter(
-                    description = "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH)",
-                    example = "SUCCESS,FAILED_TO_PUBLISH",
-                    schema = @Schema(
-                            allowableValues = {
-                                    "BUNDLE_REQUESTED", "WAITING_FOR_PUBLISHING", "BUNDLING", "SENDING_TO_ENDPOINTS", 
-                                    "PUBLISHING_BUNDLE", "BUNDLE_SENT_SUCCESSFULLY", "RECEIVED_BUNDLE", "BUNDLE_SAVED_SUCCESSFULLY", 
-                                    "SUCCESS", "SUCCESS_WITH_WARNINGS", "FAILED_TO_BUNDLE", "FAILED_TO_SENT", 
-                                    "FAILED_TO_SEND_TO_ALL_GROUPS", "FAILED_TO_SEND_TO_SOME_GROUPS", "FAILED_TO_PUBLISH", 
-                                    "FAILED_INTEGRITY_CHECK", "INVALID_TOKEN", "LICENSE_REQUIRED"
-                            }
-                    )
+                    description = "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH). " +
+                            "Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, " +
+                            "SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, " +
+                            "RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY, SUCCESS, " +
+                            "SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, " +
+                            "FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS, " +
+                            "FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, " +
+                            "LICENSE_REQUIRED",
+                    example = "SUCCESS,FAILED_TO_PUBLISH"
             )
             @QueryParam("status") final String status) throws DotPublisherException {
 
@@ -422,7 +420,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "404",
-                    description = "Bundle not found",
+                    description = "Bundle not found in either the publishing audit history or the bundle table",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -864,7 +862,9 @@ public class PublishingResource {
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200",
-                    description = "Purge operation initiated (processes in background). Results delivered via WebSocket system messages to browser clients only.",
+                    description = "Purge operation initiated (processes in background). " +
+                            "The result is delivered as a system notification to the triggering user's " +
+                            "browser session. Non-browser API clients will not receive the completion event.",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ResponseEntityPurgeView.class)
@@ -897,7 +897,13 @@ public class PublishingResource {
             @Parameter(
                     description = "Comma-separated status values to purge. If omitted, uses safe defaults " +
                             "(all terminal + queued, excludes in-progress). " +
-                            "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE",
+                            "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE. " +
+                            "Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, " +
+                            "BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY, " +
+                            "SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, " +
+                            "FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS, " +
+                            "FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, " +
+                            "LICENSE_REQUIRED",
                     example = "SUCCESS,FAILED_TO_PUBLISH"
             )
             @QueryParam("status") final String status) throws DotDataException {

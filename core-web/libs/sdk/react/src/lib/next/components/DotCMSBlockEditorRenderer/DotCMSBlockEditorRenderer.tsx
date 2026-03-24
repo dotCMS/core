@@ -1,12 +1,7 @@
-import { useEffect, useState } from 'react';
-
 import { BlockEditorNode } from '@dotcms/types';
-import { BlockEditorState } from '@dotcms/types/internal';
 import { isValidBlocks } from '@dotcms/uve/internal';
 
 import { BlockEditorBlock } from './components/BlockEditorBlock';
-
-import { useIsDevMode } from '../../hooks/useIsDevMode';
 
 /**
  * Props that all custom renderers must accept.
@@ -54,6 +49,7 @@ export interface BlockEditorRendererProps {
     style?: React.CSSProperties;
     className?: string;
     customRenderers?: CustomRenderer;
+    isDevMode?: boolean;
 }
 
 /**
@@ -71,35 +67,16 @@ export const DotCMSBlockEditorRenderer = ({
     blocks,
     style,
     className,
-    customRenderers
+    customRenderers,
+    isDevMode = false
 }: BlockEditorRendererProps) => {
-    const [blockEditorState, setBlockEditorState] = useState<BlockEditorState>({ error: null });
-    const isDevMode = useIsDevMode();
+    const validationResult = isValidBlocks(blocks);
 
-    /**
-     * Validates the blocks structure and updates the block editor state.
-     *
-     * This effect:
-     * 1. Validates that blocks have the correct structure (doc type, content array, etc)
-     * 2. Updates the block editor state with validation result
-     * 3. Logs any validation errors to console
-     *
-     * @dependency {Block} blocks - The content blocks to validate
-     */
-    useEffect(() => {
-        const validationResult = isValidBlocks(blocks);
-        setBlockEditorState(validationResult);
-
-        if (validationResult.error) {
-            console.error(validationResult.error);
-        }
-    }, [blocks]);
-
-    if (blockEditorState.error) {
-        console.error(blockEditorState.error);
+    if (validationResult.error) {
+        console.error(validationResult.error);
 
         if (isDevMode) {
-            return <div data-testid="invalid-blocks-message">{blockEditorState.error}</div>;
+            return <div data-testid="invalid-blocks-message">{validationResult.error}</div>;
         }
 
         return null;
@@ -107,7 +84,11 @@ export const DotCMSBlockEditorRenderer = ({
 
     return (
         <div className={className} style={style} data-testid="dot-block-editor-container">
-            <BlockEditorBlock content={blocks?.content} customRenderers={customRenderers} />
+            <BlockEditorBlock
+                content={blocks?.content}
+                customRenderers={customRenderers}
+                isDevMode={isDevMode}
+            />
         </div>
     );
 };
