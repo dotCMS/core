@@ -13,13 +13,11 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The AppConfig class provides a configuration for the AI application.
@@ -66,17 +64,9 @@ public class AppConfig implements Serializable {
             imageModel = buildModelFromProviderConfig(providerConfig, "image", AIModelType.IMAGE);
             embeddingsModel = buildModelFromProviderConfig(providerConfig, "embeddings", AIModelType.EMBEDDINGS);
         } else {
-            if (!secrets.isEmpty() || isLegacyEnabled()) {
-                AIModels.get().loadModels(
-                        this,
-                        List.of(
-                                aiAppUtil.createTextModel(secrets),
-                                aiAppUtil.createImageModel(secrets),
-                                aiAppUtil.createEmbeddingsModel(secrets)));
-            }
-            model = resolveModel(AIModelType.TEXT);
-            imageModel = resolveModel(AIModelType.IMAGE);
-            embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
+            model = AIModel.NOOP_MODEL;
+            imageModel = AIModel.NOOP_MODEL;
+            embeddingsModel = AIModel.NOOP_MODEL;
         }
 
         rolePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.ROLE_PROMPT);
@@ -319,11 +309,7 @@ public class AppConfig implements Serializable {
      * @return true if the configuration is enabled, false otherwise
      */
     public boolean isEnabled() {
-        return StringUtils.isNotBlank(providerConfig) || isLegacyEnabled();
-    }
-
-    private boolean isLegacyEnabled() {
-        return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey).allMatch(StringUtils::isNotBlank);
+        return StringUtils.isNotBlank(providerConfig);
     }
 
     private static AIModel buildModelFromProviderConfig(final String json, final String section, final AIModelType type) {
