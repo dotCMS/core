@@ -326,13 +326,17 @@ public class InitRunner implements Runnable {
 
 
     private static long getInt(String sql) {
-        Optional<Object> result = getObject(sql);
-        return result.map(v -> ((Number) v).longValue()).orElse(-1L);
+        return getObject(sql)
+                .filter(v -> v instanceof Number)
+                .map(v -> ((Number) v).longValue())
+                .orElse(-1L);
     }
 
     private static Date getDate(String sql) {
-        Optional<Object> result = getObject(sql);
-        return (Date) result.orElse(new Date(0));
+        return getObject(sql)
+                .filter(v -> v instanceof java.util.Date)
+                .map(v -> new Date(((java.util.Date) v).getTime()))
+                .orElse(new Date(0));
     }
 
     private static String getString(String sql) {
