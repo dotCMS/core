@@ -199,7 +199,13 @@ public class DbConnectionFactory {
                     connectionsHolder.set(connectionsList);
                 }
 
-                connectionsList.put(DATABASE_DEFAULT_DATASOURCE, connection);
+                // Always store the raw connection, never a ManagedConnection wrapper.
+                // getConnection() creates a fresh ManagedConnection on each call with the
+                // correct ownership flag, so the ThreadLocal must hold the unwrapped connection.
+                final Connection raw = (connection instanceof ManagedConnection)
+                        ? ((ManagedConnection) connection).internalConnection
+                        : connection;
+                connectionsList.put(DATABASE_DEFAULT_DATASOURCE, raw);
             }
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
@@ -209,13 +215,31 @@ public class DbConnectionFactory {
     }
     
     /**
-     * This method retrieves the default connection to the dotCMS DB
+     * Retrieves the default connection to the dotCMS DB, wrapped in a {@link ManagedConnection}
+     * that is safe for use in try-with-resources blocks.
+     *
+     * <p>If a connection already exists on the current thread (ThreadLocal), the same connection
+     * is returned but wrapped so that {@code close()} is a no-op — the owning scope manages
+     * its lifecycle. If no connection exists, a new one is created from the pool, and
+     * {@code close()} will properly close it and clean up the ThreadLocal.</p>
+     *
+     * <p><b>Safe usage:</b></p>
+     * <pre>
+     * try (Connection conn = DbConnectionFactory.getConnection()) {
+     *     // Use conn — close() at end is safe whether or not a connection
+     *     // already existed on this thread
+     * }
+     * </pre>
+     *
+     * @return a {@link ManagedConnection} wrapping the ThreadLocal-managed connection
+     * @see ManagedConnection
      */
     public static Connection getConnection() {
 
         try {
             HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
             Connection connection = null;
+            boolean isNewConnection = false;
             connectionsCalledFor++;
             if (connectionsList == null) {
                 connectionsList = new HashMap<>();
@@ -228,14 +252,13 @@ public class DbConnectionFactory {
                 DataSource db = getDataSource();
                 connection = db.getConnection();
                 connectionsList.put(DATABASE_DEFAULT_DATASOURCE, connection);
+                isNewConnection = true;
                 Logger.debug(DbConnectionFactory.class,
                     "Connection opened for thread " + Thread.currentThread().getId() + "-" +
                         DATABASE_DEFAULT_DATASOURCE);
             }
 
- 
-
-            return connection;
+            return new ManagedConnection(connection, isNewConnection);
         } catch (com.dotcms.shutdown.ShutdownException e) {
             // Handle shutdown exceptions quietly
             Logger.debug(DbConnectionFactory.class, "Database access during shutdown: " + e.getMessage());

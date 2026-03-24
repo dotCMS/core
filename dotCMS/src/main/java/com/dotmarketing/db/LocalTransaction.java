@@ -142,7 +142,7 @@ public class LocalTransaction {
 
     public static void handleTransactionInteruption(final Connection conn,
             final StackTraceElement[] threadStack) throws DotDataException {
-        if (DbConnectionFactory.getConnection() != conn) {
+        if (!DbConnectionFactory.getConnection().equals(conn)) {
             final String action = Config.getStringProperty("LOCAL_TRANSACTION_INTERUPTED_ACTION",
                     TransactionErrorEnum.LOG.name());
             if (TransactionErrorEnum.LOG.name().equalsIgnoreCase(action)) {

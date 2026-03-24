@@ -15,31 +15,31 @@ describe('DotUsageShellComponent', () => {
     const mockSummary: UsageSummary = {
         metrics: {
             content: {
-                COUNT_CONTENT: {
-                    name: 'COUNT_CONTENT',
+                CONTENTLETS_COUNT: {
+                    name: 'CONTENTLETS_COUNT',
                     value: 1500,
-                    displayLabel: 'usage.metric.COUNT_CONTENT'
+                    displayLabel: 'usage.metric.CONTENTLETS_COUNT'
                 }
             },
             site: {
-                COUNT_OF_SITES: {
-                    name: 'COUNT_OF_SITES',
+                SITES_COUNT_OF_SITES: {
+                    name: 'SITES_COUNT_OF_SITES',
                     value: 5,
-                    displayLabel: 'usage.metric.COUNT_OF_SITES'
+                    displayLabel: 'usage.metric.SITES_COUNT_OF_SITES'
                 }
             },
             user: {
-                COUNT_OF_USERS: {
-                    name: 'COUNT_OF_USERS',
+                USERS_COUNT_OF_USERS: {
+                    name: 'USERS_COUNT_OF_USERS',
                     value: 60,
-                    displayLabel: 'usage.metric.COUNT_OF_USERS'
+                    displayLabel: 'usage.metric.USERS_COUNT_OF_USERS'
                 }
             },
             system: {
-                COUNT_LANGUAGES: {
-                    name: 'COUNT_LANGUAGES',
+                LANGUAGES_COUNT: {
+                    name: 'LANGUAGES_COUNT',
                     value: 3,
-                    displayLabel: 'usage.metric.COUNT_LANGUAGES'
+                    displayLabel: 'usage.metric.LANGUAGES_COUNT'
                 }
             }
         },
@@ -123,10 +123,10 @@ describe('DotUsageShellComponent', () => {
         spectator.detectChanges();
 
         // Check for metric cards
-        expect(spectator.query(byTestId('site-COUNT_OF_SITES-card'))).toBeTruthy();
-        expect(spectator.query(byTestId('content-COUNT_CONTENT-card'))).toBeTruthy();
-        expect(spectator.query(byTestId('user-COUNT_OF_USERS-card'))).toBeTruthy();
-        expect(spectator.query(byTestId('system-COUNT_LANGUAGES-card'))).toBeTruthy();
+        expect(spectator.query(byTestId('site-SITES_COUNT_OF_SITES-card'))).toBeTruthy();
+        expect(spectator.query(byTestId('content-CONTENTLETS_COUNT-card'))).toBeTruthy();
+        expect(spectator.query(byTestId('user-USERS_COUNT_OF_USERS-card'))).toBeTruthy();
+        expect(spectator.query(byTestId('system-LANGUAGES_COUNT-card'))).toBeTruthy();
     });
 
     it('should handle refresh button click', () => {
@@ -217,11 +217,11 @@ describe('DotUsageShellComponent', () => {
         spectator.detectChanges();
 
         // Query the metric value from the card body (p tag inside p-card)
-        const siteCard = spectator.query(byTestId('site-COUNT_OF_SITES-card'));
+        const siteCard = spectator.query(byTestId('site-SITES_COUNT_OF_SITES-card'));
         const siteMetricValue = siteCard?.querySelector('p');
         expect(siteMetricValue?.textContent?.trim()).toBe('5');
 
-        const contentCard = spectator.query(byTestId('content-COUNT_CONTENT-card'));
+        const contentCard = spectator.query(byTestId('content-CONTENTLETS_COUNT-card'));
         const contentMetricValue = contentCard?.querySelector('p');
         expect(contentMetricValue?.textContent?.trim()).toBe('1.5K');
     });
@@ -274,9 +274,9 @@ describe('DotUsageShellComponent', () => {
     it('should get metric by category and name', () => {
         spectator.component.summary.set(mockSummary);
 
-        const metric = spectator.component.getMetric('content', 'COUNT_CONTENT');
+        const metric = spectator.component.getMetric('content', 'CONTENTLETS_COUNT');
         expect(metric).toBeDefined();
-        expect(metric?.name).toBe('COUNT_CONTENT');
+        expect(metric?.name).toBe('CONTENTLETS_COUNT');
         expect(metric?.value).toBe(1500);
     });
 
@@ -292,7 +292,7 @@ describe('DotUsageShellComponent', () => {
 
         const categoryMetrics = spectator.component.getCategoryMetrics('content');
         expect(categoryMetrics).toBeDefined();
-        expect(categoryMetrics?.['COUNT_CONTENT']).toBeDefined();
+        expect(categoryMetrics?.['CONTENTLETS_COUNT']).toBeDefined();
     });
 
     it('should get all categories', () => {

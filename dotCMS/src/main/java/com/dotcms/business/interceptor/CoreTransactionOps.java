@@ -71,7 +71,7 @@ public final class CoreTransactionOps implements TransactionOps {
             LocalTransaction.handleTransactionInteruption(connection, threadStack);
         } else {
             // When called from WrapInTransaction (no stack captured), check inline
-            if (DbConnectionFactory.getConnection() != connection) {
+            if (!DbConnectionFactory.getConnection().equals(connection)) {
                 final String action = Config.getStringProperty(
                         "LOCAL_TRANSACTION_INTERUPTED_ACTION", "LOG");
                 if ("LOG".equalsIgnoreCase(action)) {

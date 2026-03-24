@@ -30,13 +30,14 @@ const MOCK_KPIS: EngagementKPIs = {
     totalSessions: { value: 45000, trend: 5, label: 'Total Sessions' },
     engagementRate: {
         value: 45,
+        format: 'percentage',
         trend: 8,
         subtitle: '29,203 Engaged Sessions',
         label: 'Engagement Rate'
     },
     avgInteractions: { value: 6.4, trend: 18, label: 'Avg Interactions (Engaged)' },
-    avgSessionTime: { value: '2m 34s', trend: 12, label: 'Average Session Time' },
-    conversionRate: { value: '3.2%', trend: -0.3, label: 'Conversion Rate' }
+    avgSessionTime: { value: 154, format: 'time', trend: 12, label: 'Average Session Time' },
+    conversionRate: { value: 3.2, format: 'percentage', trend: -0.3, label: 'Conversion Rate' }
 };
 
 const MOCK_BREAKDOWN: ChartData = {
@@ -101,11 +102,16 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                     engagementKpis: mockKpis,
                     engagementBreakdown: mockBreakdown,
                     engagementPlatforms: mockPlatforms,
-                    engagementSparkline: mockSparkline
+                    engagementSparkline: mockSparkline,
+                    timeRange: signal('last7days')
                 }
             },
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Engagement')
+                get: jest
+                    .fn()
+                    .mockImplementation((key: string, ...args: string[]) =>
+                        args.length ? `${key}[${args.join(',')}]` : key
+                    )
             })
         ]
     });

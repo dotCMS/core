@@ -6,7 +6,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, DotSite } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 
@@ -95,7 +95,7 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site in query when provided', () => {
-                const customSite = MOCK_SITES[0] as SiteEntity;
+                const customSite = MOCK_SITES[0] as DotSite;
 
                 store.initContentDrive({
                     currentSite: customSite,
@@ -227,7 +227,7 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site hostname in assetPath when provided', () => {
-                const customSite = MOCK_SITES[0] as SiteEntity;
+                const customSite = MOCK_SITES[0] as DotSite;
                 store.initContentDrive({
                     currentSite: customSite,
                     path: DEFAULT_PATH,
@@ -458,7 +458,7 @@ describe('DotContentDriveStore', () => {
 
         describe('setItems', () => {
             it('should update items and set status to LOADED', () => {
-                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
+                store.setItems(MOCK_ITEMS);
 
                 expect(store.items()).toEqual(MOCK_ITEMS);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
@@ -466,12 +466,12 @@ describe('DotContentDriveStore', () => {
 
             it('should update items with empty array', () => {
                 // First set some items
-                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
+                store.setItems(MOCK_ITEMS);
                 expect(store.items()).toEqual(MOCK_ITEMS);
 
                 // Then clear them
                 const emptyItems: DotContentDriveItem[] = [];
-                store.setItems(emptyItems, emptyItems.length);
+                store.setItems(emptyItems);
 
                 expect(store.items()).toEqual(emptyItems);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
@@ -821,7 +821,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         // Set pagination in store
         store.setPagination({ limit: 10, page: 1, offset: 0 });
 
-        spectator.flushEffects();
+        spectator.service.loadItems();
 
         expect(contentDriveService.search).toHaveBeenCalledWith(
             expect.objectContaining({

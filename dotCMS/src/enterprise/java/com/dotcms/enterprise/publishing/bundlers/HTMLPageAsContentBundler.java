@@ -340,7 +340,7 @@ public class HTMLPageAsContentBundler implements IBundler {
 				try (final OutputStream outputStream = bundleOutput.addFile(pageFilePath)) {
 					final String html = APILocator.getHTMLPageAssetAPI()
 							.getHTML(htmlPageWrapper.getAsset().getURI(),
-									site, live, htmlPageWrapper.getAsset().getInode(),
+									site, live, null,
 									uAPI.getSystemUser(), tryingLang,
 									getUserAgent(config));
 					if (UtilMethods.isSet(html)) {
