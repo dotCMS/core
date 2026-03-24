@@ -40,7 +40,7 @@ export class RelationshipField {
      */
     async clickRelateExisting(): Promise<void> {
         await this.addButton.click();
-        const existingOption = this.page.getByLabel('Existing Content').locator('a');
+        const existingOption = this.page.getByRole('menuitem', { name: 'Existing Content' });
         await existingOption.waitFor({ state: 'visible', timeout: 5000 });
         await existingOption.click();
     }
@@ -69,14 +69,14 @@ export class RelationshipField {
      * Gets the "Existing Content" menu item locator from an open menu.
      */
     getRelateExistingMenuItem(menu: Locator): Locator {
-        return menu.getByLabel('Existing Content');
+        return menu.getByRole('menuitem', { name: 'Existing Content' });
     }
 
     /**
      * Gets the "Create New" menu item locator from an open menu.
      */
     getCreateNewMenuItem(menu: Locator): Locator {
-        return menu.getByLabel('New Content');
+        return menu.getByRole('menuitem', { name: 'New Content' });
     }
 
     // ─── Table Interactions ──────────────────────────────────────────

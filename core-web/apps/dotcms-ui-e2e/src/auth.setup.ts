@@ -1,4 +1,4 @@
-import { test as setup } from '@playwright/test';
+import { expect, test as setup } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
 import path from 'path';
 
@@ -20,8 +20,7 @@ setup('authenticate as admin', async ({ page }) => {
 
     const responsePromise = page.waitForResponse((r) => r.url().includes('/api/v1/authentication'));
     await page.getByTestId('submitButton').click();
-    await responsePromise;
-
-    await page.waitForLoadState('networkidle');
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
     await page.context().storageState({ path: AUTH_STATE_PATH });
 });

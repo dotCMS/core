@@ -303,7 +303,7 @@ export const test = base.extend<{
     },
 
     testSuffix: async ({}, use) => {
-        await use(`${Date.now()}`);
+        await use(crypto.randomUUID().slice(0, 8));
     },
 
     apiHelpers: async ({ request }, use) => {
