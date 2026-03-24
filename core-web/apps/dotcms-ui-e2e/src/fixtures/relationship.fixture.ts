@@ -1,6 +1,5 @@
 import { test as base, type Page, type APIRequestContext, expect } from '@playwright/test';
-import { LoginPage } from '@pages';
-import { admin1 } from '../tests/login/credentialsData';
+import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
 import { createFieldVariable } from '../requests/field-variables';
 
@@ -283,16 +282,10 @@ export const test = base.extend<{
         CARDINALITY: typeof CARDINALITY;
     };
 }>({
-    adminPage: async ({ browser }, use) => {
-        const context = await browser.newContext();
-        const page = await context.newPage();
-
-        // Login via UI — same flow as LoginPage.login()
-        const loginPage = new LoginPage(page);
-        await loginPage.login(admin1.username, admin1.password);
-
+    adminPage: async ({ page }, use) => {
+        // Auth cookies loaded automatically via storageState in playwright.config.ts
+        // No login needed — the setup project handles it once for all workers.
         await use(page);
-        await context.close();
     },
 
     testSuffix: async ({}, use) => {

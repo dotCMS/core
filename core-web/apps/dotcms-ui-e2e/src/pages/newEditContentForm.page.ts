@@ -87,10 +87,10 @@ export class NewEditContentFormPage {
      * then navigates to the specific content.
      */
     async goToContent(id: string) {
-        await this.page.goto(Portlet.Content);
-        await this.page.waitForLoadState('networkidle');
         await this.page.goto(`/dotAdmin/#/content/${id}`);
-        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForLoadState('domcontentloaded');
+        // Wait for the Angular content form to render
+        await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
     }
 
     /**
