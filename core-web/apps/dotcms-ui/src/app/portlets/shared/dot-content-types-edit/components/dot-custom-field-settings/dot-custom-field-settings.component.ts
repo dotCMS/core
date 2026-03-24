@@ -4,9 +4,11 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     inject,
     input,
     OnChanges,
+    OnInit,
     output,
     SimpleChanges,
     viewChild
@@ -33,7 +35,7 @@ import { FieldSettingsSection } from './sections/field-settings-section';
     templateUrl: './dot-custom-field-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCustomFieldSettingsComponent implements OnChanges {
+export class DotCustomFieldSettingsComponent implements OnChanges, OnInit {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
     /** Live render mode from the properties form — overrides saved fieldVariables when provided */
@@ -60,15 +62,19 @@ export class DotCustomFieldSettingsComponent implements OnChanges {
     private readonly renderOptions = viewChild(DotRenderOptionsSettingsComponent);
     private readonly hideLabel = viewChild(DotHideLabelSettingsComponent);
 
+    readonly #destroyRef = inject(DestroyRef);
     readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    constructor() {
+    readonly #renderOptions$ = toObservable(this.renderOptions);
+    readonly #hideLabel$ = toObservable(this.hideLabel);
+
+    ngOnInit(): void {
         merge(
-            toObservable(this.renderOptions).pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY)),
-            toObservable(this.hideLabel).pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY))
+            this.#renderOptions$.pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY)),
+            this.#hideLabel$.pipe(switchMap((s) => s?.valueChanges$ ?? EMPTY))
         )
-            .pipe(takeUntilDestroyed())
+            .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => this.$valid.emit(this.#canSave()));
     }
 

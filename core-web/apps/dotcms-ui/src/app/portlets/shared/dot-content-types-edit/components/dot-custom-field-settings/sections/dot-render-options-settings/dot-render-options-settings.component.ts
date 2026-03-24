@@ -10,7 +10,7 @@ import {
     signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
@@ -42,7 +42,7 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
     readonly #fieldVariablesService = inject(DotFieldVariablesService);
     readonly #destroyRef = inject(DestroyRef);
 
-    form: FormGroup = this.#fb.group({
+    form = this.#fb.group({
         showAsModal: [false],
         customFieldWidth: [this.defaultWidth, [Validators.required, Validators.min(1)]],
         customFieldHeight: [this.defaultHeight, [Validators.required, Validators.min(1)]]
