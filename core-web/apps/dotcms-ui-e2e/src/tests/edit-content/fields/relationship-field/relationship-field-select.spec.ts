@@ -134,7 +134,9 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await relationshipField.expectEmpty();
             });
 
-            test('ESC key does not dismiss select existing dialog @smoke', async ({ adminPage }) => {
+            test('ESC key does not dismiss select existing dialog @smoke', async ({
+                adminPage
+            }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
                 await adminPage.waitForLoadState('networkidle');

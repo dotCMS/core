@@ -130,14 +130,20 @@ async function enableNewEditor(
         data: { key: 'DOT_CONTENT_EDITOR2_ENABLED', value: true },
         headers: authHeaders()
     });
-    expect(flagResponse.ok(), `enableNewEditor: failed to set DOT_CONTENT_EDITOR2_ENABLED (status ${flagResponse.status()})`).toBeTruthy();
+    expect(
+        flagResponse.ok(),
+        `enableNewEditor: failed to set DOT_CONTENT_EDITOR2_ENABLED (status ${flagResponse.status()})`
+    ).toBeTruthy();
 
     // Set the content type pattern
     const patternResponse = await request.post('/api/v1/system-table/', {
         data: { key: 'DOT_CONTENT_EDITOR2_CONTENT_TYPE', value: '*' },
         headers: authHeaders()
     });
-    expect(patternResponse.ok(), `enableNewEditor: failed to set DOT_CONTENT_EDITOR2_CONTENT_TYPE (status ${patternResponse.status()})`).toBeTruthy();
+    expect(
+        patternResponse.ok(),
+        `enableNewEditor: failed to set DOT_CONTENT_EDITOR2_CONTENT_TYPE (status ${patternResponse.status()})`
+    ).toBeTruthy();
 
     // Enable the new editor in the content type's metadata
     await request.put(`/api/v1/contenttype/id/${contentTypeVariable}`, {
