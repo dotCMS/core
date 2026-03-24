@@ -5,10 +5,38 @@
 # Hooks wired by: prepare.js → .git/hooks/ (smart dispatcher, branch-aware)
 # Bypass (discouraged): LEFTHOOK=0 git commit / git push
 # If you bypass, manually run the equivalent checks before pushing — see each hook below.
+#
+# ─── Which hook to use ────────────────────────────────────────────────
+#
+# pre-commit  Use for anything that can AUTO-FIX files.
+#             Runs on staged files before the commit is created.
+#             With `stage_fixed: true`, lefthook re-stages any files the
+#             hook modified — the fix ships in the same commit. This is
+#             the right place for formatters, linters with --fix, and
+#             code generators (OpenAPI spec, lockfiles).
+#
+# post-merge  Use to catch drift from merges/cherry-picks that skip
+#             pre-commit. Can fix files but cannot amend the merge commit
+#             — tells the developer to review and commit the fixes.
+#             Does NOT fire on rebase (git limitation).
+#
+# pre-push    Use ONLY for read-only checks that cannot auto-fix.
+#             Runs after the commit is made — too late to modify it.
+#             Any file a pre-push hook regenerates requires a separate
+#             commit and a second push, which is fragile (nothing
+#             guarantees the caller retries). Good for: compile
+#             staleness warnings, build verification, SDK checks.
+#             Bad for: formatters, spec generators, anything with
+#             stage_fixed.
+#
+# Rule of thumb: if the hook changes files → pre-commit.
+#                if it only reads/checks → pre-push.
+#                if it catches merge gaps → post-merge.
+# ──────────────────────────────────────────────────────────────────────
 
 min_version: 2.0.0
 
-# --- Pre-commit: fast checks on staged frontend files ---
+# --- Pre-commit: auto-fix and stage (formatters, generators, lockfiles) ---
 pre-commit:
   parallel: true
   commands:
@@ -129,7 +157,7 @@ pre-commit:
         fi
 
 
-# --- Post-merge: catch formatting issues from merges/cherry-picks that skip pre-commit ---
+# --- Post-merge: catch drift from merges/cherry-picks that skip pre-commit ---
 post-merge:
   commands:
     frontend-format-check:
@@ -149,7 +177,7 @@ post-merge:
           echo "Review and commit: git add -u core-web && git commit -m 'style: format merged files'"
         fi
 
-# --- Pre-push: heavier checks that would slow down commits ---
+# --- Pre-push: read-only checks (cannot auto-fix — commit is already made) ---
 pre-push:
   commands:
     java-compile-check:
