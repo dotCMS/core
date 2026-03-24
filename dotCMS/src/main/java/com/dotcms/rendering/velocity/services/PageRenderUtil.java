@@ -747,33 +747,10 @@ public class PageRenderUtil implements Serializable {
                     contentletIdentifier, mode.showLive, languageId,
                     user, true, variantName);
 
-            if (contentletOpt.isPresent()) {
-                return contentletOpt.get();
-            }
-
-            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled the contract is strict:
-            // serve the requested language or fall back to the default language only.
-            // Returning a version from any other language would cause entity.containers.uuid to
-            // include contentlets that render() intentionally omits for the requested language.
-            if (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) {
-                return null;
-            }
-
-            // For content types that explicitly declare language fallback (languageFallback()=true),
-            // return the first available version in any language as a last resort.
-            try {
-                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
-                        contentletIdentifier, variantName);
-
-                // Check if this content type allows language fallback
-                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
-                    return anyLanguageContentlet;
-                }
-            } catch (Exception e) {
-                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
-            }
-
-            return null;
+            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, the contract is: show the
+            // requested-language version, or fall back to the default language. If the contentlet
+            // has no version in either, it must be excluded from this page render.
+            return contentletOpt.orElse(null);
 
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
