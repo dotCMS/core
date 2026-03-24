@@ -53,10 +53,12 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -794,20 +796,23 @@ public class FolderFactoryImpl extends FolderFactory {
       return false;
     }
 
-    //Update folder record in-place
+    // Snapshot sub-folder old-path data BEFORE any update so targeted cache eviction is possible
+    final List<Map<String, Object>> subFolderSnapshot = loadSubFolderSnapshot(oldPath, hostId);
+
+    // Update the folder record in-place (save() evicts its own old cache entries)
     folder.setName(newName);
     save(folder);
 
-    // Update identifier asset_name in-place
+    //  Update the folder's identifier asset_name in-place
     ident.setAssetName(newName);
     APILocator.getIdentifierAPI().save(ident);
 
-    // Bulk-update every child identifier's parent_path, level by level.
-    // Unindexed items are never missed.
-    updateChildPathsRecursively(oldPath, newPath, hostId);
+    // Bulk-update every child identifier's parent_path, level by level (iterative — no recursion).
+    //    Pure SQL, no Elasticsearch dependency, so unindexed items are never missed.
+    updateChildPaths(oldPath, newPath, hostId);
 
-    // Flush folder path-based cache
-    folderCache.clearCache();
+    // Targeted folder cache eviction for affected sub-folders (using old path data from snapshot)
+    evictSubFolderCache(subFolderSnapshot, hostId);
 
     // Evict identifier cache for every identifier moved to the new subtree
     clearIdentifierCacheForSubtree(newPath, hostId);
@@ -816,54 +821,101 @@ public class FolderFactoryImpl extends FolderFactory {
     CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
     CacheLocator.getNavToolCache().removeNavByPath(hostId, parentPath);
 
+    // Queue async ES reindex for all content under the renamed folder so path data stays current
+    APILocator.getContentletAPI().refreshContentUnderFolder(folder);
+
     return true;
   }
 
   /**
-   * Recursively updates the {@code parent_path} column of every identifier whose
-   * {@code parent_path} equals {@code oldPath} to {@code newPath}, then descends
-   * into each sub-folder found at the new path.
-   * <p>
-   * Processing level-by-level ensures the {@code identifier_parent_path_trigger} can
-   * verify that each row's new parent path already exists as a folder before the
-   * trigger runs for that row's children.
+   * Captures inode, parent_path, and asset_name of every sub-folder whose path falls under
+   * {@code oldPath}. Must be called <em>before</em> the bulk path update so old path data is
+   * available for targeted {@link FolderCache} eviction afterwards.
    */
-  private void updateChildPathsRecursively(final String oldPath, final String newPath,
-      final String hostId) throws DotDataException {
+  private List<Map<String, Object>> loadSubFolderSnapshot(final String oldPath, final String hostId)
+      throws DotDataException {
 
-    new DotConnect()
-        .setSQL("UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?")
-        .addParam(newPath)
-        .addParam(oldPath)
-        .addParam(hostId)
-        .loadResult();
-
-    final List<Map<String, Object>> subFolderRows = new DotConnect()
-        .setSQL("SELECT asset_name FROM identifier WHERE asset_type = 'folder'"
-            + " AND parent_path = ? AND host_inode = ?")
-        .addParam(newPath)
+    // LIKE 'oldPath%' covers the direct children path (/old/) and all nested sub-paths (/old/sub/).
+    return new DotConnect()
+        .setSQL("SELECT f.inode, i.parent_path, i.asset_name"
+            + " FROM identifier i JOIN folder f ON f.identifier = i.id"
+            + " WHERE i.parent_path LIKE ? AND i.asset_type = 'folder' AND i.host_inode = ?")
+        .addParam(oldPath + "%")
         .addParam(hostId)
         .loadResults();
+  }
 
-    for (final Map<String, Object> row : subFolderRows) {
-      final String assetName = (String) row.get("asset_name");
-      updateChildPathsRecursively(
-          oldPath + assetName + "/",
-          newPath + assetName + "/",
-          hostId);
+  /**
+   * Iteratively updates the {@code parent_path} column for the full sub-tree rooted at
+   * {@code startOldPath}, processing one folder level at a time.
+   * <p>
+   * Processing level-by-level (parent before children) satisfies the
+   * {@code identifier_parent_path_trigger}, which verifies that each row's new parent path already
+   * exists as a folder identifier at update time. An iterative approach with an explicit
+   * {@link Deque} is used instead of recursion to avoid stack overflow on deeply nested trees.
+   */
+  private void updateChildPaths(final String startOldPath, final String startNewPath,
+      final String hostId) throws DotDataException {
+
+    final Deque<String[]> pending = new ArrayDeque<>();
+    pending.push(new String[]{startOldPath, startNewPath});
+
+    while (!pending.isEmpty()) {
+      final String[] paths = pending.pop();
+      final String oldPath = paths[0];
+      final String newPath = paths[1];
+
+      new DotConnect()
+          .setSQL("UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?")
+          .addParam(newPath)
+          .addParam(oldPath)
+          .addParam(hostId)
+          .loadResult();
+
+      final List<Map<String, Object>> subFolderRows = new DotConnect()
+          .setSQL("SELECT asset_name FROM identifier WHERE asset_type = 'folder'"
+              + " AND parent_path = ? AND host_inode = ?")
+          .addParam(newPath)
+          .addParam(hostId)
+          .loadResults();
+
+      for (final Map<String, Object> row : subFolderRows) {
+        final String assetName = (String) row.get("asset_name");
+        pending.push(new String[]{oldPath + assetName + "/", newPath + assetName + "/"});
+      }
+    }
+  }
+
+  /**
+   * Evicts path-keyed entries from the folder cache for all sub-folders captured in the snapshot.
+   * Uses the <em>old</em> path data so stale cache entries keyed by the pre-rename paths are
+   * properly removed.
+   */
+  private void evictSubFolderCache(final List<Map<String, Object>> subFolderSnapshot,
+      final String hostId) {
+
+    for (final Map<String, Object> row : subFolderSnapshot) {
+      final Folder stub = new Folder();
+      stub.setInode((String) row.get("inode"));
+      stub.setHostId(hostId);
+
+      final Identifier oldIdent = new Identifier();
+      oldIdent.setParentPath((String) row.get("parent_path"));
+      oldIdent.setAssetName((String) row.get("asset_name"));
+
+      folderCache.removeFolder(stub, oldIdent);
     }
   }
 
   /**
    * Evicts from the identifier cache every identifier whose {@code parent_path} starts
    * with {@code rootPath} (direct children and all nested descendants).
-   * A single prefix query is used to avoid per-level round-trips.
+   * A single prefix query covers all levels in one round-trip.
    */
   private void clearIdentifierCacheForSubtree(final String rootPath, final String hostId)
       throws DotDataException {
 
-    // LIKE 'rootPath%' matches rootPath itself and every nested sub-path.
-    // rootPath always ends with '/', so it cannot accidentally match sibling paths.
+    // rootPath always ends with '/' so it cannot accidentally match sibling folder paths.
     final List<Map<String, Object>> rows = new DotConnect()
         .setSQL("SELECT id FROM identifier WHERE parent_path LIKE ? AND host_inode = ?")
         .addParam(rootPath + "%")
