@@ -27,7 +27,7 @@ import {
 import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
 import { BuilderField, BuilderSection, createField, createSection, fieldHasErrors } from './models';
 
-const STYLE_EDITOR_SCHEMA_KEY = 'styleEditorSchema';
+const STYLE_EDITOR_SCHEMA_KEY = 'DOT_STYLE_EDITOR_SCHEMA';
 
 /** A single button action within a confirmation dialog. */
 interface ConfirmAction {
