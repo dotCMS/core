@@ -412,12 +412,11 @@ test.describe('Create New Inline', () => {
         const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
         await expect(createDialog).toBeVisible({ timeout: 10000 });
 
-        const closeButton = createDialog.locator('.p-dialog-header-close, .p-dialog-close-button');
-        if ((await closeButton.count()) > 0) {
-            await closeButton.click();
-        } else {
-            await adminPage.keyboard.press('Escape');
-        }
+        const closeButton = createDialog.locator(
+            '.p-dialog-header-close, button[aria-label="Close"]'
+        );
+        await expect(closeButton).toBeVisible({ timeout: 5000 });
+        await closeButton.click();
 
         await expect(createDialog).toBeHidden({ timeout: 5000 });
         await relationshipField.expectEmpty();

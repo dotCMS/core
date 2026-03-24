@@ -6,7 +6,8 @@
 <div class="w-full h-full">
     @if (store.errorMessage()) {
         <div
-            class="flex justify-center border border-solid border-gray-400 p-12 rounded-border text-base">
+            class="flex justify-center border border-solid border-gray-400 p-12 rounded-border text-base"
+            data-testid="error-message">
             <p>{{ store.errorMessage() | dm }}</p>
         </div>
     } @else {

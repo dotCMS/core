@@ -33,6 +33,11 @@ export class RelationshipField {
         this.rows = this.table.locator('tbody tr');
     }
 
+    /** Body rows for related content only (excludes the empty-state row). */
+    private dataRows(): Locator {
+        return this.table.locator('tbody tr:not(:has([data-testid="relationship-field-empty"]))');
+    }
+
     // ─── Menu Actions ────────────────────────────────────────────────
 
     /**
@@ -60,7 +65,10 @@ export class RelationshipField {
      */
     async openAddMenu(): Promise<Locator> {
         await this.addButton.click();
-        const menu = this.page.locator('.p-menu-overlay, .p-menu').last();
+        // Popup uses appendTo="body" — locate by ARIA role, not PrimeNG overlay classes
+        const menu = this.page.getByRole('menu').filter({
+            has: this.page.getByRole('menuitem', { name: 'Existing Content' })
+        });
         await expect(menu).toBeVisible();
         return menu;
     }
@@ -82,36 +90,62 @@ export class RelationshipField {
     // ─── Table Interactions ──────────────────────────────────────────
 
     /**
-     * Returns the number of rows in the relationship table (excludes empty message row).
+     * Asserts row count is at least `min` (retries until timeout — use instead of snapshot count + expect).
      */
-    async getRowCount(): Promise<number> {
-        // Wait for the table to be stable
-        await this.table.waitFor({ state: 'visible' });
-        const rows = this.table.locator('tbody tr:not(:has(.pi-folder-open))');
-        return rows.count();
+    async expectRowCountAtLeast(min: number, options?: { timeout?: number }): Promise<void> {
+        const rows = this.dataRows();
+        await expect
+            .poll(() => rows.count(), { timeout: options?.timeout ?? 10000 })
+            .toBeGreaterThanOrEqual(min);
+    }
+
+    /**
+     * Waits until row count is at least `min`, then returns that count (retried read — safe for baselines before actions).
+     */
+    async waitForRowCountAtLeast(min: number, options?: { timeout?: number }): Promise<number> {
+        const rows = this.dataRows();
+        let last = 0;
+        await expect
+            .poll(
+                async () => {
+                    last = await rows.count();
+                    return last;
+                },
+                { timeout: options?.timeout ?? 10000 }
+            )
+            .toBeGreaterThanOrEqual(min);
+        return last;
     }
 
     /**
      * Asserts the table displays the expected number of rows.
      */
     async expectRowCount(count: number): Promise<void> {
-        const rows = this.table.locator('tbody tr:not(:has(.pi-folder-open))');
-        await expect(rows).toHaveCount(count);
+        await expect(this.dataRows()).toHaveCount(count);
+    }
+
+    /**
+     * **Baseline capture only.** `locator.count()` is a single point-in-time snapshot — it does **not** auto-retry.
+     * For count assertions, use {@link expectRowCount} (`expect(locator).toHaveCount(n)`), {@link expectRowCountAtLeast},
+     * or {@link waitForRowCountAtLeast}; do not wrap this return value in a plain `expect(...)` without polling.
+     */
+    async getRowCount(): Promise<number> {
+        await this.table.waitFor({ state: 'visible' });
+        return this.dataRows().count();
     }
 
     /**
      * Asserts the table is empty (shows empty message).
      */
     async expectEmpty(): Promise<void> {
-        const emptyMessage = this.table.locator('.pi-folder-open');
-        await expect(emptyMessage).toBeVisible();
+        await expect(this.table.getByTestId('relationship-field-empty')).toBeVisible();
     }
 
     /**
      * Gets the text content of a specific row's title column.
      */
     async getRowTitle(rowIndex: number): Promise<string> {
-        const row = this.table.locator('tbody tr:not(:has(.pi-folder-open))').nth(rowIndex);
+        const row = this.dataRows().nth(rowIndex);
         const titleCell = row.locator('td').nth(1);
         const text = await titleCell.textContent();
         return text?.trim() ?? '';
@@ -240,13 +274,11 @@ export class RelationshipField {
      * - Rows show reduced opacity
      */
     async expectDisabled(): Promise<void> {
-        // Verify add button is disabled
-        await expect(this.addButton.locator('button')).toBeDisabled();
-        // Verify all delete buttons are disabled
+        await expect(this.addButton.getByRole('button')).toBeDisabled();
         const deleteButtons = this.table.getByTestId('relationship-delete-button');
         const count = await deleteButtons.count();
         for (let i = 0; i < count; i++) {
-            await expect(deleteButtons.nth(i).locator('button')).toBeDisabled();
+            await expect(deleteButtons.nth(i).getByRole('button')).toBeDisabled();
         }
     }
 }

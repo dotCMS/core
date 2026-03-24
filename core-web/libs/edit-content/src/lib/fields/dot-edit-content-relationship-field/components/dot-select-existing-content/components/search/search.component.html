@@ -17,7 +17,8 @@
             type="text"
             class="w-88"
             [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
-            formControlName="query" />
+            formControlName="query"
+            data-testid="relationship-dialog-search-query" />
         <p-inputgroup-addon>
             <p-button
                 (onClick)="popover.toggle($event, formElement)"

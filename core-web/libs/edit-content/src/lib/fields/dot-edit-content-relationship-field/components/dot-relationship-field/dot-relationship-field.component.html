@@ -70,7 +70,9 @@
     <ng-template pTemplate="emptymessage">
         <tr>
             <td [colSpan]="$totalColumns()">
-                <div class="flex p-2 gap-2 justify-center items-center">
+                <div
+                    class="flex p-2 gap-2 justify-center items-center"
+                    data-testid="relationship-field-empty">
                     <i class="pi pi-folder-open"></i>
                     <p class="text-[var(--gray-600)]">
                         {{ 'dot.file.relationship.field.empty.message' | dm }}

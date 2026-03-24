@@ -9,6 +9,63 @@ import {
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
+const IMMUTABLE_SIMPLE_CT = 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType';
+const IMMUTABLE_TEXT_FIELD = 'com.dotcms.contenttype.model.field.ImmutableTextField';
+const IMMUTABLE_REL_FIELD = 'com.dotcms.contenttype.model.field.ImmutableRelationshipField';
+
+/**
+ * Blog content type with title + `authors` (1:N) and optional extra relationship fields.
+ */
+function blogTypeWithRelationships(
+    name: string,
+    variable: string,
+    authorTypeVariable: string,
+    extraRelationshipFields: Array<{
+        name: string;
+        variable: string;
+        sortOrder: number;
+        cardinality: number;
+    }> = []
+): Record<string, unknown> {
+    return {
+        clazz: IMMUTABLE_SIMPLE_CT,
+        name,
+        variable,
+        host: 'SYSTEM_HOST',
+        folder: 'SYSTEM_FOLDER',
+        metadata: { CONTENT_EDITOR2_ENABLED: true },
+        workflow: [SYSTEM_WORKFLOW_ID],
+        fields: [
+            {
+                clazz: IMMUTABLE_TEXT_FIELD,
+                name: 'Title',
+                variable: 'title',
+                sortOrder: 1
+            },
+            {
+                clazz: IMMUTABLE_REL_FIELD,
+                name: 'Authors',
+                variable: 'authors',
+                sortOrder: 2,
+                relationships: {
+                    velocityVar: authorTypeVariable,
+                    cardinality: CARDINALITY.ONE_TO_MANY
+                }
+            },
+            ...extraRelationshipFields.map((f) => ({
+                clazz: IMMUTABLE_REL_FIELD,
+                name: f.name,
+                variable: f.variable,
+                sortOrder: f.sortOrder,
+                relationships: {
+                    velocityVar: authorTypeVariable,
+                    cardinality: f.cardinality
+                }
+            }))
+        ]
+    };
+}
+
 // ─── Multiple Relationship Fields ───────────────────────────────
 
 test.describe('Multiple Relationship Fields', () => {
@@ -24,43 +81,19 @@ test.describe('Multiple Relationship Fields', () => {
         );
         authorTypeVariable = authorType.variable;
 
-        const blogPayload = {
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            name: `E2E_Blog_MultiRelation_${testSuffix}`,
-            variable: `E2EBlogMultiRelation${testSuffix}`,
-            host: 'SYSTEM_HOST',
-            folder: 'SYSTEM_FOLDER',
-            metadata: { CONTENT_EDITOR2_ENABLED: true },
-            workflow: [SYSTEM_WORKFLOW_ID],
-            fields: [
+        const blogPayload = blogTypeWithRelationships(
+            `E2E_Blog_MultiRelation_${testSuffix}`,
+            `E2EBlogMultiRelation${testSuffix}`,
+            authorTypeVariable,
+            [
                 {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                    name: 'Title',
-                    variable: 'title',
-                    sortOrder: 1
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-                    name: 'Authors',
-                    variable: 'authors',
-                    sortOrder: 2,
-                    relationships: {
-                        velocityVar: authorTypeVariable,
-                        cardinality: CARDINALITY.ONE_TO_MANY
-                    }
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
                     name: 'Tags',
                     variable: 'tags',
                     sortOrder: 3,
-                    relationships: {
-                        velocityVar: authorTypeVariable,
-                        cardinality: CARDINALITY.MANY_TO_MANY
-                    }
+                    cardinality: CARDINALITY.MANY_TO_MANY
                 }
             ]
-        };
+        );
 
         const blogType = await apiHelpers.createContentType(blogPayload);
         blogTypeId = blogType.id;
@@ -177,33 +210,11 @@ test.describe('Custom Columns (showFields)', () => {
         );
         authorTypeVariable = authorType.variable;
 
-        const blogPayload = {
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            name: `E2E_Blog_ShowFields_${testSuffix}`,
-            variable: `E2EBlogShowFields${testSuffix}`,
-            host: 'SYSTEM_HOST',
-            folder: 'SYSTEM_FOLDER',
-            metadata: { CONTENT_EDITOR2_ENABLED: true },
-            workflow: [SYSTEM_WORKFLOW_ID],
-            fields: [
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                    name: 'Title',
-                    variable: 'title',
-                    sortOrder: 1
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-                    name: 'Authors',
-                    variable: 'authors',
-                    sortOrder: 2,
-                    relationships: {
-                        velocityVar: authorTypeVariable,
-                        cardinality: CARDINALITY.ONE_TO_MANY
-                    }
-                }
-            ]
-        };
+        const blogPayload = blogTypeWithRelationships(
+            `E2E_Blog_ShowFields_${testSuffix}`,
+            `E2EBlogShowFields${testSuffix}`,
+            authorTypeVariable
+        );
 
         const blogType = await apiHelpers.createContentType(blogPayload);
         blogTypeId = blogType.id;
@@ -268,33 +279,11 @@ test.describe('Custom Columns (showFields)', () => {
 
     test('default columns without showFields', async ({ adminPage, apiHelpers, testSuffix }) => {
         // Create a blog type WITHOUT showFields
-        const defaultBlogPayload = {
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            name: `E2E_Blog_DefaultCols_${testSuffix}`,
-            variable: `E2EBlogDefaultCols${testSuffix}`,
-            host: 'SYSTEM_HOST',
-            folder: 'SYSTEM_FOLDER',
-            metadata: { CONTENT_EDITOR2_ENABLED: true },
-            workflow: [SYSTEM_WORKFLOW_ID],
-            fields: [
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                    name: 'Title',
-                    variable: 'title',
-                    sortOrder: 1
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-                    name: 'Authors',
-                    variable: 'authors',
-                    sortOrder: 2,
-                    relationships: {
-                        velocityVar: authorTypeVariable,
-                        cardinality: CARDINALITY.ONE_TO_MANY
-                    }
-                }
-            ]
-        };
+        const defaultBlogPayload = blogTypeWithRelationships(
+            `E2E_Blog_DefaultCols_${testSuffix}`,
+            `E2EBlogDefaultCols${testSuffix}`,
+            authorTypeVariable
+        );
 
         const defaultBlogType = await apiHelpers.createContentType(defaultBlogPayload);
 

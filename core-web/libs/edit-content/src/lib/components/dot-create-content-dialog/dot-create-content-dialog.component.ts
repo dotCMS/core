@@ -8,6 +8,7 @@ import {
     viewChild,
     signal
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -82,7 +83,7 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     constructor() {
         pushFormBridge();
         // Subscribe to dialog close events to handle callback when dialog is closed by any means
-        this.#dialogRef.onClose.subscribe(() => {
+        this.#dialogRef.onClose.pipe(takeUntilDestroyed()).subscribe(() => {
             if (!this.#isClosing) {
                 this.#handleDialogClose();
             }

@@ -81,12 +81,11 @@ export class SelectExistingContentDialog {
     }
 
     async expectApplyDisabled(): Promise<void> {
-        // p-button is a custom element — the native <button> inside holds the disabled state
-        await expect(this.dialog.getByTestId('apply-button').locator('button')).toBeDisabled();
+        await expect(this.dialog.getByTestId('apply-button').getByRole('button')).toBeDisabled();
     }
 
     async expectApplyEnabled(): Promise<void> {
-        await expect(this.dialog.getByTestId('apply-button').locator('button')).toBeEnabled();
+        await expect(this.dialog.getByTestId('apply-button').getByRole('button')).toBeEnabled();
     }
 
     // ─── Dialog Dismissal ────────────────────────────────────────────
@@ -104,7 +103,7 @@ export class SelectExistingContentDialog {
     // ─── Search ──────────────────────────────────────────────────────
 
     async search(query: string): Promise<void> {
-        const searchInput = this.dialog.locator('input[formcontrolname="query"]');
+        const searchInput = this.dialog.getByTestId('relationship-dialog-search-query');
         await searchInput.fill(query);
         // Submit the form via Enter — the search button is inside a popover, not always visible
         await searchInput.press('Enter');
@@ -118,7 +117,7 @@ export class SelectExistingContentDialog {
      * Searches using the popover filter panel (opens filters, fills query, clicks search button).
      */
     async searchViaFilters(query: string): Promise<void> {
-        const searchInput = this.dialog.locator('input[formcontrolname="query"]');
+        const searchInput = this.dialog.getByTestId('relationship-dialog-search-query');
         await searchInput.fill(query);
         await this.openFilters();
         // search-button is inside a popover appended to body
@@ -136,14 +135,45 @@ export class SelectExistingContentDialog {
         await this.dialog.getByTestId('show-selected-switch').click();
     }
 
-    // ─── Pagination ──────────────────────────────────────────────────
+    // ─── Pagination / row counts ─────────────────────────────────────
 
-    async getRowCount(): Promise<number> {
-        return this.rows.count();
+    /**
+     * Asserts row count is at least `min` (retries until timeout — use instead of snapshot count + expect).
+     */
+    async expectRowCountAtLeast(min: number, options?: { timeout?: number }): Promise<void> {
+        await expect
+            .poll(() => this.rows.count(), { timeout: options?.timeout ?? 10000 })
+            .toBeGreaterThanOrEqual(min);
+    }
+
+    /**
+     * Waits until row count is at least `min`, then returns that count (retried read — safe for baselines before actions).
+     */
+    async waitForRowCountAtLeast(min: number, options?: { timeout?: number }): Promise<number> {
+        let last = 0;
+        await expect
+            .poll(
+                async () => {
+                    last = await this.rows.count();
+                    return last;
+                },
+                { timeout: options?.timeout ?? 10000 }
+            )
+            .toBeGreaterThanOrEqual(min);
+        return last;
     }
 
     async expectRowCount(count: number): Promise<void> {
         await expect(this.rows).toHaveCount(count);
+    }
+
+    /**
+     * **Baseline capture only.** `locator.count()` is a single point-in-time snapshot — it does **not** auto-retry.
+     * For count assertions, use {@link expectRowCount} (`expect(locator).toHaveCount(n)`), {@link expectRowCountAtLeast},
+     * or {@link waitForRowCountAtLeast}; do not wrap this return value in a plain `expect(...)` without polling.
+     */
+    async getRowCount(): Promise<number> {
+        return this.rows.count();
     }
 
     async clickNextPage(): Promise<void> {
@@ -157,6 +187,6 @@ export class SelectExistingContentDialog {
     // ─── Error State ─────────────────────────────────────────────────
 
     async expectErrorMessage(): Promise<void> {
-        await expect(this.dialog.locator('.border-gray-400')).toBeVisible();
+        await expect(this.dialog.getByTestId('error-message')).toBeVisible();
     }
 }

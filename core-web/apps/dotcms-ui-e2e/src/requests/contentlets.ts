@@ -44,30 +44,6 @@ export async function createContentlet(
 }
 
 /**
- * Creates multiple contentlets via the workflow fire/publish API.
- *
- * @param request - Playwright APIRequestContext
- * @param contentType - The content type variable name
- * @param items - Array of field data objects
- * @returns Array of created contentlets
- */
-export async function createMultipleContentlets(
-    request: APIRequestContext,
-    contentType: string,
-    items: Record<string, unknown>[]
-): Promise<Contentlet[]> {
-    const results: Contentlet[] = [];
-    for (const item of items) {
-        const contentlet = await createContentlet(request, {
-            contentType,
-            ...item
-        });
-        results.push(contentlet);
-    }
-    return results;
-}
-
-/**
  * Relates content via the relationship API.
  * Uses the PUBLISH workflow action to save content with relationship data.
  *
