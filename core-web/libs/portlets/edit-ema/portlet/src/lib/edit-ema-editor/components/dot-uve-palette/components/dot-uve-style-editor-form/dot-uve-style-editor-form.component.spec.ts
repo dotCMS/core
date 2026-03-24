@@ -21,7 +21,10 @@ import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.comp
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
-import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME } from '../../../../../shared/consts';
+import {
+    STYLE_EDITOR_DEBOUNCE_TIME,
+    STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME
+} from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
