@@ -210,11 +210,14 @@ test.describe('Custom Columns (showFields)', () => {
         blogTypeVariable = blogType.variable;
 
         // Add showFields variable to the relationship field after creation
-        const relationshipFieldDef = blogType.fields.find(
-            (f) => f.variable === 'authors'
-        );
+        const relationshipFieldDef = blogType.fields.find((f) => f.variable === 'authors');
         if (relationshipFieldDef) {
-            await apiHelpers.addFieldVariable(blogTypeId, relationshipFieldDef.id, 'showFields', 'title,bio');
+            await apiHelpers.addFieldVariable(
+                blogTypeId,
+                relationshipFieldDef.id,
+                'showFields',
+                'title,bio'
+            );
         }
 
         const authors: TestContentlet[] = [];
@@ -332,4 +335,3 @@ test.describe('Custom Columns (showFields)', () => {
         }
     });
 });
-

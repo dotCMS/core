@@ -1,5 +1,10 @@
 import { NewEditContentFormPage } from '@pages';
-import { CARDINALITY, expect, test, TestContentlet } from '../../../../fixtures/relationship.fixture';
+import {
+    CARDINALITY,
+    expect,
+    test,
+    TestContentlet
+} from '../../../../fixtures/relationship.fixture';
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
@@ -317,7 +322,11 @@ test.describe('Table Pagination', () => {
         if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
-    test.fixme('paginates at 10 items per page @smoke', async ({ adminPage, apiHelpers, testSuffix }) => {
+    test.fixme('paginates at 10 items per page @smoke', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
         // BUG: pagination shows all items instead of 10 per page.
         // Remove fixme once the bug is fixed.
         const authors: TestContentlet[] = [];
@@ -347,7 +356,11 @@ test.describe('Table Pagination', () => {
         await relationshipField.expectRowCount(2);
     });
 
-    test.fixme('no pagination with 10 or fewer items', async ({ adminPage, apiHelpers, testSuffix }) => {
+    test.fixme('no pagination with 10 or fewer items', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
         // BUG: pagination appears even with fewer items. Same pagination bug as above.
         const authors: TestContentlet[] = [];
         for (let i = 1; i <= 9; i++) {

@@ -1,5 +1,10 @@
 import { NewEditContentFormPage } from '@pages';
-import { CARDINALITY, expect, test, TestContentlet } from '../../../../fixtures/relationship.fixture';
+import {
+    CARDINALITY,
+    expect,
+    test,
+    TestContentlet
+} from '../../../../fixtures/relationship.fixture';
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 

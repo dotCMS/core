@@ -274,9 +274,8 @@ export class DotRelationshipFieldComponent
             return;
         }
 
-        const { DotEditContentDialogComponent } = await import(
-            '../../../../components/dot-create-content-dialog/dot-create-content-dialog.component'
-        );
+        const { DotEditContentDialogComponent } =
+            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
 
         const dialogData: EditContentDialogData = {
             mode: 'new',

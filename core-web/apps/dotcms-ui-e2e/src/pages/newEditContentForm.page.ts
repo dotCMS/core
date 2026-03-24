@@ -23,7 +23,10 @@ export class NewEditContentFormPage {
         const frame = getLegacyFrame(this.page);
 
         // Wait for the Dojo iframe to fully load and widgets to initialize
-        await frame.locator('.dijitDropDownButton').first().waitFor({ state: 'visible', timeout: 15000 });
+        await frame
+            .locator('.dijitDropDownButton')
+            .first()
+            .waitFor({ state: 'visible', timeout: 15000 });
         // Small delay for Dojo widget initialization after DOM is visible
         await this.page.waitForTimeout(500);
 

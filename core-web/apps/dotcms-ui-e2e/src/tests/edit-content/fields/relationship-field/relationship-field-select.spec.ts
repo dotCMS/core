@@ -3,7 +3,6 @@ import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fix
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
-
 // ─── Single Selection (ONE_TO_ONE, MANY_TO_ONE) ─────────────────
 
 test.describe('Single Selection (1:1 / M:1)', () => {
@@ -406,9 +405,7 @@ test.describe('Create New Inline', () => {
         const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
         await expect(createDialog).toBeVisible({ timeout: 10000 });
 
-        const closeButton = createDialog.locator(
-            '.p-dialog-header-close, .p-dialog-close-button'
-        );
+        const closeButton = createDialog.locator('.p-dialog-header-close, .p-dialog-close-button');
         if ((await closeButton.count()) > 0) {
             await closeButton.click();
         } else {

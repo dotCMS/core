@@ -87,7 +87,10 @@
             [class.cursor-not-allowed]="isDisabled">
             <td class="w-12 min-w-12">
                 @if (!isDisabled) {
-                    <span class="pi pi-bars text-[var(--gray-600)]" pReorderableRowHandle data-testid="relationship-drag-handle"></span>
+                    <span
+                        class="pi pi-bars text-[var(--gray-600)]"
+                        pReorderableRowHandle
+                        data-testid="relationship-drag-handle"></span>
                 } @else {
                     <span class="pi pi-bars text-[var(--gray-600)] cursor-not-allowed"></span>
                 }

@@ -1,4 +1,4 @@
-import { test as base, type Page, type APIRequestContext, expect } from '@playwright/test';
+import { type APIRequestContext, test as base, expect, type Page } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
 import { createFieldVariable } from '../requests/field-variables';
@@ -60,10 +60,7 @@ async function createContentTypeWithFields(
 /**
  * Deletes a content type by its id or variable name.
  */
-async function deleteContentTypeById(
-    request: APIRequestContext,
-    idOrVar: string
-): Promise<void> {
+async function deleteContentTypeById(request: APIRequestContext, idOrVar: string): Promise<void> {
     const response = await request.delete(`/api/v1/contenttype/id/${idOrVar}`, {
         headers: authHeaders()
     });
@@ -111,7 +108,10 @@ async function fireContentletWithRelationship(
     );
     if (response.status() !== 200) {
         const errorBody = await response.json().catch(() => response.statusText());
-        console.error('fireContentletWithRelationship failed:', JSON.stringify({ contentType, fields, relationships, error: errorBody }, null, 2));
+        console.error(
+            'fireContentletWithRelationship failed:',
+            JSON.stringify({ contentType, fields, relationships, error: errorBody }, null, 2)
+        );
     }
     expect(response.status()).toBe(200);
     const data = await response.json();
@@ -136,18 +136,15 @@ async function enableNewEditor(
         headers: authHeaders()
     });
     // Enable the new editor in the content type's metadata
-    const response = await request.put(
-        `/api/v1/contenttype/id/${contentTypeVariable}`,
-        {
-            data: {
-                contentType: {
-                    variable: contentTypeVariable,
-                    metadata: { CONTENT_EDITOR2_ENABLED: true }
-                }
-            },
-            headers: authHeaders()
-        }
-    );
+    const response = await request.put(`/api/v1/contenttype/id/${contentTypeVariable}`, {
+        data: {
+            contentType: {
+                variable: contentTypeVariable,
+                metadata: { CONTENT_EDITOR2_ENABLED: true }
+            }
+        },
+        headers: authHeaders()
+    });
     // Might be 200 or 400 depending on API version; the system-table flags are the critical ones
 }
 
@@ -230,7 +227,8 @@ function blogContentTypePayload(
             },
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-                name: relationshipFieldVariable.charAt(0).toUpperCase() +
+                name:
+                    relationshipFieldVariable.charAt(0).toUpperCase() +
                     relationshipFieldVariable.slice(1),
                 variable: relationshipFieldVariable,
                 sortOrder: 2,
@@ -273,12 +271,28 @@ export const test = base.extend<{
         createContentType: (payload: Record<string, unknown>) => Promise<TestContentType>;
         deleteContentType: (idOrVar: string) => Promise<void>;
         createContentlet: (ct: string, fields: Record<string, unknown>) => Promise<TestContentlet>;
-        createContentletWithRelationship: (ct: string, fields: Record<string, unknown>, rels: Record<string, string>) => Promise<TestContentlet>;
+        createContentletWithRelationship: (
+            ct: string,
+            fields: Record<string, unknown>,
+            rels: Record<string, string>
+        ) => Promise<TestContentlet>;
         enableNewEditor: (ctVar: string) => Promise<void>;
         authorPayload: (suffix: string) => Record<string, unknown>;
         tagPayload: (suffix: string) => Record<string, unknown>;
-        blogPayload: (suffix: string, name: string, variable: string, relatedCt: string, relField: string, cardinality: number) => Record<string, unknown>;
-        addFieldVariable: (contentTypeId: string, fieldId: string, key: string, value: string) => Promise<void>;
+        blogPayload: (
+            suffix: string,
+            name: string,
+            variable: string,
+            relatedCt: string,
+            relField: string,
+            cardinality: number
+        ) => Record<string, unknown>;
+        addFieldVariable: (
+            contentTypeId: string,
+            fieldId: string,
+            key: string,
+            value: string
+        ) => Promise<void>;
         CARDINALITY: typeof CARDINALITY;
     };
 }>({
@@ -311,7 +325,16 @@ export const test = base.extend<{
                 relatedCt: string,
                 relField: string,
                 cardinality: number
-            ) => blogContentTypePayload(suffix, name, variable, relatedCt, relField, cardinality, workflowId),
+            ) =>
+                blogContentTypePayload(
+                    suffix,
+                    name,
+                    variable,
+                    relatedCt,
+                    relField,
+                    cardinality,
+                    workflowId
+                ),
             addFieldVariable: (contentTypeId, fieldId, key, value) =>
                 createFieldVariable(request, contentTypeId, fieldId, key, value),
             CARDINALITY
