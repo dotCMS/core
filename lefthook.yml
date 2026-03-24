@@ -3,7 +3,8 @@
 #
 # Installed via mise: mise install (adds lefthook binary)
 # Hooks wired by: prepare.js → .git/hooks/ (smart dispatcher, branch-aware)
-# Skip hooks: LEFTHOOK=0 git commit / git push
+# Bypass (discouraged): LEFTHOOK=0 git commit / git push
+# If you bypass, manually run the equivalent checks before pushing — see each hook below.
 
 min_version: 2.0.0
 

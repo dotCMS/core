@@ -58,7 +58,7 @@ Tests are **silently skipped** without explicit `skip=false` flags: `-Dcoreit.te
 
 ## Gotchas
 
-- **Git hooks require mise** — run `mise install` to set up lefthook, or `LEFTHOOK=0 git commit` to skip
+- **Git hooks require mise** — run `mise install` to set up lefthook. Do not bypass hooks with `LEFTHOOK=0` or `--no-verify` — if a hook fails, fix the underlying issue. If bypass is truly unavoidable, manually run the equivalent checks before pushing (see `lefthook.yml` for what each hook does).
 - **Frontend memory** — standalone Nx builds may OOM; set `NODE_OPTIONS="--max_old_space_size=4096"`
 - **Frontend changes only show via `nx serve`** — `core-web/` edits are served live by `just dev-start-frontend`. They do NOT appear at the backend's `/dotAdmin`, which serves the Angular WAR from the Docker image. If changes are invisible, check which URL you're using.
 - **`build-quicker` shares `.m2` across projects** — `just build-quicker` uses the frontend WAR last installed by any project's `just build`. The recipe detects and warns when the WAR is from a different branch. Use `nx serve` for frontend dev, or `just build` for a consistent image.
