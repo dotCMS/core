@@ -244,8 +244,12 @@ public class InitRunner implements Runnable {
 
     @Override
     public void run() {
+
+
         try {
-            runTask();
+            if( !runTask()){
+                logInfo("Skipping pingback");
+            }
         } catch (Throwable e) {
             logError(e);
         }
