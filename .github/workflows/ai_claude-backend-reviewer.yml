@@ -20,9 +20,10 @@ jobs:
     steps:
       - name: Check if PR author is in pilot list
         id: check
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
           PILOT_AUTHORS='["dsolistorres","gortiz-dotcms"]'
-          AUTHOR="${{ github.event.pull_request.user.login }}"
           if echo "$PILOT_AUTHORS" | jq -e --arg a "$AUTHOR" 'index($a) != null' > /dev/null; then
             echo "authorized=true" >> $GITHUB_OUTPUT
             echo "✅ $AUTHOR is in the pilot list"
@@ -50,8 +51,10 @@ jobs:
 
       - name: Check for Java file changes
         id: check
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          CHANGED=$(git diff --name-only "origin/${BASE_REF}...HEAD")
           echo "Changed files:"
           echo "$CHANGED"
           if echo "$CHANGED" | grep -qE '\.java$'; then
@@ -90,7 +93,7 @@ jobs:
       enable_mention_detection: false
       claude_args: >-
         --allowedTools
-        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh api repos/${{ github.repository }}/issues*),Bash(jq*)"
+        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments*),Bash(gh api repos/${{ github.repository }}/issues/comments/*),Bash(jq*)"
       prompt: |
         You are the orchestrator of a dotCMS backend code review pipeline.
         Your job is to coordinate specialized sub-agents, collect their findings,
