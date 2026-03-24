@@ -11,9 +11,9 @@
     <div class="relative h-48 w-full">
         @if (blog().image) {
             <img
-                [ngSrc]="blog().image.identifier"
-                [alt]="blog().urlTitle || blog().title"
+                [ngSrc]="blog().image.fileAsset.versionPath"
                 fill
+                [alt]="blog().urlTitle"
                 class="absolute inset-0 w-full h-full object-cover" />
         } @else {
             <div class="absolute inset-0 bg-gray-200 flex items-center justify-center">
