@@ -48,6 +48,11 @@ services:
       retries: 12
     restart: unless-stopped
 
+  # OpenSearch 3.4 — part of the progressive migration from ES/OpenSearch 1.x to 3.x.
+  # Runs alongside the 1.3 instance so developers can test both search backends in parallel.
+  # dotCMS selects the backend via DOT_ES_ENDPOINTS at dev-run time (defaults to 1.3 on :19200).
+  # To test against 3.4, set DOT_ES_ENDPOINTS=https://localhost:19201 in .env.local.
+  # This service is optional — safe to stop if you only need the 1.3 backend.
   dotcms-shared-os-upgrade:
     image: opensearchproject/opensearch:3.4.0
     container_name: dotcms-shared-os-upgrade
