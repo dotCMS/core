@@ -24,6 +24,7 @@ def main():
 
     jobs_file = workspace / "jobs-detailed.json"
 
+    # Fetch jobs if not cached
     if not jobs_file.exists():
         print("Fetching job details...")
         try:
@@ -35,17 +36,67 @@ def main():
     else:
         print(f"Using cached jobs: {jobs_file}")
 
-    print("")
-    print("=== Failed Jobs ===")
+    # Display all jobs with status, then detail failed jobs with step-level info
     jobs_data = json.loads(jobs_file.read_text(encoding='utf-8'))
     jobs = jobs_data.get('jobs', [])
 
+    print("")
+    print("=== All Jobs ===")
     for job in jobs:
-        if job.get('conclusion') == 'failure':
-            print(f"Name: {job.get('name')}")
-            print(f"ID: {job.get('id')}")
-            print(f"Conclusion: {job.get('conclusion')}")
-            print("")
+        conclusion = job.get('conclusion', 'unknown')
+        status = job.get('status', 'unknown')
+        label = conclusion if conclusion else status
+        print(f"  [{label:<12}] {job.get('name')}  (ID: {job.get('id')})")
+
+    failed_jobs = [j for j in jobs if j.get('conclusion') == 'failure']
+    if not failed_jobs:
+        print("\nNo failed jobs found.")
+        return
+
+    print("")
+    print("=== Failed Job Details ===")
+    for job in failed_jobs:
+        print(f"\n--- {job.get('name')} (ID: {job.get('id')}) ---")
+        steps = job.get('steps', [])
+        if not steps:
+            print("  (no step data available)")
+            continue
+
+        # Identify which steps failed and whether non-cleanup steps ran after
+        # GitHub Actions always runs "Post ..." and "Complete job" cleanup steps
+        # even after a failure, so we exclude those from continue-on-error detection.
+        def is_cleanup_step(s):
+            n = s.get('name', '')
+            return n.startswith('Post ') or n == 'Complete job' or n == 'Set up job'
+
+        # Build list of non-cleanup steps that succeeded, keyed by number
+        succeeded_non_cleanup = set()
+        for step in steps:
+            if (step.get('conclusion') == 'success'
+                    and not is_cleanup_step(step)):
+                succeeded_non_cleanup.add(step.get('number', 0))
+
+        for step in steps:
+            conclusion = step.get('conclusion', '')
+            if not conclusion:
+                continue
+            number = step.get('number', 0)
+            name = step.get('name', 'unknown')
+
+            if conclusion == 'failure':
+                # continue-on-error if a non-cleanup step succeeded AFTER this one
+                later_succeeded = any(n > number for n in succeeded_non_cleanup)
+                if later_succeeded:
+                    marker = "FAIL (continue-on-error — did NOT cause job failure)"
+                    print(f"  [{marker}] Step {number}: {name}")
+                    print(f"         ↳ NOTE: This is a real error masked by continue-on-error. Worth investigating separately.")
+                else:
+                    marker = "FAIL ← likely caused job failure"
+                    print(f"  [{marker}] Step {number}: {name}")
+            elif conclusion == 'skipped':
+                print(f"  [skipped     ] Step {number}: {name}")
+            else:
+                print(f"  [{conclusion:<12}] Step {number}: {name}")
 
 
 if __name__ == "__main__":
