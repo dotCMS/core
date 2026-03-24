@@ -101,14 +101,15 @@ setup:
     if [ -f "$REPO_ROOT/core-web/prepare.js" ]; then
         echo ""
         echo "Wiring git hooks..."
-        (
-            cd "$REPO_ROOT" || exit 0
-            env -u CI "$MISE" exec -- node core-web/prepare.js
-        ) 2>/dev/null || (
-            cd "$REPO_ROOT" || exit 0
-            export PATH="$HOME/.local/share/mise/shims:$PATH"
-            env -u CI node core-web/prepare.js
-        ) 2>/dev/null || true
+        cd "$REPO_ROOT" || exit 1
+        if env -u CI "$MISE" exec -- node core-web/prepare.js 2>&1; then
+            echo "  ✓ Git hooks installed"
+        elif PATH="$HOME/.local/share/mise/shims:$PATH" env -u CI node core-web/prepare.js 2>&1; then
+            echo "  ✓ Git hooks installed (via shims fallback)"
+        else
+            echo "  ⚠ Git hooks could not be installed — node may not be available yet."
+            echo "    After restarting your shell, run: just setup"
+        fi
     fi
 
     echo ""
