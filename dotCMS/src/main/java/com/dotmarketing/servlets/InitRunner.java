@@ -149,11 +149,11 @@ public class InitRunner implements Runnable {
     }
 
     private String getPortalUrl() {
-        return Try.of(()->APILocator.getCompanyAPI().getDefaultCompany().getPortalURL()).getOrNull();
+        return Try.of(()->APILocator.getCompanyAPI().getDefaultCompany().getPortalURL()).getOrElse("");
     }
 
     private String getEmailAddress() {
-        return Try.of(()->APILocator.getCompanyAPI().getDefaultCompany().getEmailAddress()).getOrNull();
+        return Try.of(()->APILocator.getCompanyAPI().getDefaultCompany().getEmailAddress()).getOrElse("");
     }
 
 
@@ -310,9 +310,9 @@ public class InitRunner implements Runnable {
     private static Optional<Object> getObject(String sql) {
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             return Optional.ofNullable(new DotConnect(sql).loadObjectResults(conn).get(0).get("test_value"));
-
         } catch (DotDataException | SQLException e) {
-            throw new DotRuntimeException(e);
+            logError(e);
+            return Optional.empty();
         }
     }
 

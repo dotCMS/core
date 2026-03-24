@@ -107,8 +107,9 @@ public class InitRunnerTest {
                 "id", "hostnames", "dotcmsVersion", "buildDate", "lastContentEdit",
                 "defaultHost", "clusterId", "totalUsers", "activeUsers", "totalSites",
                 "totalTypes", "activeSites", "totalContent", "recentlyEditedContent",
-                "totalLanguages", "numFolders", "clusterNodes", "workflows",
-                "uveEnabled", "jvmInfo", "createdDate", "pushPublishing", "collectionTime"
+                "totalLanguages", "numFolders", "clusterNodes", "serverNumber", "workflows",
+                "uveEnabled", "portalUrl", "emailAddress", "jvmInfo", "createdDate",
+                "pushPublishing", "collectionTime"
         };
 
         for (String key : expectedKeys) {
