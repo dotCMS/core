@@ -210,24 +210,39 @@ All components and hooks should be imported from `@dotcms/react`:
 | ------------ | ------------------------ | -------- | -------------- | ---------------------------------------------- |
 | `page`       | `DotCMSPageAsset`        | ✅       | -              | The page asset containing the layout to render |
 | `components` | `DotCMSPageComponent`    | ✅       | `{}`           | [Map of content type → React component](#component-mapping)          |
-| `mode`       | `DotCMSPageRendererMode` | ❌       | `'production'` | [Rendering mode ('production' or 'development')](#layout-body-modes) |
+| `mode`       | `DotCMSPageRendererMode` | ❌       | `’production’` | [Rendering mode (‘production’ or ‘development’)](#layout-body-modes) |
+| `slots`      | `Record<string, ReactNode>` | ❌    | `{}`           | Pre-rendered server component nodes keyed by contentlet identifier. See [`buildSlots`](#buildslots). |
 
-#### Client-Side Only Component
+#### Next.js App Router
 
-> ⚠️ **Important: This is a client-side React component.**
-> `DotCMSLayoutBody` uses React features like `useContext`, `useEffect`, and `useState`.
-> If you're using a framework that supports Server-Side Rendering (like **Next.js**, **Gatsby**, or **Astro**), you **must** mark the parent component with `"use client"` or follow your framework’s guidelines for using client-side components.
->
-> 👉 [Learn more: Next.js – Client Components](https://nextjs.org/docs/getting-started/react-essentials#client-components)
+`DotCMSLayoutBody` requires a `"use client"` parent because `components` is a map of React component functions, which React cannot serialize across the server→client boundary. The recommended pattern is to fetch data in the server page and pass the plain result to a client wrapper:
+
+```tsx
+// page.tsx — server component, fetches data only
+export default async function Page() {
+    const pageContent = await getDotCMSPage(path);
+    return <PageView pageContent={pageContent} />;
+}
+```
+
+```tsx
+// PageView.tsx — "use client", owns components and renders layout
+‘use client’;
+
+export function PageView({ pageContent }) {
+    const { pageAsset } = useEditableDotCMSPage(pageContent);
+    return <DotCMSLayoutBody page={pageAsset} components={pageComponents} />;
+}
+```
 
 #### Usage
 
 ```tsx
-import type { DotCMSPageAsset } from '@dotcms/types';
-import { DotCMSLayoutBody } from '@dotcms/react';
+import type { DotCMSPageAsset } from ‘@dotcms/types’;
+import { DotCMSLayoutBody } from ‘@dotcms/react’;
 
-import { MyBlogCard } from './MyBlogCard';
-import { DotCMSProductComponent } from './DotCMSProductComponent';
+import { MyBlogCard } from ‘./MyBlogCard’;
+import { DotCMSProductComponent } from ‘./DotCMSProductComponent’;
 
 const COMPONENTS_MAP = {
     Blog: MyBlogCard,
@@ -238,6 +253,23 @@ const MyPage = ({ pageAsset }: DotCMSPageResponse) => {
     return <DotCMSLayoutBody page={pageAsset} components={COMPONENTS_MAP} />;
 };
 ```
+
+#### buildSlots
+
+Use `buildSlots` when you have Next.js async server components that need to fetch their own data. Since async server components can’t be called from inside a client component tree, pre-render them on the server and pass the result into the layout via `slots`:
+
+```tsx
+import { buildSlots, DotCMSLayoutBody } from ‘@dotcms/react’;
+
+// BlogListContainer is an async server component that fetches its own data
+const slots = buildSlots(pageContent.pageAsset.containers, {
+    BlogList: BlogListContainer,
+});
+
+<DotCMSLayoutBody page={pageAsset} components={pageComponents} slots={slots} />
+```
+
+The layout renders the pre-rendered slot node for a contentlet if one exists, otherwise falls back to the matching entry in `components`.
 
 #### Layout Body Modes
 
@@ -313,12 +345,13 @@ export default MyBannerComponent;
 
 `DotCMSBlockEditorRenderer` is a component for rendering [Block Editor](https://dev.dotcms.com/docs/block-editor) content from dotCMS with support for custom block renderers.
 
-| Input             | Type                 | Required | Description                                                                                                |
-| ----------------- | -------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
-| `blocks`          | `BlockEditorContent` | ✅       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
-| `customRenderers` | `CustomRenderers`    | ❌       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
-| `className`       | `string`             | ❌       | CSS class to apply to the container                                                                        |
-| `style`           | `CSSProperties`      | ❌       | Inline styles for the container                                                                            |
+| Input             | Type                 | Required | Default | Description                                                                                                |
+| ----------------- | -------------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------- |
+| `blocks`          | `BlockEditorContent` | ✅       | -       | The [Block Editor](https://dev.dotcms.com/docs/block-editor) content to render                             |
+| `customRenderers` | `CustomRenderers`    | ❌       | -       | Custom rendering functions for specific [block types](https://dev.dotcms.com/docs/block-editor#BlockTypes) |
+| `className`       | `string`             | ❌       | -       | CSS class to apply to the container                                                                        |
+| `style`           | `CSSProperties`      | ❌       | -       | Inline styles for the container                                                                            |
+| `isDevMode`       | `boolean`            | ❌       | `false` | When `true`, shows a visible error message if the `blocks` data is invalid. When `false` (default), invalid blocks render nothing silently. |
 
 #### Usage
 
@@ -342,6 +375,27 @@ const DetailPage = ({ contentlet }: { contentlet: DotCMSBasicContentlet }) => {
         />
     );
 };
+```
+
+#### Next.js Server Components
+
+`DotCMSBlockEditorRenderer` can be used directly in a Next.js server component — it has no hooks or browser dependencies:
+
+```tsx
+// app/article/page.tsx — server component
+import { DotCMSBlockEditorRenderer } from '@dotcms/react';
+
+export default async function ArticlePage() {
+    const { pageAsset } = await getDotCMSPage('/article');
+    const blocks = pageAsset.containers['...'].contentlets[0].blockEditorContent;
+
+    return (
+        <DotCMSBlockEditorRenderer
+            blocks={blocks}
+            isDevMode={process.env.NODE_ENV === 'development'}
+        />
+    );
+}
 ```
 
 #### Recommendations

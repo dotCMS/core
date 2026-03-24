@@ -52,6 +52,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.Set;
 
 /**
@@ -63,6 +64,16 @@ import java.util.Set;
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     public static final String HTML_HEAD = "<head>";
+
+    // Matches either the full UVE script block (init function + <script src> with onload)
+    // or the plain SDK script tag injected when no schemas are found.
+    // The prefix literal is sourced from HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX
+    // to keep the pattern in sync with the template — update both together if the template changes.
+    private static final Pattern UVE_SCRIPT_BLOCK_PATTERN = Pattern.compile(
+            "(?:" + Pattern.quote(HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX) + ".*?</script>" +
+            "<script src=\"/ext/uve/dot-uve\\.js\"[^>]*></script>" +
+            "|" + Pattern.quote(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE) + ")",
+            Pattern.DOTALL);
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final LanguageAPI languageAPI;
@@ -665,10 +676,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setSite(host).setURLMapper(pageURI)
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
-        // strips the UVE script so the comparison is purely on page content
+        // strips the UVE script block so the comparison is purely on page content
         return new PageLivePreviewVersionBean(
-                renderLive.replace(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE, ""),
-                renderWorking.replace(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE, ""));
+                UVE_SCRIPT_BLOCK_PATTERN.matcher(renderLive).replaceAll(""),
+                UVE_SCRIPT_BLOCK_PATTERN.matcher(renderWorking).replaceAll(""));
     }
 
     private static class DiffMockRequest extends MockAttributeRequest {
