@@ -25,6 +25,7 @@ describe('DotUveIframeComponent', () => {
     let pageTypeSignal: WritableSignal<PageType>;
     let pageRenderSignal: WritableSignal<string>;
     let editorEnableInlineEditSignal: WritableSignal<boolean>;
+    let iframeDocHeightSignal: WritableSignal<number>;
 
     const mockPageRender = '<html><head></head><body>Test Content</body></html>';
     const mockSeoResults: SeoMetaTagsResult[] = [
@@ -63,6 +64,7 @@ describe('DotUveIframeComponent', () => {
                     $pageRender: pageRenderSignal,
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
+                    $viewIframeDocHeight: iframeDocHeightSignal,
                     setSeoData: jest.fn()
                 })
             }
@@ -73,6 +75,7 @@ describe('DotUveIframeComponent', () => {
         pageTypeSignal = signal(PageType.HEADLESS);
         pageRenderSignal = signal(mockPageRender);
         editorEnableInlineEditSignal = signal(false);
+        iframeDocHeightSignal = signal(0);
 
         spectator = createComponent({
             props: {

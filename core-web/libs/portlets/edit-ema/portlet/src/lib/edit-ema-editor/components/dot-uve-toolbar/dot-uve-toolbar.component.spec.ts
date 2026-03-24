@@ -1535,6 +1535,8 @@ describe('DotUveToolbarComponent', () => {
                             canLock: true,
                             loading: true,
                             disabled: false,
+                            lockedBy: '',
+                            shouldShowButton: true,
                             message: 'editpage.toolbar.page.release.lock.locked.by.user',
                             args: []
                         });

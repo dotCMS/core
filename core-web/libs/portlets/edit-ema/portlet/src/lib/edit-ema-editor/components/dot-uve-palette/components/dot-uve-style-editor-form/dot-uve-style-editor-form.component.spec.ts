@@ -214,7 +214,7 @@ describe('DotUveStyleEditorFormComponent', () => {
         });
 
         it('should render accordion tabs for each section', () => {
-            expect(spectator.queryAll('.uve-accordion-tab').length).toBe(2);
+            expect(spectator.queryAll('p-accordion-panel').length).toBe(2);
         });
     });
 

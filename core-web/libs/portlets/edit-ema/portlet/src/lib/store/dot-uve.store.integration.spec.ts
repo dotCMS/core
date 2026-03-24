@@ -16,6 +16,7 @@ import {
     DotPageLayoutService,
     DotPropertiesService,
     DotSystemConfigService,
+    DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -124,6 +125,9 @@ describe('UVEStore - Integration Tests ', () => {
             },
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: () => of({})
+            }),
+            mockProvider(DotWorkflowActionsFireService, {
+                saveContentlet: jest.fn().mockReturnValue(of({}))
             }),
             {
                 provide: GlobalStore,

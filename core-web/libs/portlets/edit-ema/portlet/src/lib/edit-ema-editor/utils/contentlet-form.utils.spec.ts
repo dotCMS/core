@@ -220,6 +220,16 @@ describe('ContentletFormUtils', () => {
                                     readOnly: false,
                                     required: false,
                                     values: 'One|1\nTwo|2'
+                                } as DotCMSContentTypeField,
+                                {
+                                    clazz: DotCMSClazzes.TAG,
+                                    name: 'Tag Field',
+                                    variable: 'tagField',
+                                    regexCheck: '',
+                                    dataType: 'TEXT',
+                                    readOnly: false,
+                                    required: false,
+                                    values: ''
                                 } as DotCMSContentTypeField
                             ]
                         }
@@ -229,14 +239,15 @@ describe('ContentletFormUtils', () => {
 
             const result = getQuickEditFields(layout);
 
-            expect(result).toHaveLength(6);
+            expect(result).toHaveLength(7);
             expect(result.map((f) => f.clazz)).toEqual([
                 DotCMSClazzes.TEXT,
                 DotCMSClazzes.TEXTAREA,
                 DotCMSClazzes.CHECKBOX,
                 DotCMSClazzes.SELECT,
                 DotCMSClazzes.RADIO,
-                DotCMSClazzes.MULTI_SELECT
+                DotCMSClazzes.MULTI_SELECT,
+                DotCMSClazzes.TAG
             ]);
         });
 
@@ -436,6 +447,10 @@ describe('ContentletFormUtils', () => {
             expect(isQuickEditSupportedField(DotCMSClazzes.BINARY)).toBe(true);
         });
 
+        it('should return true for TAG field', () => {
+            expect(isQuickEditSupportedField(DotCMSClazzes.TAG)).toBe(true);
+        });
+
         it('should return false for undefined', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect(isQuickEditSupportedField(undefined as any)).toBe(false);
@@ -443,8 +458,8 @@ describe('ContentletFormUtils', () => {
     });
 
     describe('QUICK_EDIT_SUPPORTED_FIELDS constant', () => {
-        it('should contain exactly 9 supported field types', () => {
-            expect(QUICK_EDIT_SUPPORTED_FIELDS).toHaveLength(9);
+        it('should contain exactly 10 supported field types', () => {
+            expect(QUICK_EDIT_SUPPORTED_FIELDS).toHaveLength(10);
         });
 
         it('should contain all expected field types', () => {
@@ -457,6 +472,7 @@ describe('ContentletFormUtils', () => {
             expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.BINARY);
             expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.IMAGE);
             expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.FILE);
+            expect(QUICK_EDIT_SUPPORTED_FIELDS).toContain(DotCMSClazzes.TAG);
         });
     });
 });

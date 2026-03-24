@@ -9,7 +9,8 @@ import {
     DotExperimentsService,
     DotLanguagesService,
     DotPageLayoutService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/types';
 
@@ -89,6 +90,9 @@ describe('withPageApi', () => {
             }),
             mockProvider(UveIframeMessengerService, {
                 sendPageData: jest.fn()
+            }),
+            mockProvider(DotWorkflowActionsFireService, {
+                saveContentlet: jest.fn().mockReturnValue(of({}))
             }),
             {
                 provide: DotPageApiService,

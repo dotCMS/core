@@ -16,7 +16,8 @@ export type QuickEditFieldClass =
     | typeof DotCMSClazzes.SELECT
     | typeof DotCMSClazzes.BINARY
     | typeof DotCMSClazzes.IMAGE
-    | typeof DotCMSClazzes.FILE;
+    | typeof DotCMSClazzes.FILE
+    | typeof DotCMSClazzes.TAG;
 
 /**
  * Supported field types for the quick edit form
@@ -30,7 +31,8 @@ export const QUICK_EDIT_SUPPORTED_FIELDS: QuickEditFieldClass[] = [
     DotCMSClazzes.SELECT,
     DotCMSClazzes.BINARY,
     DotCMSClazzes.IMAGE,
-    DotCMSClazzes.FILE
+    DotCMSClazzes.FILE,
+    DotCMSClazzes.TAG
 ];
 
 /**

@@ -24,6 +24,7 @@ import {
     DotPageLayoutService,
     DotRouterService,
     DotSystemConfigService,
+    DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
@@ -134,6 +135,9 @@ describe('EditEmaLayoutComponent', () => {
             },
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: () => of({})
+            }),
+            mockProvider(DotWorkflowActionsFireService, {
+                saveContentlet: jest.fn().mockReturnValue(of({}))
             }),
             {
                 provide: GlobalStore,
