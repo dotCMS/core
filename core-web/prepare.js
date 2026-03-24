@@ -47,6 +47,7 @@ if [ -f "$REPO_ROOT/lefthook.yml" ] || [ -f "$REPO_ROOT/lefthook.yaml" ]; then
   if command -v mise >/dev/null 2>&1 && mise exec -- lefthook version >/dev/null 2>&1; then
     exec mise exec -- lefthook run ${hookName} "$@"
   fi
+  echo "WARNING: lefthook not found — ${hookName} hooks skipped. Run: just setup" >&2
   exit 0
 fi
 
