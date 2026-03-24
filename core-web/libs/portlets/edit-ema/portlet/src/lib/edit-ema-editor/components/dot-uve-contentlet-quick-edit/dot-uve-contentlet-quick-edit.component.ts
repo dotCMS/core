@@ -1,4 +1,4 @@
-import { of, timer } from 'rxjs';
+import { timer } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -340,11 +340,7 @@ export class DotUveContentletQuickEditComponent {
                                 );
                             }
                         }),
-                        debounce((changeEvent) =>
-                            changeEvent.isTraditionalPage
-                                ? of(0)
-                                : timer(STYLE_EDITOR_DEBOUNCE_TIME)
-                        )
+                        debounce(() => timer(STYLE_EDITOR_DEBOUNCE_TIME))
                     )
                 ),
                 takeUntilDestroyed(this.#destroyRef)
