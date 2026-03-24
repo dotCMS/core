@@ -212,24 +212,10 @@ pre-push:
             ;;
         esac
 
-    frontend-format-verify:
-      glob: "core-web/**/*.{ts,js,tsx,jsx,json,html,css,scss}"
-      run: |
-        cd core-web
-        # Safety net: verify formatting on all pushed frontend files.
-        # Catches anything that bypassed pre-commit (merges, cherry-picks, --no-verify).
-        base_branch=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo "origin/main")
-        files=$(git diff --name-only "$(git merge-base HEAD "$base_branch")" HEAD -- 'core-web/**/*.ts' 'core-web/**/*.js' 'core-web/**/*.tsx' 'core-web/**/*.jsx' 'core-web/**/*.json' 'core-web/**/*.html' 'core-web/**/*.css' 'core-web/**/*.scss' 2>/dev/null \
-          | sed 's|^core-web/||' | paste -sd, -)
-        [ -z "$files" ] && exit 0
-        # Dry-run format check — list files that would change
-        NX_DAEMON=false mise exec -- yarn nx format:check --files="$files" 2>&1 || {
-          echo ""
-          echo "ERROR: Unformatted files detected. Run:"
-          echo "  cd core-web && yarn nx format:write"
-          echo "  git add -u && git commit -m 'style: format files'"
-          exit 1
-        }
+    # frontend-format-verify removed — pre-commit frontend-format (with stage_fixed) already
+    # handles this. A pre-push format check can only detect problems and tell the developer to
+    # fix them manually — it cannot auto-fix because the commit is already made. The post-merge
+    # hook below catches the remaining gap (merges/cherry-picks that skip pre-commit).
 
     sdk-uve-check:
       glob: "core-web/**/sdk-uve/**"
