@@ -35,9 +35,7 @@ const mockBundleItems: DotBundle[] = [
 ];
 
 const mockBundleResponse = {
-    bodyJsonObject: {
-        items: mockBundleItems
-    }
+    items: mockBundleItems
 };
 
 const mockAddToBundleResponse: DotAjaxActionResponseView = {

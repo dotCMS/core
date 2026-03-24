@@ -780,9 +780,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 
     it('should handle errors from content drive service', () => {
         // Mock error from content drive service
-        contentDriveService.search.mockReturnValue(
-            throwError(() => new Error('Failed to get content'))
-        );
+        contentDriveService.search.mockReturnValue(throwError(new Error('Failed to get content')));
 
         spectator.flushEffects();
 

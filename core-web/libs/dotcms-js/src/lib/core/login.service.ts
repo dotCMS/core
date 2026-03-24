@@ -1,9 +1,9 @@
-import { Observable, of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
 import {
     DotCMSResponse,
@@ -12,7 +12,6 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { DotcmsEventsService } from './dotcms-events.service';
-import { HttpCode } from './util/http-code';
 
 export interface DotLoginParams {
     login: string;
@@ -107,9 +106,7 @@ export class LoginService {
      * @memberof LoginService
      */
     getCurrentUser(): Observable<CurrentUser> {
-        return this.http
-            .get<CurrentUser>(this.urls.current)
-            .pipe(catchError((error) => this.handleUnauthorized(error)));
+        return this.http.get<CurrentUser>(this.urls.current);
     }
 
     /**
@@ -189,8 +186,7 @@ export class LoginService {
                     });
 
                     return res.entity.loginAs;
-                }),
-                catchError((error) => this.handleUnauthorized(error))
+                })
             );
     }
 
@@ -254,8 +250,7 @@ export class LoginService {
                 });
 
                 return res.entity.logoutAs;
-            }),
-            catchError((error) => this.handleUnauthorized(error))
+            })
         );
     }
 
@@ -323,14 +318,6 @@ export class LoginService {
 
     private logOutUser(): void {
         window.location.href = `${LOGOUT_URL}?r=${new Date().getTime()}`;
-    }
-
-    private handleUnauthorized(error: HttpErrorResponse): Observable<never> {
-        if (error.status === HttpCode.UNAUTHORIZED && this._auth?.user) {
-            this.logOutUser();
-        }
-
-        return throwError(() => error);
     }
 
     private getFullAuth(auth: Auth): Auth {

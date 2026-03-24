@@ -3,12 +3,11 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map, mergeMap, toArray } from 'rxjs/operators';
+import { filter, mergeMap, toArray } from 'rxjs/operators';
 
 import { ApiRoot } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
-    DotCMSResponseJsonObject,
     DotCurrentUser,
     DotEnvironment,
     DotPushPublishData
@@ -49,11 +48,9 @@ export class PushPublishService {
     getEnvironments(): Observable<DotEnvironment[]> {
         return this.currentUser.getCurrentUser().pipe(
             mergeMap((user: DotCurrentUser) => {
-                return this.http
-                    .get<
-                        DotCMSResponseJsonObject<DotEnvironment[]>
-                    >(`${this.pushEnvironementsUrl}/${user.roleId}`)
-                    .pipe(map((response) => response.bodyJsonObject));
+                return this.http.get<DotEnvironment[]>(
+                    `${this.pushEnvironementsUrl}/${user.roleId}`
+                );
             }),
             mergeMap((environments: DotEnvironment[]) => environments),
             filter((environment: DotEnvironment) => environment.name !== ''),

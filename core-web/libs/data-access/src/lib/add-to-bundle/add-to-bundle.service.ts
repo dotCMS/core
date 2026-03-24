@@ -5,12 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
-import {
-    DotAjaxActionResponseView,
-    DotBundle,
-    DotCMSResponseJsonObject,
-    DotCurrentUser
-} from '@dotcms/dotcms-models';
+import { DotAjaxActionResponseView, DotBundle, DotCurrentUser } from '@dotcms/dotcms-models';
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
@@ -32,10 +27,8 @@ export class AddToBundleService {
         return this.currentUser.getCurrentUser().pipe(
             mergeMap((user: DotCurrentUser) => {
                 return this.http
-                    .get<
-                        DotCMSResponseJsonObject<{ items: DotBundle[] }>
-                    >(`${this.bundleUrl}/${user.userId}`)
-                    .pipe(map((response) => response.bodyJsonObject.items));
+                    .get<{ items: DotBundle[] }>(`${this.bundleUrl}/${user.userId}`)
+                    .pipe(map((response) => response.items));
             })
         );
     }

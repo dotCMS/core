@@ -7,7 +7,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, mergeMap } from 'rxjs/operators';
 
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotCMSResponse, DotCMSResponseJsonObject } from '@dotcms/dotcms-models';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
 
@@ -54,7 +54,7 @@ export class DotCDNService {
             mergeMap((hostId: string) => {
                 return this.purgeUrlRequest({ hostId, invalidateAll: false, urls });
             }),
-            map((response) => response.bodyJsonObject)
+            map((response) => response.entity)
         );
     }
 
@@ -68,7 +68,7 @@ export class DotCDNService {
         return this.siteService.getCurrentSite().pipe(
             map((site) => site.identifier),
             mergeMap((hostId: string) => this.purgeUrlRequest({ hostId, invalidateAll: true })),
-            map((response) => response.bodyJsonObject)
+            map((response) => response.entity)
         );
     }
 
@@ -76,17 +76,13 @@ export class DotCDNService {
         urls = [],
         invalidateAll,
         hostId
-    }: PurgeUrlOptions): Observable<DotCMSResponseJsonObject<PurgeReturnData>> {
-        return this.http.request<DotCMSResponseJsonObject<PurgeReturnData>>(
-            'DELETE',
-            '/api/v1/dotcdn',
-            {
-                body: {
-                    urls,
-                    invalidateAll,
-                    hostId
-                }
+    }: PurgeUrlOptions): Observable<DotCMSResponse<PurgeReturnData>> {
+        return this.http.request<DotCMSResponse<PurgeReturnData>>('DELETE', '/api/v1/dotcdn', {
+            body: {
+                urls,
+                invalidateAll,
+                hostId
             }
-        );
+        });
     }
 }

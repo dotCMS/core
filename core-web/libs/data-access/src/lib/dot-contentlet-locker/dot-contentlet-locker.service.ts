@@ -3,10 +3,6 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map } from 'rxjs/operators';
-
-import { DotCMSResponseJsonObject } from '@dotcms/dotcms-models';
-
 export interface DotContentletLockResponse {
     id: string;
     inode: string;
@@ -32,11 +28,7 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     lock(inode: string): Observable<DotContentletLockResponse> {
-        return this.http
-            .put<
-                DotCMSResponseJsonObject<DotContentletLockResponse>
-            >(`/api/content/lock/inode/${inode}`, {})
-            .pipe(map((response) => response.bodyJsonObject));
+        return this.http.put<DotContentletLockResponse>(`/api/content/lock/inode/${inode}`, {});
     }
 
     /**
@@ -47,10 +39,6 @@ export class DotContentletLockerService {
      * @memberof PageViewService
      */
     unlock(inode: string): Observable<DotContentletLockResponse> {
-        return this.http
-            .put<
-                DotCMSResponseJsonObject<DotContentletLockResponse>
-            >(`/api/content/unlock/inode/${inode}`, {})
-            .pipe(map((response) => response.bodyJsonObject));
+        return this.http.put<DotContentletLockResponse>(`/api/content/unlock/inode/${inode}`, {});
     }
 }

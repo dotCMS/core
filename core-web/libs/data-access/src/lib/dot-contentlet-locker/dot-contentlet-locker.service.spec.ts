@@ -36,7 +36,7 @@ describe('DotContentletLockerService', () => {
 
         const req = httpMock.expectOne('/api/content/lock/inode/test-inode');
         expect(req.request.method).toBe('PUT');
-        req.flush({ bodyJsonObject: mockResponse });
+        req.flush(mockResponse);
     });
 
     it('should unlock a contentlet', () => {
@@ -52,6 +52,6 @@ describe('DotContentletLockerService', () => {
 
         const req = httpMock.expectOne('/api/content/unlock/inode/test-inode');
         expect(req.request.method).toBe('PUT');
-        req.flush({ bodyJsonObject: mockResponse });
+        req.flush(mockResponse);
     });
 });

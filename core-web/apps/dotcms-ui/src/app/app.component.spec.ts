@@ -155,14 +155,13 @@ describe('AppComponent', () => {
 
         it('should use default colors when configuration fails to load', () => {
             const error = new Error('Failed to load configuration');
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => error));
+            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(error));
 
             fixture.detectChanges();
 
-            // Should log warning (throwError wraps error in a function, so we check for the message)
             expect(consoleWarnSpy).toHaveBeenCalledWith(
                 'Failed to load configuration, using defaults:',
-                expect.any(Function)
+                error
             );
 
             // Should use default colors
@@ -179,16 +178,13 @@ describe('AppComponent', () => {
 
         it('should handle configuration error gracefully (unauthenticated user)', () => {
             const httpError = { status: 401, message: 'Unauthorized' };
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                throwError(() => httpError)
-            );
+            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(httpError));
 
             fixture.detectChanges();
 
-            // Should log warning (throwError wraps error in a function)
             expect(consoleWarnSpy).toHaveBeenCalledWith(
                 'Failed to load configuration, using defaults:',
-                expect.any(Function)
+                httpError
             );
 
             // Should still set default colors to ensure app works
@@ -203,7 +199,7 @@ describe('AppComponent', () => {
 
         it('should always set colors even when configuration fails', () => {
             jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                throwError(() => new Error('Network error'))
+                throwError(new Error('Network error'))
             );
 
             // Mock querySelector to return null (edge case)

@@ -28,11 +28,8 @@ export class DotCrudService {
      * @memberof CrudService
      */
     public postData<T, K>(baseUrl: string, data: K): Observable<T> {
-        // Ensure URL starts with /api/ if it doesn't already
-        const url = this.normalizeUrl(baseUrl);
-
         return this.http
-            .post<DotCMSResponse<T>>(url, data)
+            .post<DotCMSResponse<T>>(baseUrl, data)
             .pipe(map((response) => response.entity));
     }
 
@@ -45,9 +42,9 @@ export class DotCrudService {
      * @memberof CrudService
      */
     public putData<T>(baseUrl: string, data: unknown): Observable<T> {
-        const url = this.normalizeUrl(baseUrl);
-
-        return this.http.put<DotCMSResponse<T>>(url, data).pipe(map((response) => response.entity));
+        return this.http
+            .put<DotCMSResponse<T>>(baseUrl, data)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -64,9 +61,9 @@ export class DotCrudService {
         id: string,
         pick: 'entity' | 'contentlets' | 'tempFiles' = 'entity'
     ): Observable<T> {
-        const url = this.normalizeUrl(`${baseUrl}/id/${id}`);
-
-        return this.http.get<DotCMSResponse<T>>(url).pipe(map((response) => response[pick] as T));
+        return this.http
+            .get<DotCMSResponse<T>>(`${baseUrl}/id/${id}`)
+            .pipe(map((response) => response[pick] as T));
     }
 
     /**
@@ -78,28 +75,8 @@ export class DotCrudService {
      * @memberof CrudService
      */
     delete<T>(baseUrl: string, id: string): Observable<T> {
-        const url = this.normalizeUrl(`${baseUrl}/${id}`);
-
-        return this.http.delete<DotCMSResponse<T>>(url).pipe(map((response) => response.entity));
-    }
-
-    /**
-     * Normalizes URL to ensure it starts with /api/.
-     *
-     * - Already prefixed with /api/ → returned as-is
-     * - Absolute but missing /api/ (e.g. /v1/foo) → /api is prepended
-     * - Relative (e.g. v1/foo) → /api/ is prepended
-     * @private
-     */
-    private normalizeUrl(url: string): string {
-        if (url.startsWith('/api/')) {
-            return url;
-        }
-
-        if (url.startsWith('/')) {
-            return `/api${url}`;
-        }
-
-        return `/api/${url}`;
+        return this.http
+            .delete<DotCMSResponse<T>>(`${baseUrl}/${id}`)
+            .pipe(map((response) => response.entity));
     }
 }
