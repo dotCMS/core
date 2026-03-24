@@ -52,7 +52,8 @@ public enum AppKeys {
                     " the following text:\\n\"\"\"\\n$!{supportingContent} \\n\"\"\"\\n"),
     LISTENER_INDEXER("listenerIndexer", "{}"),
     AI_MODELS_CACHE_TTL("com.dotcms.ai.models.supported.ttl", "28800"),
-    AI_MODELS_CACHE_SIZE("com.dotcms.ai.models.supported.size", "64");
+    AI_MODELS_CACHE_SIZE("com.dotcms.ai.models.supported.size", "64"),
+    PROVIDER_CONFIG("providerConfig", null);
 
     public static final String APP_KEY = "dotAI";
 
