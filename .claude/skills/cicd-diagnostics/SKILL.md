@@ -127,9 +127,9 @@ Form **competing hypotheses** and evaluate each against evidence:
 - **Test filtering** — PR subset passed, full suite failed?
 - **Cascading failure** — One primary error causing secondary failures?
 
-**Before concluding root cause, verify the error actually failed the job.** `fetch-jobs.py` flags steps where `continue-on-error` is detectable from the API (step failed but later non-cleanup steps succeeded). Look at the step marked `FAIL ← likely caused job failure` for the actual root cause.
+**Before concluding root cause, verify the error actually failed the job.** `diagnose.py` flags steps where `continue-on-error` is detectable from the API (step failed but later non-cleanup steps succeeded). Look at the step marked `FAIL ← likely caused job failure` for the actual root cause.
 
-**WARNING: `continue-on-error` steps may show `conclusion: success` in the API even when they have internal errors.** GitHub masks the failure — the step reports success but error messages are still in the raw logs. For trunk deployment jobs, check [WORKFLOWS.md](WORKFLOWS.md) for which steps have `continue-on-error` (notably CLI Deploy / deploy-jfrog). When you see `##[error]` lines in logs that don't correspond to any failed step in `fetch-jobs.py` output, that's a masked `continue-on-error` error. Report these as **secondary findings** — they are real bugs being hidden, not the cause of the run failure, but worth flagging.
+**WARNING: `continue-on-error` steps may show `conclusion: success` in the API even when they have internal errors.** GitHub masks the failure — the step reports success but error messages are still in the raw logs. For trunk deployment jobs, check [WORKFLOWS.md](WORKFLOWS.md) for which steps have `continue-on-error` (notably CLI Deploy / deploy-jfrog). When you see `##[error]` lines in logs that don't correspond to any failed step in `diagnose.py` output, that's a masked `continue-on-error` error. Report these as **secondary findings** — they are real bugs being hidden, not the cause of the run failure, but worth flagging.
 
 Label each finding: **FACT** (logs show it), **HYPOTHESIS** (theory), **CONFIDENCE** (High/Medium/Low).
 
@@ -167,7 +167,7 @@ gh issue create --repo dotCMS/core --title "[CI/CD] Brief description" \
 3. **Evidence-driven** — Present evidence to AI reasoning, don't hardcode classification rules.
 4. **Context matters** — Same error means different things in different workflows.
 5. **Use the scripts** — Workspace caching means re-runs are fast. Ad-hoc `gh` commands waste tokens.
-6. **Never skip a failed step** — If a script errors, diagnose why and fix it before continuing. Do not rationalize past it ("I'll just use gh directly", "I don't really need that data"). A failed fetch-jobs means you have no job IDs. A failed fetch-logs means you have no evidence. Proceeding without evidence produces guesswork, not diagnosis.
+6. **Never skip a failed step** — If `diagnose.py` errors, diagnose why and fix it before continuing. Do not rationalize past it ("I'll just use gh directly", "I don't really need that data"). Proceeding without evidence produces guesswork, not diagnosis.
 
 ## Reference Files
 
