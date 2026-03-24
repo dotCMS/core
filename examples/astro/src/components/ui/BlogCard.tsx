@@ -34,9 +34,9 @@ export function BlogCard({ blog }: { blog: BlogCardProps }) {
       )}
 
       <div className="relative h-48 w-full overflow-hidden">
-        {image?.identifier && (
+        {inode && (
           <img
-            src={`/dA/${image.identifier}`}
+            src={`/dA/${inode}`}
             alt={urlTitle || title}
             className="object-cover w-full h-full"
           />

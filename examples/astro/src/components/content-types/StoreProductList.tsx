@@ -50,7 +50,7 @@ function ProductCard({ product }: { product: Product }) {
       <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
         <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
           <img
-            src={`/dA/${image.identifier}`}
+            src={image}
             alt={title}
             className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
           />
