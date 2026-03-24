@@ -310,6 +310,53 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 	}
 
 	/**
+	 * <ul>
+	 *     <li><b>Method to test:</b> {@link FolderAPI#renameFolder(Folder, String, User, boolean)}</li>
+	 *     <li><b>Given Scenario:</b> Rename a folder whose name contains SQL LIKE wildcard
+	 *     characters ({@code _} and {@code %}). A sibling folder exists whose name would be
+	 *     matched by the unescaped LIKE pattern — e.g. {@code test_folder} without escaping
+	 *     would match {@code testXfolder} because {@code _} means "any single character".</li>
+	 *     <li><b>Expected Result:</b> The rename succeeds and the sibling folder's children
+	 *     retain their original {@code parent_path}, proving the LIKE parameters are correctly
+	 *     escaped and the subtree queries do not over-match.</li>
+	 * </ul>
+	 */
+	@Test
+	public void renameFolder_withLikeWildcardsInName_doesNotAffectSiblingFolders()
+			throws DotDataException, DotSecurityException {
+
+		final long ts = System.currentTimeMillis();
+		final Host site = new SiteDataGen().nextPersisted();
+
+		// Folder whose name contains _ and % — LIKE wildcards if unescaped
+		final String wildcardName = "test_wild%" + ts;
+		final Folder wildcardFolder = new FolderDataGen().name(wildcardName).site(site).nextPersisted();
+
+		// Sibling whose name matches the unescaped pattern:
+		// "test_wild%" with _ as wildcard matches "testXwild" + any suffix
+		final String siblingName = "testXwild" + ts;
+		final Folder sibling = new FolderDataGen().name(siblingName).site(site).nextPersisted();
+
+		// Child of sibling — its parent_path must not be altered by renaming wildcardFolder
+		final Folder siblingChild = new FolderDataGen().name("child").parent(sibling).nextPersisted();
+		final String originalChildParentPath = "/" + siblingName + "/";
+
+		// Rename the wildcard folder
+		final String newName = "renamed_wild_" + ts;
+		final boolean renamed = folderAPI.renameFolder(wildcardFolder, newName, user, false);
+		assertTrue("renameFolder must return true for a folder with wildcard chars in its name",
+				renamed);
+
+		// Sibling child must retain its original parent_path — DB-direct check, no cache
+		final Identifier siblingChildIdent =
+				identifierAPI.loadFromDb(siblingChild.getIdentifier());
+		assertNotNull("Sibling child identifier must still exist", siblingChildIdent);
+		assertEquals(
+				"Sibling child parent_path must be unchanged — LIKE escaping prevents over-matching",
+				originalChildParentPath, siblingChildIdent.getParentPath());
+	}
+
+	/**
 	 * Test move folders with subfolders
 	 * @throws Exception
 	 */

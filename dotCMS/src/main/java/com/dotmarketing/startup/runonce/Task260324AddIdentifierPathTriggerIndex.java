@@ -10,9 +10,9 @@ import java.sql.SQLException;
 /**
  * Creates a functional index on {@code identifier(host_inode, asset_type,
  * lower(parent_path||asset_name||'/'))} to support the
- * {@code identifier_parent_path_check} trigger efficiently.
+ * {@code identifier_parent_path_trigger} trigger efficiently.
+ * The trigger calls the {@code identifier_parent_path_check()} function which runs:
  * <p>
- * The trigger fires BEFORE INSERT/UPDATE on {@code identifier} and runs:
  * <pre>
  *   SELECT id FROM identifier
  *     WHERE asset_type = 'folder'

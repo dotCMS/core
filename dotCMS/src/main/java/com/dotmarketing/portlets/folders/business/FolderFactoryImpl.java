@@ -803,6 +803,11 @@ public class FolderFactoryImpl extends FolderFactory {
     final List<Map<String, Object>> subFolderSnapshot = loadSubFolderSnapshot(oldPath, hostId);
 
     // Update the folder record in-place.
+    // save() uses upsertFolder keyed on the existing inode — the inode is NOT regenerated.
+    // Because the inode is preserved, the old updateOtherFolderReferences calls (which updated
+    // structure.folder, permission.inode_id, permission_reference.asset_id from oldInode to
+    // newInode) are pure no-ops (SET x = X WHERE x = X) and have been removed.
+    //
     // save() internally calls APILocator.getIdentifierAPI().find() to get the identifier for
     // FolderCache eviction. At this point the identifier cache still holds asset_name=oldName, so
     // save() correctly evicts the old path-keyed cache entry. The identifier cache is evicted on
@@ -902,6 +907,11 @@ public class FolderFactoryImpl extends FolderFactory {
    * Evicts path-keyed entries from the folder cache for all sub-folders captured in the snapshot.
    * Uses the <em>old</em> path data so stale cache entries keyed by the pre-rename paths are
    * properly removed.
+   * <p>
+   * The stub objects set only the fields consumed by {@link com.dotmarketing.cache.FolderCacheImpl#removeFolder}:
+   * {@code inode} and {@code hostId} for the inode-keyed cache entry, and {@code parentPath} +
+   * {@code assetName} (via {@link com.dotmarketing.beans.Identifier#getPath()}) for the
+   * path-keyed cache entry. No other fields are needed.
    */
   private void evictSubFolderCache(final List<Map<String, Object>> subFolderSnapshot,
       final String hostId) {
