@@ -107,7 +107,7 @@ public class InitRunner implements Runnable {
         }
     });
 
-    Lazy<List<Server>> aliveServers = Lazy.of(() -> {
+    private final Lazy<List<Server>> aliveServers = Lazy.of(() -> {
         try {
             return APILocator.getServerAPI().getAliveServers()
                     .stream()
@@ -131,7 +131,6 @@ public class InitRunner implements Runnable {
         try {
             String serverId = APILocator.getServerAPI().readServerId();
             List<Server> servers = aliveServers.get();
-            ;
             for (int i = 0; i < servers.size(); i++) {
 
                 if (servers.get(i).getServerId().equals(serverId)) {
@@ -147,6 +146,14 @@ public class InitRunner implements Runnable {
 
     private int getClusterNodeNumber() {
         return aliveServers.get().size();
+    }
+
+    private String getPortalUrl() {
+        return Try.of(()->APILocator.getCompanyAPI().getDefaultCompany().getPortalURL()).getOrNull();
+    }
+
+    private String getEmailAddress() {
+        return Try.of(()->APILocator.getCompanyAPI().getDefaultCompany().getEmailAddress()).getOrNull();
     }
 
 
@@ -214,14 +221,14 @@ public class InitRunner implements Runnable {
         logInfo("Pingback response: " + response.statusCode());
 
         if (response.statusCode() >= 200 && response.statusCode() < 300) {
-
-            String error = response.body();
-            if (UtilMethods.isSet(error)) {
-                logInfo("Pingback error: " + error);
-            }
-            return false;
+            return true;
         }
-        return true;
+
+        String error = response.body();
+        if (UtilMethods.isSet(error)) {
+            logInfo("Pingback error: " + error);
+        }
+        return false;
 
 
     }
@@ -267,7 +274,6 @@ public class InitRunner implements Runnable {
     private Map<String, Object> getStats() {
 
         long startTime = System.currentTimeMillis();
-        final ImmutableMap.Builder<String, Object> resultMapBuilder = new ImmutableMap.Builder<>();
         Map<String, Object> resultMap = new ImmutableMap.Builder<String, Object>()
                 .put("id", new ULID().nextULID())
                 .put("hostnames", getHostnames())
@@ -289,6 +295,8 @@ public class InitRunner implements Runnable {
                 .put("clusterNodes", getClusterNodeNumber())
                 .put("workflows", getInt(TOTAL_WORKFLOWS))
                 .put("uveEnabled", isUveEnabled())
+                .put("portalUrl", getPortalUrl())
+                .put("emailAddress", getEmailAddress())
                 .put("jvmInfo", getJVMInfo())
                 .put("createdDate", new Date())
                 .put("pushPublishing", Try.of(this::countPushPublishing).getOrElse(0))
@@ -311,7 +319,7 @@ public class InitRunner implements Runnable {
 
     private static long getInt(String sql) {
         Optional<Object> result = getObject(sql);
-        return (Long) result.orElse(-1);
+        return result.map(v -> ((Number) v).longValue()).orElse(-1L);
     }
 
     private static Date getDate(String sql) {
