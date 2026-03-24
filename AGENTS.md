@@ -64,5 +64,5 @@ Tests are **silently skipped** without explicit `skip=false` flags: `-Dcoreit.te
 - **`build-quicker` shares `.m2` across projects** — `just build-quicker` uses the frontend WAR last installed by any project's `just build`. The recipe detects and warns when the WAR is from a different branch. Use `nx serve` for frontend dev, or `just build` for a consistent image.
 - **Docker image build fails with stale SHA** — run `docker builder prune -f` then retry
 - **Tests are silently skipped** — integration, postman, karate, and E2E tests all require explicit `-Dskip=false` flags or nothing runs
-- **Pre-push hook may auto-commit and exit 2** — if REST API Java files changed, the `openapi-freshness` hook regenerates the OpenAPI spec, auto-commits it, and exits 2 (not 1) to signal "retry needed". Agents must re-push after this; the second push will succeed.
+- **OpenAPI spec auto-regenerates on commit** — if REST API Java files changed, the pre-commit `openapi-freshness` hook regenerates and auto-stages the OpenAPI spec into the same commit. No separate commit or re-push needed. Requires compiled classes (`just build` first).
 - **Cross-platform scripts** — all justfile recipes and shell commands must work on both macOS and Linux. See `.claude/rules/shell-cross-platform.md` for the pitfall table.
