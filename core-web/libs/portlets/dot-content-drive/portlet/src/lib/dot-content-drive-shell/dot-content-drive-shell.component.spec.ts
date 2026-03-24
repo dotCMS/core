@@ -764,7 +764,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(addSpy).toHaveBeenNthCalledWith(2, {
                 severity: 'error',
                 summary: 'content-drive.add-dotasset-error',
-                detail: 'content-drive.add-dotasset-error-detail',
+                detail: 'Upload failed',
                 life: ERROR_MESSAGE_LIFE
             });
         });
