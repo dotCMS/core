@@ -108,7 +108,7 @@ export class DotPluginsListComponent {
             { separator: true },
             {
                 label: this.dotMessageService.get('plugins.process-exports'),
-                command: () => this.store.processExports(bundle.symbolicName)
+                command: () => this.confirmProcessExports(bundle.jarFile)
             },
             {
                 label: this.dotMessageService.get('plugins.add-to-bundle'),
@@ -167,6 +167,21 @@ export class DotPluginsListComponent {
             if (result === EXTRA_PACKAGES_RESET_RESULT) {
                 this.store.restart();
             }
+        });
+    }
+
+    confirmProcessExports(jarFile: string): void {
+        this.confirmationService.confirm({
+            message: this.dotMessageService.get('plugins.confirm.process-exports.message'),
+            header: this.dotMessageService.get('plugins.confirm.process-exports.header'),
+            acceptLabel: this.dotMessageService.get('Ok'),
+            rejectLabel: this.dotMessageService.get('Cancel'),
+            acceptButtonStyleClass: 'p-button-primary',
+            rejectButtonStyleClass: 'p-button-outlined',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
+            accept: () => this.store.processExports(jarFile)
         });
     }
 

@@ -171,7 +171,30 @@ describe('DotPluginsListComponent', () => {
                 expect(items[4].label).toBe('plugins.add-to-bundle');
             });
 
-            it('should call processExports with the bundle symbolic name', () => {
+            it('should open a confirmation dialog when process exports is triggered', () => {
+                const confirmationService =
+                    spectator.debugElement.injector.get(ConfirmationService);
+                const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test-bundle',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                component.contextMenuItems()[3].command!({} as never);
+                expect(confirmSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        header: 'plugins.confirm.process-exports.header',
+                        message: 'plugins.confirm.process-exports.message'
+                    })
+                );
+            });
+
+            it('should call processExports with the jar file name when confirmed', () => {
+                const confirmationService =
+                    spectator.debugElement.injector.get(ConfirmationService);
+                jest.spyOn(confirmationService, 'confirm').mockImplementation(({ accept }) =>
+                    accept?.()
+                );
                 jest.spyOn(component.store, 'processExports');
                 openContextMenu({
                     jarFile: 'test.jar',
@@ -179,7 +202,7 @@ describe('DotPluginsListComponent', () => {
                     state: BUNDLE_STATE.ACTIVE
                 });
                 component.contextMenuItems()[3].command!({} as never);
-                expect(component.store.processExports).toHaveBeenCalledWith('test-bundle');
+                expect(component.store.processExports).toHaveBeenCalledWith('test.jar');
             });
 
             it('should set addToBundleIdentifier to the jar file name', () => {
