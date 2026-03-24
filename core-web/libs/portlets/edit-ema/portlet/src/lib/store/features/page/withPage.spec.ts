@@ -10,7 +10,10 @@ import { UVE_MODE } from '@dotcms/types';
 
 import { withPage } from './withPage';
 
-import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
+import {
+    DotPageApiParams,
+    DotPageApiService
+} from '../../../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';

@@ -706,9 +706,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     onIframePageLoad(): void {
-        this.iframeMessenger.setIframeWindow(
-            this.iframe?.nativeElement.contentWindow ?? null
-        );
+        this.iframeMessenger.setIframeWindow(this.iframe?.nativeElement.contentWindow ?? null);
 
         if (this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();

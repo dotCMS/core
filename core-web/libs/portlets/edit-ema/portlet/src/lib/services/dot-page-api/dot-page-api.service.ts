@@ -10,7 +10,11 @@ import { DEFAULT_VARIANT_ID, DotPagination, DotPersona } from '@dotcms/dotcms-mo
 import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../../shared/consts';
-import { DotPageAssetParams, SavePagePayload, SaveStylePropertiesPayload } from '../../shared/models';
+import {
+    DotPageAssetParams,
+    SavePagePayload,
+    SaveStylePropertiesPayload
+} from '../../shared/models';
 import { getFullPageURL } from '../../utils';
 
 export interface DotPageApiParams {
