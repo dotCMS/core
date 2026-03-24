@@ -75,6 +75,9 @@ pre-commit:
       stage_fixed: true
       run: |
         cd core-web
+        # lefthook substitutes {staged_files} as space-separated paths before shell execution.
+        # printf treats each as a separate argument, one per line — correct for paths without spaces.
+        # Filenames with spaces would break, but this is not a realistic concern for TS/JS sources.
         files=$(printf '%s\n' {staged_files} | sed 's|^core-web/||' | paste -sd, -)
         # NX_DAEMON=false avoids daemon race condition when commands run in parallel
         [ -n "$files" ] && NX_DAEMON=false mise exec -- yarn nx affected -t lint --exclude='tag:skip:lint' --fix --files="$files"
