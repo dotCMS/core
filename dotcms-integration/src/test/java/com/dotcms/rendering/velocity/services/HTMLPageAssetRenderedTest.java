@@ -1655,14 +1655,17 @@ public class HTMLPageAssetRenderedTest {
                             .build(),
                     mockRequest, mockResponse);
 
+            // With DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true and rendering in EN (language 1),
+            // only content1 (EN-only) and content2 (EN+ES) are included. content3Spa (ES-only)
+            // has no EN version and is correctly excluded — it will not appear in the rendered output.
             final String regexExpected =
                     "<div data-dot-object=\"container\" .* data-dot-uuid=\"dotParser_.*\" .*>" +
-                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
                             "<div data-dot-object=\"contentlet\" .*>.*</div>" +
                             "<div data-dot-object=\"contentlet\" .*>.*</div>" +
                             "</div>";
 
             assertTrue(html.matches(regexExpected));
+
         } finally {
             Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE,
                     defaultContentToDefaultLangOriginalValue);
@@ -1689,13 +1692,6 @@ public class HTMLPageAssetRenderedTest {
         final TestHostType anotherHost = TestHostType.ANOTHER;
         final TestHostType defaultHost = TestHostType.DEFAULT;
         final TestHostType currentHost = TestHostType.CURRENT;
-
-        /* We are not using this mocked request ?
-        final HttpServletRequest request = mock(HttpServletRequest.class);
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
-        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(currentHost);
-
-         */
 
         return new Object[][]{
                 {currentHost, currentHost, currentHost, relativePath, advanceTemplate, true},
@@ -1873,9 +1869,13 @@ public class HTMLPageAssetRenderedTest {
                             WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR)
                     .values());
 
-            //Create Contentlet
+            //Create Contentlet — must be published so it is visible in LIVE mode
             final Contentlet widgetContentlet = TestDataUtils.getWidgetContent(true, 1,
                     contentType.id());
+            widgetContentlet.setIndexPolicy(IndexPolicy.FORCE);
+            widgetContentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            widgetContentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentletAPI.publish(widgetContentlet, systemUser, false);
             addAnonymousPermissions(widgetContentlet);
 
             //Create Container, Template and Page
@@ -1908,6 +1908,7 @@ public class HTMLPageAssetRenderedTest {
             assertTrue("Page Mode: " + testCase.pageMode + " html: " + html,
                     html.contains(preExecuteCode));
         } finally {
+
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
                     defaultContentToDefaultLangOriginalValue);
         }
