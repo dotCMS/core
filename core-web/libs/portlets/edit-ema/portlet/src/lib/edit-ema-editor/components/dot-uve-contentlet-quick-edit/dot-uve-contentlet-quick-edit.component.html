@@ -122,6 +122,14 @@
                                     "
                                     [vertical]="true" />
                             }
+                            @case (DotCMSClazzes.TAG) {
+                                <dot-tag-field
+                                    [formControlName]="field.variable"
+                                    [variableName]="field.variable"
+                                    [hasError]="
+                                        $contentletForm()?.get(field.variable)?.invalid ?? false
+                                    " />
+                            }
                         }
                     </div>
                 }

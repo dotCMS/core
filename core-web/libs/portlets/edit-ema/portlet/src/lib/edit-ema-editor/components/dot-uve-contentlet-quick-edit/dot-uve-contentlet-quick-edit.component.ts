@@ -32,7 +32,12 @@ import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSClazzes, DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotEditContentBinaryFieldComponent, DotFileFieldComponent } from '@dotcms/edit-content';
+import {
+    DotEditContentBinaryFieldComponent,
+    DotEditContentService,
+    DotFileFieldComponent,
+    DotTagFieldComponent
+} from '@dotcms/edit-content';
 
 import { UveOptimisticSaveService } from '../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME } from '../../../shared/consts';
@@ -84,9 +89,10 @@ export interface ContentletEditData {
         TextareaModule,
 
         DotEditContentBinaryFieldComponent,
-        DotFileFieldComponent
+        DotFileFieldComponent,
+        DotTagFieldComponent
     ],
-    providers: [UveOptimisticSaveService],
+    providers: [UveOptimisticSaveService, DotEditContentService],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
     host: { class: 'flex flex-col h-full' },
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -211,12 +217,11 @@ export class DotUveContentletQuickEditComponent {
             if (field.clazz === DotCMSClazzes.BINARY) {
                 if (typeof fieldValue === 'string' && fieldValue) {
                     fieldValue = fieldValue.trim();
-                } else if (
-                    fieldValue &&
-                    typeof fieldValue === 'object' &&
-                    'identifier' in fieldValue
-                ) {
-                    fieldValue = fieldValue.identifier ?? '';
+                } else if (fieldValue && typeof fieldValue === 'object') {
+                    // DotBinary map from GQL: has idPath/versionPath, NOT identifier.
+                    // idPath is the stable identifier-based URL used by most headless templates.
+                    const binary = fieldValue as Record<string, string>;
+                    fieldValue = binary.idPath || binary.versionPath || binary.identifier || '';
                 } else {
                     fieldValue = '';
                 }
@@ -272,10 +277,8 @@ export class DotUveContentletQuickEditComponent {
      *
      * For text/other fields the value is returned as-is.
      */
-    #toPageAssetProperties(
-        formValues: Record<string, unknown>
-    ): Record<string, unknown> {
-        const { fields, contentlet } = this.data();
+    #toPageAssetProperties(formValues: Record<string, unknown>): Record<string, unknown> {
+        const { fields } = this.data();
         const result: Record<string, unknown> = { ...formValues };
 
         for (const field of fields) {
@@ -287,19 +290,17 @@ export class DotUveContentletQuickEditComponent {
                 continue;
             }
 
-            const newValue = formValues[field.variable];
-
-            if (typeof newValue !== 'string') {
-                continue;
+            if (field.clazz === DotCMSClazzes.IMAGE || field.clazz === DotCMSClazzes.FILE) {
+                result[field.variable] = {
+                    identifier: formValues[field.variable]
+                };
+            } else if (field.clazz === DotCMSClazzes.BINARY) {
+                result[field.variable] = {
+                    idPath: formValues[field.variable]
+                };
+            } else {
+                result[field.variable] = formValues[field.variable];
             }
-
-            const original = contentlet?.[field.variable];
-
-            if (original && typeof original === 'object' && 'identifier' in original) {
-                // Preserve the original object shape but swap in the new identifier
-                result[field.variable] = { ...(original as object), identifier: newValue };
-            }
-            // Otherwise (already a string in the page asset) leave newValue as-is
         }
 
         return result;
