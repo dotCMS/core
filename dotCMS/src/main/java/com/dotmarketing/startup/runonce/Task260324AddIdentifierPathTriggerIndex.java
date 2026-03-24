@@ -34,7 +34,9 @@ public class Task260324AddIdentifierPathTriggerIndex implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        return true;
+        // CREATE INDEX IF NOT EXISTS is idempotent; forceRun=false lets the startup framework
+        // skip this task after it has been recorded in db_version.
+        return false;
     }
 
     @Override
@@ -43,7 +45,7 @@ public class Task260324AddIdentifierPathTriggerIndex implements StartupTask {
             Logger.info(this, "Creating index " + INDEX_NAME + " on identifier table");
             new DotConnect().executeStatement(
                     "CREATE INDEX IF NOT EXISTS " + INDEX_NAME + " ON identifier"
-                    + " (host_inode, asset_type, lower((parent_path||asset_name||'/')::text))");
+                    + " (host_inode, asset_type, lower(parent_path||asset_name||'/'))");
         } catch (final SQLException e) {
             throw new DotDataException("Failed to create index " + INDEX_NAME + ": "
                     + e.getMessage(), e);

@@ -169,8 +169,11 @@ public class FolderAPIImpl implements FolderAPI  {
 			validateFolderName(folder, newName);
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
 			// Nav cache eviction for the folder and sub-tree is handled inside the factory.
-			// Trigger ES reindex AFTER the transaction commits so a transient ES failure
-			// does not roll back a successful DB rename.
+			// Queue async ES reindex. The try/catch prevents a transient ES failure from
+			// propagating as a RuntimeException and rolling back the transaction. The call
+			// still runs within the @WrapInTransaction scope (DB connection remains open),
+			// but refreshContentUnderFolder only inserts into dist_reindex_journal and
+			// returns quickly — actual reindex work is asynchronous.
 			try {
 				contentletAPI.refreshContentUnderFolder(folder);
 			} catch (final Exception e) {

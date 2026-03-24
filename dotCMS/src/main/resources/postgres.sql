@@ -2230,7 +2230,7 @@ create index idx_identifier_perm on identifier (asset_type,host_inode);
 -- Supports the identifier_parent_path_check trigger which validates parent folder existence via
 -- lower(parent_path||asset_name||'/') = lower(NEW.parent_path). Without this index the trigger
 -- falls back to a full filter scan over all folders on the host for every updated row.
-create index idx_identifier_parent_path_trigger on identifier (host_inode, asset_type, lower((parent_path||asset_name||'/')::text));
+create index idx_identifier_parent_path_trigger on identifier (host_inode, asset_type, lower(parent_path||asset_name||'/'));
 
 CREATE TABLE broken_link (
    id VARCHAR(36) PRIMARY KEY,

@@ -786,7 +786,10 @@ public class FolderFactoryImpl extends FolderFactory {
     final Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
     final String parentPath = ident.getParentPath();
     final String hostId = ident.getHostId();
-    final String oldPath = parentPath + folder.getName() + "/";
+    // Use ident.getAssetName() (DB value) not folder.getName(): when called from saveFolder the
+    // folder object already carries the new name, which would make oldPath == newPath and leave
+    // all children with a stale parent_path pointing to a non-existent folder.
+    final String oldPath = parentPath + ident.getAssetName() + "/";
     final String newPath = parentPath + newName + (newName.endsWith("/") ? "" : "/");
 
     // Check for name collision with a different existing folder
