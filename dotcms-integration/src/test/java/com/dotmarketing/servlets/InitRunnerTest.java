@@ -108,7 +108,7 @@ public class InitRunnerTest {
                 "defaultHost", "clusterId", "totalUsers", "activeUsers", "totalSites",
                 "totalTypes", "activeSites", "totalContent", "recentlyEditedContent",
                 "totalLanguages", "numFolders", "clusterNodes", "serverNumber", "workflows",
-                "uveEnabled", "portalUrl", "emailAddress", "jvmInfo", "createdDate",
+                "uveEnabled", "portalUrl", "emailDomain", "jvmInfo", "createdDate",
                 "pushPublishing", "collectionTime"
         };
 

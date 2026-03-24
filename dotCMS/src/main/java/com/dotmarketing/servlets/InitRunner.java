@@ -36,9 +36,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class InitRunner implements Runnable {
+
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("[^<@\\s]+@([^>\\s]+)");
 
 
     static final String TOTAL_WORKFLOWS = "select count(*) as test_value from workflow_scheme";
@@ -152,8 +156,12 @@ public class InitRunner implements Runnable {
         return Try.of(()->APILocator.getCompanyAPI().getDefaultCompany().getPortalURL()).getOrElse("");
     }
 
-    private String getEmailAddress() {
-        return Try.of(()->APILocator.getCompanyAPI().getDefaultCompany().getEmailAddress()).getOrElse("");
+    private String getEmailDomain() {
+        return Try.of(() -> {
+            String raw = APILocator.getCompanyAPI().getDefaultCompany().getEmailAddress();
+            Matcher m = EMAIL_PATTERN.matcher(raw);
+            return m.find() ? m.group(1) : "";
+        }).getOrElse("");
     }
 
 
@@ -296,7 +304,7 @@ public class InitRunner implements Runnable {
                 .put("workflows", getInt(TOTAL_WORKFLOWS))
                 .put("uveEnabled", isUveEnabled())
                 .put("portalUrl", getPortalUrl())
-                .put("emailAddress", getEmailAddress())
+                .put("emailDomain", getEmailDomain())
                 .put("jvmInfo", getJVMInfo())
                 .put("createdDate", new Date())
                 .put("pushPublishing", Try.of(this::countPushPublishing).getOrElse(0))
