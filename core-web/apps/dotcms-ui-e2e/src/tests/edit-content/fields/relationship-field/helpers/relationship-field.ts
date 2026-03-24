@@ -29,7 +29,7 @@ export class RelationshipField {
             this.root = this.table;
         }
 
-        this.addButton = this.root.getByRole('button', { name: '' }).first();
+        this.addButton = this.root.getByTestId('relationship-add-button');
         this.rows = this.table.locator('tbody tr');
     }
 
@@ -240,12 +240,13 @@ export class RelationshipField {
      * - Rows show reduced opacity
      */
     async expectDisabled(): Promise<void> {
-        await this.expectAddButtonDisabled();
+        // Verify add button is disabled
+        await expect(this.addButton.locator('button')).toBeDisabled();
+        // Verify all delete buttons are disabled
         const deleteButtons = this.table.getByTestId('relationship-delete-button');
         const count = await deleteButtons.count();
         for (let i = 0; i < count; i++) {
-            const btn = deleteButtons.nth(i).locator('button');
-            await expect(btn).toBeDisabled();
+            await expect(deleteButtons.nth(i).locator('button')).toBeDisabled();
         }
     }
 }

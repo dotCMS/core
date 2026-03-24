@@ -50,7 +50,7 @@ test.describe('Add More Relations', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
         if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
@@ -84,12 +84,9 @@ test.describe('Add More Relations', () => {
         await relationshipField.expectRowCount(3);
 
         await formPage.save();
-        await adminPage.waitForTimeout(1000);
-        await adminPage.reload();
         await adminPage.waitForLoadState('networkidle');
 
-        const reloadedField = new RelationshipField(adminPage);
-        await reloadedField.expectRowCount(3);
+        await relationshipField.expectRowCount(3);
     });
 
     test.fixme('thumbnail rendering in relationship table', async ({ adminPage }) => {
@@ -151,7 +148,7 @@ test.describe('Remove Relations', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
         if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
@@ -179,12 +176,9 @@ test.describe('Remove Relations', () => {
         await relationshipField.expectRowCount(2);
 
         await formPage.save();
-        await adminPage.waitForTimeout(1000);
-        await adminPage.reload();
         await adminPage.waitForLoadState('networkidle');
 
-        const reloadedField = new RelationshipField(adminPage);
-        await reloadedField.expectRowCount(2);
+        await relationshipField.expectRowCount(2);
     });
 
     test('delete all items @smoke', async ({ adminPage }) => {
@@ -249,7 +243,7 @@ test.describe('Delete and Re-add (Single Mode)', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
         if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 

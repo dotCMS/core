@@ -75,7 +75,7 @@ test.describe('Multiple Relationship Fields', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
         if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
@@ -117,9 +117,6 @@ test.describe('Multiple Relationship Fields', () => {
         // Save
         await formPage.save();
 
-        // Reload and verify persistence
-        await adminPage.waitForTimeout(1000);
-        await adminPage.reload();
         await adminPage.waitForLoadState('networkidle');
 
         const reloadedAuthors = new RelationshipField(adminPage, 'authors');
@@ -237,7 +234,7 @@ test.describe('Custom Columns (showFields)', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
         if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 

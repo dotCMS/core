@@ -1,3 +1,4 @@
+import path from 'path';
 import { workspaceRoot } from '@nx/devkit';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
@@ -86,7 +87,7 @@ export default defineConfig({
             testIgnore: /tests\/login\//,
             use: {
                 ...devices['Desktop Chrome'],
-                storageState: 'test-results/.auth/admin.json'
+                storageState: path.join(__dirname, '.auth', 'admin.json')
             },
             dependencies: ['setup']
         },

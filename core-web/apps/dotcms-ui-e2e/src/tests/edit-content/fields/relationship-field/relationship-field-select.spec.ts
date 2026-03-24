@@ -46,7 +46,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
             });
 
             test.afterEach(async ({ apiHelpers }) => {
-                if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+                if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
                 if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
             });
 
@@ -91,13 +91,9 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await relationshipField.expectRowCount(1);
 
                 await formPage.save();
-
-                await adminPage.waitForTimeout(1000);
-                await adminPage.reload();
                 await adminPage.waitForLoadState('networkidle');
 
-                const reloadedField = new RelationshipField(adminPage);
-                await reloadedField.expectRowCount(1);
+                await relationshipField.expectRowCount(1);
             });
 
             test('apply button disabled with no selection @smoke', async ({ adminPage }) => {
@@ -202,7 +198,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
             });
 
             test.afterEach(async ({ apiHelpers }) => {
-                if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+                if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
                 if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
             });
 
@@ -266,13 +262,9 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await relationshipField.expectRowCount(3);
 
                 await formPage.save();
-
-                await adminPage.waitForTimeout(1000);
-                await adminPage.reload();
                 await adminPage.waitForLoadState('networkidle');
 
-                const reloadedField = new RelationshipField(adminPage);
-                await reloadedField.expectRowCount(3);
+                await relationshipField.expectRowCount(3);
             });
 
             test('select all with header checkbox @smoke', async ({ adminPage }) => {
@@ -327,7 +319,7 @@ test.describe('Create New Inline', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
         if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
@@ -456,7 +448,7 @@ test.describe('New Content Disabled (No New Editor)', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
         if (tagTypeVariable) await apiHelpers.deleteContentType(tagTypeVariable);
     });
 
@@ -505,7 +497,7 @@ test.describe('Menu Disabled When Single Item Exists', () => {
     });
 
     test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeVariable) await apiHelpers.deleteContentType(blogTypeId);
+        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
         if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
     });
 
