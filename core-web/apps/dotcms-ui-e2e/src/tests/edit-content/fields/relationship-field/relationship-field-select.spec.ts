@@ -13,7 +13,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
 
     for (const cardinality of cardinalities) {
         test.describe(`${cardinality.name}`, () => {
-            // Serial: beforeEach/afterEach share mutable `let` vars across tests.
+            // Serial: beforeEach shares mutable `let` vars across tests.
             test.describe.configure({ mode: 'serial' });
 
             let blogTypeId: string;
@@ -51,10 +51,6 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 );
             });
 
-            test.afterEach(async ({ apiHelpers }) => {
-                if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-                if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-            });
 
             test('select and apply item @critical', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
@@ -179,7 +175,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
 
     for (const cardinality of cardinalities) {
         test.describe(`${cardinality.name}`, () => {
-            // Serial: beforeEach/afterEach share mutable `let` vars across tests.
+            // Serial: beforeEach shares mutable `let` vars across tests.
             test.describe.configure({ mode: 'serial' });
 
             let blogTypeId: string;
@@ -217,10 +213,6 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 );
             });
 
-            test.afterEach(async ({ apiHelpers }) => {
-                if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-                if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-            });
 
             test('open dialog shows checkboxes @critical', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
@@ -314,7 +306,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
 // ─── Create New Inline ──────────────────────────────────────────
 
 test.describe('Create New Inline', () => {
-    // Serial: beforeEach/afterEach share mutable `let` vars across tests.
+    // Serial: beforeEach shares mutable `let` vars across tests.
     test.describe.configure({ mode: 'serial' });
 
     let blogTypeId: string;
@@ -341,10 +333,6 @@ test.describe('Create New Inline', () => {
         blogTypeVariable = blogType.variable;
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test('new content option is visible when editor enabled @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
@@ -467,10 +455,6 @@ test.describe('New Content Disabled (No New Editor)', () => {
         blogTypeVariable = blogType.variable;
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (tagTypeVariable) await apiHelpers.deleteContentType(tagTypeVariable);
-    });
 
     test('new content disabled when related type lacks new editor @critical', async ({
         adminPage
@@ -487,7 +471,7 @@ test.describe('New Content Disabled (No New Editor)', () => {
 // ─── Menu Disabled in Single Mode (Item Already Exists) ─────────
 
 test.describe('Menu Disabled When Single Item Exists', () => {
-    // Serial: beforeEach/afterEach share mutable `let` vars across tests.
+    // Serial: beforeEach shares mutable `let` vars across tests.
     test.describe.configure({ mode: 'serial' });
 
     let blogTypeId: string;
@@ -519,10 +503,6 @@ test.describe('Menu Disabled When Single Item Exists', () => {
         });
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test('existing content disabled after selecting item @smoke', async ({
         adminPage,

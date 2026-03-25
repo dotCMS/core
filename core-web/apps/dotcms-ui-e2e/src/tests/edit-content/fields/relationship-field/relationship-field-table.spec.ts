@@ -48,10 +48,6 @@ test.describe('Reorder (Drag & Drop)', () => {
         );
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test('drag handles visible @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
@@ -150,10 +146,6 @@ test.describe('Search and Filter', () => {
         );
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test('global search filters results @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
@@ -237,6 +229,8 @@ test.describe('Search and Filter', () => {
 // ─── Dialog Lists All Items ─────────────────────────────────────
 
 test.describe('Dialog Content Listing', () => {
+    test.slow(); // bulk-creates 15 contentlets — needs extra time on CI
+
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -272,10 +266,6 @@ test.describe('Dialog Content Listing', () => {
         );
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test('dialog shows all 15 items @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
@@ -322,10 +312,6 @@ test.describe('Table Pagination', () => {
         blogTypeVariable = blogType.variable;
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test.fixme('paginates at 10 items per page @smoke', async ({
         adminPage,

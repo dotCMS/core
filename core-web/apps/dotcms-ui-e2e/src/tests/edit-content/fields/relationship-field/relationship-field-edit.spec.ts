@@ -57,10 +57,6 @@ test.describe('Add More Relations', () => {
         );
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test('load existing relationships on edit @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
@@ -158,10 +154,6 @@ test.describe('Remove Relations', () => {
         );
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test('delete a single relation @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
@@ -249,10 +241,6 @@ test.describe('Delete and Re-add (Single Mode)', () => {
         );
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
 
     test('delete and re-add in single mode', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);

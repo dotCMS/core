@@ -112,11 +112,6 @@ test.describe('Multiple Relationship Fields', () => {
         );
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
-
     test('coexistence of multiple relationship fields @critical', async ({
         adminPage,
         testSuffix
@@ -249,11 +244,6 @@ test.describe('Custom Columns (showFields)', () => {
         );
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
-        if (blogTypeId) await apiHelpers.deleteContentType(blogTypeId);
-        if (authorTypeVariable) await apiHelpers.deleteContentType(authorTypeVariable);
-    });
-
     test('custom columns with showFields configured', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
@@ -289,40 +279,36 @@ test.describe('Custom Columns (showFields)', () => {
 
         const defaultBlogType = await apiHelpers.createContentType(defaultBlogPayload);
 
-        try {
-            const author = await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `DefaultCol Author ${testSuffix}`,
-                bio: 'Bio'
-            });
+        const author = await apiHelpers.createContentlet(authorTypeVariable, {
+            title: `DefaultCol Author ${testSuffix}`,
+            bio: 'Bio'
+        });
 
-            const blog = await apiHelpers.createContentletWithRelationship(
-                defaultBlogType.variable,
-                { title: `Blog DefaultCols Test ${testSuffix}` },
-                { authors: author.identifier }
-            );
+        const blog = await apiHelpers.createContentletWithRelationship(
+            defaultBlogType.variable,
+            { title: `Blog DefaultCols Test ${testSuffix}` },
+            { authors: author.identifier }
+        );
 
-            const formPage = new NewEditContentFormPage(adminPage);
-            await formPage.goToContent(blog.inode);
-            await adminPage.waitForLoadState('networkidle');
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToContent(blog.inode);
+        await adminPage.waitForLoadState('networkidle');
 
-            // Default columns: Title, Language, Status
-            const table = adminPage.getByTestId('relationship-field-table');
-            const headers = table.locator('thead th');
+        // Default columns: Title, Language, Status
+        const table = adminPage.getByTestId('relationship-field-table');
+        const headers = table.locator('thead th');
 
-            const headerTexts: string[] = [];
-            const headerCount = await headers.count();
-            for (let i = 0; i < headerCount; i++) {
-                const text = await headers.nth(i).textContent();
-                if (text?.trim()) {
-                    headerTexts.push(text.trim().toLowerCase());
-                }
+        const headerTexts: string[] = [];
+        const headerCount = await headers.count();
+        for (let i = 0; i < headerCount; i++) {
+            const text = await headers.nth(i).textContent();
+            if (text?.trim()) {
+                headerTexts.push(text.trim().toLowerCase());
             }
-
-            expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
-            expect(headerTexts.some((h) => h.includes('language'))).toBe(true);
-            expect(headerTexts.some((h) => h.includes('status'))).toBe(true);
-        } finally {
-            await apiHelpers.deleteContentType(defaultBlogType.id);
         }
+
+        expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
+        expect(headerTexts.some((h) => h.includes('language'))).toBe(true);
+        expect(headerTexts.some((h) => h.includes('status'))).toBe(true);
     });
 });

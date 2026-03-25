@@ -58,17 +58,6 @@ async function createContentTypeWithFields(
 }
 
 /**
- * Deletes a content type by its id or variable name.
- */
-async function deleteContentTypeById(request: APIRequestContext, idOrVar: string): Promise<void> {
-    const response = await request.delete(`/api/v1/contenttype/id/${idOrVar}`, {
-        headers: authHeaders()
-    });
-    // Accept 200 or 404 (already cleaned up)
-    expect([200, 404]).toContain(response.status());
-}
-
-/**
  * Creates a contentlet via the workflow fire/PUBLISH endpoint.
  */
 async function fireContentlet(
@@ -339,7 +328,6 @@ export const test = base.extend<{
     testSuffix: string;
     apiHelpers: {
         createContentType: (payload: Record<string, unknown>) => Promise<TestContentType>;
-        deleteContentType: (idOrVar: string) => Promise<void>;
         createContentlet: (ct: string, fields: Record<string, unknown>) => Promise<TestContentlet>;
         /** Bulk create; returned array sorted by `title` (API completion order is not guaranteed). */
         createContentlets: (
@@ -386,7 +374,6 @@ export const test = base.extend<{
 
         await use({
             createContentType: (payload) => createContentTypeWithFields(request, payload),
-            deleteContentType: (id) => deleteContentTypeById(request, id),
             createContentlet: (ct, fields) => fireContentlet(request, ct, fields),
             createContentlets: (ct, fieldsList) => fireContentlets(request, ct, fieldsList),
             createContentletWithRelationship: (ct, fields, rels) =>
