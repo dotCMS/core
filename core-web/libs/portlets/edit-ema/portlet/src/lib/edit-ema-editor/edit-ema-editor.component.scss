@@ -83,12 +83,12 @@ dot-results-seo-tool {
     transition: width $basic-speed ease-in-out;
 
     &.open {
-        width: 18.75rem;
+        width: 23.4375rem;
     }
 
     > * {
-        width: 18.75rem;
-        min-width: 18.75rem;
+        width: 23.4375rem;
+        min-width: 23.4375rem;
         transform: translateX(100%);
         transition: transform $basic-speed ease-in-out;
     }

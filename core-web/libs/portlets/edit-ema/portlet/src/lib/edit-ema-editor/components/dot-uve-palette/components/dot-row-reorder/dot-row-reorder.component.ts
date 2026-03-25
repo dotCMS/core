@@ -20,6 +20,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '@dotcms/types';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
@@ -33,6 +34,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
         DialogModule,
         ReactiveFormsModule,
         InputTextModule,
+        DotMessagePipe,
         ButtonModule
     ],
     templateUrl: './dot-row-reorder.component.html',
@@ -57,6 +59,7 @@ export class DotRowReorderComponent {
     onRowSelect = output<{ selector: string; type: string }>();
 
     private readonly expandedRowIndexes = signal<Set<number>>(new Set());
+    private readonly expandedColumnKeys = signal<Set<string>>(new Set());
     private readonly columnDragging = signal<boolean>(false);
     readonly editRowDialogOpen = signal<boolean>(false);
     private readonly editingRowIndex = signal<number | null>(null);
@@ -75,6 +78,16 @@ export class DotRowReorderComponent {
 
     getColumnLabel(column: DotPageAssetLayoutColumn, index: number): string {
         return column.styleClass || `Column ${index + 1}`;
+    }
+
+    getColumnContainers(column: DotPageAssetLayoutColumn): { title: string }[] {
+        const containersData = this.uveStore.pageAsset()?.containers ?? {};
+
+        return (column.containers ?? []).map(({ identifier }) => {
+            const title = containersData[identifier]?.container?.title ?? identifier;
+
+            return { title };
+        });
     }
 
     protected selectRow(index: number): void {
@@ -191,6 +204,21 @@ export class DotRowReorderComponent {
             next.add(rowIndex);
         }
         this.expandedRowIndexes.set(next);
+    }
+
+    protected isColumnExpanded(rowIndex: number, colIndex: number): boolean {
+        return this.expandedColumnKeys().has(`${rowIndex}-${colIndex}`);
+    }
+
+    protected toggleColumn(rowIndex: number, colIndex: number): void {
+        const key = `${rowIndex}-${colIndex}`;
+        const next = new Set(this.expandedColumnKeys());
+        if (next.has(key)) {
+            next.delete(key);
+        } else {
+            next.add(key);
+        }
+        this.expandedColumnKeys.set(next);
     }
 
     protected isColumnDragging(): boolean {
