@@ -12,6 +12,7 @@ import {
     output,
     viewChild
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -22,8 +23,13 @@ import { TabsModule } from 'primeng/tabs';
 
 import { take } from 'rxjs/operators';
 
-import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotCurrentUserService,
+    DotEventsService,
+    DotMessageService,
+    DotPropertiesService
+} from '@dotcms/data-access';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotMessagePipe, DotClipboardUtil } from '@dotcms/ui';
 
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
@@ -63,6 +69,7 @@ export class ContentTypesLayoutComponent implements OnInit {
     private fieldDragDropService = inject(FieldDragDropService);
     private dotEventsService = inject(DotEventsService);
     private dotCurrentUserService = inject(DotCurrentUserService);
+    private dotPropertiesService = inject(DotPropertiesService);
     private dotClipboardUtil = inject(DotClipboardUtil);
 
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
@@ -76,6 +83,12 @@ export class ContentTypesLayoutComponent implements OnInit {
     relationshipURL: string;
     contentTypeNameInputSize: number;
     showPermissionsTab: Observable<boolean>;
+    readonly $showStyleEditorTab = toSignal(
+        this.dotPropertiesService.getFeatureFlag(
+            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
+        ),
+        { initialValue: false }
+    );
     addToMenuContentType = false;
 
     actions: MenuItem[];

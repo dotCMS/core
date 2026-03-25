@@ -15,7 +15,7 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 
-import { Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
@@ -34,6 +34,7 @@ import {
     DotHttpErrorManagerService,
     DotIframeService,
     DotMessageService,
+    DotPropertiesService,
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
@@ -159,8 +160,12 @@ const fakeContentType: DotCMSContentType = {
 describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
+    let featureFlagSubject: BehaviorSubject<boolean>;
 
     beforeEach(() => {
+        // Default: feature enabled. Tests that need it disabled can emit false.
+        featureFlagSubject = new BehaviorSubject<boolean>(true);
+
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
             'contenttypes.tab.fields.header': 'Fields Header Tab',
@@ -254,6 +259,12 @@ describe('ContentTypesLayoutComponent', () => {
                 {
                     provide: DotAlertConfirmService,
                     useValue: { confirm: jest.fn(), alert: jest.fn() }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getFeatureFlag: jest.fn().mockReturnValue(featureFlagSubject.asObservable())
+                    }
                 }
             ]
         });
@@ -528,6 +539,34 @@ describe('ContentTypesLayoutComponent', () => {
                 expect(iframe.componentInstance.src).toBe(
                     '/html/content_types/push_history.jsp?contentTypeId=1234567890&popup=true'
                 );
+            });
+        });
+
+        describe('Style Editor tab', () => {
+            it('should show the style editor tab when feature flag is enabled', () => {
+                const styleEditorPanel = de.query(By.css('[data-testid="style-editor-panel"]'));
+                const styleEditorTab = de.query(By.css('[data-testid="style-editor-tab"]'));
+
+                expect(styleEditorPanel).not.toBeNull();
+                expect(styleEditorTab).not.toBeNull();
+            });
+
+            it('should render dot-style-editor-builder inside the style editor panel', () => {
+                const styleEditorBuilder = de.query(By.css('dot-style-editor-builder'));
+
+                expect(styleEditorBuilder).not.toBeNull();
+                expect(styleEditorBuilder.componentInstance.contentType).toEqual(fakeContentType);
+            });
+
+            it('should hide the style editor tab when feature flag is disabled', () => {
+                featureFlagSubject.next(false);
+                fixture.detectChanges();
+
+                const styleEditorPanel = de.query(By.css('[data-testid="style-editor-panel"]'));
+                const styleEditorTab = de.query(By.css('[data-testid="style-editor-tab"]'));
+
+                expect(styleEditorPanel).toBeNull();
+                expect(styleEditorTab).toBeNull();
             });
         });
 

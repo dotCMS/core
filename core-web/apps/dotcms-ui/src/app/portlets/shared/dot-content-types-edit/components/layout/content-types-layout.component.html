@@ -6,8 +6,10 @@
             <p-tab [value]="0">
                 {{ 'contenttypes.tab.fields.header' | dm }}
             </p-tab>
-            @if ($contentType()) {
-                <p-tab [value]="1">{{ 'contenttypes.tab.style.editor.header' | dm }}</p-tab>
+            @if ($contentType() && $showStyleEditorTab()) {
+                <p-tab [value]="1" data-testid="style-editor-tab">
+                    {{ 'contenttypes.tab.style.editor.header' | dm }}
+                </p-tab>
             }
             @if ($contentType()) {
                 <p-tab [value]="2">
@@ -26,7 +28,7 @@
             }
 
             <!-- Actions: Settings + context menu -->
-            <div class="ml-auto flex items-center gap-6 self-center px-4">
+            <div class="ml-auto flex items-center gap-4 self-center px-4">
                 <p-button
                     data-testid="settings-btn"
                     [label]="'contenttypes.content.settings' | dm"
@@ -62,8 +64,8 @@
                     </div>
                 </div>
             </p-tabpanel>
-            @if ($contentType()) {
-                <p-tabpanel [value]="1" class="h-full min-h-0">
+            @if ($contentType() && $showStyleEditorTab()) {
+                <p-tabpanel [value]="1" class="h-full min-h-0" data-testid="style-editor-panel">
                     <dot-style-editor-builder [contentType]="$contentType()" />
                 </p-tabpanel>
             }
