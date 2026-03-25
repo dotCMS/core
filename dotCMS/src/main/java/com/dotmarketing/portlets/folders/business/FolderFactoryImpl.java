@@ -908,12 +908,9 @@ public class FolderFactoryImpl extends FolderFactory {
       // No asset_type filter is intentional: every identifier that lives directly under the
       // renamed folder path (files, pages, content, sub-folders alike) must have its
       // parent_path updated, not just folders.
-      new DotConnect()
-          .setSQL("UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?")
-          .addParam(pair[1])
-          .addParam(pair[0])
-          .addParam(hostId)
-          .loadResult();
+      new DotConnect().executeUpdate(
+          "UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?",
+          pair[1], pair[0], hostId);
     }
   }
 
