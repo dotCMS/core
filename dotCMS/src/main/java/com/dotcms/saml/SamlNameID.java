@@ -63,7 +63,28 @@ public final class SamlNameID implements Serializable {
     }
 
     @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SamlNameID)) {
+            return false;
+        }
+        final SamlNameID other = (SamlNameID) o;
+        return Objects.equals(xmlString, other.xmlString);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(xmlString);
+    }
+
+    /**
+     * Returns a redacted representation to prevent accidental PII leakage in logs.
+     * The XML string contains the user's SAML identity value and must never appear in logs.
+     */
+    @Override
     public String toString() {
-        return "SamlNameID{xmlString='" + xmlString + "'}";
+        return "SamlNameID{xmlString='[REDACTED]'}";
     }
 }
