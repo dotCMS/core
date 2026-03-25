@@ -53,12 +53,10 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -822,9 +820,9 @@ public class FolderFactoryImpl extends FolderFactory {
     ident.setAssetName(newName);
     APILocator.getIdentifierAPI().save(ident);
 
-    // Bulk-update every child identifier's parent_path depth-first (iterative — no recursion).
-    //    Pure SQL, no Elasticsearch dependency, so unindexed items are never missed.
-    updateChildPaths(oldPath, newPath, hostId);
+    // Bulk-update every child identifier's parent_path, processing parent folders before children.
+    // The snapshot already contains all sub-folder paths so no extra SELECTs are needed.
+    updateChildPaths(oldPath, newPath, hostId, subFolderSnapshot);
 
     // Targeted folder cache eviction for affected sub-folders (using old path data from snapshot)
     evictSubFolderCache(subFolderSnapshot, hostId);
@@ -850,7 +848,11 @@ public class FolderFactoryImpl extends FolderFactory {
   private List<Map<String, Object>> loadSubFolderSnapshot(final String oldPath, final String hostId)
       throws DotDataException {
 
-    // LIKE 'oldPath%' covers direct children (/old/) and all nested sub-paths (/old/sub/).
+    // LIKE 'oldPath%' covers ALL levels of the sub-tree:
+    //   - Direct sub-folders have parent_path = oldPath (e.g. '/original/').
+    //     Since oldPath ends with '/' and '%' matches zero or more chars,
+    //     '/original/' LIKE '/original/%' evaluates to TRUE.
+    //   - Deeper descendants have parent_path starting with oldPath (e.g. '/original/sub/').
     // Escape '%' and '_' so folder names containing those characters do not widen the match.
     final String likeParam = escapeLikeParam(oldPath) + "%";
     return new DotConnect()
@@ -863,43 +865,42 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Iteratively updates the {@code parent_path} column for the full sub-tree rooted at
-   * {@code startOldPath} using a depth-first traversal.
+   * Bulk-updates the {@code parent_path} column for every identifier in the sub-tree rooted at
+   * {@code startOldPath}, processing parent folders before their children to satisfy the
+   * {@code identifier_parent_path_trigger} ordering requirement.
    * <p>
-   * Each folder level is processed before its children are pushed onto the stack, which satisfies
-   * the {@code identifier_parent_path_trigger} requirement that a row's new parent path must
-   * already exist as a folder identifier at update time. An explicit {@link Deque} is used instead
-   * of recursion to avoid stack overflow on deeply nested trees.
+   * Instead of issuing a SELECT after each UPDATE to discover the next folder level (which would
+   * cause N+1 queries for wide, flat trees), this method derives all (oldPath → newPath) pairs
+   * directly from {@code subFolderSnapshot} — data already loaded before the rename began.
+   * Each pair is sorted by ascending old-path length: a parent path is always shorter than any
+   * of its descendant paths, so length-order guarantees the required parent-before-child sequence.
    */
   private void updateChildPaths(final String startOldPath, final String startNewPath,
-      final String hostId) throws DotDataException {
+      final String hostId, final List<Map<String, Object>> subFolderSnapshot)
+      throws DotDataException {
 
-    final Deque<String[]> pending = new ArrayDeque<>();
-    pending.push(new String[]{startOldPath, startNewPath});
+    // Build the complete set of (oldPath, newPath) pairs: root level plus one pair per sub-folder.
+    final List<String[]> levels = new ArrayList<>();
+    levels.add(new String[]{startOldPath, startNewPath});
 
-    while (!pending.isEmpty()) {
-      final String[] paths = pending.pop();
-      final String oldPath = paths[0];
-      final String newPath = paths[1];
+    for (final Map<String, Object> row : subFolderSnapshot) {
+      final String oldFolderPath = row.get("parent_path") + (String) row.get("asset_name") + "/";
+      // Compute new path by replacing the startOldPath prefix with startNewPath
+      final String newFolderPath = startNewPath + oldFolderPath.substring(startOldPath.length());
+      levels.add(new String[]{oldFolderPath, newFolderPath});
+    }
 
+    // Sort by old-path length ascending: shorter (shallower) paths are processed first,
+    // ensuring every parent folder's parent_path is updated before its children's rows are touched.
+    levels.sort(Comparator.comparingInt(pair -> pair[0].length()));
+
+    for (final String[] pair : levels) {
       new DotConnect()
           .setSQL("UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?")
-          .addParam(newPath)
-          .addParam(oldPath)
+          .addParam(pair[1])
+          .addParam(pair[0])
           .addParam(hostId)
           .loadResult();
-
-      final List<Map<String, Object>> subFolderRows = new DotConnect()
-          .setSQL("SELECT asset_name FROM identifier WHERE asset_type = 'folder'"
-              + " AND parent_path = ? AND host_inode = ?")
-          .addParam(newPath)
-          .addParam(hostId)
-          .loadResults();
-
-      for (final Map<String, Object> row : subFolderRows) {
-        final String assetName = (String) row.get("asset_name");
-        pending.push(new String[]{oldPath + assetName + "/", newPath + assetName + "/"});
-      }
     }
   }
 
@@ -933,6 +934,13 @@ public class FolderFactoryImpl extends FolderFactory {
    * Evicts from the identifier cache every identifier whose {@code parent_path} starts
    * with {@code rootPath} (direct children and all nested descendants).
    * A single prefix query covers all levels in one round-trip.
+   * <p>
+   * {@link com.dotmarketing.business.IdentifierCache#removeFromCacheByIdentifier(String)} looks up
+   * the identifier by UUID from cache. At the time this method runs the DB has already been
+   * updated to new paths, but the cache may still hold stale entries with the <em>old</em>
+   * {@code parent_path}. The eviction uses that stale cached URI to remove the old path-keyed
+   * entry — which is exactly what is needed. UUID-keyed and path-keyed entries are always stored
+   * together, so if the identifier is in the UUID cache the path-keyed entry is evicted too.
    */
   private void clearIdentifierCacheForSubtree(final String rootPath, final String hostId)
       throws DotDataException {

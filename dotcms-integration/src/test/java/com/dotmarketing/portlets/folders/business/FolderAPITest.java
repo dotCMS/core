@@ -82,6 +82,7 @@ import java.util.Map;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -224,6 +225,33 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 	 *     </li>
 	 * </ul>
 	 */
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:</b> {@link FolderAPI#renameFolder(Folder, String, User, boolean)}</li>
+	 *     <li><b>Given Scenario:</b> Attempt to rename a folder to the name already used by an
+	 *     existing sibling folder.</li>
+	 *     <li><b>Expected Result:</b> {@code renameFolder} returns {@code false} without modifying
+	 *     either folder.</li>
+	 * </ul>
+	 */
+	@Test
+	public void renameFolder_toExistingName_returnsFalse() throws DotDataException, DotSecurityException {
+		final Host site = new SiteDataGen().nextPersisted();
+		final Folder folderA = new FolderDataGen().name("folder-a-" + System.currentTimeMillis()).site(site).nextPersisted();
+		final Folder folderB = new FolderDataGen().name("folder-b-" + System.currentTimeMillis()).site(site).nextPersisted();
+
+		final boolean result = folderAPI.renameFolder(folderA, folderB.getName(), user, false);
+
+		assertFalse("renameFolder must return false when the target name is already taken by a sibling",
+				result);
+
+		// Both folders must remain unchanged
+		final Identifier identA = identifierAPI.loadFromDb(folderA.getIdentifier());
+		assertEquals("folderA asset_name must be unchanged", folderA.getName(), identA.getAssetName());
+		final Identifier identB = identifierAPI.loadFromDb(folderB.getIdentifier());
+		assertEquals("folderB asset_name must be unchanged", folderB.getName(), identB.getAssetName());
+	}
+
 	@Test
 	public void renameFolder_updatesChildrenAndSubChildrenPaths() throws Exception {
 

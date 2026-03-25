@@ -169,6 +169,11 @@ public class FolderAPIImpl implements FolderAPI  {
 			validateFolderName(folder, newName);
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
 			// Nav cache eviction for the folder and sub-tree is handled inside the factory.
+			// NOTE: the factory mutates the passed-in folder via folder.setName(newName), so
+			// folder.getPath() returns the new path here. refreshContentUnderFolder depends on
+			// this side-effect to queue the reindex against the renamed path. Do not refactor
+			// the factory to work on a defensive copy without updating this call site.
+			//
 			// Queue async ES reindex. The try/catch prevents a transient ES failure from
 			// propagating as a RuntimeException and rolling back the transaction. The call
 			// still runs within the @WrapInTransaction scope (DB connection remains open),
