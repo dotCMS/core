@@ -1,6 +1,4 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -26,13 +24,6 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.field.type.dropdown': 'Dropdown',
     'style.editor.form.builder.field.type.radio': 'Radio Buttons',
     'style.editor.form.builder.field.type.checkbox.group': 'Checkbox Group'
-};
-
-const dotMessageServiceMock = {
-    get: (key: string, ...args: string[]) => {
-        const template = MOCK_MESSAGES[key] ?? key;
-        return args.reduce((acc, arg, i) => acc.replace(`{${i}}`, arg), template);
-    }
 };
 
 const INPUT_FIELD: BuilderField = {
@@ -61,76 +52,79 @@ const DROPDOWN_FIELD: BuilderField = {
 };
 
 describe('DotStyleEditorFieldFormComponent', () => {
-    let fixture: ComponentFixture<DotStyleEditorFieldFormComponent>;
-    let comp: DotStyleEditorFieldFormComponent;
-    let de: DebugElement;
+    let spectator: Spectator<DotStyleEditorFieldFormComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotStyleEditorFieldFormComponent,
+        providers: [
+            mockProvider(DotMessageService, {
+                get: (key: string, ...args: string[]) => {
+                    const template = MOCK_MESSAGES[key] ?? key;
+
+                    return args.reduce((acc, arg, i) => acc.replace(`{${i}}`, arg), template);
+                }
+            })
+        ]
+    });
 
     function setup(field: BuilderField = INPUT_FIELD, showErrors = false): void {
-        fixture = TestBed.createComponent(DotStyleEditorFieldFormComponent);
-        fixture.componentRef.setInput('field', field);
-        fixture.componentRef.setInput('isFirst', false);
-        fixture.componentRef.setInput('isLast', false);
-        fixture.componentRef.setInput('showErrors', showErrors);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        fixture.detectChanges();
+        spectator = createComponent({
+            props: { field, isFirst: false, isLast: false, showErrors } as unknown
+        });
     }
 
-    function typeInInput(input: DebugElement, value: string): void {
-        input.nativeElement.value = value;
-        input.nativeElement.dispatchEvent(new Event('input'));
-        fixture.detectChanges();
+    function typeInInput(selector: string, value: string, index = 0): void {
+        const inputs = spectator.queryAll(selector) as HTMLInputElement[];
+        const input = inputs[index];
+        if (input) {
+            input.value = value;
+            input.dispatchEvent(new Event('input'));
+            spectator.detectChanges();
+        }
     }
-
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotStyleEditorFieldFormComponent],
-            providers: [{ provide: DotMessageService, useValue: dotMessageServiceMock }]
-        }).compileComponents();
-    });
 
     describe('Label → Identifier auto-link', () => {
         it('should auto-generate the identifier when the label changes', () => {
             setup();
 
-            typeInInput(de.query(By.css('input[placeholder="New Field"]')), 'Background Color');
+            typeInInput('input[placeholder="New Field"]', 'Background Color');
 
             // Check the component state signal directly — ngModel DOM sync may lag behind
-            expect(comp.$identifier()).toBe('backgroundColor');
+            expect(spectator.component.$identifier()).toBe('backgroundColor');
         });
 
         it('should stop updating the identifier after it has been manually edited', () => {
             setup();
 
-            typeInInput(de.query(By.css('input[placeholder="fieldId"]')), 'myCustomId');
-            typeInInput(de.query(By.css('input[placeholder="New Field"]')), 'New Label');
+            typeInInput('input[placeholder="fieldId"]', 'myCustomId');
+            typeInInput('input[placeholder="New Field"]', 'New Label');
 
-            expect(comp.$identifier()).toBe('myCustomId');
+            expect(spectator.component.$identifier()).toBe('myCustomId');
         });
 
         it('should show the reset button after the identifier is manually edited', () => {
             setup();
 
-            expect(de.query(By.css('[data-testid="reset-identifier-btn"]'))).toBeNull();
+            expect(spectator.query(byTestId('reset-identifier-btn'))).toBeNull();
 
-            typeInInput(de.query(By.css('input[placeholder="fieldId"]')), 'custom');
+            typeInInput('input[placeholder="fieldId"]', 'custom');
 
-            expect(de.query(By.css('[data-testid="reset-identifier-btn"]'))).not.toBeNull();
+            expect(spectator.query(byTestId('reset-identifier-btn'))).not.toBeNull();
         });
 
         it('should re-link identifier to label and hide reset button after clicking reset', () => {
             setup({ ...INPUT_FIELD, label: 'My Label', identifier: 'myLabel' });
 
-            typeInInput(de.query(By.css('input[placeholder="fieldId"]')), 'custom');
-            de.query(By.css('[data-testid="reset-identifier-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            typeInInput('input[placeholder="fieldId"]', 'custom');
+            spectator.query(byTestId('reset-identifier-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(de.query(By.css('[data-testid="reset-identifier-btn"]'))).toBeNull();
+            expect(spectator.query(byTestId('reset-identifier-btn'))).toBeNull();
 
             // Typing in label now updates identifier again — check component state signal
-            typeInInput(de.query(By.css('input[placeholder="New Field"]')), 'Relabeled');
+            typeInInput('input[placeholder="New Field"]', 'Relabeled');
 
-            expect(comp.$identifier()).toBe('relabeled');
+            expect(spectator.component.$identifier()).toBe('relabeled');
         });
     });
 
@@ -139,134 +133,119 @@ describe('DotStyleEditorFieldFormComponent', () => {
             setup(INPUT_FIELD);
 
             expect(
-                de.query(By.css('input[placeholder="e.g. Enter your text here..."]'))
+                spectator.query('input[placeholder="e.g. Enter your text here..."]')
             ).not.toBeNull();
         });
 
         it('should show the options card when type is dropdown', () => {
             setup(DROPDOWN_FIELD);
 
-            expect(de.query(By.css('input[placeholder="Label"]'))).not.toBeNull();
+            expect(spectator.query('input[placeholder="Label"]')).not.toBeNull();
         });
 
         it('should hide the description input when type is not input', () => {
             setup(DROPDOWN_FIELD);
 
-            expect(
-                de.query(By.css('input[placeholder="e.g. Enter your text here..."]'))
-            ).toBeNull();
+            expect(spectator.query('input[placeholder="e.g. Enter your text here..."]')).toBeNull();
         });
     });
 
     describe('Options management', () => {
         it('should add an option row when "Add Option" is clicked', () => {
             setup(DROPDOWN_FIELD);
-            const before = de.queryAll(By.css('input[placeholder="Label"]')).length;
+            const before = spectator.queryAll('input[placeholder="Label"]').length;
 
-            de.query(By.css('[data-testid="add-option-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('add-option-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(de.queryAll(By.css('input[placeholder="Label"]')).length).toBe(before + 1);
+            expect(spectator.queryAll('input[placeholder="Label"]').length).toBe(before + 1);
         });
 
         it('should remove an option row when its remove button is clicked', () => {
             setup(DROPDOWN_FIELD);
-            const before = de.queryAll(By.css('input[placeholder="Label"]')).length;
+            const before = spectator.queryAll('input[placeholder="Label"]').length;
 
-            de.query(By.css('[data-testid="remove-option-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('remove-option-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(de.queryAll(By.css('input[placeholder="Label"]')).length).toBe(before - 1);
+            expect(spectator.queryAll('input[placeholder="Label"]').length).toBe(before - 1);
         });
 
         it('should auto-generate option value from option label', () => {
             setup(DROPDOWN_FIELD);
 
-            typeInInput(de.queryAll(By.css('input[placeholder="Label"]'))[0], 'Heading One');
+            typeInInput('input[placeholder="Label"]', 'Heading One');
 
             // Check the component state signal directly — ngModel DOM sync may lag behind
-            expect(comp.$options()[0].value).toBe('headingOne');
+            expect(spectator.component.$options()[0].value).toBe('headingOne');
         });
 
         it('should stop updating option value once it has been manually edited', () => {
             setup(DROPDOWN_FIELD);
 
-            typeInInput(de.queryAll(By.css('input[placeholder="value"]'))[0], 'manual-value');
-            typeInInput(de.queryAll(By.css('input[placeholder="Label"]'))[0], 'New Label');
+            typeInInput('input[placeholder="value"]', 'manual-value');
+            typeInInput('input[placeholder="Label"]', 'New Label');
 
-            expect(comp.$options()[0].value).toBe('manual-value');
+            expect(spectator.component.$options()[0].value).toBe('manual-value');
         });
     });
 
     describe('Output events', () => {
         it('should emit fieldChange with updated label when the label input changes', () => {
             setup();
-            let emitted: BuilderField | undefined;
-            comp.fieldChange.subscribe((f) => (emitted = f));
+            jest.spyOn(spectator.component.fieldChange, 'emit');
 
-            typeInInput(de.query(By.css('input[placeholder="New Field"]')), 'Updated Label');
+            typeInInput('input[placeholder="New Field"]', 'Updated Label');
 
-            expect(emitted?.label).toBe('Updated Label');
-            expect(emitted?.uid).toBe(INPUT_FIELD.uid);
+            expect(spectator.component.fieldChange.emit).toHaveBeenCalledWith(
+                expect.objectContaining({ label: 'Updated Label', uid: INPUT_FIELD.uid })
+            );
         });
 
         it('should emit delete when the delete button is clicked', () => {
             setup();
-            let emitted = false;
-            comp.delete.subscribe(() => (emitted = true));
+            jest.spyOn(spectator.component.delete, 'emit');
 
-            de.query(By.css('[data-testid="delete-field-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('delete-field-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emitted).toBe(true);
+            expect(spectator.component.delete.emit).toHaveBeenCalled();
         });
 
         it('should emit moveUp when the move-up button is clicked', () => {
             setup();
-            let emitted = false;
-            comp.moveUp.subscribe(() => (emitted = true));
+            jest.spyOn(spectator.component.moveUp, 'emit');
 
-            de.query(By.css('[data-testid="move-up-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('move-up-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emitted).toBe(true);
+            expect(spectator.component.moveUp.emit).toHaveBeenCalled();
         });
 
         it('should emit moveDown when the move-down button is clicked', () => {
             setup();
-            let emitted = false;
-            comp.moveDown.subscribe(() => (emitted = true));
+            jest.spyOn(spectator.component.moveDown, 'emit');
 
-            de.query(By.css('[data-testid="move-down-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('move-down-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emitted).toBe(true);
+            expect(spectator.component.moveDown.emit).toHaveBeenCalled();
         });
 
         it('should disable move-up when isFirst is true', () => {
-            fixture = TestBed.createComponent(DotStyleEditorFieldFormComponent);
-            fixture.componentRef.setInput('field', INPUT_FIELD);
-            fixture.componentRef.setInput('isFirst', true);
-            fixture.componentRef.setInput('isLast', false);
-            fixture.componentRef.setInput('showErrors', false);
-            de = fixture.debugElement;
-            fixture.detectChanges();
+            setup(INPUT_FIELD);
+            spectator.setInput('isFirst', true);
 
-            const btn = de.query(By.css('[data-testid="move-up-btn"] button'));
-            expect(btn.nativeElement.disabled).toBe(true);
+            const btn = spectator.query(byTestId('move-up-btn'))?.querySelector('button');
+            expect(btn?.disabled).toBe(true);
         });
 
         it('should disable move-down when isLast is true', () => {
-            fixture = TestBed.createComponent(DotStyleEditorFieldFormComponent);
-            fixture.componentRef.setInput('field', INPUT_FIELD);
-            fixture.componentRef.setInput('isFirst', false);
-            fixture.componentRef.setInput('isLast', true);
-            fixture.componentRef.setInput('showErrors', false);
-            de = fixture.debugElement;
-            fixture.detectChanges();
+            setup(INPUT_FIELD);
+            spectator.setInput('isLast', true);
 
-            const btn = de.query(By.css('[data-testid="move-down-btn"] button'));
-            expect(btn.nativeElement.disabled).toBe(true);
+            const btn = spectator.query(byTestId('move-down-btn'))?.querySelector('button');
+            expect(btn?.disabled).toBe(true);
         });
     });
 
@@ -274,36 +253,32 @@ describe('DotStyleEditorFieldFormComponent', () => {
         it('should show a label error when label is empty', () => {
             setup({ ...INPUT_FIELD, label: '' }, true);
 
-            const errors = de.queryAll(By.css('small.text-red-500'));
-            expect(
-                errors.some((e) => e.nativeElement.textContent.includes('Label is required'))
-            ).toBe(true);
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(errors.some((e) => e.textContent?.includes('Label is required'))).toBe(true);
         });
 
         it('should show an identifier error when identifier is empty', () => {
             setup({ ...INPUT_FIELD, identifier: '' }, true);
 
-            const errors = de.queryAll(By.css('small.text-red-500'));
-            expect(
-                errors.some((e) => e.nativeElement.textContent.includes('Identifier is required'))
-            ).toBe(true);
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(errors.some((e) => e.textContent?.includes('Identifier is required'))).toBe(
+                true
+            );
         });
 
         it('should show an options-count error when a dropdown has no options', () => {
             setup({ ...DROPDOWN_FIELD, options: [] }, true);
 
-            const errors = de.queryAll(By.css('small.text-red-500'));
+            const errors = spectator.queryAll('small.text-red-500');
             expect(
-                errors.some((e) =>
-                    e.nativeElement.textContent.includes('At least one option is required')
-                )
+                errors.some((e) => e.textContent?.includes('At least one option is required'))
             ).toBe(true);
         });
 
         it('should not show any errors when showErrors is false', () => {
             setup({ ...INPUT_FIELD, label: '', identifier: '' }, false);
 
-            expect(de.queryAll(By.css('small.text-red-500')).length).toBe(0);
+            expect(spectator.queryAll('small.text-red-500').length).toBe(0);
         });
     });
 });

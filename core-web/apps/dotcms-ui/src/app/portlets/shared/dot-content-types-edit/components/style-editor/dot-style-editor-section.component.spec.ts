@@ -1,6 +1,4 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -22,13 +20,6 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.field.type.dropdown': 'Dropdown',
     'style.editor.form.builder.field.type.radio': 'Radio Buttons',
     'style.editor.form.builder.field.type.checkbox.group': 'Checkbox Group'
-};
-
-const dotMessageServiceMock = {
-    get: (key: string, ...args: string[]) => {
-        const template = MOCK_MESSAGES[key] ?? key;
-        return args.reduce((acc, arg, i) => acc.replace(`{${i}}`, arg), template);
-    }
 };
 
 const MOCK_FIELD: BuilderField = {
@@ -66,153 +57,152 @@ const MOCK_SECTION_TWO_FIELDS: BuilderSection = {
 };
 
 describe('DotStyleEditorSectionComponent', () => {
-    let fixture: ComponentFixture<DotStyleEditorSectionComponent>;
-    let comp: DotStyleEditorSectionComponent;
-    let de: DebugElement;
+    let spectator: Spectator<DotStyleEditorSectionComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotStyleEditorSectionComponent,
+        providers: [
+            mockProvider(DotMessageService, {
+                get: (key: string, ...args: string[]) => {
+                    const template = MOCK_MESSAGES[key] ?? key;
+
+                    return args.reduce((acc, arg, i) => acc.replace(`{${i}}`, arg), template);
+                }
+            })
+        ]
+    });
 
     function setup(section: BuilderSection = MOCK_SECTION, isFirst = false, isLast = false): void {
-        fixture = TestBed.createComponent(DotStyleEditorSectionComponent);
-        fixture.componentRef.setInput('section', section);
-        fixture.componentRef.setInput('isFirst', isFirst);
-        fixture.componentRef.setInput('isLast', isLast);
-        fixture.componentRef.setInput('showErrors', false);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        fixture.detectChanges();
+        spectator = createComponent({
+            props: { section, isFirst, isLast, showErrors: false } as unknown
+        });
     }
-
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotStyleEditorSectionComponent],
-            providers: [{ provide: DotMessageService, useValue: dotMessageServiceMock }]
-        }).compileComponents();
-    });
 
     describe('Section header actions', () => {
         it('should emit delete when the trash button is clicked', () => {
             setup();
-            let emitted = false;
-            comp.delete.subscribe(() => (emitted = true));
+            jest.spyOn(spectator.component.delete, 'emit');
 
-            de.query(By.css('[data-testid="delete-section-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('delete-section-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emitted).toBe(true);
+            expect(spectator.component.delete.emit).toHaveBeenCalled();
         });
 
         it('should emit moveUp when the move-up button is clicked', () => {
             setup(MOCK_SECTION, false, false);
-            let emitted = false;
-            comp.moveUp.subscribe(() => (emitted = true));
+            jest.spyOn(spectator.component.moveUp, 'emit');
 
-            de.query(By.css('[data-testid="move-section-up-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('move-section-up-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emitted).toBe(true);
+            expect(spectator.component.moveUp.emit).toHaveBeenCalled();
         });
 
         it('should emit moveDown when the move-down button is clicked', () => {
             setup(MOCK_SECTION, false, false);
-            let emitted = false;
-            comp.moveDown.subscribe(() => (emitted = true));
+            jest.spyOn(spectator.component.moveDown, 'emit');
 
-            de.query(By.css('[data-testid="move-section-down-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('move-section-down-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emitted).toBe(true);
+            expect(spectator.component.moveDown.emit).toHaveBeenCalled();
         });
 
         it('should disable move-up button when section is first', () => {
             setup(MOCK_SECTION, true, false);
 
-            const btn = de.query(By.css('[data-testid="move-section-up-btn"] button'));
-            expect(btn.nativeElement.disabled).toBe(true);
+            const btn = spectator.query(byTestId('move-section-up-btn'))?.querySelector('button');
+            expect(btn?.disabled).toBe(true);
         });
 
         it('should disable move-down button when section is last', () => {
             setup(MOCK_SECTION, false, true);
 
-            const btn = de.query(By.css('[data-testid="move-section-down-btn"] button'));
-            expect(btn.nativeElement.disabled).toBe(true);
+            const btn = spectator.query(byTestId('move-section-down-btn'))?.querySelector('button');
+            expect(btn?.disabled).toBe(true);
         });
     });
 
     describe('Title editing', () => {
         it('should emit titleChange when the title input is changed', () => {
             setup();
-            let emitted: string | undefined;
-            comp.titleChange.subscribe((t) => (emitted = t));
+            jest.spyOn(spectator.component.titleChange, 'emit');
 
-            const titleInput = de.query(By.css('input[placeholder="Section Title"]'));
-            titleInput.nativeElement.value = 'Colors';
-            titleInput.nativeElement.dispatchEvent(new Event('input'));
-            fixture.detectChanges();
+            const titleInput = spectator.query(
+                'input[placeholder="Section Title"]'
+            ) as HTMLInputElement | null;
+            if (titleInput) {
+                titleInput.value = 'Colors';
+                titleInput.dispatchEvent(new Event('input'));
+                spectator.detectChanges();
+            }
 
-            expect(emitted).toBe('Colors');
+            expect(spectator.component.titleChange.emit).toHaveBeenCalledWith('Colors');
         });
     });
 
     describe('Field interactions', () => {
         it('should emit addField when the "Add Field" button is clicked', () => {
             setup();
-            let emitted = false;
-            comp.addField.subscribe(() => (emitted = true));
+            jest.spyOn(spectator.component.addField, 'emit');
 
-            de.query(By.css('[data-testid="add-field-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('add-field-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emitted).toBe(true);
+            expect(spectator.component.addField.emit).toHaveBeenCalled();
         });
 
         it('should emit removeField with the field uid when field delete is triggered', () => {
             setup();
-            let emittedUid: string | undefined;
-            comp.removeField.subscribe((uid) => (emittedUid = uid));
+            jest.spyOn(spectator.component.removeField, 'emit');
 
-            de.query(By.css('[data-testid="delete-field-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('delete-field-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emittedUid).toBe(MOCK_FIELD.uid);
+            expect(spectator.component.removeField.emit).toHaveBeenCalledWith(MOCK_FIELD.uid);
         });
 
         it('should emit moveFieldUp with the field uid when field move-up is triggered', () => {
             // MOCK_FIELD is at index 1 (not first) so its Move-Up button is enabled
             setup(MOCK_SECTION_TWO_FIELDS);
-            let emittedUid: string | undefined;
-            comp.moveFieldUp.subscribe((uid) => (emittedUid = uid));
+            jest.spyOn(spectator.component.moveFieldUp, 'emit');
 
             // Second field's move-up button (index 1 → enabled)
-            de.queryAll(By.css('[data-testid="move-up-btn"] button'))[1].nativeElement.click();
-            fixture.detectChanges();
+            spectator.queryAll(byTestId('move-up-btn'))[1]?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emittedUid).toBe(MOCK_FIELD.uid);
+            expect(spectator.component.moveFieldUp.emit).toHaveBeenCalledWith(MOCK_FIELD.uid);
         });
 
         it('should emit moveFieldDown with the field uid when field move-down is triggered', () => {
             // MOCK_FIELD_2 is at index 0 (not last) so its Move-Down button is enabled
             setup(MOCK_SECTION_TWO_FIELDS);
-            let emittedUid: string | undefined;
-            comp.moveFieldDown.subscribe((uid) => (emittedUid = uid));
+            jest.spyOn(spectator.component.moveFieldDown, 'emit');
 
             // First field's move-down button (index 0 → enabled)
-            de.queryAll(By.css('[data-testid="move-down-btn"] button'))[0].nativeElement.click();
-            fixture.detectChanges();
+            spectator.queryAll(byTestId('move-down-btn'))[0]?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(emittedUid).toBe(MOCK_FIELD_2.uid);
+            expect(spectator.component.moveFieldDown.emit).toHaveBeenCalledWith(MOCK_FIELD_2.uid);
         });
 
         it('should emit fieldChange when a field label is updated', () => {
             setup();
-            let emittedField: BuilderField | undefined;
-            comp.fieldChange.subscribe((f) => (emittedField = f));
+            jest.spyOn(spectator.component.fieldChange, 'emit');
 
-            const labelInput = de.query(By.css('input[placeholder="New Field"]'));
-            labelInput.nativeElement.value = 'Line Height';
-            labelInput.nativeElement.dispatchEvent(new Event('input'));
-            fixture.detectChanges();
+            const labelInput = spectator.query(
+                'input[placeholder="New Field"]'
+            ) as HTMLInputElement | null;
+            if (labelInput) {
+                labelInput.value = 'Line Height';
+                labelInput.dispatchEvent(new Event('input'));
+                spectator.detectChanges();
+            }
 
-            expect(emittedField?.uid).toBe(MOCK_FIELD.uid);
-            expect(emittedField?.label).toBe('Line Height');
+            expect(spectator.component.fieldChange.emit).toHaveBeenCalledWith(
+                expect.objectContaining({ uid: MOCK_FIELD.uid, label: 'Line Height' })
+            );
         });
     });
 
@@ -220,13 +210,13 @@ describe('DotStyleEditorSectionComponent', () => {
         it('should show the empty message when the section has no fields', () => {
             setup({ ...MOCK_SECTION, fields: [] });
 
-            expect(de.nativeElement.textContent).toContain('No fields yet');
+            expect(spectator.element.textContent).toContain('No fields yet');
         });
 
         it('should not show the empty message when the section has fields', () => {
             setup(MOCK_SECTION);
 
-            expect(de.nativeElement.textContent).not.toContain('No fields yet');
+            expect(spectator.element.textContent).not.toContain('No fields yet');
         });
     });
 });

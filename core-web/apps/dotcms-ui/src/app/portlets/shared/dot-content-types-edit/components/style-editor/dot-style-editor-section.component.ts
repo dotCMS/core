@@ -1,4 +1,5 @@
 import {
+    ChangeDetectionStrategy,
     Component,
     computed,
     effect,
@@ -32,7 +33,8 @@ import { BuilderField, BuilderSection, fieldHasErrors } from './models';
         DotMessagePipe,
         DotStyleEditorFieldFormComponent
     ],
-    templateUrl: './dot-style-editor-section.component.html'
+    templateUrl: './dot-style-editor-section.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotStyleEditorSectionComponent {
     readonly #dotMessageService = inject(DotMessageService);

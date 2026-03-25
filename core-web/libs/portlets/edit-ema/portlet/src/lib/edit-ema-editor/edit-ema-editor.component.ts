@@ -202,47 +202,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly UVE_STATUS = UVE_STATUS;
 
-    SCHEMAS = [
-        {
-            contentType: 'Activity',
-            sections: [
-                {
-                    title: 'Layout',
-                    fields: [
-                        {
-                            type: 'input',
-                            label: 'New Field',
-                            id: 'newField',
-                            config: { inputType: 'text' }
-                        },
-                        {
-                            type: 'input',
-                            label: 'New Field',
-                            id: 'newField',
-                            config: { inputType: 'text' }
-                        }
-                    ]
-                },
-                {
-                    title: 'Typography',
-                    fields: [
-                        {
-                            type: 'dropdown',
-                            label: 'Font size',
-                            id: 'fontSize',
-                            config: {
-                                options: [
-                                    { label: 'Text XL', value: 'text-xl' },
-                                    { label: 'Text SM', value: 'text-sm' }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            ]
-        }
-    ];
-
     readonly $paletteClass = computed(() => {
         return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
     });

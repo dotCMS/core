@@ -1,6 +1,7 @@
 import { patchState, signalState } from '@ngrx/signals';
 
 import {
+    ChangeDetectionStrategy,
     Component,
     computed,
     effect,
@@ -57,7 +58,8 @@ interface FieldFormState {
         SelectButtonModule,
         DotMessagePipe
     ],
-    templateUrl: './dot-style-editor-field-form.component.html'
+    templateUrl: './dot-style-editor-field-form.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotStyleEditorFieldFormComponent {
     readonly #dotMessageService = inject(DotMessageService);

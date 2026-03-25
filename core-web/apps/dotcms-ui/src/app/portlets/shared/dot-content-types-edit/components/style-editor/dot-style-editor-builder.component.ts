@@ -1,6 +1,15 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    signal,
+    untracked
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -65,7 +74,8 @@ interface DotStyleEditorBuilderState {
         DotMessagePipe,
         DotStyleEditorSectionComponent
     ],
-    templateUrl: './dot-style-editor-builder.component.html'
+    templateUrl: './dot-style-editor-builder.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotStyleEditorBuilderComponent {
     readonly #crudService = inject(DotCrudService);

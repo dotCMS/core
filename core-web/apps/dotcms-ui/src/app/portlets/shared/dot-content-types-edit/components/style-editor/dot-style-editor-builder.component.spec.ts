@@ -1,8 +1,11 @@
+import {
+    Spectator,
+    SpyObject,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
-
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 
 import {
     DotCrudService,
@@ -27,13 +30,6 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.saved.message': 'Style Editor schema saved successfully'
 };
 
-const dotMessageServiceMock = {
-    get: (key: string, ...args: string[]) => {
-        const template = MOCK_MESSAGES[key] ?? key;
-        return args.reduce((acc, arg, i) => acc.replace(`{${i}}`, arg), template);
-    }
-};
-
 const MOCK_CONTENT_TYPE = {
     id: 'content-type-id',
     variable: 'testType',
@@ -42,92 +38,93 @@ const MOCK_CONTENT_TYPE = {
 } as DotCMSContentType;
 
 describe('DotStyleEditorBuilderComponent', () => {
-    let fixture: ComponentFixture<DotStyleEditorBuilderComponent>;
-    let comp: DotStyleEditorBuilderComponent;
-    let de: DebugElement;
-    let crudService: { putData: jest.Mock };
+    let spectator: Spectator<DotStyleEditorBuilderComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotStyleEditorBuilderComponent,
+        providers: [
+            mockProvider(DotCrudService, { putData: jest.fn().mockReturnValue(of({})) }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
+            {
+                provide: DotMessageService,
+                useValue: {
+                    get: (key: string, ...args: string[]) => {
+                        const template = MOCK_MESSAGES[key] ?? key;
+
+                        return args.reduce((acc, arg, i) => acc.replace(`{${i}}`, arg), template);
+                    }
+                }
+            }
+        ]
+    });
 
     function setup(contentType?: DotCMSContentType): void {
-        fixture = TestBed.createComponent(DotStyleEditorBuilderComponent);
+        spectator = createComponent();
         if (contentType) {
-            fixture.componentRef.setInput('contentType', contentType);
+            spectator.setInput('contentType', contentType);
         }
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        fixture.detectChanges();
     }
 
     function clickAddSection(): void {
-        de.query(By.css('[data-testid="add-section-btn"] button')).nativeElement.click();
-        fixture.detectChanges();
+        spectator.query(byTestId('add-section-btn'))?.querySelector('button')?.click();
+        spectator.detectChanges();
     }
-
-    beforeEach(async () => {
-        crudService = { putData: jest.fn().mockReturnValue(of({})) };
-
-        await TestBed.configureTestingModule({
-            imports: [DotStyleEditorBuilderComponent],
-            providers: [
-                { provide: DotCrudService, useValue: crudService },
-                { provide: DotHttpErrorManagerService, useValue: { handle: jest.fn() } },
-                { provide: DotMessageDisplayService, useValue: { push: jest.fn() } },
-                { provide: DotMessageService, useValue: dotMessageServiceMock }
-            ]
-        }).compileComponents();
-    });
 
     describe('Sections', () => {
         it('should add a section when "Add New Section" is clicked', () => {
             setup();
-            expect(comp.$sections().length).toBe(0);
+            expect(spectator.component.$sections().length).toBe(0);
 
             clickAddSection();
 
-            expect(comp.$sections().length).toBe(1);
+            expect(spectator.component.$sections().length).toBe(1);
         });
 
         it('should show a confirmation dialog before deleting a section', () => {
             setup();
             clickAddSection();
 
-            de.query(By.css('[data-testid="delete-section-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('delete-section-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(comp.$confirmState()?.header).toBe('Delete Section');
+            expect(spectator.component.$confirmState()?.header).toBe('Delete Section');
         });
 
         it('should remove the section after confirming the delete', () => {
             setup();
             clickAddSection();
-            expect(comp.$sections().length).toBe(1);
+            expect(spectator.component.$sections().length).toBe(1);
 
-            de.query(By.css('[data-testid="delete-section-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('delete-section-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
             // Dialog actions use dynamic [label] binding, so invoke the callback directly
-            comp.$confirmState()
+            spectator.component
+                .$confirmState()
                 ?.actions.find((a) => a.label === 'Delete')
                 ?.callback();
-            fixture.detectChanges();
+            spectator.detectChanges();
 
-            expect(comp.$sections().length).toBe(0);
+            expect(spectator.component.$sections().length).toBe(0);
         });
 
         it('should keep the section when the delete confirmation is cancelled', () => {
             setup();
             clickAddSection();
 
-            de.query(By.css('[data-testid="delete-section-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('delete-section-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
             // Dialog actions use dynamic [label] binding, so invoke the callback directly
-            comp.$confirmState()
+            spectator.component
+                .$confirmState()
                 ?.actions.find((a) => a.label === 'Cancel')
                 ?.callback();
-            fixture.detectChanges();
+            spectator.detectChanges();
 
-            expect(comp.$sections().length).toBe(1);
-            expect(comp.$confirmState()).toBeNull();
+            expect(spectator.component.$sections().length).toBe(1);
+            expect(spectator.component.$confirmState()).toBeNull();
         });
 
         it('should move a section up when its move-up button is clicked', () => {
@@ -135,17 +132,18 @@ describe('DotStyleEditorBuilderComponent', () => {
             clickAddSection();
             clickAddSection();
 
-            const firstTitle = comp.$sections()[0].uid;
-            const secondTitle = comp.$sections()[1].uid;
+            const firstUid = spectator.component.$sections()[0].uid;
+            const secondUid = spectator.component.$sections()[1].uid;
 
             // Move the second section up
-            de.queryAll(
-                By.css('[data-testid="move-section-up-btn"] button')
-            )[1].nativeElement.click();
-            fixture.detectChanges();
+            spectator
+                .queryAll(byTestId('move-section-up-btn'))[1]
+                ?.querySelector('button')
+                ?.click();
+            spectator.detectChanges();
 
-            expect(comp.$sections()[0].uid).toBe(secondTitle);
-            expect(comp.$sections()[1].uid).toBe(firstTitle);
+            expect(spectator.component.$sections()[0].uid).toBe(secondUid);
+            expect(spectator.component.$sections()[1].uid).toBe(firstUid);
         });
     });
 
@@ -153,58 +151,60 @@ describe('DotStyleEditorBuilderComponent', () => {
         it('should not show the Cancel button when the form is not dirty', () => {
             setup();
 
-            expect(de.query(By.css('[data-testid="cancel-btn"]'))).toBeNull();
+            expect(spectator.query(byTestId('cancel-btn'))).toBeNull();
         });
 
         it('should show the Cancel button after a section is added', () => {
             setup();
             clickAddSection();
 
-            expect(de.query(By.css('[data-testid="cancel-btn"]'))).not.toBeNull();
+            expect(spectator.query(byTestId('cancel-btn'))).not.toBeNull();
         });
 
         it('should open an "Unsaved Changes" dialog when Cancel is clicked', () => {
             setup();
             clickAddSection();
 
-            de.query(By.css('[data-testid="cancel-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('cancel-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(comp.$confirmState()?.header).toBe('Unsaved Changes');
+            expect(spectator.component.$confirmState()?.header).toBe('Unsaved Changes');
         });
 
         it('should discard all changes when "Leave without saving" is clicked', () => {
             setup();
             clickAddSection();
 
-            de.query(By.css('[data-testid="cancel-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('cancel-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
             // Dialog actions use dynamic [label] binding, so invoke the callback directly
-            comp.$confirmState()
+            spectator.component
+                .$confirmState()
                 ?.actions.find((a) => a.label === 'Leave without saving')
                 ?.callback();
-            fixture.detectChanges();
+            spectator.detectChanges();
 
-            expect(comp.$sections().length).toBe(0);
-            expect(comp.$confirmState()).toBeNull();
+            expect(spectator.component.$sections().length).toBe(0);
+            expect(spectator.component.$confirmState()).toBeNull();
         });
 
         it('should close the dialog without discarding when "Cancel" in the dialog is clicked', () => {
             setup();
             clickAddSection();
 
-            de.query(By.css('[data-testid="cancel-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('cancel-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
             // Dialog actions use dynamic [label] binding, so invoke the callback directly
-            comp.$confirmState()
+            spectator.component
+                .$confirmState()
                 ?.actions.find((a) => a.label === 'Cancel')
                 ?.callback();
-            fixture.detectChanges();
+            spectator.detectChanges();
 
-            expect(comp.$sections().length).toBe(1);
-            expect(comp.$confirmState()).toBeNull();
+            expect(spectator.component.$sections().length).toBe(1);
+            expect(spectator.component.$confirmState()).toBeNull();
         });
     });
 
@@ -213,47 +213,47 @@ describe('DotStyleEditorBuilderComponent', () => {
             setup(MOCK_CONTENT_TYPE);
             clickAddSection();
 
-            // The default new section has a field with label:'New Field' and identifier:'newField'
-            // but we'll set the section title to empty to ensure at least one validation check
-            // Actually the default field IS valid (input type, non-empty label/identifier)
-            // To make it invalid: clear the label from the field form in the DOM
-            const labelInput = de.query(By.css('input[placeholder="New Field"]'));
-            labelInput.nativeElement.value = '';
-            labelInput.nativeElement.dispatchEvent(new Event('input'));
-            fixture.detectChanges();
+            // Clear the label of the new field to make it invalid
+            const labelInput = spectator.query(
+                'input[placeholder="New Field"]'
+            ) as HTMLInputElement | null;
+            if (labelInput) {
+                labelInput.value = '';
+                labelInput.dispatchEvent(new Event('input'));
+                spectator.detectChanges();
+            }
 
-            expect(comp.$saveAttempted()).toBe(false);
+            expect(spectator.component.$saveAttempted()).toBe(false);
 
-            de.query(By.css('[data-testid="save-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(comp.$saveAttempted()).toBe(true);
-            expect(crudService.putData).not.toHaveBeenCalled();
+            expect(spectator.component.$saveAttempted()).toBe(true);
+            expect(spectator.inject(DotCrudService).putData).not.toHaveBeenCalled();
         });
 
         it('should call the CRUD API when the form is valid', () => {
             setup(MOCK_CONTENT_TYPE);
             // No sections → empty form is valid (nothing to validate)
-            de.query(By.css('[data-testid="save-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(crudService.putData).toHaveBeenCalledWith(
+            expect(spectator.inject(DotCrudService).putData).toHaveBeenCalledWith(
                 `v1/contenttype/id/${MOCK_CONTENT_TYPE.id}`,
                 expect.anything()
             );
         });
 
         it('should handle API errors by calling the error manager', () => {
-            const httpErrorManager = TestBed.inject(
-                DotHttpErrorManagerService
-            ) as jest.Mocked<DotHttpErrorManagerService>;
+            setup(MOCK_CONTENT_TYPE);
+
+            const crudService: SpyObject<DotCrudService> = spectator.inject(DotCrudService);
             crudService.putData.mockReturnValue(throwError(() => new Error('Server error')));
 
-            setup(MOCK_CONTENT_TYPE);
-            de.query(By.css('[data-testid="save-btn"] button')).nativeElement.click();
-            fixture.detectChanges();
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
 
-            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
         });
     });
 });
