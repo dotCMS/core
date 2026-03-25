@@ -51,6 +51,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -174,14 +175,13 @@ public class FolderAPIImpl implements FolderAPI  {
 			// this side-effect to queue the reindex against the renamed path. Do not refactor
 			// the factory to work on a defensive copy without updating this call site.
 			//
-			// Queue async ES reindex. The try/catch prevents a transient ES failure from
-			// propagating as a RuntimeException and rolling back the transaction. The call
-			// still runs within the @WrapInTransaction scope (DB connection remains open),
-			// but refreshContentUnderFolder only inserts into dist_reindex_journal and
-			// returns quickly — actual reindex work is asynchronous.
+			// Queue async ES reindex. DotReindexStateException is caught here so a transient
+			// reindex-queue failure does not roll back an otherwise successful rename.
+			// DotDataException (DB-layer) is intentionally NOT caught: if the DB itself fails
+			// (e.g. the dist_reindex_journal INSERT fails), the rename transaction should roll back.
 			try {
 				contentletAPI.refreshContentUnderFolder(folder);
-			} catch (final Exception e) {
+			} catch (final DotReindexStateException e) {
 				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder '"
 						+ folder.getPath() + "' to '" + newName + "': " + e.getMessage());
 			}
