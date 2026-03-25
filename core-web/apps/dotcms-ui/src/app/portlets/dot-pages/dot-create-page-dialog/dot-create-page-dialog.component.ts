@@ -20,7 +20,6 @@ import { DotAutofocusDirective, DotMessagePipe } from '@dotcms/ui';
         DotMessagePipe,
         InputTextModule,
         ReactiveFormsModule,
-        DotMessagePipe,
         DialogModule,
         IconFieldModule,
         InputIconModule

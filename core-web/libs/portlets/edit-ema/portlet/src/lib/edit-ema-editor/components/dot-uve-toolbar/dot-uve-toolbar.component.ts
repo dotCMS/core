@@ -1,5 +1,4 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
