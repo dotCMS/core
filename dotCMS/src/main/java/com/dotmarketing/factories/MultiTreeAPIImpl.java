@@ -735,17 +735,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
                     personalization, variantId);
 
-            // Language-pair DELETE: remove entries whose child contentlet has a version in either
-            // the requested language or the default language. When the requested language IS the
-            // default, a single-language DELETE is sufficient. This ensures that contentlets
-            // exclusive to another language (e.g. ESP-only) are not removed when editing a page
-            // in the default language.
             final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
+            // When the requested language IS the default, a single-language DELETE is sufficient.
             if (defaultLanguageId == languageId) {
                 deleteEntriesByRequestedLanguage(pageId, personalization, languageId, variantId, db);
             } else {
-                deleteEntriesByRequestedAndDefaultLanguage(pageId, personalization, languageId, variantId, db, defaultLanguageId);
+                // Language-pair DELETE: remove entries whose child contentlet has a version in either
+                // the requested language or the default language. This ensures that contentlets
+                // exclusive to another language (e.g. ESP-only) are not removed when editing a page
+                // in the default language.
+                deleteEntriesByRequestedAndDefaultLanguage(pageId, personalization, languageId, defaultLanguageId, variantId, db);
             }
 
         } else if (languageId != null) {
@@ -825,8 +825,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @throws DotDataException If there is an error executing the DELETE statement.
      */
     private void deleteEntriesByRequestedAndDefaultLanguage(final String pageId, final String personalization,
-            final long languageId, final String variantId, final DotConnect db,
-            final long defaultLanguageId) throws DotDataException {
+            final long languageId, final long defaultLanguageId, final String variantId,
+            final DotConnect db) throws DotDataException {
         db.setSQL(DELETE_ALL_MULTI_TREE_BY_RELATION_AND_PERSONALIZATION_PER_TWO_LANGUAGES_NOT_SQL)
                 .addParam(variantId)
                 .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
@@ -875,12 +875,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     .addParam(copiedMultiTreeVariantId);
             final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
             if(contentExist != 0){
-                final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
-                final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
-                                                              "'%s'", contentletTitle, tree.getContentlet(),
-                        tree.getContainer());
-                Logger.debug(MultiTreeAPIImpl.class, errorMsg);
-                throw new IllegalArgumentException(errorMsg);
+                // The contentlet already exists in this container for the given page, personalization,
+                // and variant. This can happen when DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled
+                // and a fallback-language entry was not removed by a language-scoped DELETE.
+                Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
+                        "Content [%s] already exists in Container '%s', skipping.",
+                        tree.getContentlet(), tree.getContainer()));
+                continue;
             }
 
             final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
