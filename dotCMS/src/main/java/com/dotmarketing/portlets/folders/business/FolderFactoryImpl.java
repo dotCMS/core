@@ -820,15 +820,19 @@ public class FolderFactoryImpl extends FolderFactory {
     ident.setAssetName(newName);
     APILocator.getIdentifierAPI().save(ident);
 
+    // Evict identifier cache for the entire subtree BEFORE the bulk UPDATE so the eviction can
+    // reliably find the old-path-keyed cache entries. removeFromCacheByIdentifier() uses the
+    // cached identifier's current URI (old path) to evict the path-keyed entry; if we waited
+    // until after the UPDATE, those URI-keyed entries might already have been LRU-evicted and
+    // the stale old-path keys would survive indefinitely.
+    clearIdentifierCacheForSubtree(oldPath, hostId);
+
     // Bulk-update every child identifier's parent_path, processing parent folders before children.
     // The snapshot already contains all sub-folder paths so no extra SELECTs are needed.
     updateChildPaths(oldPath, newPath, hostId, subFolderSnapshot);
 
     // Targeted folder cache eviction for affected sub-folders (using old path data from snapshot)
     evictSubFolderCache(subFolderSnapshot, hostId);
-
-    // Evict identifier cache for every identifier moved to the new subtree
-    clearIdentifierCacheForSubtree(newPath, hostId);
 
     // Nav cache cleanup — evict the renamed folder, its parent, and every sub-folder in the tree
     CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
@@ -885,6 +889,12 @@ public class FolderFactoryImpl extends FolderFactory {
 
     for (final Map<String, Object> row : subFolderSnapshot) {
       final String oldFolderPath = row.get("parent_path") + (String) row.get("asset_name") + "/";
+      // Guard against corrupt snapshot data: every sub-folder path must start with the root.
+      if (!oldFolderPath.startsWith(startOldPath)) {
+        Logger.warn(FolderFactoryImpl.class, "Sub-folder path '" + oldFolderPath
+            + "' does not start with expected prefix '" + startOldPath + "'; skipping.");
+        continue;
+      }
       // Compute new path by replacing the startOldPath prefix with startNewPath
       final String newFolderPath = startNewPath + oldFolderPath.substring(startOldPath.length());
       levels.add(new String[]{oldFolderPath, newFolderPath});
