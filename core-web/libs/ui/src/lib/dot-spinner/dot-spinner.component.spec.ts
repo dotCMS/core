@@ -27,8 +27,8 @@ describe('DotSpinnerComponent', () => {
         component.size = '20px';
         fixture.detectChanges();
         const innerElement = fixture.debugElement.query(By.css('div'));
-        expect(innerElement.styles.cssText).toEqual(
-            'border-width: 2px; width: 20px; height: 20px;'
-        );
+        expect(innerElement.styles['border-width']).toEqual('2px');
+        expect(innerElement.styles['width']).toEqual('20px');
+        expect(innerElement.styles['height']).toEqual('20px');
     });
 });
