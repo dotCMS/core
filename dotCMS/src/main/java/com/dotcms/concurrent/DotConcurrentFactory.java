@@ -1062,8 +1062,14 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         @Override
         public void schedule(Runnable task, long delay, TimeUnit unit) {
-            throw new UnsupportedOperationException(
-                    "Submit Delay not supported on concurrent submitter, name: " + this.threadPoolExecutor.toString());
+            try {
+                this.delayedQueue.put(new DelayedDelegate(()-> {
+
+                    task.run();
+                }, delay, unit));
+            } catch (InterruptedException e) {
+                throw new DotConcurrentException(e.getMessage(), e);
+            }
         }
 
 
