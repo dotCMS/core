@@ -2,9 +2,9 @@ name: "dotAI"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/chatgpt_logo.svg"
 allowExtraParameters: true
 description: |
-  Credentials and options for using OpenAI/ChatGPT with dotCMS. There are a number of config 
-  properties that can be set in the extra parameter fields. Please see the "config" tab of the [dotAI tool](#/c/dotai) to see what can be configured. We recommend you have a single config for all your sites, 
-  by placing all config on the SYSTEM_HOST or provide a configuration PER site. 
+  Credentials and options for using OpenAI/ChatGPT with dotCMS. There are a number of config
+  properties that can be set in the extra parameter fields. Please see the "config" tab of the [dotAI tool](#/c/dotai) to see what can be configured. We recommend you have a single config for all your sites,
+  by placing all config on the SYSTEM_HOST or provide a configuration PER site.
 
 params:
   providerConfig:
@@ -21,20 +21,6 @@ params:
         "image": { "provider": "openai", "apiKey": "sk-...", "model": "dall-e-3", "size": "1024x1024" }
       }
     required: false
-  apiKey:
-    value: ""
-    hidden: true
-    type: "STRING"
-    label: "API Key"
-    hint: "Your ChatGPT API key (legacy — use providerConfig instead)"
-    required: false
-  textModelNames:
-    value: "gpt-4o"
-    hidden: true
-    type: "STRING"
-    label: "Allowed Model Names"
-    hint: "Comma delimited list of models (legacy — use providerConfig instead)"
-    required: false
   rolePrompt:
     value: "You are dotCMSbot, and AI assistant to help content creators generate and rewrite content in their content management system."
     hidden: false
@@ -48,41 +34,6 @@ params:
     type: "STRING"
     label: "Text Prompt"
     hint: "A prompt describing writing style."
-    required: false
-  textModelTokensPerMinute:
-    value: "180000"
-    hidden: true
-    type: "STRING"
-    label: "Tokens per Minute"
-    hint: "Legacy rate-limiting field — use providerConfig instead."
-    required: false
-  textModelApiPerMinute:
-    value: "3500"
-    hidden: true
-    type: "STRING"
-    label: "API per Minute"
-    hint: "Legacy rate-limiting field — use providerConfig instead."
-    required: false
-  textModelMaxTokens:
-    value: "16384"
-    hidden: true
-    type: "STRING"
-    label: "Max Tokens"
-    hint: "Legacy field — use providerConfig instead."
-    required: false
-  textModelCompletion:
-    value: "true"
-    hidden: true
-    type: "STRING"
-    label: "Completion model enabled"
-    hint: "Legacy field — use providerConfig instead."
-    required: false
-  imageModelNames:
-    value: "dall-e-3"
-    hidden: true
-    type: "STRING"
-    label: "Image Model Names"
-    hint: "Legacy field — use providerConfig instead."
     required: false
   imagePrompt:
     value: "Use 16:9 aspect ratio."
@@ -117,69 +68,6 @@ params:
         value: "1920x1080"
       - label: "256x256 (Small Square 1:1)"
         value: "256x256"
-  imageModelTokensPerMinute:
-    value: "0"
-    hidden: true
-    type: "STRING"
-    label: "Image Tokens per Minute"
-    hint: "Legacy rate-limiting field — use providerConfig instead."
-    required: false
-  imageModelApiPerMinute:
-    value: "50"
-    hidden: true
-    type: "STRING"
-    label: "Image API per Minute"
-    hint: "Legacy rate-limiting field — use providerConfig instead."
-    required: false
-  imageModelMaxTokens:
-    value: "0"
-    hidden: true
-    type: "STRING"
-    label: "Image Max Tokens"
-    hint: "Legacy field — use providerConfig instead."
-    required: false
-  imageModelCompletion:
-    value: "false"
-    hidden: true
-    type: "STRING"
-    label: "Image Completion model enabled"
-    hint: "Legacy field — use providerConfig instead."
-    required: false
-  embeddingsModelNames:
-    value: "text-embedding-ada-002"
-    hidden: true
-    type: "STRING"
-    label: "Embeddings Model Names"
-    hint: "Legacy field — use providerConfig instead."
-    required: false
-  embeddingsModelTokensPerMinute:
-    value: "1000000"
-    hidden: true
-    type: "STRING"
-    label: "Embeddings Tokens per Minute"
-    hint: "Legacy rate-limiting field — use providerConfig instead."
-    required: false
-  embeddingsModelApiPerMinute:
-    value: "3000"
-    hidden: true
-    type: "STRING"
-    label: "Embeddings API per Minute"
-    hint: "Legacy rate-limiting field — use providerConfig instead."
-    required: false
-  embeddingsModelMaxTokens:
-    value: "8191"
-    hidden: true
-    type: "STRING"
-    label: "Embeddings Max Tokens"
-    hint: "Legacy field — use providerConfig instead."
-    required: false
-  embeddingsModelCompletion:
-    value: "false"
-    hidden: true
-    type: "STRING"
-    label: "Embeddings Completion model enabled"
-    hint: "Legacy field — use providerConfig instead."
-    required: false
   listenerIndexer:
     value: ""
     hidden: false
@@ -193,7 +81,7 @@ params:
           "blogsOnly": "blog.blogcontent"
       }
       ```
-      means that blog, news and webPageContent will be indexed in the `default` index and the blog field `blog.blogcontent` will be 
-      indexed into the `blogsOnly` index. The list of content types is a comma separated list content types and can optionally 
+      means that blog, news and webPageContent will be indexed in the `default` index and the blog field `blog.blogcontent` will be
+      indexed into the `blogsOnly` index. The list of content types is a comma separated list content types and can optionally
       include the field that should be indexed when a contentlet is published.  All unpublished content will be removed from the index.
     required: false
