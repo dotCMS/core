@@ -1,5 +1,6 @@
 package com.dotcms.content.index.opensearch;
 
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -37,25 +38,6 @@ import java.util.List;
 class ConfigurableOpenSearchProvider {
 
     private static final String OS_ENDPOINTS = "OS_ENDPOINTS";
-    private static final String OS_HOSTNAME = "OS_HOSTNAME";
-    private static final String OS_PROTOCOL = "OS_PROTOCOL";
-    private static final String OS_PORT = "OS_PORT";
-
-    private static final String OS_AUTH_TYPE = "OS_AUTH_TYPE";
-    private static final String OS_AUTH_BASIC_USER = "OS_AUTH_BASIC_USER";
-    private static final String OS_AUTH_BASIC_PASSWORD = "OS_AUTH_BASIC_PASSWORD";
-    private static final String OS_AUTH_JWT_TOKEN = "OS_AUTH_JWT_TOKEN";
-
-    private static final String OS_TLS_ENABLED = "OS_TLS_ENABLED";
-    private static final String OS_TLS_TRUST_SELF_SIGNED = "OS_TLS_TRUST_SELF_SIGNED";
-    private static final String OS_TLS_CLIENT_CERT = "OS_TLS_CLIENT_CERT";
-    private static final String OS_TLS_CLIENT_KEY = "OS_TLS_CLIENT_KEY";
-    private static final String OS_TLS_CA_CERT = "OS_TLS_CA_CERT";
-
-    private static final String OS_CONNECTION_TIMEOUT = "OS_CONNECTION_TIMEOUT";
-    private static final String OS_SOCKET_TIMEOUT = "OS_SOCKET_TIMEOUT";
-    private static final String OS_MAX_CONNECTIONS = "OS_MAX_CONNECTIONS";
-    private static final String OS_MAX_CONNECTIONS_PER_ROUTE = "OS_MAX_CONNECTIONS_PER_ROUTE";
 
     private static final String BASIC_AUTH_TYPE = "BASIC";
     private static final String JWT_AUTH_TYPE = "JWT";
@@ -66,7 +48,7 @@ class ConfigurableOpenSearchProvider {
 
     //TODO: Find a better place for this property to live!!!
     public static final String INDEX_OPERATIONS_TIMEOUT = Lazy.of(
-            () -> Config.getStringProperty("OPENSEARCH_INDEX_OPERATIONS_TIMEOUT", "15s")).get();
+            () -> IndexConfigHelper.getString(OSIndexProperty.INDEX_OPERATIONS_TIMEOUT, "15s")).get();
 
     private OpenSearchClient client;
     private OpenSearchTransport transport;
@@ -124,44 +106,44 @@ class ConfigurableOpenSearchProvider {
         builder.endpoints(Arrays.asList(endpoints));
 
         // Load authentication settings
-        String authType = Config.getStringProperty(OS_AUTH_TYPE, BASIC_AUTH_TYPE);
+        String authType = IndexConfigHelper.getString(OSIndexProperty.AUTH_TYPE, BASIC_AUTH_TYPE);
 
         if (BASIC_AUTH_TYPE.equals(authType)) {
-            String username = Config.getStringProperty(OS_AUTH_BASIC_USER, null);
-            String password = Config.getStringProperty(OS_AUTH_BASIC_PASSWORD, null);
+            String username = IndexConfigHelper.getString(OSIndexProperty.AUTH_BASIC_USER, null);
+            String password = IndexConfigHelper.getString(OSIndexProperty.AUTH_BASIC_PASSWORD, null);
             if (UtilMethods.isSet(username) && UtilMethods.isSet(password)) {
                 builder.username(username).password(password);
             }
         } else if (JWT_AUTH_TYPE.equals(authType)) {
-            String token = Config.getStringProperty(OS_AUTH_JWT_TOKEN, null);
+            String token = IndexConfigHelper.getString(OSIndexProperty.AUTH_JWT_TOKEN, null);
             if (UtilMethods.isSet(token)) {
                 builder.jwtToken(token);
             }
         } else if (CERT_AUTH_TYPE.equals(authType)) {
-            String clientCert = Config.getStringProperty(OS_TLS_CLIENT_CERT, null);
-            String clientKey = Config.getStringProperty(OS_TLS_CLIENT_KEY, null);
+            String clientCert = IndexConfigHelper.getString(OSIndexProperty.TLS_CLIENT_CERT, null);
+            String clientKey = IndexConfigHelper.getString(OSIndexProperty.TLS_CLIENT_KEY, null);
             if (UtilMethods.isSet(clientCert) && UtilMethods.isSet(clientKey)) {
                 builder.clientCertPath(clientCert).clientKeyPath(clientKey);
             }
         }
 
         // Load TLS settings
-        boolean tlsEnabled = Config.getBooleanProperty(OS_TLS_ENABLED, false);
+        boolean tlsEnabled = IndexConfigHelper.getBoolean(OSIndexProperty.TLS_ENABLED, false);
         builder.tlsEnabled(tlsEnabled);
 
         if (tlsEnabled) {
-            builder.trustSelfSigned(Config.getBooleanProperty(OS_TLS_TRUST_SELF_SIGNED, false));
-            String caCert = Config.getStringProperty(OS_TLS_CA_CERT, null);
+            builder.trustSelfSigned(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_TRUST_SELF_SIGNED, false));
+            String caCert = IndexConfigHelper.getString(OSIndexProperty.TLS_CA_CERT, null);
             if (UtilMethods.isSet(caCert)) {
                 builder.caCertPath(caCert);
             }
         }
 
         // Load connection settings with defaults
-        int connectionTimeout = Config.getIntProperty(OS_CONNECTION_TIMEOUT, 10000);
-        int socketTimeout = Config.getIntProperty(OS_SOCKET_TIMEOUT, 30000);
-        int maxConnections = Config.getIntProperty(OS_MAX_CONNECTIONS, 100);
-        int maxConnectionsPerRoute = Config.getIntProperty(OS_MAX_CONNECTIONS_PER_ROUTE, 50);
+        int connectionTimeout = IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_TIMEOUT, 10000);
+        int socketTimeout = IndexConfigHelper.getInt(OSIndexProperty.SOCKET_TIMEOUT, 30000);
+        int maxConnections = IndexConfigHelper.getInt(OSIndexProperty.MAX_CONNECTIONS, 100);
+        int maxConnectionsPerRoute = IndexConfigHelper.getInt(OSIndexProperty.MAX_CONNECTIONS_PER_ROUTE, 50);
 
         builder.connectionTimeout(java.time.Duration.ofMillis(connectionTimeout))
                .socketTimeout(java.time.Duration.ofMillis(socketTimeout))
@@ -175,9 +157,9 @@ class ConfigurableOpenSearchProvider {
      * Get default endpoints if not configured
      */
     private String[] getDefaultEndpoints() {
-        String hostname = Config.getStringProperty(OS_HOSTNAME, "localhost");
-        String protocol = Config.getStringProperty(OS_PROTOCOL, HTTPS_PROTOCOL);
-        int port = Config.getIntProperty(OS_PORT, 9200);
+        String hostname = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
+        String protocol = IndexConfigHelper.getString(OSIndexProperty.PROTOCOL, HTTPS_PROTOCOL);
+        int port = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);
 
         return new String[] { protocol + "://" + hostname + ":" + port };
     }

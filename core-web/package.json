@@ -220,6 +220,7 @@
         "babel-jest": "30.2.0",
         "babel-loader": "10.0.0",
         "codelyzer": "6.0.2",
+        "daisyui": "5.5.19",
         "dotenv": "16.5.0",
         "esbuild": "0.19.2",
         "eslint": "8.57.0",
@@ -254,6 +255,7 @@
         "react-test-renderer": "18.2.0",
         "rollup": "4.14.0",
         "rollup-plugin-postcss": "4.0.2",
+        "rollup-plugin-preserve-directives": "0.4.0",
         "sass": "1.56.2",
         "storybook": "10.2.9",
         "ts-jest": "29.4.6",
@@ -271,6 +273,7 @@
     },
     "resolutions": {
         "@babel/helper-define-polyfill-provider": "0.6.6",
+        "@vue/shared": "3.5.29",
         "http-cache-semantics": "4.1.1",
         "pdfjs-dist": "4.2.67",
         "stylus": "github:stylus/stylus#0.59.0"

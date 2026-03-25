@@ -4,6 +4,7 @@ import { Location } from '@angular/common';
 import { effect, inject } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 
 import { withConversions } from './features/with-conversions.feature';
@@ -11,10 +12,12 @@ import { withEngagement } from './features/with-engagement.feature';
 import { withFilters } from './features/with-filters.feature';
 import { withPageview } from './features/with-pageview.feature';
 
-import { DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
+import { DASHBOARD_TAB_LIST, DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
 import { TimeRangeInput } from '../types';
 import { isValidTab, paramsToTimeRange } from '../utils/filters.utils';
 import { silentNavigate } from '../utils/router.utils';
+
+const TAB_CONFIG_MAP = new Map(DASHBOARD_TAB_LIST.map((tab) => [tab.id, tab]));
 
 /**
  * Analytics Dashboard Store
@@ -111,10 +114,24 @@ export const DotAnalyticsDashboardStore = signalStore(
         onInit(store) {
             const route = inject(ActivatedRoute);
             const globalStore = inject(GlobalStore);
+            const messageService = inject(DotMessageService);
             const params = route.snapshot.queryParams;
 
             // Set initial state from query params
             patchState(store, setTabFromQueryParams(params), setTimeRangeFromQueryParams(params));
+
+            // Update breadcrumb when currentTab changes
+            effect(() => {
+                const currentTab = store.currentTab();
+                const tabConfig = TAB_CONFIG_MAP.get(currentTab);
+
+                if (tabConfig) {
+                    globalStore.addNewBreadcrumb({
+                        id: `analytics-${currentTab}`,
+                        label: messageService.get(tabConfig.label)
+                    });
+                }
+            });
 
             // Auto-load data when currentTab, timeRange, or currentSiteId changes
             effect(() => {

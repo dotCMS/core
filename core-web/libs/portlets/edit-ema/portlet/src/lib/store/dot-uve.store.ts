@@ -7,13 +7,11 @@ import { DotCMSPageAsset } from '@dotcms/types';
 import { withSave } from './features/editor/save/withSave';
 import { withEditor } from './features/editor/withEditor';
 import { withLock } from './features/editor/withLock';
-import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withTrack } from './features/track/withTrack';
 import { withPageContext } from './features/withPageContext';
 import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
 
-import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
 
@@ -65,7 +63,6 @@ export const UVEStore = signalStore(
     withLayout(),
     withEditor(),
     withTrack(),
-    withFlags(UVE_FEATURE_FLAGS),
     withLock(),
     withComputed(
         ({

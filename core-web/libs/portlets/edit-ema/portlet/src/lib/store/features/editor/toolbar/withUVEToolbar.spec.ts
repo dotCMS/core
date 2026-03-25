@@ -1,4 +1,4 @@
-import { expect, describe } from '@jest/globals';
+import { describe, expect } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -21,6 +21,7 @@ import {
     URL_CONTENT_MAP_MOCK
 } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
+import { WithFlagsState } from '../../flags/models';
 
 const pageParams = {
     url: 'test-url',
@@ -48,9 +49,12 @@ const initialState: UVEState = {
     }
 };
 
+const initialFlagsState: WithFlagsState = { flags: {} };
+
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
+    withState<WithFlagsState>(initialFlagsState),
     withUVEToolbar()
 );
 

@@ -68,6 +68,7 @@ import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherI
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getURLMapPageWithImage;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingContentWithURlMap;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingFileAsset;
+import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getLivePageWhenURLMapContentIsNotPopulated;
 import static com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.getWorkingPage;
 import static com.dotcms.util.CollectionsUtils.list;
 import static junit.framework.TestCase.*;
@@ -123,6 +124,8 @@ public class StaticPublisherIntegrationTest {
      *  Should generate into the bundle two files when the Operation is equals to UN_PUBLISH: just the page's files
      * - Add into the bundle a LIVE Page with version in two different languages but Add into the bundle just one of the lang: should include just two files for the page's version in the lang included
      * - Add into the bundle a LIVE FileAsset with version in two different languages but Add into the bundle just one of the lang: should include just one file for File's version in the lang included
+     * - Add into the bundle a LIVE Page whose container renders a marker if {@code $URLMapContent} is set:
+     *   the generated HTML must be {@code <div></div>} (empty), confirming {@code $URLMapContent} is null for regular pages
      *
      * @return
      * @throws Exception
@@ -146,7 +149,8 @@ public class StaticPublisherIntegrationTest {
                 getLiveContentWithURlMap(),
                 getPageWithImage(),
                 getURLMapPageWithImage(),
-                getPageWithCSS()
+                getPageWithCSS(),
+                getLivePageWhenURLMapContentIsNotPopulated()
         };
 
        final TestCase[] testCasesWitLangFilter = {

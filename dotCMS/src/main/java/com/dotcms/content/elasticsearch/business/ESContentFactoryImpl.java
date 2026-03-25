@@ -1,6 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
+import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
@@ -14,15 +16,14 @@ import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTok
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
-import com.dotcms.content.model.annotation.IndexMetadata;
-import com.dotcms.content.model.annotation.IndexMetadata.IndexAccess;
-import com.dotcms.content.model.annotation.IndexMetadata.IndexEngine;
+import com.dotcms.content.model.annotation.IndexRouter;
+import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -126,10 +127,10 @@ import org.apache.commons.lang.StringUtils;
  * @since Mar 22, 2012
  *
  */
+
 @IndexLibraryIndependent
-@IndexMetadata(
-        access = IndexAccess.READ_ONLY,
-        currentlySupports = { IndexEngine.ELASTICSEARCH }
+@IndexRouter(
+        access = IndexAccess.READ_ONLY
 )
 public class ESContentFactoryImpl implements ContentletFactory {
 
@@ -229,8 +230,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
-	private final ESQueryCache queryCache;
     private final ContentFactoryIndexOperations indexOperationsES;
+    private final ContentFactoryIndexOperations indexOperationsOS;
+
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
 
@@ -257,9 +259,17 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public ESContentFactoryImpl() {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
-        this.queryCache      = CacheLocator.getESQueryCache();
-        this.indexOperationsES = new ContentFactoryIndexOperationsES(queryCache);
+        this.indexOperationsOS = new ContentFactoryIndexOperationsOS();
+        this.indexOperationsES = new ContentFactoryIndexOperationsES(CacheLocator.getESQueryCache());
 	}
+
+    /**
+     * Migration-phase-aware Operations delegate
+     * @return {@link ContentFactoryIndexOperations}
+     */
+    ContentFactoryIndexOperations indexOperationsDelegate(){
+        return isMigrationComplete() || isReadEnabled() ? indexOperationsOS : indexOperationsES ;
+    }
 
 	@Override
 	public Object loadField(String inode, String fieldContentlet) throws DotDataException {
@@ -292,9 +302,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
                                 field.variable(), field.variable());
             }
         }
-        //if we were able to set the query then give it a try executing it.
+        //if we were able to set the query, then give it a try executing it.
         if (UtilMethods.isSet(loadJsonFieldValueSQL)) {
-            //if the attribute is missing for some reason ms-sql might not like it. we better try-catch this.
+            //if the attribute is missing for some reason, ms-sql might not like it. we better try-catch this.
             final String finalQuery = loadJsonFieldValueSQL;
             return Try.of(() -> new DotConnect().setSQL(finalQuery).addParam(inode).getString("value"))
                     .onFailure(throwable -> {
@@ -1312,7 +1322,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public List<Contentlet> findContentletsByHost(final String hostId, final int limit,
             final int offset) {
 		try {
-            final List<String> inodes = indexOperationsES.search("+conhost:" + hostId, limit, offset);
+            final List<String> inodes = indexOperationsDelegate().search("+conhost:" + hostId, limit, offset);
             return findContentlets(inodes);
 		} catch (Exception e) {
 			throw new RuntimeException(e.getMessage(), e);
@@ -1567,7 +1577,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-        return indexOperationsES.indexCount(qq);
+        return indexOperationsDelegate().indexCount(qq);
     }
 
     @Override
@@ -1576,7 +1586,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        return indexOperationsES.searchHits(
+        return indexOperationsDelegate().searchHits(
                 formattedQuery, limit, offset, sortBy);
 
     }
@@ -1594,7 +1604,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @return PaginatedArrayList containing all search results
      */
     PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
-       return indexOperationsES.indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get());
+       return indexOperationsDelegate().indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get());
     }
 
     /**
@@ -1629,7 +1639,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
                                                   final boolean respectFrontendRoles, final int batchSize,
                                                   final String sortBy) {
-       return indexOperationsES.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+       return indexOperationsDelegate().createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
     }
 
     /**

@@ -48,6 +48,7 @@ import {
     sanitizeURL
 } from '../../../utils';
 import { UVEState } from '../../models';
+import { WithFlagsState } from '../flags/models';
 import { PageContextComputed } from '../withPageContext';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
@@ -81,7 +82,7 @@ const initialState: EditorState = {
 export function withEditor() {
     return signalStoreFeature(
         {
-            state: type<UVEState>(),
+            state: type<UVEState & WithFlagsState>(),
             props: type<PageContextComputed>()
         },
         withState<EditorState>(initialState),
@@ -147,7 +148,7 @@ export function withEditor() {
                             store.isEditState() && untracked(() => store.isEnterprise())
                     };
                 }),
-                $pageRender: computed<string>(() => {
+                $pageRender: computed<string | undefined>(() => {
                     return store.pageAPIResponse()?.page?.rendered;
                 }),
                 $enableInlineEdit: computed<boolean>(() => {

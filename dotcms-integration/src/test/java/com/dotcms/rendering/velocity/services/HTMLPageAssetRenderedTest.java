@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotF
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -2374,7 +2375,10 @@ public class HTMLPageAssetRenderedTest {
                 "<script>console.log(\"AAAA\");</SCRIPT>\n" +
                 "<script>console.log(\"BBB\");</script>\n";
 
-        final Language language = new LanguageDataGen().nextPersisted();
+        // JSON-escaped form of SDK_EDITOR_SCRIPT_SOURCE: quotes become \" and </script> becomes \</script\>
+        final String sdkEditorTestScript = HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE
+                .replace("\"", "\\\"")
+                .replace("</script>", "\\</script\\>");
         final Host host = new SiteDataGen().nextPersisted();
 
         final ContentType widgetContentType = new ContentTypeDataGen()
@@ -2429,10 +2433,11 @@ public class HTMLPageAssetRenderedTest {
                                 .setPageMode(PageMode.NAVIGATE_EDIT_MODE)
                                 .build(),
                         mockRequest, mockResponse);
-        final String expected = "\"rendered\" : \"<div><html>\\nThis is a test\\n</html>\\n<script>console.log(\\\"AAAA\\\");\\</script\\>\\n<script>console.log(\\\"BBB\\\");\\</script\\>\\n</div>\"";
-        assertTrue(html.contains(expected));
+        // Assert page.rendered has correctly escaped script tags from the widget
+        final String expectedWidgetRendered = "\"rendered\" : \"<div><html>\\nThis is a test\\n</html>\\n<script>console.log(\\\"AAAA\\\");\\</script\\>\\n<script>console.log(\\\"BBB\\\");\\</script\\>\\n</div>";
+        assertTrue(html.contains(expectedWidgetRendered));
 
-
-
+        // Assert UVE script is present in page.rendered.
+        assertTrue("UVE script should be present in page.rendered", html.contains(sdkEditorTestScript));
     }
 }

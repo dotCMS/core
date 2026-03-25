@@ -140,22 +140,26 @@ public class BrowserAPIImpl implements BrowserAPI {
     ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int maxRows) {
         final SelectQuery sqlQuery = this.selectQuery(browserQuery);
         final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
-        final DotConnect dcSelect = getDotConnect(sqlQuery);
 
         try {
             if (useElasticSearchForTextFiltering) {
                 // Permission filtering and page slicing happen inside — return directly.
-                return doElasticSearchTextFiltering(browserQuery, maxRows, dcSelect);
+                return doElasticSearchTextFiltering(browserQuery, maxRows, sqlQuery);
             }
 
             // When pagination is not requested (public overload passes -1), fetch everything at once.
             if (maxRows <= 0) {
+                final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+                sqlQuery.params.forEach(dcSelect::addParam);
                 final List<String> allInodesOrdered = collectInodesFromDB(dcSelect);
                 final List<Contentlet> filtered = getContentFilteredByRole(browserQuery, allInodesOrdered);
                 return new ContentUnderParent(filtered, false, 0);
             }
 
-            return getContentByChunks(browserQuery, maxRows, dcSelect);
+            final int chunkSize = Math.max(maxRows * BROWSER_DB_CHUNK_FACTOR.get(), BROWSER_DB_CHUNK_MIN_SIZE.get());
+
+            Logger.debug(this, "::::: Using DB Chunked to retrieve content filtered by role ::::");
+            return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, false);
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
             final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
@@ -175,20 +179,27 @@ public class BrowserAPIImpl implements BrowserAPI {
      * returned by the previous page. On the first page it is 0.
      * </p>
      *
-     * @param browserQuery query containing search criteria, user context, and the current cursor
-     * @param maxRows      maximum number of permission-visible items to return
-     * @param dcSelect     pre-built {@link DotConnect} with the select query and its bound params
+     * @param browserQuery  query containing search criteria, user context, and the current cursor
+     * @param maxRows       maximum number of permission-visible items to return
+     * @param sqlQuery      the pre-built SQL select query containing: string query and parameters
+     * @param chunkSize     number of DB rows to fetch per iteration
+     * @param applyESFilter when {@code true}, each chunk is text-filtered through Elasticsearch
+     *                      before permission filtering; when {@code false}, only permission
+     *                      filtering is applied
      * @return permission-filtered page together with {@code hasMore} and the next cursor value
      * @throws DotDataException     if a DB or permission lookup fails at the data layer
      * @throws DotSecurityException if a security boundary is violated during permission filtering
      */
     private ContentUnderParent getContentByChunks(final BrowserQuery browserQuery,
-            final int maxRows, final DotConnect dcSelect) throws DotDataException, DotSecurityException {
+            final int maxRows, final SelectQuery sqlQuery, final int chunkSize,
+            final boolean applyESFilter) throws DotDataException, DotSecurityException {
+
+        final int scanLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
-        final int chunkSize = Math.max(maxRows * BROWSER_DB_CHUNK_FACTOR.get(), BROWSER_DB_CHUNK_MIN_SIZE.get());
-        int chunkCount = 0;
+        List<String> candidateChunkInodes;
         int dbOffset = browserQuery.contentCursor;
+        int chunkCount = 0;
         int nextContentCursor;
         boolean hasMore = false;
 
@@ -200,29 +211,39 @@ public class BrowserAPIImpl implements BrowserAPI {
             chunkCount++;
             Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
 
-            dcSelect.setStartRow(dbOffset).setMaxRows(chunkSize);
-            final List<String> chunkInodesOrdered = collectInodesFromDB(dcSelect);
+            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, chunkSize, dbOffset);
+            candidateChunkInodes = collectInodesFromDB(dcSelectChunk);
 
-            if (chunkInodesOrdered.isEmpty()) {
+            if (candidateChunkInodes.isEmpty()) {
                 Logger.debug(this, String.format("DB exhausted at offset %d after %d chunks.",
                         dbOffset, chunkCount));
                 nextContentCursor = dbOffset;
                 break;
             }
 
-            final List<Contentlet> chunkFiltered = getContentFilteredByRole(browserQuery, chunkInodesOrdered);
-
+            // if applyESFilter is true ES text-filter this chunk, then permission-filter, otherwise just permission-filter the matches
+            List<Contentlet> chunkFiltered = getChunkFiltered(browserQuery, applyESFilter, candidateChunkInodes);
             accumulatedContent.addAll(chunkFiltered);
-            dbOffset += chunkInodesOrdered.size();
 
-            if (accumulatedContent.size() >= maxRows) {
-                hasMore = (chunkInodesOrdered.size() == chunkSize);
-                nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
-                        chunkInodesOrdered, dbOffset);
+            dbOffset += candidateChunkInodes.size();
+
+            if (dbOffset >= scanLimit) {
+                Logger.warn(BrowserAPIImpl.class, String.format(
+                        "Scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
+                        dbOffset, chunkCount, accumulatedContent.size()));
+                nextContentCursor = dbOffset;
+                hasMore = true;
                 break;
             }
 
-            if (chunkInodesOrdered.size() < chunkSize) {
+            if (accumulatedContent.size() >= maxRows) {
+                hasMore = (candidateChunkInodes.size() == chunkSize);
+                nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
+                        candidateChunkInodes, dbOffset);
+                break;
+            }
+
+            if (candidateChunkInodes.size() < chunkSize) {
                 Logger.debug(this, String.format(
                         "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
                         accumulatedContent.size()));
@@ -249,16 +270,52 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Creates a {@link DotConnect} preloaded with the select query and its bound parameters from a
-     * {@link SelectQuery} may further configure pagination
-     * ({@code setStartRow}/{@code setMaxRows}) before executing.
+     * Filters a single DB chunk down to the contentlets the user is allowed to read.
+     * <p>
+     * When {@code applyESFilter} is {@code true}, the chunk is first narrowed by an Elasticsearch
+     * text-search query (matching {@link BrowserQuery#filter} / {@link BrowserQuery#fileName})
+     * before permission filtering is applied. When {@code false}, only permission filtering runs.
+     * </p>
      *
-     * @param sqlQuery the pre-built SQL select query containing: string query and parameters
-     * @return a {@link DotConnect} ready to execute
+     * @param browserQuery         query providing the text filter, user, and role context
+     * @param applyESFilter        {@code true} to run ES text filtering before permission check
+     * @param candidateChunkInodes DB-ordered inodes fetched in the current chunk
+     * @return permission-visible contentlets from this chunk; empty list when none pass
+     * @throws DotDataException     if a DB or permission lookup fails
+     * @throws DotSecurityException if a security boundary is violated during filtering
      */
-    private static DotConnect getDotConnect(final SelectQuery sqlQuery) {
-        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+    private List<Contentlet> getChunkFiltered(final BrowserQuery browserQuery,
+            final boolean applyESFilter, final List<String> candidateChunkInodes) throws DotDataException, DotSecurityException {
+
+        if (applyESFilter) {
+            final Set<String> esFiltered = processESDirectly(
+                    browserQuery, new LinkedHashSet<>(candidateChunkInodes));
+            if (!esFiltered.isEmpty()) {
+                return getContentFilteredByRole(browserQuery, new LinkedList<>(esFiltered));
+            }
+        } else {
+            return getContentFilteredByRole(browserQuery, candidateChunkInodes);
+        }
+        return List.of();
+    }
+
+    /**
+     * Creates a {@link DotConnect} with SQL-level pagination appended to the select query. Uses
+     * {@code LIMIT/OFFSET} so the database engine only transfers the requested slice of rows
+     * instead of the full result set.
+     *
+     * @param sqlQuery the pre-built SQL select query (must already contain an ORDER BY clause)
+     * @param limit    maximum number of rows to return
+     * @param offset   number of rows to skip from the beginning of the result set
+     * @return a {@link DotConnect} ready to execute with pagination built into the SQL
+     */
+    private static DotConnect buildPaginatedDotConnect(final SelectQuery sqlQuery, final int limit, final int offset) {
+        final String paginatedSQL = sqlQuery.selectQuery + " LIMIT ? OFFSET ?";
+        final DotConnect dcSelect = new DotConnect().setSQL(paginatedSQL);
         sqlQuery.params.forEach(dcSelect::addParam);
+        dcSelect.addParam(limit);
+        dcSelect.addParam(offset);
+
         return dcSelect;
     }
 
@@ -362,29 +419,26 @@ public class BrowserAPIImpl implements BrowserAPI {
      *
      * @param browserQuery the query object containing the search criteria
      * @param maxRows      the maximum number of rows to be retrieved
-     * @param dcSelect a fully configured {@link DotConnect} query with params ready to execute
+     * @param sqlQuery     the SQL query and params to build paginated {@link DotConnect} instances from
      * @return permission-filtered, paginated {@link ContentUnderParent} with {@code hasMore} and
      *         the next cursor value set by the chosen heuristic
      * @throws DotDataException if an error occurs during query execution
      */
     private ContentUnderParent doElasticSearchTextFiltering(final BrowserQuery browserQuery,
-            final int maxRows, final DotConnect dcSelect) throws DotDataException {
+            final int maxRows, final SelectQuery sqlQuery) throws DotDataException {
 
         // Get the heuristic strategy from a lazy configuration
         final SearchHeuristicType heuristicType = HEURISTIC_TYPE.get();
 
         // Track execution time for heuristic performance analysis using modern time APIs
         final long startTimeNanos = System.nanoTime();
-        // Starting row index for the search result set
-        final int startRow = browserQuery.contentCursor;
-
         try {
             switch (heuristicType) {
                 case HYBRID_SINGLE_CHUNKED_QUERY_ES:
-                    return doHybridSingleChunkedQueryES(browserQuery, startRow, maxRows, dcSelect);
+                    return doHybridSingleChunkedQueryES(browserQuery, maxRows, sqlQuery);
                 case PURE_ES:
                 default:
-                    return doPureESQuery(browserQuery, startRow, maxRows);
+                    return doPureESQuery(browserQuery, maxRows);
             }
         } catch (DotSecurityException e) {
             throw new DotRuntimeException(e.getMessage(), e);
@@ -415,126 +469,34 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Single Query Chunked: Fetches all inodes in a single database query without pagination,
-     * then processes them in optimally-sized ES chunks based on total count percentage.
-     */
-    ContentUnderParent doHybridSingleChunkedQueryES(final BrowserQuery browserQuery, final int startRow,
-            final int maxRows, final DotConnect dcSelect) throws DotDataException, DotSecurityException {
-
-        Logger.debug(this, "::::: Using Single Query Chunked for text filtering ::::");
-
-        // Execute single DB query to get ALL candidate inodes without pagination
-        final List<String> allCandidateInodes = collectInodesFromDB(dcSelect);
-
-        if (allCandidateInodes.isEmpty()) {
-            Logger.debug(this, "Single Query Chunked: No candidate inodes found");
-            return new ContentUnderParent(List.of(), false, 0);
-        }
-
-        final int totalCandidates = allCandidateInodes.size();
-
-        // Calculate the optimal ES chunk size based on total count
-        final int esChunkSize = calculateESChunkSizeFromTotalCount(totalCandidates);
-
-        // Process chunks in parallel for better throughput
-        final LinkedList<String> list = new LinkedList<>(
-                parallelChunksInES(browserQuery, allCandidateInodes, totalCandidates, esChunkSize));
-
-        // Permission filtering before slicing: guarantees the caller always receives a full page
-        // when enough visible items exist, regardless of per-item permission variance.
-        final List<Contentlet> allFiltered = getContentFilteredByRole(browserQuery, list);
-        final int totalFiltered = allFiltered.size();
-
-        final int safeStartRow = Math.max(0, Math.min(startRow, totalFiltered));
-        final int safeEndRow   = Math.min(totalFiltered, safeStartRow + Math.max(0, maxRows));
-        final List<Contentlet> page = new ArrayList<>(allFiltered.subList(safeStartRow, safeEndRow));
-
-        // hasMore: there are items in the filtered set beyond the current page end.
-        final boolean hasMore = safeEndRow < totalFiltered;
-        return new ContentUnderParent(page, hasMore, safeEndRow);
-    }
-
-    /**
-     * Processes chunks of candidate inodes in parallel for improved performance.
-     * Each chunk is processed directly through ES without further internal partitioning.
+     * Hybrid Chunked DB + ES: delegates to {@link #getContentByChunks} with
+     * {@code applyESFilter=true}, so each DB chunk is text-filtered through Elasticsearch before
+     * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}(default 900).
      *
-     * @param browserQuery The browser query containing search criteria
-     * @param allCandidateInodes All candidate inodes to process
-     * @param totalCandidates Total number of candidates
-     * @param esChunkSize Size of each chunk for ES processing
-     * @return Set of filtered inodes that match the search criteria
+     * @param browserQuery query containing the text filter, user context, and current cursor
+     * @param maxRows      maximum number of permission-visible items to return
+     * @param sqlQuery     pre-built SQL select query with bound parameters
+     * @return permission-filtered page with {@code hasMore} and the next DB cursor
+     * @throws DotDataException     if a DB or ES lookup fails
+     * @throws DotSecurityException if a security boundary is violated during permission filtering
      */
-    private Set<String> parallelChunksInES(BrowserQuery browserQuery, List<String> allCandidateInodes,
-                                               int totalCandidates, int esChunkSize) {
-        final Set<String> collectedInodes = Collections.synchronizedSet(new LinkedHashSet<>());
-        final long startTime = System.currentTimeMillis();
+    ContentUnderParent doHybridSingleChunkedQueryES(final BrowserQuery browserQuery,
+            final int maxRows, final SelectQuery sqlQuery) throws DotDataException, DotSecurityException {
 
-        // Create chunks for parallel processing
-        final List<List<String>> chunks = Lists.partition(allCandidateInodes, esChunkSize);
+        final int chunkSize = Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
 
-        final int actualChunks = chunks.size();
-        Logger.debug(this, String.format("Processing %d chunks in parallel", actualChunks));
-
-        // Process chunks in parallel using CompletableFuture
-        final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
-        final CompletableFuture[] futures = new CompletableFuture[actualChunks];
-
-        for (int i = 0; i < actualChunks; i++) {
-            final List<String> chunk = chunks.get(i);
-            final int chunkIndex = i + 1;
-            futures[i] = CompletableFuture
-                .supplyAsync(() -> {
-                    // Process chunk directly without internal partitioning
-                    final Set<String> chunkMatches = processESDirectly(browserQuery, new LinkedHashSet<>(chunk));
-                    Logger.debug(BrowserAPIImpl.this, String.format("Processed chunk %d/%d: %d inodes, found %d matches.",
-                            chunkIndex, actualChunks, chunk.size(), chunkMatches.size()));
-                    return chunkMatches;
-                }, submitter)
-                .orTimeout(60, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    Logger.error(BrowserAPIImpl.this, String.format("Chunk %d failed: %s", chunkIndex, throwable.getMessage()), throwable);
-                    return new LinkedHashSet<>();
-                });
-        }
-
-        // Wait for all chunks to complete and collect results
-        try {
-            CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
-            allFutures.get(120, TimeUnit.SECONDS); // Global timeout
-            for (CompletableFuture<Set<String>> future : futures) {
-                try {
-                    Set<String> chunkMatches = future.get();
-                    collectedInodes.addAll(chunkMatches);
-                } catch (Exception e) {
-                    Logger.warn(this, "Failed to get result from chunk future: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
-            }
-
-            final long totalDuration = System.currentTimeMillis() - startTime;
-            Logger.debug(this, String.format(
-                "Single Query Chunked parallel processing completed: %d candidates in %d chunks → %d total matches in %d ms",
-                totalCandidates, actualChunks, collectedInodes.size(), totalDuration));
-
-        } catch (InterruptedException e) {
-            Logger.error(this, "Parallel chunk processing interrupted: " + e.getMessage(), e);
-            Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            Logger.error(this, "Parallel chunk processing execution error: " + e.getMessage(), e);
-        } catch (TimeoutException e) {
-            Logger.error(this, "Parallel chunk processing timed out: " + e.getMessage(), e);
-        }
-
-        return collectedInodes;
+        Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
+        return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, true);
     }
-
 
     /**
      * Pure ES: Uses Elasticsearch exclusively without any database queries.
      * Constructs a comprehensive ES query from browserQuery and uses the appropriate search API
      * to return contentlets directly, bypassing all database operations.
      */
-    private ContentUnderParent doPureESQuery(BrowserQuery browserQuery, int startRow, int maxRows) throws DotDataException {
+    private ContentUnderParent doPureESQuery(BrowserQuery browserQuery, int maxRows) throws DotDataException {
+        final int startRow = browserQuery.contentCursor;    // resume from where the previous page stopped
+
         Logger.debug(this, "::::: Using Pure ES for text filtering (no database queries) ::::");
 
         try {
@@ -550,7 +512,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<Contentlet> contentlets = contentletAPI.search(
                 esQuery,
                 browserQuery.maxResults > 0 ? browserQuery.maxResults : maxRows,
-                browserQuery.contentCursor >= 0 ? browserQuery.contentCursor : startRow,
+                startRow,
                 browserQuery.sortBy,
                 browserQuery.user,
                 browserQuery.respectFrontEndRoles // false for backend searches
@@ -681,59 +643,35 @@ public class BrowserAPIImpl implements BrowserAPI {
     });
 
     // ===========================================
-    // CONFIGURATION PROPERTIES FOR ES CHUNK SIZING
+    // CONFIGURATION PROPERTIES FOR PARALLEL CONTENTLET LOADING
     // ===========================================
 
-    //Configuration for ES chunk percentage calculation
-    final Lazy<Double> SINGLE_QUERY_ES_CHUNK_PERCENTAGE = Lazy.of(
+    // Percentage of total inodes used to calculate the chunk size for parallel contentlet loading.
+    final Lazy<Double> CONTENTLET_PARALLEL_CHUNK_PERCENTAGE = Lazy.of(
             () -> {
-                final String value = Config.getStringProperty("BROWSE_API_SINGLE_QUERY_ES_CHUNK_PERCENTAGE", "30.0");
+                final String value = Config.getStringProperty("BROWSER_CONTENTLET_PARALLEL_CHUNK_PERCENTAGE", "30.0");
                 try {
                     return Double.parseDouble(value);
                 } catch (NumberFormatException e) {
-                    Logger.warn(this.getClass(), "Invalid ES chunk percentage value: " + value + ", using default 30.0");
+                    Logger.warn(this.getClass(), "Invalid contentlet chunk percentage value: " + value + ", using default 30.0");
                     return 30.0;
                 }
             });
 
-    //Minimum ES chunk size to ensure reasonable performance
-    final Lazy<Integer> SINGLE_QUERY_ES_CHUNK_MIN_SIZE = Lazy.of(
-            () -> Config.getIntProperty("BROWSE_API_SINGLE_QUERY_ES_CHUNK_MIN_SIZE", 100));
-
     // Multiplier applied to (startRow + maxRows) to determine the DB chunk size for permission-aware pagination.
     // A factor of 3 means: fetch 3x the needed rows per chunk, expecting ~1/3 may be filtered by permissions.
     final Lazy<Integer> BROWSER_DB_CHUNK_FACTOR = Lazy.of(
-            () -> Config.getIntProperty("BROWSER_DB_CHUNK_FACTOR", 3));
+            () -> Config.getIntProperty("BROWSER_DB_CHUNK_FACTOR", 10));
 
     // Absolute minimum DB chunk size to avoid excessive round-trips on small page sizes.
     final Lazy<Integer> BROWSER_DB_CHUNK_MIN_SIZE = Lazy.of(
-            () -> Config.getIntProperty("BROWSER_DB_CHUNK_MIN_SIZE", 50));
+            () -> Config.getIntProperty("BROWSER_DB_CHUNK_MIN_SIZE", 200));
 
-    /**
-     * Calculates optimal ES chunk size based on percentage of total count for processing inodes.
-     * The chunk size is calculated as a percentage of the total count, with minimum and maximum limits
-     * to ensure reasonable ES performance and memory usage.
-     *
-     * @param totalCount Total number of inodes to process
-     * @return Calculated ES chunk size within configured bounds
-     */
-    private int calculateESChunkSizeFromTotalCount(int totalCount) {
-        if (totalCount <= 0) {
-            return SINGLE_QUERY_ES_CHUNK_MIN_SIZE.get();
-        }
-
-        // Calculate chunk size as percentage of total count
-        final double percentage = SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get() / 100.0;
-        int calculatedSize = (int) Math.ceil(totalCount * percentage);
-
-        // Calculate estimated number of ES chunks
-        final int estimatedChunks = (int) Math.ceil((double) totalCount / calculatedSize);
-
-        Logger.debug(this, String.format("ES chunk size calculation: total=%d, percentage=%.1f%%, calculated=%d, final=%d, estimated ES chunks=%d",
-            totalCount, SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get(), (int) Math.ceil(totalCount * percentage), calculatedSize, estimatedChunks));
-
-        return calculatedSize;
-    }
+    // Maximum total DB rows to scan per request across all chunks. Acts as a safety cap to prevent
+    // runaway queries when a restricted user has access to a small fraction of site content.
+    // Default of 50,000 covers a worst-case ~5% permission pass rate for a full page of 300 items.
+    static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
+    static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
 
     /**
      * Represents content items under a specific parent along with the total count.
@@ -983,7 +921,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int totalInodes = inodesOrdered.size();
         final long startTime = System.currentTimeMillis();
 
-        // Use the same 30% heuristic for contentlet loading chunks
+        // Chunk size driven by BROWSER_CONTENTLET_PARALLEL_CHUNK_PERCENTAGE (default 30%)
         final int chunkSize = calculateContentletChunkSize(totalInodes);
 
         Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes, chunk size: %d",
@@ -1006,12 +944,11 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Calculates optimal chunk size for contentlet loading using 30% heuristic.
-     * Similar to ES chunk calculation but optimized for database operations.
+     * Calculates optimal chunk size for parallel contentlet loading. Uses
+     * {@code BROWSER_CONTENTLET_PARALLEL_CHUNK_PERCENTAGE} (default 30%) of the total inode count.
      */
     private int calculateContentletChunkSize(int totalInodes) {
-        // Use the same percentage logic as ES chunks
-        final double percentage = SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get() / 100.0;
+        final double percentage = CONTENTLET_PARALLEL_CHUNK_PERCENTAGE.get() / 100.0;
         int calculatedSize = (int) Math.ceil(totalInodes * percentage);
 
         // Apply bounds - smaller max than ES since DB operations are typically more expensive
@@ -1021,7 +958,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         calculatedSize = Math.max(calculatedSize, minSize);
         calculatedSize = Math.min(calculatedSize, maxSize);
 
-        Logger.debug(this, String.format("Contentlet chunk calculation: %d inodes → %d per chunk (%.1f%% of total)",
+        Logger.debug(this, String.format("Parallel contentlet chunk: %d inodes → %d per chunk (%.1f%% of total)",
             totalInodes, calculatedSize, percentage * 100));
 
         return calculatedSize;
