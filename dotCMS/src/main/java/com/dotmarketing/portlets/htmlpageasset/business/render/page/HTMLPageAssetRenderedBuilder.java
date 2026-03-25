@@ -425,10 +425,10 @@ public class HTMLPageAssetRenderedBuilder {
                         (existing, replacement) -> existing))
                 .values().stream()
                 .map(ct -> Optional.ofNullable(ct.metadata())
-                        .map(meta -> {
+                        .map(meta -> Try.of(() -> {
                             final String schemaStr = (String) meta.get("DOT_STYLE_EDITOR_SCHEMA");
-                            return Try.of(() -> mapper.readTree(schemaStr)).getOrNull();
-                        })
+                            return mapper.readTree(schemaStr);
+                        }).getOrNull())
                         .orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
