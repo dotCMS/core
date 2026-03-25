@@ -150,10 +150,13 @@ def show_jobs(jobs_data: dict) -> list:
             print("  (no step data available)")
             continue
 
-        succeeded_non_cleanup = set()
+        # Track non-cleanup steps that ran (have any conclusion), not just succeeded.
+        # A failed step followed by any later non-cleanup step that ran means the job
+        # didn't stop at that step — i.e., it had continue-on-error.
+        ran_non_cleanup = set()
         for step in steps:
-            if step.get('conclusion') == 'success' and not is_cleanup_step(step):
-                succeeded_non_cleanup.add(step.get('number', 0))
+            if step.get('conclusion') and not is_cleanup_step(step):
+                ran_non_cleanup.add(step.get('number', 0))
 
         for step in steps:
             conclusion = step.get('conclusion', '')
@@ -163,8 +166,8 @@ def show_jobs(jobs_data: dict) -> list:
             name = step.get('name', 'unknown')
 
             if conclusion == 'failure':
-                later_succeeded = any(n > number for n in succeeded_non_cleanup)
-                if later_succeeded:
+                later_ran = any(n > number for n in ran_non_cleanup)
+                if later_ran:
                     marker = "FAIL (continue-on-error — did NOT cause job failure)"
                     print(f"  [{marker}] Step {number}: {name}")
                     print(f"         NOTE: Real error masked by continue-on-error. Worth investigating separately.")
@@ -271,7 +274,7 @@ def show_log_errors(workspace: Path, jobs: list):
             for line_num, msg in error_lines:
                 print(f"    Line {line_num}: {msg}")
         else:
-            print("  No ##[error] lines found in log.")
+            print("  No error lines found in log.")
 
 
 def show_evidence(workspace: Path, jobs: list):

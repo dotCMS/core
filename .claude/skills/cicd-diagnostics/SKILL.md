@@ -79,7 +79,7 @@ python3 .claude/skills/cicd-diagnostics/diagnose.py <ID> --evidence <ID> # evide
 
 **Do NOT run ad-hoc `gh run view`, `gh api`, or `gh run list` commands to re-fetch data that `diagnose.py` already provided.** The job list, step details, and error summaries are all in the output. Running separate `gh` commands wastes tokens, triggers permission prompts, and often misses the structured signals (like `continue-on-error` detection) that `diagnose.py` provides. Only use direct `gh` commands for data that `diagnose.py` does not cover (e.g., comparing against other runs, checking PR info, searching issues).
 
-### 3. Check Known Issues (Before Deep Dive!)
+### 2. Check Known Issues (Before Deep Dive!)
 
 **This is the step the baseline skipped.** Search before re-investigating from scratch:
 
@@ -103,7 +103,7 @@ indicators = extract_error_indicators(log_content)
 print(format_external_issue_report(indicators, generate_search_queries(indicators, "DATE"), []))
 ```
 
-### 4. Present Evidence for Analysis
+### 3. Present Evidence for Analysis
 
 Use `evidence.py` to extract structured failure data from logs:
 
@@ -118,7 +118,7 @@ print(present_complete_diagnostic(LOG))
 
 This extracts: failed tests, error messages, assertion failures, stack traces, timing indicators, infrastructure events, cascade detection, known issue matches.
 
-### 5. Analyze (Evidence-Based)
+### 4. Analyze (Evidence-Based)
 
 Form **competing hypotheses** and evaluate each against evidence:
 - **Code defect** — New bug from recent PR changes?
@@ -135,14 +135,14 @@ Label each finding: **FACT** (logs show it), **HYPOTHESIS** (theory), **CONFIDEN
 
 See [REFERENCE.md](REFERENCE.md) for detailed diagnostic patterns (timing analysis, thread context, concurrency).
 
-### 6. Compare Runs (If Needed)
+### 5. Compare Runs (If Needed)
 
 ```python
 from evidence import present_recent_runs
 print(present_recent_runs("cicd_1-pr.yml", 20))  # Check if intermittent
 ```
 
-### 7. Report
+### 6. Report
 
 Write DIAGNOSIS.md to the diagnostic workspace directory (e.g., `.claude/diagnostics/run-<RUN_ID>/DIAGNOSIS.md`). **Never write to the project root.** Natural language, like a senior engineer writing to a colleague.
 
@@ -151,7 +151,7 @@ Write DIAGNOSIS.md to the diagnostic workspace directory (e.g., `.claude/diagnos
 
 Do not force sections that add no value. See [REFERENCE.md](REFERENCE.md) for templates.
 
-### 8. Create Issue (If Warranted)
+### 7. Create Issue (If Warranted)
 
 Only when: not already tracked, new failure pattern, blocking development, actionable.
 
