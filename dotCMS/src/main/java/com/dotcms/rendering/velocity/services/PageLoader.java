@@ -39,8 +39,8 @@ public class PageLoader implements DotLoader {
     @Override
     public void invalidate(Object obj) {
 
-        
-        
+
+
         for (PageMode mode : PageMode.values()) {
             invalidate(obj, mode);
         }
@@ -75,11 +75,8 @@ public class PageLoader implements DotLoader {
     }
 
 
-
-
-
-    public InputStream buildStream(IHTMLPage htmlPage, PageMode mode, final String filePath)
-            throws DotDataException, DotSecurityException {
+    public InputStream buildStream(IHTMLPage htmlPage, PageMode mode, final String filePath,
+            final long viewingLanguageId) throws DotDataException, DotSecurityException {
         String folderPath = mode.name() + File.separator;
 
         StringBuilder sb = new StringBuilder();
@@ -112,7 +109,7 @@ public class PageLoader implements DotLoader {
             }
         }
 
-        addWidgetPreExecuteCodeAndPageInfo((HTMLPageAsset) htmlPage, mode, sb, sys);
+        addWidgetPreExecuteCodeAndPageInfo((HTMLPageAsset) htmlPage, mode, sb, sys, viewingLanguageId);
 
         sb.append("#set($dotPageContent = $dotcontent.find(\"" + htmlPage.getInode() + "\" ))");
 
@@ -131,9 +128,9 @@ public class PageLoader implements DotLoader {
             .append("#end");
 
 
-        
-        
-        
+
+
+
         // Now we need to use the found tags in order to accrue them each time this page is visited
         if (!pageFoundTags.isEmpty()) {
             // Velocity call to accrue tags on each request to this page
@@ -158,12 +155,12 @@ public class PageLoader implements DotLoader {
 
         sb.append("#if(!$doNotParseTemplate)");
         if (cmsTemplate.isDrawed()) {
-            
+
             if(null == cmsTemplate.getTheme()) {
                 throw new DotStateException("Drawed template has no theme.  Template id: " + cmsTemplate.getIdentifier() + " template name:" + cmsTemplate.getName());
             }
-            
-            
+
+
             // We have a designed template
             // Setting some theme variables
             sb.append("#set ($dotTheme = $templatetool.theme(\"")
@@ -193,8 +190,9 @@ public class PageLoader implements DotLoader {
     }
 
     private void addWidgetPreExecuteCodeAndPageInfo(final HTMLPageAsset htmlPage, final PageMode mode,
-            final StringBuilder stringBuilder, final User user) throws DotSecurityException, DotDataException {
-        final PageRenderUtil pce = new PageRenderUtil(htmlPage, user, mode);
+            final StringBuilder stringBuilder, final User user, final long viewingLanguageId) throws DotSecurityException, DotDataException {
+        final Host host = APILocator.getHostAPI().find(htmlPage.getHost(), user, false);
+        final PageRenderUtil pce = new PageRenderUtil(htmlPage, user, mode, viewingLanguageId, host);
         // Add the pre-execute code of a widget to the page
         stringBuilder.append(pce.getWidgetPreExecute());
         // Adds the page info
@@ -205,7 +203,12 @@ public class PageLoader implements DotLoader {
     @Override
 
     public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
-        return buildStream(getPage(key), key.mode, key.path);
+        // Use the language from the velocity key (the requested viewing language) instead of the
+        // page's own language. When a page falls back to the default language due to
+        // DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, the page's languageId becomes the default lang, but
+        // content lookup should still use the originally-requested language so that contentlets
+        // existing only in the requested language (e.g. for site search indexing) are rendered.
+        return buildStream(getPage(key), key.mode, key.path, ConversionUtils.toLong(key.language));
     }
 
     private HTMLPageAsset getPage(VelocityResourceKey key)
