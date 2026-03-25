@@ -1,0 +1,18 @@
+# Files to copy between worktrees (must also be gitignored).
+# Used by: wt step copy-ignored (worktrunk) and Claude Code desktop worktrees.
+#
+# Intentionally excludes target/ and .cache/ — developers typically rebuild
+# after creating a worktree (code changed), so copying stale build artifacts
+# delays startup without helping the build.
+#
+# node_modules is NOT copied — yarn install must run fresh to match the
+# target branch's yarn.lock. Copying from a different branch causes silent
+# stale-dependency bugs that yarn install doesn't detect.
+
+# Frontend build caches
+core-web/.nx/
+core-web/.angular/cache
+core-web/.sass-cache
+
+# Python virtual environment (mise-managed)
+.venv/
