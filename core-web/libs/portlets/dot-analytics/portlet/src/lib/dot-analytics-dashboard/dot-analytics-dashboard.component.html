@@ -1,23 +1,21 @@
 <div class="flex flex-col portlet-wrapper" data-testid="analytics-dashboard">
-    <div class="header-container p-4 py-6">
-        @if ($showMessage()) {
-            <div class="pb-3">
-                <p-message
-                    severity="info"
-                    [closable]="true"
-                    (onClose)="onCloseMessage()"
-                    data-testid="analytics-message">
-                    <div class="flex items-center gap-2">
-                        <i class="pi pi-info-circle"></i>
-                        <span data-testid="message-content">
-                            {{ 'analytics.feature.state' | dm }}
-                            <b>{{ 'development' | dm }}</b>
-                        </span>
-                    </div>
-                </p-message>
+    @if ($showMessage()) {
+        <p-message
+            severity="info"
+            [closable]="true"
+            (onClose)="onCloseMessage()"
+            data-testid="analytics-message">
+            <div class="flex items-center gap-2">
+                <i class="pi pi-info-circle"></i>
+                <span data-testid="message-content">
+                    {{ 'analytics.feature.state' | dm }}
+                    <b>{{ 'development' | dm }}</b>
+                </span>
             </div>
-        }
+        </p-message>
+    }
 
+    <div class="bg-gray-100 border-b border-gray-300 p-4 py-6">
         <div class="flex justify-between items-center">
             <dot-analytics-filters
                 [timeRange]="store.timeRange()"
@@ -40,9 +38,9 @@
                     <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
                 }
             </p-tablist>
-            <p-tabpanels>
+            <p-tabpanels class="dashboard-panels w-full max-w-[1600px] mx-auto">
                 @for (tab of tabs; track tab.id) {
-                    <p-tabpanel [value]="tab.id">
+                    <p-tabpanel [value]="tab.id" styleClass="w-full">
                         <ng-template #content>
                             <ng-container *ngComponentOutlet="tabComponents[tab.id]" />
                         </ng-template>

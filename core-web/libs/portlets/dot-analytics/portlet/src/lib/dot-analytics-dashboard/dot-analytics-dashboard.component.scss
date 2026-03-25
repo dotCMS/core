@@ -1,6 +1,1 @@
-@use "variables" as *;
-
-.header-container {
-    background: $color-palette-gray-100;
-    border-bottom: $field-border-size solid $color-palette-gray-300;
-}
+// All layout and styling handled by Tailwind utilities and PrimeNG styleClass on the template
