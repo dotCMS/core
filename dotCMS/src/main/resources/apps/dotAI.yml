@@ -73,7 +73,7 @@ params:
   textModelCompletion:
     value: "true"
     hidden: true
-    type: "BOOL"
+    type: "STRING"
     label: "Completion model enabled"
     hint: "Legacy field — use providerConfig instead."
     required: false
@@ -141,7 +141,7 @@ params:
   imageModelCompletion:
     value: "false"
     hidden: true
-    type: "BOOL"
+    type: "STRING"
     label: "Image Completion model enabled"
     hint: "Legacy field — use providerConfig instead."
     required: false
@@ -176,7 +176,7 @@ params:
   embeddingsModelCompletion:
     value: "false"
     hidden: true
-    type: "BOOL"
+    type: "STRING"
     label: "Embeddings Completion model enabled"
     hint: "Legacy field — use providerConfig instead."
     required: false
