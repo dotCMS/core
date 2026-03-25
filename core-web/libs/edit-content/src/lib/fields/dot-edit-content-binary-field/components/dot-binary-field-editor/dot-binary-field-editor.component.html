@@ -25,14 +25,14 @@
     <div class="binary-field__editor-container">
         <ngx-monaco-editor
             (init)="onEditorInit()"
-            [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
+            [class.binary-field__code-editor--disabled]="form.disabled"
             [options]="monacoOptions()"
             class="binary-field__code-editor"
             #editorRef
             data-testId="code-editor"
             formControlName="content" />
 
-        <div [ngClass]="{ 'editor-mode__helper--visible': mimeType }" class="editor-mode__helper">
+        <div [class.editor-mode__helper--visible]="mimeType" class="editor-mode__helper">
             <i class="pi pi-info-circle"></i>
             <small>Mime Type: {{ mimeType }}</small>
         </div>

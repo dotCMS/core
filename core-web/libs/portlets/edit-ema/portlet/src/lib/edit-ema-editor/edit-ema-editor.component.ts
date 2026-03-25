@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
-import { NgClass, NgStyle } from '@angular/common';
+import { NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     AfterViewInit,
@@ -134,7 +134,6 @@ const MESSAGE_KEY = {
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgClass,
         NgStyle,
         FormsModule,
         SafeUrlPipe,

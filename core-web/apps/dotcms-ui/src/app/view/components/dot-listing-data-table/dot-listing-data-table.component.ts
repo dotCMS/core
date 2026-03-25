@@ -1,4 +1,4 @@
-import { NgClass, NgStyle, NgTemplateOutlet } from '@angular/common';
+import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectorRef,
@@ -77,7 +77,6 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
         DotMessagePipe,
         DotRelativeDatePipe,
         DotStringFormatPipe,
-        NgClass,
         NgStyle,
         NgTemplateOutlet
     ]

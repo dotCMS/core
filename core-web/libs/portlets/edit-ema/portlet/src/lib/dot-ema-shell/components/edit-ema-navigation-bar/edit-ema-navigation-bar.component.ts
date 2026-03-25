@@ -1,4 +1,4 @@
-import { NgClass, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -21,7 +21,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     templateUrl: './edit-ema-navigation-bar.component.html',
     styleUrls: ['./edit-ema-navigation-bar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [RouterModule, DotMessagePipe, TooltipModule, ButtonModule, NgClass, NgTemplateOutlet]
+    imports: [RouterModule, DotMessagePipe, TooltipModule, ButtonModule, NgTemplateOutlet]
 })
 export class EditEmaNavigationBarComponent {
     /**

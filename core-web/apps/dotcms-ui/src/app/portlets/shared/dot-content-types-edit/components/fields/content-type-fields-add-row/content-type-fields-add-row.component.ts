@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { NgClass } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -33,7 +32,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
     templateUrl: './content-type-fields-add-row.component.html',
-    imports: [ButtonModule, TooltipModule, SplitButtonModule, DotMessagePipe, NgClass]
+    imports: [ButtonModule, TooltipModule, SplitButtonModule, DotMessagePipe]
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     private dotEventsService = inject(DotEventsService);

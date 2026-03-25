@@ -1,6 +1,5 @@
 import { of } from 'rxjs';
 
-import { NgClass } from '@angular/common';
 import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
@@ -58,8 +57,7 @@ interface dotPreviewResourceLink {
         DialogModule,
         DotMessagePipe,
         DotFileSizeFormatPipe,
-        DotCopyButtonComponent,
-        NgClass
+        DotCopyButtonComponent
     ],
     providers: [DotResourceLinksService],
     templateUrl: './dot-binary-field-preview.component.html',

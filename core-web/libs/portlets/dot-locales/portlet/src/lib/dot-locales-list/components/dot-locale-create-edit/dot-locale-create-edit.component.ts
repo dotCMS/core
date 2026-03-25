@@ -1,6 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { NgClass, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -51,8 +51,7 @@ export interface DotLocaleCreateEditData {
         DotCopyButtonComponent,
         IconFieldModule,
         InputIconModule,
-        AsyncPipe,
-        NgClass
+        AsyncPipe
     ],
     templateUrl: './dot-locale-create-edit.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

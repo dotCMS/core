@@ -55,7 +55,7 @@
         <tr
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
-            [ngClass]="{ 'disabled-row': rowData?.owner === 'system' }"
+            [class.disabled-row]="rowData?.owner === 'system'"
             [pSelectableRowDisabled]="rowData?.owner === 'system'"
             [pContextMenuRowDisabled]="rowData.disableInteraction"
             [attr.data-testRowId]="rowData.identifier"

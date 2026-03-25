@@ -1,6 +1,5 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { NgClass } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -60,8 +59,7 @@ import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-sele
         DotFieldValidationMessageComponent,
         SelectButtonModule,
         DotFieldRequiredDirective,
-        DotMessagePipe,
-        NgClass
+        DotMessagePipe
     ]
 })
 export class DotPushPublishFormComponent

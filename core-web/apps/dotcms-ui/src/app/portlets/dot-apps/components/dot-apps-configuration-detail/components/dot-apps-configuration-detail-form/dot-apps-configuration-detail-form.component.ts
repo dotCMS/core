@@ -1,7 +1,7 @@
 import { MarkdownComponent } from 'ngx-markdown';
 import { Subscription } from 'rxjs';
 
-import { NgClass, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     Component,
     effect,
@@ -56,7 +56,6 @@ enum FieldStatus {
         DotFieldRequiredDirective,
         MarkdownComponent,
         DotAppsConfigurationDetailGeneratedStringFieldComponent,
-        NgClass,
         NgTemplateOutlet
     ],
     providers: [FormGroupDirective]

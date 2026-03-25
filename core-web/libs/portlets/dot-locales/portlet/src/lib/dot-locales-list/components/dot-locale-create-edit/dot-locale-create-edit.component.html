@@ -1,6 +1,6 @@
 <form
     (ngSubmit)="handleSubmit()"
-    [ngClass]="{ 'min-h-80': languageId?.value, 'min-h-122': !languageId?.value }"
+    [class]="{ 'min-h-80': languageId?.value, 'min-h-122': !languageId?.value }"
     [formGroup]="form"
     class="flex flex-col gap-6">
     @if (languageId?.value) {

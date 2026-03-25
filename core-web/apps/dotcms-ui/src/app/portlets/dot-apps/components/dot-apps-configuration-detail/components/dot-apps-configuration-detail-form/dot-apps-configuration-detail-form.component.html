@@ -59,9 +59,7 @@
                     @case ('BOOL') {
                         <div class="flex items-center">
                             <p-checkbox
-                                [ngClass]="{
-                                    required: field.required
-                                }"
+                                [class.required]="field.required"
                                 [inputId]="field.name"
                                 [formControlName]="field.name"
                                 [value]="field.value"
@@ -79,9 +77,7 @@
                         <p-select
                             [id]="field.name"
                             [formControlName]="field.name"
-                            [ngClass]="{
-                                required: field.required
-                            }"
+                            [class.required]="field.required"
                             [options]="field.options" />
                         <span class="p-field-hint">
                             <markdown>{{ field.hint }}</markdown>

@@ -35,7 +35,7 @@
                 @if (data) {
                     @for (header of data[0] | keyvalue; track header; let last = $last) {
                         <div
-                            [ngClass]="{ 'justify-end': last }"
+                            [class.justify-end]="last"
                             class="flex flex-col flex-wrap items-center capitalize"
                             data-testId="default-header-columns">
                             {{ header.key }}

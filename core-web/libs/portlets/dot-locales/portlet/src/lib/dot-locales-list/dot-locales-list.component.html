@@ -45,9 +45,7 @@
             </ng-template>
             <ng-template pTemplate="body" let-locale>
                 <tr (click)="store.openAddEditDialog(locale.id)" data-testId="locale-row">
-                    <td
-                        [ngClass]="{ 'tag-padding': locale.defaultLanguage }"
-                        data-testId="locale-cell">
+                    <td [class.tag-padding]="locale.defaultLanguage" data-testId="locale-cell">
                         {{ locale.language }} ({{ locale.isoCode }})
                         @if (locale.defaultLanguage) {
                             <p-tag [value]="'Default' | dm" class="sm p-tag-success" />

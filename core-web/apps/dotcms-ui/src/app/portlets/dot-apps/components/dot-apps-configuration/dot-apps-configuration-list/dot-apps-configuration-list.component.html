@@ -4,9 +4,7 @@
             (edit)="edit.emit($event)"
             (export)="export.emit($event)"
             (delete)="delete.emit($event)"
-            [ngClass]="{
-                'dot-apps-configuration-item__not-configured': !site.configured
-            }"
+            [class.dot-apps-configuration-item__not-configured]="!site.configured"
             [site]="site" />
     }
 </div>

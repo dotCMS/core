@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { NgClass, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -40,8 +40,7 @@ import {
         TableModule,
         TagModule,
         ToastModule,
-        AsyncPipe,
-        NgClass
+        AsyncPipe
     ],
     templateUrl: './dot-locales-list.component.html',
 
