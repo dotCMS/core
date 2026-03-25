@@ -5,7 +5,7 @@ import {
 } from '@materia-ui/ngx-monaco-editor';
 import { from } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -46,14 +46,14 @@ const DEFAULT_FILE_TYPE = 'text';
 @Component({
     selector: 'dot-binary-field-editor',
     imports: [
-        CommonModule,
         MonacoEditorModule,
         FormsModule,
         ReactiveFormsModule,
         InputTextModule,
         ButtonModule,
         DotMessagePipe,
-        DotFieldValidationMessageComponent
+        DotFieldValidationMessageComponent,
+        NgClass
     ],
     templateUrl: './dot-binary-field-editor.component.html',
     styleUrls: ['./dot-binary-field-editor.component.scss'],

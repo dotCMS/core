@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -29,7 +29,6 @@ import {
 @Component({
     selector: 'dot-experiments-configuration-variants-add',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DotSidebarHeaderComponent,
         DotMessagePipe,
@@ -40,7 +39,8 @@ import {
         InputTextModule,
         AutoFocusModule,
         DotAutofocusDirective,
-        DotTrimInputDirective
+        DotTrimInputDirective,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-variants-add.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

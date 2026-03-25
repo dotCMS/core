@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -45,14 +45,14 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 @Component({
     selector: 'dot-category-field-category-list',
     imports: [
-        CommonModule,
         TreeModule,
         CheckboxModule,
         ButtonModule,
         FormsModule,
         DotCategoryFieldListSkeletonComponent,
         DotCollapseBreadcrumbComponent,
-        DotEmptyContainerComponent
+        DotEmptyContainerComponent,
+        NgClass
     ],
     templateUrl: './dot-category-field-category-list.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

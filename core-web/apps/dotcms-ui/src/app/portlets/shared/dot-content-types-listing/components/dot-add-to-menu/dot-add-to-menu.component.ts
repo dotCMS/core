@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -47,7 +47,6 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
     selector: 'dot-add-to-menu',
     templateUrl: 'dot-add-to-menu.component.html',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DialogModule,
         ButtonModule,
@@ -57,7 +56,8 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
         DotAutofocusDirective,
         DotFieldValidationMessageComponent,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        AsyncPipe
     ]
 })
 export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {

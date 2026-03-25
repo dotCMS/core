@@ -1,6 +1,6 @@
 import { MarkdownComponent } from 'ngx-markdown';
 
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, input, output } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
@@ -16,15 +16,14 @@ import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
     templateUrl: './dot-apps-card.component.html',
     styleUrls: ['./dot-apps-card.component.scss'],
     imports: [
-        CommonModule,
         CardModule,
         AvatarModule,
         BadgeModule,
-
         MarkdownComponent,
         TooltipModule,
         DotAvatarDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        NgClass
     ]
 })
 export class DotAppsCardComponent {

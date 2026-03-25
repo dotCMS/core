@@ -1,7 +1,7 @@
 import { MarkdownComponent } from 'ngx-markdown';
 import { Subscription } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     Component,
     effect,
@@ -45,7 +45,6 @@ enum FieldStatus {
     templateUrl: './dot-apps-configuration-detail-form.component.html',
     styleUrls: ['./dot-apps-configuration-detail-form.component.scss'],
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         ButtonModule,
         CheckboxModule,
@@ -56,7 +55,9 @@ enum FieldStatus {
         DotIconComponent,
         DotFieldRequiredDirective,
         MarkdownComponent,
-        DotAppsConfigurationDetailGeneratedStringFieldComponent
+        DotAppsConfigurationDetailGeneratedStringFieldComponent,
+        NgClass,
+        NgTemplateOutlet
     ],
     providers: [FormGroupDirective]
 })

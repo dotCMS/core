@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgStyle, AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -57,7 +57,6 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
     imports: [
-        CommonModule,
         DotPortletBaseComponent,
         TableModule,
         DotContentTypeSelectorComponent,
@@ -70,7 +69,9 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotRelativeDatePipe,
         ActionHeaderComponent,
         InputTextModule,
-        DotContentletStatusChipComponent
+        DotContentletStatusChipComponent,
+        AsyncPipe,
+        NgStyle
     ],
     providers: [
         DotContainerListStore,

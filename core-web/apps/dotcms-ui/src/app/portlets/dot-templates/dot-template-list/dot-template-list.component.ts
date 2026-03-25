@@ -1,6 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { CommonModule } from '@angular/common';
+import { NgStyle } from '@angular/common';
 import {
     Component,
     DestroyRef,
@@ -81,7 +81,6 @@ interface TemplateListState {
     templateUrl: './dot-template-list.component.html',
     styleUrls: ['./dot-template-list.component.scss'],
     imports: [
-        CommonModule,
         FormsModule,
         DotMessagePipe,
         DotRelativeDatePipe,
@@ -97,7 +96,8 @@ interface TemplateListState {
         SkeletonModule,
         InputTextModule,
         DotContentletStatusChipComponent,
-        ContextMenu
+        ContextMenu,
+        NgStyle
     ],
     providers: [DotTemplatesService, DialogService, DotSiteBrowserService]
 })

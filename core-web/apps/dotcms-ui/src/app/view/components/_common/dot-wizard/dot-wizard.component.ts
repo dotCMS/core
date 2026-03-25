@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgStyle } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -37,7 +37,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
-    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceDirective]
+    imports: [DialogModule, ButtonModule, DotContainerReferenceDirective, NgStyle]
 })
 export class DotWizardComponent implements AfterViewInit {
     #wizardData: { [key: string]: string };
