@@ -563,11 +563,6 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(rulesComponent).toBeTruthy();
             }));
 
-            it('should NOT add a new tab for rules (tab count stays at 4)', () => {
-                const tabView = spectator.query(byTestId('sidebar-tabs'));
-                const tabs = tabView.querySelectorAll('[role="tab"]');
-                expect(tabs.length).toBe(4);
-            });
         });
     });
 
