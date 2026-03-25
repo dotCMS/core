@@ -1,6 +1,7 @@
 import { type APIRequestContext, test as base, expect, type Page } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
+
 import { createFieldVariable } from '../requests/field-variables';
 
 /**
@@ -96,7 +97,7 @@ function parseBulkPublishContentlets(
     expect(summary?.failCount ?? 0, `bulk publish failures: ${JSON.stringify(summary)}`).toBe(0);
     expect(summary?.successCount).toBe(expectedCount);
     const results = data.entity?.results ?? [];
-    expect(results.length).toBe(expectedCount);
+    expect(results).toHaveLength(expectedCount);
     const contentlets: TestContentlet[] = [];
     for (const entry of results) {
         const payload = Object.values(entry)[0];
@@ -365,6 +366,7 @@ export const test = base.extend<{
         await use(page);
     },
 
+    // eslint-disable-next-line no-empty-pattern
     testSuffix: async ({}, use) => {
         await use(crypto.randomUUID().slice(0, 8));
     },

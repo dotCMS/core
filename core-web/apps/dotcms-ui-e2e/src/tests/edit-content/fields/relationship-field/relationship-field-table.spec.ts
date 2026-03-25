@@ -1,17 +1,18 @@
 import { NewEditContentFormPage } from '@pages';
+
+import { RelationshipField } from './helpers/relationship-field';
+import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
+
 import {
     CARDINALITY,
     expect,
     test,
     TestContentlet
 } from '../../../../fixtures/relationship.fixture';
-import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 // ─── Reorder (Drag & Drop) ──────────────────────────────────────
 
 test.describe('Reorder (Drag & Drop)', () => {
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
     let blogContentlet: TestContentlet;
@@ -32,7 +33,6 @@ test.describe('Reorder (Drag & Drop)', () => {
                 CARDINALITY.ONE_TO_MANY
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         const authors = await apiHelpers.createContentlets(authorTypeVariable, [
@@ -64,8 +64,7 @@ test.describe('Reorder (Drag & Drop)', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
 
-        // Capture original order: Author 1, Author 2, Author 3
-        const originalFirst = await relationshipField.getRowTitle(0);
+        // Capture original order to verify reorder
         const originalThird = await relationshipField.getRowTitle(2);
 
         // Drag row 3 to row 1 position
@@ -109,7 +108,6 @@ test.describe('Reorder (Drag & Drop)', () => {
 test.describe('Search and Filter', () => {
     // Serial: limits concurrent API churn on one dotCMS backend; each test creates its own content types.
     test.describe.configure({ mode: 'serial' });
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 
@@ -129,7 +127,6 @@ test.describe('Search and Filter', () => {
                 CARDINALITY.ONE_TO_MANY
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         const names = ['John Smith', 'John Doe', 'Jane Smith', 'Alice Johnson', 'Bob Williams'];
@@ -223,7 +220,6 @@ test.describe('Search and Filter', () => {
 test.describe('Dialog Content Listing', () => {
     test.slow(); // bulk-creates 15 contentlets — needs extra time on CI
 
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 
@@ -243,7 +239,6 @@ test.describe('Dialog Content Listing', () => {
                 CARDINALITY.MANY_TO_MANY
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         await apiHelpers.createContentlets(
@@ -278,7 +273,6 @@ test.describe('Dialog Content Listing', () => {
 // ─── Table Pagination (>6 items) ────────────────────────────────
 
 test.describe('Table Pagination', () => {
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 
@@ -298,7 +292,6 @@ test.describe('Table Pagination', () => {
                 CARDINALITY.MANY_TO_MANY
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
     });
 

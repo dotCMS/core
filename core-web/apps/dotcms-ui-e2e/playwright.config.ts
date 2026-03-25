@@ -1,8 +1,9 @@
-import path from 'path';
 import { workspaceRoot } from '@nx/devkit';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
+
+import path from 'path';
 
 // Environment configuration
 const currentEnv = process.env['CURRENT_ENV'] || 'dev';

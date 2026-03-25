@@ -1,4 +1,8 @@
 import { NewEditContentFormPage } from '@pages';
+
+import { RelationshipField } from './helpers/relationship-field';
+import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
+
 import {
     CARDINALITY,
     expect,
@@ -6,8 +10,6 @@ import {
     test,
     TestContentlet
 } from '../../../../fixtures/relationship.fixture';
-import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 const IMMUTABLE_SIMPLE_CT = 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType';
 const IMMUTABLE_TEXT_FIELD = 'com.dotcms.contenttype.model.field.ImmutableTextField';
@@ -72,7 +74,6 @@ test.describe('Multiple Relationship Fields', () => {
     // Serial: limits concurrent API churn on one dotCMS backend; each test owns its content types.
     test.describe.configure({ mode: 'serial' });
 
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 
@@ -97,7 +98,6 @@ test.describe('Multiple Relationship Fields', () => {
         );
 
         const blogType = await apiHelpers.createContentType(blogPayload);
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         await apiHelpers.createContentlets(

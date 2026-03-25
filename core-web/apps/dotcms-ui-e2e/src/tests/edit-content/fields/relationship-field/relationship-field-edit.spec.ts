@@ -1,12 +1,14 @@
 import { NewEditContentFormPage } from '@pages';
+
+import { RelationshipField } from './helpers/relationship-field';
+import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
+
 import {
     CARDINALITY,
     expect,
     test,
     TestContentlet
 } from '../../../../fixtures/relationship.fixture';
-import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 // ─── Add More Relations ─────────────────────────────────────────
 
@@ -14,7 +16,6 @@ test.describe('Add More Relations', () => {
     // Serial: limits concurrent API calls against one dotCMS instance (not shared UI state).
     test.describe.configure({ mode: 'serial' });
 
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
     let blogContentlet: TestContentlet;
@@ -36,7 +37,6 @@ test.describe('Add More Relations', () => {
                 CARDINALITY.ONE_TO_MANY
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         authors = await apiHelpers.createContentlets(
@@ -106,7 +106,6 @@ test.describe('Remove Relations', () => {
     // Serial: limits concurrent API calls against one dotCMS instance (not shared UI state).
     test.describe.configure({ mode: 'serial' });
 
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
     let blogContentlet: TestContentlet;
@@ -128,7 +127,6 @@ test.describe('Remove Relations', () => {
                 CARDINALITY.ONE_TO_MANY
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         authors = await apiHelpers.createContentlets(
@@ -194,7 +192,6 @@ test.describe('Remove Relations', () => {
 // ─── Delete and Re-add in Single Mode ───────────────────────────
 
 test.describe('Delete and Re-add (Single Mode)', () => {
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
     let blogContentlet: TestContentlet;
@@ -216,7 +213,6 @@ test.describe('Delete and Re-add (Single Mode)', () => {
                 CARDINALITY.ONE_TO_ONE
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         authors = await apiHelpers.createContentlets(authorTypeVariable, [

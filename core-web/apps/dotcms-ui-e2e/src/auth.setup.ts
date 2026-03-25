@@ -1,5 +1,6 @@
 import { expect, test as setup } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
+
 import path from 'path';
 
 const AUTH_STATE_PATH = path.join(__dirname, '..', '.auth', 'admin.json');

@@ -1,7 +1,9 @@
 import { NewEditContentFormPage } from '@pages';
-import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fixture';
+
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
+
+import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fixture';
 
 // ─── Single Selection (ONE_TO_ONE, MANY_TO_ONE) ─────────────────
 
@@ -16,11 +18,10 @@ test.describe('Single Selection (1:1 / M:1)', () => {
             // Serial: beforeEach shares mutable `let` vars across tests.
             test.describe.configure({ mode: 'serial' });
 
-            let blogTypeId: string;
             let authorTypeVariable: string;
             let blogTypeVariable: string;
 
-            test.beforeEach(async ({ adminPage, apiHelpers, testSuffix }) => {
+            test.beforeEach(async ({ apiHelpers, testSuffix }) => {
                 const authorType = await apiHelpers.createContentType(
                     apiHelpers.authorPayload(`${cardinality.name}_${testSuffix}`)
                 );
@@ -36,7 +37,6 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                         cardinality.value
                     )
                 );
-                blogTypeId = blogType.id;
                 blogTypeVariable = blogType.variable;
 
                 await apiHelpers.createContentlets(
@@ -171,11 +171,10 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
             // Serial: beforeEach shares mutable `let` vars across tests.
             test.describe.configure({ mode: 'serial' });
 
-            let blogTypeId: string;
             let authorTypeVariable: string;
             let blogTypeVariable: string;
 
-            test.beforeEach(async ({ adminPage, apiHelpers, testSuffix }) => {
+            test.beforeEach(async ({ apiHelpers, testSuffix }) => {
                 const authorType = await apiHelpers.createContentType(
                     apiHelpers.authorPayload(`${cardinality.name}_${testSuffix}`)
                 );
@@ -191,7 +190,6 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                         cardinality.value
                     )
                 );
-                blogTypeId = blogType.id;
                 blogTypeVariable = blogType.variable;
 
                 await apiHelpers.createContentlets(
@@ -296,11 +294,10 @@ test.describe('Create New Inline', () => {
     // Serial: beforeEach shares mutable `let` vars across tests.
     test.describe.configure({ mode: 'serial' });
 
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 
-    test.beforeEach(async ({ adminPage, apiHelpers, testSuffix }) => {
+    test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const authorType = await apiHelpers.createContentType(
             apiHelpers.authorPayload(`CreateNew_${testSuffix}`)
         );
@@ -316,7 +313,6 @@ test.describe('Create New Inline', () => {
                 CARDINALITY.ONE_TO_MANY
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
     });
 
@@ -413,11 +409,10 @@ test.describe('Create New Inline', () => {
 // ─── New Content Disabled (No New Editor) ───────────────────────
 
 test.describe('New Content Disabled (No New Editor)', () => {
-    let blogTypeId: string;
     let tagTypeVariable: string;
     let blogTypeVariable: string;
 
-    test.beforeEach(async ({ adminPage, apiHelpers, testSuffix }) => {
+    test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const tagType = await apiHelpers.createContentType(
             apiHelpers.tagPayload(`NoEditor_${testSuffix}`)
         );
@@ -433,7 +428,6 @@ test.describe('New Content Disabled (No New Editor)', () => {
                 CARDINALITY.ONE_TO_MANY
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
     });
 
@@ -454,11 +448,10 @@ test.describe('Menu Disabled When Single Item Exists', () => {
     // Serial: beforeEach shares mutable `let` vars across tests.
     test.describe.configure({ mode: 'serial' });
 
-    let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
 
-    test.beforeEach(async ({ adminPage, apiHelpers, testSuffix }) => {
+    test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const authorType = await apiHelpers.createContentType(
             apiHelpers.authorPayload(`SingleFull_${testSuffix}`)
         );
@@ -474,7 +467,6 @@ test.describe('Menu Disabled When Single Item Exists', () => {
                 CARDINALITY.ONE_TO_ONE
             )
         );
-        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         await apiHelpers.createContentlet(authorTypeVariable, {
@@ -483,10 +475,7 @@ test.describe('Menu Disabled When Single Item Exists', () => {
         });
     });
 
-    test('existing content disabled after selecting item @smoke', async ({
-        adminPage,
-        testSuffix
-    }) => {
+    test('existing content disabled after selecting item @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
 

@@ -1,6 +1,6 @@
 import { APIRequestContext, expect } from '@playwright/test';
-import { generateBase64Credentials } from '@utils/generateBase64Credential';
 import { admin1 } from '@utils/credentials';
+import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
 /**
  * Represents a dotCMS contentlet returned from the API.

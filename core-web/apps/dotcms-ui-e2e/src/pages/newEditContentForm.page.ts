@@ -1,5 +1,4 @@
 import { expect, Page } from '@playwright/test';
-
 import { getLegacyFrame } from '@utils/iframe';
 import { Portlet } from '@utils/portlets';
 
@@ -12,7 +11,7 @@ export class NewEditContentFormPage {
      */
     async goToContentList(contentTypeVariable: string) {
         await this.page.goto(`${Portlet.Content}?filter=${contentTypeVariable}`);
-        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForLoadState('domcontentloaded');
     }
 
     /**
@@ -86,9 +85,7 @@ export class NewEditContentFormPage {
     }
 
     /**
-     * Navigates to edit an existing contentlet.
-     * Goes through the Content portlet first to initialize the Dojo app,
-     * then navigates to the specific content.
+     * Navigates directly to edit an existing contentlet by its inode.
      */
     async goToContent(id: string) {
         await this.page.goto(`/dotAdmin/#/content/${id}`);
