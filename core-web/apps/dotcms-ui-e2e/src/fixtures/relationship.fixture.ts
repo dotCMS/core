@@ -146,7 +146,7 @@ async function enableNewEditor(
     ).toBeTruthy();
 
     // Enable the new editor in the content type's metadata
-    await request.put(`/api/v1/contenttype/id/${contentTypeVariable}`, {
+    const putResponse = await request.put(`/api/v1/contenttype/id/${contentTypeVariable}`, {
         data: {
             contentType: {
                 variable: contentTypeVariable,
@@ -155,7 +155,10 @@ async function enableNewEditor(
         },
         headers: authHeaders()
     });
-    // The PUT may return 200 or 400 depending on API version; the system-table flags above are critical
+    expect(
+        [200, 400].includes(putResponse.status()),
+        `enableNewEditor: content type metadata PUT failed with status ${putResponse.status()}`
+    ).toBe(true);
 }
 
 /**

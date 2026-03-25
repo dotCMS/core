@@ -118,7 +118,7 @@ test.describe('Reorder (Drag & Drop)', () => {
 // ─── Search and Filter in Selection Dialog ──────────────────────
 
 test.describe('Search and Filter', () => {
-    // Tests share the same dialog — must run sequentially
+    // Serial: limits concurrent API churn on one dotCMS backend; each test creates its own content types.
     test.describe.configure({ mode: 'serial' });
     let blogTypeId: string;
     let authorTypeVariable: string;

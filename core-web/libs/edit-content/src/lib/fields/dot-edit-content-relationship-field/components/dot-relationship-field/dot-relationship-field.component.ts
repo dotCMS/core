@@ -254,11 +254,17 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Reorders the data in the store.
-     * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
+     * Persists row order after a PrimeNG table row reorder.
+     *
+     * PrimeNG mutates the bound `[value]` array in-place via `ObjectUtils.reorderArray` before
+     * emitting `onRowReorder` (see `Table.onRowDrop` in `primeng/table`). `dragIndex` / `dropIndex`
+     * describe that mutation; re-applying them here would corrupt the order. The store must only
+     * take an immutable snapshot so signal consumers re-run (`setData` clones the array).
      */
     onRowReorder(event: TableRowReorderEvent) {
-        if (this.$isDisabled() || event?.dragIndex == null || event?.dropIndex == null) {
+        const dragIndex = event?.dragIndex;
+        const dropIndex = event?.dropIndex;
+        if (this.$isDisabled() || dragIndex == null || dropIndex == null) {
             return;
         }
 

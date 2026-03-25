@@ -22,5 +22,7 @@ setup('authenticate as admin', async ({ page }) => {
     await page.getByTestId('submitButton').click();
     const response = await responsePromise;
     expect(response.status()).toBe(200);
+    // Wait until the shell has navigated so cookies / storage match a logged-in session
+    await page.waitForURL(/dotAdmin/i, { timeout: 30000 });
     await page.context().storageState({ path: AUTH_STATE_PATH });
 });

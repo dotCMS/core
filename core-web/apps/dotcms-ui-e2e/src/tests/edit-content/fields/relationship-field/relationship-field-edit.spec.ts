@@ -11,6 +11,7 @@ import { SelectExistingContentDialog } from './helpers/select-existing-content-d
 // ─── Add More Relations ─────────────────────────────────────────
 
 test.describe('Add More Relations', () => {
+    // Serial: limits concurrent API calls against one dotCMS instance (not shared UI state).
     test.describe.configure({ mode: 'serial' });
 
     let blogTypeId: string;
@@ -109,6 +110,7 @@ test.describe('Add More Relations', () => {
 // ─── Remove Relations ───────────────────────────────────────────
 
 test.describe('Remove Relations', () => {
+    // Serial: limits concurrent API calls against one dotCMS instance (not shared UI state).
     test.describe.configure({ mode: 'serial' });
 
     let blogTypeId: string;

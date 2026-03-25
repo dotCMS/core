@@ -1,9 +1,10 @@
 /**
- * This is a valid user that can do everything
+ * Prefer `E2E_ADMIN_USER` / `E2E_ADMIN_PASS` in CI or shared environments so secrets are not
+ * committed; defaults match local dotCMS demo credentials.
  */
 export const admin1 = {
-    username: 'admin@dotcms.com',
-    password: 'admin'
+    username: process.env['E2E_ADMIN_USER'] ?? 'admin@dotcms.com',
+    password: process.env['E2E_ADMIN_PASS'] ?? 'admin'
 };
 
 /**

@@ -28,7 +28,7 @@ import {
 export class AngularFormBridge implements FormBridge {
     private static instance: AngularFormBridge | null = null;
     private static refCount = 0;
-    private static instanceStack: { instance: AngularFormBridge; refCount: number }[] = [];
+    private static instanceStack: { instance: AngularFormBridge | null; refCount: number }[] = [];
     #fieldSubscriptions: Map<string, FieldSubscription> = new Map();
     #form: FormGroup;
     #zone: NgZone;
@@ -119,16 +119,17 @@ export class AngularFormBridge implements FormBridge {
      * allowing a new instance to be created for a nested context (e.g. a dialog).
      * The parent's custom field components retain their direct reference to the
      * stashed instance, so they remain functional behind the modal.
+     *
+     * Always records a stack frame (even when `instance` is null) so {@link popInstance}
+     * restores symmetrically and cannot pop an unrelated prior push.
      */
     static pushInstance(): void {
-        if (AngularFormBridge.instance) {
-            AngularFormBridge.instanceStack.push({
-                instance: AngularFormBridge.instance,
-                refCount: AngularFormBridge.refCount
-            });
-            AngularFormBridge.instance = null;
-            AngularFormBridge.refCount = 0;
-        }
+        AngularFormBridge.instanceStack.push({
+            instance: AngularFormBridge.instance,
+            refCount: AngularFormBridge.refCount
+        });
+        AngularFormBridge.instance = null;
+        AngularFormBridge.refCount = 0;
     }
 
     /**

@@ -69,6 +69,7 @@ function blogTypeWithRelationships(
 // ─── Multiple Relationship Fields ───────────────────────────────
 
 test.describe('Multiple Relationship Fields', () => {
+    // Serial: limits concurrent API churn on one dotCMS backend; each test owns its content types.
     test.describe.configure({ mode: 'serial' });
 
     let blogTypeId: string;
@@ -197,6 +198,7 @@ test.describe('Multiple Relationship Fields', () => {
 // ─── Custom Columns (showFields) ────────────────────────────────
 
 test.describe('Custom Columns (showFields)', () => {
+    // Serial: limits concurrent API churn on one dotCMS backend; each test owns its content types.
     test.describe.configure({ mode: 'serial' });
 
     let blogTypeId: string;
