@@ -15,7 +15,7 @@
                 [inputId]="'show-archived-templates'"
                 [binary]="true"
                 [ngModel]="$state.archive()"
-                data-testid="archiveCheckbox"></p-checkbox>
+                data-testid="archiveCheckbox" />
             <label [for]="'show-archived-templates'">
                 {{ 'Show-Archived' | dm }}
             </label>
@@ -29,12 +29,12 @@
             severity="secondary"
             [outlined]="true"
             icon="pi pi-ellipsis-v"
-            data-testid="bulkActions"></p-button>
+            data-testid="bulkActions" />
         <p-button
             (click)="handleButtonClick()"
             [icon]="'pi pi-plus'"
             [rounded]="true"
-            data-testid="addTemplate"></p-button>
+            data-testid="addTemplate" />
         <p-menu
             [popup]="true"
             [model]="$state.templateBulkActions()"

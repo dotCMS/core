@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-toolbar>
         <ng-template #start>
-            <ng-content select="[toolbar-left]"></ng-content>
+            <ng-content select="[toolbar-left]" />
         </ng-template>
         <ng-template #end>
             <div class="flex gap-2">
@@ -26,8 +26,8 @@
                 [themeId]="template.themeId"
                 (selectTheme)="updateTheme($event)"
                 [layoutProperties]="vm.layoutProperties"
-                data-testId="template-builder-actions"></dotcms-template-builder-actions>
-            <ng-content select="[toolbar-actions-right]"></ng-content>
+                data-testId="template-builder-actions" />
+            <ng-content select="[toolbar-actions-right]" />
         </ng-template>
     </p-toolbar>
     <div

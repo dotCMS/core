@@ -87,7 +87,7 @@
                     <div
                         class="flex flex-col grow min-h-0 overflow-x-hidden overflow-y-auto bg-gray-200 p-6"
                         id="content-type-form-main">
-                        <ng-content></ng-content>
+                        <ng-content />
                     </div>
                     <div
                         class="items-center w-64 flex flex-col px-3.5 min-h-0 overflow-y-auto border-l border-gray-200">
@@ -95,9 +95,8 @@
                             (onClick)="fireAddRowEvent()"
                             [model]="actions"
                             icon="pi pi-plus"
-                            label="{{ 'contenttypes.content.row' | dm }}"></p-splitButton>
-                        <dot-content-types-fields-list
-                            [baseType]="$contentType().baseType"></dot-content-types-fields-list>
+                            label="{{ 'contenttypes.content.row' | dm }}" />
+                        <dot-content-types-fields-list [baseType]="$contentType().baseType" />
                     </div>
                 </div>
             </p-tabpanel>
