@@ -51,6 +51,9 @@ if [ -f "$REPO_ROOT/lefthook.yml" ] || [ -f "$REPO_ROOT/lefthook.yaml" ]; then
   exit 0
 fi
 
+# No lefthook config in this branch — check for legacy husky hooks.
+# This keeps the hook compatible across branches that predate lefthook.
+
 for dir in "$REPO_ROOT/.husky" "$REPO_ROOT/core-web/.husky"; do
   if [ -f "$dir/${hookName}" ]; then
     exec sh "$dir/${hookName}" "$@"
