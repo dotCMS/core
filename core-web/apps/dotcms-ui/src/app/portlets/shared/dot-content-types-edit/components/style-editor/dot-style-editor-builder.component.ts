@@ -3,6 +3,7 @@ import { patchState, signalState } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     computed,
     effect,
     inject,
@@ -10,6 +11,7 @@ import {
     signal,
     untracked
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -34,7 +36,14 @@ import {
 } from '@dotcms/uve';
 
 import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
-import { BuilderField, BuilderSection, createField, createSection, fieldHasErrors } from './models';
+import {
+    BuilderField,
+    BuilderOption,
+    BuilderSection,
+    createField,
+    createSection,
+    fieldHasErrors
+} from './models';
 
 const STYLE_EDITOR_SCHEMA_KEY = 'DOT_STYLE_EDITOR_SCHEMA';
 
@@ -42,11 +51,11 @@ const STYLE_EDITOR_SCHEMA_KEY = 'DOT_STYLE_EDITOR_SCHEMA';
 interface ConfirmAction {
     label: string;
     /** Render as text-only (no border/background). */
-    text?: boolean;
+    text: boolean;
     /** Render with an outline border. */
-    outlined?: boolean;
-    /** PrimeNG button severity. Defaults to 'primary'. */
-    severity?: 'primary' | 'secondary' | 'danger' | 'contrast';
+    outlined: boolean;
+    /** PrimeNG button severity. */
+    severity: 'primary' | 'secondary' | 'danger' | 'contrast';
     callback: () => void;
 }
 
@@ -82,6 +91,7 @@ export class DotStyleEditorBuilderComponent {
     readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
 
     /** Signal state holding sections and saving status. */
     readonly #state = signalState<DotStyleEditorBuilderState>({ sections: [], saving: false });
@@ -118,7 +128,11 @@ export class DotStyleEditorBuilderComponent {
     /** Config for the shared confirmation dialog. Null means the dialog is closed. */
     readonly #confirmState = signal<ConfirmDialogConfig | null>(null);
 
-    /** Becomes true after the first save attempt; drives error display in child components. */
+    /**
+     * Becomes true after the first save attempt; drives error display in child components.
+     * Kept as an independent signal (not in signalState) so that section/field state updates
+     * during typing do not touch this signal's reactive graph.
+     */
     readonly #saveAttempted = signal(false);
 
     /** Public read-only signal consumed by the template to thread showErrors into sections. */
@@ -201,7 +215,7 @@ export class DotStyleEditorBuilderComponent {
         patchState(this.#state, { saving: true });
         this.#crudService
             .putData<DotCMSContentType>(`v1/contenttype/id/${contentType.id}`, payload)
-            .pipe(take(1))
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: () => {
                     patchState(this.#state, { saving: false });
@@ -269,30 +283,29 @@ export class DotStyleEditorBuilderComponent {
      * @returns A `BuilderField` suitable for editing in the UI.
      */
     #schemaFieldToBuilderField(field: StyleEditorFieldSchema): BuilderField {
+        const rawOptions = (field.config.options as BuilderOption[] | undefined) ?? [];
+        const options = rawOptions.map((o): BuilderOption => {
+            if (field.type === 'checkboxGroup') {
+                return { label: o.label, key: o.key ?? '' };
+            }
+
+            const option: BuilderOption = { label: o.label, value: o.value ?? '' };
+            if (o.imageURL) {
+                option.imageURL = o.imageURL;
+            }
+
+            return option;
+        });
+
         return {
             uid: crypto.randomUUID(),
             type: field.type,
             label: field.label,
             identifier: field.id,
-            inputType: (field.config?.inputType as 'text' | 'number') ?? 'text',
-            placeholder: (field.config?.placeholder as string) ?? '',
-            columns: (field.config?.columns as 1 | 2) ?? 1,
-            options: (
-                (field.config?.options as Array<{
-                    label: string;
-                    value?: string;
-                    key?: string;
-                    imageURL?: string;
-                }>) ?? []
-            ).map((o) =>
-                field.type === 'checkboxGroup'
-                    ? { label: o.label, key: o.key ?? '' }
-                    : {
-                          label: o.label,
-                          value: o.value ?? '',
-                          ...(o.imageURL ? { imageURL: o.imageURL } : {})
-                      }
-            )
+            inputType: field.config.inputType ?? 'text',
+            placeholder: field.config.placeholder ?? '',
+            columns: field.config.columns ?? 1,
+            options
         };
     }
 
@@ -363,11 +376,15 @@ export class DotStyleEditorBuilderComponent {
                 {
                     label: this.#dotMessageService.get('style.editor.form.builder.dialog.cancel'),
                     text: true,
+                    outlined: false,
+                    severity: 'secondary',
                     callback: () => this.#confirmState.set(null)
                 },
                 {
                     label: this.#dotMessageService.get('style.editor.form.builder.dialog.leave'),
+                    text: false,
                     outlined: true,
+                    severity: 'secondary',
                     callback: () => {
                         this.#confirmState.set(null);
                         this.#discardChanges();
@@ -377,6 +394,9 @@ export class DotStyleEditorBuilderComponent {
                     label: this.#dotMessageService.get(
                         'style.editor.form.builder.dialog.save.close'
                     ),
+                    text: false,
+                    outlined: false,
+                    severity: 'primary',
                     callback: () => {
                         this.#confirmState.set(null);
                         this.save();
@@ -405,10 +425,15 @@ export class DotStyleEditorBuilderComponent {
                 {
                     label: this.#dotMessageService.get('style.editor.form.builder.dialog.cancel'),
                     text: true,
+                    outlined: false,
+                    severity: 'secondary',
                     callback: () => this.#confirmState.set(null)
                 },
                 {
                     label: this.#dotMessageService.get('style.editor.form.builder.dialog.delete'),
+                    text: false,
+                    outlined: false,
+                    severity: 'danger',
                     callback: () => {
                         this.#confirmState.set(null);
                         this.removeSection(index);
@@ -438,10 +463,15 @@ export class DotStyleEditorBuilderComponent {
                 {
                     label: this.#dotMessageService.get('style.editor.form.builder.dialog.cancel'),
                     text: true,
+                    outlined: false,
+                    severity: 'secondary',
                     callback: () => this.#confirmState.set(null)
                 },
                 {
                     label: this.#dotMessageService.get('style.editor.form.builder.dialog.delete'),
+                    text: false,
+                    outlined: false,
+                    severity: 'danger',
                     callback: () => {
                         this.#confirmState.set(null);
                         this.removeField(sectionIndex, fieldUid);

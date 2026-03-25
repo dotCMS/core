@@ -131,12 +131,10 @@ describe('DotStyleEditorSectionComponent', () => {
 
             const titleInput = spectator.query(
                 'input[placeholder="Section Title"]'
-            ) as HTMLInputElement | null;
-            if (titleInput) {
-                titleInput.value = 'Colors';
-                titleInput.dispatchEvent(new Event('input'));
-                spectator.detectChanges();
-            }
+            ) as HTMLInputElement;
+            titleInput.value = 'Colors';
+            titleInput.dispatchEvent(new Event('input'));
+            spectator.detectChanges();
 
             expect(spectator.component.titleChange.emit).toHaveBeenCalledWith('Colors');
         });
@@ -193,12 +191,10 @@ describe('DotStyleEditorSectionComponent', () => {
 
             const labelInput = spectator.query(
                 'input[placeholder="New Field"]'
-            ) as HTMLInputElement | null;
-            if (labelInput) {
-                labelInput.value = 'Line Height';
-                labelInput.dispatchEvent(new Event('input'));
-                spectator.detectChanges();
-            }
+            ) as HTMLInputElement;
+            labelInput.value = 'Line Height';
+            labelInput.dispatchEvent(new Event('input'));
+            spectator.detectChanges();
 
             expect(spectator.component.fieldChange.emit).toHaveBeenCalledWith(
                 expect.objectContaining({ uid: MOCK_FIELD.uid, label: 'Line Height' })

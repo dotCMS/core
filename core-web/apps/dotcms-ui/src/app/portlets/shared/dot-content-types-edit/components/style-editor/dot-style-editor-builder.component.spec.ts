@@ -216,12 +216,10 @@ describe('DotStyleEditorBuilderComponent', () => {
             // Clear the label of the new field to make it invalid
             const labelInput = spectator.query(
                 'input[placeholder="New Field"]'
-            ) as HTMLInputElement | null;
-            if (labelInput) {
-                labelInput.value = '';
-                labelInput.dispatchEvent(new Event('input'));
-                spectator.detectChanges();
-            }
+            ) as HTMLInputElement;
+            labelInput.value = '';
+            labelInput.dispatchEvent(new Event('input'));
+            spectator.detectChanges();
 
             expect(spectator.component.$saveAttempted()).toBe(false);
 

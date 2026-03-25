@@ -84,9 +84,9 @@
             @for (action of $confirmState()?.actions; track $index) {
                 <p-button
                     [label]="action.label"
-                    [text]="action.text ?? false"
-                    [outlined]="action.outlined ?? false"
-                    [severity]="action.severity ?? 'primary'"
+                    [text]="action.text"
+                    [outlined]="action.outlined"
+                    [severity]="action.severity"
                     (onClick)="action.callback()" />
             }
         </div>

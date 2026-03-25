@@ -35,12 +35,14 @@
                     [text]="true"
                     severity="secondary"
                     (onClick)="openEditDialog.emit($event)" />
-                <button
+                <p-button
                     type="button"
-                    (click)="contextMenu.toggle($event)"
-                    class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 hover:bg-gray-100 transition-colors">
-                    <i class="pi pi-ellipsis-v text-sm text-gray-600"></i>
-                </button>
+                    icon="pi pi-ellipsis-v"
+                    severity="secondary"
+                    [rounded]="true"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="contextMenu.toggle($event)" />
                 <p-menu #contextMenu [model]="$menuItems()" [popup]="true" appendTo="body" />
             </div>
         </p-tablist>

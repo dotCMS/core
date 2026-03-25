@@ -321,20 +321,14 @@ describe('ContentTypesLayoutComponent', () => {
 
         const tabs = de.queryAll(By.css('p-tab'));
         // tabs[0]=Fields, [1]=StyleEditor, [2]=Relationship
-        if (tabs.length > 2) {
-            tabs[2].nativeElement.click();
-            fixture.detectChanges();
+        tabs[2].nativeElement.click();
+        fixture.detectChanges();
 
-            fixture.whenStable().then(() => {
-                const panels = de.queryAll(By.css('p-tabpanel'));
-                if (panels.length > 2) {
-                    const contentTypeRelationshipsPortletBox = panels[2].query(
-                        By.css('dot-portlet-box')
-                    );
-                    expect(contentTypeRelationshipsPortletBox).not.toBeNull();
-                }
-            });
-        }
+        fixture.whenStable().then(() => {
+            const panels = de.queryAll(By.css('p-tabpanel'));
+            const contentTypeRelationshipsPortletBox = panels[2].query(By.css('dot-portlet-box'));
+            expect(contentTypeRelationshipsPortletBox).not.toBeNull();
+        });
     }));
 
     it('should have dot-portlet-box in the Permissions tab after it has been clicked', fakeAsync(() => {
@@ -343,21 +337,14 @@ describe('ContentTypesLayoutComponent', () => {
 
         const tabs = de.queryAll(By.css('p-tab'));
         // tabs[0]=Fields, [1]=StyleEditor, [2]=Relationship, [3]=Permissions
-        const tabIndex = tabs.length > 3 ? 3 : 2;
-        if (tabs.length > tabIndex) {
-            tabs[tabIndex].nativeElement.click();
-            fixture.detectChanges();
+        tabs[3].nativeElement.click();
+        fixture.detectChanges();
 
-            fixture.whenStable().then(() => {
-                const panels = de.queryAll(By.css('p-tabpanel'));
-                if (panels.length > tabIndex) {
-                    const contentTypePushHistoryPortletBox = panels[tabIndex].query(
-                        By.css('dot-portlet-box')
-                    );
-                    expect(contentTypePushHistoryPortletBox).not.toBeNull();
-                }
-            });
-        }
+        fixture.whenStable().then(() => {
+            const panels = de.queryAll(By.css('p-tabpanel'));
+            const contentTypePushHistoryPortletBox = panels[3].query(By.css('dot-portlet-box'));
+            expect(contentTypePushHistoryPortletBox).not.toBeNull();
+        });
     }));
 
     describe('Edit toolBar', () => {
@@ -489,11 +476,9 @@ describe('ContentTypesLayoutComponent', () => {
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 // panels[0]=Fields, [1]=StyleEditor, [2]=Relationship, [3]=Permissions
-                pTabPanel = panels.length > 3 ? panels[3] : null;
-                if (pTabPanel) {
-                    fixture.detectChanges();
-                    iframe = pTabPanel.query(By.css('dot-iframe'));
-                }
+                pTabPanel = panels[3];
+                fixture.detectChanges();
+                iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a permission panel', () => {
@@ -518,11 +503,9 @@ describe('ContentTypesLayoutComponent', () => {
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 // panels[0]=Fields, [1]=StyleEditor, [2]=Relationship, [3]=Permissions, [4]=PushHistory
-                pTabPanel = panels.length > 4 ? panels[4] : panels.length > 3 ? panels[3] : null;
-                if (pTabPanel) {
-                    fixture.detectChanges();
-                    iframe = pTabPanel.query(By.css('dot-iframe'));
-                }
+                pTabPanel = panels[4];
+                fixture.detectChanges();
+                iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a permission panel', () => {
@@ -575,11 +558,9 @@ describe('ContentTypesLayoutComponent', () => {
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 // panels[0]=Fields, [1]=StyleEditor, [2]=Relationship
-                pTabPanel = panels.length > 2 ? panels[2] : null;
-                if (pTabPanel) {
-                    fixture.detectChanges();
-                    iframe = pTabPanel.query(By.css('dot-iframe'));
-                }
+                pTabPanel = panels[2];
+                fixture.detectChanges();
+                iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a Relationship tab', () => {
