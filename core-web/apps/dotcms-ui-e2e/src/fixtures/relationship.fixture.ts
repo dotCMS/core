@@ -88,6 +88,63 @@ async function fireContentlet(
     return data.entity as TestContentlet;
 }
 
+interface BulkPublishResponseBody {
+    entity?: {
+        results?: Array<Record<string, unknown>>;
+        summary?: { failCount?: number; successCount?: number };
+    };
+}
+
+/**
+ * Parses bulk PUBLISH response (`POST .../workflow/actions/default/fire/PUBLISH` with `contentlets` array).
+ * Results are ordered by `title` because the API completes futures in non-deterministic order.
+ */
+function parseBulkPublishContentlets(
+    data: BulkPublishResponseBody,
+    expectedCount: number
+): TestContentlet[] {
+    const summary = data.entity?.summary;
+    expect(summary?.failCount ?? 0, `bulk publish failures: ${JSON.stringify(summary)}`).toBe(0);
+    expect(summary?.successCount).toBe(expectedCount);
+    const results = data.entity?.results ?? [];
+    expect(results.length).toBe(expectedCount);
+    const contentlets: TestContentlet[] = [];
+    for (const entry of results) {
+        const payload = Object.values(entry)[0];
+        expect(
+            payload != null && typeof payload === 'object',
+            'bulk result entry missing contentlet'
+        ).toBe(true);
+        contentlets.push(payload as TestContentlet);
+    }
+    contentlets.sort((a, b) =>
+        String(a.title).localeCompare(String(b.title), undefined, { numeric: true })
+    );
+    return contentlets;
+}
+
+/**
+ * Creates several contentlets in one request (POST bulk PUBLISH with `contentlets` body).
+ */
+async function fireContentlets(
+    request: APIRequestContext,
+    contentType: string,
+    fieldsList: Record<string, unknown>[]
+): Promise<TestContentlet[]> {
+    const items = fieldsList.map((fields) => ({ contentType, ...fields }));
+    const response = await request.post(
+        '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
+        {
+            data: { contentlets: items },
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' }
+        }
+    );
+    const bodyText = await response.text();
+    expect(response.status(), bodyText).toBe(200);
+    const data = JSON.parse(bodyText) as BulkPublishResponseBody;
+    return parseBulkPublishContentlets(data, items.length);
+}
+
 /**
  * Saves a contentlet and sets its relationships via the workflow PUBLISH endpoint.
  */
@@ -284,6 +341,11 @@ export const test = base.extend<{
         createContentType: (payload: Record<string, unknown>) => Promise<TestContentType>;
         deleteContentType: (idOrVar: string) => Promise<void>;
         createContentlet: (ct: string, fields: Record<string, unknown>) => Promise<TestContentlet>;
+        /** Bulk create; returned array sorted by `title` (API completion order is not guaranteed). */
+        createContentlets: (
+            ct: string,
+            fieldsList: Record<string, unknown>[]
+        ) => Promise<TestContentlet[]>;
         createContentletWithRelationship: (
             ct: string,
             fields: Record<string, unknown>,
@@ -326,6 +388,7 @@ export const test = base.extend<{
             createContentType: (payload) => createContentTypeWithFields(request, payload),
             deleteContentType: (id) => deleteContentTypeById(request, id),
             createContentlet: (ct, fields) => fireContentlet(request, ct, fields),
+            createContentlets: (ct, fieldsList) => fireContentlets(request, ct, fieldsList),
             createContentletWithRelationship: (ct, fields, rels) =>
                 fireContentletWithRelationship(request, ct, fields, rels),
             enableNewEditor: (ctVar) => enableNewEditor(request, ctVar),

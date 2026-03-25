@@ -100,12 +100,16 @@ test.describe('Multiple Relationship Fields', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        for (let i = 1; i <= 5; i++) {
-            await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `MultiAuthor ${i} ${testSuffix}`,
-                bio: `Bio ${i}`
-            });
-        }
+        await apiHelpers.createContentlets(
+            authorTypeVariable,
+            Array.from({ length: 5 }, (_, j) => {
+                const i = j + 1;
+                return {
+                    title: `MultiAuthor ${i} ${testSuffix}`,
+                    bio: `Bio ${i}`
+                };
+            })
+        );
     });
 
     test.afterEach(async ({ apiHelpers }) => {
@@ -233,14 +237,10 @@ test.describe('Custom Columns (showFields)', () => {
             );
         }
 
-        const authors: TestContentlet[] = [];
-        for (let i = 1; i <= 2; i++) {
-            const author = await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `ShowFields Author ${i} ${testSuffix}`,
-                bio: `Detailed bio for author ${i}`
-            });
-            authors.push(author);
-        }
+        const authors = await apiHelpers.createContentlets(authorTypeVariable, [
+            { title: `ShowFields Author 1 ${testSuffix}`, bio: 'Detailed bio for author 1' },
+            { title: `ShowFields Author 2 ${testSuffix}`, bio: 'Detailed bio for author 2' }
+        ]);
 
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,

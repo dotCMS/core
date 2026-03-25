@@ -13,6 +13,9 @@ test.describe('Single Selection (1:1 / M:1)', () => {
 
     for (const cardinality of cardinalities) {
         test.describe(`${cardinality.name}`, () => {
+            // Serial: beforeEach/afterEach share mutable `let` vars across tests.
+            test.describe.configure({ mode: 'serial' });
+
             let blogTypeId: string;
             let authorTypeVariable: string;
             let blogTypeVariable: string;
@@ -36,12 +39,16 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 blogTypeId = blogType.id;
                 blogTypeVariable = blogType.variable;
 
-                for (let i = 1; i <= 3; i++) {
-                    await apiHelpers.createContentlet(authorTypeVariable, {
-                        title: `Author ${cardinality.name} ${i} ${testSuffix}`,
-                        bio: `Bio for author ${i}`
-                    });
-                }
+                await apiHelpers.createContentlets(
+                    authorTypeVariable,
+                    Array.from({ length: 3 }, (_, j) => {
+                        const i = j + 1;
+                        return {
+                            title: `Author ${cardinality.name} ${i} ${testSuffix}`,
+                            bio: `Bio for author ${i}`
+                        };
+                    })
+                );
             });
 
             test.afterEach(async ({ apiHelpers }) => {
@@ -172,6 +179,9 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
 
     for (const cardinality of cardinalities) {
         test.describe(`${cardinality.name}`, () => {
+            // Serial: beforeEach/afterEach share mutable `let` vars across tests.
+            test.describe.configure({ mode: 'serial' });
+
             let blogTypeId: string;
             let authorTypeVariable: string;
             let blogTypeVariable: string;
@@ -195,12 +205,16 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 blogTypeId = blogType.id;
                 blogTypeVariable = blogType.variable;
 
-                for (let i = 1; i <= 3; i++) {
-                    await apiHelpers.createContentlet(authorTypeVariable, {
-                        title: `Author ${cardinality.name} ${i} ${testSuffix}`,
-                        bio: `Bio for author ${i}`
-                    });
-                }
+                await apiHelpers.createContentlets(
+                    authorTypeVariable,
+                    Array.from({ length: 3 }, (_, j) => {
+                        const i = j + 1;
+                        return {
+                            title: `Author ${cardinality.name} ${i} ${testSuffix}`,
+                            bio: `Bio for author ${i}`
+                        };
+                    })
+                );
             });
 
             test.afterEach(async ({ apiHelpers }) => {
@@ -300,6 +314,9 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
 // ─── Create New Inline ──────────────────────────────────────────
 
 test.describe('Create New Inline', () => {
+    // Serial: beforeEach/afterEach share mutable `let` vars across tests.
+    test.describe.configure({ mode: 'serial' });
+
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;
@@ -470,6 +487,9 @@ test.describe('New Content Disabled (No New Editor)', () => {
 // ─── Menu Disabled in Single Mode (Item Already Exists) ─────────
 
 test.describe('Menu Disabled When Single Item Exists', () => {
+    // Serial: beforeEach/afterEach share mutable `let` vars across tests.
+    test.describe.configure({ mode: 'serial' });
+
     let blogTypeId: string;
     let authorTypeVariable: string;
     let blogTypeVariable: string;

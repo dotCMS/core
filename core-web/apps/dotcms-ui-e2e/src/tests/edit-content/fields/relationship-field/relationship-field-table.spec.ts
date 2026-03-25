@@ -35,14 +35,11 @@ test.describe('Reorder (Drag & Drop)', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        const authors: TestContentlet[] = [];
-        for (let i = 1; i <= 3; i++) {
-            const author = await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `Reorder Author ${i} ${testSuffix}`,
-                bio: `Bio ${i}`
-            });
-            authors.push(author);
-        }
+        const authors = await apiHelpers.createContentlets(authorTypeVariable, [
+            { title: `Reorder Author 1 ${testSuffix}`, bio: 'Bio 1' },
+            { title: `Reorder Author 2 ${testSuffix}`, bio: 'Bio 2' },
+            { title: `Reorder Author 3 ${testSuffix}`, bio: 'Bio 3' }
+        ]);
 
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
@@ -144,12 +141,13 @@ test.describe('Search and Filter', () => {
         blogTypeVariable = blogType.variable;
 
         const names = ['John Smith', 'John Doe', 'Jane Smith', 'Alice Johnson', 'Bob Williams'];
-        for (const name of names) {
-            await apiHelpers.createContentlet(authorTypeVariable, {
+        await apiHelpers.createContentlets(
+            authorTypeVariable,
+            names.map((name) => ({
                 title: `${name} ${testSuffix}`,
                 bio: `Bio for ${name}`
-            });
-        }
+            }))
+        );
     });
 
     test.afterEach(async ({ apiHelpers }) => {
@@ -193,11 +191,19 @@ test.describe('Search and Filter', () => {
 
         const initialCount = await selectDialog.waitForRowCountAtLeast(5);
 
+        // Debounced search — fires automatically after 300ms
         await selectDialog.search('John');
+
+        // Verify the filter actually reduced results (not just "at least 2")
+        await expect
+            .poll(() => selectDialog.rows.count(), { timeout: 10000 })
+            .toBeLessThan(initialCount);
         await selectDialog.expectRowCountAtLeast(2);
 
+        // Clear via the filter popover and wait for the table to reload
         await selectDialog.openFilters();
         await selectDialog.clearSearch();
+        await selectDialog.waitForContentLoaded();
 
         await selectDialog.expectRowCountAtLeast(initialCount);
 
@@ -254,12 +260,16 @@ test.describe('Dialog Content Listing', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        for (let i = 1; i <= 15; i++) {
-            await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `ListAuthor ${String(i).padStart(2, '0')} ${testSuffix}`,
-                bio: `Bio ${i}`
-            });
-        }
+        await apiHelpers.createContentlets(
+            authorTypeVariable,
+            Array.from({ length: 15 }, (_, j) => {
+                const i = j + 1;
+                return {
+                    title: `ListAuthor ${String(i).padStart(2, '0')} ${testSuffix}`,
+                    bio: `Bio ${i}`
+                };
+            })
+        );
     });
 
     test.afterEach(async ({ apiHelpers }) => {
@@ -324,14 +334,16 @@ test.describe('Table Pagination', () => {
     }) => {
         // BUG: pagination shows all items instead of 10 per page.
         // Remove fixme once the bug is fixed.
-        const authors: TestContentlet[] = [];
-        for (let i = 1; i <= 12; i++) {
-            const author = await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `TablePag Author ${i} ${testSuffix}`,
-                bio: `Bio ${i}`
-            });
-            authors.push(author);
-        }
+        const authors = await apiHelpers.createContentlets(
+            authorTypeVariable,
+            Array.from({ length: 12 }, (_, j) => {
+                const i = j + 1;
+                return {
+                    title: `TablePag Author ${i} ${testSuffix}`,
+                    bio: `Bio ${i}`
+                };
+            })
+        );
 
         const blog = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
@@ -357,14 +369,16 @@ test.describe('Table Pagination', () => {
         testSuffix
     }) => {
         // BUG: pagination appears even with fewer items. Same pagination bug as above.
-        const authors: TestContentlet[] = [];
-        for (let i = 1; i <= 9; i++) {
-            const author = await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `NoPag Author ${i} ${testSuffix}`,
-                bio: `Bio ${i}`
-            });
-            authors.push(author);
-        }
+        const authors = await apiHelpers.createContentlets(
+            authorTypeVariable,
+            Array.from({ length: 9 }, (_, j) => {
+                const i = j + 1;
+                return {
+                    title: `NoPag Author ${i} ${testSuffix}`,
+                    bio: `Bio ${i}`
+                };
+            })
+        );
 
         const blog = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,

@@ -39,14 +39,16 @@ test.describe('Add More Relations', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        authors = [];
-        for (let i = 1; i <= 5; i++) {
-            const author = await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `Author Edit ${i} ${testSuffix}`,
-                bio: `Bio for edit author ${i}`
-            });
-            authors.push(author);
-        }
+        authors = await apiHelpers.createContentlets(
+            authorTypeVariable,
+            Array.from({ length: 5 }, (_, j) => {
+                const i = j + 1;
+                return {
+                    title: `Author Edit ${i} ${testSuffix}`,
+                    bio: `Bio for edit author ${i}`
+                };
+            })
+        );
 
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
@@ -138,14 +140,16 @@ test.describe('Remove Relations', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        authors = [];
-        for (let i = 1; i <= 3; i++) {
-            const author = await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `Author Delete ${i} ${testSuffix}`,
-                bio: `Bio for delete author ${i}`
-            });
-            authors.push(author);
-        }
+        authors = await apiHelpers.createContentlets(
+            authorTypeVariable,
+            Array.from({ length: 3 }, (_, j) => {
+                const i = j + 1;
+                return {
+                    title: `Author Delete ${i} ${testSuffix}`,
+                    bio: `Bio for delete author ${i}`
+                };
+            })
+        );
 
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,
@@ -233,14 +237,10 @@ test.describe('Delete and Re-add (Single Mode)', () => {
         blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
-        authors = [];
-        for (let i = 1; i <= 2; i++) {
-            const author = await apiHelpers.createContentlet(authorTypeVariable, {
-                title: `Author SingleDel ${i} ${testSuffix}`,
-                bio: `Bio ${i}`
-            });
-            authors.push(author);
-        }
+        authors = await apiHelpers.createContentlets(authorTypeVariable, [
+            { title: `Author SingleDel 1 ${testSuffix}`, bio: 'Bio 1' },
+            { title: `Author SingleDel 2 ${testSuffix}`, bio: 'Bio 2' }
+        ]);
 
         blogContentlet = await apiHelpers.createContentletWithRelationship(
             blogTypeVariable,

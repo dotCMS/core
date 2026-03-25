@@ -111,6 +111,11 @@ export class SelectExistingContentDialog {
 
     async openFilters(): Promise<void> {
         await this.dialog.getByTestId('open-filters-button').click();
+        // PrimeNG popover appends to body with an enter animation — wait for it to settle
+        await this.page
+            .getByTestId('clear-button')
+            .getByRole('button')
+            .waitFor({ state: 'visible' });
     }
 
     /**
@@ -120,13 +125,11 @@ export class SelectExistingContentDialog {
         const searchInput = this.dialog.getByTestId('relationship-dialog-search-query');
         await searchInput.fill(query);
         await this.openFilters();
-        // search-button is inside a popover appended to body
-        await this.page.getByTestId('search-button').click();
+        await this.page.getByTestId('search-button').getByRole('button').click();
     }
 
     async clearSearch(): Promise<void> {
-        // Clear button is inside a popover that PrimeNG appends to body (outside dialog scope)
-        await this.page.getByTestId('clear-button').click();
+        await this.page.getByTestId('clear-button').getByRole('button').click();
     }
 
     // ─── Show Selected Toggle ────────────────────────────────────────
