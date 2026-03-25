@@ -35,7 +35,7 @@ import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-fa
 
 @Component({
     selector: 'dot-form-dialog',
-    template: '<ng-content></ng-content><ng-content select="[footerActions]"></ng-content>',
+    template: '<ng-content /><ng-content select="[footerActions]" />',
     styleUrls: [],
     standalone: false
 })

@@ -28,7 +28,7 @@ import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.compone
     selector: 'dot-test-host-component',
     template: `
         <button (click)="op.openMenu($event)" type="text">Open</button>
-        <dot-device-selector-seo [apiLink]="apiLink" #op></dot-device-selector-seo>
+        <dot-device-selector-seo [apiLink]="apiLink" #op />
     `
 })
 class TestHostComponent {

@@ -10,7 +10,7 @@ import { colIcon, rowIcon } from '../../assets/icons';
     standalone: false,
     selector: 'dotcms-host-component',
     template: `
-        <dotcms-add-widget [label]="label" [icon]="icon"></dotcms-add-widget>
+        <dotcms-add-widget [label]="label" [icon]="icon" />
     `
 })
 class HostComponent {

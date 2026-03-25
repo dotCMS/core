@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -41,7 +41,6 @@ import { FieldDragDropService } from '../fields/service';
     selector: 'dot-content-type-layout',
     templateUrl: 'content-types-layout.component.html',
     imports: [
-        CommonModule,
         AsyncPipe,
         TabsModule,
         SplitButtonModule,

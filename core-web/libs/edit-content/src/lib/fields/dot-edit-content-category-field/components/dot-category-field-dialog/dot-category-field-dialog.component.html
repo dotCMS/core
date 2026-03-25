@@ -40,7 +40,7 @@
 
         <div
             class="flex flex-col flex-[0_0_25%] gap-2 p-4 border-[1.5px] border-(--gray-400) rounded-md bg-white overflow-hidden"
-            [ngClass]="{ 'pl-0': !store.dialog.selected().length }">
+            [class.pl-0]="!store.dialog.selected().length">
             @if (store.dialog.selected().length) {
                 <div class="flex-1 overflow-y-auto [scrollbar-gutter:auto]">
                     <dot-category-field-selected
