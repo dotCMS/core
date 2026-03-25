@@ -27,8 +27,11 @@ if (!isCi) {
         process.exit(0);
     }
 
-    // Hooks used by lefthook.yml — keep in sync with that file.
-    const hooks = ['pre-commit', 'pre-push', 'post-merge'];
+    // Hooks managed by this dispatcher. Includes all hooks from lefthook.yml plus any
+    // that lefthook install may have written (prepare-commit-msg). Without coverage here,
+    // lefthook-native hooks call lefthook unconditionally and print "No config files"
+    // warnings on branches that predate lefthook.
+    const hooks = ['pre-commit', 'pre-push', 'post-merge', 'prepare-commit-msg'];
 
     for (const hookName of hooks) {
         const script = `#!/bin/sh
