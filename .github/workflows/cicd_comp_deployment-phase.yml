@@ -322,6 +322,7 @@ jobs:
           artifactory-username: ${{ secrets.EE_REPO_USERNAME }}
           artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifact-run-id: ${{ inputs.artifact-run-id }}
 
       # Publish CLI to NPM (if required)
       # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
