@@ -1,3 +1,5 @@
+import { patchState, signalState } from '@ngrx/signals';
+
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -5,8 +7,6 @@ import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
-
-import { patchState, signalState } from '@ngrx/signals';
 
 import {
     DotCrudService,
@@ -161,6 +161,7 @@ export class DotStyleEditorBuilderComponent {
 
         if (this.$sections().length === 0) {
             // Empty form — remove the key so metadata stays clean (no empty schema noise)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { [STYLE_EDITOR_SCHEMA_KEY]: _removed, ...rest } = existingMetadata;
             updatedMetadata = rest;
         } else {
@@ -179,6 +180,7 @@ export class DotStyleEditorBuilderComponent {
 
         // `systemActionMappings` contains full workflow-action objects that the API
         // misinterprets as action IDs when round-tripped in a PUT body. Strip it out.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { systemActionMappings: _wf, ...contentTypeData } = contentType;
 
         const payload: DotCMSContentType = {

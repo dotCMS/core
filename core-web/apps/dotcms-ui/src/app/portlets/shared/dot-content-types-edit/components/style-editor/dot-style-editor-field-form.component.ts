@@ -19,8 +19,8 @@ import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { StyleEditorFieldType } from '@dotcms/uve';
 import { DotMessagePipe } from '@dotcms/ui';
+import { StyleEditorFieldType } from '@dotcms/uve';
 
 import { BuilderField, BuilderOption, FIELD_TYPE_OPTIONS, toLabelIdentifier } from './models';
 
@@ -334,6 +334,7 @@ export class DotStyleEditorFieldFormComponent {
             const updated = [...options];
             const opt = updated[index];
             if (opt.imageURL !== undefined) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { imageURL: _removed, ...rest } = opt;
                 updated[index] = rest;
             } else {
