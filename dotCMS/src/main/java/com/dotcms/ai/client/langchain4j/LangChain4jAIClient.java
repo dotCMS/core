@@ -114,8 +114,6 @@ public class LangChain4jAIClient implements AIClient {
         }
     }
 
-    // ── Chat ─────────────────────────────────────────────────────────────────
-
     private String executeChatRequest(final String providerConfigJson, final JSONObject payload) {
         final ChatModel model = chatModelCache.computeIfAbsent(
                 providerConfigJson + ":chat",
@@ -138,8 +136,6 @@ public class LangChain4jAIClient implements AIClient {
         return toChatResponseJson(response);
     }
 
-    // ── Embeddings ───────────────────────────────────────────────────────────
-
     private String executeEmbeddingRequest(final String providerConfigJson, final JSONObject payload) {
         final EmbeddingModel model = embeddingModelCache.computeIfAbsent(
                 providerConfigJson + ":embeddings",
@@ -149,8 +145,6 @@ public class LangChain4jAIClient implements AIClient {
         final Response<Embedding> response = model.embed(TextSegment.from(input));
         return toEmbeddingResponseJson(response.content());
     }
-
-    // ── Image ────────────────────────────────────────────────────────────────
 
     private String executeImageRequest(final String providerConfigJson, final JSONObject payload) {
         final ImageModel model = imageModelCache.computeIfAbsent(
@@ -162,9 +156,7 @@ public class LangChain4jAIClient implements AIClient {
         return toImageResponseJson(response.content());
     }
 
-    // ── Translation: JSONObject → LangChain4J ─────────────────────────────────
-
-    private static List<ChatMessage> toMessages(final JSONArray messagesArray) {
+    static List<ChatMessage> toMessages(final JSONArray messagesArray) {
         final List<ChatMessage> messages = new ArrayList<>();
         if (messagesArray == null) {
             return messages;
@@ -184,9 +176,7 @@ public class LangChain4jAIClient implements AIClient {
         return messages;
     }
 
-    // ── Translation: LangChain4J → JSONObject ────────────────────────────────
-
-    private static String toChatResponseJson(final ChatResponse response) {
+    static String toChatResponseJson(final ChatResponse response) {
         final JSONObject message = new JSONObject();
         message.put(AiKeys.ROLE, "assistant");
         message.put(AiKeys.CONTENT, response.aiMessage().text());
@@ -205,7 +195,7 @@ public class LangChain4jAIClient implements AIClient {
         return result.toString();
     }
 
-    private static String toEmbeddingResponseJson(final Embedding embedding) {
+    static String toEmbeddingResponseJson(final Embedding embedding) {
         final JSONArray embeddingArray = new JSONArray();
         for (final float value : embedding.vector()) {
             embeddingArray.put((double) value);
@@ -224,7 +214,7 @@ public class LangChain4jAIClient implements AIClient {
         return result.toString();
     }
 
-    private static String toImageResponseJson(final Image image) {
+    static String toImageResponseJson(final Image image) {
         final JSONObject data = new JSONObject();
         data.put(AiKeys.URL, image.url() != null ? image.url().toString() : "");
 
@@ -235,8 +225,6 @@ public class LangChain4jAIClient implements AIClient {
         result.put(AiKeys.DATA, dataArray);
         return result.toString();
     }
-
-    // ── Config parsing ───────────────────────────────────────────────────────
 
     private static ProviderConfig parseSection(final String providerConfigJson, final String section) {
         try {

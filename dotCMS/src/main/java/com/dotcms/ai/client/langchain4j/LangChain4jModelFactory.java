@@ -86,6 +86,9 @@ public class LangChain4jModelFactory {
         final OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .apiKey(config.getApiKey())
                 .modelName(config.getModel());
+        if (config.getEndpoint() != null) {
+            builder.baseUrl(config.getEndpoint());
+        }
         if (config.getMaxTokens() != null) {
             builder.maxTokens(config.getMaxTokens());
         }
@@ -105,6 +108,9 @@ public class LangChain4jModelFactory {
         final OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder builder = OpenAiEmbeddingModel.builder()
                 .apiKey(config.getApiKey())
                 .modelName(config.getModel());
+        if (config.getEndpoint() != null) {
+            builder.baseUrl(config.getEndpoint());
+        }
         if (config.getMaxRetries() != null) {
             builder.maxRetries(config.getMaxRetries());
         }
@@ -118,6 +124,9 @@ public class LangChain4jModelFactory {
         final OpenAiImageModel.OpenAiImageModelBuilder builder = OpenAiImageModel.builder()
                 .apiKey(config.getApiKey())
                 .modelName(config.getModel());
+        if (config.getEndpoint() != null) {
+            builder.baseUrl(config.getEndpoint());
+        }
         if (config.getSize() != null) {
             builder.size(config.getSize());
         }

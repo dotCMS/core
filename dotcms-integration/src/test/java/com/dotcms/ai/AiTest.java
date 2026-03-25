@@ -83,4 +83,31 @@ public interface AiTest {
         APILocator.getAppsAPI().deleteSecrets(AppKeys.APP_KEY, host, APILocator.systemUser());
     }
 
+    static String providerConfigJson(final int port, final String chatModel) {
+        final String endpoint = String.format("http://localhost:%d/", port);
+        return String.format(
+                "{" +
+                "\"chat\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
+                "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
+                "\"image\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}" +
+                "}",
+                API_KEY, chatModel, endpoint,
+                API_KEY, EMBEDDINGS_MODEL, endpoint,
+                API_KEY, IMAGE_MODEL, endpoint);
+    }
+
+    static Map<String, Secret> aiAppSecretsWithProviderConfig(
+            final Host host, final String providerConfigJson) throws Exception {
+        final AppSecrets appSecrets = new AppSecrets.Builder()
+                .withKey(AppKeys.APP_KEY)
+                .withSecret(AppKeys.PROVIDER_CONFIG.key, providerConfigJson)
+                .withSecret(AppKeys.LISTENER_INDEXER.key, "{\"default\":\"blog\"}")
+                .withSecret(AppKeys.COMPLETION_ROLE_PROMPT.key, AppKeys.COMPLETION_ROLE_PROMPT.defaultValue)
+                .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue)
+                .build();
+        APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
+        TimeUnit.SECONDS.sleep(1);
+        return appSecrets.getSecrets();
+    }
+
 }
