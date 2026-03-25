@@ -1,6 +1,6 @@
 import { fromEvent } from 'rxjs';
 
-import { NgStyle, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     AfterContentInit,
     AfterViewInit,
@@ -57,7 +57,6 @@ import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
         PopoverModule,
         DotIconComponent,
         DotMessagePipe,
-        NgStyle,
         NgTemplateOutlet
     ]
 })

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { NgStyle, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
@@ -41,8 +41,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         CheckboxModule,
         BreadcrumbModule,
         DotEmptyStateComponent,
-        AsyncPipe,
-        NgStyle
+        AsyncPipe
     ]
 })
 export class DotCategoriesListComponent {

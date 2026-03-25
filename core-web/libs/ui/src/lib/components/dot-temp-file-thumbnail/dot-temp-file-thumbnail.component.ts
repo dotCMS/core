@@ -1,4 +1,4 @@
-import { NgClass, NgStyle } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
 import { DotCMSTempFile, DotFileMetadata } from '@dotcms/dotcms-models';
@@ -31,7 +31,7 @@ export interface DotThumbnailOptions {
 
 @Component({
     selector: 'dot-temp-file-thumbnail',
-    imports: [NgClass, NgStyle],
+    imports: [NgClass],
     templateUrl: './dot-temp-file-thumbnail.component.html',
     host: {
         class: 'flex h-full w-full items-center justify-center'

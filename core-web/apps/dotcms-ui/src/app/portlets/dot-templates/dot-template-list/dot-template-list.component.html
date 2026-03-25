@@ -132,7 +132,7 @@
                         <p-tableCheckbox [value]="template" />
                     }
                 </td>
-                <td [ngStyle]="{ 'text-align': $state.tableColumns()[0].textAlign || 'left' }">
+                <td [style.text-align]="$state.tableColumns()[0].textAlign || 'left'">
                     <span
                         (click)="template.identifier !== 'SYSTEM_TEMPLATE' && onRowClick(template)"
                         [class.cursor-pointer]="template.identifier !== 'SYSTEM_TEMPLATE'"
@@ -140,11 +140,11 @@
                         {{ template.name }}
                     </span>
                 </td>
-                <td [ngStyle]="{ 'text-align': $state.tableColumns()[1].textAlign || 'left' }">
+                <td [style.text-align]="$state.tableColumns()[1].textAlign || 'left'">
                     <dot-contentlet-status-chip [state]="getTemplateState(template)" />
                 </td>
                 <td
-                    [ngStyle]="{ 'text-align': $state.tableColumns()[2].textAlign || 'left' }"
+                    [style.text-align]="$state.tableColumns()[2].textAlign || 'left'"
                     data-testId="theme-cell">
                     @if (template.themeInfo?.inode === 'SYSTEM_THEME') {
                         {{ template.themeInfo?.title }}
@@ -159,10 +159,10 @@
                         }
                     }
                 </td>
-                <td [ngStyle]="{ 'text-align': $state.tableColumns()[3].textAlign || 'left' }">
+                <td [style.text-align]="$state.tableColumns()[3].textAlign || 'left'">
                     {{ template.friendlyName }}
                 </td>
-                <td [ngStyle]="{ 'text-align': $state.tableColumns()[4].textAlign || 'left' }">
+                <td [style.text-align]="$state.tableColumns()[4].textAlign || 'left'">
                     {{ template.modDate | dotRelativeDate }}
                 </td>
                 <td style="width: 5%" (contextmenu)="$event.stopPropagation()">

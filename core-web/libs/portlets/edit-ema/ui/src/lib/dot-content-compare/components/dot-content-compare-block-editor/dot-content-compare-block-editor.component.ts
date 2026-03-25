@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { NgStyle, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { AfterViewInit, Component, Input, ViewChild, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
@@ -14,7 +14,7 @@ import { DotContentCompareTableData } from '../../store/dot-content-compare.stor
 @Component({
     selector: 'dot-content-compare-block-editor',
     templateUrl: './dot-content-compare-block-editor.component.html',
-    imports: [BlockEditorModule, DotSafeHtmlPipe, DotDiffPipe, AsyncPipe, NgStyle]
+    imports: [BlockEditorModule, DotSafeHtmlPipe, DotDiffPipe, AsyncPipe]
 })
 export class DotContentCompareBlockEditorComponent implements AfterViewInit {
     private sanitizer = inject(DomSanitizer);

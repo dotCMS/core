@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { NgStyle, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -70,8 +70,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         ActionHeaderComponent,
         InputTextModule,
         DotContentletStatusChipComponent,
-        AsyncPipe,
-        NgStyle
+        AsyncPipe
     ],
     providers: [
         DotContainerListStore,
