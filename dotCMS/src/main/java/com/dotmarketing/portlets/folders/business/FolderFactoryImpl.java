@@ -905,6 +905,9 @@ public class FolderFactoryImpl extends FolderFactory {
     levels.sort(Comparator.comparingInt(pair -> pair[0].length()));
 
     for (final String[] pair : levels) {
+      // No asset_type filter is intentional: every identifier that lives directly under the
+      // renamed folder path (files, pages, content, sub-folders alike) must have its
+      // parent_path updated, not just folders.
       new DotConnect()
           .setSQL("UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?")
           .addParam(pair[1])

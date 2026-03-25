@@ -210,24 +210,6 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 	/**
 	 * <ul>
 	 *     <li><b>Method to test:</b> {@link FolderAPI#renameFolder(Folder, String, User, boolean)}</li>
-	 *     <li><b>Given Scenario:</b> A folder containing a file asset, an HTML page, and a
-	 *     sub-folder (which itself contains a file asset) is renamed. This exercises the fix for
-	 *     issue #34655, where the old implementation used Elasticsearch to discover children and
-	 *     missed unindexed items, causing a DB constraint violation on folder deletion.</li>
-	 *     <li><b>Expected Result:</b>
-	 *     <ul>
-	 *         <li>Rename returns {@code true}.</li>
-	 *         <li>Folder and sub-folder identifiers are unchanged (in-place rename).</li>
-	 *         <li>All direct children's {@code parent_path} in the DB equals the new folder path.</li>
-	 *         <li>All sub-children's {@code parent_path} equals the new sub-folder path.</li>
-	 *         <li>Folder is findable by new path; old path resolves to nothing.</li>
-	 *     </ul>
-	 *     </li>
-	 * </ul>
-	 */
-	/**
-	 * <ul>
-	 *     <li><b>Method to test:</b> {@link FolderAPI#renameFolder(Folder, String, User, boolean)}</li>
 	 *     <li><b>Given Scenario:</b> Attempt to rename a folder to the name already used by an
 	 *     existing sibling folder.</li>
 	 *     <li><b>Expected Result:</b> {@code renameFolder} returns {@code false} without modifying
@@ -252,6 +234,24 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		assertEquals("folderB asset_name must be unchanged", folderB.getName(), identB.getAssetName());
 	}
 
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:</b> {@link FolderAPI#renameFolder(Folder, String, User, boolean)}</li>
+	 *     <li><b>Given Scenario:</b> A folder containing a file asset, an HTML page, and a
+	 *     sub-folder (which itself contains a file asset) is renamed. This exercises the fix for
+	 *     issue #34655, where the old implementation used Elasticsearch to discover children and
+	 *     missed unindexed items, causing a DB constraint violation on folder deletion.</li>
+	 *     <li><b>Expected Result:</b>
+	 *     <ul>
+	 *         <li>Rename returns {@code true}.</li>
+	 *         <li>Folder and sub-folder identifiers are unchanged (in-place rename).</li>
+	 *         <li>All direct children's {@code parent_path} in the DB equals the new folder path.</li>
+	 *         <li>All sub-children's {@code parent_path} equals the new sub-folder path.</li>
+	 *         <li>Folder is findable by new path; old path resolves to nothing.</li>
+	 *     </ul>
+	 *     </li>
+	 * </ul>
+	 */
 	@Test
 	public void renameFolder_updatesChildrenAndSubChildrenPaths() throws Exception {
 
