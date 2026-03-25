@@ -666,12 +666,25 @@ public class FolderAPIImpl implements FolderAPI  {
 		//if the folder was renamed, we will need to create a new identifier
 		if (!folder.getName().equalsIgnoreCase(existingID.getAssetName())){
 			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
+			// Queue async ES reindex so content under the renamed folder is re-indexed at the new
+			// path. folderFactory.renameFolder() mutates folder.setName(newName), so
+			// folder.getPath() already returns the new path when this runs.
+			// DotReindexStateException is caught to avoid rolling back the save on a transient
+			// reindex-queue failure.
+			try {
+				contentletAPI.refreshContentUnderFolder(folder);
+			} catch (final DotReindexStateException e) {
+				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder via save(): "
+						+ e.getMessage());
+			}
 		} else{
 			folder.setModDate(new Date());
 			folderFactory.save(folder);
 		}
 
-        // remove folder and parent from navigation cache
+        // Nav cache: folderFactory.renameFolder() already evicts the renamed folder and its
+        // sub-tree. The two calls below are redundant for the rename path but are kept for the
+        // non-rename (else) branch where the factory does not evict nav cache.
 		if (!isNew) {
 			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 			CacheLocator.getNavToolCache()

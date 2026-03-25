@@ -8,7 +8,6 @@ import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CO
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
 
 import com.dotcms.browser.BrowserQuery;
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
@@ -780,7 +779,6 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   @Override
-  @WrapInTransaction
   protected boolean renameFolder(final Folder folder, final String newName, final User user,
       final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
@@ -916,12 +914,16 @@ public class FolderFactoryImpl extends FolderFactory {
     for (final Map<String, Object> row : subFolderSnapshot) {
       final String oldFolderPath = (String) row.get("parent_path") + (String) row.get("asset_name") + "/";
       // Guard against corrupt snapshot data: every sub-folder path must start with the root.
+      // Throw rather than skipping: a partial rename that returns true is worse than a rollback,
+      // because the caller has no way to know which levels were left with a stale parent_path.
       if (!oldFolderPath.startsWith(startOldPath)) {
-        Logger.warn(FolderFactoryImpl.class, "Sub-folder path '"
+        throw new DotDataException(
+            "Rename aborted: sub-folder path '"
             + oldFolderPath.replaceAll("[\\r\\n]", " ")
             + "' does not start with expected prefix '"
-            + startOldPath.replaceAll("[\\r\\n]", " ") + "'; skipping.");
-        continue;
+            + startOldPath.replaceAll("[\\r\\n]", " ")
+            + "'. This indicates corrupt parent_path data in the identifier table."
+            + " The transaction will be rolled back.");
       }
       // Compute new path by replacing the startOldPath prefix with startNewPath
       final String newFolderPath = startNewPath + oldFolderPath.substring(startOldPath.length());
@@ -977,16 +979,12 @@ public class FolderFactoryImpl extends FolderFactory {
    * with {@code rootPath} (direct children and all nested descendants).
    * A single prefix query covers all levels in one round-trip.
    * <p>
-   * Two eviction calls are issued per row to guarantee complete removal regardless of cache
-   * temperature:
-   * <ul>
-   *   <li>{@link com.dotmarketing.business.IdentifierCache#removeFromCacheByURI} uses the
-   *       <em>old</em> path (computed from the pre-rename DB values) to directly remove the
-   *       URI-keyed entry even when the UUID cache is cold.</li>
-   *   <li>{@link com.dotmarketing.business.IdentifierCache#removeFromCacheByIdentifier(String)}
-   *       removes the UUID-keyed entry; if the identifier is in the UUID cache it also performs
-   *       full eviction (UUID + URI keys together).</li>
-   * </ul>
+   * Uses {@link com.dotmarketing.business.IdentifierCache#removeFromCacheDirect} which removes
+   * both the UUID-keyed and URI-keyed cache entries without triggering the recursive
+   * {@code findByParentPath} DB call that the standard eviction methods perform for folder
+   * entries. Because this method already iterates the full flat set of descendants, the
+   * recursive re-discovery would cause O(F × depth) redundant DB queries.
+   * <p>
    * Note: {@code ContentletCache} and {@code HTMLPageCache} are keyed by inode/UUID, not by
    * path, so no additional eviction is needed for non-folder children after a parent_path update.
    */
@@ -1005,11 +1003,8 @@ public class FolderFactoryImpl extends FolderFactory {
 
     final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
     for (final Map<String, Object> row : rows) {
-      // Evict by old URI directly — works even when the UUID-keyed entry is absent (cold cache).
       final String oldUri = (String) row.get("parent_path") + (String) row.get("asset_name");
-      identifierCache.removeFromCacheByURI(hostId, oldUri);
-      // Evict by UUID — removes the UUID-keyed entry and, if warm, also the URI-keyed entry.
-      identifierCache.removeFromCacheByIdentifier((String) row.get("id"));
+      identifierCache.removeFromCacheDirect((String) row.get("id"), hostId, oldUri);
     }
   }
 

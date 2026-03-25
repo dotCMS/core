@@ -262,8 +262,8 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 
 		// /original/
 		final Folder parentFolder = new FolderDataGen().name(originalName).site(site).nextPersisted();
-		// /original/sub/
-		final Folder subFolder    = new FolderDataGen().name("sub").parent(parentFolder).site(site).nextPersisted();
+		// /original/sub/  — do NOT call .site() after .parent(): FolderDataGen.site() clears the parent field.
+		final Folder subFolder    = new FolderDataGen().name("sub").parent(parentFolder).nextPersisted();
 
 		// File asset directly under /original/
 		final Contentlet fileInParent = new FileAssetDataGen(parentFolder, "content-in-parent").nextPersisted();
