@@ -46,7 +46,7 @@ import java.util.Set;
  */
 @IndexLibraryIndependent
 @IndexRouter(
-        access = IndexAccess.READ_WRITE
+        access = {IndexAccess.READ,IndexAccess.WRITE}
 )
 public class IndexAPIImpl implements IndexAPI {
 
