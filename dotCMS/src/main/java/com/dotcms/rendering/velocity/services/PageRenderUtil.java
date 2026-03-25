@@ -747,33 +747,12 @@ public class PageRenderUtil implements Serializable {
                     contentletIdentifier, mode.showLive, languageId,
                     user, true, variantName);
 
-            if (contentletOpt.isPresent()) {
-                return contentletOpt.get();
-            }
-
-            // When the requested language IS the default language, there is no further fallback:
-            // findContentletByIdentifierOrFallback already tried it, so give up here.
-            final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            if (languageId == defaultLanguageId) {
-                return null;
-            }
-
-            // When the requested language is NOT the default language we still allow the
-            // any-language fallback for content types that explicitly declare languageFallback()=true.
-            // Return the first available version in any language as a last resort.
-            try {
-                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
-                        contentletIdentifier, variantName);
-
-                // Check if this content type allows language fallback
-                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
-                    return anyLanguageContentlet;
-                }
-            } catch (Exception e) {
-                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
-            }
-
-            return null;
+            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, the contract is: show the
+            // requested-language version, or fall back to the default language. If the contentlet
+            // has no version in either, it must be excluded from this page render.
+            // This logic covers the scenario presented in the
+            // [DEFECT] Page API not respecting DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE #34290
+            return contentletOpt.orElse(null);
 
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
