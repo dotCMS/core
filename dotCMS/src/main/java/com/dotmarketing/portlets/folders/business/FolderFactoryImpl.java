@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CO
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
 
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
@@ -779,10 +780,15 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   @Override
+  @WrapInTransaction
   protected boolean renameFolder(final Folder folder, final String newName, final User user,
       final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
     final Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
+    if (ident == null) {
+      throw new DotDataException("Identifier not found in DB for folder inode='"
+          + folder.getInode() + "' id='" + folder.getIdentifier() + "'");
+    }
     final String parentPath = ident.getParentPath();
     final String hostId = ident.getHostId();
     // Use ident.getAssetName() (DB value) not folder.getName(): when called from saveFolder the
@@ -801,6 +807,13 @@ public class FolderFactoryImpl extends FolderFactory {
     // Snapshot sub-folder old-path data BEFORE any update so targeted cache eviction is possible
     final List<Map<String, Object>> subFolderSnapshot = loadSubFolderSnapshot(oldPath, hostId);
 
+    // Capture the old values before mutation so they can be restored if a subsequent DB
+    // operation fails. @WrapInTransaction rolls back DB changes, but Java object state is
+    // not rolled back automatically — callers that retain a reference after failure would
+    // otherwise observe the new name permanently despite the rename not completing.
+    final String oldFolderName = folder.getName();
+    final String oldAssetName  = ident.getAssetName();
+
     // Update the folder record in-place.
     // save() uses upsertFolder keyed on the existing inode — the inode is NOT regenerated.
     // Because the inode is preserved, the old updateOtherFolderReferences calls (which updated
@@ -811,15 +824,21 @@ public class FolderFactoryImpl extends FolderFactory {
     // FolderCache eviction. At this point the identifier cache still holds asset_name=oldName, so
     // save() correctly evicts the old path-keyed cache entry. The identifier cache is evicted on
     // the next line, AFTER save() reads it, preserving the correct ordering.
-    folder.setName(newName);
-    save(folder);
+    try {
+      folder.setName(newName);
+      save(folder);
 
-    // Evict old identifier URI cache entry BEFORE mutating asset_name: removeFromCacheByIdentifier
-    // looks up the identifier by ID from cache (still holds old URI) and evicts by that key.
-    // After save(ident), the new URI key is stored normally.
-    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
-    ident.setAssetName(newName);
-    APILocator.getIdentifierAPI().save(ident);
+      // Evict old identifier URI cache entry BEFORE mutating asset_name: removeFromCacheByIdentifier
+      // looks up the identifier by ID from cache (still holds old URI) and evicts by that key.
+      // After save(ident), the new URI key is stored normally.
+      CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
+      ident.setAssetName(newName);
+      APILocator.getIdentifierAPI().save(ident);
+    } catch (final DotDataException | RuntimeException e) {
+      folder.setName(oldFolderName);
+      ident.setAssetName(oldAssetName);
+      throw e;
+    }
 
     // Evict identifier cache for the entire subtree BEFORE the bulk UPDATE so the eviction can
     // reliably find the old-path-keyed cache entries. removeFromCacheByIdentifier() uses the
@@ -936,6 +955,10 @@ public class FolderFactoryImpl extends FolderFactory {
       final Identifier oldIdent = new Identifier();
       oldIdent.setParentPath((String) row.get("parent_path"));
       oldIdent.setAssetName((String) row.get("asset_name"));
+      // assetType must be "folder" so Identifier.getPath() appends a trailing '/'.
+      // FolderCacheImpl keys path-based entries with the slash, so without this the eviction
+      // silently misses every sub-folder path-keyed cache entry.
+      oldIdent.setAssetType("folder");
 
       folderCache.removeFolder(stub, oldIdent);
     }
