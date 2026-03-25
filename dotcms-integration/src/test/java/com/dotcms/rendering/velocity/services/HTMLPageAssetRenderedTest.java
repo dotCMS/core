@@ -1656,7 +1656,7 @@ public class HTMLPageAssetRenderedTest {
                     mockRequest, mockResponse);
 
             // With DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true and rendering in EN (language 1),
-            // only content1 (EN-only) and content2 (EN+ES) are included. content3Spa (ES-only)
+            // only content1 (EN-only) and content2 (EN+ES) are included. content3 (ES-only)
             // has no EN version and is correctly excluded — it will not appear in the rendered output.
             final String regexExpected =
                     "<div data-dot-object=\"container\" .* data-dot-uuid=\"dotParser_.*\" .*>" +
