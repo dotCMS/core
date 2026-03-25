@@ -44,7 +44,6 @@ import {
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import {
-    STYLE_EDITOR_DEBOUNCE_TIME,
     STYLE_EDITOR_FIELD_TYPES,
     STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME
 } from '../../../../../shared/consts';
@@ -224,7 +223,7 @@ export class DotUveStyleEditorFormComponent {
                         tap(({ formValues, activeContentlet }) => {
                             this.#updateIframeOptimistically(formValues, activeContentlet);
                         }),
-                        debounce(() => timer(STYLE_EDITOR_DEBOUNCE_TIME))
+                        debounce(() => timer(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME))
                     );
                 }),
                 takeUntilDestroyed(this.#destroyRef)

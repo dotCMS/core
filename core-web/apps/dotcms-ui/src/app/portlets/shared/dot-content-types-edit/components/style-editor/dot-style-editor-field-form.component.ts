@@ -177,9 +177,14 @@ export class DotStyleEditorFieldFormComponent {
         const type = this.$type();
 
         return opts.some((opt) => {
-            if (!opt.label?.trim()) return true;
-            if (type === 'checkboxGroup') return !opt.key?.trim();
-            if (!opt.value?.trim()) return true;
+            if (!opt.label?.trim()) {
+                return true;
+            }
+
+            if (type === 'checkboxGroup') {
+                return !opt.key?.trim();
+            }
+
             if (type === 'radio' && opt.imageURL !== undefined && !opt.imageURL?.trim())
                 return true;
 

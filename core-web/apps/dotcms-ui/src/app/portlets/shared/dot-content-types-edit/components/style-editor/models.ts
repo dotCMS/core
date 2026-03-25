@@ -66,15 +66,26 @@ export function toLabelIdentifier(label: string): string {
  * Used by the builder (form-level validity) and section (header error indicator).
  */
 export function fieldHasErrors(field: BuilderField): boolean {
-    if (!field.label?.trim() || !field.identifier?.trim()) return true;
-    if (field.type === 'input') return false;
+    if (!field.label.trim() || !field.identifier.trim()) {
+        return true;
+    }
+    if (field.type === 'input') {
+        return false;
+    }
 
-    if (field.options.length === 0) return true;
+    if (field.options.length === 0) {
+        return true;
+    }
 
     return field.options.some((opt) => {
-        if (!opt.label?.trim()) return true;
-        if (field.type === 'checkboxGroup') return !opt.key?.trim();
-        if (!opt.value?.trim()) return true;
+        if (!opt.label?.trim()) {
+            return true;
+        }
+
+        if (field.type === 'checkboxGroup') {
+            return !opt.key?.trim();
+        }
+
         if (field.type === 'radio' && opt.imageURL !== undefined && !opt.imageURL?.trim())
             return true;
 

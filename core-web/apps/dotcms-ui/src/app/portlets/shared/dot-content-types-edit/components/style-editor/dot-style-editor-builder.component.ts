@@ -231,9 +231,13 @@ export class DotStyleEditorBuilderComponent {
      */
     #loadFromMetadata(contentType: DotCMSContentType): void {
         const raw = contentType.metadata?.[STYLE_EDITOR_SCHEMA_KEY];
-        if (!raw) return;
+        if (!raw || typeof raw !== 'string') {
+            console.warn('[StyleEditorBuilder] Invalid schema in metadata');
+            return;
+        }
+
         try {
-            const schema = JSON.parse(raw as string) as StyleEditorFormSchema;
+            const schema = JSON.parse(raw) as StyleEditorFormSchema;
             const sections = this.#schemaToBuilderSections(schema);
             patchState(this.#state, { sections });
             this.#formSnapshot.set(JSON.stringify(sections));
