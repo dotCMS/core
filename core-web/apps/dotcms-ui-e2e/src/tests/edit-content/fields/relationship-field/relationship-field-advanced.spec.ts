@@ -118,7 +118,6 @@ test.describe('Multiple Relationship Fields', () => {
     }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         // Use fieldVariable to scope each relationship field
         const authorsField = new RelationshipField(adminPage, 'authors');
@@ -150,8 +149,6 @@ test.describe('Multiple Relationship Fields', () => {
         // Save
         await formPage.save();
 
-        await adminPage.waitForLoadState('networkidle');
-
         const reloadedAuthors = new RelationshipField(adminPage, 'authors');
         const reloadedTags = new RelationshipField(adminPage, 'tags');
         await reloadedAuthors.expectRowCount(2);
@@ -161,7 +158,6 @@ test.describe('Multiple Relationship Fields', () => {
     test('independence between fields @smoke', async ({ adminPage, testSuffix }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const authorsField = new RelationshipField(adminPage, 'authors');
         const tagsField = new RelationshipField(adminPage, 'tags');
@@ -247,7 +243,6 @@ test.describe('Custom Columns (showFields)', () => {
     test('custom columns with showFields configured', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(2);
@@ -292,7 +287,6 @@ test.describe('Custom Columns (showFields)', () => {
 
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blog.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         // Default columns: Title, Language, Status
         const table = adminPage.getByTestId('relationship-field-table');

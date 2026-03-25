@@ -181,9 +181,9 @@ async function enableNewEditor(
         `enableNewEditor: failed to set DOT_CONTENT_EDITOR2_ENABLED (status ${flagResponse.status()})`
     ).toBeTruthy();
 
-    // Set the content type pattern
+    // Scope to the specific content type — avoid '*' which pollutes all types system-wide
     const patternResponse = await request.post('/api/v1/system-table/', {
-        data: { key: 'DOT_CONTENT_EDITOR2_CONTENT_TYPE', value: '*' },
+        data: { key: 'DOT_CONTENT_EDITOR2_CONTENT_TYPE', value: contentTypeVariable },
         headers: authHeaders()
     });
     expect(
@@ -202,9 +202,9 @@ async function enableNewEditor(
         headers: authHeaders()
     });
     expect(
-        [200, 400].includes(putResponse.status()),
+        putResponse.status(),
         `enableNewEditor: content type metadata PUT failed with status ${putResponse.status()}`
-    ).toBe(true);
+    ).toBe(200);
 }
 
 /**

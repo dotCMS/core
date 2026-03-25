@@ -57,11 +57,9 @@ test.describe('Add More Relations', () => {
         );
     });
 
-
     test('load existing relationships on edit @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(2);
@@ -70,7 +68,6 @@ test.describe('Add More Relations', () => {
     test('add more relations to existing content @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         const selectDialog = new SelectExistingContentDialog(adminPage);
@@ -88,7 +85,6 @@ test.describe('Add More Relations', () => {
         await relationshipField.expectRowCount(3);
 
         await formPage.save();
-        await adminPage.waitForLoadState('networkidle');
 
         await relationshipField.expectRowCount(3);
     });
@@ -97,7 +93,6 @@ test.describe('Add More Relations', () => {
         // TODO: Thumbnails only render for content types with image fields. E2E_Author has text fields only.
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const thumbnails = adminPage.getByTestId('contentlet-thumbnail');
         // 2 related authors = 2 thumbnails
@@ -154,11 +149,9 @@ test.describe('Remove Relations', () => {
         );
     });
 
-
     test('delete a single relation @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
 
@@ -170,7 +163,6 @@ test.describe('Remove Relations', () => {
     test('delete and verify persistence @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
@@ -179,7 +171,6 @@ test.describe('Remove Relations', () => {
         await relationshipField.expectRowCount(2);
 
         await formPage.save();
-        await adminPage.waitForLoadState('networkidle');
 
         await relationshipField.expectRowCount(2);
     });
@@ -187,7 +178,6 @@ test.describe('Remove Relations', () => {
     test('delete all items @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
@@ -241,11 +231,9 @@ test.describe('Delete and Re-add (Single Mode)', () => {
         );
     });
 
-
     test('delete and re-add in single mode', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         const selectDialog = new SelectExistingContentDialog(adminPage);

@@ -40,7 +40,8 @@ export class NewEditContentFormPage {
         await addNewOption.waitFor({ state: 'visible', timeout: 10000 });
         await addNewOption.click({ force: true });
 
-        await this.page.waitForLoadState('networkidle');
+        // Wait for the Angular form to render (replaces networkidle which is unreliable in SPAs)
+        await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
     }
 
     async fillTextField(text: string) {

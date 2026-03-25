@@ -51,11 +51,9 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 );
             });
 
-
             test('select and apply item @critical', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -77,7 +75,6 @@ test.describe('Single Selection (1:1 / M:1)', () => {
             test('save and verify persistence @critical', async ({ adminPage, testSuffix }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -93,7 +90,6 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await relationshipField.expectRowCount(1);
 
                 await formPage.save();
-                await adminPage.waitForLoadState('networkidle');
 
                 await relationshipField.expectRowCount(1);
             });
@@ -101,7 +97,6 @@ test.describe('Single Selection (1:1 / M:1)', () => {
             test('apply button disabled with no selection @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -121,7 +116,6 @@ test.describe('Single Selection (1:1 / M:1)', () => {
             test('cancel discards selection @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -142,7 +136,6 @@ test.describe('Single Selection (1:1 / M:1)', () => {
             }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -213,11 +206,9 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 );
             });
 
-
             test('open dialog shows checkboxes @critical', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -235,7 +226,6 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
             test('select multiple items and apply @critical', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -258,7 +248,6 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
             }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -274,7 +263,6 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await relationshipField.expectRowCount(3);
 
                 await formPage.save();
-                await adminPage.waitForLoadState('networkidle');
 
                 await relationshipField.expectRowCount(3);
             });
@@ -282,7 +270,6 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
             test('select all with header checkbox @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
-                await adminPage.waitForLoadState('networkidle');
 
                 const relationshipField = new RelationshipField(adminPage);
                 const dialog = new SelectExistingContentDialog(adminPage);
@@ -333,11 +320,9 @@ test.describe('Create New Inline', () => {
         blogTypeVariable = blogType.variable;
     });
 
-
     test('new content option is visible when editor enabled @critical', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         const menu = await relationshipField.openAddMenu();
@@ -350,7 +335,6 @@ test.describe('Create New Inline', () => {
     test('create inline and add to relationship @critical', async ({ adminPage, testSuffix }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
@@ -387,7 +371,6 @@ test.describe('Create New Inline', () => {
     }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const outerTitle = `Blog Outer Title ${testSuffix}`;
         await formPage.fillTextField(outerTitle);
@@ -409,7 +392,6 @@ test.describe('Create New Inline', () => {
     test('dismiss create dialog via X button @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
@@ -455,13 +437,11 @@ test.describe('New Content Disabled (No New Editor)', () => {
         blogTypeVariable = blogType.variable;
     });
 
-
     test('new content disabled when related type lacks new editor @critical', async ({
         adminPage
     }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectNewContentDisabled();
@@ -503,14 +483,12 @@ test.describe('Menu Disabled When Single Item Exists', () => {
         });
     });
 
-
     test('existing content disabled after selecting item @smoke', async ({
         adminPage,
         testSuffix
     }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         const dialog = new SelectExistingContentDialog(adminPage);

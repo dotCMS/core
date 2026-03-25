@@ -14,7 +14,9 @@ export class SelectExistingContentDialog {
         // as siblings of .p-dialog, so scoping to .p-dialog misses them.
         this.dialog = page.locator('.p-dialog-relationship-field');
         this.table = this.dialog.locator('p-table, .p-datatable');
-        this.rows = this.table.locator('tbody tr');
+        this.rows = this.table.locator(
+            'tbody tr:not(:has([data-testid="relationship-dialog-empty"]))'
+        );
     }
 
     // ─── Dialog State ────────────────────────────────────────────────

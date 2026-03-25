@@ -48,11 +48,9 @@ test.describe('Reorder (Drag & Drop)', () => {
         );
     });
 
-
     test('drag handles visible @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
@@ -62,7 +60,6 @@ test.describe('Reorder (Drag & Drop)', () => {
     test('reorder persists after save @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blogContentlet.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.expectRowCount(3);
@@ -100,7 +97,6 @@ test.describe('Reorder (Drag & Drop)', () => {
 
         // Save
         await formPage.save();
-        await adminPage.waitForLoadState('networkidle');
 
         await relationshipField.expectRowCount(3);
         const persistedFirst = await relationshipField.getRowTitle(0);
@@ -146,11 +142,9 @@ test.describe('Search and Filter', () => {
         );
     });
 
-
     test('global search filters results @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         const selectDialog = new SelectExistingContentDialog(adminPage);
@@ -172,7 +166,6 @@ test.describe('Search and Filter', () => {
     test('clear search resets results @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         const selectDialog = new SelectExistingContentDialog(adminPage);
@@ -205,7 +198,6 @@ test.describe('Search and Filter', () => {
     test('toggle show selected items', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         const selectDialog = new SelectExistingContentDialog(adminPage);
@@ -266,11 +258,9 @@ test.describe('Dialog Content Listing', () => {
         );
     });
 
-
     test('dialog shows all 15 items @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
         const selectDialog = new SelectExistingContentDialog(adminPage);
@@ -312,7 +302,6 @@ test.describe('Table Pagination', () => {
         blogTypeVariable = blogType.variable;
     });
 
-
     test.fixme('paginates at 10 items per page @smoke', async ({
         adminPage,
         apiHelpers,
@@ -339,7 +328,6 @@ test.describe('Table Pagination', () => {
 
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blog.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
 
@@ -374,7 +362,6 @@ test.describe('Table Pagination', () => {
 
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToContent(blog.inode);
-        await adminPage.waitForLoadState('networkidle');
 
         const relationshipField = new RelationshipField(adminPage);
 
