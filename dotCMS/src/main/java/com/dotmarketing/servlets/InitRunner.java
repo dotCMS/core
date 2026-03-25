@@ -113,6 +113,7 @@ public class InitRunner implements Runnable {
         }
     });
 
+
     private final Lazy<List<Server>> aliveServers = Lazy.of(() -> {
         try {
             return APILocator.getServerAPI().getAliveServers()
