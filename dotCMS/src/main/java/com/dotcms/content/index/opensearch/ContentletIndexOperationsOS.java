@@ -63,7 +63,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
     private static final String OS_SETTINGS_FILE = "os-content-settings.json";
     /** OpenSearch accepts the same content mapping format as Elasticsearch. */
-    private static final String CONTENT_MAPPING_FILE = "es-content-mapping.json";
+    private static final String CONTENT_MAPPING_FILE = "os-content-mapping.json";
 
     @Inject
     private OSClientProvider clientProvider;
