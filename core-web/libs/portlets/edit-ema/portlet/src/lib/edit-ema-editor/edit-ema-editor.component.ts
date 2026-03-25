@@ -1,6 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
+import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     AfterViewInit,
@@ -145,7 +146,9 @@ const MESSAGE_KEY = {
         DotUvePageVersionNotFoundComponent,
         DotUveContentletToolsComponent,
         DotUveLockOverlayComponent,
-        DotUvePaletteComponent
+        DotUvePaletteComponent,
+        NgClass,
+        NgStyle
     ],
     providers: [
         DotCopyContentModalService,
