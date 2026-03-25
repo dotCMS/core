@@ -207,7 +207,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	
 
 
-	protected void removeFromCacheByURI(String hostId,String URI) {
+	public void removeFromCacheByURI(String hostId,String URI) {
 		Identifier id = getIdentifier(hostId,URI);
 		if(id==null) {
     		String key = getPrimaryGroup() + hostId + "-" + URI;

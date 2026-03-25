@@ -19,6 +19,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
@@ -945,12 +946,18 @@ public class FolderFactoryImpl extends FolderFactory {
    * with {@code rootPath} (direct children and all nested descendants).
    * A single prefix query covers all levels in one round-trip.
    * <p>
-   * {@link com.dotmarketing.business.IdentifierCache#removeFromCacheByIdentifier(String)} looks up
-   * the identifier by UUID from cache. At the time this method runs the DB has already been
-   * updated to new paths, but the cache may still hold stale entries with the <em>old</em>
-   * {@code parent_path}. The eviction uses that stale cached URI to remove the old path-keyed
-   * entry — which is exactly what is needed. UUID-keyed and path-keyed entries are always stored
-   * together, so if the identifier is in the UUID cache the path-keyed entry is evicted too.
+   * Two eviction calls are issued per row to guarantee complete removal regardless of cache
+   * temperature:
+   * <ul>
+   *   <li>{@link com.dotmarketing.business.IdentifierCache#removeFromCacheByURI} uses the
+   *       <em>old</em> path (computed from the pre-rename DB values) to directly remove the
+   *       URI-keyed entry even when the UUID cache is cold.</li>
+   *   <li>{@link com.dotmarketing.business.IdentifierCache#removeFromCacheByIdentifier(String)}
+   *       removes the UUID-keyed entry; if the identifier is in the UUID cache it also performs
+   *       full eviction (UUID + URI keys together).</li>
+   * </ul>
+   * Note: {@code ContentletCache} and {@code HTMLPageCache} are keyed by inode/UUID, not by
+   * path, so no additional eviction is needed for non-folder children after a parent_path update.
    */
   private void clearIdentifierCacheForSubtree(final String rootPath, final String hostId)
       throws DotDataException {
@@ -959,13 +966,19 @@ public class FolderFactoryImpl extends FolderFactory {
     // Escape '%' and '_' so folder names containing those characters do not widen the match.
     final String likeParam = escapeLikeParam(rootPath) + "%";
     final List<Map<String, Object>> rows = new DotConnect()
-        .setSQL("SELECT id FROM identifier WHERE parent_path LIKE ? ESCAPE '\\' AND host_inode = ?")
+        .setSQL("SELECT id, parent_path, asset_name FROM identifier"
+            + " WHERE parent_path LIKE ? ESCAPE '\\' AND host_inode = ?")
         .addParam(likeParam)
         .addParam(hostId)
         .loadResults();
 
+    final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
     for (final Map<String, Object> row : rows) {
-      CacheLocator.getIdentifierCache().removeFromCacheByIdentifier((String) row.get("id"));
+      // Evict by old URI directly — works even when the UUID-keyed entry is absent (cold cache).
+      final String oldUri = row.get("parent_path") + (String) row.get("asset_name");
+      identifierCache.removeFromCacheByURI(hostId, oldUri);
+      // Evict by UUID — removes the UUID-keyed entry and, if warm, also the URI-keyed entry.
+      identifierCache.removeFromCacheByIdentifier((String) row.get("id"));
     }
   }
 

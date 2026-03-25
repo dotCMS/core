@@ -191,6 +191,11 @@ public class FolderAPIImpl implements FolderAPI  {
 					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
 					+ newName + ". Error: " + e.getMessage());
 			throw e;
+		} catch (DotSecurityException e) {
+			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
+					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
+					+ newName + ". Error: " + e.getMessage());
+			throw e;
 		} catch (Exception e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
 					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
