@@ -6,7 +6,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -14,7 +13,6 @@ import com.dotmarketing.util.ULID;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.util.ReleaseInfo;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -28,7 +26,9 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.apache.felix.framework.OSGIUtil;
+import org.osgi.framework.Bundle;
 
 public class InitRunner implements Runnable {
 
@@ -80,7 +82,7 @@ public class InitRunner implements Runnable {
             "select count(working_inode) as test_value from contentlet_version_info, contentlet where contentlet.inode =contentlet_version_info.working_inode and contentlet.mod_date  > now() - interval '1 month'";
 
     static final String LAST_CONTENT_EDIT =
-            "select max(version_ts) as test_value from contentlet_version_info;";
+            "select max(version_ts) as test_value from contentlet_version_info";
 
     static final String FIND_ALL_HOSTS_SQL =
             "select \n"
@@ -116,6 +118,7 @@ public class InitRunner implements Runnable {
             return APILocator.getServerAPI().getAliveServers()
                     .stream()
                     .filter(Objects::nonNull)
+                    .filter(s -> s.getLastHeartBeat() != null)
                     .filter(s -> s.getLastHeartBeat()
                             .toInstant()
                             .isAfter(Instant.now()
@@ -129,6 +132,34 @@ public class InitRunner implements Runnable {
         }
 
     });
+
+
+    /***
+     * Bundle states:
+     *     int UNINSTALLED = 1;
+     *     int INSTALLED = 2;
+     *     int RESOLVED = 4;
+     *     int STARTING = 8;
+     *     int STOPPING = 16;
+     *     int ACTIVE = 32;
+     * @return
+     */
+    int countPlugins(){
+
+
+        List<Bundle> bundles = Arrays.stream(OSGIUtil.getInstance().getBundles())
+                .filter(b->!b.getSymbolicName().startsWith("org.apache.felix"))
+                .filter(b->!b.getSymbolicName().startsWith("org.osgi"))
+                .filter(b->!b.getSymbolicName().startsWith("osgi.cmpn"))
+                .collect(Collectors.toList());
+        for(Bundle bundle : bundles){
+            logInfo("got bundle: " + bundle.getSymbolicName() + " state: " + bundle.getState() + " version: " + bundle.getVersion() + " location: " + bundle.getLocation() + "");
+        }
+        return bundles.size();
+
+    }
+
+
 
 
     private int getServerNumber() {
@@ -286,36 +317,36 @@ public class InitRunner implements Runnable {
     private Map<String, Object> getStats() {
 
         long startTime = System.currentTimeMillis();
-        Map<String, Object> resultMap = new ImmutableMap.Builder<String, Object>()
-                .put("id", new ULID().nextULID())
-                .put("hostnames", getHostnames())
-                .put("dotcmsVersion", ReleaseInfo.getVersion())
-                .put("buildDate", ReleaseInfo.getBuildDate())
-                .put("lastContentEdit", getDate(LAST_CONTENT_EDIT))
-                .put("defaultHost", getDefaultHostname())
-                .put("clusterId", ClusterFactory.getClusterId())
-                .put("totalUsers", getInt(TOTAL_USERS))
-                .put("activeUsers", getInt(ACTIVE_USERS))
-                .put("totalSites", getInt(TOTAL_SITES))
-                .put("totalTypes", getInt(TOTAL_TYPES))
-                .put("activeSites", getInt(ACTIVE_SITES))
-                .put("totalContent", getInt(NUMBER_OF_CONTENTS))
-                .put("recentlyEditedContent", getInt(RECENTLY_EDITED_CONTENT))
-                .put("totalLanguages", getInt(TOTAL_LANGUAGES))
-                .put("numFolders", getInt(TOTAL_FOLDERS))
-                .put("serverNumber", getServerNumber())
-                .put("clusterNodes", getClusterNodeNumber())
-                .put("workflows", getInt(TOTAL_WORKFLOWS))
-                .put("uveEnabled", isUveEnabled())
-                .put("portalUrl", getPortalUrl())
-                .put("emailDomain", getEmailDomain())
-                .put("jvmInfo", getJVMInfo())
-                .put("createdDate", new Date())
-                .put("pushPublishing", Try.of(this::countPushPublishing).getOrElse(0))
-                .put("collectionTime", (System.currentTimeMillis() - startTime))
-                .build();
-
-        return resultMap;
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("id", new ULID().nextULID());
+        resultMap.put("hostnames", getHostnames());
+        resultMap.put("dotcmsVersion", ReleaseInfo.getVersion());
+        resultMap.put("buildDate", ReleaseInfo.getBuildDate());
+        resultMap.put("lastContentEdit", getDate(LAST_CONTENT_EDIT));
+        resultMap.put("defaultHost", getDefaultHostname());
+        resultMap.put("clusterId", ClusterFactory.getClusterId());
+        resultMap.put("totalUsers", getInt(TOTAL_USERS));
+        resultMap.put("activeUsers", getInt(ACTIVE_USERS));
+        resultMap.put("totalSites", getInt(TOTAL_SITES));
+        resultMap.put("totalTypes", getInt(TOTAL_TYPES));
+        resultMap.put("activeSites", getInt(ACTIVE_SITES));
+        resultMap.put("totalContent", getInt(NUMBER_OF_CONTENTS));
+        resultMap.put("recentlyEditedContent", getInt(RECENTLY_EDITED_CONTENT));
+        resultMap.put("totalLanguages", getInt(TOTAL_LANGUAGES));
+        resultMap.put("numFolders", getInt(TOTAL_FOLDERS));
+        resultMap.put("serverNumber", getServerNumber());
+        resultMap.put("clusterNodes", getClusterNodeNumber());
+        resultMap.put("workflows", getInt(TOTAL_WORKFLOWS));
+        resultMap.put("uveEnabled", isUveEnabled());
+        resultMap.put("portalUrl", getPortalUrl());
+        resultMap.put("emailDomain", getEmailDomain());
+        resultMap.put("jvmInfo", getJVMInfo());
+        resultMap.put("bundles", countPlugins());
+        resultMap.put("createdDate", new Date());
+        resultMap.put("pushPublishing", Try.of(this::countPushPublishing).getOrElse(0));
+        resultMap.put("collectionTime", (System.currentTimeMillis() - startTime));
+        resultMap.entrySet().removeIf(entry -> entry.getValue() == null);
+        return Map.copyOf(resultMap);
 
     }
 
@@ -343,10 +374,6 @@ public class InitRunner implements Runnable {
                 .orElse(new Date(0));
     }
 
-    private static String getString(String sql) {
-        Optional<Object> result = getObject(sql);
-        return (String) result.orElse(null);
-    }
 
     boolean isUveEnabled() {
 
