@@ -837,6 +837,12 @@ public class FolderFactoryImpl extends FolderFactory {
     } catch (final DotDataException | RuntimeException e) {
       folder.setName(oldFolderName);
       ident.setAssetName(oldAssetName);
+      // A concurrent rename to the same destination path can race past the collision check and
+      // hit the DB unique constraint on identifier(parent_path, asset_name, host_inode).
+      // Treat this the same as a pre-checked collision: restore state and return false.
+      if (DbConnectionFactory.isConstraintViolationException(e.getCause() != null ? e.getCause() : e)) {
+        return false;
+      }
       throw e;
     }
 
@@ -908,11 +914,13 @@ public class FolderFactoryImpl extends FolderFactory {
     levels.add(new String[]{startOldPath, startNewPath});
 
     for (final Map<String, Object> row : subFolderSnapshot) {
-      final String oldFolderPath = row.get("parent_path") + (String) row.get("asset_name") + "/";
+      final String oldFolderPath = (String) row.get("parent_path") + (String) row.get("asset_name") + "/";
       // Guard against corrupt snapshot data: every sub-folder path must start with the root.
       if (!oldFolderPath.startsWith(startOldPath)) {
-        Logger.warn(FolderFactoryImpl.class, "Sub-folder path '" + oldFolderPath
-            + "' does not start with expected prefix '" + startOldPath + "'; skipping.");
+        Logger.warn(FolderFactoryImpl.class, "Sub-folder path '"
+            + oldFolderPath.replaceAll("[\\r\\n]", " ")
+            + "' does not start with expected prefix '"
+            + startOldPath.replaceAll("[\\r\\n]", " ") + "'; skipping.");
         continue;
       }
       // Compute new path by replacing the startOldPath prefix with startNewPath
@@ -998,7 +1006,7 @@ public class FolderFactoryImpl extends FolderFactory {
     final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
     for (final Map<String, Object> row : rows) {
       // Evict by old URI directly — works even when the UUID-keyed entry is absent (cold cache).
-      final String oldUri = row.get("parent_path") + (String) row.get("asset_name");
+      final String oldUri = (String) row.get("parent_path") + (String) row.get("asset_name");
       identifierCache.removeFromCacheByURI(hostId, oldUri);
       // Evict by UUID — removes the UUID-keyed entry and, if warm, also the URI-keyed entry.
       identifierCache.removeFromCacheByIdentifier((String) row.get("id"));

@@ -193,6 +193,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		new ShortyIdCache().remove(id.getId());
 	}
 	
+	@Override
 	public void removeFromCacheByIdentifier(String ident) {
 		
 		Identifier id = getIdentifier(ident);
@@ -207,6 +208,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	
 
 
+	@Override
 	public void removeFromCacheByURI(String hostId,String URI) {
 		Identifier id = getIdentifier(hostId,URI);
 		if(id==null) {
