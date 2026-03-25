@@ -737,8 +737,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * it's editing the english version of the page
      * Should: Throw an exception saying that the content already exists in that container.
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void test_overridesMultitreesByPersonalization_AddContentTwiceDiffLangEditing_throwException() throws Exception {
+    @Test
+    public void test_overridesMultitreesByPersonalization_multiLangContent_noFallback_skipsExistingEntries() throws Exception {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
 
@@ -755,7 +755,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Folder folder = new FolderDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
         final Structure structure = new StructureDataGen().nextPersisted();
-        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
 
         final String uniqueId = UUIDGenerator.shorty();
 
@@ -777,12 +777,25 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setTreeOrder(2)
                 .nextPersisted();
 
-        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
-                page.getIdentifier(),
-                DOT_PERSONALIZATION_DEFAULT,
-                list(multiTreeContentEN, multiTreeContentES),
-                defaultLanguage.getId()
-        );
+        // With fallback OFF, the language-scoped DELETE only removes the EN contentlet.
+        // The ES contentlet (no EN version) stays in multi_tree, so its INSERT is skipped.
+        // No exception should be thrown — both end up on the page.
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeContentEN, multiTreeContentES),
+                    defaultLanguage.getId()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should remain on the page (was skipped, not duplicated)", resultIds.contains(espContentlet.getIdentifier()));
     }
 
     /**
