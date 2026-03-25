@@ -444,42 +444,36 @@ public interface MultiTreeAPI {
     void overridesMultitreesByPersonalization(String pageId, String personalization, List<MultiTree> multiTrees)  throws DotDataException ;
 
     /**
-     * Save a collection of {@link MultiTree} and link them with a page, replacing existing entries.
-     * The deletion is scoped to the given language: only multi-tree entries whose child contentlet
-     * has a version in {@code languageId} (and optionally the default language when
-     * {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is enabled) are removed before inserting the
-     * new set. Contentlets that exist exclusively in other languages are left untouched.
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
+     * {@link MultiTree} linked previously with the page.
      *
      * @param pageId          The page identifier.
      * @param personalization The personalization token (e.g., persona key tag).
      * @param multiTrees      The list of {@link MultiTree} objects to save.
-     * @param languageId      The language ID that scopes the deletion.
+     * @param languageIdOpt      The optional language ID that scopes the deletion.
      * @throws DotDataException If there is an issue retrieving or persisting data from/to the DB.
      */
     void overridesMultitreesByPersonalization(final String pageId,
             final String personalization,
             final List<MultiTree> multiTrees,
-            final long languageId
+            final Optional<Long> languageIdOpt
     ) throws DotDataException;
 
     /**
-     * Save a collection of {@link MultiTree} and link them with a page, replacing existing entries.
-     * The deletion is scoped to the given language: only multi-tree entries whose child contentlet
-     * has a version in {@code languageId} (and optionally the default language when
-     * {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is enabled) are removed before inserting the
-     * new set. Contentlets that exist exclusively in other languages are left untouched.
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
+     * {@link MultiTree} linked previously with the page.
      *
      * @param pageId          The page identifier.
      * @param personalization The personalization token (e.g., persona key tag).
      * @param multiTrees      The list of {@link MultiTree} objects to save.
-     * @param languageId      The language ID that scopes the deletion.
+     * @param languageIdOpt      The optional language ID that scopes the deletion.
      * @param variantId       The variant identifier.
      * @throws DotDataException If there is an issue retrieving or persisting data from/to the DB.
      */
     void overridesMultitreesByPersonalization(final String pageId,
                                              final String personalization,
                                              final List<MultiTree> multiTrees,
-                                             final long languageId,
+                                             final Optional<Long> languageIdOpt,
                                              final String variantId
                                         ) throws DotDataException;
 

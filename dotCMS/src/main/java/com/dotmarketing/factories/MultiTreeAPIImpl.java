@@ -650,40 +650,14 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                                      final String personalization,
                                                      final List<MultiTree> multiTrees) throws DotDataException {
 
-        this.overridesMultitreesByPersonalizationInternal(pageId, personalization, multiTrees,
-                null, VariantAPI.DEFAULT_VARIANT.name());
+        this.overridesMultitreesByPersonalization(pageId, personalization, multiTrees,
+                Optional.empty(), VariantAPI.DEFAULT_VARIANT.name());  // no lang passed, will deletes everything
     }
 
     /**
      * Saves a collection of {@link MultiTree} objects linked to an HTML Page, replacing existing
-     * entries. The deletion is scoped to the given language: only multi-tree entries whose child
-     * contentlet has a version in {@code languageId} (and optionally the default language when
-     * {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is enabled) are removed before inserting the
-     * new set. Contentlets that exist exclusively in other languages are left untouched.
-     *
-     * @param pageId          The page identifier.
-     * @param personalization The personalization token (e.g., persona key tag).
-     * @param multiTrees      The list of {@link MultiTree} objects to save.
-     * @param languageId      The language ID that scopes the deletion.
-     * @param variantId       The variant identifier.
-     * @throws DotDataException If there is an issue retrieving or persisting data from/to the DB.
-     */
-    @Override
-    @WrapInTransaction
-    public void overridesMultitreesByPersonalization(final String pageId,
-                                                    final String personalization,
-                                                    final List<MultiTree> multiTrees,
-                                                    final long languageId,
-                                                    final String variantId) throws DotDataException {
-
-        this.overridesMultitreesByPersonalizationInternal(pageId, personalization, multiTrees,
-                languageId, variantId);
-    }
-
-    /**
-     * Internal implementation for {@code overridesMultitreesByPersonalization}. The deletion
-     * strategy depends on whether a language is specified and whether the global language-fallback
-     * flag ({@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}) is enabled:
+     * entries. The deletion strategy depends on whether a language is specified and whether the
+     * global language-fallback flag ({@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}) is enabled:
      *
      * <ul>
      *   <li><b>Language-pair DELETE</b> (when {@code languageId} is non-null AND
@@ -700,12 +674,21 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      *   multi-tree entries for the page/personalization/variant before inserting the new set.
      *   Used when no language context is available (e.g. template-level saves).</li>
      * </ul>
+     *
+     * @param pageId          The page identifier.
+     * @param personalization The personalization token (e.g., persona key tag).
+     * @param multiTrees      The list of {@link MultiTree} objects to save.
+     * @param languageIdOpt   Optional language ID. When present, restricts the deletion scope as
+     *                        described above.
+     * @param variantId       The variant identifier.
+     * @throws DotDataException If there is an issue retrieving or persisting data from/to the DB.
      */
+    @Override
     @WrapInTransaction
-    private void overridesMultitreesByPersonalizationInternal(final String pageId,
+    public void overridesMultitreesByPersonalization(final String pageId,
                                                     final String personalization,
                                                     final List<MultiTree> multiTrees,
-                                                    final Long languageId,
+                                                    final Optional<Long> languageIdOpt,
                                                     final String variantId) throws DotDataException {
 
         Logger.info(this, String.format(
@@ -731,30 +714,30 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
                 "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
 
-        if (languageId != null && defaultContentToDefaultLanguage) {
+        if (languageIdOpt.isPresent() && defaultContentToDefaultLanguage) {
             originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
                     personalization, variantId);
 
             final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
             // When the requested language IS the default, a single-language DELETE is sufficient.
-            if (defaultLanguageId == languageId) {
-                deleteEntriesByRequestedLanguage(pageId, personalization, languageId, variantId, db);
+            if (defaultLanguageId == languageIdOpt.get()) {
+                deleteEntriesByRequestedLanguage(pageId, personalization, languageIdOpt.get(), variantId, db);
             } else {
                 // Language-pair DELETE: remove entries whose child contentlet has a version in either
                 // the requested language or the default language. This ensures that contentlets
                 // exclusive to another language (e.g. ESP-only) are not removed when editing a page
                 // in the default language.
-                deleteEntriesByRequestedAndDefaultLanguage(pageId, personalization, languageId, defaultLanguageId, variantId, db);
+                deleteEntriesByRequestedAndDefaultLanguage(pageId, personalization, languageIdOpt.get(), defaultLanguageId, variantId, db);
             }
 
-        } else if (languageId != null) {
+        } else if (languageIdOpt.isPresent()) {
             originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
-                    personalization, variantId, languageId);
+                    personalization, variantId, languageIdOpt.get());
 
             // Language-scoped DELETE: only remove entries whose child contentlet has a version
             // in the given language. Preserves language-exclusive content in other languages.
-            deleteEntriesByRequestedLanguage(pageId, personalization, languageId, variantId, db);
+            deleteEntriesByRequestedLanguage(pageId, personalization, languageIdOpt.get(), variantId, db);
         } else {
             // Full DELETE: no language context — remove all entries for this page/personalization/variant.
             originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
@@ -897,9 +880,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     public void overridesMultitreesByPersonalization(final String pageId,
             final String personalization, final List<MultiTree> multiTrees,
-            final long languageId) throws DotDataException {
-        overridesMultitreesByPersonalizationInternal(pageId, personalization, multiTrees,
-                languageId, VariantAPI.DEFAULT_VARIANT.name());
+            final Optional<Long> languageIdOpt) throws DotDataException {
+        overridesMultitreesByPersonalization(pageId, personalization, multiTrees,
+                languageIdOpt, VariantAPI.DEFAULT_VARIANT.name());
     }
 
     @Override

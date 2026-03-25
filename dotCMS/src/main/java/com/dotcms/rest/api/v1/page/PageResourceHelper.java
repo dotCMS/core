@@ -201,7 +201,8 @@ public class PageResourceHelper implements Serializable {
         }
         for (final String personalization : multiTreesMap.keySet()) {
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization), language.getId(), variantName);
+                    multiTreesMap.get(personalization), Optional.of(language.getId()),
+                    variantName);
         }
 
         return responseViews;

@@ -732,10 +732,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
      * When: A Page with content in spanish and english, is trying to add the spanish content again into the same container, but
      * it's editing the english version of the page
-     * Should: Throw an exception saying that the content already exists in that container.
+     * Should: Complete without throwing an exception, the duplicate INSERT is silently skipped.
      */
     @Test
     public void test_overridesMultitreesByPersonalization_multiLangContent_noFallback_skipsExistingEntries() throws Exception {
@@ -786,7 +786,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     page.getIdentifier(),
                     DOT_PERSONALIZATION_DEFAULT,
                     list(multiTreeContentEN, multiTreeContentES),
-                    defaultLanguage.getId()
+                    Optional.of(defaultLanguage.getId())
             );
         } finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
@@ -799,7 +799,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long, String)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
      * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is edited in the <b>default
      * language</b> (EN), and the page already has an EN-only entry and an ES-only entry in the DB.
      * Since the requested language is the default language, a single-language DELETE is performed
@@ -858,7 +858,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     page.getIdentifier(),
                     DOT_PERSONALIZATION_DEFAULT,
                     list(multiTreeContentEN),
-                    defaultLanguage.getId(),
+                    Optional.of(defaultLanguage.getId()),
                     VariantAPI.DEFAULT_VARIANT.name()
             );
         } finally {
@@ -874,7 +874,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long, String)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
      * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is edited in a
      * <b>non-default language</b> (ES), and the page already has three entries: EN-only, ES-only,
      * and FR-only. {@code render()} in ES mode returns: the EN contentlet (fallback to default
@@ -938,7 +938,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     page.getIdentifier(),
                     DOT_PERSONALIZATION_DEFAULT,
                     list(multiTreeEN, multiTreeES),
-                    espLanguage.getId(),
+                    Optional.of(espLanguage.getId()),
                     VariantAPI.DEFAULT_VARIANT.name()
             );
         } finally {
@@ -955,7 +955,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long, String)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
      * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=false}, the page is edited in a non-default
      * language (ES), and the page already has an EN-only entry and an ES-only entry. Without the
      * fallback flag, {@code render()} in ES mode does not include the EN-only contentlet (no EN
@@ -1006,7 +1006,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                     page.getIdentifier(),
                     DOT_PERSONALIZATION_DEFAULT,
                     list(multiTreeES),
-                    espLanguage.getId(),
+                    Optional.of(espLanguage.getId()),
                     VariantAPI.DEFAULT_VARIANT.name()
             );
         } finally {
@@ -1022,7 +1022,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long, String)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
      * When: No language context is provided ({@code languageIdOpt} is empty), so the full DELETE
      * path is taken. The page already has an EN entry and an ES entry, but the client submits only
      * the EN contentlet.
@@ -1067,7 +1067,9 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                 page.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
-                list(multiTreeEN)
+                list(multiTreeEN),
+                Optional.empty(),
+                VariantAPI.DEFAULT_VARIANT.name()
         );
 
         final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
@@ -1154,7 +1156,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long, String)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
      * When: A Page with content in a specific variants and personalization try to update the MulTree just for the one specific variant and personalization
      * Should: Should keep the DEFAULT variants and DEFAULT persona versions
      */
@@ -1262,7 +1264,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 page.getIdentifier(),
                 persona.getKeyTag(),
                 list(newMultiTreeEnContent),
-                defaultLanguage.getId(),
+                Optional.of(defaultLanguage.getId()),
                 variantA.name()
         );
 
@@ -1487,7 +1489,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long, String)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
      * When: Try to save the same contentlet twice but for different variants
      * Should: save both multi_tree
      */
@@ -1522,7 +1524,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 page.getIdentifier(),
                 persona.getKeyTag(),
                 list(firstMultiTree),
-                defaultLanguage.getId(),
+                Optional.of(defaultLanguage.getId()),
                 variantA.name()
         );
 
@@ -1543,7 +1545,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 page.getIdentifier(),
                 persona.getKeyTag(),
                 list(newMultiTreeEnContent),
-                defaultLanguage.getId(),
+                Optional.of(defaultLanguage.getId()),
                 variantB.name()
         );
 
@@ -1559,7 +1561,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long, String)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
      * When: A Page with content in different variants (A and B) try to update the MulTree just for the A variant
      * Should: Should keep the B and Default content and replace the A content
      */
@@ -1637,7 +1639,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 page.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
                 list(newMultiTreeEnContent),
-                defaultLanguage.getId(),
+                Optional.of(defaultLanguage.getId()),
                 variantA.name()
         );
 
@@ -1656,7 +1658,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
      * When: A Page with content in Spanish and English try to update the MulTree just for English lang
      * Should: Should keep the Spanish content and replace the English content
      */
@@ -1730,7 +1732,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 page.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
                 list(newMultiTreeEnContent),
-                defaultLanguage.getId()
+                Optional.of(defaultLanguage.getId())
         );
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
@@ -1746,7 +1748,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
      * When: A Page with content in Spanish and English try to update the MulTree but without lang
      * Should: Should replace all the {@link MultiTree}
      */
@@ -1806,7 +1808,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                 page.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
-                list(newMultiTreeEnContent)
+                list(newMultiTreeEnContent),
+                Optional.empty()
         );
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
@@ -1931,7 +1934,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
     ///
     /**
-     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, long)}
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)}}
      * When: Two pages shares the same contentlets, them one of these pages overrides their multitree
      * Should: Make sure the multitree of the another page still there (previously the share contentlets were removed on both tree, but just added in the one that overrides)
      */
@@ -2009,7 +2012,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 page1.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
                 list(newMultiTreeEnContent1, newMultiTreeEnContent2, newMultiTreeEnContent),
-                defaultLanguage.getId()
+                Optional.of(defaultLanguage.getId())
         );
 
         CacheLocator.getMultiTreeCache().clearCache();
