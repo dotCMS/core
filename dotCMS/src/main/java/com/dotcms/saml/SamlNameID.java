@@ -32,6 +32,12 @@ public final class SamlNameID implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /** Maximum permitted length of the XML string (guards against heap exhaustion on corrupt sessions). */
+    private static final int MAX_XML_LENGTH   = 8192;
+
+    /** Maximum permitted length of the plain NameID value. */
+    private static final int MAX_VALUE_LENGTH = 1024;
+
     private final String xmlString;
 
     /** The plain NameID value (email, persistent ID, etc.) for cheap retrieval without XML parsing. */
@@ -52,6 +58,12 @@ public final class SamlNameID implements Serializable {
      * Returns the XML string representation of the NameID, used to reconstruct a live
      * NameID object in the SAML plugin via {@code SamlUtils.toNameID(SamlNameID)}.
      *
+     * <p><strong>Security warning:</strong> the XML string contains the user's SAML identity
+     * value (email address, persistent ID, etc.) and is therefore PII. It must never be
+     * written to logs, stored in plaintext audit trails, or returned in API responses.
+     * Use {@link #getValue()} only when the raw identity string is genuinely required
+     * (e.g. for hashing before storage), and {@link #toString()} for any diagnostic output.
+     *
      * @return the XML string; never {@code null}
      */
     public String getXmlString() {
@@ -61,8 +73,10 @@ public final class SamlNameID implements Serializable {
     /**
      * Returns the plain NameID value (e.g. email address or opaque persistent ID).
      *
-     * <p>Use this for hashing, logging correlation, or any operation that needs the raw
-     * identity value without reconstructing the full OpenSAML object.
+     * <p><strong>Security warning:</strong> this is raw PII. Pass it only to operations that
+     * require the actual identity (e.g. {@code SAMLHelper.hashIt()}) — never write it directly
+     * to logs or API responses. If a correlation token is needed for debugging, hash the value
+     * first and use only the first few characters of the hash.
      *
      * @return the NameID value; never {@code null}
      */
@@ -72,14 +86,25 @@ public final class SamlNameID implements Serializable {
 
     /**
      * Validates invariants after Java deserialization.
+     *
+     * <p>Length caps are enforced here in addition to the null/blank checks because
+     * {@code defaultReadObject()} can restore arbitrarily large strings from a corrupt or
+     * malicious Redis entry, potentially exhausting heap memory before any application code
+     * runs.
      */
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (xmlString == null || xmlString.isBlank()) {
             throw new InvalidObjectException("SamlNameID: xmlString must not be null or blank");
         }
+        if (xmlString.length() > MAX_XML_LENGTH) {
+            throw new InvalidObjectException("SamlNameID: xmlString exceeds maximum length of " + MAX_XML_LENGTH);
+        }
         if (value == null || value.isBlank()) {
             throw new InvalidObjectException("SamlNameID: value must not be null or blank");
+        }
+        if (value.length() > MAX_VALUE_LENGTH) {
+            throw new InvalidObjectException("SamlNameID: value exceeds maximum length of " + MAX_VALUE_LENGTH);
         }
     }
 
