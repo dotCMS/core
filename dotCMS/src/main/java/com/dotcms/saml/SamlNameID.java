@@ -34,17 +34,23 @@ public final class SamlNameID implements Serializable {
 
     private final String xmlString;
 
+    /** The plain NameID value (email, persistent ID, etc.) for cheap retrieval without XML parsing. */
+    private final String value;
+
     /**
-     * Constructs a {@code SamlNameID} from the XML representation of a NameID.
+     * Constructs a {@code SamlNameID}.
      *
      * @param xmlString the full XML string of the NameID; must not be {@code null}
+     * @param value     the plain NameID value (e.g. email or opaque ID); must not be {@code null}
      */
-    public SamlNameID(final String xmlString) {
+    public SamlNameID(final String xmlString, final String value) {
         this.xmlString = Objects.requireNonNull(xmlString, "xmlString must not be null");
+        this.value     = Objects.requireNonNull(value, "value must not be null");
     }
 
     /**
-     * Returns the XML string representation of the NameID.
+     * Returns the XML string representation of the NameID, used to reconstruct a live
+     * NameID object in the SAML plugin via {@code SamlUtils.toNameID(SamlNameID)}.
      *
      * @return the XML string; never {@code null}
      */
@@ -53,12 +59,27 @@ public final class SamlNameID implements Serializable {
     }
 
     /**
+     * Returns the plain NameID value (e.g. email address or opaque persistent ID).
+     *
+     * <p>Use this for hashing, logging correlation, or any operation that needs the raw
+     * identity value without reconstructing the full OpenSAML object.
+     *
+     * @return the NameID value; never {@code null}
+     */
+    public String getValue() {
+        return value;
+    }
+
+    /**
      * Validates invariants after Java deserialization.
      */
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-        if (xmlString.isBlank()) {
-            throw new InvalidObjectException("SamlNameID: xmlString must not be blank");
+        if (xmlString == null || xmlString.isBlank()) {
+            throw new InvalidObjectException("SamlNameID: xmlString must not be null or blank");
+        }
+        if (value == null || value.isBlank()) {
+            throw new InvalidObjectException("SamlNameID: value must not be null or blank");
         }
     }
 
