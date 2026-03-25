@@ -1,7 +1,7 @@
 import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FieldTree } from '@angular/forms/signals';
 
 import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
@@ -74,6 +74,14 @@ const MOCK_SAVED_VARIABLE: DotFieldVariable = {
     value: JSON.stringify({ showAsModal: false, width: '398px', height: '400px' })
 };
 
+type RenderOptionsFormTree = FieldTree<{
+    showAsModal: boolean;
+    customFieldWidth: number;
+    customFieldHeight: number;
+}>;
+
+type WithFormTree = { formTree: RenderOptionsFormTree };
+
 describe('DotRenderOptionsSettingsComponent', () => {
     let spectator: Spectator<DotRenderOptionsSettingsComponent>;
     let component: DotRenderOptionsSettingsComponent;
@@ -82,15 +90,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
     describe('without existing field variable (defaults)', () => {
         const createComponent = createComponentFactory({
             component: DotRenderOptionsSettingsComponent,
-            imports: [
-                FormsModule,
-                ReactiveFormsModule,
-                InputTextModule,
-                ToggleSwitchModule,
-                DotMessagePipe
-            ],
+            imports: [InputTextModule, ToggleSwitchModule, DotMessagePipe],
             providers: [
-                FormBuilder,
                 mockProvider(DotFieldVariablesService, {
                     save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
@@ -114,7 +115,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should return true after the form is explicitly marked dirty', () => {
-                component.form.markAsDirty();
+                const ft = (component as WithFormTree).formTree;
+                ft().markAsDirty();
                 expect(component.isDirty).toBe(true);
             });
         });
@@ -125,29 +127,36 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should return true when showAsModal is false (width/height disabled)', () => {
-                expect(component.form.controls['customFieldWidth'].disabled).toBe(true);
-                expect(component.form.controls['customFieldHeight'].disabled).toBe(true);
+                const ft = (component as WithFormTree).formTree;
+                expect(ft.customFieldWidth().disabled()).toBe(true);
+                expect(ft.customFieldHeight().disabled()).toBe(true);
                 expect(component.$isValid()).toBe(true);
             });
 
             it('should return true when showAsModal is true and values are valid', () => {
-                component.form.controls['showAsModal'].setValue(true);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
+                spectator.detectChanges();
 
-                expect(component.form.controls['customFieldWidth'].enabled).toBe(true);
-                expect(component.form.controls['customFieldHeight'].enabled).toBe(true);
+                expect(ft.customFieldWidth().disabled()).toBe(false);
+                expect(ft.customFieldHeight().disabled()).toBe(false);
                 expect(component.$isValid()).toBe(true);
             });
 
             it('should return false when showAsModal is true and customFieldWidth is 0', () => {
-                component.form.controls['showAsModal'].setValue(true);
-                component.form.controls['customFieldWidth'].setValue(0);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
+                ft.customFieldWidth().value.set(0);
+                spectator.detectChanges();
 
                 expect(component.$isValid()).toBe(false);
             });
 
             it('should return false when showAsModal is true and customFieldHeight is 0', () => {
-                component.form.controls['showAsModal'].setValue(true);
-                component.form.controls['customFieldHeight'].setValue(0);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
+                ft.customFieldHeight().value.set(0);
+                spectator.detectChanges();
 
                 expect(component.$isValid()).toBe(false);
             });
@@ -155,37 +164,45 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
         describe('ngOnInit with no field variables', () => {
             it('should initialise showAsModal to false', () => {
-                expect(component.form.controls['showAsModal'].value).toBe(false);
+                const ft = (component as WithFormTree).formTree;
+                expect(ft.showAsModal().value()).toBe(false);
             });
 
             it('should initialise customFieldWidth to 398 (default)', () => {
-                expect(component.form.getRawValue().customFieldWidth).toBe(398);
+                const ft = (component as WithFormTree).formTree;
+                expect(ft.customFieldWidth().value()).toBe(398);
             });
 
             it('should initialise customFieldHeight to 400 (default)', () => {
-                expect(component.form.getRawValue().customFieldHeight).toBe(400);
+                const ft = (component as WithFormTree).formTree;
+                expect(ft.customFieldHeight().value()).toBe(400);
             });
 
             it('should disable width and height controls when showAsModal is false', () => {
-                expect(component.form.controls['customFieldWidth'].disabled).toBe(true);
-                expect(component.form.controls['customFieldHeight'].disabled).toBe(true);
+                const ft = (component as WithFormTree).formTree;
+                expect(ft.customFieldWidth().disabled()).toBe(true);
+                expect(ft.customFieldHeight().disabled()).toBe(true);
             });
         });
 
         describe('width/height control enable/disable logic', () => {
             it('should enable width and height controls when showAsModal toggles to true', () => {
-                component.form.controls['showAsModal'].setValue(true);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
+                spectator.detectChanges();
 
-                expect(component.form.controls['customFieldWidth'].enabled).toBe(true);
-                expect(component.form.controls['customFieldHeight'].enabled).toBe(true);
+                expect(ft.customFieldWidth().disabled()).toBe(false);
+                expect(ft.customFieldHeight().disabled()).toBe(false);
             });
 
             it('should disable width and height controls when showAsModal toggles back to false', () => {
-                component.form.controls['showAsModal'].setValue(true);
-                component.form.controls['showAsModal'].setValue(false);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
+                ft.showAsModal().value.set(false);
+                spectator.detectChanges();
 
-                expect(component.form.controls['customFieldWidth'].disabled).toBe(true);
-                expect(component.form.controls['customFieldHeight'].disabled).toBe(true);
+                expect(ft.customFieldWidth().disabled()).toBe(true);
+                expect(ft.customFieldHeight().disabled()).toBe(true);
             });
 
             it('should not show width/height inputs in DOM when showAsModal is false', () => {
@@ -196,7 +213,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should show width/height inputs in DOM when showAsModal is true', () => {
-                component.form.controls['showAsModal'].setValue(true);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
                 expect(spectator.query('[data-testid="render-options-width"]')).not.toBeNull();
@@ -222,9 +240,10 @@ describe('DotRenderOptionsSettingsComponent', () => {
                 );
             });
 
-            it('should include disabled width/height values via getRawValue()', () => {
-                // Controls are disabled but their raw values should still be sent
-                expect(component.form.controls['customFieldWidth'].disabled).toBe(true);
+            it('should include width/height in save payload even when showAsModal is false', () => {
+                // Controls are disabled but their values should still be read from the model
+                const ft = (component as WithFormTree).formTree;
+                expect(ft.customFieldWidth().disabled()).toBe(true);
 
                 component.save(MOCK_FIELD_BASE).subscribe();
 
@@ -273,12 +292,12 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should show width error when control is touched and value is invalid', () => {
-                component.form.controls['showAsModal'].setValue(true);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
-                const widthControl = component.form.controls['customFieldWidth'];
-                widthControl.setValue(0);
-                widthControl.markAsTouched();
+                ft.customFieldWidth().value.set(0);
+                ft.customFieldWidth().markAsTouched();
                 spectator.detectChanges();
 
                 expect(
@@ -287,12 +306,12 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should show height error when control is touched and value is invalid', () => {
-                component.form.controls['showAsModal'].setValue(true);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
-                const heightControl = component.form.controls['customFieldHeight'];
-                heightControl.setValue(0);
-                heightControl.markAsTouched();
+                ft.customFieldHeight().value.set(0);
+                ft.customFieldHeight().markAsTouched();
                 spectator.detectChanges();
 
                 expect(
@@ -301,14 +320,25 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should not show width error when control is untouched even if invalid', () => {
-                component.form.controls['showAsModal'].setValue(true);
+                const ft = (component as WithFormTree).formTree;
+                ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
-                component.form.controls['customFieldWidth'].setValue(0);
+                ft.customFieldWidth().value.set(0);
                 // Do NOT markAsTouched
                 spectator.detectChanges();
 
                 expect(spectator.query('[data-testid="render-options-width-error"]')).toBeNull();
+            });
+        });
+
+        describe('valueChanges$', () => {
+            it('should not emit on initial subscription (skip(1) behavior)', () => {
+                const emitted: unknown[] = [];
+                component.valueChanges$.subscribe((v) => emitted.push(v));
+                spectator.flushEffects();
+
+                expect(emitted).toHaveLength(0);
             });
         });
     });
@@ -321,15 +351,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
         const createComponent = createComponentFactory({
             component: DotRenderOptionsSettingsComponent,
-            imports: [
-                FormsModule,
-                ReactiveFormsModule,
-                InputTextModule,
-                ToggleSwitchModule,
-                DotMessagePipe
-            ],
+            imports: [InputTextModule, ToggleSwitchModule, DotMessagePipe],
             providers: [
-                FormBuilder,
                 mockProvider(DotFieldVariablesService, {
                     save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
@@ -347,20 +370,24 @@ describe('DotRenderOptionsSettingsComponent', () => {
         });
 
         it('should restore saved showAsModal as true from existing variable', () => {
-            expect(component.form.controls['showAsModal'].value).toBe(true);
+            const ft = (component as WithFormTree).formTree;
+            expect(ft.showAsModal().value()).toBe(true);
         });
 
         it('should parse width (strips "px") from existing variable', () => {
-            expect(component.form.getRawValue().customFieldWidth).toBe(500);
+            const ft = (component as WithFormTree).formTree;
+            expect(ft.customFieldWidth().value()).toBe(500);
         });
 
         it('should parse height (strips "px") from existing variable', () => {
-            expect(component.form.getRawValue().customFieldHeight).toBe(600);
+            const ft = (component as WithFormTree).formTree;
+            expect(ft.customFieldHeight().value()).toBe(600);
         });
 
         it('should enable width and height controls since showAsModal is restored as true', () => {
-            expect(component.form.controls['customFieldWidth'].enabled).toBe(true);
-            expect(component.form.controls['customFieldHeight'].enabled).toBe(true);
+            const ft = (component as WithFormTree).formTree;
+            expect(ft.customFieldWidth().disabled()).toBe(false);
+            expect(ft.customFieldHeight().disabled()).toBe(false);
         });
 
         it('should include existing variable id in save payload (PUT-style update)', () => {
@@ -392,15 +419,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
         const createComponent = createComponentFactory({
             component: DotRenderOptionsSettingsComponent,
-            imports: [
-                FormsModule,
-                ReactiveFormsModule,
-                InputTextModule,
-                ToggleSwitchModule,
-                DotMessagePipe
-            ],
+            imports: [InputTextModule, ToggleSwitchModule, DotMessagePipe],
             providers: [
-                FormBuilder,
                 mockProvider(DotFieldVariablesService, {
                     save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
@@ -414,9 +434,10 @@ describe('DotRenderOptionsSettingsComponent', () => {
             spectatorPct.setInput('field', fieldWithPercentSizes);
             spectatorPct.detectChanges();
             const comp = spectatorPct.component;
+            const ft = (comp as WithFormTree).formTree;
 
-            expect(comp.form.getRawValue().customFieldWidth).toBe(398);
-            expect(comp.form.getRawValue().customFieldHeight).toBe(400);
+            expect(ft.customFieldWidth().value()).toBe(398);
+            expect(ft.customFieldHeight().value()).toBe(400);
         });
 
         it('should fall back for vh/em and mixed invalid width', () => {
@@ -439,9 +460,10 @@ describe('DotRenderOptionsSettingsComponent', () => {
             const spectatorVh = createComponent();
             spectatorVh.setInput('field', fieldVh);
             spectatorVh.detectChanges();
+            const ft = (spectatorVh.component as WithFormTree).formTree;
 
-            expect(spectatorVh.component.form.getRawValue().customFieldWidth).toBe(398);
-            expect(spectatorVh.component.form.getRawValue().customFieldHeight).toBe(400);
+            expect(ft.customFieldWidth().value()).toBe(398);
+            expect(ft.customFieldHeight().value()).toBe(400);
         });
 
         it('should accept numeric width/height from JSON as pixels', () => {
@@ -464,9 +486,10 @@ describe('DotRenderOptionsSettingsComponent', () => {
             const spectatorNum = createComponent();
             spectatorNum.setInput('field', fieldNums);
             spectatorNum.detectChanges();
+            const ft = (spectatorNum.component as WithFormTree).formTree;
 
-            expect(spectatorNum.component.form.getRawValue().customFieldWidth).toBe(500);
-            expect(spectatorNum.component.form.getRawValue().customFieldHeight).toBe(600);
+            expect(ft.customFieldWidth().value()).toBe(500);
+            expect(ft.customFieldHeight().value()).toBe(600);
         });
     });
 
@@ -486,15 +509,8 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
         const createComponent = createComponentFactory({
             component: DotRenderOptionsSettingsComponent,
-            imports: [
-                FormsModule,
-                ReactiveFormsModule,
-                InputTextModule,
-                ToggleSwitchModule,
-                DotMessagePipe
-            ],
+            imports: [InputTextModule, ToggleSwitchModule, DotMessagePipe],
             providers: [
-                FormBuilder,
                 mockProvider(DotFieldVariablesService, {
                     save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
@@ -508,10 +524,11 @@ describe('DotRenderOptionsSettingsComponent', () => {
             spectator.setInput('field', fieldWithBadJson);
             spectator.detectChanges();
             const comp = spectator.component;
+            const ft = (comp as WithFormTree).formTree;
 
-            expect(comp.form.controls['showAsModal'].value).toBe(false);
-            expect(comp.form.getRawValue().customFieldWidth).toBe(398);
-            expect(comp.form.getRawValue().customFieldHeight).toBe(400);
+            expect(ft.showAsModal().value()).toBe(false);
+            expect(ft.customFieldWidth().value()).toBe(398);
+            expect(ft.customFieldHeight().value()).toBe(400);
         });
     });
 });

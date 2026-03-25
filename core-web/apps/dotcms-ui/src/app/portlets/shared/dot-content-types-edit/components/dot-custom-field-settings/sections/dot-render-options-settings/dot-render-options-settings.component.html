@@ -1,4 +1,4 @@
-<form class="form mt-4" [formGroup]="form">
+<div class="form mt-4">
     <div class="field">
         <label>{{ 'contenttypes.field.properties.renderOptions.title' | dm }}</label>
         <div class="flex flex-col gap-3 border border-gray-300 rounded p-4 bg-primary-50">
@@ -13,7 +13,7 @@
                 </div>
                 <p-toggleswitch
                     id="showAsModal"
-                    formControlName="showAsModal"
+                    [formField]="formTree.showAsModal"
                     class="shrink-0"
                     data-testid="render-options-show-as-modal" />
             </div>
@@ -28,15 +28,15 @@
                                 id="customFieldWidth"
                                 type="number"
                                 min="1"
-                                formControlName="customFieldWidth"
+                                [formField]="formTree.customFieldWidth"
                                 pInputText
                                 class="flex-1"
                                 data-testid="render-options-width" />
                             <span class="text-sm shrink-0">px</span>
                         </div>
                         @if (
-                            form.get('customFieldWidth')?.invalid &&
-                            form.get('customFieldWidth')?.touched
+                            formTree.customFieldWidth().invalid() &&
+                            formTree.customFieldWidth().touched()
                         ) {
                             <small class="p-error" data-testid="render-options-width-error">
                                 {{ 'contenttypes.field.properties.renderOptions.width.error' | dm }}
@@ -52,15 +52,15 @@
                                 id="customFieldHeight"
                                 type="number"
                                 min="1"
-                                formControlName="customFieldHeight"
+                                [formField]="formTree.customFieldHeight"
                                 pInputText
                                 class="flex-1"
                                 data-testid="render-options-height" />
                             <span class="text-sm shrink-0">px</span>
                         </div>
                         @if (
-                            form.get('customFieldHeight')?.invalid &&
-                            form.get('customFieldHeight')?.touched
+                            formTree.customFieldHeight().invalid() &&
+                            formTree.customFieldHeight().touched()
                         ) {
                             <small class="p-error" data-testid="render-options-height-error">
                                 {{
@@ -73,4 +73,4 @@
             }
         </div>
     </div>
-</form>
+</div>

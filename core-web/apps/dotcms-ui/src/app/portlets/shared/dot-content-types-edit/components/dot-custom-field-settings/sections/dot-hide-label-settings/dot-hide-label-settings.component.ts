@@ -1,11 +1,20 @@
 import { Observable } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnInit,
+    computed,
+    inject,
+    input,
+    signal
+} from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { FormField, form } from '@angular/forms/signals';
 
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { tap } from 'rxjs/operators';
+import { skip, tap } from 'rxjs/operators';
 
 import {
     DotCMSClazzes,
@@ -18,29 +27,35 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotFieldVariablesService } from '../../../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 import { FieldSettingsSection } from '../field-settings-section';
 
+interface HideLabelModel {
+    hideLabel: boolean;
+}
+
 @Component({
     selector: 'dot-hide-label-settings',
-    imports: [ReactiveFormsModule, CheckboxModule, DotMessagePipe],
+    imports: [FormField, CheckboxModule, DotMessagePipe],
     templateUrl: './dot-hide-label-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotHideLabelSettingsComponent implements OnInit, FieldSettingsSection {
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
-    readonly #fb = inject(FormBuilder);
     readonly #fieldVariablesService = inject(DotFieldVariablesService);
 
-    form: FormGroup = this.#fb.group({ hideLabel: [false] });
+    readonly #model = signal<HideLabelModel>({ hideLabel: false });
+
+    protected readonly formTree = form(this.#model);
+
     readonly $isValid = signal(true);
+
+    readonly valueChanges$: Observable<unknown> = toObservable(
+        computed(() => this.formTree().dirty())
+    ).pipe(skip(1));
 
     #fieldVariableRef: DotFieldVariable | null = null;
 
     get isDirty(): boolean {
-        return this.form.dirty;
-    }
-
-    get valueChanges$(): Observable<unknown> {
-        return this.form.valueChanges;
+        return this.formTree().dirty();
     }
 
     ngOnInit(): void {
@@ -49,12 +64,12 @@ export class DotHideLabelSettingsComponent implements OnInit, FieldSettingsSecti
         );
         this.#fieldVariableRef = hideLabelVar ?? null;
 
-        this.form.patchValue({ hideLabel: hideLabelVar?.value === 'true' }, { emitEvent: false });
-        this.form.markAsPristine();
+        this.#model.set({ hideLabel: hideLabelVar?.value === 'true' });
+        this.formTree().reset();
     }
 
     save(field: DotCMSContentTypeField): Observable<DotFieldVariable> {
-        const { hideLabel } = this.form.getRawValue();
+        const { hideLabel } = this.#model();
         const fieldVariable: DotFieldVariable = {
             ...(this.#fieldVariableRef || {}),
             clazz: DotCMSClazzes.FIELD_VARIABLE,

@@ -1,7 +1,7 @@
 import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FieldTree } from '@angular/forms/signals';
 
 import { CheckboxModule } from 'primeng/checkbox';
 
@@ -57,6 +57,9 @@ const MOCK_SAVED_VARIABLE: DotFieldVariable = {
     value: 'true'
 };
 
+type HideLabelFormTree = FieldTree<{ hideLabel: boolean }>;
+type WithFormTree = { formTree: HideLabelFormTree };
+
 describe('DotHideLabelSettingsComponent', () => {
     let spectator: Spectator<DotHideLabelSettingsComponent>;
     let component: DotHideLabelSettingsComponent;
@@ -65,9 +68,8 @@ describe('DotHideLabelSettingsComponent', () => {
     describe('without existing field variable (defaults)', () => {
         const createComponent = createComponentFactory({
             component: DotHideLabelSettingsComponent,
-            imports: [ReactiveFormsModule, CheckboxModule, DotMessagePipe],
+            imports: [CheckboxModule, DotMessagePipe],
             providers: [
-                FormBuilder,
                 mockProvider(DotFieldVariablesService, {
                     save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
@@ -91,7 +93,8 @@ describe('DotHideLabelSettingsComponent', () => {
             });
 
             it('should return true after the form is marked dirty', () => {
-                component.form.markAsDirty();
+                const ft = (component as WithFormTree).formTree;
+                ft().markAsDirty();
                 expect(component.isDirty).toBe(true);
             });
         });
@@ -104,7 +107,8 @@ describe('DotHideLabelSettingsComponent', () => {
 
         describe('ngOnInit with no field variables', () => {
             it('should initialise hideLabel to false', () => {
-                expect(component.form.controls['hideLabel'].value).toBe(false);
+                const ft = (component as WithFormTree).formTree;
+                expect(ft.hideLabel().value()).toBe(false);
             });
 
             it('should render the checkbox', () => {
@@ -127,7 +131,8 @@ describe('DotHideLabelSettingsComponent', () => {
             });
 
             it('should call DotFieldVariablesService.save with value "true" when checked', () => {
-                component.form.controls['hideLabel'].setValue(true);
+                const ft = (component as WithFormTree).formTree;
+                ft.hideLabel().value.set(true);
                 component.save(MOCK_FIELD_BASE).subscribe();
 
                 expect(dotFieldVariablesService.save).toHaveBeenCalledWith(
@@ -177,9 +182,8 @@ describe('DotHideLabelSettingsComponent', () => {
 
         const createComponent = createComponentFactory({
             component: DotHideLabelSettingsComponent,
-            imports: [ReactiveFormsModule, CheckboxModule, DotMessagePipe],
+            imports: [CheckboxModule, DotMessagePipe],
             providers: [
-                FormBuilder,
                 mockProvider(DotFieldVariablesService, {
                     save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
@@ -197,7 +201,8 @@ describe('DotHideLabelSettingsComponent', () => {
         });
 
         it('should parse hideLabel as true from existing variable', () => {
-            expect(component.form.controls['hideLabel'].value).toBe(true);
+            const ft = (component as WithFormTree).formTree;
+            expect(ft.hideLabel().value()).toBe(true);
         });
 
         it('should include existing variable id in save payload (PUT-style update)', () => {
@@ -225,9 +230,8 @@ describe('DotHideLabelSettingsComponent', () => {
 
         const createComponent = createComponentFactory({
             component: DotHideLabelSettingsComponent,
-            imports: [ReactiveFormsModule, CheckboxModule, DotMessagePipe],
+            imports: [CheckboxModule, DotMessagePipe],
             providers: [
-                FormBuilder,
                 mockProvider(DotFieldVariablesService, {
                     save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
@@ -244,7 +248,8 @@ describe('DotHideLabelSettingsComponent', () => {
         });
 
         it('should parse hideLabel as false from existing variable with value "false"', () => {
-            expect(component.form.controls['hideLabel'].value).toBe(false);
+            const ft = (component as WithFormTree).formTree;
+            expect(ft.hideLabel().value()).toBe(false);
         });
     });
 });

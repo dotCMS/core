@@ -3,19 +3,19 @@ import { Observable } from 'rxjs';
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
     OnInit,
+    computed,
     inject,
     input,
     signal
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { FormField, disabled, form, min, required } from '@angular/forms/signals';
 
 import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
-import { startWith, tap } from 'rxjs/operators';
+import { skip, tap } from 'rxjs/operators';
 
 import {
     CUSTOM_FIELD_OPTIONS_KEY,
@@ -28,9 +28,15 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotFieldVariablesService } from '../../../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 import { FieldSettingsSection } from '../field-settings-section';
 
+interface RenderOptionsModel {
+    showAsModal: boolean;
+    customFieldWidth: number;
+    customFieldHeight: number;
+}
+
 @Component({
     selector: 'dot-render-options-settings',
-    imports: [ReactiveFormsModule, InputTextModule, ToggleSwitchModule, DotMessagePipe],
+    imports: [FormField, InputTextModule, ToggleSwitchModule, DotMessagePipe],
     templateUrl: './dot-render-options-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -38,26 +44,35 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     readonly defaultWidth = 398;
     readonly defaultHeight = 400;
-    readonly #fb = inject(FormBuilder);
-    readonly #fieldVariablesService = inject(DotFieldVariablesService);
-    readonly #destroyRef = inject(DestroyRef);
 
-    form = this.#fb.group({
-        showAsModal: [false],
-        customFieldWidth: [this.defaultWidth, [Validators.required, Validators.min(1)]],
-        customFieldHeight: [this.defaultHeight, [Validators.required, Validators.min(1)]]
+    readonly #fieldVariablesService = inject(DotFieldVariablesService);
+
+    readonly #model = signal<RenderOptionsModel>({
+        showAsModal: false,
+        customFieldWidth: this.defaultWidth,
+        customFieldHeight: this.defaultHeight
     });
-    readonly $isValid = signal(true);
-    protected readonly $showAsModal = signal(false);
+
+    protected readonly formTree = form(this.#model, (f) => {
+        required(f.customFieldWidth);
+        min(f.customFieldWidth, 1);
+        required(f.customFieldHeight);
+        min(f.customFieldHeight, 1);
+        disabled(f.customFieldWidth, () => !this.#model().showAsModal);
+        disabled(f.customFieldHeight, () => !this.#model().showAsModal);
+    });
+
+    readonly $isValid = computed(() => this.formTree().valid());
+    protected readonly $showAsModal = computed(() => this.#model().showAsModal);
+
+    readonly valueChanges$: Observable<unknown> = toObservable(
+        computed(() => [this.formTree().dirty(), this.formTree().valid()])
+    ).pipe(skip(1));
 
     #fieldVariableRef: DotFieldVariable | null = null;
 
     get isDirty(): boolean {
-        return this.form.dirty;
-    }
-
-    get valueChanges$(): Observable<unknown> {
-        return this.form.valueChanges;
+        return this.formTree().dirty();
     }
 
     ngOnInit(): void {
@@ -74,54 +89,30 @@ export class DotRenderOptionsSettingsComponent implements OnInit, FieldSettingsS
             // Malformed JSON in field variable — fall back to defaults
         }
 
-        const initialShowAsModal = !!options['showAsModal'];
-
-        this.form.patchValue({
-            showAsModal: initialShowAsModal,
+        this.#model.set({
+            showAsModal: !!options['showAsModal'],
             customFieldWidth: this.#parsePxToNumber(options['width'], this.defaultWidth),
             customFieldHeight: this.#parsePxToNumber(options['height'], this.defaultHeight)
         });
-        this.form.markAsPristine();
-
-        this.form.statusChanges
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => this.$isValid.set(this.form.valid));
-
-        this.form.controls['showAsModal'].valueChanges
-            .pipe(startWith(initialShowAsModal), takeUntilDestroyed(this.#destroyRef))
-            .subscribe((value) => {
-                this.$showAsModal.set(value);
-                this.#toggleSizeControls(value);
-            });
+        this.formTree().reset();
     }
 
     save(field: DotCMSContentTypeField): Observable<DotFieldVariable> {
-        const value = this.form.getRawValue();
+        const { showAsModal, customFieldWidth, customFieldHeight } = this.#model();
         const fieldVariable: DotFieldVariable = {
             ...(this.#fieldVariableRef || {}),
             clazz: DotCMSClazzes.FIELD_VARIABLE,
             key: CUSTOM_FIELD_OPTIONS_KEY,
             value: JSON.stringify({
-                showAsModal: value.showAsModal ?? false,
-                width: `${value.customFieldWidth ?? this.defaultWidth}px`,
-                height: `${value.customFieldHeight ?? this.defaultHeight}px`
+                showAsModal,
+                width: `${customFieldWidth ?? this.defaultWidth}px`,
+                height: `${customFieldHeight ?? this.defaultHeight}px`
             })
         };
 
         return this.#fieldVariablesService
             .save(field, fieldVariable)
             .pipe(tap((saved) => (this.#fieldVariableRef = saved)));
-    }
-
-    #toggleSizeControls(showAsModal: boolean): void {
-        const opts = { emitEvent: false };
-        if (showAsModal) {
-            this.form.controls['customFieldWidth'].enable(opts);
-            this.form.controls['customFieldHeight'].enable(opts);
-        } else {
-            this.form.controls['customFieldWidth'].disable(opts);
-            this.form.controls['customFieldHeight'].disable(opts);
-        }
     }
 
     /** Pixels only: `123`, `123px`, or JSON number. Rejects `%`, `vh`, etc. */

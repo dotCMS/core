@@ -37,7 +37,7 @@ import { DotKeyValue } from '../../../../../../shared/models/dot-key-value-ng/do
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-    private $fieldVariablesService = inject(DotFieldVariablesService);
+    private fieldVariablesService = inject(DotFieldVariablesService);
 
     readonly $field = input<DotCMSContentTypeField>(undefined, { alias: 'field' });
     readonly $showTable = input<boolean>(true, { alias: 'showTable' });
@@ -82,7 +82,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * @memberof DotContentTypeFieldsVariablesComponent
      */
     deleteFieldVariable(variable: DotKeyValue): void {
-        this.$fieldVariablesService
+        this.fieldVariablesService
             .delete(this.field, variable)
             .pipe(take(1))
             .subscribe({
@@ -105,7 +105,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * @memberof DotContentTypeFieldsVariablesComponent
      */
     updateFieldVariable(variable: DotKeyValue): void {
-        this.$fieldVariablesService
+        this.fieldVariablesService
             .save(this.field, variable)
             .pipe(take(1))
             .subscribe({
@@ -124,7 +124,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             return;
         }
 
-        this.$fieldVariablesService
+        this.fieldVariablesService
             .load(this.field)
             .pipe(takeUntil(this.destroy$))
             .subscribe(($fieldVariables: DotFieldVariable[]) => {

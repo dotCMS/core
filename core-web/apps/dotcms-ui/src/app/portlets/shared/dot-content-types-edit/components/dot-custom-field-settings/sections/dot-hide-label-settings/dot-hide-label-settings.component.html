@@ -1,6 +1,6 @@
-<div [formGroup]="form" class="flex gap-2 items-center py-2">
+<div class="flex gap-2 items-center py-2">
     <p-checkbox
-        formControlName="hideLabel"
+        [formField]="formTree.hideLabel"
         [binary]="true"
         inputId="hideLabel"
         data-testid="hide-label-checkbox" />
