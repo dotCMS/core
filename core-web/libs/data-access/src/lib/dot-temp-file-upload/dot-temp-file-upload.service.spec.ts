@@ -1,12 +1,9 @@
 import { expect, it, describe } from '@jest/globals';
 import { of } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotTempFileUploadService } from './dot-temp-file-upload.service';
 
@@ -19,10 +16,10 @@ describe('DotTempFileUploadService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotTempFileUploadService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {

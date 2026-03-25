@@ -1,27 +1,27 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 export interface DotPushPublishFilter {
     defaultFilter: boolean;
     key: string;
     title: string;
 }
+
 @Injectable({
     providedIn: 'root'
 })
 export class DotPushPublishFiltersService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     get(): Observable<DotPushPublishFilter[]> {
-        return this.coreWebService
-            .requestView({
-                url: '/api/v1/pushpublish/filters/'
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<DotCMSResponse<DotPushPublishFilter[]>>('/api/v1/pushpublish/filters/')
+            .pipe(map((response) => response.entity));
     }
 }

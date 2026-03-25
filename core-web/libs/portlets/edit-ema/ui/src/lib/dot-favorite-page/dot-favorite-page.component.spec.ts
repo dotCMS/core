@@ -1,6 +1,7 @@
 import { describe, expect } from '@jest/globals';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -13,7 +14,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { of } from 'rxjs/internal/observable/of';
 
 import { DotMessageService, DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     DotFieldRequiredDirective,
@@ -138,13 +139,13 @@ describe('DotFavoritePageComponent', () => {
                 ReactiveFormsModule,
                 DotFieldValidationMessageComponent,
                 DotFieldRequiredDirective,
-                DotPagesFavoritePageEmptySkeletonComponent,
-                HttpClientTestingModule
+                DotPagesFavoritePageEmptySkeletonComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotSessionStorageService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock

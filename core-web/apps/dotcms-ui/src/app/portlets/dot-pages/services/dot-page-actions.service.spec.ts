@@ -456,9 +456,7 @@ describe('DotPageActionsService', () => {
 
         it('should handle delete favorite error', fakeAsync(() => {
             const error = new Error('Delete error');
-            mockWorkflowActionsFireService.deleteContentlet.mockReturnValue(
-                throwError(() => error)
-            );
+            mockWorkflowActionsFireService.deleteContentlet.mockReturnValue(throwError(error));
 
             spectator.service.getItems(MOCK_FAVORITE_PAGE).subscribe((items) => {
                 const deleteAction = items.find((item) =>
@@ -554,7 +552,7 @@ describe('DotPageActionsService', () => {
 
         it('should handle workflow action error', fakeAsync(() => {
             const error = new Error('Workflow error');
-            mockWorkflowActionsFireService.fireTo.mockReturnValue(throwError(() => error));
+            mockWorkflowActionsFireService.fireTo.mockReturnValue(throwError(error));
             mockActionsService.getByInode.mockReturnValue(of([MOCK_WORKFLOW_ACTION_NO_INPUTS]));
 
             spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {

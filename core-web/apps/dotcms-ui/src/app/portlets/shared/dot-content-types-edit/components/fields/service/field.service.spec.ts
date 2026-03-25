@@ -1,9 +1,9 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 
 import { FieldService } from '.';
 
@@ -19,15 +19,14 @@ export const mockFieldType: FieldType = {
 
 describe('FieldService', () => {
     let fieldService: FieldService;
-    let httpMock: HttpTestingController;
+    let httpTesting: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, FieldService]
+            providers: [provideHttpClient(), provideHttpClientTesting(), FieldService]
         });
         fieldService = TestBed.inject(FieldService);
-        httpMock = TestBed.inject(HttpTestingController);
+        httpTesting = TestBed.inject(HttpTestingController);
     });
 
     it('should load field types', () => {
@@ -37,7 +36,7 @@ describe('FieldService', () => {
             expect(res).toEqual(mockResponse);
         });
 
-        const req = httpMock.expectOne('v1/fieldTypes');
+        const req = httpTesting.expectOne('/api/v1/fieldTypes');
         expect(req.request.method).toBe('GET');
         req.flush({ entity: mockResponse });
     });
@@ -67,7 +66,7 @@ describe('FieldService', () => {
                     expect(res).toEqual(mockData);
                 });
 
-            const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields/move`);
+            const req = httpTesting.expectOne(`/api/v3/contenttype/${contentTypeId}/fields/move`);
             expect(req.request.method).toBe('PUT');
             req.flush({ entity: mockData });
         });
@@ -96,7 +95,7 @@ describe('FieldService', () => {
                     }
                 );
 
-            const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields`);
+            const req = httpTesting.expectOne(`/api/v3/contenttype/${contentTypeId}/fields`);
             expect(req.request.method).toBe('DELETE');
             req.flush({ entity: { deletedIds: ['1', '2'], fields: mockData } });
         });
@@ -123,13 +122,13 @@ describe('FieldService', () => {
                     expect(res[0]).toEqual(mockResponse);
                 });
 
-            const req = httpMock.expectOne(`v3/contenttype/${contentTypeId}/fields/1`);
+            const req = httpTesting.expectOne(`/api/v3/contenttype/${contentTypeId}/fields/1`);
             expect(req.request.method).toBe('PUT');
             req.flush({ entity: [mockResponse] });
         });
     });
 
     afterEach(() => {
-        httpMock.verify();
+        httpTesting.verify();
     });
 });

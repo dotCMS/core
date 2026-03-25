@@ -1,7 +1,8 @@
 import { describe, expect, it } from '@jest/globals';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -11,7 +12,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { PopoverModule } from 'primeng/popover';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { WINDOW } from '@dotcms/utils';
 import {
     CurrentUserDataMock,
@@ -60,12 +60,13 @@ describe('DotDeviceSelectorSeoComponent', () => {
             declarations: [TestHostComponent],
             imports: [
                 DotDeviceSelectorSeoComponent,
-                HttpClientTestingModule,
                 PopoverModule,
                 NoopAnimationsModule,
                 RouterTestingModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 {
                     provide: WINDOW,
                     useValue: window
@@ -77,10 +78,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
                 },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock }
             ],
