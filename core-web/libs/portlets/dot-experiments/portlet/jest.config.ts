@@ -5,10 +5,7 @@ export default {
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
     coverageDirectory: '../../../../../target/core-web-reports/',
-    coverageReporters: [['lcovonly', { file: 'TEST-portlet-experiment.lcov' }]],
     reporters: [
-        'default',
-        ['github-actions', { silent: false }],
         [
             'jest-junit',
             {
@@ -21,7 +18,6 @@ export default {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
             {
-                isolatedModules: true, // Prevent type checking in tests and deps
                 tsconfig: '<rootDir>/tsconfig.spec.json',
                 stringifyContentPathRegex: '\\.(html|svg)$'
             }

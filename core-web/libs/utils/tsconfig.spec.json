@@ -2,11 +2,13 @@
     "extends": "./tsconfig.json",
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
-        "module": "commonjs",
+        "module": "preserve",
         "types": ["jest", "node"],
         "target": "ES2022",
         "useDefineForClassFields": false,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "moduleResolution": "bundler",
+        "isolatedModules": true
     },
     "include": ["**/*.spec.ts", "**/*.test.ts", "**/*.d.ts"]
 }

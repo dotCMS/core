@@ -14,7 +14,7 @@ import { DynamicControl } from './model';
 @Component({
     selector: 'dot-bubble-form',
     templateUrl: './bubble-form.component.html',
-    styleUrls: ['./bubble-form.component.scss'],
+    styleUrls: ['./bubble-form.component.css'],
     standalone: false
 })
 export class BubbleFormComponent {

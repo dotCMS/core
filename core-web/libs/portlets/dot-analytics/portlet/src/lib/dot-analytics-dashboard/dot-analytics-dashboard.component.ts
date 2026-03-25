@@ -1,20 +1,9 @@
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    effect,
-    inject,
-    signal
-} from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal, Type } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
-
-import { map } from 'rxjs/operators';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
@@ -25,7 +14,6 @@ import {
     isValidTab,
     TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import DotAnalyticsConversionsReportComponent from './reports/conversions/dot-analytics-conversions-report/dot-analytics-conversions-report.component';
@@ -43,24 +31,20 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
         MessageModule,
         TabsModule,
         DotAnalyticsFiltersComponent,
-        DotAnalyticsPageviewReportComponent,
-        DotAnalyticsConversionsReportComponent,
-        DotAnalyticsEngagementReportComponent,
         DotMessagePipe
     ],
+    providers: [DotAnalyticsDashboardStore],
     templateUrl: './dot-analytics-dashboard.component.html',
     styleUrl: './dot-analytics-dashboard.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 /**
  * Root analytics dashboard component. Manages tab navigation, time range filters,
- * and feature-flag-gated visibility of the Engagement tab.
+ * and the Engagement, Pageview, and Conversions tabs.
  */
 export default class DotAnalyticsDashboardComponent {
-    readonly #globalStore = inject(GlobalStore);
     /** Analytics dashboard store providing data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
-    readonly #activatedRoute = inject(ActivatedRoute);
     readonly #localStorageService = inject(DotLocalstorageService);
 
     /** Controls visibility of the top informational message banner */
@@ -68,36 +52,13 @@ export default class DotAnalyticsDashboardComponent {
         !this.#localStorageService.getItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY)
     );
 
-    /**
-     * Whether the Engagement tab is enabled via feature flag.
-     * TODO: Remove this signal when the feature flag is removed.
-     */
-    readonly $engagementEnabled = toSignal(
-        this.#activatedRoute.data.pipe(
-            map((data: Record<string, unknown>) => data['engagementEnabled'] === true)
-        )
-    );
+    readonly tabs = DASHBOARD_TAB_LIST;
 
-    /** Visible tabs, filtered by feature flag (Engagement tab hidden when disabled) */
-    readonly $tabs = computed(() => {
-        const enabled = this.$engagementEnabled();
-        return DASHBOARD_TAB_LIST.filter((tab) => tab.id !== DASHBOARD_TABS.engagement || enabled);
-    });
-
-    constructor() {
-        // TODO: Remove this effect when the feature flag is removed
-        effect(() => {
-            const enabled = this.$engagementEnabled();
-            const params = this.#activatedRoute.snapshot.queryParamMap;
-
-            if (enabled && !params.has('tab')) {
-                this.#globalStore.addNewBreadcrumb({
-                    label: DASHBOARD_TABS.engagement,
-                    url: '/analytics/dashboard?tab=engagement'
-                });
-            }
-        });
-    }
+    readonly tabComponents: Record<DashboardTab, Type<unknown>> = {
+        [DASHBOARD_TABS.pageview]: DotAnalyticsPageviewReportComponent,
+        [DASHBOARD_TABS.conversions]: DotAnalyticsConversionsReportComponent,
+        [DASHBOARD_TABS.engagement]: DotAnalyticsEngagementReportComponent
+    };
 
     /**
      * Closes the message banner and stores the preference in localStorage

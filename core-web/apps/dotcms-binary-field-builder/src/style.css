@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+/* Binary field dialogs use a white transparent backdrop (mirrors pre-migration p-component-overlay rule).
+   PrimeNG 21 renamed the mask class from p-component-overlay to p-overlay-mask. */
+.p-dialog-mask-transparent {
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+/* The global .pi rule in _misc.scss sets display:flex + width:20px + aspect-ratio:1/1 to create
+   fixed-size icon boxes. Inside a PrimeNG 21 p-button this breaks the icon/label flex alignment
+   because the icon span becomes an oversized block, pushing the label out of place.
+   Reset those properties so the button's own flex layout controls icon sizing. */
+.p-button .p-button-icon.pi {
+    display: inline-flex;
+    width: auto;
+    aspect-ratio: unset;
+}

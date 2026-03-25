@@ -1,25 +1,20 @@
-@let allowFileNameEdit = $allowFileNameEdit();
-@let cancel = $cancel;
-
-<form
-    (ngSubmit)="onSubmit()"
-    [formGroup]="form"
-    class="flex h-full w-full flex-col items-start justify-center gap-4">
+<form (ngSubmit)="onSubmit()" [formGroup]="form" class="editor-mode__form">
     @if (allowFileNameEdit) {
-        <div class="flex w-full flex-col gap-2">
-            <label class="p-label-input-required" data-testId="editor-label" for="file-name">
-                {{ 'dot.binary.field.action.create.new.file.label' | dm }}
-            </label>
-            <input
-                id="file-name"
-                autocomplete="off"
-                formControlName="name"
-                pInputText
-                class="w-full"
-                placeholder="Ex. template.html"
-                type="text"
-                data-testId="editor-file-name" />
-            <div class="flex min-h-6 items-start">
+        <div class="editor-mode__input-container">
+            <div class="editor-mode__input">
+                <label class="p-label-input-required" data-testId="editor-label" for="file-name">
+                    {{ 'dot.binary.field.action.create.new.file.label' | dm }}
+                </label>
+                <input
+                    id="file-name"
+                    autocomplete="off"
+                    formControlName="name"
+                    pInputText
+                    placeholder="Ex. template.html"
+                    type="text"
+                    data-testId="editor-file-name" />
+            </div>
+            <div class="error-message">
                 <dot-field-validation-message
                     [field]="form.get('name')"
                     [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
@@ -27,26 +22,22 @@
             </div>
         </div>
     }
-    <div class="flex w-full flex-1 flex-col items-start gap-2">
+    <div class="binary-field__editor-container">
         <ngx-monaco-editor
             (init)="onEditorInit()"
-            [class.bg-gray-200]="form.disabled"
-            [class.opacity-50]="form.disabled"
-            [class.cursor-not-allowed]="form.disabled"
+            [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
             [options]="monacoOptions()"
-            class="block w-full min-h-80 flex-1 overflow-auto rounded-md border border-gray-400"
+            class="binary-field__code-editor"
             #editorRef
             data-testId="code-editor"
             formControlName="content" />
 
-        <div
-            [class.visible]="!!mimeType"
-            class="invisible flex items-center gap-2 text-sm text-gray-700">
+        <div [ngClass]="{ 'editor-mode__helper--visible': mimeType }" class="editor-mode__helper">
             <i class="pi pi-info-circle"></i>
             <small>Mime Type: {{ mimeType }}</small>
         </div>
     </div>
-    <div class="flex w-full items-center justify-end gap-2">
+    <div class="editor-mode__actions">
         <p-button
             (click)="cancel.emit()"
             [label]="'dot.common.cancel' | dm"

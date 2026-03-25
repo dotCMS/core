@@ -536,7 +536,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                 this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
             })
             .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
-                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
+                this.store.setResizingRowID(String(el.gridstackNode.grid.parentGridItem.id));
             })
             .on('resizestop', () => {
                 this.store.setResizingRowID(null);

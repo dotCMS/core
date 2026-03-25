@@ -160,7 +160,7 @@
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
         },
-        "@angular-devkit/build-angular:application": {
+        "@angular/build:application": {
             "cache": true,
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
@@ -179,7 +179,6 @@
         "sharedGlobals": [
             "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
-            "{workspaceRoot}/tslint.json",
             "{workspaceRoot}/nx.json",
             "{workspaceRoot}/babel.config.json"
         ],
@@ -209,7 +208,6 @@
             "options": {
                 "buildTargetName": "build",
                 "previewTargetName": "preview",
-                "testTargetName": "test",
                 "serveTargetName": "serve",
                 "serveStaticTargetName": "serve-static"
             }
@@ -224,6 +222,12 @@
             "plugin": "@nx/playwright/plugin",
             "options": {
                 "targetName": "e2e"
+            }
+        },
+        {
+            "plugin": "@nx/vitest",
+            "options": {
+                "testTargetName": "test"
             }
         }
     ],

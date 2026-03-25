@@ -1,6 +1,6 @@
 package com.dotmarketing.sitesearch.viewtool;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -114,7 +114,7 @@ public class SiteSearchWebAPI implements ViewTool {
         
         String indexName=null;
         if(indexAlias!=null) {
-            ESIndexAPI iapi=new ESIndexAPI();
+            IndexAPI iapi=APILocator.getESIndexAPI();
             indexName=iapi.getAliasToIndexMap(siteSearchAPI.listIndices()).get(indexAlias);
             if(indexName==null) {
                 results.setError("Index Alias not found: "+indexAlias);

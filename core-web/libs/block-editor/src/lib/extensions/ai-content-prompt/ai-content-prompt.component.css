@@ -1,0 +1,33 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    display: contents;
+}
+
+.ai-content__generated-text-wrapper {
+    @apply flex flex-col relative;
+}
+
+.ai-content__generated-text-wrapper .p-inputtext.p-inputtextarea {
+    @apply py-2 px-6 min-h-16;
+    resize: vertical;
+}
+
+.ai-content__generated-text-wrapper dot-copy-button {
+    @apply absolute right-4 bottom-2;
+}
+
+.ai-content__generated-text,
+dot-empty-container {
+    height: 22rem;
+}
+
+.ai-content__input-text {
+    resize: vertical;
+    @apply h-16;
+}
+
+dot-empty-container ::ng-deep .message__icon {
+    @apply text-red-600;
+}

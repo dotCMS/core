@@ -8787,6 +8787,7 @@ Styles for commons fields along the backend
   border: solid 1px var(--gray-500);
   width: 100%;
 }
+.fileAjaxUploader input[type=file]::file-selector-button,
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button {
   background-color: var(--color-palette-primary-500);
   height: 36px;
@@ -8795,6 +8796,7 @@ Styles for commons fields along the backend
   cursor: pointer;
   padding: 0 1rem;
 }
+.fileAjaxUploader input[type=file]::file-selector-button:hover,
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button:hover {
   background-color: var(--color-palette-primary-400);
 }

@@ -58,7 +58,7 @@ interface ToolbarAnimationState {
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'block transition-all duration-300 ease-in-out',
-        '[style.height]': '"7.125rem"'
+        '[style.min-height]': '"7.125rem"'
     },
     styles: [
         `

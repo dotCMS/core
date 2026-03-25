@@ -6,7 +6,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, DotSite } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
 
@@ -95,7 +95,7 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site in query when provided', () => {
-                const customSite = MOCK_SITES[0] as SiteEntity;
+                const customSite = MOCK_SITES[0] as DotSite;
 
                 store.initContentDrive({
                     currentSite: customSite,
@@ -204,7 +204,8 @@ describe('DotContentDriveStore', () => {
                 expect(request.language).toBeUndefined();
                 expect(request.contentTypes).toBeUndefined();
                 expect(request.baseTypes).toBeUndefined();
-                expect(request.offset).toBe(DEFAULT_PAGINATION.offset);
+                expect(request.contentCursor).toBe(0);
+                expect(request.folderCursor).toBe(0);
                 expect(request.maxResults).toBe(DEFAULT_PAGINATION.limit);
                 expect(request.sortBy).toBe(`${DEFAULT_SORT.field}:${DEFAULT_SORT.order}`);
                 expect(request.archived).toBe(false);
@@ -226,7 +227,7 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should include custom site hostname in assetPath when provided', () => {
-                const customSite = MOCK_SITES[0] as SiteEntity;
+                const customSite = MOCK_SITES[0] as DotSite;
                 store.initContentDrive({
                     currentSite: customSite,
                     path: DEFAULT_PATH,
@@ -317,12 +318,11 @@ describe('DotContentDriveStore', () => {
                     filters: {},
                     isTreeExpanded: false
                 });
-                store.setPagination({ limit: 50, offset: 20 });
+                store.setPagination({ limit: 50, page: 1, offset: 0 });
 
                 const request = store.$request();
 
                 expect(request.maxResults).toBe(50);
-                expect(request.offset).toBe(20);
             });
 
             it('should include sort in request', () => {
@@ -417,7 +417,7 @@ describe('DotContentDriveStore', () => {
                     filters,
                     isTreeExpanded: false
                 });
-                store.setPagination({ limit: 30, offset: 10 });
+                store.setPagination({ limit: 30, page: 1, offset: 0 });
                 store.setSort({ field: 'modDate', order: DotContentDriveSortOrder.DESC });
 
                 const request = store.$request();
@@ -428,7 +428,6 @@ describe('DotContentDriveStore', () => {
                 expect(request.baseTypes).toEqual(['CONTENT']);
                 expect(request.language).toEqual(['en']);
                 expect(request.maxResults).toBe(30);
-                expect(request.offset).toBe(10);
                 expect(request.sortBy).toBe('modDate:desc');
                 expect(request.showFolders).toBe(false);
             });
@@ -459,7 +458,7 @@ describe('DotContentDriveStore', () => {
 
         describe('setItems', () => {
             it('should update items and set status to LOADED', () => {
-                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
+                store.setItems(MOCK_ITEMS);
 
                 expect(store.items()).toEqual(MOCK_ITEMS);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
@@ -467,12 +466,12 @@ describe('DotContentDriveStore', () => {
 
             it('should update items with empty array', () => {
                 // First set some items
-                store.setItems(MOCK_ITEMS, MOCK_ITEMS.length);
+                store.setItems(MOCK_ITEMS);
                 expect(store.items()).toEqual(MOCK_ITEMS);
 
                 // Then clear them
                 const emptyItems: DotContentDriveItem[] = [];
-                store.setItems(emptyItems, emptyItems.length);
+                store.setItems(emptyItems);
 
                 expect(store.items()).toEqual(emptyItems);
                 expect(store.status()).toBe(DotContentDriveStatus.LOADED);
@@ -511,11 +510,11 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should reset pagination offset when setting global search', () => {
-                store.setPagination({ limit: 10, offset: 20 });
-                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+                store.setPagination({ limit: 20, page: 2, offset: 20 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
 
                 store.setGlobalSearch('test');
-                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
             });
 
             it('should reset path to DEFAULT_PATH when setting global search', () => {
@@ -538,22 +537,22 @@ describe('DotContentDriveStore', () => {
 
             it('should reset pagination offset when removing filter', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                store.setPagination({ limit: 10, offset: 20 });
-                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+                store.setPagination({ limit: 20, page: 2, offset: 20 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
 
                 store.removeFilter('contentType');
-                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
             });
 
             it('should not change state if filter does not exist', () => {
                 const initialFilters = { contentType: ['Blog'] };
                 store.patchFilters(initialFilters);
-                store.setPagination({ limit: 10, offset: 20 });
+                store.setPagination({ limit: 20, page: 2, offset: 20 });
 
                 store.removeFilter('nonExistentFilter');
 
                 expect(store.filters()).toEqual(initialFilters);
-                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
             });
         });
 
@@ -572,19 +571,19 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should update filters and reset pagination offset', () => {
-                store.setPagination({ limit: 10, offset: 10 });
-                expect(store.pagination()).toEqual({ limit: 10, offset: 10 });
+                store.setPagination({ limit: 20, page: 2, offset: 20 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
 
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
                 expect(store.filters()).toEqual({ contentType: ['Blog'] });
             });
         });
 
         describe('setPagination', () => {
             it('should update pagination with provided values', () => {
-                store.setPagination({ limit: 10, offset: 0 });
-                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+                store.setPagination({ limit: 10, page: 1, offset: 0 });
+                expect(store.pagination()).toEqual({ limit: 10, page: 1, offset: 0 });
             });
         });
 
@@ -652,13 +651,13 @@ describe('DotContentDriveStore', () => {
                     filters: {},
                     isTreeExpanded: false
                 });
-                store.setPagination({ limit: 20, offset: 40 });
-                expect(store.pagination()).toEqual({ limit: 20, offset: 40 });
+                store.setPagination({ limit: 20, page: 3, offset: 40 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 3, offset: 40 });
 
                 store.setPath('/documents/');
 
                 expect(store.path()).toBe('/documents/');
-                expect(store.pagination()).toEqual({ limit: 20, offset: 0 });
+                expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
             });
 
             it('should update path', () => {
@@ -763,7 +762,6 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 
         expect(contentDriveService.search).toHaveBeenCalled();
         expect(store.items()).toEqual(MOCK_ITEMS);
-        expect(store.totalItems()).toBe(MOCK_ITEMS.length);
         expect(store.status()).toBe(DotContentDriveStatus.LOADED);
     });
 
@@ -821,14 +819,13 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 
     it('should handle pagination', () => {
         // Set pagination in store
-        store.setPagination({ limit: 10, offset: 0 });
+        store.setPagination({ limit: 10, page: 1, offset: 0 });
 
-        spectator.flushEffects();
+        spectator.service.loadItems();
 
         expect(contentDriveService.search).toHaveBeenCalledWith(
             expect.objectContaining({
-                maxResults: 10,
-                offset: 0
+                maxResults: 10
             })
         );
     });

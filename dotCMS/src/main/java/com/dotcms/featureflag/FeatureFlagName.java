@@ -15,9 +15,6 @@ public interface FeatureFlagName {
 
     String FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT = "FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT";
 
-    // Engagement Dashboard
-    String FEATURE_FLAG_CONTENT_ANALYTICS_SHOW_ENGAGEMENT_DASHBOARD = "FEATURE_FLAG_CONTENT_ANALYTICS_SHOW_ENGAGEMENT_DASHBOARD";
-
     // Unique Fields
     String FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = "FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION";
 
@@ -50,8 +47,17 @@ public interface FeatureFlagName {
 
     String FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES = "FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES";
 
-    // Open Search Related
-    String FEATURE_FLAG_OPEN_SEARCH_WRITE = "FEATURE_FLAG_OPEN_SEARCH_WRITE";
-
-    String FEATURE_FLAG_OPEN_SEARCH_READ = "FEATURE_FLAG_OPEN_SEARCH_READ";
+    /**
+     * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
+     *
+     * <ul>
+     *   <li>0 — ES only (default)</li>
+     *   <li>1 — dual-write, ES reads</li>
+     *   <li>2 — dual-write, OS reads</li>
+     *   <li>3 — OS only</li>
+     * </ul>
+     *
+     * @see com.dotcms.content.index.IndexConfigHelper.MigrationPhase
+     */
+    String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
 }

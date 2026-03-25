@@ -283,39 +283,31 @@ public class PublishingResourceIntegrationTest {
     /**
      * Given: Page number is 0 or negative
      * When: Request made
-     * Then: Defaults to page 1
+     * Then: Returns 400 Bad Request
      */
-    @Test
-    public void test_pagination_invalidPageDefaultsToOne() throws Exception {
-        createBundleWithStatus("pagination-test", Status.SUCCESS);
-
-        final ResponseEntityPublishingJobsView result = callEndpoint(0, 50, null, null);
-
-        assertEquals("Should default to page 1", 1, result.getPagination().getCurrentPage());
+    @Test(expected = BadRequestException.class)
+    public void test_pagination_invalidPage_returns400() throws Exception {
+        callEndpoint(0, 50, null, null);
     }
 
     /**
      * Given: per_page exceeds maximum (500)
      * When: Request made
-     * Then: Caps at 500
+     * Then: Returns 400 Bad Request
      */
-    @Test
-    public void test_pagination_perPageCappedAt500() throws Exception {
-        final ResponseEntityPublishingJobsView result = callEndpoint(1, 1000, null, null);
-
-        assertEquals("Should cap at 500", 500, result.getPagination().getPerPage());
+    @Test(expected = BadRequestException.class)
+    public void test_pagination_perPageExceedsMax_returns400() throws Exception {
+        callEndpoint(1, 1000, null, null);
     }
 
     /**
      * Given: per_page is 0 or negative
      * When: Request made
-     * Then: Defaults to minimum (1)
+     * Then: Returns 400 Bad Request
      */
-    @Test
-    public void test_pagination_invalidPerPageDefaultsToMinimum() throws Exception {
-        final ResponseEntityPublishingJobsView result = callEndpoint(1, 0, null, null);
-
-        assertEquals("Should default to 1", 1, result.getPagination().getPerPage());
+    @Test(expected = BadRequestException.class)
+    public void test_pagination_invalidPerPage_returns400() throws Exception {
+        callEndpoint(1, 0, null, null);
     }
 
     // =========================================================================

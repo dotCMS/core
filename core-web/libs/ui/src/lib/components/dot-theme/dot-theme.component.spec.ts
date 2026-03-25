@@ -6,7 +6,7 @@ import {
     SpectatorHost,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -18,7 +18,8 @@ import { Button } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
 
 import { DotThemesService } from '@dotcms/data-access';
-import { DotTheme, DotPagination } from '@dotcms/dotcms-models';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotPagination, DotTheme } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotThemeComponent } from './dot-theme.component';
@@ -88,6 +89,10 @@ describe('DotThemeComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
+            {
+                provide: DotcmsEventsService,
+                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
+            },
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -349,6 +354,10 @@ describe('DotThemeComponent - ControlValueAccessor writeValue', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
+            {
+                provide: DotcmsEventsService,
+                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
+            },
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -456,6 +465,10 @@ describe('DotThemeComponent - ControlValueAccessor Integration', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
+            {
+                provide: DotcmsEventsService,
+                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
+            },
             provideHttpClient(),
             provideHttpClientTesting(),
             {

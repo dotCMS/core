@@ -206,6 +206,28 @@ public interface TagAPI {
 	public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException;
 
 	/**
+	 * Updates an existing tag, resolving {@code siteId} through the site's tagStorage before
+	 * persisting — consistent with {@link #saveTag} behaviour. Callers pass a conceptual siteId;
+	 * the physical storage host is resolved internally.
+	 *
+	 * @param tagId   tag to update
+	 * @param tagName new tag name
+	 * @param siteId  conceptual site identifier
+	 */
+	public void updateTag(String tagId, String tagName, String siteId) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Resolves a conceptual siteId to the physical host where tags are stored, applying the same
+	 * tagStorage chain logic as {@link #saveTag}. If {@code siteId} already equals
+	 * {@code currentHostId} the value is returned as-is to prevent a double-hop on no-op edits.
+	 *
+	 * @param siteId        conceptual site identifier supplied by the caller
+	 * @param currentHostId physical host where the tag currently lives
+	 * @return the physical storage host identifier
+	 */
+	public String resolveTagStorage(String siteId, String currentHostId) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Updates the persona attribute of a given tag
 	 *
 	 * @param tagId

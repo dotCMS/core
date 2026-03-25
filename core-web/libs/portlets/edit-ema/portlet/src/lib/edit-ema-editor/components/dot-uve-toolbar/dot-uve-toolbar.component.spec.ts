@@ -201,16 +201,9 @@ describe('DotUveToolbarComponent', () => {
     let devicesService: DotDevicesService;
     let personalizeService: DotPersonalizeService;
 
-    // Use Jest's fake timers for controlled date testing instead of mocking Date constructor
-    // which breaks PrimeNG's internal date handling
-    beforeAll(() => {
-        jest.useFakeTimers();
-        jest.setSystemTime(new Date('2024-01-01'));
-    });
-
-    afterAll(() => {
-        jest.useRealTimers();
-    });
+    // Do NOT use fake timers globally: PrimeNG's equals() (deepEquals) calls .getTime() on
+    // values it thinks are Date. With Jest fake timers or Date instanceof mocks, that breaks.
+    // Use real timers; use fake timers only in specific calendar tests that need a fixed "today".
 
     const createComponent = createComponentFactory({
         component: DotUveToolbarComponent,
@@ -1295,34 +1288,9 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('calendar', () => {
-            const originalHasInstance = Object.getOwnPropertyDescriptor(Date, Symbol.hasInstance);
-            const originalUTC = Object.getOwnPropertyDescriptor(Date, 'UTC');
-
-            // We need to mock Date instanceof check and Date.UTC to avoid jest errors when running the tests
-            // More info here: https://github.com/jestjs/jest/issues/11808
-            Object.defineProperty(Date, Symbol.hasInstance, {
-                value: function () {
-                    return true;
-                }
-            });
-
-            Object.defineProperty(Date, 'UTC', {
-                value: function (_args) {
-                    return new Date();
-                }
-            });
-
-            afterAll(() => {
-                // Restore original instanceof behavior
-                if (originalHasInstance) {
-                    Object.defineProperty(Date, Symbol.hasInstance, originalHasInstance);
-                }
-
-                // Restore original UTC behavior
-                if (originalUTC) {
-                    Object.defineProperty(Date, 'UTC', originalUTC);
-                }
-            });
+            // Do not mock Date Symbol.hasInstance or Date.UTC: PrimeNG's equals() uses
+            // (x instanceof Date) then x.getTime(). Making instanceof always true causes
+            // getTime() to be called on non-Date values and throws.
 
             it('should show calendar when in live mode', () => {
                 expect(spectator.query('p-datepicker')).toBeTruthy();

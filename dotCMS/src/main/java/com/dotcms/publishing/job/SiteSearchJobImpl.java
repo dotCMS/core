@@ -1,6 +1,6 @@
 package com.dotcms.publishing.job;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.enterprise.LicenseUtil;
@@ -14,7 +14,6 @@ import com.dotcms.publishing.BundlerStatus;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.PublisherAPI;
-import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -79,7 +78,7 @@ public class SiteSearchJobImpl {
     static final String INCLUDE = "include";
     static final String PATHS = "paths";
 
-    private final ESIndexAPI esIndexAPI;
+    private final IndexAPI esIndexAPI;
     private final IndiciesAPI indicesAPI;
     private final SiteSearchAPI siteSearchAPI;
     private final HostAPI hostAPI;
@@ -91,7 +90,7 @@ public class SiteSearchJobImpl {
 
     @VisibleForTesting
     SiteSearchJobImpl(
-            final ESIndexAPI esIndexAPI,
+            final IndexAPI esIndexAPI,
             final IndiciesAPI indicesAPI,
             final SiteSearchAPI siteSearchAPI,
             final HostAPI hostAPI,

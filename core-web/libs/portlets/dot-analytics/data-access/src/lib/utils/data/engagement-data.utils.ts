@@ -8,6 +8,7 @@ import type {
     EngagementPlatforms,
     SessionsByBrowserDailyEntity,
     SessionsByDeviceDailyEntity,
+    SessionsByLanguageDailyEntity,
     SparklineDataPoint
 } from '../../types';
 
@@ -15,13 +16,14 @@ const EMPTY_KPIS: EngagementKPIs = {
     totalSessions: { value: 0, trend: 0, label: 'Total Sessions' },
     engagementRate: {
         value: 0,
+        format: 'percentage',
         trend: 0,
         label: 'Engagement Rate',
         subtitle: '0 Engaged Sessions'
     },
     avgInteractions: { value: 0, trend: 0, label: 'Avg Interactions (Engaged)' },
-    avgSessionTime: { value: '0m 0s', trend: 0, label: 'Average Session Time' },
-    conversionRate: { value: '0%', trend: 0, label: 'Conversion Rate' }
+    avgSessionTime: { value: 0, format: 'time', trend: 0, label: 'Average Session Time' },
+    conversionRate: { value: 0, format: 'percentage', trend: 0, label: 'Conversion Rate' }
 };
 
 function parseNum(s: string | undefined | null): number {
@@ -71,7 +73,6 @@ export function toEngagementKPIs(
         return null;
     }
 
-    const totalSessionsPrev = parseNum(previous['EngagementDaily.totalSessions']);
     const engagedSessionsCur = parseNum(current['EngagementDaily.engagedSessions']);
     const engagementRateCur = parseNum(current['EngagementDaily.engagementRate']);
     const conversionRateCur = parseNum(current['EngagementDaily.conversionRate']);
@@ -80,21 +81,32 @@ export function toEngagementKPIs(
     );
     const avgSessionTimeCur = parseNum(current['EngagementDaily.avgSessionTimeSeconds']);
 
-    const engagementRatePrev = parseNum(previous['EngagementDaily.engagementRate']);
-    const conversionRatePrev = parseNum(previous['EngagementDaily.conversionRate']);
-    const avgInteractionsPrev = parseNum(
-        previous['EngagementDaily.avgInteractionsPerEngagedSession']
-    );
-    const avgSessionTimePrev = parseNum(previous['EngagementDaily.avgSessionTimeSeconds']);
-
-    const engagementRateTrend = computeTrendPercent(engagementRateCur, engagementRatePrev);
-    const totalSessionsTrend = computeTrendPercent(totalSessionsCur, totalSessionsPrev);
-    const conversionRateTrend = computeTrendPercent(conversionRateCur, conversionRatePrev);
-    const avgInteractionsTrend = computeTrendPercent(avgInteractionsCur, avgInteractionsPrev);
-    const avgSessionTimeTrend = computeTrendPercent(avgSessionTimeCur, avgSessionTimePrev);
-
     const engagementRateValue = Math.round(engagementRateCur * 10000) / 100;
-    const conversionRateValue = `${Math.round(conversionRateCur * 1000) / 10}%`;
+    const conversionRateValue = Math.round(conversionRateCur * 1000) / 10;
+
+    // When there is no previous period data, trends are undefined ("No prior data")
+    const hasPriorData = previousRow != null;
+    let engagementRateTrend: number | undefined;
+    let totalSessionsTrend: number | undefined;
+    let conversionRateTrend: number | undefined;
+    let avgInteractionsTrend: number | undefined;
+    let avgSessionTimeTrend: number | undefined;
+
+    if (hasPriorData) {
+        const totalSessionsPrev = parseNum(previous['EngagementDaily.totalSessions']);
+        const engagementRatePrev = parseNum(previous['EngagementDaily.engagementRate']);
+        const conversionRatePrev = parseNum(previous['EngagementDaily.conversionRate']);
+        const avgInteractionsPrev = parseNum(
+            previous['EngagementDaily.avgInteractionsPerEngagedSession']
+        );
+        const avgSessionTimePrev = parseNum(previous['EngagementDaily.avgSessionTimeSeconds']);
+
+        engagementRateTrend = computeTrendPercent(engagementRateCur, engagementRatePrev);
+        totalSessionsTrend = computeTrendPercent(totalSessionsCur, totalSessionsPrev);
+        conversionRateTrend = computeTrendPercent(conversionRateCur, conversionRatePrev);
+        avgInteractionsTrend = computeTrendPercent(avgInteractionsCur, avgInteractionsPrev);
+        avgSessionTimeTrend = computeTrendPercent(avgSessionTimeCur, avgSessionTimePrev);
+    }
 
     return {
         totalSessions: {
@@ -104,6 +116,7 @@ export function toEngagementKPIs(
         },
         engagementRate: {
             value: engagementRateValue,
+            format: 'percentage',
             trend: engagementRateTrend,
             label: 'Engagement Rate',
             subtitle: `${engagedSessionsCur.toLocaleString()} Engaged Sessions`
@@ -114,12 +127,14 @@ export function toEngagementKPIs(
             label: 'Avg Interactions (Engaged)'
         },
         avgSessionTime: {
-            value: formatSecondsToTime(avgSessionTimeCur),
+            value: avgSessionTimeCur,
+            format: 'time',
             trend: avgSessionTimeTrend,
             label: 'Average Session Time'
         },
         conversionRate: {
             value: conversionRateValue,
+            format: 'percentage',
             trend: conversionRateTrend,
             label: 'Conversion Rate'
         }
@@ -269,15 +284,36 @@ export function toEngagementPlatformsFromBrowser(
 }
 
 /**
- * Build full EngagementPlatforms from device and browser arrays.
+ * Map SessionsByLanguageDaily rows to language platform metrics.
+ */
+export function toEngagementPlatformsFromLanguage(
+    rows: SessionsByLanguageDailyEntity[] | null
+): EngagementPlatformMetrics[] {
+    if (!rows?.length) return [];
+    const total = rows.reduce(
+        (sum, r) => sum + parseNum(r['SessionsByLanguageDaily.engagedSessions']),
+        0
+    );
+    return rows.map((row) => {
+        const views = parseNum(row['SessionsByLanguageDaily.engagedSessions']);
+        const avgSec = parseNum(row['SessionsByLanguageDaily.avgEngagedSessionTimeSeconds']);
+        const name = row['SessionsByLanguageDaily.localeId'] ?? 'Other';
+        return toPlatformMetrics(name, views, total, avgSec);
+    });
+}
+
+/**
+ * Build full EngagementPlatforms from device, browser, and language arrays.
  */
 export function toEngagementPlatforms(
     deviceRows: SessionsByDeviceDailyEntity[] | null,
-    browserRows: SessionsByBrowserDailyEntity[] | null
+    browserRows: SessionsByBrowserDailyEntity[] | null,
+    languageRows: SessionsByLanguageDailyEntity[] | null
 ): EngagementPlatforms {
     return {
         device: toEngagementPlatformsFromDevice(deviceRows),
-        browser: toEngagementPlatformsFromBrowser(browserRows)
+        browser: toEngagementPlatformsFromBrowser(browserRows),
+        language: toEngagementPlatformsFromLanguage(languageRows)
     };
 }
 
@@ -299,5 +335,5 @@ export function getEmptyEngagementChartData(): ChartData {
  * Default empty EngagementPlatforms when no data.
  */
 export function getEmptyEngagementPlatforms(): EngagementPlatforms {
-    return { device: [], browser: [] };
+    return { device: [], browser: [], language: [] };
 }

@@ -29,13 +29,13 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ClusterStats;
+import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.NodeStats;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.domain.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -95,7 +95,7 @@ public class ESIndexResource {
     
     
     
-	private final ESIndexAPI indexAPI;
+	private final IndexAPI indexAPI;
 	private final ESIndexHelper indexHelper;
     private final ContentletIndexAPI idxApi;
 
@@ -109,7 +109,7 @@ public class ESIndexResource {
 	}
 
 	@VisibleForTesting
-	ESIndexResource(ESIndexAPI indexAPI, ESIndexHelper indexHelper,
+	ESIndexResource(IndexAPI indexAPI, ESIndexHelper indexHelper,
 			WebResource webResource, LayoutAPI layoutAPI, IndiciesAPI indiciesAPI) {
 		this.indexAPI = indexAPI;
 		this.indexHelper = indexHelper;
@@ -144,27 +144,25 @@ public class ESIndexResource {
     @NoCache
     @Path("/cluster")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response getClusterStats(@Context final HttpServletRequest request, @Context final HttpServletResponse response)
-                    throws DotDataException {
+    public Response getClusterStats(@Context final HttpServletRequest request, @Context final HttpServletResponse response) {
 
         auth(request, response);
 
 
-        final ESIndexAPI esIndexAPI = new ESIndexAPI();
-        final ClusterStats clusterStats = esIndexAPI.getClusterStats();
+        final ClusterStats clusterStats = APILocator.getESIndexAPI().getClusterStats();
 
         Builder<String, Object> builder =
-                        ImmutableMap.<String, Object>builder().put("clusterName", clusterStats.getClusterName());
+                        ImmutableMap.<String, Object>builder().put("clusterName", clusterStats.clusterName());
 
-        for (NodeStats stats : clusterStats.getNodeStats()) {
-            builder.put("name", stats.getName())
-                .put("master", stats.isMaster())
-                .put("host", stats.getHost())
-                .put("address", stats.getTransportAddress())
-                .put("size", stats.getSize())
-                .put("count", stats.getDocCount());
+        for (NodeStats stats : clusterStats.nodeStats()) {
+            builder.put("name", stats.name())
+                .put("master", stats.master())
+                .put("host", stats.host())
+                .put("address", stats.transportAddress())
+                .put("size", stats.size())
+                .put("count", stats.docCount());
         }
-        return Response.ok(new ResponseEntityView(builder.build())).build();
+        return Response.ok(new ResponseEntityView<>(builder.build())).build();
     }
     
     @CloseDBIfOpened
@@ -326,10 +324,9 @@ public class ESIndexResource {
     @NoCache
     @Path("/reindex")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
-                    @QueryParam("shards") int shards, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
+    public Response startReindex(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @DefaultValue(DOTALL) @QueryParam("contentType") String contentType) throws DotDataException, DotSecurityException {
         final InitDataObject init = auth(request, response);
-        shards = (shards <= 0) ? Config.getIntProperty("es.index.number_of_shards", 2) : shards;
+        int shards = Config.getIntProperty("es.index.number_of_shards", 1) ;
 
         System.setProperty("es.index.number_of_shards", String.valueOf(shards));
         Logger.info(this, "Running Contentlet Reindex");
@@ -345,7 +342,6 @@ public class ESIndexResource {
         }
 
         return getReindexationProgress(request, response);
-
 
     }
     

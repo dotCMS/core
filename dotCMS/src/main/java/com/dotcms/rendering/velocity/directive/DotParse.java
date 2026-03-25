@@ -14,6 +14,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -243,7 +244,7 @@ public class DotParse extends DotDirective {
 
         tokens.nextToken();
         final String inodeOrIdentifier = tokens.nextToken();
-        final String fieldVar = tokens.hasMoreTokens() ? tokens.nextToken() : DotAssetContentType.ASSET_FIELD_VAR;
+        final String explicitFieldVar = tokens.hasMoreTokens() ? tokens.nextToken() : null;
         final Optional<ShortyId> shortOpt = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
         if (shortOpt.isEmpty()) {
@@ -260,6 +261,11 @@ public class DotParse extends DotDirective {
         if (conOpt.isEmpty()) {
             return Optional.empty();
         }
+
+        final String defaultFieldVar = conOpt.get().getContentType() instanceof FileAssetContentType
+                        ? FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR
+                        : DotAssetContentType.ASSET_FIELD_VAR;
+        final String fieldVar = (explicitFieldVar != null) ? explicitFieldVar : defaultFieldVar;
 
         final Identifier identifier = APILocator.getIdentifierAPI().find(conOpt.get().getIdentifier());
         return Optional.of(Tuple.of(identifier, fieldVar));

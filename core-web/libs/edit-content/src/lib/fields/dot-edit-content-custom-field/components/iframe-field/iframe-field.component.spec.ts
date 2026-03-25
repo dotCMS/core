@@ -1,5 +1,6 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
+import { DeferBlockState } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { WINDOW } from '@dotcms/utils';
@@ -488,9 +489,9 @@ describe('IframeFieldComponent', () => {
             spectator.component.$showModal.set(true);
             spectator.detectChanges();
             await spectator.fixture.whenStable();
-            spectator.flushEffects();
             spectator.detectChanges();
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            const deferBlocks = await spectator.fixture.getDeferBlocks();
+            await deferBlocks[0].render(DeferBlockState.Complete);
 
             const iframe = spectator.query(
                 byTestId('custom-field-modal-iframe')
@@ -512,9 +513,9 @@ describe('IframeFieldComponent', () => {
             spectator.component.$showModal.set(true);
             spectator.detectChanges();
             await spectator.fixture.whenStable();
-            spectator.flushEffects();
             spectator.detectChanges();
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            const deferBlocks = await spectator.fixture.getDeferBlocks();
+            await deferBlocks[0].render(DeferBlockState.Complete);
 
             // Now we can call onIframeLoad since the iframe exists in the modal
             spectator.component.onIframeLoad();
@@ -595,22 +596,16 @@ describe('IframeFieldComponent', () => {
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
-            // Flush effects to ensure defer executes
-            spectator.flushEffects();
+            // Render the @defer block (modal + iframe) using Angular's defer testing API
+            const deferBlocks = await spectator.fixture.getDeferBlocks();
+            await deferBlocks[0].render(DeferBlockState.Complete);
             spectator.detectChanges();
-            await spectator.fixture.whenStable();
 
-            // Verify modal is open
             expect(spectator.component.$showModal()).toBe(true);
 
-            // Wait for defer to load and dialog to render
-            await new Promise((resolve) => setTimeout(resolve, 300));
-
-            // Check if modal dialog exists first
             const modalDialog = spectator.query(byTestId('custom-field-modal'));
             expect(modalDialog).toBeTruthy();
 
-            // Then check for iframe inside modal
             const modalIframe = spectator.query(byTestId('custom-field-modal-iframe'));
             expect(modalIframe).toBeTruthy();
         });
@@ -620,8 +615,10 @@ describe('IframeFieldComponent', () => {
             spectator.component.$showModal.set(true);
             spectator.detectChanges();
             await spectator.fixture.whenStable();
-            // Wait for defer to load
-            await new Promise((resolve) => setTimeout(resolve, 300));
+
+            const deferBlocks = await spectator.fixture.getDeferBlocks();
+            await deferBlocks[0].render(DeferBlockState.Complete);
+            spectator.detectChanges();
 
             const doneButtonComponent = spectator.query('p-button[label="Done"]');
             if (doneButtonComponent) {

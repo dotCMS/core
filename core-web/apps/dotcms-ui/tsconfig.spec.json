@@ -1,12 +1,13 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "preserve",
         "outDir": "../out-tsc/spec",
         "types": ["jest", "node"],
         "target": "ES2022",
         "useDefineForClassFields": false,
-        "isolatedModules": true
+        "isolatedModules": true,
+        "moduleResolution": "bundler"
     },
     "files": ["src/test-setup.ts", "src/polyfills.ts"],
     "include": ["**/*.spec.ts", "**/*.d.ts"]

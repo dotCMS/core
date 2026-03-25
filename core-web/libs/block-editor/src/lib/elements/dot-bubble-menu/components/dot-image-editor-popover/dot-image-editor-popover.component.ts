@@ -17,7 +17,7 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
 @Component({
     selector: 'dot-image-editor-popover',
     templateUrl: './dot-image-editor-popover.component.html',
-    styleUrls: ['./dot-image-editor-popover.component.scss'],
+    styleUrls: ['./dot-image-editor-popover.component.css'],
     imports: [EditorModalDirective, InputText, ReactiveFormsModule, Button]
 })
 export class DotImageEditorPopoverComponent {

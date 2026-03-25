@@ -4,6 +4,7 @@ import { getUVEState } from '@dotcms/uve';
 
 import { BlockQuote, CodeBlock } from './blocks/Code';
 import { DotContent } from './blocks/DotContent';
+import { GridBlock } from './blocks/GridBlock';
 import { DotCMSImage } from './blocks/Image';
 import { BulletList, ListItem, OrderedList } from './blocks/Lists';
 import { TableRenderer } from './blocks/Table';
@@ -15,6 +16,7 @@ import { CustomRenderer } from '../DotCMSBlockEditorRenderer';
 interface BlockEditorBlockProps {
     content: BlockEditorNode[] | undefined;
     customRenderers?: CustomRenderer;
+    isDevMode?: boolean;
 }
 
 /**
@@ -24,7 +26,11 @@ interface BlockEditorBlockProps {
  * @param customRenderers - Optional custom renderers for specific node types.
  * @returns The rendered block editor item.
  */
-export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockProps) => {
+export const BlockEditorBlock = ({
+    content,
+    customRenderers,
+    isDevMode
+}: BlockEditorBlockProps) => {
     if (!content) {
         return null;
     }
@@ -36,7 +42,11 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
         if (CustomRendererComponent) {
             return (
                 <CustomRendererComponent key={key} node={node}>
-                    <BlockEditorBlock content={node.content} customRenderers={customRenderers} />
+                    <BlockEditorBlock
+                        content={node.content}
+                        customRenderers={customRenderers}
+                        isDevMode={isDevMode}
+                    />
                 </CustomRendererComponent>
             );
         }
@@ -48,6 +58,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
+                            isDevMode={isDevMode}
                         />
                     </Paragraph>
                 );
@@ -58,6 +69,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
+                            isDevMode={isDevMode}
                         />
                     </Heading>
                 );
@@ -71,6 +83,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
+                            isDevMode={isDevMode}
                         />
                     </BulletList>
                 );
@@ -81,6 +94,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
+                            isDevMode={isDevMode}
                         />
                     </OrderedList>
                 );
@@ -91,6 +105,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
+                            isDevMode={isDevMode}
                         />
                     </ListItem>
                 );
@@ -101,6 +116,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
+                            isDevMode={isDevMode}
                         />
                     </BlockQuote>
                 );
@@ -111,6 +127,7 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                         <BlockEditorBlock
                             content={node.content}
                             customRenderers={customRenderers}
+                            isDevMode={isDevMode}
                         />
                     </CodeBlock>
                 );
@@ -136,12 +153,23 @@ export const BlockEditorBlock = ({ content, customRenderers }: BlockEditorBlockP
                     />
                 );
 
+            case BlockEditorDefaultBlocks.GRID_BLOCK:
+                return (
+                    <GridBlock
+                        key={key}
+                        node={node}
+                        blockEditorBlock={BlockEditorBlock}
+                        customRenderers={customRenderers}
+                    />
+                );
+
             case BlockEditorDefaultBlocks.DOT_CONTENT:
                 return (
                     <DotContent
                         key={key}
                         customRenderers={customRenderers as CustomRenderer}
                         node={node}
+                        isDevMode={isDevMode}
                     />
                 );
 

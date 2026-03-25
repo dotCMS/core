@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 @Component({
     selector: 'dot-suggestion-loading-list',
     templateUrl: './suggestion-loading-list.component.html',
-    styleUrls: ['./suggestion-loading-list.component.scss'],
+    styleUrls: ['./suggestion-loading-list.component.css'],
     standalone: false
 })
 export class SuggestionLoadingListComponent {

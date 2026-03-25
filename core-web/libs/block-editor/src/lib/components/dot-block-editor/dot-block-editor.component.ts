@@ -66,7 +66,15 @@ import {
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
+import {
+    AIContentNode,
+    ContentletBlock,
+    createGridColumn,
+    GridBlock,
+    ImageNode,
+    LoaderNode,
+    VideoNode
+} from '../../nodes';
 import {
     DEFAULT_LANG_ID,
     DotMarketingConfigService,
@@ -79,7 +87,7 @@ import {
 @Component({
     selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
-    styleUrls: ['./dot-block-editor.component.scss'],
+    styleUrls: ['./dot-block-editor.component.css'],
     providers: [
         DialogService,
         {
@@ -121,7 +129,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         ['image', ImageNode],
         ['video', VideoNode],
         ['aiContent', AIContentNode],
-        ['loader', LoaderNode]
+        ['loader', LoaderNode],
+        ['gridBlock', GridBlock]
     ]);
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
@@ -257,13 +266,32 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         this.destroy$.complete();
     }
 
-    onBlockEditorChange(value: JSONContent) {
+    onBlockEditorChange(value: JSONContent): void {
         if (this.disabled) {
             return;
         }
 
-        this.valueChange.emit(value);
-        this.onChange?.(JSON.stringify(value));
+        // Eagerly include charCount/wordCount/readingTime in the doc attrs so the
+        // API response always contains this metadata. Without this patch the attrs
+        // would only arrive after the 250 ms debounce fired by the (keyup) handler.
+        // `characterCount` is derived from `this.editor?.storage`, so it can be
+        // undefined when the editor hasn't finished initializing (async ngOnInit).
+        const charCount = this.characterCount?.characters?.() ?? 0;
+        const updatedValue: JSONContent =
+            charCount > 0
+                ? {
+                      ...value,
+                      attrs: {
+                          ...(value.attrs || {}),
+                          charCount,
+                          wordCount: this.characterCount?.words?.() ?? 0,
+                          readingTime: this.readingTime
+                      }
+                  }
+                : value;
+
+        this.valueChange.emit(updatedValue);
+        this.onChange?.(JSON.stringify(updatedValue));
         this.updateCharLimitValidity();
     }
 
@@ -608,7 +636,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                         return this.#dotMessageService.get('block-editor.placeholder.quote');
                     }
 
-                    if (node.type.name === 'table') {
+                    if (node.type.name === 'table' || node.type.name === 'gridBlock') {
                         return '';
                     }
 
@@ -616,7 +644,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                 }
             }),
             ...DotCMSTableExtensions,
-            DotTableCellContextMenu(this.viewContainerRef)
+            DotTableCellContextMenu(this.viewContainerRef),
+            createGridColumn(this.allowedBlocks.length > 1 ? this.allowedBlocks : [])
         ];
 
         if (isAIPluginInstalled) {

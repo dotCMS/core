@@ -46,6 +46,7 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
 import {
+    DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
     HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
@@ -147,7 +148,7 @@ describe('DotContentDriveShellComponent', () => {
                     sort: jest
                         .fn()
                         .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
-                    totalItems: jest.fn().mockReturnValue(MOCK_ITEMS.length),
+                    pages: jest.fn().mockReturnValue([DEFAULT_PAGE]),
                     setItems: jest.fn(),
                     setStatus: jest.fn(),
                     setPagination: jest.fn(),
@@ -368,15 +369,52 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('$totalItems', () => {
+        it('should return limit * (currentPage + 1) when hasMoreContent is true', () => {
+            // DEFAULT_PAGINATION: { page: 1, limit: 20 }, DEFAULT_PAGE: { hasMoreContent: true }
+            store.pagination.mockReturnValue({ page: 1, limit: 20, offset: 0 });
+            store.pages.mockReturnValue([DEFAULT_PAGE]);
+            store.items.mockReturnValue(MOCK_ITEMS);
+            spectator.detectChanges();
+
+            // hasMoreContent = true, page=1, limit=20 → 20 * (1+1) = 40
+            expect(spectator.component.$totalItems()).toBe(40);
+        });
+
+        it('should return exact total when hasMoreContent is false', () => {
+            store.pagination.mockReturnValue({ page: 1, limit: 20, offset: 0 });
+            store.pages.mockReturnValue([{ ...DEFAULT_PAGE, hasMoreContent: false }]);
+            store.items.mockReturnValue(MOCK_ITEMS);
+            spectator.detectChanges();
+
+            // hasMoreContent = false, page=1, limit=20, items=MOCK_ITEMS.length → 20*(1-1) + MOCK_ITEMS.length
+            expect(spectator.component.$totalItems()).toBe(MOCK_ITEMS.length);
+        });
+
+        it('should account for previous pages when hasMoreContent is false on page 2', () => {
+            store.pagination.mockReturnValue({ page: 2, limit: 20, offset: 20 });
+            store.pages.mockReturnValue([{ ...DEFAULT_PAGE, hasMoreContent: false }]);
+            store.items.mockReturnValue(MOCK_ITEMS);
+            spectator.detectChanges();
+
+            // hasMoreContent = false, page=2, limit=20, items=MOCK_ITEMS.length → 20*(2-1) + MOCK_ITEMS.length
+            expect(spectator.component.$totalItems()).toBe(20 + MOCK_ITEMS.length);
+        });
+    });
+
     describe('onPaginate', () => {
         it('should set pagination with provided values', () => {
             const folderListView = spectator.debugElement.query(
                 By.directive(DotFolderListViewComponent)
             );
 
-            spectator.triggerEventHandler(folderListView, 'paginate', { rows: 10, first: 0 });
+            spectator.triggerEventHandler(folderListView, 'paginate', {
+                rows: 10,
+                first: 0,
+                page: 1
+            });
 
-            expect(store.setPagination).toHaveBeenCalledWith({ limit: 10, offset: 0 });
+            expect(store.setPagination).toHaveBeenCalledWith({ limit: 10, page: 1, offset: 0 });
         });
 
         it('should not set pagination if rows are not provided', () => {

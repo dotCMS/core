@@ -4,14 +4,15 @@ import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    EventEmitter,
     OnDestroy,
     OnInit,
-    inject,
-    output
+    Output,
+    inject
 } from '@angular/core';
 import {
-    FormControl,
     FormGroup,
+    FormControl,
     FormsModule,
     ReactiveFormsModule,
     Validators
@@ -42,11 +43,12 @@ import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-v
     ],
     providers: [DotBinaryFieldUrlModeStore],
     templateUrl: './dot-binary-field-url-mode.component.html',
+    styleUrls: ['./dot-binary-field-url-mode.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
-    $tempFileUploaded = output<DotCMSTempFile>();
-    $cancel = output<void>();
+    @Output() tempFileUploaded: EventEmitter<DotCMSTempFile> = new EventEmitter<DotCMSTempFile>();
+    @Output() cancel: EventEmitter<void> = new EventEmitter<void>();
 
     private readonly store = inject(DotBinaryFieldUrlModeStore);
     private readonly dotBinaryFieldValidatorService = inject(DotBinaryFieldValidatorService);
@@ -78,7 +80,7 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
                 filter((tempFile) => tempFile !== null)
             )
             .subscribe((tempFile) => {
-                this.$tempFileUploaded.emit(tempFile);
+                this.tempFileUploaded.emit(tempFile);
             });
     }
 
@@ -114,7 +116,7 @@ export class DotBinaryFieldUrlModeComponent implements OnInit, OnDestroy {
     cancelUpload(): void {
         this.abortController?.abort();
         // TODO: The 'emit' function requires a mandatory void argument
-        this.$cancel.emit();
+        this.cancel.emit();
     }
 
     /**

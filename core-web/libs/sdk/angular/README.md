@@ -198,7 +198,7 @@ Add the proxy configuration to your `angular.json`:
         "my-app": {
             "architect": {
                 "serve": {
-                    "builder": "@angular-devkit/build-angular:dev-server",
+                    "builder": "@angular/build:dev-server",
                     "options": {
                         "proxyConfig": "src/proxy.conf.json"
                     }
@@ -287,26 +287,26 @@ You can control the image quality using the `loaderParams` attribute. This is pa
   selector: 'optimized-image',
   template: `
     <!-- High quality for hero images -->
-    <img 
-      [ngSrc]="heroImagePath" 
-      alt="Hero image" 
-      width="1200" 
+    <img
+      [ngSrc]="heroImagePath"
+      alt="Hero image"
+      width="1200"
       height="600"
       [loaderParams]="{ quality: 85 }" />
-    
+
     <!-- Lower quality for thumbnails -->
-    <img 
-      [ngSrc]="thumbnailPath" 
-      alt="Thumbnail" 
-      width="200" 
+    <img
+      [ngSrc]="thumbnailPath"
+      alt="Thumbnail"
+      width="200"
       height="150"
       [loaderParams]="{ quality: 30 }" />
-    
+
     <!-- Custom language and quality -->
-    <img 
-      [ngSrc]="imagePath" 
-      alt="Localized image" 
-      width="400" 
+    <img
+      [ngSrc]="imagePath"
+      alt="Localized image"
+      width="400"
       height="300"
       [loaderParams]="{ quality: 60, languageId: '2' }" />
   `,

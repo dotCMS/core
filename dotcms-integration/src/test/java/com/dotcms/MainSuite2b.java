@@ -112,6 +112,7 @@ import com.dotcms.rest.api.v1.publishing.PublishingResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
+import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
@@ -378,6 +379,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VersionableFactoryImplTest.class,
         Task220928AddLookbackWindowColumnToExperimentTest.class,
         TailLogResourceTest.class,
+        ClusterLogCollectorTest.class,
         BayesianAPIImplIT.class,
         ContentletDependenciesTest.class,
         SaveContentAsDraftActionletIntegrationTest.class,

@@ -5,7 +5,7 @@ import { EditorAssetTypes } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-asset-preview',
     templateUrl: './dot-asset-preview.component.html',
-    styleUrls: ['./dot-asset-preview.component.scss'],
+    styleUrls: ['./dot-asset-preview.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: false
 })

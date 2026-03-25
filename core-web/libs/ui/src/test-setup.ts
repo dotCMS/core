@@ -6,13 +6,6 @@ import '@testing-library/jest-dom';
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 setupZoneTestEnv();
 
-// Angular testing environment setup
-import { getTestBed } from '@angular/core/testing';
-import {
-    BrowserDynamicTestingModule,
-    platformBrowserDynamicTesting
-} from '@angular/platform-browser-dynamic/testing';
-
 // Mock PointerEvent
 class MockPointerEvent implements Partial<PointerEvent> {
     public clientX?: number;
@@ -90,9 +83,3 @@ Object.defineProperty(window, 'matchMedia', {
         return null;
     }
 };
-
-// Setup Angular testing environment
-getTestBed().resetTestEnvironment();
-getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting(), {
-    teardown: { destroyAfterEach: false }
-});

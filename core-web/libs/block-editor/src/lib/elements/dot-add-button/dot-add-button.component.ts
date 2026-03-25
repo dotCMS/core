@@ -23,7 +23,7 @@ import { PluginKey } from '@tiptap/pm/state';
                 icon="pi pi-plus" />
         </div>
     `,
-    styleUrls: ['./dot-add-button.component.scss'],
+    styleUrls: ['./dot-add-button.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [TiptapFloatingMenuDirective, Button]
 })

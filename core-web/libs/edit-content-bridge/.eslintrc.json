@@ -25,7 +25,19 @@
             "files": ["*.json"],
             "parser": "jsonc-eslint-parser",
             "rules": {
-                "@nx/dependency-checks": "error"
+                "@nx/dependency-checks": [
+                    "error",
+                    {
+                        "ignoredDependencies": [
+                            "rxjs",
+                            "@angular/core",
+                            "@angular/forms",
+                            "vite",
+                            "primeng",
+                            "@nx/vite"
+                        ]
+                    }
+                ]
             }
         }
     ]

@@ -17,13 +17,19 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
@@ -32,11 +38,14 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.PaginatedContentList;
@@ -52,7 +61,9 @@ import io.vavr.control.Try;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletRequest;
@@ -954,6 +965,131 @@ public class ContentToolTest extends IntegrationTestBase {
 
         Assert.assertNotNull(hydratedContentlet);
         Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("url"));
+    }
+
+    /**
+     * Method to Test: {@link ContentTool#find(String)} with addStylePropertiesFromMultiTree
+     * When: Content is loaded via find() in a page/container context (HTMLPAGE_IDENTIFIER,
+     * CONTAINER_IDENTIFIER, CONTAINER_UNIQUE_ID set in velocity context) and the contentlet
+     * has style properties stored in the MultiTree (from UVE style editor)
+     * Should: Add dotStyleProperties to the contentlet map, accessible via get("dotStyleProperties")
+     */
+    @Test
+    public void testFind_WhenPageContainerContext_AddsDotStylePropertiesFromMultiTree()
+            throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .host(host)
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+        ContentletDataGen.publish(contentlet);
+
+        final Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("fontSize", "20px");
+        styleProperties.put("color", "#ff0000");
+
+        MultiTree multiTree = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .setInstanceID("1")
+                .next();
+        multiTree = multiTree.setStyleProperties(styleProperties);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        final ContentTool contentTool = getContentToolWithPageContext(
+                defaultLanguage.getId(),
+                host,
+                page.getIdentifier(),
+                container.getIdentifier()
+        );
+
+        final ContentMap contentMap = contentTool.find(contentlet.getIdentifier());
+        assertNotNull(contentMap);
+
+        final Map<String, Object> result = (Map<String, Object>) contentMap.get(Contentlet.STYLE_PROPERTIES_KEY);
+        assertNotNull(result);
+        assertEquals("20px", result.get("fontSize"));
+        assertEquals("#ff0000", result.get("color"));
+    }
+
+    /**
+     * Method to Test: {@link ContentTool#load(String)} (LazyLoaderContentMap)
+     * When: Same as testFind_WhenPageContainerContext - content with style props in MultiTree
+     * Should: LazyLoaderContentMap.get("dotStyleProperties") returns the style properties
+     */
+    @Test
+    public void testLoad_WhenPageContainerContext_ReturnsDotStylePropertiesInLazyLoaderContentMap()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .host(host)
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+        ContentletDataGen.publish(contentlet);
+
+        final Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("fontSize", "16px");
+
+        MultiTree multiTree = new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
+                .setContentlet(contentlet)
+                .setInstanceID("1")
+                .next();
+        multiTree = multiTree.setStyleProperties(styleProperties);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        final ContentTool contentTool = getContentToolWithPageContext(
+                defaultLanguage.getId(),
+                host,
+                page.getIdentifier(),
+                container.getIdentifier()
+        );
+
+        final LazyLoaderContentMap lazyMap = contentTool.load(contentlet.getIdentifier());
+        assertNotNull(lazyMap);
+
+        final Map<String, Object> result = (Map<String, Object>) lazyMap.get(Contentlet.STYLE_PROPERTIES_KEY);
+        assertNotNull(result);
+        assertEquals("16px", result.get("fontSize"));
+    }
+
+    private ContentTool getContentToolWithPageContext(final long languageId, final Host host,
+            final String pageId, final String containerId) {
+        final ViewContext viewContext = mock(ViewContext.class);
+        final Context velocityContext = mock(Context.class);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession session = mock(HttpSession.class);
+
+        when(viewContext.getVelocityContext()).thenReturn(velocityContext);
+        when(viewContext.getRequest()).thenReturn(request);
+        when(request.getParameter("host_id")).thenReturn(host.getInode());
+        when(request.getParameter("language_id")).thenReturn(String.valueOf(languageId));
+        when(request.getSession(false)).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
+        when(request.getSession()).thenReturn(session);
+        when(request.getParameter(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER))
+                .thenReturn(PageMode.PREVIEW_MODE.name());
+        when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER)).thenReturn(user);
+
+        when(velocityContext.get("HTMLPAGE_IDENTIFIER")).thenReturn(pageId);
+        when(velocityContext.get("CONTAINER_IDENTIFIER")).thenReturn(containerId);
+        when(velocityContext.get("CONTAINER_UNIQUE_ID")).thenReturn("1");
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+        final ContentTool contentTool = new ContentTool();
+        contentTool.init(viewContext);
+        return contentTool;
     }
 
 }

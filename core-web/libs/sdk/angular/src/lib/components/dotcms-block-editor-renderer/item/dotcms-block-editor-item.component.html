@@ -89,6 +89,12 @@
                 <dotcms-block-editor-renderer-table [content]="node.content" />
             }
 
+            @case (BLOCKS.GRID_BLOCK) {
+                <dotcms-block-editor-renderer-grid-block
+                    [node]="node"
+                    [customRenderers]="customRenderers" />
+            }
+
             @case (BLOCKS.DOT_CONTENT) {
                 <dotcms-block-editor-renderer-contentlet
                     [node]="node"

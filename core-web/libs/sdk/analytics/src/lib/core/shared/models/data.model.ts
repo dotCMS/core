@@ -105,8 +105,8 @@ export type DotCMSEventPageData = Pick<
 > & {
     /** Page title */
     title: string | undefined;
-    /** Language identifier */
-    language_id?: string;
+    /** Locale identifier (e.g., es-es, en-us) */
+    locale_id: string;
     /** Persona identifier */
     persona?: string;
 };

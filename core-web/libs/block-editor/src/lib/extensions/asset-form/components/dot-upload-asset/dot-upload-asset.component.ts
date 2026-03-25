@@ -32,7 +32,7 @@ export enum STATUS {
 @Component({
     selector: 'dot-upload-asset',
     templateUrl: './dot-upload-asset.component.html',
-    styleUrls: ['./dot-upload-asset.component.scss'],
+    styleUrls: ['./dot-upload-asset.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [shakeAnimation],
     standalone: false

@@ -8,9 +8,14 @@ import {
     IMPRESSION_EVENT_TYPE
 } from '../../shared/constants/dot-analytics.constants';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
-import { INITIAL_SCAN_DELAY_MS } from '../../shared/utils/dot-analytics.utils';
+import { INITIAL_SCAN_DELAY_MS, isBrowser } from '../../shared/utils/dot-analytics.utils';
 
 // Mock dependencies
+jest.mock('../../shared/utils/dot-analytics.utils', () => ({
+    ...jest.requireActual('../../shared/utils/dot-analytics.utils'),
+    isBrowser: jest.fn(() => true)
+}));
+
 jest.mock('./dot-analytics.impression.utils', () => ({
     ...jest.requireActual('./dot-analytics.impression.utils'),
     createDebounce: jest.fn((callback) => callback) // Execute immediately for testing
@@ -130,17 +135,14 @@ describe('DotCMSImpressionTracker', () => {
         });
 
         it('should NOT initialize in SSR (no window)', () => {
-            // Hide window
-            const originalWindow = global.window;
-            delete (global as any).window;
+            (isBrowser as jest.Mock).mockReturnValue(false);
 
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
 
             expect(global.IntersectionObserver).not.toHaveBeenCalled();
 
-            // Restore
-            (global as any).window = originalWindow;
+            (isBrowser as jest.Mock).mockReturnValue(true);
         });
 
         it('should setup MutationObserver for dynamic content', () => {
@@ -623,21 +625,6 @@ describe('DotCMSImpressionTracker', () => {
     });
 
     describe('SPA Navigation Detection', () => {
-        let originalLocation: Location;
-
-        beforeEach(() => {
-            originalLocation = window.location;
-        });
-
-        afterEach(() => {
-            // Restore
-            Object.defineProperty(window, 'location', {
-                value: originalLocation,
-                writable: true,
-                configurable: true
-            });
-        });
-
         it('should clear element states on navigation', () => {
             const element = createMockContentletElement('content-123');
             document.body.appendChild(element);
@@ -662,12 +649,8 @@ describe('DotCMSImpressionTracker', () => {
             const timerCountWithActive = jest.getTimerCount();
             expect(timerCountWithActive).toBeGreaterThanOrEqual(1); // At least navigation interval
 
-            // Simulate navigation by replacing window.location
-            Object.defineProperty(window, 'location', {
-                value: { pathname: '/new-page' },
-                writable: true,
-                configurable: true
-            });
+            // Simulate SPA navigation (tracker listens to pushState and checks pathname)
+            history.pushState({}, '', '/new-page');
 
             // Trigger navigation check via interval
             jest.advanceTimersByTime(1000);
@@ -694,12 +677,8 @@ describe('DotCMSImpressionTracker', () => {
             jest.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
             expect(callback).toHaveBeenCalledTimes(1);
 
-            // Simulate navigation
-            Object.defineProperty(window, 'location', {
-                value: { pathname: '/new-page' },
-                writable: true,
-                configurable: true
-            });
+            // Simulate SPA navigation (tracker listens to pushState and checks pathname)
+            history.pushState({}, '', '/new-page');
 
             // Advance timers to trigger interval check
             jest.advanceTimersByTime(1000);

@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableSet;
@@ -2034,4 +2035,57 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("nextContentCursor should stay at 0 — no content was consumed", 0, result.nextContentCursor);
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A site contains 20 content items but
+     *     {@code BROWSER_DB_MAX_SCAN_ROWS} is intentionally set to 15, lower than the total row
+     *     count. The scan loop must stop as soon as the number of rows scanned exceeds the limit,
+     *     preventing runaway queries on large sites with heavily restricted users.</li>
+     *     <li><b>Expected Result:</b> The request completes without hanging or throwing an
+     *     exception. The result contains whatever items were accumulated before the limit was hit,
+     *     and {@code nextContentCursor} reflects how far the scan reached (&gt; 0).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_scanLimitStopsLoop() throws Exception {
+        final int scanLimit = 15;
+        final int itemCount = 20;
+
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, scanLimit);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+            for (int i = 0; i < itemCount; i++) {
+                final File file = FileUtil.createTemporaryFile("scan-limit-" + i, ".txt", "content " + i);
+                new FileAssetDataGen(file).folder(folder).host(host).nextPersisted();
+            }
+
+            // Query against the site root (no folder filter) so all 20 items are in scope
+            final BrowserQuery query = BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(host.getIdentifier())
+                    .skipFolder(true)
+                    .showFiles(true)
+                    .showWorking(true)
+                    .showFolders(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents result = browserAPI.getPaginatedContents(query);
+
+            assertNotNull("Result must not be null when scan limit is reached", result);
+            // 20 items were accumulated before the scan limit fired (dbOffset 20 >= scanLimit 15)
+            assertTrue("Should have returned items accumulated before the scan limit",
+                    result.contentCount > 0);
+            // Cursor must reflect how far into the DB the scan reached
+            assertTrue("nextContentCursor should be > 0 since rows were scanned",
+                    result.nextContentCursor > 0);
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        }
+    }
 }

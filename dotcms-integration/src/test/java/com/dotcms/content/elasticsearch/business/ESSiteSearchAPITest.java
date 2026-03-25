@@ -4,7 +4,7 @@ import static com.dotmarketing.sitesearch.business.SiteSearchAPI.ES_SITE_SEARCH_
 import static org.junit.Assert.*;
 
 import com.dotcms.LicenseTestUtil;
-import com.dotcms.rest.api.v1.menu.MenuResource;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -12,9 +12,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import java.io.IOException;
 import java.util.Date;
-import java.util.Set;
 
-import com.liferay.portal.model.User;
 import java.util.List;
 
 import org.junit.BeforeClass;
@@ -26,7 +24,7 @@ import org.junit.Test;
 public class ESSiteSearchAPITest {
 
     private static SiteSearchAPI siteSearchAPI;
-    private static ESIndexAPI indexAPI;
+    private static IndexAPI indexAPI;
     private static IndiciesAPI indiciesAPI;
     private static ContentletIndexAPI contentletIndexAPI;
 

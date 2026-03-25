@@ -8,7 +8,6 @@ import { useExperimentVariant } from './useExperimentVariant';
 
 import MockDotExperimentsContext from '../contexts/DotExperimentsContext';
 import { EXPERIMENT_DEFAULT_VARIANT_NAME } from '../shared/constants';
-import { LocationMock } from '../shared/mocks/mock';
 
 interface WrapperProps {
     children: React.ReactNode;
@@ -66,12 +65,6 @@ describe('useExperimentVariant', () => {
         });
 
         it(' if VariantId get from `PageApi` is same of VariantAssigned', () => {
-            const locationSpy = jest.spyOn(window, 'location', 'get');
-
-            const locationMock = { ...LocationMock, pathname: '/blog' };
-
-            locationSpy.mockReturnValue(locationMock);
-
             jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
             const { result } = renderHook(
@@ -88,12 +81,6 @@ describe('useExperimentVariant', () => {
 
         describe('shouldWaitForVariant `true`', () => {
             it(' if VariantId get from `PageApi` is different of VariantAssigned', () => {
-                const locationSpy = jest.spyOn(window, 'location', 'get');
-
-                const locationMock = { ...LocationMock, pathname: '/blog' };
-
-                locationSpy.mockReturnValue(locationMock);
-
                 jest.spyOn(uve, 'getUVEState').mockReturnValue(undefined);
 
                 const { result } = renderHook(

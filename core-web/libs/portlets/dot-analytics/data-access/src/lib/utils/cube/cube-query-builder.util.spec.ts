@@ -1,6 +1,7 @@
 import { CubeQueryBuilder, createCubeQuery } from './cube-query-builder.util';
 
 import { TIME_RANGE_CUBEJS_MAPPING } from '../../constants';
+import { Granularity } from '../../types';
 
 describe('CubeQueryBuilder', () => {
     let builder: CubeQueryBuilder;
@@ -178,13 +179,13 @@ describe('CubeQueryBuilder', () => {
 
         it('should add time range with granularity', () => {
             const query = builder
-                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last30days, 'week')
+                .timeRange('createdAt', TIME_RANGE_CUBEJS_MAPPING.last30days, Granularity.DAY)
                 .build();
             expect(query.timeDimensions).toEqual([
                 {
                     dimension: 'request.createdAt',
                     dateRange: TIME_RANGE_CUBEJS_MAPPING.last30days,
-                    granularity: 'week'
+                    granularity: Granularity.DAY
                 }
             ]);
         });
@@ -333,7 +334,7 @@ describe('CubeQueryBuilder', () => {
                     {
                         dimension: 'request.createdAt',
                         dateRange: TIME_RANGE_CUBEJS_MAPPING.last7days,
-                        granularity: 'day'
+                        granularity: Granularity.DAY
                     }
                 ]
             });

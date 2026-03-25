@@ -33,7 +33,9 @@ export enum NodeTypes {
     TEXT = 'text',
     TABLE_CELL = 'tableCell',
     AI_CONTENT = 'aiContent',
-    LOADER = 'loader'
+    LOADER = 'loader',
+    GRID_BLOCK = 'gridBlock',
+    GRID_COLUMN = 'gridColumn'
 }
 
 export const CustomNodeTypes: Array<NodeTypes> = [NodeTypes.DOT_IMAGE, NodeTypes.DOT_CONTENT];

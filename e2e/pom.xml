@@ -20,7 +20,6 @@
 
     <modules>
         <module>dotcms-e2e-java</module>
-        <module>dotcms-e2e-node</module>
     </modules>
 
 </project>

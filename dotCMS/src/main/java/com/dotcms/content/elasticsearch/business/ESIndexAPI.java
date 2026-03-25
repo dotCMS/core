@@ -6,12 +6,12 @@ import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -26,13 +26,9 @@ import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -47,16 +43,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.util.Strings;
-import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -84,11 +75,6 @@ import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.GetAliasesResponse;
@@ -96,24 +82,21 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import com.dotcms.content.index.domain.ClusterIndexHealth;
+import com.dotcms.content.index.domain.CreateIndexStatus;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
-import org.elasticsearch.cluster.health.ClusterIndexHealth;
+import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
-public class ESIndexAPI {
 
-
+public class ESIndexAPI implements IndexAPI {
 
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
@@ -125,25 +108,14 @@ public class ESIndexAPI {
 	public static final int INDEX_OPERATIONS_TIMEOUT_IN_MS =
 			Config.getIntProperty("ES_INDEX_OPERATIONS_TIMEOUT", 15000);
 
-	final private ContentletIndexAPI iapi;
+	final private Lazy<ContentletIndexAPI> iapi;
 	final private ESIndexHelper esIndexHelper;
 
 	final private Lazy<String> clusterPrefix;
-	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
-		private final String status;
-
-		Status(String status) {
-			this.status = status;
-		}
-
-		public String getStatus() {
-			return status;
-		}
-	}
 
     @VisibleForTesting
     ESIndexAPI(Lazy<String> clusterPrefix) {
-        this.iapi = new ContentletIndexAPIImpl();
+        this.iapi = Lazy.of(ContentletIndexAPIImpl::new);
         this.esIndexHelper = ESIndexHelper.getInstance();
         this.clusterPrefix = clusterPrefix;
     }
@@ -170,11 +142,11 @@ public class ESIndexAPI {
     }
 
 	@SuppressWarnings("unchecked")
-	public Map<String, IndexStats> getIndicesStats() {
+	public Map<String, com.dotcms.content.index.domain.IndexStats> getIndicesStats() {
         final Request request = new Request("GET", "/" + clusterPrefix.get() + "*/_stats");
 		final Map<String, Object> jsonMap = performLowLevelRequest(request);
 
-		final Map<String, IndexStats> indexStatsMap = new HashMap<>();
+		final Map<String, com.dotcms.content.index.domain.IndexStats> indexStatsMap = new HashMap<>();
 
 		final Map<String, Object> indices = (Map<String, Object>)jsonMap.get("indices");
 
@@ -193,7 +165,12 @@ public class ESIndexAPI {
 
                 final String indexNameWithoutPrefix = removeClusterIdFromName(key);
                 indexStatsMap.put(indexNameWithoutPrefix,
-                        new IndexStats(indexNameWithoutPrefix, numOfDocs, sizeInBytes));
+                        com.dotcms.content.index.domain.IndexStats.builder()
+                                .indexName(indexNameWithoutPrefix)
+                                .documentCount(numOfDocs)
+                                .sizeRaw(sizeInBytes)
+                                .size(new ByteSizeValue(sizeInBytes).toString())
+                                .build());
             }
 		});
 
@@ -232,117 +209,6 @@ public class ESIndexAPI {
 		return map;
 	}
 
-
-
-
-    /**
-     * @deprecated Generating a manual index backup is not recommended. Snapshot and restore operations
-     * via Elastic Search High Level Rest API should be used instead.
-     * For further details: https://www.elastic.co/guide/en/elasticsearch/reference/7.x/modules-snapshots.html
-     *
-	 * Writes an index to a backup file
-	 * @param index
-	 * @return
-	 * @throws IOException
-	 */
-	@Deprecated
-	public  File backupIndex(String index) throws IOException {
-		return backupIndex(index, null);
-	}
-
-    /**
-     * @deprecated Generating a manual index backup is not recommended. Snapshot and restore operations
-     * via Elastic Search High Level Rest API should be used instead.
-     * For further details: https://www.elastic.co/guide/en/elasticsearch/reference/7.x/modules-snapshots.html
-     *
-	 * writes an index to a backup file
-	 * @param index
-	 * @param toFile
-	 * @return
-	 * @throws IOException
-	 */
-	@Deprecated
-	public  File backupIndex(String index, File toFile) throws IOException {
-
-		AdminLogger.log(this.getClass(), "backupIndex", "Trying to backup index: " + index);
-
-	    boolean indexExists = indexExists(index);
-        if (!indexExists) {
-            throw new IOException("Index :" + index + " does not exist");
-        }
-
-		String date = new java.text.SimpleDateFormat("yyyy-MM-dd_hh-mm-ss").format(new Date());
-		if (toFile == null) {
-			toFile = new File(ConfigUtils.getBackupPath());
-			if(!toFile.exists()){
-				toFile.mkdirs();
-			}
-			toFile = new File(ConfigUtils.getBackupPath() + File.separator + index + "_" + date + ".json");
-		}
-
-		BufferedWriter bw;
-		try (final ZipOutputStream zipOut = new ZipOutputStream(Files.newOutputStream(toFile.toPath()))){
-		    zipOut.setLevel(9);
-		    zipOut.putNextEntry(new ZipEntry(toFile.getName()));
-
-			bw = new BufferedWriter(
-			        new OutputStreamWriter(zipOut), 500000); // 500K buffer
-
-			final String type=index.startsWith("sitesearch_") ? SiteSearchAPI.ES_SITE_SEARCH_MAPPING
-					: "content";
-	        final String mapping = mappingAPI.getMapping(getNameWithClusterIDPrefix(index));
-	        bw.write(MAPPING_MARKER);
-	        bw.write(mapping);
-	        bw.newLine();
-
-			SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-			searchSourceBuilder.query(QueryBuilders.matchAllQuery());
-			searchSourceBuilder.size(100);
-			searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-			//_doc has no real use-case besides being the most efficient sort order.
-			searchSourceBuilder.sort("_doc", SortOrder.DESC);
-
-
-			SearchRequest searchRequest = new SearchRequest();
-			searchRequest.scroll(TimeValue.timeValueMinutes(2));
-			searchRequest.source(searchSourceBuilder);
-
-			final SearchResponse searchResponse = Sneaky.sneak(()->
-					RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
-							RequestOptions.DEFAULT));
-
-			String scrollId = searchResponse.getScrollId();
-
-
-			while (true) {
-				// new way
-				SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-				scrollRequest.scroll(TimeValue.timeValueMinutes(2));
-				SearchResponse searchScrollResponse = RestHighLevelClientProvider.getInstance()
-						.getClient().scroll(scrollRequest, RequestOptions.DEFAULT);
-
-				scrollId = searchResponse.getScrollId();
-
-				boolean hitsRead = false;
-				for (SearchHit hit : searchResponse.getHits()) {
-					bw.write(hit.getId());
-					bw.write(JSON_RECORD_DELIMITER);
-					bw.write(hit.getSourceAsString());
-					bw.newLine();
-					hitsRead = true;
-				}
-				if (!hitsRead) {
-					break;
-				}
-			}
-			return toFile;
-		} catch (Exception e) {
-		    Logger.error(this.getClass(), "Can't export index",e);
-			throw new IOException(e.getMessage(),e);
-		} finally {
-			AdminLogger.log(this.getClass(), "backupIndex", "Back up for index: " + index + " done.");
-		}
-	}
 
 	public boolean optimize(List<String> indexNames) {
 		try {
@@ -429,7 +295,7 @@ public class ESIndexAPI {
 
 			final String indexTimestamp = getIndexTimestamp(index);
 
-			deleteLiveWorkinSetFromList(indicesToRemove, index, indexTimestamp);
+			deleteLiveWorkingSetFromList(indicesToRemove, index, indexTimestamp);
 
 			if(!indexTimestamp.equals(lastTimestamp)) {
 				kept++;
@@ -447,7 +313,7 @@ public class ESIndexAPI {
 
 	}
 
-	private void deleteLiveWorkinSetFromList(List<String> indicesToRemove, String index, String indexTimestamp) {
+	private void deleteLiveWorkingSetFromList(List<String> indicesToRemove, String index, String indexTimestamp) {
 		indicesToRemove.remove(index);
 		// let's check if the next one has the same timestamp - if so remove it, because it is the
 		// the other index in the live/working set that we want to delete.
@@ -526,7 +392,7 @@ public class ESIndexAPI {
 	 * @throws DotStateException
 	 * @throws IOException
 	 */
-	public  CreateIndexResponse  createIndex(String indexName, int shards) throws DotStateException, IOException{
+	public CreateIndexStatus createIndex(String indexName, int shards) throws DotStateException, IOException{
 
 		return createIndex(indexName, null, shards);
 	}
@@ -546,19 +412,19 @@ public class ESIndexAPI {
         AdminLogger.log(this.getClass(), "clearIndex", "Trying to clear index: " + indexName);
 
 		final ClusterIndexHealth cih = getClusterHealth().get(indexName);
-		final int shards = cih.getNumberOfShards();
+		final int shards = cih.numberOfShards();
 		final String alias=getIndexAlias(indexName);
 
 		delete(indexName);
 
-		if(UtilMethods.isSet(indexName) && indexName.indexOf("sitesearch") > -1) {
+		if(UtilMethods.isSet(indexName) && indexName.contains("sitesearch")) {
 			APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
 		} else {
-			final CreateIndexResponse res=createIndex(indexName, getDefaultIndexSettings(),  shards);
+			final CreateIndexStatus res=createIndex(indexName, getDefaultIndexSettings(),  shards);
 
 			try {
 				int w=0;
-				while(!res.isAcknowledged() && ++w<100)
+				while(!res.acknowledged() && ++w<100)
 					Thread.sleep(100);
 			}
 			catch(InterruptedException ex) {
@@ -583,18 +449,25 @@ public class ESIndexAPI {
      * @throws ElasticsearchException
      * @throws IOException
      */
-	public synchronized CreateIndexResponse createIndex(final String indexName, String settings,
-			int shards) throws ElasticsearchException, IOException {
+	public synchronized CreateIndexStatus createIndex(final String indexName, String settings,
+			int shards) throws IOException {
 
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
 
 		shards = shards > 0 ? shards : Config.getIntProperty("es.index.number_of_shards", 1);
 
+		if(shards>1){
+			Logger.warn(this.getClass(),"Number of ES shards : " + shards + ". Important to note that the more shards you enable, the slower the index reads.  dotCMS recommends using only 1 shard per replica. ");
+		}
 		Map<String,Object> map  = (settings ==null) ? new HashMap<>() : new ObjectMapper().readValue(settings, LinkedHashMap.class);
 
+
+		String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
+
 		map.put("number_of_shards", shards);
-		map.put("index.auto_expand_replicas", "0-all");
+		map.put("index.auto_expand_replicas", autoExpandReplicas);
+
 		map.putIfAbsent("index.mapping.total_fields.limit", 10000);
 		map.putIfAbsent("index.mapping.nested_fields.limit", 10000);
 		map.putIfAbsent("index.query.default_field", Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
@@ -609,7 +482,7 @@ public class ESIndexAPI {
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Index created: " + indexName + " with shards: " + shards);
 
-		return createIndexResponse;
+		return CreateIndexStatus.from(createIndexResponse);
 	}
 
 
@@ -652,11 +525,12 @@ public class ESIndexAPI {
                 RestHighLevelClientProvider.getInstance().getClient()
                         .cluster().health(request, RequestOptions.DEFAULT));
 
-        //returns indexes that belong to the cluster
+        //returns indexes that belong to the cluster, mapped to domain ClusterIndexHealth
         return response.getIndices().entrySet().stream()
                 .filter(x -> hasClusterPrefix(x.getKey()))
                 .collect(Collectors
-                        .toMap(x -> removeClusterIdFromName(x.getKey()), x -> x.getValue()));
+                        .toMap(x -> removeClusterIdFromName(x.getKey()),
+                               x -> ClusterIndexHealth.from(x.getValue())));
     }
 
 	/**
@@ -683,7 +557,7 @@ public class ESIndexAPI {
 			return;
 		}
 
-		final int curReplicas = health.getNumberOfReplicas();
+		final int curReplicas = health.numberOfReplicas();
 
 		if(curReplicas != replicas){
 			final Map<String,Integer> newSettings = new HashMap<>();
@@ -907,32 +781,14 @@ public class ESIndexAPI {
 
     }
 
-    /**
-     * Given an alias or index name that might contain a cluster id prefix
-     * (format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>),
-     * this method will return the name without the prefix. In case of name is null, an empty string
-     * will be returned
-     * @param name Index name or alias with the cluster id prefix
-     * @return Index name or alias without the cluster id prefix
-     */
-    public String removeClusterIdFromName(final String name) {
-        if(name==null) return "";
-        return name.indexOf(".")>-1 
-                        ? name.substring(name.lastIndexOf(".")+1, name.length()) 
-                        : name;
-
-	}
-
-
-
 	public List<String> getClosedIndexes() {
 
         return getIndices(false, true);
     }
 
     public Status getIndexStatus(String indexName) throws DotDataException {
-    	List<String> currentIdx = iapi.getCurrentIndex();
-		List<String> newIdx =iapi.getNewIndex();
+    	List<String> currentIdx = iapi.get().getCurrentIndex();
+		List<String> newIdx =iapi.get().getNewIndex();
 
 		boolean active =currentIdx.contains(getNameWithClusterIDPrefix(indexName));
 		boolean building =newIdx.contains(getNameWithClusterIDPrefix(indexName));
@@ -1325,7 +1181,7 @@ public class ESIndexAPI {
 	 * @return
 	 */
     public boolean waitUtilIndexReady() {
-        ClusterStats stats = null;
+        com.dotcms.content.index.domain.ClusterStats stats = null;
         for (int i = 0; i < Config.getIntProperty("ES_CONNECTION_ATTEMPTS", 24); i++) {
             try {
                 stats = getClusterStats();
@@ -1407,38 +1263,47 @@ public class ESIndexAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	public ClusterStats getClusterStats() {
+	public com.dotcms.content.index.domain.ClusterStats getClusterStats() {
 		final Request request = new Request("GET", "/_nodes/stats");
 		final Map<String, Object> jsonMap = performLowLevelRequest(request);
 
 		final String clusterName = (String) jsonMap.get("cluster_name");
-		final ClusterStats clusterStats = new ClusterStats(clusterName);
+		final List<com.dotcms.content.index.domain.NodeStats> nodeStatsList = new ArrayList<>();
 		final Map<String, Object> nodes = (Map<String, Object>)jsonMap.get("nodes");
 
 		nodes.forEach((key, value)-> {
-			final NodeStats.Builder builder = new NodeStats.Builder();
 			final Map<String, Object> stats = (Map<String, Object>) value;
-			builder.name((String) stats.get("name"));
-			builder.transportAddress((String) stats.get("transport_address"));
-			builder.host((String) stats.get("host"));
+			final String name = (String) stats.get("name");
+			final String transportAddress = (String) stats.get("transport_address");
+			final String host = (String) stats.get("host");
 
 			final Map<String, Object> indexStats = (Map<String, Object>) stats.get("indices");
             final Object docCount = ((Map<String, Object>) indexStats.get("docs"))
                     .get("count");
 
-            final Object size = ((Map<String, Object>) indexStats.get("store"))
+            final Object sizeObj = ((Map<String, Object>) indexStats.get("store"))
 					.get("size_in_bytes");
 
 			final List<String> roles = (List<String>) stats.get("roles");
+			final boolean isMaster = roles.contains("master");
+			final long docCountLong = Long.parseLong(docCount != null ? docCount.toString() : "0");
+			final long sizeLong = Long.parseLong(sizeObj != null ? sizeObj.toString() : "0");
 
-			builder.master(roles.contains("master"));
-			builder.docCount(Long.valueOf(docCount!=null? docCount.toString():"0"));
-			builder.size(Long.valueOf(size!=null? size.toString():"0"));
-
-			clusterStats.addNodeStats(builder.build());
+			nodeStatsList.add(com.dotcms.content.index.domain.NodeStats.builder()
+					.name(name)
+					.transportAddress(transportAddress)
+					.host(host)
+					.master(isMaster)
+					.docCount(docCountLong)
+					.sizeRaw(sizeLong)
+					.size(new ByteSizeValue(sizeLong).toString())
+					.build());
 		});
 
-		return clusterStats;
+		return com.dotcms.content.index.domain.ClusterStats.builder()
+				.clusterName(clusterName)
+				.nodeStats(nodeStatsList)
+				.build();
 	}
 
 	Map performLowLevelRequest(Request request) {

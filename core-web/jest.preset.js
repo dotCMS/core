@@ -11,6 +11,18 @@ module.exports = {
         '!src/**/*.module.ts',
         '!src/index.ts'
     ],
+    coverageReporters: ['html', 'lcov', 'text'],
+    reporters: [
+        'default',
+        ['github-actions', { silent: false }],
+        [
+            'jest-junit',
+            {
+                outputDirectory: '../../../target/core-web-reports',
+                outputName: 'TEST-results.xml'
+            }
+        ]
+    ],
     verbose: true,
     /* TODO: Update to latest Jest snapshotFormat
      * By default Nx has kept the older style of Jest Snapshot formats

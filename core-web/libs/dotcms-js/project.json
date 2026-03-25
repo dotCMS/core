@@ -10,7 +10,7 @@
             "outputs": ["{options.outputFile}"]
         },
         "test": {
-            "executor": "@angular-devkit/build-angular:karma",
+            "executor": "@angular/build:karma",
             "outputs": ["{workspaceRoot}/coverage/libs/dotcms-js"],
             "options": {
                 "main": "libs/dotcms-js/src/test.ts",

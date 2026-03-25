@@ -237,7 +237,7 @@ export interface SessionsByBrowserDailyEntity {
  * SessionsByLanguageDaily cube entity (one row per language).
  */
 export interface SessionsByLanguageDailyEntity {
-    'SessionsByLanguageDaily.languageId'?: string;
+    'SessionsByLanguageDaily.localeId'?: string;
     'SessionsByLanguageDaily.engagedSessions'?: string;
     'SessionsByLanguageDaily.totalSessions'?: string;
     'SessionsByLanguageDaily.avgEngagedSessionTimeSeconds'?: string;

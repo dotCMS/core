@@ -1,5 +1,22 @@
 import { DotCMSContentlet } from './dot-contentlet.model';
 
+/**
+ * Pagination/sort/filter event shape compatible with PrimeNG's LazyLoadEvent.
+ * Defined locally so dotcms-models does not depend on primeng; consumers can pass
+ * a real LazyLoadEvent from p-table/p-dataView.
+ */
+export interface DotContentDriveLazyLoadEvent {
+    first?: number;
+    last?: number;
+    rows?: number;
+    sortField?: string;
+    sortOrder?: number;
+    multiSortMeta?: Array<{ field: string; order: number }>;
+    filters?: Record<string, { value?: unknown; matchMode?: string; operator?: string }>;
+    globalFilter?: unknown;
+    forceUpdate?: () => void;
+}
+
 export interface DotContentDriveFolder {
     __icon__: 'folderIcon';
     defaultFileType: string;
@@ -27,6 +44,12 @@ export interface DotContentDriveFolder {
 // This will extend the DotCMSContentlet with more properties,
 // but for now we will just use the DotCMSContentlet until we have folders on the request response
 export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
+
+/**
+ * Pagination event emitted by the folder list view,
+ * extending the lazy-load event shape with a resolved 1-indexed page number.
+ */
+export type DotContentDrivePaginateEvent = DotContentDriveLazyLoadEvent & { page: number };
 
 /**
  * Interface representing data needed for context menu interactions
@@ -125,10 +148,16 @@ export interface DotContentDriveSearchRequest {
     filters?: DotContentDriveQueryFilters;
 
     /**
-     * Number of results to skip for pagination.
+     * Number of content items to skip for pagination.
      * @default 0
      */
-    offset?: number;
+    contentCursor?: number;
+
+    /**
+     * Number of folder items to skip for pagination.
+     * @default 0
+     */
+    folderCursor?: number;
 
     /**
      * Maximum number of results to return.
@@ -174,8 +203,11 @@ export interface DotContentDriveSearchRequest {
  * @property {DotContentDriveItem[]} list - The list of content items
  */
 export interface DotContentDriveSearchResponse {
-    contentTotalCount: number;
     folderCount: number;
     contentCount: number;
     list: DotContentDriveItem[];
+    hasMoreContent: boolean;
+    hasMoreFolders: boolean;
+    nextContentCursor: number;
+    nextFolderCursor: number;
 }

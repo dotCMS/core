@@ -61,7 +61,7 @@ yarn nx generate @nx/angular:library --name=portlet \
 1. **tsconfig alias** in `core-web/tsconfig.base.json`: change generated `"portlet"` → `"@dotcms/portlets/dot-{feature}/portlet"`
 2. **project.json** `name`: change to `portlets-dot-{feature}-portlet`
 3. **jest.config.ts** `displayName`: change to `portlets-dot-{feature}-portlet`
-4. **jest.config.ts**: add `isolatedModules: true` in transform options (required for transitive deps)
+4. **tsconfig.spec.json**: add `isolatedModules: true` in transform options (required for transitive deps)
 5. **tsconfig.spec.json**: keep minimal — only `module`, `target`, `types`
 6. **Delete** generated `README.md` and boilerplate component in `src/lib/portlet/`
 

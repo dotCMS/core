@@ -1,0 +1,23 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    @apply flex flex-col justify-center w-fit;
+}
+
+.preview-container__video {
+    aspect-ratio: 16/9;
+    height: 300px;
+}
+
+.preview-container__video video {
+    @apply w-full h-full;
+}
+
+.preview-container__loading {
+    @apply flex justify-between py-4;
+}
+
+.default-message {
+    @apply block bg-gray-200 p-4 text-base w-full;
+}

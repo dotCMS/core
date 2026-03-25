@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.LicenseService;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -58,7 +59,7 @@ public class ESIndexHelper implements Serializable{
 	 * @param map map containing the key (type) and the name
 	 * @return
 	 */
-	public String getIndexNameOrAlias(Map<String, String> map, ESIndexAPI esIndexAPI) {
+	public String getIndexNameOrAlias(Map<String, String> map, IndexAPI esIndexAPI) {
 		return getIndexNameOrAlias(map, INDEX, ALIAS, esIndexAPI);
 	}
 
@@ -69,7 +70,7 @@ public class ESIndexHelper implements Serializable{
 	 * @param aliasAttr alias key name
 	 * @return
 	 */
-	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr, ESIndexAPI esIndexAPI) {
+	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr, IndexAPI esIndexAPI) {
 		String indexName = map.get(indexAttr);
 		String indexAlias = map.get(aliasAttr);
 		if (UtilMethods.isSet(indexAlias) && licenseService.getLevel() >= LicenseLevel.STANDARD.level) {

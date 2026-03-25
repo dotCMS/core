@@ -57,13 +57,8 @@ describe('initializeContentAnalytics', () => {
         track: jest.fn()
     };
 
-    let originalWindow: any;
-
     beforeEach(() => {
         jest.clearAllMocks();
-
-        // Save original window
-        originalWindow = global.window;
 
         // Mock getUVEState (not in editor by default)
         (getUVEState as jest.Mock).mockReturnValue(undefined);
@@ -74,32 +69,6 @@ describe('initializeContentAnalytics', () => {
         mockDotAnalyticsEnricherPlugin.mockReturnValue({} as any);
         mockDotAnalyticsIdentityPlugin.mockReturnValue({} as any);
         mockDotAnalyticsImpressionPlugin.mockReturnValue({} as any);
-
-        // Mock global window
-        Object.defineProperty(global, 'window', {
-            value: {
-                addEventListener: jest.fn(),
-                dispatchEvent: jest.fn(),
-                __dotAnalyticsCleanup: null,
-                document: {
-                    addEventListener: jest.fn(),
-                    removeEventListener: jest.fn()
-                }
-            },
-            writable: true,
-            configurable: true
-        });
-    });
-
-    afterEach(() => {
-        // Restore original window
-        if (originalWindow) {
-            Object.defineProperty(global, 'window', {
-                value: originalWindow,
-                writable: true,
-                configurable: true
-            });
-        }
     });
 
     it('should create analytics instance with correct config and plugins', () => {
@@ -120,20 +89,16 @@ describe('initializeContentAnalytics', () => {
     });
 
     it('should setup window event listeners for cleanup', () => {
-        const mockAddEventListener = jest.fn();
-        const mockDispatchEvent = jest.fn();
-        Object.defineProperty(global, 'window', {
-            value: {
-                addEventListener: mockAddEventListener,
-                dispatchEvent: mockDispatchEvent
-            },
-            writable: true
-        });
+        const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+        const dispatchEventSpy = jest.spyOn(window, 'dispatchEvent');
 
         initializeContentAnalytics(mockConfig);
 
-        expect(mockAddEventListener).toHaveBeenCalledWith('beforeunload', expect.any(Function));
-        expect(mockDispatchEvent).toHaveBeenCalledWith(expect.any(CustomEvent));
+        expect(addEventListenerSpy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
+        expect(dispatchEventSpy).toHaveBeenCalledWith(expect.any(CustomEvent));
+
+        addEventListenerSpy.mockRestore();
+        dispatchEventSpy.mockRestore();
     });
 
     it('should return null when siteAuth is missing', () => {
@@ -355,13 +320,16 @@ describe('initializeContentAnalytics', () => {
 
     describe('when window is not available (SSR)', () => {
         it('should work without window object', () => {
-            delete (global as any).window;
+            const savedWindow = (global as any).window;
+            (global as any).window = undefined;
 
             const analytics = initializeContentAnalytics(mockConfig);
 
             expect(analytics).not.toBeNull();
             expect(analytics!.pageView).toBeDefined();
             expect(analytics!.track).toBeDefined();
+
+            (global as any).window = savedWindow;
         });
     });
 

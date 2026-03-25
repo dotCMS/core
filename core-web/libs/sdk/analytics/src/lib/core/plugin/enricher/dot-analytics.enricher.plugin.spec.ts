@@ -119,33 +119,16 @@ describe('dotAnalyticsEnricherPlugin', () => {
 
     describe('Track Event Enrichment', () => {
         let originalTitle: string;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        let originalHref: string;
 
         beforeEach(() => {
-            // Save originals
             originalTitle = document.title;
-            originalHref = window.location.href;
-
-            // Mock document title and window location
-            Object.defineProperty(document, 'title', {
-                value: 'Test Page',
-                writable: true,
-                configurable: true
-            });
-
-            // Mock window.location.href
-            delete (window as any).location;
-            (window as any).location = { href: 'http://localhost/test' };
+            // Use history API to set URL (window.location is not mockable in JSDOM)
+            history.replaceState({}, '', '/test');
+            document.title = 'Test Page';
         });
 
         afterEach(() => {
-            // Restore originals
-            Object.defineProperty(document, 'title', {
-                value: originalTitle,
-                writable: true,
-                configurable: true
-            });
+            document.title = originalTitle;
         });
 
         it('should enrich content_impression events with page data', () => {
@@ -181,7 +164,7 @@ describe('dotAnalyticsEnricherPlugin', () => {
                 ...mockPayload,
                 page: {
                     title: 'Test Page',
-                    url: 'http://localhost/test'
+                    url: window.location.href
                 }
             });
             expect(result.local_time).toBeDefined();

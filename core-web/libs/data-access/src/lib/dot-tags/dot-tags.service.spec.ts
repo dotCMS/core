@@ -90,6 +90,7 @@ describe('DotTagsService', () => {
         spectator.service
             .getTagsPaginated({
                 filter: 'test',
+                site: 'site-abc',
                 page: 2,
                 per_page: 10,
                 orderBy: 'tagname',
@@ -100,9 +101,46 @@ describe('DotTagsService', () => {
             });
 
         const req = spectator.expectOne(
-            '/api/v2/tags?filter=test&page=2&per_page=10&orderBy=tagname&direction=ASC',
+            '/api/v2/tags?filter=test&site=site-abc&page=2&per_page=10&orderBy=tagname&direction=ASC',
             HttpMethod.GET
         );
+        req.flush(mockResponse);
+    });
+
+    it('should get paginated tags with site param only', () => {
+        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
+            entity: [],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {},
+            pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
+        };
+
+        spectator.service.getTagsPaginated({ site: 'site-123' }).subscribe((res) => {
+            expect(res).toEqual(mockResponse);
+        });
+
+        const req = spectator.expectOne('/api/v2/tags?site=site-123', HttpMethod.GET);
+        req.flush(mockResponse);
+    });
+
+    it('should omit site param when not provided', () => {
+        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
+            entity: [],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {},
+            pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
+        };
+
+        spectator.service.getTagsPaginated({}).subscribe((res) => {
+            expect(res).toEqual(mockResponse);
+        });
+
+        const req = spectator.expectOne('/api/v2/tags', HttpMethod.GET);
+        expect(req.request.params.has('site')).toBe(false);
         req.flush(mockResponse);
     });
 

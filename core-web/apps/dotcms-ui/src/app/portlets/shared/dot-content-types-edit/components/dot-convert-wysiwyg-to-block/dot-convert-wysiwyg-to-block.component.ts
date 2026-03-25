@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -17,7 +17,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     imports: [CommonModule, FormsModule, ButtonModule, CheckboxModule, DotMessagePipe]
 })
 export class DotConvertWysiwygToBlockComponent {
-    @Input() currentFieldType: { clazz?: string };
+    readonly $currentFieldType = input({ alias: 'currentFieldType' });
 
     readonly $convert = output<MouseEvent>();
 

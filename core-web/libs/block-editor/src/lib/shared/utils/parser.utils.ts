@@ -34,12 +34,18 @@ const video: BlockMap = {
 
 const basicNodes: BlockMap = { paragrah: true, text: true, doc: true };
 
+const gridContent: BlockMap = {
+    gridBlock: true,
+    gridColumn: true
+};
+
 const relatedContent = {
     image: imageContent,
     table: tableContent,
     orderedList: orderedListContent,
     bulletList: bulletListContent,
-    video
+    video,
+    gridBlock: gridContent
 };
 
 /**

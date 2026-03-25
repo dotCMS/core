@@ -22,7 +22,7 @@ export const LoaderNode = Node.create({
     parseHTML() {
         return [
             {
-                tag: 'div.p-d-flex.p-jc-center'
+                tag: 'div.flex.justify-center'
             }
         ];
     },
@@ -62,7 +62,7 @@ export const LoaderNode = Node.create({
     },
 
     renderHTML() {
-        return ['div', { class: 'p-d-flex p-jc-center' }];
+        return ['div', { class: 'flex justify-center' }];
     },
 
     addNodeView() {

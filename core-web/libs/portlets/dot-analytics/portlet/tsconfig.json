@@ -7,7 +7,9 @@
         "noImplicitOverride": true,
         "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true
+        "noFallthroughCasesInSwitch": true,
+        "module": "preserve",
+        "lib": ["dom", "dom.iterable", "es2022"]
     },
     "files": [],
     "include": [],

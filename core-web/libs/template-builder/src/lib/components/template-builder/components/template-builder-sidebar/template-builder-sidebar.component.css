@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tailwindcss-primeui';
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
 
 :host {
     @apply w-72 border border-primary-500 rounded-md bg-white p-3 flex flex-col gap-3;

@@ -7,7 +7,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DotContentletLockerService, DotMessageService } from '@dotcms/data-access';
 
 import { UVEState } from '../../models';
-import { withLoad } from '../load/withLoad';
 
 interface WithLockState {
     lockLoading: boolean;
@@ -20,12 +19,12 @@ interface WithLockState {
 export function withLock() {
     return signalStoreFeature(
         {
-            state: type<UVEState>()
+            state: type<UVEState>(),
+            methods: type<{ reloadCurrentPage: () => void }>()
         },
         withState<WithLockState>({
             lockLoading: false
         }),
-        withLoad(),
         withMethods((store) => {
             const messageService = inject(MessageService);
             const dotMessageService = inject(DotMessageService);

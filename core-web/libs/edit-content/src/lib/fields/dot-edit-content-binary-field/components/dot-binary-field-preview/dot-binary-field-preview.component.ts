@@ -5,10 +5,13 @@ import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
     Component,
-    effect,
+    EventEmitter,
+    Input,
+    OnChanges,
+    OnInit,
+    Output,
+    SimpleChanges,
     inject,
-    input,
-    output,
     signal
 } from '@angular/core';
 
@@ -26,10 +29,10 @@ import {
     DotFileMetadata
 } from '@dotcms/dotcms-models';
 import {
-    DotCopyButtonComponent,
+    DotTempFileThumbnailComponent,
     DotFileSizeFormatPipe,
     DotMessagePipe,
-    DotTempFileThumbnailComponent
+    DotCopyButtonComponent
 } from '@dotcms/ui';
 
 import { getFileMetadata } from '../../utils/binary-field-utils';
@@ -60,19 +63,20 @@ interface dotPreviewResourceLink {
     ],
     providers: [DotResourceLinksService],
     templateUrl: './dot-binary-field-preview.component.html',
+    styleUrls: ['./dot-binary-field-preview.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class DotBinaryFieldPreviewComponent {
-    $contentlet = input<DotCMSContentlet>(undefined, { alias: 'contentlet' });
-    $tempFile = input<DotCMSTempFile>(undefined, { alias: 'tempFile' });
-    $editableImage = input<boolean>(undefined, { alias: 'editableImage' });
-    $fieldVariable = input<string>(undefined, { alias: 'fieldVariable' });
-    $disabled = input<boolean>(false, { alias: 'disabled' });
+export class DotBinaryFieldPreviewComponent implements OnInit, OnChanges {
+    @Input() contentlet: DotCMSContentlet;
+    @Input() tempFile: DotCMSTempFile;
+    @Input() editableImage: boolean;
+    @Input() fieldVariable: string;
+    @Input() disabled = false;
 
-    $editImage = output<void>();
-    $editFile = output<void>();
-    $removeFile = output<void>();
+    @Output() editImage: EventEmitter<void> = new EventEmitter();
+    @Output() editFile: EventEmitter<void> = new EventEmitter();
+    @Output() removeFile: EventEmitter<void> = new EventEmitter();
 
     protected visibility = false;
     protected isEditable = false;
@@ -80,52 +84,33 @@ export class DotBinaryFieldPreviewComponent {
     protected readonly resourceLinks = signal<dotPreviewResourceLink[]>([]);
     readonly #dotResourceLinksService = inject(DotResourceLinksService);
 
-    private readonly contentletEffect = effect(() => {
-        const contentlet = this.$contentlet();
-        if (contentlet) {
-            this.content.set(contentlet?.content);
-            this.fetchResourceLinks();
-        }
-    });
-
-    private readonly tempFileEffect = effect(() => {
-        const editableImage = this.$editableImage();
-        if (editableImage !== undefined) {
-            this.isEditable = this.isFileEditable();
-        }
-
-        const tempFile = this.$tempFile();
-        if (tempFile) {
-            this.content.set(tempFile.content);
-        }
-    });
-
     get metadata(): DotFileMetadata {
-        const tempFile = this.$tempFile();
-        const contentlet = this.$contentlet();
-
-        if (tempFile?.metadata) {
-            return tempFile.metadata;
-        }
-
-        return contentlet ? getFileMetadata(contentlet) : ({} as DotFileMetadata);
+        return this.tempFile?.metadata ?? getFileMetadata(this.contentlet);
     }
 
     get title(): string {
-        const contentlet = this.$contentlet();
-
-        return contentlet?.fileName || this.metadata.name;
+        return this.contentlet?.fileName || this.metadata.name;
     }
 
     get downloadLink(): string {
-        const contentlet = this.$contentlet();
-        const fieldVariable = this.$fieldVariable();
+        return `/contentAsset/raw-data/${this.contentlet.inode}/${this.fieldVariable}?byInode=true&force_download=true`;
+    }
 
-        if (!contentlet || !fieldVariable) {
-            return '';
+    ngOnInit() {
+        if (this.contentlet) {
+            this.content.set(this.contentlet?.content);
+            this.fetchResourceLinks();
+        }
+    }
+
+    ngOnChanges({ tempFile, editableImage }: SimpleChanges): void {
+        if (editableImage) {
+            this.isEditable = this.isFileEditable();
         }
 
-        return `/contentAsset/raw-data/${contentlet.inode}/${fieldVariable}?byInode=true&force_download=true`;
+        if (tempFile?.currentValue) {
+            this.content.set(tempFile.currentValue.content);
+        }
     }
 
     /**
@@ -135,17 +120,17 @@ export class DotBinaryFieldPreviewComponent {
      * @memberof DotBinaryFieldPreviewComponent
      */
     onEdit(): void {
-        if (this.$disabled()) {
+        if (this.disabled) {
             return;
         }
 
         if (this.metadata.editableAsText) {
-            this.$editFile.emit();
+            this.editFile.emit();
 
             return;
         }
 
-        this.$editImage.emit();
+        this.editImage.emit();
     }
 
     /**
@@ -155,15 +140,10 @@ export class DotBinaryFieldPreviewComponent {
      * @memberof DotBinaryFieldPreviewComponent
      */
     private fetchResourceLinks(): void {
-        const contentlet = this.$contentlet();
-        const fieldVariable = this.$fieldVariable();
-        if (!contentlet || !fieldVariable) {
-            return;
-        }
         this.#dotResourceLinksService
             .getFileResourceLinksByInode({
-                fieldVariable,
-                inode: contentlet.inode
+                fieldVariable: this.fieldVariable,
+                inode: this.contentlet.inode
             })
             .pipe(
                 catchError(() => {
@@ -189,7 +169,7 @@ export class DotBinaryFieldPreviewComponent {
                     {
                         key: 'Resource-Link',
                         value: text,
-                        show: contentlet.baseType === DotCMSBaseTypesContentTypes.FILEASSET
+                        show: this.contentlet.baseType === DotCMSBaseTypesContentTypes.FILEASSET
                     },
                     {
                         key: 'VersionPath',
@@ -211,7 +191,7 @@ export class DotBinaryFieldPreviewComponent {
      * @memberof DotBinaryFieldPreviewComponent
      */
     downloadAsset(): void {
-        if (this.$disabled()) {
+        if (this.disabled) {
             return;
         }
 
@@ -236,6 +216,6 @@ export class DotBinaryFieldPreviewComponent {
      * @memberof DotBinaryFieldPreviewComponent
      */
     private isEditableImage(): boolean {
-        return this.metadata.isImage && this.$editableImage();
+        return this.metadata.isImage && this.editableImage;
     }
 }

@@ -1,0 +1,77 @@
+:host {
+    box-sizing: border-box;
+    display: flex;
+    gap: 16px;
+    padding: 4px 8px;
+    background-color: #fff;
+    cursor: pointer;
+    align-items: center;
+}
+
+:host * {
+    pointer-events: none;
+}
+
+:host[disabled='true'] {
+    color: var(--gray-500);
+    cursor: not-allowed;
+}
+
+.icon-wrapper {
+    align-items: center;
+    border: solid 1px lightgrey;
+    display: flex;
+    flex-basis: 32px;
+    flex-shrink: 0;
+    height: 32px;
+    justify-content: center;
+    width: 32px;
+}
+
+.icon-wrapper dot-contentlet-thumbnail {
+    align-items: center;
+    display: block;
+    position: relative;
+    width: 42px;
+    height: 42px;
+}
+
+.icon-wrapper.dot-contentlet {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+}
+
+.icon-wrapper.page,
+.icon-wrapper.page dot-contentlet-thumbnail {
+    flex-basis: 64px;
+    height: 64px;
+    width: 64px;
+}
+
+.data-wrapper {
+    overflow: hidden;
+}
+
+.data-wrapper > span {
+    overflow: hidden;
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.data-wrapper .url {
+    color: var(--gray-500);
+    font-size: 14.4px;
+}
+
+.data-wrapper .state {
+    margin-top: 8px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.data-wrapper .state dot-state-icon {
+    margin-right: 8px;
+}

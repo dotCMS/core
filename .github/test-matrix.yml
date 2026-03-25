@@ -146,11 +146,6 @@ test_types:
       needs_node: true
       base_maven_args: "verify -De2e.test.skip=false"
     suites:
-      - name: "E2E Tests - JVM Suite"
-        maven_args: >-
-          -Dci=true -Dit.test=E2eTestSuite 
-          -De2e.test.forkCount=1 -pl :dotcms-e2e-java
-        stage_name: "E2E JVM E2E Suite"
-      - name: "E2E Tests - Node Suite"
-        maven_args: "-De2e.test.env=ci -pl :dotcms-e2e-node"
-        stage_name: "E2E Node E2E Suite" 
+      - name: "E2E Tests - Nx Playwright"
+        maven_args: "-De2e.test.env=ci -pl :dotcms-ui-e2e"
+        stage_name: "E2E Nx Playwright Suite"

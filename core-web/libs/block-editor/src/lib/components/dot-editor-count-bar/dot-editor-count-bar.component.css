@@ -1,0 +1,10 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    @apply flex justify-end items-end text-gray-500 mt-4 gap-2 text-sm;
+}
+
+:host .error-message {
+    @apply text-red-600;
+}

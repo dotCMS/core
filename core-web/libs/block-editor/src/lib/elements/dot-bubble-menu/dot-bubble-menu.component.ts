@@ -67,7 +67,7 @@ const BUBBLE_MENU_VISIBLE_NODES = {
 @Component({
     selector: 'dot-bubble-menu',
     templateUrl: './dot-bubble-menu.component.html',
-    styleUrls: ['./dot-bubble-menu.component.scss'],
+    styleUrls: ['./dot-bubble-menu.component.css'],
     imports: [
         TiptapBubbleMenuDirective,
         FormsModule,
