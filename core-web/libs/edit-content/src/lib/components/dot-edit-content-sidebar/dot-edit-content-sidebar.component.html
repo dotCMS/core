@@ -118,6 +118,13 @@
                         [identifier]="$identifier() ?? ''"
                         [languageId]="$contentlet()?.languageId ?? 0"
                         data-testId="permissions" />
+                    <!-- Rules section (Page content type only) -->
+                    @if ($isPage()) {
+                        <dot-edit-content-sidebar-rules
+                            [identifier]="$identifier() ?? ''"
+                            [languageId]="$contentlet()?.languageId ?? 0"
+                            data-testId="rules" />
+                    }
                 </p-tabpanel>
             }
         </p-tabpanels>
