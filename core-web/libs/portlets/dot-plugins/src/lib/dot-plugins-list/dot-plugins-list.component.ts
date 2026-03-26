@@ -6,6 +6,7 @@ import {
     signal,
     viewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -19,6 +20,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
@@ -44,6 +46,7 @@ import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upl
     selector: 'dot-plugins-list',
     standalone: true,
     imports: [
+        FormsModule,
         MenuModule,
         TableModule,
         SkeletonModule,
@@ -55,6 +58,7 @@ import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upl
         IconFieldModule,
         InputIconModule,
         InputTextModule,
+        ToggleSwitchModule,
         DotMessagePipe,
         DotAddToBundleComponent
     ],
@@ -68,6 +72,12 @@ export class DotPluginsListComponent {
     protected readonly BUNDLE_STATE = BUNDLE_STATE;
     readonly skeletonRows = Array(10).fill(null);
     isDragging = signal(false);
+    showUndeployed = signal(false);
+    readonly filteredRows = computed(() =>
+        this.showUndeployed()
+            ? this.store.rows()
+            : this.store.rows().filter((r) => r.state !== 'undeployed')
+    );
     private dragCounter = 0;
     private readonly selectedBundle = signal<PluginRow | null>(null);
     readonly addToBundleIdentifier = signal<string | null>(null);
@@ -140,15 +150,15 @@ export class DotPluginsListComponent {
     openUploadDialog(): void {
         const ref = this.dialogService.open(DotPluginsUploadComponent, {
             header: this.dotMessageService.get('plugins.upload.title'),
-            width: '500px',
+            width: '450px',
             closable: true,
             closeOnEscape: true,
             resizable: false,
             draggable: false
         });
-        ref?.onClose.pipe(take(1)).subscribe((result) => {
-            if (result) {
-                this.store.loadAll();
+        ref?.onClose.pipe(take(1)).subscribe((files: File[] | null) => {
+            if (files?.length) {
+                this.store.uploadBundles(files);
             }
         });
     }
@@ -156,8 +166,8 @@ export class DotPluginsListComponent {
     openExtraPackagesDialog(): void {
         const ref = this.dialogService.open(DotPluginsExtraPackagesComponent, {
             header: this.dotMessageService.get('plugins.extra-packages.title'),
-            width: '600px',
-            height: '600px',
+            width: '540px',
+            height: '540px',
             closable: true,
             closeOnEscape: true,
             resizable: false,

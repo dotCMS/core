@@ -61,7 +61,6 @@
     <p-button
         [label]="'plugins.upload' | dm"
         [disabled]="selectedFiles().length === 0"
-        [loading]="uploading()"
         (onClick)="upload()"
         data-testid="plugins-upload-submit-btn" />
 </div>

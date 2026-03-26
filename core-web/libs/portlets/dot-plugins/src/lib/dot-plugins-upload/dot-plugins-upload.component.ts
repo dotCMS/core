@@ -1,5 +1,3 @@
-import { EMPTY } from 'rxjs';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -13,9 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileUpload, FileUploadModule, FileSelectEvent } from 'primeng/fileupload';
 
-import { catchError, take } from 'rxjs/operators';
-
-import { DotHttpErrorManagerService, DotMessageService, DotOsgiService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
@@ -27,14 +23,11 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotPluginsUploadComponent {
     readonly #ref = inject(DynamicDialogRef);
-    readonly #osgiService = inject(DotOsgiService);
-    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #dotMessageService = inject(DotMessageService);
 
     readonly fileUploadRef = viewChild<FileUpload>('fileUpload');
 
     selectedFiles = signal<File[]>([]);
-    uploading = signal(false);
 
     /** Summary line for selected files (e.g. "file.jar" or "file.jar and 2 more"). */
     selectedFilesSummary = computed(() => {
@@ -53,31 +46,18 @@ export class DotPluginsUploadComponent {
         this.selectedFiles.set([]);
     }
 
+    /** Closes the dialog with the selected files so the list store handles the upload. */
     upload(): void {
         const files = this.selectedFiles();
         if (files.length === 0) return;
-        this.uploading.set(true);
-        this.#osgiService
-            .uploadBundles(files)
-            .pipe(
-                take(1),
-                catchError((error) => {
-                    this.#httpErrorManager.handle(error);
-                    this.uploading.set(false);
-                    return EMPTY;
-                })
-            )
-            .subscribe(() => {
-                this.uploading.set(false);
-                this.clearAndClose(true);
-            });
+        this.clearAndClose(files);
     }
 
     close(): void {
-        this.clearAndClose(false);
+        this.clearAndClose(null);
     }
 
-    private clearAndClose(result: boolean): void {
+    private clearAndClose(result: File[] | null): void {
         this.selectedFiles.set([]);
         this.fileUploadRef()?.clear();
         this.#ref.close(result);

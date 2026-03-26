@@ -181,37 +181,37 @@ describe('DotPluginsListStore', () => {
     });
 
     describe('uploadBundles', () => {
-        it('should upload files and reload bundles and available jars on success', fakeAsync(() => {
+        it('should set status to uploading immediately when called', () => {
+            store.uploadBundles([new File(['content'], 'plugin.jar')]);
+            expect(store.status()).toBe('uploading');
+        });
+
+        it('should keep status as uploading after HTTP 200 — reload is owned by OSGI_BUNDLES_LOADED', () => {
+            store.uploadBundles([new File(['content'], 'plugin.jar')]);
+            // HTTP 200 resolves synchronously via mock; status must still be uploading
+            expect(store.status()).toBe('uploading');
+        });
+
+        it('should not trigger a data reload directly after HTTP 200', () => {
+            const callsBefore = (osgiService.getInstalledBundles as jest.Mock).mock.calls.length;
+            store.uploadBundles([new File(['content'], 'plugin.jar')]);
+            expect((osgiService.getInstalledBundles as jest.Mock).mock.calls.length).toBe(
+                callsBefore
+            );
+        });
+
+        it('should call osgiService.uploadBundles with the provided files', () => {
             const files = [new File(['content'], 'plugin.jar')];
-            const installedCallsBefore = (osgiService.getInstalledBundles as jest.Mock).mock.calls
-                .length;
-            const pluginsCallsBefore = (osgiService.getAvailablePlugins as jest.Mock).mock.calls
-                .length;
-
             store.uploadBundles(files);
-            tick();
-
             expect(osgiService.uploadBundles).toHaveBeenCalledWith(files);
-            expect(
-                (osgiService.getInstalledBundles as jest.Mock).mock.calls.length
-            ).toBeGreaterThan(installedCallsBefore);
-            expect(
-                (osgiService.getAvailablePlugins as jest.Mock).mock.calls.length
-            ).toBeGreaterThan(pluginsCallsBefore);
-        }));
+        });
 
-        it('should invoke optional callback on success', fakeAsync(() => {
-            const callback = jest.fn();
-            store.uploadBundles([new File(['content'], 'plugin.jar')], callback);
-            tick();
-            expect(callback).toHaveBeenCalled();
-        }));
-
-        it('should handle upload error', () => {
+        it('should reset status to loaded and report the error on upload failure', () => {
             const error = new Error('Upload failed');
             jest.spyOn(osgiService, 'uploadBundles').mockReturnValue(throwError(error));
             store.uploadBundles([new File(['content'], 'plugin.jar')]);
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(store.status()).toBe('loaded');
         });
     });
 
@@ -365,6 +365,23 @@ describe('DotPluginsListStore', () => {
             expect((osgiService.getInstalledBundles as jest.Mock).mock.calls.length).toBe(
                 initialCalls
             );
+        });
+
+        it('should preserve uploading status through the websocket-triggered reload and resolve to loaded', () => {
+            jest.spyOn(osgiService, 'getInstalledBundles').mockReturnValue(
+                of(mockDotCMSResponse([] as BundleMap[]))
+            );
+            jest.spyOn(osgiService, 'getAvailablePlugins').mockReturnValue(
+                of(mockDotCMSResponse([] as string[]))
+            );
+
+            store.uploadBundles([new File(['content'], 'plugin.jar')]);
+            expect(store.status()).toBe('uploading');
+
+            osgiBundlesLoadedSubject.next();
+            jest.advanceTimersByTime(5000);
+
+            expect(store.status()).toBe('loaded');
         });
     });
 });

@@ -31,8 +31,16 @@ const OSGI_ACTION_DELAY_MS = 5000;
  * - `loaded`     : data ready (empty rows → empty state; rows present → table)
  * - `error`      : initial load failed
  * - `restarting` : OSGi framework restart in progress
+ * - `uploading`  : JAR files are being transferred to the server
  */
-type DotPluginsListStatus = 'init' | 'loading' | 'loaded' | 'refreshing' | 'error' | 'restarting';
+type DotPluginsListStatus =
+    | 'init'
+    | 'loading'
+    | 'loaded'
+    | 'refreshing'
+    | 'error'
+    | 'restarting'
+    | 'uploading';
 
 /** Patchable OSGi list state; `rows` is derived for the plugins table. */
 interface DotPluginsListState {
@@ -117,11 +125,17 @@ export const DotPluginsListStore = signalStore(
         }
 
         /**
-         * Loads bundles and available JARs together. Initial load uses `loading`; subsequent loads use `refreshing`.
+         * Loads bundles and available JARs together. Initial load uses `loading`; subsequent loads
+         * use `intermediateStatus` (defaults to `refreshing`). Callers that manage their own loading
+         * indicator (e.g. `uploadBundles`) pass their own status to keep the UI consistent.
          * On HTTP error, restores `loaded` so the table stays usable.
          */
-        function loadAll(onSuccess?: () => void, initialLoad = false) {
-            patchState(store, { status: initialLoad ? 'loading' : 'refreshing' });
+        function loadAll(
+            onSuccess?: () => void,
+            initialLoad = false,
+            intermediateStatus: DotPluginsListStatus = 'refreshing'
+        ) {
+            patchState(store, { status: initialLoad ? 'loading' : intermediateStatus });
             forkJoin([osgiService.getInstalledBundles(true), osgiService.getAvailablePlugins()])
                 .pipe(
                     take(1),
@@ -168,9 +182,24 @@ export const DotPluginsListStore = signalStore(
             loadBundles,
             loadAvailablePlugins,
             loadAll,
-            /** POSTs JAR files to OSGi, then reloads bundles and available JARs. */
-            uploadBundles(files: File[], onSuccess?: () => void) {
-                handlePluginAction(osgiService.uploadBundles(files), () => loadAll(onSuccess));
+            /**
+             * POSTs JAR files to OSGi. Sets `uploading` on a successful 200 response and keeps
+             * that state through the data reload, so the uploading indicator stays visible until
+             * the table reflects the new plugins. On upload error the status resets to `loaded`.
+             */
+            uploadBundles(files: File[]) {
+                patchState(store, { status: 'uploading' });
+                osgiService
+                    .uploadBundles(files)
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { status: 'loaded' });
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe();
             },
             /** Deploys an undeployed JAR by filename; delayed reload so the framework can finish. */
             deploy(jar: string) {
@@ -232,7 +261,13 @@ export const DotPluginsListStore = signalStore(
             dotcmsEventsService
                 .subscribeTo('OSGI_BUNDLES_LOADED')
                 .pipe(debounceTime(OSGI_ACTION_DELAY_MS), takeUntilDestroyed(destroyRef))
-                .subscribe(() => store.loadAll());
+                .subscribe(() =>
+                    store.loadAll(
+                        undefined,
+                        false,
+                        store.status() === 'uploading' ? 'uploading' : 'refreshing'
+                    )
+                );
         }
     }))
 );
