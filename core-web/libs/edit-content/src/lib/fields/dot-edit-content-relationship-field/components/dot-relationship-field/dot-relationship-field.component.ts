@@ -256,10 +256,11 @@ export class DotRelationshipFieldComponent
     /**
      * Persists row order after a PrimeNG table row reorder.
      *
-     * PrimeNG mutates the bound `[value]` array in-place via `ObjectUtils.reorderArray` before
-     * emitting `onRowReorder` (see `Table.onRowDrop` in `primeng/table`). `dragIndex` / `dropIndex`
-     * describe that mutation; re-applying them here would corrupt the order. The store must only
-     * take an immutable snapshot so signal consumers re-run (`setData` clones the array).
+     * Since `[value]` is now bound to a paginated slice (a new array from a computed signal),
+     * PrimeNG mutates that transient slice in-place via `ObjectUtils.reorderArray`, leaving
+     * the full `store.data()` untouched. We translate the slice-local `dragIndex` / `dropIndex`
+     * to global indices using the current pagination offset, then apply the reorder on a copy
+     * of the full data array and persist it back to the store.
      */
     onRowReorder(event: TableRowReorderEvent) {
         const dragIndex = event?.dragIndex;
@@ -268,7 +269,15 @@ export class DotRelationshipFieldComponent
             return;
         }
 
-        this.store.setData(this.store.data());
+        const offset = this.store.pagination().offset;
+        const globalDragIndex = offset + dragIndex;
+        const globalDropIndex = offset + dropIndex;
+
+        const reorderedData = [...this.store.data()];
+        const [movedItem] = reorderedData.splice(globalDragIndex, 1);
+        reorderedData.splice(globalDropIndex, 0, movedItem);
+
+        this.store.setData(reorderedData);
     }
 
     /**

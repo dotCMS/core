@@ -66,6 +66,16 @@ export const RelationshipFieldStore = signalStore(
          */
         totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
         /**
+         * Returns the slice of data for the current page based on offset and rowsPerPage.
+         * @returns {DotCMSContentlet[]} The items for the current page.
+         */
+        paginatedData: computed(() => {
+            const allData = state.data();
+            const { offset, rowsPerPage } = state.pagination();
+
+            return allData.slice(offset, offset + rowsPerPage);
+        }),
+        /**
          * Checks if the create new content button is disabled based on the selection mode and the number of items.
          * @returns {boolean} True if the button is disabled, false otherwise.
          */
@@ -145,13 +155,37 @@ export const RelationshipFieldStore = signalStore(
                 )
             ),
             /**
-             * Deletes an item from the store at the specified index.
-             * @param index - The index of the item to delete.
+             * Deletes an item from the store by inode.
+             * If the current page offset exceeds the new data length, pagination resets to the last valid page.
+             * @param inode - The inode of the item to delete.
              */
             deleteItem(inode: string) {
-                patchState(store, {
-                    data: store.data().filter((item) => item.inode !== inode)
-                });
+                const newData = store.data().filter((item) => item.inode !== inode);
+                const { offset, rowsPerPage } = store.pagination();
+
+                if (offset >= newData.length && newData.length > 0) {
+                    const lastPage = Math.ceil(newData.length / rowsPerPage);
+                    const newOffset = (lastPage - 1) * rowsPerPage;
+                    patchState(store, {
+                        data: newData,
+                        pagination: {
+                            ...store.pagination(),
+                            offset: newOffset,
+                            currentPage: lastPage
+                        }
+                    });
+                } else if (newData.length === 0) {
+                    patchState(store, {
+                        data: newData,
+                        pagination: {
+                            ...store.pagination(),
+                            offset: 0,
+                            currentPage: 1
+                        }
+                    });
+                } else {
+                    patchState(store, { data: newData });
+                }
             },
             /**
              * Advances the pagination to the next page and updates the state accordingly.

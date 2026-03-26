@@ -170,6 +170,41 @@ describe('RelationshipFieldStore', () => {
                 expect(store.data().length).toBe(2);
                 expect(store.data().find((item) => item.inode === 'inode1')).toBeUndefined();
             });
+
+            it('should reset pagination when current page exceeds total after delete', () => {
+                // Create 7 items so page 2 has 1 item
+                const sevenItems = Array.from({ length: 7 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `del-inode-${i + 1}`,
+                        identifier: `del-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(sevenItems);
+
+                // Navigate to page 2 (offset 6, only item index 6)
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+
+                // Delete the single item on page 2
+                store.deleteItem('del-inode-7');
+
+                // Should reset to page 1
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+                expect(store.data().length).toBe(6);
+            });
+
+            it('should reset pagination to page 1 when all items are deleted', () => {
+                store.setData([mockData[0]]);
+                store.nextPage(); // artificially advance
+                store.deleteItem(mockData[0].inode);
+
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+                expect(store.data().length).toBe(0);
+            });
         });
 
         describe('pagination', () => {
@@ -253,6 +288,47 @@ describe('RelationshipFieldStore', () => {
                 store.setData(mockData);
 
                 expect(store.isDisabledCreateNewContent()).toBe(false);
+            });
+        });
+
+        describe('paginatedData', () => {
+            const paginatedMockData = Array.from({ length: 8 }, (_, i) =>
+                createFakeContentlet({
+                    inode: `inode-page-${i + 1}`,
+                    identifier: `identifier-page-${i + 1}`,
+                    id: `${i + 1}`
+                })
+            );
+
+            it('should return first page slice by default', () => {
+                store.setData(paginatedMockData);
+
+                const result = store.paginatedData();
+                expect(result.length).toBe(6);
+                expect(result[0].inode).toBe('inode-page-1');
+                expect(result[5].inode).toBe('inode-page-6');
+            });
+
+            it('should return second page after nextPage()', () => {
+                store.setData(paginatedMockData);
+                store.nextPage();
+
+                const result = store.paginatedData();
+                expect(result.length).toBe(2);
+                expect(result[0].inode).toBe('inode-page-7');
+                expect(result[1].inode).toBe('inode-page-8');
+            });
+
+            it('should return empty array when data is empty', () => {
+                expect(store.paginatedData()).toEqual([]);
+            });
+
+            it('should update when data changes', () => {
+                store.setData(paginatedMockData);
+                expect(store.paginatedData().length).toBe(6);
+
+                store.setData(paginatedMockData.slice(0, 3));
+                expect(store.paginatedData().length).toBe(3);
             });
         });
 
