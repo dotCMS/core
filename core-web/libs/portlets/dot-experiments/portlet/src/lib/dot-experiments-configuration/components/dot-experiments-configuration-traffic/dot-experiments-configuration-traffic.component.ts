@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgClass, AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -27,12 +27,13 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
 @Component({
     selector: 'dot-experiments-configuration-traffic',
     imports: [
-        CommonModule,
         DotMessagePipe,
         DotDynamicDirective,
         CardModule,
         ButtonModule,
-        TooltipModule
+        TooltipModule,
+        AsyncPipe,
+        NgClass
     ],
     templateUrl: './dot-experiments-configuration-traffic.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

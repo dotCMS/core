@@ -1,6 +1,5 @@
 import { of, timer } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -45,7 +44,6 @@ import { filterFormValues } from '../../utils';
     selector: 'dot-uve-style-editor-form',
     templateUrl: './dot-uve-style-editor-form.component.html',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         AccordionModule,
         ButtonModule,

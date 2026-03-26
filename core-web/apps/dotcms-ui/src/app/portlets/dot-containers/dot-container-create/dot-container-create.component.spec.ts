@@ -18,7 +18,6 @@ import {
     DotRouterService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
@@ -27,7 +26,6 @@ import {
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotContainerCreateComponent } from './dot-container-create.component';
 
@@ -60,7 +58,6 @@ describe('ContainerCreateComponent', () => {
             providers: [
                 provideHttpClient(),
                 provideHttpClientTesting(),
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotEventsService, useClass: MockDotEventsService },
                 {
                     provide: ActivatedRoute,

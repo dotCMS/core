@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
@@ -14,7 +14,7 @@ import { DotContentCompareState, DotContentCompareStore } from './store/dot-cont
     templateUrl: './dot-content-compare.component.html',
     styleUrls: ['./dot-content-compare.component.scss'],
     providers: [DotContentCompareStore],
-    imports: [CommonModule, DotContentCompareTableComponent]
+    imports: [DotContentCompareTableComponent, AsyncPipe]
 })
 export class DotContentCompareComponent {
     store = inject(DotContentCompareStore);

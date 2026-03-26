@@ -9,7 +9,8 @@ import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, EventEmitter, Input, Output, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -52,13 +53,7 @@ import {
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoginService
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
@@ -195,7 +190,7 @@ class DotUvePaletteStubComponent {
 const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
+        imports: [RouterTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
@@ -309,6 +304,8 @@ const createRouting = () =>
             }
         ],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             {
                 provide: GlobalStore,
                 useValue: mockGlobalStore
@@ -410,10 +407,6 @@ const createRouting = () =>
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(messagesMock)
-            },
-            {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
             },
             {
                 provide: WINDOW,

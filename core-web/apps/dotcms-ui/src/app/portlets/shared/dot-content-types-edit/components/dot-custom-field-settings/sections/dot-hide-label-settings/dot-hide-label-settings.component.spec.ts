@@ -58,7 +58,8 @@ const MOCK_SAVED_VARIABLE: DotFieldVariable = {
 };
 
 type HideLabelFormTree = FieldTree<{ hideLabel: boolean }>;
-type WithFormTree = { formTree: HideLabelFormTree };
+const getFormTree = (component: DotHideLabelSettingsComponent): HideLabelFormTree =>
+    Reflect.get(component, 'formTree') as HideLabelFormTree;
 
 describe('DotHideLabelSettingsComponent', () => {
     let spectator: Spectator<DotHideLabelSettingsComponent>;
@@ -93,7 +94,7 @@ describe('DotHideLabelSettingsComponent', () => {
             });
 
             it('should return true after the form is marked dirty', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft().markAsDirty();
                 expect(component.isDirty).toBe(true);
             });
@@ -105,9 +106,9 @@ describe('DotHideLabelSettingsComponent', () => {
             });
         });
 
-        describe('ngOnInit with no field variables', () => {
+        describe('with no field variables', () => {
             it('should initialise hideLabel to false', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 expect(ft.hideLabel().value()).toBe(false);
             });
 
@@ -131,7 +132,7 @@ describe('DotHideLabelSettingsComponent', () => {
             });
 
             it('should call DotFieldVariablesService.save with value "true" when checked', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.hideLabel().value.set(true);
                 component.save(MOCK_FIELD_BASE).subscribe();
 
@@ -201,7 +202,7 @@ describe('DotHideLabelSettingsComponent', () => {
         });
 
         it('should parse hideLabel as true from existing variable', () => {
-            const ft = (component as WithFormTree).formTree;
+            const ft = getFormTree(component);
             expect(ft.hideLabel().value()).toBe(true);
         });
 
@@ -248,7 +249,7 @@ describe('DotHideLabelSettingsComponent', () => {
         });
 
         it('should parse hideLabel as false from existing variable with value "false"', () => {
-            const ft = (component as WithFormTree).formTree;
+            const ft = getFormTree(component);
             expect(ft.hideLabel().value()).toBe(false);
         });
     });

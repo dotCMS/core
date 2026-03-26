@@ -28,6 +28,11 @@ import { DotFieldVariablesService } from './services/dot-field-variables.service
 
 import { DotKeyValue } from '../../../../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
+/**
+ * Displays and manages free-form field variables for a content-type field.
+ * Filters out reserved keys that are managed by dedicated settings sections
+ * (e.g. `customFieldOptions`, `hideLabel` for Custom Fields; `allowedBlocks` for Block Editor).
+ */
 @Component({
     selector: 'dot-content-type-fields-variables',
     templateUrl: './dot-content-type-fields-variables.component.html',
@@ -39,14 +44,22 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private fieldVariablesService = inject(DotFieldVariablesService);
 
+    /** The content-type field whose variables are loaded and managed. */
     readonly $field = input<DotCMSContentTypeField>(undefined, { alias: 'field' });
+
+    /** When `false`, hides the key-value table (used to embed without the table UI). */
     readonly $showTable = input<boolean>(true, { alias: 'showTable' });
 
-    /** Local copy of field for access */
+    /** Local snapshot of the field, updated on every `$field` change. */
     field: DotCMSContentTypeField;
 
+    /** Signal holding the list of variables currently shown in the table. */
     $fieldVariables = signal<DotFieldVariable[]>([]);
 
+    /**
+     * Per-field-type map of variable keys that must be hidden from the table.
+     * These keys are owned by dedicated settings sections and should not be edited here.
+     */
     blackList = {
         'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
             allowedBlocks: true

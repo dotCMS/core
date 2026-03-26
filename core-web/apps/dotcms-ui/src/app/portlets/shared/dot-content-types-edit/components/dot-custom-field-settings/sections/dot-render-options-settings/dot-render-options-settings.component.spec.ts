@@ -79,8 +79,8 @@ type RenderOptionsFormTree = FieldTree<{
     customFieldWidth: number;
     customFieldHeight: number;
 }>;
-
-type WithFormTree = { formTree: RenderOptionsFormTree };
+const getFormTree = (component: DotRenderOptionsSettingsComponent): RenderOptionsFormTree =>
+    Reflect.get(component, 'formTree') as RenderOptionsFormTree;
 
 describe('DotRenderOptionsSettingsComponent', () => {
     let spectator: Spectator<DotRenderOptionsSettingsComponent>;
@@ -115,7 +115,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should return true after the form is explicitly marked dirty', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft().markAsDirty();
                 expect(component.isDirty).toBe(true);
             });
@@ -127,14 +127,14 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should return true when showAsModal is false (width/height disabled)', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 expect(ft.customFieldWidth().disabled()).toBe(true);
                 expect(ft.customFieldHeight().disabled()).toBe(true);
                 expect(component.$isValid()).toBe(true);
             });
 
             it('should return true when showAsModal is true and values are valid', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
@@ -144,7 +144,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should return false when showAsModal is true and customFieldWidth is 0', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 ft.customFieldWidth().value.set(0);
                 spectator.detectChanges();
@@ -153,7 +153,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should return false when showAsModal is true and customFieldHeight is 0', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 ft.customFieldHeight().value.set(0);
                 spectator.detectChanges();
@@ -164,22 +164,22 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
         describe('ngOnInit with no field variables', () => {
             it('should initialise showAsModal to false', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 expect(ft.showAsModal().value()).toBe(false);
             });
 
             it('should initialise customFieldWidth to 398 (default)', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 expect(ft.customFieldWidth().value()).toBe(398);
             });
 
             it('should initialise customFieldHeight to 400 (default)', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 expect(ft.customFieldHeight().value()).toBe(400);
             });
 
             it('should disable width and height controls when showAsModal is false', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 expect(ft.customFieldWidth().disabled()).toBe(true);
                 expect(ft.customFieldHeight().disabled()).toBe(true);
             });
@@ -187,7 +187,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
         describe('width/height control enable/disable logic', () => {
             it('should enable width and height controls when showAsModal toggles to true', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
@@ -196,7 +196,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should disable width and height controls when showAsModal toggles back to false', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 ft.showAsModal().value.set(false);
                 spectator.detectChanges();
@@ -213,7 +213,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should show width/height inputs in DOM when showAsModal is true', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
@@ -242,7 +242,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
             it('should include width/height in save payload even when showAsModal is false', () => {
                 // Controls are disabled but their values should still be read from the model
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 expect(ft.customFieldWidth().disabled()).toBe(true);
 
                 component.save(MOCK_FIELD_BASE).subscribe();
@@ -292,7 +292,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should show width error when control is touched and value is invalid', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
@@ -306,7 +306,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should show height error when control is touched and value is invalid', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
@@ -320,7 +320,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             });
 
             it('should not show width error when control is untouched even if invalid', () => {
-                const ft = (component as WithFormTree).formTree;
+                const ft = getFormTree(component);
                 ft.showAsModal().value.set(true);
                 spectator.detectChanges();
 
@@ -370,22 +370,22 @@ describe('DotRenderOptionsSettingsComponent', () => {
         });
 
         it('should restore saved showAsModal as true from existing variable', () => {
-            const ft = (component as WithFormTree).formTree;
+            const ft = getFormTree(component);
             expect(ft.showAsModal().value()).toBe(true);
         });
 
         it('should parse width (strips "px") from existing variable', () => {
-            const ft = (component as WithFormTree).formTree;
+            const ft = getFormTree(component);
             expect(ft.customFieldWidth().value()).toBe(500);
         });
 
         it('should parse height (strips "px") from existing variable', () => {
-            const ft = (component as WithFormTree).formTree;
+            const ft = getFormTree(component);
             expect(ft.customFieldHeight().value()).toBe(600);
         });
 
         it('should enable width and height controls since showAsModal is restored as true', () => {
-            const ft = (component as WithFormTree).formTree;
+            const ft = getFormTree(component);
             expect(ft.customFieldWidth().disabled()).toBe(false);
             expect(ft.customFieldHeight().disabled()).toBe(false);
         });
@@ -434,7 +434,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             spectatorPct.setInput('field', fieldWithPercentSizes);
             spectatorPct.detectChanges();
             const comp = spectatorPct.component;
-            const ft = (comp as WithFormTree).formTree;
+            const ft = getFormTree(comp);
 
             expect(ft.customFieldWidth().value()).toBe(398);
             expect(ft.customFieldHeight().value()).toBe(400);
@@ -460,7 +460,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             const spectatorVh = createComponent();
             spectatorVh.setInput('field', fieldVh);
             spectatorVh.detectChanges();
-            const ft = (spectatorVh.component as WithFormTree).formTree;
+            const ft = getFormTree(spectatorVh.component);
 
             expect(ft.customFieldWidth().value()).toBe(398);
             expect(ft.customFieldHeight().value()).toBe(400);
@@ -486,7 +486,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             const spectatorNum = createComponent();
             spectatorNum.setInput('field', fieldNums);
             spectatorNum.detectChanges();
-            const ft = (spectatorNum.component as WithFormTree).formTree;
+            const ft = getFormTree(spectatorNum.component);
 
             expect(ft.customFieldWidth().value()).toBe(500);
             expect(ft.customFieldHeight().value()).toBe(600);
@@ -524,7 +524,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             spectator.setInput('field', fieldWithBadJson);
             spectator.detectChanges();
             const comp = spectator.component;
-            const ft = (comp as WithFormTree).formTree;
+            const ft = getFormTree(comp);
 
             expect(ft.showAsModal().value()).toBe(false);
             expect(ft.customFieldWidth().value()).toBe(398);

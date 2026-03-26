@@ -31,7 +31,7 @@
                 appendTo="body"
                 formControlName="menuOption"
                 optionLabel="name"
-                optionValue="id"></p-select>
+                optionValue="id" />
         </div>
         <div class="field">
             <label dotFieldRequired for="cardViewMode" data-testId="ViewModeLabel">
@@ -43,7 +43,7 @@
                     data-testId="cardViewMode"
                     name="defaultView"
                     value="card"
-                    formControlName="defaultView"></p-radioButton>
+                    formControlName="defaultView" />
                 <label [for]="'cardViewMode'">
                     {{ 'custom.content.portlet.dataViewMode.card' | dm }}
                 </label>
@@ -55,7 +55,7 @@
                     data-testId="listViewMode"
                     name="defaultView"
                     value="list"
-                    formControlName="defaultView"></p-radioButton>
+                    formControlName="defaultView" />
                 <label [for]="'listViewMode'">
                     {{ 'custom.content.portlet.dataViewMode.list' | dm }}
                 </label>
@@ -70,14 +70,14 @@
                     [disabled]="dialogActions.cancel.disabled"
                     severity="secondary"
                     (click)="dialogActions.cancel.action()"
-                    data-testId="dotDialogCancelAction"></p-button>
+                    data-testId="dotDialogCancelAction" />
             }
             @if (dialogActions.accept) {
                 <p-button
                     [label]="dialogActions.accept.label"
                     [disabled]="dialogActions.accept.disabled"
                     (click)="dialogActions.accept.action()"
-                    data-testId="dotDialogAcceptAction"></p-button>
+                    data-testId="dotDialogAcceptAction" />
             }
         </ng-template>
     }

@@ -29,6 +29,11 @@ import { DotHideLabelSettingsComponent } from './sections/dot-hide-label-setting
 import { DotRenderOptionsSettingsComponent } from './sections/dot-render-options-settings';
 import { FieldSettingsSection } from './sections/field-settings-section';
 
+/**
+ * Orchestrator panel for the "Settings" tab of the Custom Field dialog.
+ * Hosts all {@link FieldSettingsSection} sub-components (render options, hide-label, etc.),
+ * aggregates their dirty/valid state, and exposes Save/Cancel dialog controls to the parent.
+ */
 @Component({
     selector: 'dot-custom-field-settings',
     imports: [DotRenderOptionsSettingsComponent, DotHideLabelSettingsComponent],
@@ -36,15 +41,28 @@ import { FieldSettingsSection } from './sections/field-settings-section';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCustomFieldSettingsComponent implements OnChanges, OnInit {
+    /** The content-type field whose settings are being edited. */
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+
+    /** Controls whether the settings panel is rendered. Dialog controls are emitted on show. */
     readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
-    /** Live render mode from the properties form — overrides saved fieldVariables when provided */
+
+    /** Live render mode from the properties form — overrides saved fieldVariables when provided. */
     readonly $renderMode = input<string | undefined>(undefined, { alias: 'renderMode' });
 
+    /** Emits updated dialog accept/cancel actions whenever the panel becomes visible or state changes. */
     readonly $changeControls = output<DotDialogActions>();
+
+    /** Emits after all dirty sections have been saved successfully. */
     readonly $save = output<void>();
+
+    /** Emits the current saveable state (`true` when at least one section is dirty and all are valid). */
     readonly $valid = output<boolean>();
 
+    /**
+     * Whether the field is currently configured to render in an iframe.
+     * Derived from the live `$renderMode` input when present, otherwise from the persisted field variable.
+     */
     protected readonly $isIframeMode = computed(() => {
         const liveMode = this.$renderMode();
 
@@ -85,6 +103,10 @@ export class DotCustomFieldSettingsComponent implements OnChanges, OnInit {
         }
     }
 
+    /**
+     * Saves all dirty sections in parallel via `forkJoin`.
+     * Emits `$save` on success or delegates errors to `DotHttpErrorManagerService`.
+     */
     saveSettings(): void {
         const sections = this.#activeSections();
         const saveActions = sections.filter((s) => s.isDirty).map((s) => s.save(this.$field()));
@@ -102,18 +124,21 @@ export class DotCustomFieldSettingsComponent implements OnChanges, OnInit {
             });
     }
 
+    /** Returns only the section components that are currently present in the DOM. */
     #activeSections(): FieldSettingsSection[] {
         return [this.renderOptions(), this.hideLabel()].filter(
             (s): s is DotRenderOptionsSettingsComponent | DotHideLabelSettingsComponent => s != null
         );
     }
 
+    /** `true` when at least one section is dirty and every section is valid. */
     #canSave(): boolean {
         const sections = this.#activeSections();
 
         return sections.some((s) => s.isDirty) && sections.every((s) => s.$isValid());
     }
 
+    /** Builds the accept/cancel actions for the parent dialog. */
     #dialogActions(): DotDialogActions {
         return {
             accept: {

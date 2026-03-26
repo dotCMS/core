@@ -58,7 +58,7 @@
                     <dot-convert-to-block-info
                         ($action)="scrollTo($event)"
                         [currentFieldType]="currentFieldType"
-                        [currentField]="currentField"></dot-convert-to-block-info>
+                        [currentField]="currentField" />
                 }
                 <dot-content-type-fields-properties-form
                     (saveField)="saveFieldsHandler($event)"
@@ -85,7 +85,7 @@
                                 ($save)="toggleDialog()"
                                 ($valid)="setDialogOkButtonState($event)"
                                 [field]="currentField"
-                                [isVisible]="activeTab === 1"></dot-block-editor-settings>
+                                [isVisible]="activeTab === 1" />
                         }
                         @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
                             <dot-binary-settings
@@ -93,7 +93,7 @@
                                 ($save)="toggleDialog()"
                                 ($valid)="setDialogOkButtonState($event)"
                                 [field]="currentField"
-                                [isVisible]="activeTab === 1"></dot-binary-settings>
+                                [isVisible]="activeTab === 1" />
                         }
                         @case ('com.dotcms.contenttype.model.field.ImmutableCustomField') {
                             <dot-custom-field-settings
@@ -112,7 +112,7 @@
             <p-tabpanel [value]="variablesTabIndex">
                 <dot-content-type-fields-variables
                     [showTable]="activeTab === variablesTabIndex"
-                    [field]="currentField"></dot-content-type-fields-variables>
+                    [field]="currentField" />
             </p-tabpanel>
         </p-tabpanels>
     </p-tabs>
@@ -124,14 +124,14 @@
                     [disabled]="dialogActions.cancel.disabled"
                     severity="secondary"
                     (click)="dialogActions.cancel.action()"
-                    data-testId="dotDialogCancelAction"></p-button>
+                    data-testId="dotDialogCancelAction" />
             }
             @if (dialogActions.accept) {
                 <p-button
                     [label]="dialogActions.accept.label"
                     [disabled]="dialogActions.accept.disabled"
                     (click)="dialogActions.accept.action()"
-                    data-testId="dotDialogAcceptAction"></p-button>
+                    data-testId="dotDialogAcceptAction" />
             }
         </ng-template>
     }

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal, Type } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -26,12 +26,12 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
 @Component({
     selector: 'dot-analytics-dashboard',
     imports: [
-        CommonModule,
         ButtonModule,
         MessageModule,
         TabsModule,
         DotAnalyticsFiltersComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        NgComponentOutlet
     ],
     providers: [DotAnalyticsDashboardStore],
     templateUrl: './dot-analytics-dashboard.component.html',

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -28,7 +28,6 @@ import {
     selector: 'dot-locales-list',
     host: { class: 'flex flex-1 flex-col' },
     imports: [
-        CommonModule,
         ButtonModule,
         ConfirmDialogModule,
         ConfirmPopupModule,
@@ -40,7 +39,8 @@ import {
         InputTextModule,
         TableModule,
         TagModule,
-        ToastModule
+        ToastModule,
+        AsyncPipe
     ],
     templateUrl: './dot-locales-list.component.html',
 

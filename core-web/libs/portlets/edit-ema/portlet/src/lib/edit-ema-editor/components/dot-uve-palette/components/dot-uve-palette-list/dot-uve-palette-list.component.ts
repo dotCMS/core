@@ -1,6 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { NgClass, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -86,7 +86,6 @@ const DEBOUNCE_TIME = 300;
 @Component({
     selector: 'dot-uve-palette-list',
     imports: [
-        NgClass,
         NgTemplateOutlet,
         ReactiveFormsModule,
         DotUVEPaletteContenttypeComponent,
