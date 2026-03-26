@@ -246,18 +246,15 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
-        describe('editContent', () => {
-            it('should emit editContent with context when clicking edit button', () => {
+        describe('edit button', () => {
+            it('should emit openQuickEdit when clicking edit button', () => {
                 const handler = jest.fn();
-                spectator.output('editContent').subscribe(handler);
+                spectator.output('openQuickEdit').subscribe(handler);
 
                 const editButton = spectator.query(byTestId('edit-button')) as HTMLElement;
                 spectator.click(editButton.querySelector('button') as Element);
 
-                expect(handler).toHaveBeenCalledWith({
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    position: 'after'
-                });
+                expect(handler).toHaveBeenCalled();
             });
         });
 

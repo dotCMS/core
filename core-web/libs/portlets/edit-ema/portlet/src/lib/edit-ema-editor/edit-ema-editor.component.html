@@ -166,8 +166,8 @@
                         @if ($showContentletControls()) {
                             <dot-uve-contentlet-tools
                                 (selectedContentlet)="handleSelectedContentlet($event)"
+                                (openQuickEdit)="handleOpenQuickEdit()"
                                 (editVTL)="handleEditVTL($event)"
-                                (editContent)="handleEditContentlet($event)"
                                 (deleteContent)="deleteContent($event)"
                                 (addContent)="handleAddContent($event)"
                                 (selectContent)="handleSelectContent($event)"
@@ -226,7 +226,8 @@
                     @if ($editorPanelActiveTab() === 0) {
                         <dot-uve-contentlet-quick-edit
                             [data]="$contentletEditData()"
-                            [loading]="$isIframeLoading()" />
+                            [loading]="$isIframeLoading()"
+                            (openFullEditor)="handleOpenFullEditor()" />
                     }
                 </p-tabpanel>
                 @if ($showStyleEditorTab()) {

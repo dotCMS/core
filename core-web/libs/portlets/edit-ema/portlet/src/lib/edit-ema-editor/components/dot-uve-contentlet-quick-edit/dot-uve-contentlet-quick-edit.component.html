@@ -134,12 +134,35 @@
             }
         </div>
     </form>
-    <div class="flex justify-end shrink-0 p-4 border-t border-gray-300">
+    <div class="flex justify-between shrink-0 p-4 border-t border-gray-300">
+        <p-button
+            [text]="true"
+            [label]="'uve.quick-edit.open-full-editor' | dm"
+            data-testid="open-full-editor-button"
+            (onClick)="openFullEditor.emit()" />
         <p-button
             label="Save"
             data-testid="save-button"
             [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
             (onClick)="save()" />
+    </div>
+} @else if (data().contentlet?.identifier) {
+    <div
+        class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div class="rounded-full p-6">
+            <i class="pi pi-ban text-[5rem]! text-gray-500"></i>
+        </div>
+        <div class="space-y-2">
+            <div class="font-bold text-gray-900">No editable fields</div>
+            <p class="m-0 text-sm text-gray-800">
+                This content type has no supported fields for quick editing.
+            </p>
+            <p-button
+                [text]="true"
+                size="small"
+                label="Click here to open the full editor"
+                (onClick)="openFullEditor.emit()" />
+        </div>
     </div>
 } @else {
     <div

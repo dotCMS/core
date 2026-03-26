@@ -1129,6 +1129,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @return {*}
      * @memberof EditEmaEditorComponent
      */
+    protected handleOpenQuickEdit(): void {
+        this.uveStore.setEditPanelOpen(true);
+        patchState(this.#rightSidebarTabState, { currentTab: 0 });
+    }
+
+    protected handleOpenFullEditor(): void {
+        const activeContentlet = this.uveStore.editorActiveContentlet();
+
+        if (activeContentlet) {
+            this.handleEditContentlet(activeContentlet);
+        }
+    }
+
     protected handleEditContentlet(payload: ActionPayload) {
         const { contentlet, container } = payload;
         const { onNumberOfPages = '1', title } = contentlet;

@@ -69,10 +69,9 @@ export class DotUveContentletToolsComponent {
      */
     readonly editVTL = output<VTLFile>();
     /**
-     * Emitted when the user wants to edit the contentlet itself.
-     * Carries the current `ActionPayload` built from `contentletArea`.
+     * Emitted when the user clicks the edit (pencil) button to open the quick-edit side panel.
      */
-    readonly editContent = output<ActionPayload>();
+    readonly openQuickEdit = output<void>();
     /**
      * Emitted when the user requests deletion of the current contentlet.
      * The parent component is responsible for performing and confirming the deletion.

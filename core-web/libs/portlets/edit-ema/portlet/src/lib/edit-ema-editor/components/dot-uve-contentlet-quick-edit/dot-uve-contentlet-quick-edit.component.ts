@@ -6,6 +6,7 @@ import {
     effect,
     inject,
     input,
+    output,
     signal,
     untracked
 } from '@angular/core';
@@ -37,6 +38,7 @@ import {
     DotFileFieldComponent,
     DotTagFieldComponent
 } from '@dotcms/edit-content';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { UveOptimisticSaveService } from '../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../shared/enums';
@@ -90,7 +92,8 @@ export interface ContentletEditData {
 
         DotEditContentBinaryFieldComponent,
         DotFileFieldComponent,
-        DotTagFieldComponent
+        DotTagFieldComponent,
+        DotMessagePipe
     ],
     providers: [UveOptimisticSaveService, DotEditContentService],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
@@ -108,6 +111,8 @@ export class DotUveContentletQuickEditComponent {
     // Inputs (data down from parent container)
     data = input.required<ContentletEditData>({ alias: 'data' });
     loading = input<boolean>(false, { alias: 'loading' });
+
+    readonly openFullEditor = output<void>();
 
     // Internal form state
     private readonly contentletForm = signal<FormGroup | null>(null);

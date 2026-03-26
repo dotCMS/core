@@ -1452,14 +1452,11 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectChanges();
 
                         store.setContentletArea(CONTENTLET_MOCK);
+                        store.setActiveContentlet(EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
 
                         spectator.detectComponentChanges();
 
-                        spectator.triggerEventHandler(
-                            DotUveContentletToolsComponent,
-                            'editContent',
-                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
-                        );
+                        spectator.component['handleOpenFullEditor']();
 
                         spectator.detectComponentChanges();
 
@@ -1480,14 +1477,11 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectChanges();
 
                         store.setContentletArea(CONTENTLET_MOCK);
+                        store.setActiveContentlet(EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
 
                         spectator.detectComponentChanges();
 
-                        spectator.triggerEventHandler(
-                            DotUveContentletToolsComponent,
-                            'editContent',
-                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
-                        );
+                        spectator.component['handleOpenFullEditor']();
 
                         spectator.detectComponentChanges();
 
@@ -1507,14 +1501,11 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectChanges();
 
                         store.setContentletArea(CONTENTLET_MOCK);
+                        store.setActiveContentlet(EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
 
                         spectator.detectComponentChanges();
 
-                        spectator.triggerEventHandler(
-                            DotUveContentletToolsComponent,
-                            'editContent',
-                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
-                        );
+                        spectator.component['handleOpenFullEditor']();
 
                         spectator.detectComponentChanges();
 
@@ -2149,11 +2140,8 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        DotUveContentletToolsComponent,
-                        'editContent',
-                        EDIT_ACTION_PAYLOAD_MOCK
-                    );
+                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    spectator.component['handleOpenFullEditor']();
 
                     spectator.detectComponentChanges();
 
