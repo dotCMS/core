@@ -259,20 +259,37 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
     // ==================== PUT /v1/configuration/locale ====================
 
     @Test
-    public void test_saveLocaleInfo_asAdmin_succeeds() {
+    public void test_saveLocaleInfo_asAdmin_succeeds() throws Exception {
         final HttpServletRequest request = createAdminRequest();
 
-        final CompanyLocaleForm form = new CompanyLocaleForm("en_US", "America/New_York");
+        // Snapshot locale state for restore
+        final User origDefaultUser = APILocator.getUserAPI().getDefaultUser();
+        final String origLanguageId = origDefaultUser.getLanguageId();
+        final String origTimeZoneId = origDefaultUser.getTimeZoneId();
+        final java.util.TimeZone origJvmTimeZone = java.util.TimeZone.getDefault();
 
-        final ResponseEntityCompanyConfigView result =
-                resource.saveLocaleInfo(request, mockResponse, form);
+        try {
+            final CompanyLocaleForm form = new CompanyLocaleForm("en_US", "America/New_York");
 
-        assertNotNull(result);
-        final CompanyConfigView config = result.getEntity();
-        assertNotNull(config);
-        assertNotNull(config.companyId());
-        assertEquals("en_US", config.languageId());
-        assertEquals("America/New_York", config.timeZoneId());
+            final ResponseEntityCompanyConfigView result =
+                    resource.saveLocaleInfo(request, mockResponse, form);
+
+            assertNotNull(result);
+            final CompanyConfigView config = result.getEntity();
+            assertNotNull(config);
+            assertNotNull(config.companyId());
+            assertEquals("en_US", config.languageId());
+            assertEquals("America/New_York", config.timeZoneId());
+        } finally {
+            try {
+                // Restore default user locale
+                com.liferay.portal.ejb.CompanyManagerUtil.updateUsers(
+                        origLanguageId, origTimeZoneId, null, false, false, null);
+                java.util.TimeZone.setDefault(origJvmTimeZone);
+            } catch (Exception e) {
+                // best effort restore
+            }
+        }
     }
 
     @Test(expected = ValidationException.class)
@@ -302,21 +319,32 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
     public void test_regenerateKey_asAdmin_returnsNewDigest() throws Exception {
         final HttpServletRequest request = createAdminRequest();
 
+        final String originalKey = companyAPI.getDefaultCompany().getKey();
         final String originalDigest = companyAPI.getDefaultCompany().getKeyDigest();
 
-        final ResponseEntityStringView result =
-                resource.regenerateKey(request, mockResponse);
+        try {
+            final ResponseEntityStringView result =
+                    resource.regenerateKey(request, mockResponse);
 
-        assertNotNull(result);
-        final String newDigest = result.getEntity();
-        assertNotNull(newDigest);
-        assertTrue("Key digest should not be empty", newDigest.length() > 0);
-        assertNotEquals("Key digest should change after regeneration",
-                originalDigest, newDigest);
+            assertNotNull(result);
+            final String newDigest = result.getEntity();
+            assertNotNull(newDigest);
+            assertTrue("Key digest should not be empty", newDigest.length() > 0);
+            assertNotEquals("Key digest should change after regeneration",
+                    originalDigest, newDigest);
 
-        // Verify persistence
-        final String persistedDigest = companyAPI.getDefaultCompany().getKeyDigest();
-        assertEquals(newDigest, persistedDigest);
+            // Verify persistence
+            final String persistedDigest = companyAPI.getDefaultCompany().getKeyDigest();
+            assertEquals(newDigest, persistedDigest);
+        } finally {
+            try {
+                final Company company = companyAPI.getDefaultCompany();
+                company.setKey(originalKey);
+                com.liferay.portal.ejb.CompanyManagerUtil.updateCompany(company);
+            } catch (Exception e) {
+                // best effort restore
+            }
+        }
     }
 
     @Test(expected = SecurityException.class)

@@ -166,6 +166,17 @@ public class CompanyBasicInfoForm extends Validated {
         if (UtilMethods.isSet(backgroundColor)) {
             validateHexColor("backgroundColor", backgroundColor);
         }
+
+        // Logo paths must be dotAsset references (matches the read-side
+        // filter in CompanyConfigHelper.toView that drops non-/dA values)
+        if (UtilMethods.isSet(loginScreenLogo) && !loginScreenLogo.startsWith("/dA")) {
+            throw new BadRequestException(
+                    "loginScreenLogo must be a dotAsset path starting with /dA");
+        }
+        if (UtilMethods.isSet(navBarLogo) && !navBarLogo.startsWith("/dA")) {
+            throw new BadRequestException(
+                    "navBarLogo must be a dotAsset path starting with /dA");
+        }
     }
 
     private static void validateMaxLength(final String field, final String value) {

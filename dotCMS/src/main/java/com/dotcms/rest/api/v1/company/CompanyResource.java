@@ -214,7 +214,6 @@ public class CompanyResource {
 
     /**
      * Saves company locale information (language and timezone).
-     * Moved from ConfigurationResource._saveCompanyLocaleInfo.
      */
     @Operation(
             summary = "Save company locale info",
