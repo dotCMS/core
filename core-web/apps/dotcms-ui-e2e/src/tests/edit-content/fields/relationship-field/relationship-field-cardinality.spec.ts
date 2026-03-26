@@ -1,14 +1,15 @@
-import {
-    CARDINALITY,
-    test,
-    expect,
-    type TestContentType,
-    type TestContentlet
-} from '@fixtures/relationship.fixture';
 import { NewEditContentFormPage } from '@pages';
 
 import { RelationshipField } from './helpers/relationship-field';
 import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
+
+import {
+    CARDINALITY,
+    expect,
+    test,
+    type TestContentType,
+    type TestContentlet
+} from '../../../../fixtures/relationship.fixture';
 
 /**
  * Tests that the "Select Existing Content" dialog disables items
