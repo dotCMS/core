@@ -13,6 +13,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { FormField, form } from '@angular/forms/signals';
 
 import { CheckboxModule } from 'primeng/checkbox';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { skip, tap } from 'rxjs/operators';
 
@@ -39,7 +40,7 @@ interface HideLabelModel {
  */
 @Component({
     selector: 'dot-hide-label-settings',
-    imports: [FormField, CheckboxModule, DotMessagePipe],
+    imports: [FormField, CheckboxModule, DotMessagePipe, TooltipModule],
     templateUrl: './dot-hide-label-settings.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
