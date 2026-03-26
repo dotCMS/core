@@ -398,22 +398,20 @@ public class HTMLPageAssetRenderedBuilder {
      */
     private String injectUVEScript(final String html, final Collection<? extends ContainerRaw> containers) {
         if (!UtilMethods.isSet(html)) {
-            Logger.debug(this, "Skipping UVE script injection: rendered HTML is empty or null");
             return html;
         }
-        final String scripts = Try.of(() -> buildUVEStyleEditorScripts(containers)
-                        .orElse(SDK_EDITOR_SCRIPT_SOURCE))
+        final Optional<String> styleEditorScript = Try.of(() -> buildUVEStyleEditorScripts(containers))
                 .onFailure(e -> Logger.error(this,
                         "Failed to build UVE style editor scripts, falling back to plain script tag", e))
-                .getOrElse(SDK_EDITOR_SCRIPT_SOURCE);
+                .getOrElse(Optional.empty());
+        final String scripts = styleEditorScript.orElse(SDK_EDITOR_SCRIPT_SOURCE);
+        Logger.debug(this, () -> styleEditorScript.isPresent()
+                ? "Injecting UVE script with style editor schemas"
+                : "Injecting plain UVE script (no style editor schemas found)");
         final int closingBodyIndex = html.toLowerCase().lastIndexOf("</body>");
         if (closingBodyIndex != -1) {
-            Logger.debug(this, () -> String.format(
-                    "UVE script injected before </body> (HTML length: %d)", html.length()));
             return html.substring(0, closingBodyIndex) + scripts + html.substring(closingBodyIndex);
         }
-        Logger.debug(this, () -> String.format(
-                "No </body> tag found, appending UVE script at end (HTML length: %d)", html.length()));
         return html + scripts;
     }
 
