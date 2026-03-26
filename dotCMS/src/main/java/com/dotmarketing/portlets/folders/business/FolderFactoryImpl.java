@@ -832,6 +832,11 @@ public class FolderFactoryImpl extends FolderFactory {
       CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
       ident.setAssetName(newName);
       APILocator.getIdentifierAPI().save(ident);
+
+      // Evict again AFTER the DB identifier row has been updated. This prevents a race where the
+      // identifier can be cached by another thread (e.g. reindex) after the pre-update eviction
+      // but before/while the asset_name mutation becomes visible.
+      CacheLocator.getIdentifierCache().removeFromCacheDirect(ident.getId(), hostId, null);
     } catch (final DotDataException | RuntimeException e) {
       folder.setName(oldFolderName);
       ident.setAssetName(oldAssetName);
@@ -854,6 +859,11 @@ public class FolderFactoryImpl extends FolderFactory {
     // Bulk-update every child identifier's parent_path, processing parent folders before children.
     // The snapshot already contains all sub-folder paths so no extra SELECTs are needed.
     updateChildPaths(oldPath, newPath, hostId, subFolderSnapshot);
+
+    // Evict identifier caches rooted at the *new* parent path after the bulk update.
+    // This closes the window where other threads could have cached descendants with the old
+    // parent_path during the rename transaction.
+    clearIdentifierCacheForSubtree(newPath, hostId);
 
     // Targeted folder cache eviction for affected sub-folders (using old path data from snapshot)
     evictSubFolderCache(subFolderSnapshot, hostId);

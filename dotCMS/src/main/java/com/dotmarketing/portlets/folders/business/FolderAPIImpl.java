@@ -168,6 +168,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		// Sanitize user-supplied name before logging to prevent log injection via \r or \n.
 		final String safeNewName = newName.replaceAll("[\\r\\n]", " ");
+		final String safePath = folder.getPath() == null ? null : folder.getPath().replaceAll("[\\r\\n]", " ");
 		try {
 			validateFolderName(folder, newName);
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
@@ -185,22 +186,22 @@ public class FolderAPIImpl implements FolderAPI  {
 				contentletAPI.refreshContentUnderFolder(folder);
 			} catch (final DotReindexStateException e) {
 				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder '"
-						+ folder.getPath() + "' to '" + safeNewName + "': " + e.getMessage());
+						+ safePath + "' to '" + safeNewName + "': " + e.getMessage());
 			}
 			return renamed;
 		} catch (InvalidFolderNameException e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
-					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
 					+ safeNewName + ". Error: " + e.getMessage());
 			throw e;
 		} catch (DotSecurityException e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
-					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
 					+ safeNewName + ". Error: " + e.getMessage());
 			throw e;
 		} catch (Exception e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
-					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
 					+ safeNewName + ". Error: " + e.getMessage());
 			throw new DotDataException(e.getMessage(),e);
 		}
