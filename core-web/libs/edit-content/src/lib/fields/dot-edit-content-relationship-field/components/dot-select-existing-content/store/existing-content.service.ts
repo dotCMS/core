@@ -196,17 +196,19 @@ export class ExistingContentService {
      *
      * Uses the ES search API to find parent contentlets and extract their related child identifiers.
      *
-     * @param params.relationshipVariable - The relationship type value (e.g., "Blog.authors")
+     * @param params.parentContentTypeVariable - The variable of the parent content type (e.g., "MAIN")
+     * @param params.fieldVariable - The relationship field variable (e.g., "relation")
      * @param params.currentContentIdentifier - The identifier of the contentlet being edited (to exclude its own children)
      * @returns Observable<Set<string>> - Set of child identifiers that are already "taken" by other parents
      */
     getConstrainedIdentifiers(params: {
-        relationshipVariable: string;
+        parentContentTypeVariable: string;
+        fieldVariable: string;
         currentContentIdentifier: string | null;
     }): Observable<Set<string>> {
-        const [parentContentType, fieldVariable] = params.relationshipVariable.split('.');
+        const { parentContentTypeVariable, fieldVariable } = params;
 
-        if (!parentContentType || !fieldVariable) {
+        if (!parentContentTypeVariable || !fieldVariable) {
             return of(new Set<string>());
         }
 
@@ -215,7 +217,7 @@ export class ExistingContentService {
                 jsonObjectView: { contentlets: DotCMSContentlet[] };
                 resultsSize: number;
             }>({
-                query: `+contentType:${parentContentType} +working:true +deleted:false`,
+                query: `+contentType:${parentContentTypeVariable} +working:true +deleted:false`,
                 limit: CONSTRAINED_QUERY_LIMIT
             })
             .pipe(

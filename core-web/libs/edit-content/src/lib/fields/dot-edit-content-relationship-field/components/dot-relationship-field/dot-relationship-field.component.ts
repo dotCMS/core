@@ -237,7 +237,8 @@ export class DotRelationshipFieldComponent
                 selectionMode: this.store.selectionMode(),
                 currentItemsIds: this.store.data().map((item) => item.inode),
                 cardinality: this.$field().relationships?.cardinality,
-                relationshipVariable: this.$field().relationships?.velocityVar,
+                parentContentTypeVariable: this.$contentlet()?.contentType,
+                fieldVariable: this.$field().variable,
                 isParentField: this.$field().relationships?.isParentField,
                 currentContentIdentifier: this.$contentlet()?.identifier ?? null
             },

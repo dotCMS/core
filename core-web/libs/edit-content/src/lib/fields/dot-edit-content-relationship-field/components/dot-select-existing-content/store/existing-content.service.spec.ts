@@ -630,7 +630,8 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    relationshipVariable: 'Blog.authors',
+                    parentContentTypeVariable: 'Blog',
+                    fieldVariable: 'authors',
                     currentContentIdentifier: 'currentBlog'
                 })
                 .subscribe((result) => {
@@ -657,7 +658,8 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    relationshipVariable: 'Blog.authors',
+                    parentContentTypeVariable: 'Blog',
+                    fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
                 .subscribe((result) => {
@@ -681,7 +683,8 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    relationshipVariable: 'Blog.authors',
+                    parentContentTypeVariable: 'Blog',
+                    fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
                 .subscribe((result) => {
@@ -690,10 +693,11 @@ describe('ExistingContentService', () => {
                 });
         });
 
-        it('should return empty set for invalid relationship variable', (done) => {
+        it('should return empty set for missing params', (done) => {
             spectator.service
                 .getConstrainedIdentifiers({
-                    relationshipVariable: 'invalid',
+                    parentContentTypeVariable: '',
+                    fieldVariable: '',
                     currentContentIdentifier: null
                 })
                 .subscribe((result) => {
@@ -710,7 +714,8 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    relationshipVariable: 'Blog.authors',
+                    parentContentTypeVariable: 'Blog',
+                    fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
                 .subscribe((result) => {
@@ -729,7 +734,8 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    relationshipVariable: 'Blog.authors',
+                    parentContentTypeVariable: 'Blog',
+                    fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
                 .subscribe(() => {
