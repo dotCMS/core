@@ -85,12 +85,32 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-item let-columns="columns">
-                <tr [class.p-highlight]="checkIfSelected(item)">
-                    <td class="max-w-20" pFrozenColumn alignFrozen="left" [frozen]="true">
+                @let isConstrained = store.isItemConstrained()(item.identifier);
+                <tr
+                    [class.p-highlight]="checkIfSelected(item)"
+                    [class.opacity-50]="isConstrained"
+                    [class.pointer-events-none]="isConstrained">
+                    <td
+                        class="max-w-20"
+                        pFrozenColumn
+                        alignFrozen="left"
+                        [frozen]="true"
+                        [pTooltip]="
+                            isConstrained
+                                ? ('dot.file.relationship.dialog.content.already.related' | dm)
+                                : null
+                        "
+                        tooltipPosition="right">
                         @if (selectionMode === 'multiple') {
-                            <p-tableCheckbox [value]="item" />
+                            <p-tableCheckbox
+                                [value]="item"
+                                [disabled]="isConstrained"
+                                data-testid="row-checkbox" />
                         } @else {
-                            <p-tableRadioButton [value]="item" />
+                            <p-tableRadioButton
+                                [value]="item"
+                                [disabled]="isConstrained"
+                                data-testid="row-radio" />
                         }
                     </td>
                     <td class="w-[6rem] h-[6rem]">

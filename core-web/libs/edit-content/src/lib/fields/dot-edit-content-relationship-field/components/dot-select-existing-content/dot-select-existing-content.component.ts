@@ -22,6 +22,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -37,6 +38,10 @@ type DialogData = {
     selectionMode: SelectionMode;
     currentItemsIds: string[];
     showFields?: string[] | null;
+    cardinality?: number;
+    relationshipVariable?: string;
+    isParentField?: boolean;
+    currentContentIdentifier?: string;
 };
 
 const STATIC_COLUMNS = 6;
@@ -58,7 +63,8 @@ const STATIC_COLUMNS = 6;
         LanguagePipe,
         DatePipe,
         ChipModule,
-        FormsModule
+        FormsModule,
+        TooltipModule
     ],
     templateUrl: './dot-select-existing-content.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -120,7 +126,11 @@ export class DotSelectExistingContentComponent implements OnInit {
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
             selectedItemsIds: data.currentItemsIds,
-            showFields: data.showFields
+            showFields: data.showFields,
+            cardinality: data.cardinality,
+            relationshipVariable: data.relationshipVariable,
+            isParentField: data.isParentField,
+            currentContentIdentifier: data.currentContentIdentifier
         });
     }
 

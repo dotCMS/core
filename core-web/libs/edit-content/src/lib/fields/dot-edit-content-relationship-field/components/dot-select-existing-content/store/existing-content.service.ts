@@ -16,6 +16,8 @@ import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/d
 
 import { Column } from '../../../models/column.model';
 
+const CONSTRAINED_QUERY_LIMIT = 5000;
+
 type LanguagesMap = Record<number, DotLanguage>;
 
 const EXCLUDED_COLUMNS = ['title', 'language', 'modDate'];
@@ -186,6 +188,61 @@ export class ExistingContentService {
                 field: column.variable,
                 header: column.name
             }));
+    }
+
+    /**
+     * Fetches identifiers of contentlets that are already related to OTHER parents
+     * through the given relationship, excluding children of the current contentlet.
+     *
+     * Uses the ES search API to find parent contentlets and extract their related child identifiers.
+     *
+     * @param params.relationshipVariable - The relationship type value (e.g., "Blog.authors")
+     * @param params.currentContentIdentifier - The identifier of the contentlet being edited (to exclude its own children)
+     * @returns Observable<Set<string>> - Set of child identifiers that are already "taken" by other parents
+     */
+    getConstrainedIdentifiers(params: {
+        relationshipVariable: string;
+        currentContentIdentifier: string | null;
+    }): Observable<Set<string>> {
+        const [parentContentType, fieldVariable] = params.relationshipVariable.split('.');
+
+        if (!parentContentType || !fieldVariable) {
+            return of(new Set<string>());
+        }
+
+        return this.#contentSearchService
+            .get<{
+                jsonObjectView: { contentlets: DotCMSContentlet[] };
+                resultsSize: number;
+            }>({
+                query: `+contentType:${parentContentType} +working:true +deleted:false`,
+                limit: CONSTRAINED_QUERY_LIMIT
+            })
+            .pipe(
+                map(({ jsonObjectView: { contentlets } }) => {
+                    const constrainedIds = new Set<string>();
+
+                    for (const parent of contentlets) {
+                        if (parent.identifier === params.currentContentIdentifier) {
+                            continue;
+                        }
+
+                        const relatedChildren = parent[fieldVariable];
+                        if (Array.isArray(relatedChildren)) {
+                            for (const child of relatedChildren) {
+                                const childId =
+                                    typeof child === 'string' ? child : child?.identifier;
+                                if (childId) {
+                                    constrainedIds.add(childId);
+                                }
+                            }
+                        }
+                    }
+
+                    return constrainedIds;
+                }),
+                catchError(() => of(new Set<string>()))
+            );
     }
 
     /**

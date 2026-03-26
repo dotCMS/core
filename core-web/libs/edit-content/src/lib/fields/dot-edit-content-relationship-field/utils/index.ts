@@ -143,3 +143,27 @@ export const isImageField = (clazz: DotCMSClazz): boolean => {
 export const isNewEditorEnabled = (contentType: DotCMSContentType): boolean => {
     return contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
 };
+
+/**
+ * Determines if the relationship field requires a cardinality constraint check
+ * in the "Select Existing Content" dialog.
+ *
+ * This is needed when the current content is the parent side of a ONE_TO_ONE
+ * or ONE_TO_MANY relationship, because each child can only belong to one parent.
+ *
+ * @param cardinality - The cardinality value of the relationship (0-3).
+ * @param isParentField - Whether the current content type is the parent in the relationship.
+ * @returns True if constraint check is needed, false otherwise.
+ */
+export function needsCardinalityConstraintCheck(
+    cardinality: number,
+    isParentField: boolean
+): boolean {
+    if (!isParentField) {
+        return false;
+    }
+
+    const type = RELATIONSHIP_OPTIONS[cardinality];
+
+    return type === RelationshipTypes.ONE_TO_ONE || type === RelationshipTypes.ONE_TO_MANY;
+}

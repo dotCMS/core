@@ -235,7 +235,11 @@ export class DotRelationshipFieldComponent
             data: {
                 contentTypeId: contentType.id,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.inode)
+                currentItemsIds: this.store.data().map((item) => item.inode),
+                cardinality: this.$field().relationships?.cardinality,
+                relationshipVariable: this.$field().relationships?.velocityVar,
+                isParentField: this.$field().relationships?.isParentField,
+                currentContentIdentifier: this.$contentlet()?.identifier ?? null
             },
             templates: {
                 header: HeaderComponent,

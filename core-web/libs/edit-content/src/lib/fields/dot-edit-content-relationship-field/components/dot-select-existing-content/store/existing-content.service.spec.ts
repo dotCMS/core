@@ -603,4 +603,144 @@ describe('ExistingContentService', () => {
             });
         });
     });
+
+    describe('getConstrainedIdentifiers', () => {
+        it('should return child identifiers from parent contentlets excluding current content', (done) => {
+            const parentContentlets = [
+                {
+                    identifier: 'blog1',
+                    authors: [{ identifier: 'author1' }, { identifier: 'author2' }]
+                },
+                {
+                    identifier: 'blog2',
+                    authors: [{ identifier: 'author3' }]
+                },
+                {
+                    identifier: 'currentBlog',
+                    authors: [{ identifier: 'author4' }]
+                }
+            ] as unknown as DotCMSContentlet[];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({
+                    jsonObjectView: { contentlets: parentContentlets },
+                    resultsSize: parentContentlets.length
+                })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    relationshipVariable: 'Blog.authors',
+                    currentContentIdentifier: 'currentBlog'
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set(['author1', 'author2', 'author3']));
+                    expect(result.has('author4')).toBe(false);
+                    done();
+                });
+        });
+
+        it('should handle children as string identifiers', (done) => {
+            const parentContentlets = [
+                {
+                    identifier: 'blog1',
+                    authors: ['author1', 'author2']
+                }
+            ] as unknown as DotCMSContentlet[];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({
+                    jsonObjectView: { contentlets: parentContentlets },
+                    resultsSize: 1
+                })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    relationshipVariable: 'Blog.authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set(['author1', 'author2']));
+                    done();
+                });
+        });
+
+        it('should return empty set when no parents have relationships', (done) => {
+            const parentContentlets = [
+                { identifier: 'blog1' },
+                { identifier: 'blog2' }
+            ] as unknown as DotCMSContentlet[];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({
+                    jsonObjectView: { contentlets: parentContentlets },
+                    resultsSize: 2
+                })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    relationshipVariable: 'Blog.authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set());
+                    done();
+                });
+        });
+
+        it('should return empty set for invalid relationship variable', (done) => {
+            spectator.service
+                .getConstrainedIdentifiers({
+                    relationshipVariable: 'invalid',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set());
+                    expect(dotContentSearchService.get).not.toHaveBeenCalled();
+                    done();
+                });
+        });
+
+        it('should return empty set on error', (done) => {
+            dotContentSearchService.get.mockReturnValue(
+                throwError(() => new Error('Network error'))
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    relationshipVariable: 'Blog.authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set());
+                    done();
+                });
+        });
+
+        it('should use correct Lucene query for parent content type', (done) => {
+            dotContentSearchService.get.mockReturnValue(
+                of({
+                    jsonObjectView: { contentlets: [] },
+                    resultsSize: 0
+                })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    relationshipVariable: 'Blog.authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe(() => {
+                    expect(dotContentSearchService.get).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            query: '+contentType:Blog +working:true +deleted:false',
+                            limit: 5000
+                        })
+                    );
+                    done();
+                });
+        });
+    });
 });

@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { forkJoin, of, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
@@ -17,6 +17,7 @@ import { RelationshipFieldQueryParams, ExistingContentService } from './existing
 import { Column } from '../../../models/column.model';
 import { SelectionMode } from '../../../models/relationship.models';
 import { SearchParams } from '../../../models/search.model';
+import { needsCardinalityConstraintCheck } from '../../../utils';
 
 const ViewMode = {
     all: 'all',
@@ -33,6 +34,7 @@ export interface ExistingContentState {
     selectionMode: SelectionMode | null;
     errorMessage: string | null;
     columns: Column[];
+    constrainedIdentifiers: Set<string>;
     pagination: {
         offset: number;
         currentPage: number;
@@ -64,6 +66,7 @@ const initialState: ExistingContentState = {
     status: ComponentStatus.INIT,
     selectionMode: null,
     errorMessage: null,
+    constrainedIdentifiers: new Set<string>(),
     pagination: { ...paginationInitialState },
     previousPagination: { ...paginationInitialState },
     selectionItems: null,
@@ -128,7 +131,16 @@ export const ExistingContentStore = signalStore(
          * Computes whether the show only selected state is true.
          * @returns {boolean} True if the show only selected state is true, false otherwise.
          */
-        isSelectedView: computed(() => state.viewMode() === ViewMode.selected)
+        isSelectedView: computed(() => state.viewMode() === ViewMode.selected),
+        /**
+         * Returns a function that checks if a contentlet identifier is constrained
+         * (already related to another parent in a cardinality-restricted relationship).
+         */
+        isItemConstrained: computed(() => {
+            const constrained = state.constrainedIdentifiers();
+
+            return (identifier: string) => constrained.has(identifier);
+        })
     })),
     withMethods((store) => {
         const existingContentService = inject(ExistingContentService);
@@ -136,6 +148,7 @@ export const ExistingContentStore = signalStore(
         return {
             /**
              * Initiates the loading of content by setting the status to LOADING and fetching content from the service.
+             * Optionally loads constrained identifiers in parallel when cardinality constraints apply.
              * @returns {Observable<void>} An observable that completes when the content has been loaded.
              */
             initLoad: rxMethod<{
@@ -143,12 +156,17 @@ export const ExistingContentStore = signalStore(
                 selectionMode: SelectionMode;
                 selectedItemsIds: string[];
                 showFields?: string[] | null;
+                cardinality?: number;
+                relationshipVariable?: string;
+                isParentField?: boolean;
+                currentContentIdentifier?: string;
             }>(
                 pipe(
                     tap(({ selectionMode }) =>
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             selectionMode,
+                            constrainedIdentifiers: new Set<string>(),
                             viewMode: ViewMode.all,
                             pagination: { ...paginationInitialState }
                         })
@@ -162,10 +180,36 @@ export const ExistingContentStore = signalStore(
                         }
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
-                    switchMap(({ contentTypeId, selectedItemsIds }) =>
-                        existingContentService.getColumnsAndContent(contentTypeId).pipe(
+                    switchMap((params) => {
+                        const {
+                            contentTypeId,
+                            selectedItemsIds,
+                            cardinality,
+                            relationshipVariable,
+                            isParentField,
+                            currentContentIdentifier
+                        } = params;
+
+                        const shouldCheckConstraints =
+                            cardinality != null &&
+                            isParentField != null &&
+                            relationshipVariable &&
+                            needsCardinalityConstraintCheck(cardinality, isParentField);
+
+                        const constrainedIds$ = shouldCheckConstraints
+                            ? existingContentService.getConstrainedIdentifiers({
+                                  relationshipVariable,
+                                  currentContentIdentifier: currentContentIdentifier ?? null
+                              })
+                            : of(new Set<string>());
+
+                        return forkJoin([
+                            existingContentService.getColumnsAndContent(contentTypeId),
+                            constrainedIds$
+                        ]).pipe(
                             tapResponse({
-                                next: ([columns, searchResponse]) => {
+                                next: ([columnsAndContent, constrainedIdentifiers]) => {
+                                    const [columns, searchResponse] = columnsAndContent;
                                     const data = searchResponse.contentlets;
                                     const selectionItems =
                                         selectedItemsIds.length > 0
@@ -181,6 +225,7 @@ export const ExistingContentStore = signalStore(
                                         searchData: data,
                                         status: ComponentStatus.LOADED,
                                         selectionItems,
+                                        constrainedIdentifiers,
                                         pagination: {
                                             ...store.pagination(),
                                             totalResults: searchResponse.totalResults
@@ -194,8 +239,8 @@ export const ExistingContentStore = signalStore(
                                             'dot.file.relationship.dialog.content.request.failed'
                                     })
                             })
-                        )
-                    )
+                        );
+                    })
                 )
             ),
             /**
