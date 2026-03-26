@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -16,7 +16,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
     selector: 'dot-content-type-selector',
     templateUrl: './dot-content-type-selector.component.html',
     styleUrls: ['./dot-content-type-selector.component.scss'],
-    imports: [CommonModule, SelectModule, FormsModule]
+    imports: [SelectModule, FormsModule, AsyncPipe]
 })
 export class DotContentTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);

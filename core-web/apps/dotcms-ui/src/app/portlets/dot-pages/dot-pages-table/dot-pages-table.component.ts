@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import {
     afterNextRender,
     ChangeDetectorRef,
@@ -56,7 +56,6 @@ type TableRowSelectEvent<T> = {
     imports: [
         ButtonModule,
         CheckboxModule,
-        CommonModule,
         ContextMenuModule,
         DotAutofocusDirective,
         DotMessagePipe,

@@ -145,9 +145,7 @@ describe('DotTagsImportComponent', () => {
             const tagsService = spectator.inject(DotTagsService);
             const httpErrorManager = spectator.inject(DotHttpErrorManagerService);
 
-            (tagsService.importTags as jest.Mock).mockReturnValue(
-                throwError(() => new Error('fail'))
-            );
+            (tagsService.importTags as jest.Mock).mockReturnValue(throwError(new Error('fail')));
 
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();

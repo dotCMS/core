@@ -1,33 +1,29 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { DotSiteBrowserService } from './dot-site-browser.service';
 
 describe('DotSiteBrowserService', () => {
-    let injector: TestBed;
-    let httpMock: HttpTestingController;
+    let httpTesting: HttpTestingController;
     let dotSiteBrowserService: DotSiteBrowserService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotSiteBrowserService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotSiteBrowserService]
         });
-        injector = getTestBed();
-        dotSiteBrowserService = injector.inject(DotSiteBrowserService);
-        httpMock = injector.inject(HttpTestingController);
+        dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
+        httpTesting = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => {
+        httpTesting.verify();
     });
 
     it('should set Site Browser Selected folder', () => {
         dotSiteBrowserService.setSelectedFolder('/test').subscribe();
 
-        const req = httpMock.expectOne('/api/v1/browser/selectedfolder');
+        const req = httpTesting.expectOne('/api/v1/browser/selectedfolder');
         expect(req.request.method).toEqual('PUT');
         expect(req.request.body).toEqual({ path: '/test' });
 
