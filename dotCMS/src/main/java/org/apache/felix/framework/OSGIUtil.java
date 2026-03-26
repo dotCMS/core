@@ -718,6 +718,18 @@ public class OSGIUtil {
      *
      * @param jarNames the jar file names that were deployed
      */
+    /**
+     * Pushes an {@link SystemEventType#OSGI_FRAMEWORK_RESTART} system event to notify
+     * all connected users that the OSGI framework has been restarted.
+     * Called from the REST restart endpoint so other users refresh their bundle table.
+     */
+    public void sendFrameworkRestartNotification() {
+
+        Try.run(() -> APILocator.getSystemEventsAPI()
+                .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload()))
+                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+    }
+
     public void sendBundleDeployedNotification(final String[] jarNames) {
 
         Try.run(() -> APILocator.getSystemEventsAPI()

@@ -601,6 +601,7 @@ public class OSGIResource {
 
         Logger.debug(this, ()->"Restarting the framework");
         OSGIUtil.getInstance().restartOsgiClusterWide();
+        OSGIUtil.getInstance().sendFrameworkRestartNotification();
         return new ResponseEntityStringView("OSGI Framework Restarted");
     }
 
