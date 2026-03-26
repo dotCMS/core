@@ -8,7 +8,6 @@ import {
     CustomRendererProps,
     DotCMSBlockEditorRenderer
 } from '../../components/DotCMSBlockEditorRenderer/DotCMSBlockEditorRenderer';
-import * as isDevModeHook from '../../hooks/useIsDevMode';
 
 describe('DotCMSBlockEditorRenderer', () => {
     const blocks: BlockEditorNode = {
@@ -28,7 +27,6 @@ describe('DotCMSBlockEditorRenderer', () => {
     };
 
     beforeEach(() => {
-        jest.spyOn(isDevModeHook, 'useIsDevMode').mockReturnValue(true);
         jest.spyOn(console, 'error').mockImplementation(() => {
             /* empty */
         });
@@ -79,7 +77,10 @@ describe('DotCMSBlockEditorRenderer', () => {
             });
 
             const { getByTestId } = render(
-                <DotCMSBlockEditorRenderer blocks={null as unknown as BlockEditorNode} />
+                <DotCMSBlockEditorRenderer
+                    blocks={null as unknown as BlockEditorNode}
+                    isDevMode={true}
+                />
             );
 
             expect(getByTestId('invalid-blocks-message')).toHaveTextContent(
@@ -96,6 +97,7 @@ describe('DotCMSBlockEditorRenderer', () => {
             const { getByTestId } = render(
                 <DotCMSBlockEditorRenderer
                     blocks={'Invalid blocks' as unknown as BlockEditorNode}
+                    isDevMode={true}
                 />
             );
 
@@ -108,7 +110,6 @@ describe('DotCMSBlockEditorRenderer', () => {
         });
 
         it('should not render error message in production mode when blocks are invalid', () => {
-            jest.spyOn(isDevModeHook, 'useIsDevMode').mockReturnValue(false);
             jest.spyOn(blockValidator, 'isValidBlocks').mockReturnValue({
                 error: 'Error: Blocks content is empty'
             });
@@ -133,12 +134,10 @@ describe('DotCMSBlockEditorRenderer', () => {
             expect(isValidBlocksSpy).toHaveBeenCalledWith(blocks);
         });
 
-        it('should update block state when blocks change', () => {
+        it('should validate updated blocks on rerender', () => {
             const isValidBlocksSpy = jest
                 .spyOn(blockValidator, 'isValidBlocks')
                 .mockReturnValue({ error: null });
-
-            const { rerender } = render(<DotCMSBlockEditorRenderer blocks={blocks} />);
 
             const updatedBlocks: BlockEditorNode = {
                 type: 'doc',
@@ -156,6 +155,7 @@ describe('DotCMSBlockEditorRenderer', () => {
                 ]
             };
 
+            const { rerender } = render(<DotCMSBlockEditorRenderer blocks={blocks} />);
             rerender(<DotCMSBlockEditorRenderer blocks={updatedBlocks} />);
 
             expect(isValidBlocksSpy).toHaveBeenCalledWith(updatedBlocks);

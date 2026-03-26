@@ -1,3 +1,5 @@
+'use client';
+
 import { DotCMSEditableText } from '@dotcms/react';
 import Image from 'next/image';
 import Link from 'next/link';

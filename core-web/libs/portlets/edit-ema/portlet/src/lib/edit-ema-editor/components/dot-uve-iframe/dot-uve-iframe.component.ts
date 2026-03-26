@@ -21,7 +21,6 @@ import { SafeUrlPipe } from '@dotcms/ui';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
-import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils';
 
 /**
  * Renders the UVE (Universal Visual Editor) page preview inside an iframe.
@@ -154,34 +153,20 @@ export class DotUveIframeComponent {
         }
 
         const doc = iframeElement.contentDocument;
-        const newDoc = this.addEditorPageScript(pageRender);
+
 
         if (!doc) {
             return;
         }
 
         doc.open();
-        doc.write(newDoc);
+        doc.write(pageRender);
         doc.close();
 
         this.handleInlineScripts(enableInlineEdit);
     }
 
-    /**
-     * Appends the UVE editor SDK script before the closing body tag.
-     * @param {string} [rendered=''] - HTML string to modify.
-     * @returns {string} HTML with the editor script injected.
-     */
-    private addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
-        const bodyExists = rendered.includes('</body>');
 
-        if (!bodyExists) {
-            return rendered + scriptString;
-        }
-
-        return rendered.replace('</body>', scriptString + '</body>');
-    }
 
     /**
      * Subscribes to filtered click events and injects or removes inline-edit scripts.
