@@ -78,7 +78,7 @@ public interface AbstractCompanyConfigView {
     String backgroundColor();
 
     @Schema(
-            description = "Background image path (dotAsset path)",
+            description = "Background image path (dotAsset path starting with /dA)",
             example = "/dA/abc123/background.png"
     )
     @Nullable

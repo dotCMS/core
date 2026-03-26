@@ -68,7 +68,7 @@ public class CompanyBasicInfoForm extends Validated {
     private final String backgroundColor;
 
     @JsonProperty("backgroundImage")
-    @Schema(description = "Background image path (dotAsset path). Cleared if omitted.",
+    @Schema(description = "Background image path (dotAsset path starting with /dA). Cleared if omitted.",
             example = "/dA/abc123/background.png")
     private final String backgroundImage;
 

@@ -222,7 +222,7 @@ public class CompanyConfigHelper {
                         LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level
                                 && UtilMethods.isSet(navLogo) && navLogo.startsWith("/dA")
                                 ? navLogo : null)
-                .authType(AuthType.fromString(company.getAuthType()))
+                .authType(AuthType.fromStringOrDefault(company.getAuthType()))
                 .keyDigest(company.getKeyDigest())
                 .languageId(languageId)
                 .timeZoneId(timeZoneId)

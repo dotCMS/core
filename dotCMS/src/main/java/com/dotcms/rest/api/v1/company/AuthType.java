@@ -36,4 +36,13 @@ public enum AuthType {
         }
         return null;
     }
+
+    /**
+     * Returns the matching AuthType, or EMAIL_ADDRESS if the value is invalid.
+     * Used by toView() where a null would crash the Immutables builder.
+     */
+    public static AuthType fromStringOrDefault(final String value) {
+        final AuthType type = fromString(value);
+        return type != null ? type : EMAIL_ADDRESS;
+    }
 }
