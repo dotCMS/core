@@ -1,11 +1,7 @@
 package com.dotcms.ai.validator;
 
 import com.dotcms.ai.app.AIModel;
-import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
-import com.dotcms.ai.app.InvalidAIKeyException;
-import com.dotcms.ai.client.AIProxyClient;
-import com.dotcms.ai.client.AIRequest;
 import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -20,9 +16,7 @@ import io.vavr.control.Try;
 
 import java.util.Collections;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The AIAppValidator class is responsible for validating AI configurations and model usage.
@@ -47,73 +41,13 @@ public class AIAppValidator {
 
     /**
      * Validates the AI configuration for the specified user.
-     * If the user ID is null, the validation is skipped.
-     * Checks if the models specified in the application configuration are supported.
-     * If any unsupported models are found, a warning message is pushed to the user.
+     * Model validation against the provider API is handled by LangChain4J at request time.
      *
      * @param appConfig the application configuration
      * @param userId the user ID
      */
     public void validateAIConfig(final AppConfig appConfig, final String userId) {
-        if (Objects.isNull(userId)) {
-            appConfig.debugLogger(getClass(), () -> "User Id is null, skipping AI configuration validation");
-            return;
-        }
-
-        try {
-            final Set<String> supportedModels = AIModels.get().getOrPullSupportedModels(appConfig);
-            final Set<String> unsupportedModels = Stream.of(
-                            appConfig.getModel(),
-                            appConfig.getImageModel(),
-                            appConfig.getEmbeddingsModel())
-                    .flatMap(aiModel -> aiModel.getModels().stream())
-                    .map(Model::getName)
-                    .filter(model -> !supportedModels.contains(model))
-                    .collect(Collectors.toSet());
-            if (unsupportedModels.isEmpty()) {
-                return;
-            }
-
-            sendUnsupportedModelsNotification(userId, unsupportedModels);
-        } catch (InvalidAIKeyException e) {
-            sendInvalidAIKeyNotification(userId);  
-        }
-    }
-
-    private void sendInvalidAIKeyNotification(final String userId) {
-        final String message = Try
-                .of(() -> LanguageUtil.get("ai.key.invalid"))
-                .getOrElse("AI key authentication failed. Please ensure the key is valid, active, and correctly configured.");
-
-        final SystemMessage systemMessage = new SystemMessageBuilder()
-                .setMessage(message)
-                .setSeverity(MessageSeverity.ERROR)
-                .setLife(DateUtil.SEVEN_SECOND_MILLIS)
-                .create();
-
-        systemMessageEventUtil.pushMessage(systemMessage, Collections.singletonList(userId));
-    }
-
-    /**
-     * Sends a notification to the specified user about unsupported AI models.
-     * Creates a warning message containing the names of the unsupported models
-     * and pushes it to the user's notification system.
-     *
-     * @param userId the ID of the user to receive the notification
-     * @param unsupportedModels a set of model names that are not supported
-     */
-    private void sendUnsupportedModelsNotification(String userId, Set<String> unsupportedModels) {
-        final String unsupported = String.join(", ", unsupportedModels);
-        final String message = Try
-                .of(() -> LanguageUtil.get("ai.unsupported.models", unsupported))
-                .getOrElse(String.format("The following models are not supported: [%s]", unsupported));
-        final SystemMessage systemMessage = new SystemMessageBuilder()
-                .setMessage(message)
-                .setSeverity(MessageSeverity.WARNING)
-                .setLife(DateUtil.SEVEN_SECOND_MILLIS)
-                .create();
-
-        systemMessageEventUtil.pushMessage(systemMessage, Collections.singletonList(userId));
+        appConfig.debugLogger(getClass(), () -> "AI configuration validation delegated to LangChain4J");
     }
 
     /**
