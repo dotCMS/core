@@ -110,4 +110,18 @@ public interface AbstractCompanyConfigView {
     )
     @Nullable
     String keyDigest();
+
+    @Schema(
+            description = "System default language as a Java locale string",
+            example = "en_US"
+    )
+    @Nullable
+    String languageId();
+
+    @Schema(
+            description = "System default timezone ID",
+            example = "America/New_York"
+    )
+    @Nullable
+    String timeZoneId();
 }

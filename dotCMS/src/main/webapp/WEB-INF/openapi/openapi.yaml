@@ -23210,6 +23210,10 @@ components:
           type: string
           description: "SHA-256 digest of the company security key (read-only, admin\
             \ only)"
+        languageId:
+          type: string
+          description: System default language as a Java locale string
+          example: en_US
         loginScreenLogo:
           type: string
           description: Login screen logo path (dotAsset path starting with /dA)
@@ -23235,6 +23239,10 @@ components:
           type: string
           description: Secondary branding color (hex)
           example: "#54428E"
+        timeZoneId:
+          type: string
+          description: System default timezone ID
+          example: America/New_York
       required:
       - authType
       - companyId

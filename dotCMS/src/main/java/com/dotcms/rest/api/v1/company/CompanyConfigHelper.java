@@ -193,6 +193,17 @@ public class CompanyConfigHelper {
         final String loginLogo = company.getCity();
         final String navLogo = company.getState();
 
+        // Locale is stored on the default User, not the Company entity
+        String languageId = null;
+        String timeZoneId = null;
+        try {
+            final User defaultUser = APILocator.getUserAPI().getDefaultUser();
+            languageId = defaultUser.getLanguageId();
+            timeZoneId = defaultUser.getTimeZoneId();
+        } catch (Exception e) {
+            Logger.debug(this, "Could not read default user locale: " + e.getMessage());
+        }
+
         return CompanyConfigView.builder()
                 .companyId(company.getCompanyId())
                 .companyName(company.getName())
@@ -213,6 +224,8 @@ public class CompanyConfigHelper {
                                 ? navLogo : null)
                 .authType(AuthType.fromString(company.getAuthType()))
                 .keyDigest(company.getKeyDigest())
+                .languageId(languageId)
+                .timeZoneId(timeZoneId)
                 .build();
     }
 
