@@ -205,3 +205,5 @@ jobs:
           java-version: ${{ inputs.java-version }}
           maven-compiler-release: ${{ inputs.maven-compiler-release }}
           artifact-suffix: ${{ inputs.artifact-suffix }}
+          docker-io-username: ${{ secrets.DOCKER_USERNAME }}
+          docker-io-token: ${{ secrets.DOCKER_TOKEN }}
