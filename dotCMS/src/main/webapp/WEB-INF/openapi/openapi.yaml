@@ -23135,7 +23135,8 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path). Cleared if omitted.
+          description: Background image path (dotAsset path starting with /dA). Cleared
+            if omitted.
           example: /dA/abc123/background.png
         emailAddress:
           type: string
@@ -23191,7 +23192,7 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path)
+          description: Background image path (dotAsset path starting with /dA)
           example: /dA/abc123/background.png
         companyId:
           type: string
