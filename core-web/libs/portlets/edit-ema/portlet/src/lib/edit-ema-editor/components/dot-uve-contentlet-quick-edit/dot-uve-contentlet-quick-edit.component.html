@@ -148,6 +148,7 @@
     </div>
 } @else if (data().contentlet?.identifier) {
     <div
+        data-testid="empty-no-fields"
         class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
         <div class="rounded-full p-6">
             <i class="pi pi-ban text-[5rem]! text-gray-500"></i>
@@ -161,11 +162,13 @@
                 [text]="true"
                 size="small"
                 label="Click here to open the full editor"
+                data-testid="empty-open-full-editor-button"
                 (onClick)="openFullEditor.emit()" />
         </div>
     </div>
 } @else {
     <div
+        data-testid="empty-no-selection"
         class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
         <div class="rounded-full p-6">
             <i class="pi pi-file-edit text-[5rem]! text-gray-500"></i>

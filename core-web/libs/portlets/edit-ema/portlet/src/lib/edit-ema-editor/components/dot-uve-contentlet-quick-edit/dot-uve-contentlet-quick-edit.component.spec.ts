@@ -242,8 +242,23 @@ describe('DotUveContentletQuickEditComponent', () => {
         }));
     });
 
-    describe('empty state', () => {
-        it('should show the empty state when there are no fields', () => {
+    describe('empty states', () => {
+        it('should show "Select a contentlet" when no contentlet is selected', () => {
+            fixture.componentRef.setInput('data', {
+                container: undefined,
+                contentlet: {} as DotCMSContentlet,
+                fields: []
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query('form')).toBeFalsy();
+            expect(spectator.query('[data-testid="empty-no-selection"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="empty-no-selection"] .font-bold')).toHaveText(
+                'Select a contentlet'
+            );
+        });
+
+        it('should show "No editable fields" when a contentlet is selected but has no supported fields', () => {
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
                 fields: []
@@ -251,7 +266,56 @@ describe('DotUveContentletQuickEditComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('form')).toBeFalsy();
-            expect(spectator.query('.font-bold')).toHaveText('Select a contentlet');
+            expect(spectator.query('[data-testid="empty-no-fields"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="empty-no-fields"] .font-bold')).toHaveText(
+                'No editable fields'
+            );
+        });
+
+        it('should render the "Click here to open the full editor" button in the no-fields state', () => {
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                fields: []
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('empty-open-full-editor-button'))).toBeTruthy();
+        });
+
+        it('should emit openFullEditor when clicking "Click here to open the full editor"', () => {
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                fields: []
+            });
+            spectator.detectChanges();
+
+            const handler = jest.fn();
+            spectator.output('openFullEditor').subscribe(handler);
+
+            const btn = spectator
+                .query(byTestId('empty-open-full-editor-button'))
+                ?.querySelector('button') as HTMLButtonElement;
+            spectator.click(btn);
+
+            expect(handler).toHaveBeenCalled();
+        });
+    });
+
+    describe('openFullEditor output', () => {
+        it('should render the "Go to full editor" button when fields are present', () => {
+            expect(spectator.query(byTestId('open-full-editor-button'))).toBeTruthy();
+        });
+
+        it('should emit openFullEditor when clicking "Go to full editor"', () => {
+            const handler = jest.fn();
+            spectator.output('openFullEditor').subscribe(handler);
+
+            const btn = spectator
+                .query(byTestId('open-full-editor-button'))
+                ?.querySelector('button') as HTMLButtonElement;
+            spectator.click(btn);
+
+            expect(handler).toHaveBeenCalled();
         });
     });
 
