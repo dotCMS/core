@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,7 +12,7 @@ import {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-section',
-    imports: [CommonModule],
+    imports: [NgTemplateOutlet],
     templateUrl: './dot-edit-content-sidebar-section.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {

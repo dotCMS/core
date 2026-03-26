@@ -29,7 +29,7 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
     standalone: false,
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff"></dot-content-compare-table>'
+        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff" />'
 })
 class TestHostComponent {
     @Input() data: DotContentCompareTableData;

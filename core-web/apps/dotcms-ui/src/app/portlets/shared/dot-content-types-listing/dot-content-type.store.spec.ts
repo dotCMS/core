@@ -1,19 +1,14 @@
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    mockResponseView
-} from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, mockResponseView } from '@dotcms/utils-testing';
 
 import { DotContentTypeStore } from './dot-content-type.store';
 
@@ -25,11 +20,12 @@ describe('DotContentTypeComponentStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, RouterTestingModule],
+            imports: [RouterTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentTypeService,
                 DotContentTypeStore,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -16,7 +16,7 @@ import { StructureTypeView } from '@dotcms/dotcms-models';
     selector: 'dot-base-type-selector',
     templateUrl: './dot-base-type-selector.component.html',
     styleUrls: ['./dot-base-type-selector.component.scss'],
-    imports: [CommonModule, SelectModule, FormsModule]
+    imports: [SelectModule, FormsModule, AsyncPipe]
 })
 export class DotBaseTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);

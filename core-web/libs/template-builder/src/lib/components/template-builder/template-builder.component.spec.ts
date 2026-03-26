@@ -2,7 +2,8 @@ import { expect, it } from '@jest/globals';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -16,11 +17,10 @@ import {
     DotMessageService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import {
     containersMock,
-    CoreWebServiceMock,
     DotcmsEventsServiceMock,
     DotContainersServiceMock,
     DotCurrentUserServiceMock,
@@ -67,8 +67,9 @@ describe('TemplateBuilderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
-        imports: [HttpClientTestingModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotTemplateBuilderStore,
             DialogService,
             DynamicDialogRef,
@@ -83,10 +84,6 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotContainersService,
                 useValue: new DotContainersServiceMock()
-            },
-            {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
             },
             {
                 provide: SiteService,

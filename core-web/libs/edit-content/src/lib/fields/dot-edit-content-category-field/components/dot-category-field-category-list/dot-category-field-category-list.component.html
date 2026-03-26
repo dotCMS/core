@@ -7,7 +7,7 @@
             <dot-collapse-breadcrumb data-testId="breadcrumb-menu" [model]="$breadcrumbsMenu()" />
         </div>
         <div
-            [ngClass]="{ 'overflow-x-hidden': $emptyColumns().length }"
+            [class.overflow-x-hidden]="$emptyColumns().length"
             class="flex-1 flex overflow-x-auto overflow-y-hidden">
             @for (column of $categories(); let index = $index; track index) {
                 <!--dynamic columns-->
@@ -20,7 +20,7 @@
                             data-testId="category-item"
                             [attr.data-clicked]="item.clicked ? 'true' : null"
                             class="flex content-center items-center h-10 flex-nowrap transition-colors duration-200 animate-[fadeIn_0.2s_ease-out] animate-fill-forwards hover:bg-(--color-palette-primary-100)"
-                            [ngClass]="{ 'bg-(--color-palette-primary-200)': item.clicked }">
+                            [class.bg-(--color-palette-primary-200)]="item.clicked">
                             <p-checkbox
                                 [(ngModel)]="$selected"
                                 [value]="item.key"

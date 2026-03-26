@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotCMSAPIResponse, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotCMSResponse } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotPageTypesService {
@@ -20,7 +20,7 @@ export class DotPageTypesService {
      */
     getPageContentTypes(keyword = ''): Observable<DotCMSContentType[]> {
         return this.#http
-            .get<DotCMSAPIResponse<DotCMSContentType[]>>(`/api/v1/page/types?filter=${keyword}`)
+            .get<DotCMSResponse<DotCMSContentType[]>>(`/api/v1/page/types?filter=${keyword}`)
             .pipe(map(({ entity }) => entity));
     }
 }

@@ -17,7 +17,8 @@ Object.defineProperty(window, 'matchMedia', {
 
 import { Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -37,12 +38,7 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsEventsService,
-    LoggerService,
-    LoginService
-} from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoggerService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
@@ -53,7 +49,6 @@ import {
 } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock,
     createFakeEvent,
     dotcmsContentTypeBasicMock,
     MockDotMessageService
@@ -184,15 +179,15 @@ describe('ContentTypesLayoutComponent', () => {
                 DotMessagePipe,
                 SplitButtonModule,
                 DotInlineEditComponent,
-                HttpClientTestingModule,
                 DotPortletBoxComponent,
                 DotCopyButtonComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotMenuService, useClass: MockDotMenuService },
                 { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotCurrentUserService,
                 DotEventsService,
                 DotAddToMenuService,

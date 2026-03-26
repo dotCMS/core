@@ -9,7 +9,7 @@ import {
 import { DDElementHost } from 'gridstack/dist/dd-element';
 import { Observable, Subject, combineLatest } from 'rxjs';
 
-import { AsyncPipe, NgClass, NgStyle } from '@angular/common';
+import { AsyncPipe, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -84,7 +84,6 @@ import {
     providers: [DotTemplateBuilderStore],
     imports: [
         AsyncPipe,
-        NgClass,
         NgStyle,
         DotMessagePipe,
         DynamicDialogModule,

@@ -3,7 +3,8 @@
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     DebugElement,
@@ -35,7 +36,7 @@ import {
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
-import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
+import { DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentType,
@@ -48,7 +49,6 @@ import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService, FieldUtil } from '@dotcms/utils';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     fieldsBrokenWithColumns,
@@ -218,7 +218,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     }
                 ]),
                 BrowserAnimationsModule,
-                HttpClientTestingModule,
                 FormsModule,
                 ReactiveFormsModule,
                 DotMessagePipe,
@@ -239,6 +238,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                 CheckboxModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: Router, useValue: mockRouter },
                 { provide: FieldDragDropService, useValue: dragDropService },
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -247,7 +248,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     provide: DotLoadingIndicatorService,
                     useValue: dotLoadingIndicatorServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotEventsSocket,
                 LoginService,
                 DotFormatDateService,
@@ -528,7 +528,6 @@ describe('Load fields and drag and drop', () => {
                 TableModule,
                 ContentTypeFieldsAddRowComponent,
                 DialogModule,
-                HttpClientTestingModule,
                 DotMessagePipe,
                 TabsModule
             ],
@@ -577,7 +576,6 @@ describe('Load fields and drag and drop', () => {
                     useValue: dotLoadingIndicatorServiceMock
                 },
                 { provide: DotHttpErrorManagerService, useValue: {} },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotEventsService
             ]
         });

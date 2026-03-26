@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import {
@@ -21,7 +20,6 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
 @Component({
     selector: 'dot-analytics-pageview-report',
     imports: [
-        CommonModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
         DotAnalyticsTopPagesTableComponent,

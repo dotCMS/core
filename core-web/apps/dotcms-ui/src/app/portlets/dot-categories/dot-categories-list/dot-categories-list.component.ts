@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
@@ -28,7 +28,6 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
     styleUrls: ['./dot-categories-list.component.scss'],
     providers: [DotCategoriesListStore],
     imports: [
-        CommonModule,
         DotPortletBaseComponent,
         MenuModule,
         ButtonModule,
@@ -41,7 +40,8 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotMessagePipe,
         CheckboxModule,
         BreadcrumbModule,
-        DotEmptyStateComponent
+        DotEmptyStateComponent,
+        AsyncPipe
     ]
 })
 export class DotCategoriesListComponent {
