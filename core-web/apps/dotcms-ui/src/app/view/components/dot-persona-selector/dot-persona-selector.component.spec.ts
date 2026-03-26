@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import { EMPTY, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, Input } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
@@ -24,11 +20,10 @@ import {
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPersona, DotSystemConfig } from '@dotcms/dotcms-models';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     DotCurrentUserServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -43,24 +38,6 @@ import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotAddPersonaDialogComponent } from '../dot-add-persona-dialog/dot-add-persona-dialog.component';
 
-@Component({
-    selector: 'dot-host-component',
-    template: `
-        <dot-persona-selector
-            (selected)="selectedPersonaHandler($event)"
-            (delete)="deletePersonaHandler($event)"
-            [disabled]="disabled"></dot-persona-selector>
-    `,
-    standalone: false
-})
-class HostTestComponent {
-    @Input() disabled: boolean;
-
-    selectedPersonaHandler(_$event) {}
-
-    deletePersonaHandler(_$event) {}
-}
-
 class TestPaginatorService {
     filter: string;
     url: string;
@@ -73,8 +50,7 @@ class TestPaginatorService {
 }
 
 describe('DotPersonaSelectorComponent', () => {
-    let spectator: Spectator<HostTestComponent>;
-    let component: DotPersonaSelectorComponent;
+    let spectator: SpectatorHost<DotPersonaSelectorComponent>;
     let paginatorService: PaginatorService;
     const defaultPersona: DotPersona = mockDotPersona;
     const messageServiceMock = new MockDotMessageService({
@@ -122,9 +98,8 @@ describe('DotPersonaSelectorComponent', () => {
         }
     }
 
-    const createComponent = createComponentFactory({
-        component: HostTestComponent,
-        imports: [DotPersonaSelectorComponent],
+    const createHost = createHostFactory({
+        component: DotPersonaSelectorComponent,
         componentProviders: [
             { provide: PaginatorService, useClass: TestPaginatorService },
             { provide: IframeOverlayService, useClass: IframeOverlayService }
@@ -145,7 +120,6 @@ describe('DotPersonaSelectorComponent', () => {
             },
             { provide: LoginService, useClass: LoginServiceMock },
             { provide: SiteService, useValue: siteServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotRouterService, useClass: MockDotRouterService },
             { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
             DotHttpErrorManagerService,
@@ -162,24 +136,30 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     const openOverlay = () => {
-        component.disabled = false;
+        spectator.component.disabled = false;
         const personaSelectedItem = spectator.query('dot-persona-selected-item');
         personaSelectedItem.dispatchEvent(new MouseEvent('click'));
         spectator.detectChanges();
     };
 
     beforeEach(() => {
-        spectator = createComponent();
-        component = spectator.query(DotPersonaSelectorComponent);
-        paginatorService = component.paginationService;
+        spectator = createHost(
+            `<dot-persona-selector [disabled]="disabled"></dot-persona-selector>`,
+            {
+                hostProps: {
+                    disabled: false
+                }
+            }
+        );
+        paginatorService = spectator.component.paginationService;
         spectator.detectChanges();
     });
 
     it('should emit the selected persona', () => {
-        jest.spyOn(component.selected, 'emit');
+        jest.spyOn(spectator.component.selected, 'emit');
         spectator.triggerEventHandler('dot-searchable-dropdown', 'switch', defaultPersona);
-        expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
-        expect(component.selected.emit).toHaveBeenCalledTimes(1);
+        expect(spectator.component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+        expect(spectator.component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should call filter change with keyword', () => {
@@ -200,41 +180,37 @@ describe('DotPersonaSelectorComponent', () => {
 
     it('should set dot-searchable-dropdown with right attributes', () => {
         // Initialize totalRecords
-        component.personas = [mockDotPersona];
-        component.totalRecords = component.personas.length;
+        spectator.component.personas = [mockDotPersona];
+        spectator.component.totalRecords = spectator.component.personas.length;
         spectator.detectChanges();
 
-        expect(component.searchableDropdown.labelPropertyName).toBe('name');
-        expect(component.searchableDropdown.width).toBe('448px');
-        expect(component.searchableDropdown.overlayWidth).toBe('300px');
-        expect(component.searchableDropdown.rows).toBe(10);
-        expect(component.totalRecords).toBe(1);
+        expect(spectator.component.searchableDropdown.labelPropertyName).toBe('name');
+        expect(spectator.component.searchableDropdown.width).toBe('448px');
+        expect(spectator.component.searchableDropdown.overlayWidth).toBe('300px');
+        expect(spectator.component.searchableDropdown.rows).toBe(10);
+        expect(spectator.component.totalRecords).toBe(1);
     });
 
     it('should set dot-persona-selected-item with right attributes', () => {
         const personaSelectedItem = spectator.query('dot-persona-selected-item');
         expect(personaSelectedItem.getAttribute('appendTo')).toBe('target');
-        // In Angular 20, ng-reflect-* attributes are not available
-        // Verify tooltip position attribute (passed as input to the component)
         expect(personaSelectedItem.getAttribute('tooltipPosition')).toBe('bottom');
-        // Verify the displayed content (persona name or 'Default Visitor')
         const nameSpan = spectator.query('dot-persona-selected-item .dot-persona-selector__name');
         expect(nameSpan?.textContent?.trim()).toBe('Default Visitor');
     });
 
     it('should call toggle when selected dot-persona-selected-item', async () => {
-        jest.spyOn(component.searchableDropdown, 'toggleOverlayPanel');
+        jest.spyOn(spectator.component.searchableDropdown, 'toggleOverlayPanel');
         await spectator.fixture.whenStable();
 
         const selectedItem = spectator.query('dot-persona-selected-item');
         spectator.click(selectedItem);
-        expect(component.searchableDropdown.toggleOverlayPanel).toHaveBeenCalled();
+        expect(spectator.component.searchableDropdown.toggleOverlayPanel).toHaveBeenCalled();
     });
 
     it('should have highlighted persona option once the dropdown in loaded', async () => {
-        // Setup personas data
-        component.personas = [mockDotPersona];
-        component.totalRecords = 1;
+        spectator.component.personas = [mockDotPersona];
+        spectator.component.totalRecords = 1;
         spectator.detectChanges();
         await spectator.fixture.whenStable();
 
@@ -247,11 +223,9 @@ describe('DotPersonaSelectorComponent', () => {
         expect(personaOption.classList.contains('highlight')).toEqual(true);
     });
 
-    // TODO: this test fails ramdomly when all tests are ran, a fix needs to be done
     it('should dot-persona-selector-option template with right params', async () => {
-        // Setup personas data
-        component.personas = [mockDotPersona];
-        component.totalRecords = 1;
+        spectator.component.personas = [mockDotPersona];
+        spectator.component.totalRecords = 1;
         spectator.detectChanges();
         await spectator.fixture.whenStable();
 
@@ -262,7 +236,6 @@ describe('DotPersonaSelectorComponent', () => {
         const mockPersonaData = { ...mockDotPersona, label: 'Global Investor' };
         const personaOption = spectator.query('dot-persona-selector-option');
         expect(personaOption).toBeTruthy();
-        // Access component instance through debugElement
         const personaComponent = spectator.debugElement.query(
             (el) => el.name === 'dot-persona-selector-option'
         );
@@ -272,13 +245,12 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should execute "change" event from dot-persona-selector-option', async () => {
-        // Setup personas data
-        component.personas = [mockDotPersona];
-        component.totalRecords = 1;
+        spectator.component.personas = [mockDotPersona];
+        spectator.component.totalRecords = 1;
         spectator.detectChanges();
         await spectator.fixture.whenStable();
 
-        jest.spyOn(component.selected, 'emit');
+        jest.spyOn(spectator.component.selected, 'emit');
         openOverlay();
         await spectator.fixture.whenStable();
         spectator.detectChanges();
@@ -288,17 +260,27 @@ describe('DotPersonaSelectorComponent', () => {
         );
         expect(personaOptionDebugElement).toBeTruthy();
         personaOptionDebugElement.triggerEventHandler('switch', defaultPersona);
-        expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
-        expect(component.selected.emit).toHaveBeenCalledTimes(1);
+        expect(spectator.component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+        expect(spectator.component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
-    xit('should execute "delete" event from dot-persona-selector-option', async () => {
+    it('should execute "delete" event from dot-persona-selector-option', async () => {
+        spectator.component.personas = [mockDotPersona];
+        spectator.component.totalRecords = 1;
+        spectator.detectChanges();
         await spectator.fixture.whenStable();
 
-        jest.spyOn(component.delete, 'emit');
+        jest.spyOn(spectator.component.delete, 'emit');
         openOverlay();
-        spectator.triggerEventHandler('dot-persona-selector-option', 'delete', defaultPersona);
-        expect<any>(component.delete.emit).toHaveBeenCalledWith({
+        await spectator.fixture.whenStable();
+        spectator.detectChanges();
+
+        const personaOptionDebugElement = spectator.debugElement.query(
+            (el) => el.name === 'dot-persona-selector-option'
+        );
+        expect(personaOptionDebugElement).toBeTruthy();
+        personaOptionDebugElement.triggerEventHandler('delete', defaultPersona);
+        expect(spectator.component.delete.emit).toHaveBeenCalledWith({
             ...defaultPersona,
             label: 'Global Investor'
         });
@@ -308,19 +290,19 @@ describe('DotPersonaSelectorComponent', () => {
         let personaDialog: DotAddPersonaDialogComponent;
 
         beforeEach(() => {
-            personaDialog = component.personaDialog;
+            personaDialog = spectator.component.personaDialog;
         });
 
         it('should toggle Overlay Panel, pass the search as name if present and open add form', () => {
             openOverlay();
             const addPersonaIcon = spectator.query('p-button');
 
-            jest.spyOn(component.searchableDropdown, 'toggleOverlayPanel');
+            jest.spyOn(spectator.component.searchableDropdown, 'toggleOverlayPanel');
 
             spectator.triggerEventHandler('dot-searchable-dropdown', 'filterChange', 'Bill');
             spectator.click(addPersonaIcon);
             spectator.detectChanges();
-            expect(component.searchableDropdown.toggleOverlayPanel).toHaveBeenCalled();
+            expect(spectator.component.searchableDropdown.toggleOverlayPanel).toHaveBeenCalled();
             expect(personaDialog.visible).toBe(true);
             expect(personaDialog.personaName).toBe('Bill');
             personaDialog.visible = false;
@@ -328,9 +310,9 @@ describe('DotPersonaSelectorComponent', () => {
         });
 
         it('should emit persona and refresh the list on Add new persona', () => {
-            jest.spyOn(component.selected, 'emit');
+            jest.spyOn(spectator.component.selected, 'emit');
             jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([mockDotPersona]));
-            jest.spyOn(component.searchableDropdown, 'resetPanelMinHeight');
+            jest.spyOn(spectator.component.searchableDropdown, 'resetPanelMinHeight');
 
             spectator.triggerEventHandler(
                 'dot-add-persona-dialog',
@@ -338,12 +320,12 @@ describe('DotPersonaSelectorComponent', () => {
                 defaultPersona
             );
 
-            expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
-            expect(component.selected.emit).toHaveBeenCalledTimes(1);
+            expect(spectator.component.selected.emit).toHaveBeenCalledWith(defaultPersona);
+            expect(spectator.component.selected.emit).toHaveBeenCalledTimes(1);
             expect(paginatorService.filter).toEqual('');
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
             expect(paginatorService.getWithOffset).toHaveBeenCalledTimes(1);
-            expect(component.searchableDropdown.resetPanelMinHeight).toHaveBeenCalled();
+            expect(spectator.component.searchableDropdown.resetPanelMinHeight).toHaveBeenCalled();
         });
     });
 
@@ -351,7 +333,7 @@ describe('DotPersonaSelectorComponent', () => {
         let iframeOverlayService: IframeOverlayService;
 
         beforeEach(() => {
-            iframeOverlayService = component.iframeOverlayService;
+            iframeOverlayService = spectator.component.iframeOverlayService;
         });
 
         it('should call hide event on hide persona list', () => {

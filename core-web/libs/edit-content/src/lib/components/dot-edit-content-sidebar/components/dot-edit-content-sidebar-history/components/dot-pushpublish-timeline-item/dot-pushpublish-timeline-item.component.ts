@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
@@ -24,12 +24,12 @@ import { DotPushPublishHistoryItem } from '../../../../../../models/dot-edit-con
 @Component({
     selector: 'dot-pushpublish-timeline-item',
     imports: [
-        CommonModule,
         AvatarModule,
         TooltipModule,
         DotCopyButtonComponent,
         DotMessagePipe,
-        DotRelativeDatePipe
+        DotRelativeDatePipe,
+        DatePipe
     ],
     providers: [DatePipe],
     templateUrl: './dot-pushpublish-timeline-item.component.html',

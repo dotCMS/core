@@ -1,6 +1,7 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -8,14 +9,10 @@ import { MenuItem } from 'primeng/api';
 import { TabsModule } from 'primeng/tabs';
 
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
-import { CoreWebService, DotcmsEventsService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import {
-    CoreWebServiceMock,
-    DotcmsEventsServiceMock,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { DotcmsEventsServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit.store';
@@ -33,7 +30,6 @@ describe('CategoriesCreateEditComponent', () => {
     const createComponent = createComponentFactory({
         component: DotCategoriesCreateEditComponent,
         imports: [
-            HttpClientTestingModule,
             RouterTestingModule,
             DotMessagePipe,
             TabsModule,
@@ -47,7 +43,8 @@ describe('CategoriesCreateEditComponent', () => {
             DotIframeService,
             DotLoadingIndicatorService,
             IframeOverlayService,
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: DotRouterService, useClass: MockDotRouterService },
             { provide: DotUiColorsService, useClass: MockDotUiColorsService },
             { provide: DotcmsEventsService, useValue: new DotcmsEventsServiceMock() },

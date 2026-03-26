@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -16,7 +16,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 
 @Component({
     selector: 'dot-experiments-configuration-targeting',
-    imports: [CommonModule, CardModule, DotMessagePipe, ButtonModule, TooltipModule],
+    imports: [CardModule, DotMessagePipe, ButtonModule, TooltipModule, AsyncPipe],
     templateUrl: './dot-experiments-configuration-targeting.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

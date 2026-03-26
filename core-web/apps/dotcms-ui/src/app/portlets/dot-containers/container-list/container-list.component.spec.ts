@@ -1,8 +1,8 @@
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -35,8 +35,6 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -248,12 +246,13 @@ describe('ContainerListComponent', () => {
                 DotMessagePipe,
                 DotPortletBaseComponent,
                 DotRelativeDatePipe,
-                HttpClientTestingModule,
                 InputTextModule,
                 MenuModule,
                 TableModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 provideNoopAnimations(),
                 ConfirmationService,
                 DialogService,
@@ -290,7 +289,6 @@ describe('ContainerListComponent', () => {
                         goToSiteBrowser: jest.fn()
                     }
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
