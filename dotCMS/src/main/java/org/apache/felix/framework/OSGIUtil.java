@@ -11,6 +11,7 @@ import com.dotcms.concurrent.lock.ClusterLockManager;
 import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.DotPubSubProvider;
 import com.dotcms.dotpubsub.DotPubSubProviderLocator;
+import com.dotcms.rest.ErrorEntity;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.osgi.HostActivator;
@@ -471,6 +472,8 @@ public class OSGIUtil {
 
                     Logger.error(this, "Error try to acquire the lock, uploadFolder: " + uploadFolderFile +
                             ", msg: " + e.getMessage(), e);
+                    pushBundleUploadError(
+                            "Failed to process OSGI bundles from upload folder: " + e.getMessage());
                 }
             } else {
 
@@ -534,6 +537,7 @@ public class OSGIUtil {
 
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
+            pushBundleUploadError("Failed to process OSGI bundle packages: " + e.getMessage());
         }
     }
 
@@ -560,7 +564,6 @@ public class OSGIUtil {
             Try.run(()->APILocator.getSystemEventsAPI()
                     .push(SystemEventType.OSGI_FRAMEWORK_RESTART, new Payload(pathnames)))
                     .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
-
         }
     }
 
@@ -585,26 +588,34 @@ public class OSGIUtil {
      * Do the restart only for the current node (locally)
      */
     public void restartOsgiOnlyLocal() {
-            Logger.info(this, ()-> "Restarting OSGI Locally");
-            //Remove Portlets in the list
-            this.portletIDsStopped.stream().forEach(APILocator.getPortletAPI()::deletePortlet);
-            Logger.info(this, "Portlets Removed: " + this.portletIDsStopped.toString());
 
-            //Remove Actionlets in the list
-            if (null  != this.workflowOsgiService) {
-                this.actionletsStopped.stream().forEach(this.workflowOsgiService::removeActionlet);
-                Logger.info(this, "Actionlets Removed: " + this.actionletsStopped.toString());
-            }
+        Logger.info(this, ()-> "Restarting OSGI Locally");
 
-            //Cleanup lists
-            this.portletIDsStopped.clear();
-            this.actionletsStopped.clear();
+        //Remove Portlets in the list
+        this.portletIDsStopped.forEach(APILocator.getPortletAPI()::deletePortlet);
+        Logger.info(this, "Portlets Removed: " + this.portletIDsStopped);
 
-            //First we need to stop the framework
+        //Remove Actionlets in the list
+        if (null != this.workflowOsgiService) {
+            this.actionletsStopped.forEach(this.workflowOsgiService::removeActionlet);
+            Logger.info(this, "Actionlets Removed: " + this.actionletsStopped);
+        }
+
+        //Cleanup lists
+        this.portletIDsStopped.clear();
+        this.actionletsStopped.clear();
+
+        try {
             this.stopFramework();
-
-            //Now we need to initialize it
             this.initializeFramework();
+        } catch (final RuntimeException e) {
+            final String errorMsg = "Failed to restart OSGI framework: " + e.getMessage();
+            Logger.error(this, errorMsg, e);
+            Try.run(() -> SystemMessageEventUtil.getInstance().pushSimpleErrorEvent(
+                    new ErrorEntity("osgi-framework-restart-failed", errorMsg)))
+                    .onFailure(ex -> Logger.error(this, ex.getMessage()));
+            throw e;
+        }
     }
 
     /**
@@ -627,16 +638,17 @@ public class OSGIUtil {
 
                     moveBundle(uploadFolderFile, pathnames, deployDirectory, pathname);
                 }
-                
+
                 sendOSGIBundlesLoadedMessage(pathnames);
             } else {
 
-                Logger.warn(this, "The directory: " + this.getFelixDeployPath()
-                        + " does not exists or can not read");
+                Logger.error(this, "The OSGI deploy directory: " + this.getFelixDeployPath()
+                        + " does not exist or is not writable");
             }
         } catch (IOException e) {
 
             Logger.error(this, e.getMessage(), e);
+            pushBundleUploadError("Failed to move OSGI bundle to deploy folder: " + e.getMessage());
         }
     }
 
@@ -666,13 +678,15 @@ public class OSGIUtil {
 
         if (FileUtil.move(bundle, bundleDestination)) {
 
-            Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
+            Try.run(()->APILocator.getSystemEventsAPI()
                     .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(pathnames)))
                     .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
 
             Logger.debug(this, "Moved the bundle: " + bundle + " to " + deployDirectory);
         } else {
-            Logger.debug(this, "Could not move the bundle: " + bundle + " to " + deployDirectory);
+            final String errorMsg = "Could not move the bundle: " + bundle + " to " + deployDirectory;
+            Logger.error(this, errorMsg);
+            pushBundleUploadError(errorMsg);
         }
     }
 
@@ -696,6 +710,40 @@ public class OSGIUtil {
                 .setSeverity(MessageSeverity.SUCCESS).create(), null);
     }
 
+
+    /**
+     * Pushes an {@link SystemEventType#OSGI_BUNDLES_LOADED} system event and a success toast
+     * to notify users that bundles have been deployed. Used by the deploy REST endpoint
+     * to provide notification parity with the upload pipeline.
+     *
+     * @param jarNames the jar file names that were deployed
+     */
+    public void sendBundleDeployedNotification(final String[] jarNames) {
+
+        Try.run(() -> APILocator.getSystemEventsAPI()
+                .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(jarNames)))
+                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+
+        Try.run(() -> sendOSGIBundlesLoadedMessage(jarNames))
+                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+    }
+
+    /**
+     * Pushes both an {@link SystemEventType#OSGI_BUNDLES_UPLOAD_FAILED} system event and
+     * an error toast to notify admin users of a bundle processing failure.
+     *
+     * @param message the error message describing the failure
+     */
+    private void pushBundleUploadError(final String message) {
+
+        Try.run(() -> APILocator.getSystemEventsAPI()
+                .push(SystemEventType.OSGI_BUNDLES_UPLOAD_FAILED, new Payload(message)))
+                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+
+        Try.run(() -> SystemMessageEventUtil.getInstance().pushSimpleErrorEvent(
+                new ErrorEntity("osgi-bundle-upload-failed", message)))
+                .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+    }
 
     private static Tuple2<Boolean, String[]> containsFragments(final String[] pathnamesIn) {
 

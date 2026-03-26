@@ -407,6 +407,8 @@ public class OSGIResource {
             if (from.renameTo(to)) {
                 final String responseText = String.format("OSGI Bundle  %s Loaded", jarName);
                 Logger.info(this, responseText);
+                OSGIUtil.getInstance().sendBundleDeployedNotification(
+                        new String[]{sanitizedJarName});
                 return new ResponseEntityStringView(responseText);
             }
         }
