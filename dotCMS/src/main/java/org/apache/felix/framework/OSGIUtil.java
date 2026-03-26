@@ -473,7 +473,7 @@ public class OSGIUtil {
                     Logger.error(this, "Error try to acquire the lock, uploadFolder: " + uploadFolderFile +
                             ", msg: " + e.getMessage(), e);
                     pushBundleUploadError(
-                            "Failed to process OSGI bundles from upload folder: " + e.getMessage());
+                            "Failed to process OSGI bundles from upload folder: " + getExceptionMessage(e));
                 }
             } else {
 
@@ -537,7 +537,7 @@ public class OSGIUtil {
 
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
-            pushBundleUploadError("Failed to process OSGI bundle packages: " + e.getMessage());
+            pushBundleUploadError("Failed to process OSGI bundle packages: " + getExceptionMessage(e));
         }
     }
 
@@ -609,7 +609,7 @@ public class OSGIUtil {
             this.stopFramework();
             this.initializeFramework();
         } catch (final RuntimeException e) {
-            final String errorMsg = "Failed to restart OSGI framework: " + e.getMessage();
+            final String errorMsg = "Failed to restart OSGI framework: " + getExceptionMessage(e);
             Logger.error(this, errorMsg, e);
             Try.run(() -> SystemMessageEventUtil.getInstance().pushSimpleErrorEvent(
                     new ErrorEntity("osgi-framework-restart-failed", errorMsg)))
@@ -648,7 +648,7 @@ public class OSGIUtil {
         } catch (IOException e) {
 
             Logger.error(this, e.getMessage(), e);
-            pushBundleUploadError("Failed to move OSGI bundle to deploy folder: " + e.getMessage());
+            pushBundleUploadError("Failed to move OSGI bundle to deploy folder: " + getExceptionMessage(e));
         }
     }
 
@@ -755,6 +755,10 @@ public class OSGIUtil {
         Try.run(() -> SystemMessageEventUtil.getInstance().pushSimpleErrorEvent(
                 new ErrorEntity("osgi-bundle-upload-failed", message)))
                 .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
+    }
+
+    private static String getExceptionMessage(final Throwable e) {
+        return UtilMethods.isSet(e.getMessage()) ? e.getMessage() : e.getClass().getSimpleName();
     }
 
     private static Tuple2<Boolean, String[]> containsFragments(final String[] pathnamesIn) {
