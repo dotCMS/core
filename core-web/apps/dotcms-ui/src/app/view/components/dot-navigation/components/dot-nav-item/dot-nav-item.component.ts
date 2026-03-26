@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -23,7 +23,7 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
     styleUrls: ['./dot-nav-item.component.scss'],
-    imports: [CommonModule, DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe],
+    imports: [DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe, NgClass, NgStyle],
     host: {
         '[class.dot-nav-item__collapsed]': '$collapsed()'
     }
