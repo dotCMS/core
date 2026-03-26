@@ -286,7 +286,7 @@ export class DotStyleEditorBuilderComponent {
         const rawOptions = (field.config.options as BuilderOption[] | undefined) ?? [];
         const options = rawOptions.map((o): BuilderOption => {
             if (field.type === 'checkboxGroup') {
-                return { label: o.label, key: o.key ?? '' };
+                return { label: o.label, key: o.value ?? '' };
             }
 
             const option: BuilderOption = { label: o.label, value: o.value ?? '' };
@@ -433,7 +433,7 @@ export class DotStyleEditorBuilderComponent {
                     label: this.#dotMessageService.get('style.editor.form.builder.dialog.delete'),
                     text: false,
                     outlined: false,
-                    severity: 'danger',
+                    severity: 'primary',
                     callback: () => {
                         this.#confirmState.set(null);
                         this.removeSection(index);
@@ -471,7 +471,7 @@ export class DotStyleEditorBuilderComponent {
                     label: this.#dotMessageService.get('style.editor.form.builder.dialog.delete'),
                     text: false,
                     outlined: false,
-                    severity: 'danger',
+                    severity: 'primary',
                     callback: () => {
                         this.#confirmState.set(null);
                         this.removeField(sectionIndex, fieldUid);
