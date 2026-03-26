@@ -13,6 +13,25 @@ setupZoneTestEnv();
 // Setup global mocks
 setupResizeObserverMock();
 
+// Add crypto.randomUUID polyfill for Jest/JSDOM environment
+if (
+    typeof globalThis.crypto === 'undefined' ||
+    typeof globalThis.crypto.randomUUID !== 'function'
+) {
+    let counter = 0;
+    Object.defineProperty(globalThis, 'crypto', {
+        value: {
+            ...globalThis.crypto,
+            randomUUID: () => {
+                counter += 1;
+                return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`;
+            }
+        },
+        configurable: true,
+        writable: true
+    });
+}
+
 // Add structuredClone polyfill for Jest environment
 if (!global.structuredClone) {
     global.structuredClone = (obj: any) => {
