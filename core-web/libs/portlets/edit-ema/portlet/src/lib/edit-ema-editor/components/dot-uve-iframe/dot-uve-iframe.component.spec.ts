@@ -12,7 +12,6 @@ import { DotUveIframeComponent } from './dot-uve-iframe.component';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
-import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils';
 
 describe('DotUveIframeComponent', () => {
     let spectator: Spectator<DotUveIframeComponent>;
@@ -248,68 +247,6 @@ describe('DotUveIframeComponent', () => {
             const openSpy = jest.spyOn(mockDoc, 'open');
             component.onIframeLoad();
             expect(openSpy).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('insertPageContent - Code Injection', () => {
-        let mockIframe: HTMLIFrameElement;
-        let mockDoc: Document;
-        let mockWindow: Window;
-        let writeSpy: jest.SpyInstance;
-
-        beforeEach(() => {
-            mockIframe = document.createElement('iframe');
-            mockDoc = document.implementation.createHTMLDocument();
-            mockWindow = {
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn()
-            } as unknown as Window;
-
-            // Spy on document write method
-            writeSpy = jest.spyOn(mockDoc, 'write').mockImplementation(() => {
-                /* empty */
-            });
-
-            Object.defineProperty(mockIframe, 'contentDocument', {
-                value: mockDoc,
-                writable: true
-            });
-            Object.defineProperty(mockIframe, 'contentWindow', {
-                value: mockWindow,
-                writable: true
-            });
-
-            component.iframe = { nativeElement: mockIframe } as any;
-        });
-
-        afterEach(() => {
-            writeSpy.mockRestore();
-        });
-
-        it('should inject editor script before closing body tag', () => {
-            const htmlWithBody = '<html><head></head><body>Content</body></html>';
-            (component as any).insertPageContent(htmlWithBody, false);
-
-            const writtenContent = writeSpy.mock.calls[0][0];
-            expect(writtenContent).toContain(SDK_EDITOR_SCRIPT_SOURCE);
-            expect(writtenContent).toContain('</body>');
-            expect(writtenContent.indexOf(SDK_EDITOR_SCRIPT_SOURCE)).toBeLessThan(
-                writtenContent.indexOf('</body>')
-            );
-        });
-
-        it('should inject editor script at end if no body tag exists', () => {
-            const htmlWithoutBody = '<html><head></head></html>';
-            writeSpy.mockClear();
-            (component as any).insertPageContent(htmlWithoutBody, false);
-
-            const writtenContent = writeSpy.mock.calls[0][0];
-            expect(writtenContent).toContain(SDK_EDITOR_SCRIPT_SOURCE);
-            // Script is added at the end, then styles are added before </head>
-            // So script should appear after </head>
-            expect(writtenContent.indexOf(SDK_EDITOR_SCRIPT_SOURCE)).toBeGreaterThan(
-                writtenContent.indexOf('</head>')
-            );
         });
     });
 

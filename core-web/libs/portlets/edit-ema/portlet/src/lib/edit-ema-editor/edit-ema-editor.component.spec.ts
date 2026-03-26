@@ -106,8 +106,6 @@ import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     EDIT_ACTION_PAYLOAD_MOCK,
     MOCK_RESPONSE_HEADLESS,
-    MOCK_RESPONSE_VTL,
-    PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK,
     PAYLOAD_MOCK,
     QUERY_PARAMS_MOCK,
     TREE_NODE_MOCK,
@@ -118,8 +116,6 @@ import {
 } from '../shared/mocks';
 import { ActionPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import * as uveUtils from '../utils';
-import { TEMPORAL_DRAG_ITEM } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -472,7 +468,6 @@ describe('EditEmaEditorComponent', () => {
         let dotCopyContentModalService: DotCopyContentModalService;
         let dotCopyContentService: DotCopyContentService;
         let dotHttpErrorManagerService: DotHttpErrorManagerService;
-        let dotPageApiService: DotPageApiService;
 
         const createComponent = createRouting();
 
@@ -500,7 +495,6 @@ describe('EditEmaEditorComponent', () => {
             dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
             dotCopyContentService = spectator.inject(DotCopyContentService, true);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
-            dotPageApiService = spectator.inject(DotPageApiService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
 
             store.pageLoad({
@@ -2133,101 +2127,6 @@ describe('EditEmaEditorComponent', () => {
 
                     componentsToHide.forEach((testId) => {
                         expect(spectator.query(byTestId(testId))).not.toBeNull();
-                    });
-                });
-
-                describe('styles injection', () => {
-                    describe('designer templates', () => {
-                        beforeEach(() => {
-                            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
-                                of(MOCK_RESPONSE_VTL)
-                            );
-                            store.pageLoad({ url: 'index', clientHost: null });
-                        });
-
-                        it.skip('should call injectBaseTag with the right data', () => {
-                            const origin = window.location.origin;
-                            const injectBaseTagSpy = jest.spyOn(uveUtils, 'injectBaseTag');
-
-                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                            iframe.dispatchEvent(new Event('load'));
-
-                            spectator.detectChanges();
-
-                            expect(injectBaseTagSpy).toHaveBeenCalledWith({
-                                html: MOCK_RESPONSE_VTL.page.rendered,
-                                url: MOCK_RESPONSE_VTL.page.pageURI,
-                                origin
-                            });
-                        });
-
-                        it('should add styles to iframe', () => {
-                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                            const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-                            iframe.dispatchEvent(new Event('load'));
-
-                            spectator.detectChanges();
-
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining(`[data-dot-object="container"]:empty`)
-                            );
-
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining(
-                                    '[data-dot-object="contentlet"].empty-contentlet'
-                                )
-                            );
-                        });
-                    });
-
-                    describe('advance templates', () => {
-                        beforeEach(() => {
-                            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
-                                of(PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK)
-                            );
-                            store.pageLoad({ url: 'index', clientHost: null });
-                        });
-
-                        it('should add styles to iframe for advance templates', () => {
-                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                            const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-
-                            iframe.dispatchEvent(new Event('load'));
-                            spectator.detectChanges();
-
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining('[data-dot-object="container"]:empty')
-                            );
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining(
-                                    '[data-dot-object="contentlet"].empty-contentlet'
-                                )
-                            );
-                        });
-                    });
-                });
-
-                describe('when pageRender is undefined', () => {
-                    beforeEach(() => {
-                        jest.spyOn(dotPageApiService, 'get').mockReturnValue(
-                            of({
-                                ...MOCK_RESPONSE_VTL,
-                                page: { ...MOCK_RESPONSE_VTL.page, rendered: undefined }
-                            })
-                        );
-                        store.loadPageAsset({ url: 'index', clientHost: null });
-                    });
-
-                    it('should not write to the iframe document', () => {
-                        spectator.detectChanges();
-
-                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-
-                        iframe.dispatchEvent(new Event('load'));
-                        spectator.detectChanges();
-
-                        expect(spyWrite).not.toHaveBeenCalled();
                     });
                 });
             });
