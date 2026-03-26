@@ -213,6 +213,16 @@ export const ExistingContentStore = signalStore(
                         ]).pipe(
                             tapResponse({
                                 next: ([columnsAndContent, constrainedIdentifiers]) => {
+                                    if (!columnsAndContent) {
+                                        patchState(store, {
+                                            status: ComponentStatus.ERROR,
+                                            errorMessage:
+                                                'dot.file.relationship.dialog.content.request.failed'
+                                        });
+
+                                        return;
+                                    }
+
                                     const [columns, searchResponse] = columnsAndContent;
                                     const data = searchResponse.contentlets;
                                     const selectionItems =

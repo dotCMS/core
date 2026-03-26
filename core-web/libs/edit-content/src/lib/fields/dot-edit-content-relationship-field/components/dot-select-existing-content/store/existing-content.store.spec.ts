@@ -318,4 +318,97 @@ describe('ExistingContentStore', () => {
             expect(store.pagination().offset).toBe(100);
         });
     });
+
+    describe('Cardinality Constraints', () => {
+        it('should have empty constrainedIdentifiers by default', () => {
+            expect(store.constrainedIdentifiers()).toEqual(new Set());
+        });
+
+        it('should return false for isItemConstrained when no constraints loaded', () => {
+            expect(store.isItemConstrained()('any-id')).toBe(false);
+        });
+
+        it('should load constrained identifiers for ONE_TO_MANY parent field', fakeAsync(() => {
+            const constrainedSet = new Set(['taken-child-1', 'taken-child-2']);
+            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+            service.getConstrainedIdentifiers.mockReturnValue(of(constrainedSet));
+
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'multiple',
+                selectedItemsIds: [],
+                cardinality: 0, // ONE_TO_MANY
+                parentContentTypeVariable: 'MAIN',
+                fieldVariable: 'relation',
+                isParentField: true,
+                currentContentIdentifier: 'current-id'
+            });
+            tick();
+
+            expect(store.constrainedIdentifiers()).toEqual(constrainedSet);
+            expect(store.isItemConstrained()('taken-child-1')).toBe(true);
+            expect(store.isItemConstrained()('taken-child-2')).toBe(true);
+            expect(store.isItemConstrained()('free-child')).toBe(false);
+            expect(service.getConstrainedIdentifiers).toHaveBeenCalledWith({
+                parentContentTypeVariable: 'MAIN',
+                fieldVariable: 'relation',
+                currentContentIdentifier: 'current-id'
+            });
+        }));
+
+        it('should not load constrained identifiers for MANY_TO_MANY', fakeAsync(() => {
+            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'multiple',
+                selectedItemsIds: [],
+                cardinality: 1, // MANY_TO_MANY
+                parentContentTypeVariable: 'MAIN',
+                fieldVariable: 'relation',
+                isParentField: true,
+                currentContentIdentifier: 'current-id'
+            });
+            tick();
+
+            expect(store.constrainedIdentifiers()).toEqual(new Set());
+            expect(service.getConstrainedIdentifiers).not.toHaveBeenCalled();
+        }));
+
+        it('should not load constrained identifiers when cardinality params are missing', fakeAsync(() => {
+            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'multiple',
+                selectedItemsIds: []
+            });
+            tick();
+
+            expect(store.constrainedIdentifiers()).toEqual(new Set());
+            expect(service.getConstrainedIdentifiers).not.toHaveBeenCalled();
+        }));
+
+        it('should handle null from getColumnsAndContent gracefully', fakeAsync(() => {
+            service.getColumnsAndContent.mockReturnValue(of(null));
+            service.getConstrainedIdentifiers.mockReturnValue(of(new Set()));
+
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'multiple',
+                selectedItemsIds: [],
+                cardinality: 0,
+                parentContentTypeVariable: 'MAIN',
+                fieldVariable: 'relation',
+                isParentField: true,
+                currentContentIdentifier: 'current-id'
+            });
+            tick();
+
+            expect(store.status()).toBe(ComponentStatus.ERROR);
+            expect(store.errorMessage()).toBe(
+                'dot.file.relationship.dialog.content.request.failed'
+            );
+        }));
+    });
 });
