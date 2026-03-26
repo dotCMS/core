@@ -18,7 +18,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import javax.enterprise.context.ApplicationScoped;
 import com.dotcms.rest.exception.BadRequestException;
 
 /**
@@ -27,7 +26,6 @@ import com.dotcms.rest.exception.BadRequestException;
  *
  * @author hassandotcms
  */
-@ApplicationScoped
 public class CompanyConfigHelper {
 
     private final CompanyAPI companyAPI;

@@ -23,7 +23,7 @@ import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.dotcms.rest.exception.ValidationException;
-import javax.ws.rs.BadRequestException;
+import com.dotcms.rest.exception.BadRequestException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -268,10 +268,11 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
                 resource.saveLocaleInfo(request, mockResponse, form);
 
         assertNotNull(result);
-        assertNotNull(result.getEntity());
-        // Locale is stored on the default User, not Company —
-        // the response confirms the company state is still valid
-        assertNotNull(result.getEntity().companyId());
+        final CompanyConfigView config = result.getEntity();
+        assertNotNull(config);
+        assertNotNull(config.companyId());
+        assertEquals("en_US", config.languageId());
+        assertEquals("America/New_York", config.timeZoneId());
     }
 
     @Test(expected = ValidationException.class)

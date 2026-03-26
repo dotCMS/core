@@ -28,7 +28,7 @@ public class CompanyBasicInfoForm extends Validated {
      * Accepts #RGB, #RGBA, #RRGGBB, #RRGGBBAA.
      */
     private static final Pattern HEX_COLOR_PATTERN =
-            Pattern.compile("^#[0-9a-fA-F]{3,8}$");
+            Pattern.compile("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$");
 
     @JsonProperty("portalURL")
     @Schema(description = "Portal URL for the dotCMS instance", example = "http://localhost:8080",
@@ -149,6 +149,15 @@ public class CompanyBasicInfoForm extends Validated {
         if (portalURL.indexOf('<') >= 0 || portalURL.indexOf('>') >= 0) {
             throw new BadRequestException(
                     "portalURL contains invalid characters");
+        }
+
+        // Reject dangerous URI schemes
+        final String portalURLLower = portalURL.trim().toLowerCase();
+        if (portalURLLower.startsWith("javascript:")
+                || portalURLLower.startsWith("data:")
+                || portalURLLower.startsWith("vbscript:")) {
+            throw new BadRequestException(
+                    "portalURL must not use javascript:, data:, or vbscript: URI schemes");
         }
 
         // Color format validation
