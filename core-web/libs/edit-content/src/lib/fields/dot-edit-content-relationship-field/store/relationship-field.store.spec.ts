@@ -43,15 +43,6 @@ describe('RelationshipFieldStore', () => {
         variable: 'relationship_field'
     });
 
-    const makeFakeContentlets = (count: number, prefix = 'item') =>
-        Array.from({ length: count }, (_, i) =>
-            createFakeContentlet({
-                inode: `${prefix}-inode-${i + 1}`,
-                identifier: `${prefix}-identifier-${i + 1}`,
-                id: `${i + 1}`
-            })
-        );
-
     const mockContentType = {
         id: 'test-content-type',
         name: 'Test Content Type',
@@ -171,7 +162,13 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should reset pagination to page 1 when data is replaced', () => {
-                const eightItems = makeFakeContentlets(8, 'set');
+                const eightItems = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `set-inode-${i + 1}`,
+                        identifier: `set-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
                 store.setData(eightItems);
 
                 // Navigate to page 2
@@ -198,7 +195,13 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should reset pagination when current page exceeds total after delete', () => {
-                const sevenItems = makeFakeContentlets(7, 'del');
+                const sevenItems = Array.from({ length: 7 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `del-inode-${i + 1}`,
+                        identifier: `del-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
                 store.setData(sevenItems);
 
                 // Navigate to page 2 (offset 6, only item index 6)
@@ -216,7 +219,13 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should stay on current page when delete does not invalidate it', () => {
-                const nineItems = makeFakeContentlets(9, 'stay');
+                const nineItems = Array.from({ length: 9 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `stay-inode-${i + 1}`,
+                        identifier: `stay-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
                 store.setData(nineItems);
 
                 // Navigate to page 2 (offset 6, items 7-9)
@@ -234,7 +243,13 @@ describe('RelationshipFieldStore', () => {
             });
 
             it('should reset pagination to page 1 when all items are deleted', () => {
-                const sevenItems = makeFakeContentlets(7, 'all');
+                const sevenItems = Array.from({ length: 7 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `all-inode-${i + 1}`,
+                        identifier: `all-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
                 store.setData(sevenItems);
 
                 // Navigate to page 2
@@ -338,7 +353,13 @@ describe('RelationshipFieldStore', () => {
         });
 
         describe('paginatedData', () => {
-            const paginatedMockData = makeFakeContentlets(8, 'page');
+            const paginatedMockData = Array.from({ length: 8 }, (_, i) =>
+                createFakeContentlet({
+                    inode: `page-inode-${i + 1}`,
+                    identifier: `page-identifier-${i + 1}`,
+                    id: `${i + 1}`
+                })
+            );
 
             it('should return first page slice by default', () => {
                 store.setData(paginatedMockData);

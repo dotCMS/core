@@ -165,20 +165,30 @@ export const RelationshipFieldStore = signalStore(
             deleteItem(inode: string) {
                 const newData = store.data().filter((item) => item.inode !== inode);
                 const { offset, rowsPerPage } = store.pagination();
-                let newOffset = offset;
-                let newPage = store.pagination().currentPage;
 
-                if (newData.length === 0 || offset >= newData.length) {
-                    const lastPage =
-                        newData.length === 0 ? 1 : Math.ceil(newData.length / rowsPerPage);
-                    newOffset = (lastPage - 1) * rowsPerPage;
-                    newPage = lastPage;
+                if (offset >= newData.length && newData.length > 0) {
+                    const lastPage = Math.ceil(newData.length / rowsPerPage);
+                    const newOffset = (lastPage - 1) * rowsPerPage;
+                    patchState(store, {
+                        data: newData,
+                        pagination: {
+                            ...store.pagination(),
+                            offset: newOffset,
+                            currentPage: lastPage
+                        }
+                    });
+                } else if (newData.length === 0) {
+                    patchState(store, {
+                        data: newData,
+                        pagination: {
+                            ...store.pagination(),
+                            offset: 0,
+                            currentPage: 1
+                        }
+                    });
+                } else {
+                    patchState(store, { data: newData });
                 }
-
-                patchState(store, {
-                    data: newData,
-                    pagination: { ...store.pagination(), offset: newOffset, currentPage: newPage }
-                });
             },
             /**
              * Advances the pagination to the next page and updates the state accordingly.
