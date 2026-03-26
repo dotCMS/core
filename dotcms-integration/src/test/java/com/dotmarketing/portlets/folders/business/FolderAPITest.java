@@ -151,17 +151,13 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 
 
 	/**
-	 * Verifies the basic rename behavior: the folder is reachable at the new path and
-	 * all nested sub-folders are still accessible with their original names.
+	 * Verifies the basic in-place rename behavior for a folder hierarchy.
 	 * <p>
-	 * The rename is performed in-place: every identifier is preserved (same UUID) and only
-	 * {@code asset_name} / {@code parent_path} values are updated in the DB.
+	 * All folder identifiers are preserved (same UUIDs), while
+	 * {@code asset_name}/{@code parent_path} are updated consistently.
 	 */
 	@Test
 	public void renameFolder() throws Exception {
-
-		final String[] folderNames = new String[]{"ff1", "ff2", "ff3"};
-
 		final Folder ftest = folderAPI
 				.createFolders("/folderTest"+System.currentTimeMillis(), host, user, false);
 		final Folder ftest1 = folderAPI
@@ -172,9 +168,8 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 				.createFolders(ftest.getPath()+"/ff1/ff2/ff3", host, user, false);
 
 		final String newFolderName = "folderTestXX" + System.currentTimeMillis();
-		Assert.assertTrue(folderAPI.renameFolder(ftest, newFolderName, user, false));
+		assertTrue(folderAPI.renameFolder(ftest, newFolderName, user, false));
 
-		// In-place rename: all identifiers are preserved (same UUIDs), asset_name / parent_path updated
 		final Identifier ident  = identifierAPI.loadFromDb(ftest.getIdentifier());
 		final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getIdentifier());
 		final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getIdentifier());
@@ -185,26 +180,26 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		assertNotNull(ident2);
 		assertNotNull(ident3);
 
-		// The renamed folder's identifier gets the new asset_name
 		assertEquals(newFolderName, ident.getAssetName());
 
-		// Folder is reachable at the new path and keeps the same identifier
-		final Folder newFolder = folderAPI.findFolderByPath(StringPool.SLASH + newFolderName, host, user, false);
-		assertNotNull(newFolder);
-		assertEquals("In-place rename must keep the same identifier UUID",
-				ftest.getIdentifier(), newFolder.getIdentifier());
+		final String newRootPath = StringPool.SLASH + newFolderName + StringPool.SLASH;
+		assertEquals(newRootPath, ident1.getParentPath());
+		assertEquals(newRootPath + "ff1" + StringPool.SLASH, ident2.getParentPath());
+		assertEquals(newRootPath + "ff1" + StringPool.SLASH + "ff2" + StringPool.SLASH, ident3.getParentPath());
 
-		// All nested sub-folders are still accessible with their original names
-		List<Folder> subFolders = folderAPI.findSubFolders(newFolder, false);
-		Folder currentChild;
-		int i = 0;
-		do {
-			assertEquals(1, subFolders.size());
-			currentChild = subFolders.get(0);
-			assertEquals(folderNames[i], currentChild.getName());
-			subFolders = folderAPI.findSubFolders(currentChild, false);
-			i++;
-		} while (i < 3);
+		final Folder newFolder = folderAPI.findFolderByPath(newRootPath, host, user, false);
+		final Folder newFolder1 = folderAPI.findFolderByPath(newRootPath + "ff1/", host, user, false);
+		final Folder newFolder2 = folderAPI.findFolderByPath(newRootPath + "ff1/ff2/", host, user, false);
+		final Folder newFolder3 = folderAPI.findFolderByPath(newRootPath + "ff1/ff2/ff3/", host, user, false);
+
+		assertNotNull(newFolder);
+		assertNotNull(newFolder1);
+		assertNotNull(newFolder2);
+		assertNotNull(newFolder3);
+		assertEquals(ftest.getIdentifier(), newFolder.getIdentifier());
+		assertEquals(ftest1.getIdentifier(), newFolder1.getIdentifier());
+		assertEquals(ftest2.getIdentifier(), newFolder2.getIdentifier());
+		assertEquals(ftest3.getIdentifier(), newFolder3.getIdentifier());
 	}
 
 	/**
