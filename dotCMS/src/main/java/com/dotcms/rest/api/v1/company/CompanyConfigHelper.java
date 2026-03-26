@@ -210,9 +210,11 @@ public class CompanyConfigHelper {
                 .mx(company.getMx())
                 .primaryColor(company.getType())
                 .secondaryColor(company.getStreet())
-                .backgroundColor(company.getSize())
+                .backgroundColor(
+                        UtilMethods.isSet(company.getSize()) ? company.getSize() : null)
                 .backgroundImage(
-                        UtilMethods.isSet(company.getHomeURL()) ? company.getHomeURL() : null)
+                        UtilMethods.isSet(company.getHomeURL()) && company.getHomeURL().startsWith("/dA")
+                                ? company.getHomeURL() : null)
                 .loginScreenLogo(
                         UtilMethods.isSet(loginLogo) && loginLogo.startsWith("/dA")
                                 ? loginLogo : null)

@@ -167,8 +167,12 @@ public class CompanyBasicInfoForm extends Validated {
             validateHexColor("backgroundColor", backgroundColor);
         }
 
-        // Logo paths must be dotAsset references (matches the read-side
+        // Image/logo paths must be dotAsset references (matches the read-side
         // filter in CompanyConfigHelper.toView that drops non-/dA values)
+        if (UtilMethods.isSet(backgroundImage) && !backgroundImage.startsWith("/dA")) {
+            throw new BadRequestException(
+                    "backgroundImage must be a dotAsset path starting with /dA");
+        }
         if (UtilMethods.isSet(loginScreenLogo) && !loginScreenLogo.startsWith("/dA")) {
             throw new BadRequestException(
                     "loginScreenLogo must be a dotAsset path starting with /dA");

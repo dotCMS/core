@@ -235,14 +235,16 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_saveAuthType_invalidType_throwsIllegalArgument() {
-        // Jackson would reject invalid values at deserialization;
-        // calling AuthType.fromString directly simulates that
-        AuthType.fromString("invalidType");
+    @Test(expected = BadRequestException.class)
+    public void test_saveAuthType_invalidType_throwsBadRequest() {
+        // AuthType.fromString returns null for invalid values;
+        // form validation catches it and throws BadRequestException
+        final HttpServletRequest request = createAdminRequest();
+        final CompanyAuthTypeForm form = new CompanyAuthTypeForm(AuthType.fromString("invalidType"));
+        resource.saveAuthType(request, mockResponse, form);
     }
 
-    @Test(expected = ValidationException.class)
+    @Test(expected = BadRequestException.class)
     public void test_saveAuthType_nullType_throwsBadRequest() {
         final HttpServletRequest request = createAdminRequest();
         final CompanyAuthTypeForm form = new CompanyAuthTypeForm(null);

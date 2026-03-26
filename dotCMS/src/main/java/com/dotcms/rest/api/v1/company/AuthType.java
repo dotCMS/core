@@ -27,12 +27,13 @@ public enum AuthType {
 
     @JsonCreator
     public static AuthType fromString(final String value) {
-        for (final AuthType type : values()) {
-            if (type.value.equals(value)) {
-                return type;
+        if (value != null) {
+            for (final AuthType type : values()) {
+                if (type.value.equals(value)) {
+                    return type;
+                }
             }
         }
-        throw new IllegalArgumentException(
-                "Invalid authType: '" + value + "'. Must be one of: emailAddress, userId");
+        return null;
     }
 }
