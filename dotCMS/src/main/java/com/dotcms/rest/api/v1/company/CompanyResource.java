@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
+import com.dotcms.rest.exception.BadRequestException;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -36,9 +37,9 @@ import javax.ws.rs.core.MediaType;
  *
  * @author hassandotcms
  */
-@Path("/v1/company")
+@Path("/v1/configuration")
 @SwaggerCompliant(value = "Company configuration and system settings APIs", batch = 3)
-@Tag(name = "Company Configuration", description = "Company settings and branding management")
+@Tag(name = "System Configuration", description = "System configuration and company settings")
 public class CompanyResource {
 
     private final WebResource webResource;
@@ -77,6 +78,7 @@ public class CompanyResource {
                     content = @Content(mediaType = "application/json"))
     })
     @GET
+    @Path("/branding")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -121,7 +123,7 @@ public class CompanyResource {
                     content = @Content(mediaType = "application/json"))
     })
     @PUT
-    @Path("/basic-info")
+    @Path("/branding")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -145,6 +147,9 @@ public class CompanyResource {
                 .init()
                 .getUser();
 
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
         form.checkValid();
 
         return new ResponseEntityCompanyConfigView(helper.saveBasicInfo(form, user));
@@ -175,7 +180,7 @@ public class CompanyResource {
                     content = @Content(mediaType = "application/json"))
     })
     @PUT
-    @Path("/auth-type")
+    @Path("/authentication")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -199,6 +204,9 @@ public class CompanyResource {
                 .init()
                 .getUser();
 
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
         form.checkValid();
 
         return new ResponseEntityCompanyConfigView(helper.saveAuthType(form, user));
@@ -217,7 +225,7 @@ public class CompanyResource {
             @ApiResponse(responseCode = "200",
                     description = "Locale settings updated successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+                            schema = @Schema(implementation = ResponseEntityCompanyConfigView.class))),
             @ApiResponse(responseCode = "400",
                     description = "Invalid locale parameters (e.g. invalid timezone)",
                     content = @Content(mediaType = "application/json")),
@@ -229,12 +237,12 @@ public class CompanyResource {
                     content = @Content(mediaType = "application/json"))
     })
     @PUT
-    @Path("/locale-info")
+    @Path("/locale")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
-    public ResponseEntityStringView saveLocaleInfo(
+    public ResponseEntityCompanyConfigView saveLocaleInfo(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -253,10 +261,15 @@ public class CompanyResource {
                 .init()
                 .getUser();
 
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
         form.checkValid();
         helper.saveLocaleInfo(form, user);
 
-        return new ResponseEntityStringView("OK");
+        // Locale is stored on the default User, not the Company entity.
+        // Return CompanyConfigView for consistency with the sibling PUT endpoints.
+        return new ResponseEntityCompanyConfigView(helper.getCompanyConfig(user));
     }
 
     /**

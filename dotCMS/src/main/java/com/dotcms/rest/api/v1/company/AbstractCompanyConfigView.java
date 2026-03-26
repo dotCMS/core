@@ -41,7 +41,9 @@ public interface AbstractCompanyConfigView {
     String portalURL();
 
     @Schema(
-            description = "Company email address used as the system sender",
+            description = "Company email address used as the system sender. "
+                    + "May be a plain email or display name format "
+                    + "(e.g. 'dotCMS Website <website@dotcms.com>')",
             example = "admin@dotcms.com",
             requiredMode = Schema.RequiredMode.REQUIRED
     )

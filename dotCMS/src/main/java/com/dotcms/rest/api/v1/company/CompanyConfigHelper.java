@@ -19,7 +19,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.BadRequestException;
+import com.dotcms.rest.exception.BadRequestException;
 
 /**
  * Business logic helper for company configuration operations.
@@ -158,7 +158,7 @@ public class CompanyConfigHelper {
                     form.getLanguageId(), form.getTimeZoneId(),
                     null, false, false, null);
         } catch (InvalidTimeZoneException e) {
-            throw e;
+            throw new BadRequestException("Invalid timeZoneId: '" + form.getTimeZoneId() + "'");
         } catch (Exception e) {
             Logger.error(this, "Error saving locale information for company: " + e.getMessage(), e);
             throw new DotRuntimeException("Error saving locale information", e);
@@ -218,12 +218,18 @@ public class CompanyConfigHelper {
 
     /**
      * Extracts the domain from an email address.
+     * Handles "Display Name &lt;user@domain&gt;" format via InternetAddress parsing.
      */
     private String extractDomain(final String email) {
 
         try {
             if (UtilMethods.isSet(email) && email.contains("@")) {
-                return email.substring(email.indexOf('@') + 1);
+                final javax.mail.internet.InternetAddress[] addresses =
+                        javax.mail.internet.InternetAddress.parse(email);
+                if (addresses.length > 0) {
+                    final String address = addresses[0].getAddress();
+                    return address.substring(address.indexOf('@') + 1);
+                }
             }
         } catch (Exception e) {
             Logger.debug(this, "Could not extract domain from email: " + e.getMessage());

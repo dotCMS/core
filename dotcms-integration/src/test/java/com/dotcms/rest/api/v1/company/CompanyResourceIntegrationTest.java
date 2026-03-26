@@ -56,7 +56,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
                 APILocator.getRoleAPI().loadBackEndUserRole(), nonAdminUser);
     }
 
-    // ==================== GET /v1/company ====================
+    // ==================== GET /v1/configuration/branding ====================
 
     @Test
     public void test_getCompanyConfig_asAdmin_returnsMappedConfig() {
@@ -87,7 +87,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         resource.getCompanyConfig(request, mockResponse);
     }
 
-    // ==================== PUT /v1/company/basic-info ====================
+    // ==================== PUT /v1/configuration/branding ====================
 
     @Test
     public void test_saveBasicInfo_asAdmin_persistsAndReturnsUpdatedConfig() {
@@ -204,7 +204,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         resource.saveBasicInfo(request, mockResponse, form);
     }
 
-    // ==================== PUT /v1/company/auth-type ====================
+    // ==================== PUT /v1/configuration/authentication ====================
 
     @Test
     public void test_saveAuthType_asAdmin_persistsAndReturnsUpdatedConfig() {
@@ -256,7 +256,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         resource.saveAuthType(request, mockResponse, form);
     }
 
-    // ==================== PUT /v1/company/locale-info ====================
+    // ==================== PUT /v1/configuration/locale ====================
 
     @Test
     public void test_saveLocaleInfo_asAdmin_succeeds() {
@@ -264,11 +264,14 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
 
         final CompanyLocaleForm form = new CompanyLocaleForm("en_US", "America/New_York");
 
-        final ResponseEntityStringView result =
+        final ResponseEntityCompanyConfigView result =
                 resource.saveLocaleInfo(request, mockResponse, form);
 
         assertNotNull(result);
-        assertEquals("OK", result.getEntity());
+        assertNotNull(result.getEntity());
+        // Locale is stored on the default User, not Company —
+        // the response confirms the company state is still valid
+        assertNotNull(result.getEntity().companyId());
     }
 
     @Test(expected = ValidationException.class)
@@ -292,7 +295,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         resource.saveLocaleInfo(request, mockResponse, form);
     }
 
-    // ==================== POST /v1/company/_regenerateKey ====================
+    // ==================== POST /v1/configuration/_regenerateKey ====================
 
     @Test
     public void test_regenerateKey_asAdmin_returnsNewDigest() throws Exception {

@@ -6,8 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotmarketing.util.UtilMethods;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.regex.Pattern;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.BadRequestException;
+import com.dotcms.rest.exception.BadRequestException;
 
 /**
  * Form for saving company basic information and branding settings.
@@ -18,6 +19,17 @@ import javax.ws.rs.BadRequestException;
 @Schema(description = "Company basic information and branding settings")
 public class CompanyBasicInfoForm extends Validated {
 
+    /**
+     * Company table columns are varchar(100).
+     */
+    static final int MAX_FIELD_LENGTH = 100;
+
+    /**
+     * Accepts #RGB, #RGBA, #RRGGBB, #RRGGBBAA.
+     */
+    private static final Pattern HEX_COLOR_PATTERN =
+            Pattern.compile("^#[0-9a-fA-F]{3,8}$");
+
     @JsonProperty("portalURL")
     @Schema(description = "Portal URL for the dotCMS instance", example = "http://localhost:8080",
             requiredMode = Schema.RequiredMode.REQUIRED)
@@ -25,7 +37,11 @@ public class CompanyBasicInfoForm extends Validated {
     private final String portalURL;
 
     @JsonProperty("emailAddress")
-    @Schema(description = "Company email address used as the system sender", example = "admin@dotcms.com",
+    @Schema(description = "Company email address used as the system sender. "
+            + "Accepts plain email (e.g. 'admin@dotcms.com') or display name format "
+            + "(e.g. 'dotCMS Website <website@dotcms.com>'). "
+            + "The mx domain is derived from this value when mx is not provided.",
+            example = "admin@dotcms.com",
             requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "emailAddress is required")
     private final String emailAddress;
@@ -47,19 +63,23 @@ public class CompanyBasicInfoForm extends Validated {
     private final String secondaryColor;
 
     @JsonProperty("backgroundColor")
-    @Schema(description = "Background branding color (hex)", example = "#3C1361")
+    @Schema(description = "Background branding color (hex). Cleared if omitted.",
+            example = "#3C1361")
     private final String backgroundColor;
 
     @JsonProperty("backgroundImage")
-    @Schema(description = "Background image path (dotAsset path)", example = "/dA/abc123/background.png")
+    @Schema(description = "Background image path (dotAsset path). Cleared if omitted.",
+            example = "/dA/abc123/background.png")
     private final String backgroundImage;
 
     @JsonProperty("loginScreenLogo")
-    @Schema(description = "Login screen logo path (dotAsset path starting with /dA)", example = "/dA/abc123/logo.png")
+    @Schema(description = "Login screen logo path (dotAsset path starting with /dA). Cleared if omitted.",
+            example = "/dA/abc123/logo.png")
     private final String loginScreenLogo;
 
     @JsonProperty("navBarLogo")
-    @Schema(description = "Navigation bar logo path (dotAsset path starting with /dA, Enterprise only)",
+    @Schema(description = "Navigation bar logo path (dotAsset path starting with /dA, Enterprise only). "
+            + "Cleared if omitted.",
             example = "/dA/abc123/nav-logo.png")
     private final String navBarLogo;
 
@@ -89,6 +109,7 @@ public class CompanyBasicInfoForm extends Validated {
     public void checkValid() {
         super.checkValid();
 
+        // Required field presence
         if (!UtilMethods.isSet(portalURL)) {
             throw new BadRequestException("portalURL is required");
         }
@@ -100,6 +121,55 @@ public class CompanyBasicInfoForm extends Validated {
         }
         if (!UtilMethods.isSet(secondaryColor)) {
             throw new BadRequestException("secondaryColor is required");
+        }
+
+        // Length validation — Company table columns are varchar(100)
+        validateMaxLength("portalURL", portalURL);
+        validateMaxLength("emailAddress", emailAddress);
+        validateMaxLength("primaryColor", primaryColor);
+        validateMaxLength("secondaryColor", secondaryColor);
+        if (UtilMethods.isSet(mx)) {
+            validateMaxLength("mx", mx);
+        }
+        if (UtilMethods.isSet(backgroundColor)) {
+            validateMaxLength("backgroundColor", backgroundColor);
+        }
+        if (UtilMethods.isSet(backgroundImage)) {
+            validateMaxLength("backgroundImage", backgroundImage);
+        }
+        if (UtilMethods.isSet(loginScreenLogo)) {
+            validateMaxLength("loginScreenLogo", loginScreenLogo);
+        }
+        if (UtilMethods.isSet(navBarLogo)) {
+            validateMaxLength("navBarLogo", navBarLogo);
+        }
+
+        // portalURL must not contain HTML characters (prevents silent data
+        // corruption by the Liferay XSS filter in the model layer)
+        if (portalURL.indexOf('<') >= 0 || portalURL.indexOf('>') >= 0) {
+            throw new BadRequestException(
+                    "portalURL contains invalid characters");
+        }
+
+        // Color format validation
+        validateHexColor("primaryColor", primaryColor);
+        validateHexColor("secondaryColor", secondaryColor);
+        if (UtilMethods.isSet(backgroundColor)) {
+            validateHexColor("backgroundColor", backgroundColor);
+        }
+    }
+
+    private static void validateMaxLength(final String field, final String value) {
+        if (value != null && value.length() > MAX_FIELD_LENGTH) {
+            throw new BadRequestException(
+                    field + " exceeds maximum length of " + MAX_FIELD_LENGTH);
+        }
+    }
+
+    private static void validateHexColor(final String field, final String value) {
+        if (!HEX_COLOR_PATTERN.matcher(value).matches()) {
+            throw new BadRequestException(
+                    field + " must be a valid hex color (e.g. #FF0000)");
         }
     }
 
