@@ -1,6 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
@@ -20,7 +20,7 @@ import { IframeComponent } from '../iframe-component/iframe.component';
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
     templateUrl: 'iframe-porlet-legacy.component.html',
-    imports: [CommonModule, RouterModule, IframeComponent, DotNotLicenseComponent]
+    imports: [RouterModule, IframeComponent, DotNotLicenseComponent, AsyncPipe]
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private contentletService = inject(DotContentTypeService);

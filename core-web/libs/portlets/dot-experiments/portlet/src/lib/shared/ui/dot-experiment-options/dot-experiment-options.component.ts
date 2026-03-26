@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -21,7 +21,7 @@ const SELECT_VALUE_ACCESSOR: Provider = {
 
 @Component({
     selector: 'dot-experiment-options',
-    imports: [CommonModule],
+    imports: [NgClass, NgTemplateOutlet],
     templateUrl: './dot-experiment-options.component.html',
     styleUrls: ['./dot-experiment-options.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

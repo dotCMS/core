@@ -6,7 +6,7 @@
         tooltipPosition="bottom"
         [text]="true"
         [rounded]="true"
-        [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
+        [class.active]="device.inode === $currentDevice()?.inode"
         (click)="onDeviceSelect(device)"
         [attr.data-testId]="device.inode" />
 }
@@ -22,7 +22,7 @@
     <ng-template pTemplate="content">
         <svg
             class="origin-center transition-transform duration-200 ease-in-out motion-reduce:transition-none"
-            [ngClass]="{
+            [class]="{
                 'rotate-90': $currentOrientation() === Orientation.LANDSCAPE,
                 'rotate-0': $currentOrientation() !== Orientation.LANDSCAPE
             }"

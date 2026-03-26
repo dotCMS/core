@@ -1,6 +1,4 @@
-<div
-    [ngClass]="{ 'preview-container--fade': this.metadata?.editableAsText }"
-    class="preview-container">
+<div [class.preview-container--fade]="this.metadata?.editableAsText" class="preview-container">
     @if (this.metadata?.editableAsText) {
         <div
             (click)="this.editFile.emit()"
