@@ -1,11 +1,9 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
-import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
 import com.dotcms.rest.WebResource;
@@ -170,15 +168,22 @@ public class CompletionsResource {
 
         final Map<String, Object> map = new HashMap<>();
         map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
-        for (final AppKeys config : AppKeys.values()) {
-            map.put(config.key, appConfig.getConfig(config));
+        map.put(AppKeys.API_KEY.key, appConfig.isEnabled() || UtilMethods.isSet(appConfig.getApiKey()) ? "*****" : "NOT SET");
+
+        final String providerConfig = appConfig.getProviderConfig();
+        if (StringUtils.isNotBlank(providerConfig)) {
+            map.put(AppKeys.PROVIDER_CONFIG.key, providerConfig.replaceAll("\"apiKey\"\\s*:\\s*\"[^\"]+\"", "\"apiKey\":\"*****\""));
         }
 
-        final String apiKey = UtilMethods.isSet(appConfig.getApiKey()) ? "*****" : "NOT SET";
-        map.put(AppKeys.API_KEY.key, apiKey);
-
-        final List<SimpleModel> models = AIModels.get().getAvailableModels();
-        map.put(AiKeys.AVAILABLE_MODELS, models);
+        map.put("model", appConfig.getModel().getCurrentModel());
+        map.put("imageModel", appConfig.getImageModel().getCurrentModel());
+        map.put("embeddingsModel", appConfig.getEmbeddingsModel().getCurrentModel());
+        map.put(AppKeys.ROLE_PROMPT.key, appConfig.getRolePrompt());
+        map.put(AppKeys.TEXT_PROMPT.key, appConfig.getTextPrompt());
+        map.put(AppKeys.IMAGE_PROMPT.key, appConfig.getImagePrompt());
+        map.put(AppKeys.IMAGE_SIZE.key, appConfig.getImageSize());
+        map.put(AppKeys.LISTENER_INDEXER.key, appConfig.getListenerIndexer());
+        map.put(AppKeys.DEBUG_LOGGING.key, appConfig.getConfig(AppKeys.DEBUG_LOGGING));
 
         return Response.ok(map).build();
     }
