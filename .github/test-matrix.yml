@@ -59,8 +59,9 @@ test_types:
       needs_node: false
       # Base command for all integration tests
       base_maven_args: >-
-        verify -Dit.test.forkcount=1 -pl :dotcms-integration 
+        verify -Dit.test.forkcount=1 -pl :dotcms-integration
         -Dcoreit.test.skip=false
+        -Dopensearch.upgrade.test=true
     suites:
       - name: "Integration Tests - MainSuite 1a"
         test_class: "MainSuite1a"
