@@ -30,7 +30,6 @@ public class UpdateQuartzCronJobsServlet extends HttpServlet {
             DotConnect db = new DotConnect();
 
             StringBuilder query = new StringBuilder(512);
-            query.ensureCapacity(128);
             query.append("select * ");
             query.append("from qrtz_triggers, ");
             query.append("     qrtz_cron_triggers ");
@@ -48,31 +47,33 @@ public class UpdateQuartzCronJobsServlet extends HttpServlet {
                 return;
             }
 
-            for (HashMap<String, String> trigger : result) {
-                try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
-                    conn.setAutoCommit(false);
-                    CronTrigger cronTrigger = new CronTrigger();
+            final String updateSql = "update qrtz_triggers set start_time=?, next_fire_time=? where trigger_name=? and trigger_group=?";
+            final CronTrigger cronTrigger = new CronTrigger();
 
-                    query = new StringBuilder(512);
-                    query.ensureCapacity(128);
-                    query.append("update qrtz_triggers ");
-                    query.append("set start_time=?, ");
-                    query.append("    next_fire_time=? ");
-                    query.append("where trigger_name=? and ");
-                    query.append("      trigger_group=?");
-
-                    cronTrigger.setCronExpression(trigger.get("cron_expression"));
-
-                    db.setSQL(query.toString());
-                    long nextFireTime = cronTrigger.getFireTimeAfter(new Date()).getTime();
-                    db.addParam(nextFireTime);
-                    db.addParam(nextFireTime);
-                    db.addParam(trigger.get("trigger_name"));
-                    db.addParam(trigger.get("trigger_group"));
-                    db.loadResult(conn);
-
-                    conn.commit();
+            try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+                conn.setAutoCommit(false);
+                for (HashMap<String, String> trigger : result) {
+                    try {
+                        cronTrigger.setCronExpression(trigger.get("cron_expression"));
+                        final Date nextFireDate = cronTrigger.getFireTimeAfter(new Date());
+                        if (nextFireDate == null) {
+                            Logger.warn(UpdateQuartzCronJobsServlet.class,
+                                    "No future fire time for trigger " + trigger.get("trigger_name") + ", skipping");
+                            continue;
+                        }
+                        final long nextFireTime = nextFireDate.getTime();
+                        db.setSQL(updateSql);
+                        db.addParam(nextFireTime);
+                        db.addParam(nextFireTime);
+                        db.addParam(trigger.get("trigger_name"));
+                        db.addParam(trigger.get("trigger_group"));
+                        db.loadResult(conn);
+                    } catch (Exception e) {
+                        Logger.error(UpdateQuartzCronJobsServlet.class,
+                                "Failed to update trigger " + trigger.get("trigger_name") + ": " + e.getMessage(), e);
+                    }
                 }
+                conn.commit();
             }
         } catch (Exception e) {
             Logger.error(UpdateQuartzCronJobsServlet.class, e.getMessage(), e);
