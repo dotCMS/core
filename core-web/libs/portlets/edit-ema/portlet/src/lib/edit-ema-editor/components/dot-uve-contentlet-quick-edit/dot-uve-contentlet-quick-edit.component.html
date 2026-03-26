@@ -1,140 +1,145 @@
 @if ($contentletForm() && data().fields.length > 0) {
-    <div class="flex flex-col h-full">
-        <!-- inert: blocks all user interaction (clicks, keyboard, focus) on this element and its subtree while saving.
-             Must use [attr.inert]="'' : null" — setting to null removes the attribute entirely.
-             [inert]="false" would set inert="false" which still activates it (any presence triggers it). -->
-        <form
-            [formGroup]="$contentletForm()!"
-            class="w-full flex flex-col overflow-auto flex-1 min-h-0 p-4"
-            [attr.inert]="loading() ? '' : null"
-            tabindex="0">
-            @if (data().contentlet?.inode) {
-                <input type="hidden" formControlName="inode" />
-            }
-            <div class="flex flex-col gap-4">
-                @for (field of data().fields; track field.variable) {
-                    <div class="flex flex-col gap-1">
-                        <label
-                            class="font-semibold text-sm"
-                            [class.p-label-input-required]="field.required"
-                            [for]="field.variable">
-                            {{ field.name }}
-                        </label>
-                        @switch (field.clazz) {
-                            @case (DotCMSClazzes.TEXT) {
-                                <input
-                                    class="w-full"
-                                    pInputText
-                                    [id]="field.variable"
-                                    [formControlName]="field.variable"
-                                    [readonly]="field.readOnly" />
-                            }
-                            @case (DotCMSClazzes.TEXTAREA) {
-                                <textarea
-                                    class="w-full"
-                                    [style]="{ height: '9.375rem', lineHeight: '1.5' }"
-                                    pInputTextarea
-                                    [id]="field.variable"
-                                    [formControlName]="field.variable"
-                                    [readonly]="field.readOnly"
-                                    rows="4"></textarea>
-                            }
-                            @case (DotCMSClazzes.CHECKBOX) {
-                                @if (field.options && field.options.length > 0) {
-                                    <div class="flex flex-column gap-2">
-                                        @for (option of field.options; track option.value) {
-                                            <p-checkbox
-                                                [formControlName]="field.variable"
-                                                [value]="option.value"
-                                                [inputId]="field.variable + '-' + option.value"
-                                                [binary]="false" />
-                                            <label [for]="field.variable + '-' + option.value">
-                                                {{ option.label }}
-                                            </label>
-                                        }
-                                    </div>
-                                } @else {
-                                    <p-checkbox
-                                        [formControlName]="field.variable"
-                                        [inputId]="field.variable"
-                                        [binary]="true"></p-checkbox>
-                                }
-                            }
-                            @case (DotCMSClazzes.SELECT) {
-                                <p-select
-                                    [formControlName]="field.variable"
-                                    [inputId]="field.variable"
-                                    [options]="field.options"
-                                    optionLabel="label"
-                                    optionValue="value"
-                                    [showClear]="true"
-                                    [disabled]="field.readOnly"
-                                    [placeholder]="'Select ' + field.name"></p-select>
-                            }
-                            @case (DotCMSClazzes.RADIO) {
+    <!-- inert: blocks all user interaction (clicks, keyboard, focus) on this element and its subtree while saving.
+         Must use [attr.inert]="'' : null" — setting to null removes the attribute entirely.
+         [inert]="false" would set inert="false" which still activates it (any presence triggers it). -->
+    <form
+        [formGroup]="$contentletForm()!"
+        class="w-full flex flex-col overflow-auto flex-1 min-h-0 p-4"
+        [attr.inert]="loading() ? '' : null"
+        tabindex="0">
+        @if (data().contentlet?.inode) {
+            <input type="hidden" formControlName="inode" />
+        }
+        <div class="flex flex-col gap-4">
+            @for (field of data().fields; track field.variable) {
+                <div class="flex flex-col gap-1">
+                    <label
+                        class="font-semibold text-sm"
+                        [class.p-label-input-required]="field.required"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </label>
+                    @switch (field.clazz) {
+                        @case (DotCMSClazzes.TEXT) {
+                            <input
+                                class="w-full"
+                                pInputText
+                                [id]="field.variable"
+                                [formControlName]="field.variable"
+                                [readonly]="field.readOnly" />
+                        }
+                        @case (DotCMSClazzes.TEXTAREA) {
+                            <textarea
+                                class="w-full"
+                                [style]="{ height: '9.375rem', lineHeight: '1.5' }"
+                                pInputTextarea
+                                [id]="field.variable"
+                                [formControlName]="field.variable"
+                                [readonly]="field.readOnly"
+                                rows="4"></textarea>
+                        }
+                        @case (DotCMSClazzes.CHECKBOX) {
+                            @if (field.options && field.options.length > 0) {
                                 <div class="flex flex-column gap-2">
                                     @for (option of field.options; track option.value) {
-                                        <p-radioButton
+                                        <p-checkbox
                                             [formControlName]="field.variable"
                                             [value]="option.value"
                                             [inputId]="field.variable + '-' + option.value"
-                                            [disabled]="field.readOnly"></p-radioButton>
+                                            [binary]="false" />
                                         <label [for]="field.variable + '-' + option.value">
                                             {{ option.label }}
                                         </label>
                                     }
                                 </div>
-                            }
-                            @case (DotCMSClazzes.MULTI_SELECT) {
-                                <p-multiSelect
+                            } @else {
+                                <p-checkbox
                                     [formControlName]="field.variable"
                                     [inputId]="field.variable"
-                                    [options]="field.options"
-                                    optionLabel="label"
-                                    optionValue="value"
-                                    [showClear]="true"
-                                    [disabled]="field.readOnly"
-                                    [placeholder]="'Select ' + field.name"></p-multiSelect>
-                            }
-                            @case (DotCMSClazzes.BINARY) {
-                                <dot-edit-content-binary-field
-                                    [formControlName]="field.variable"
-                                    [field]="$any(field)"
-                                    [contentlet]="data().contentlet" />
-                            }
-                            @case (DotCMSClazzes.IMAGE) {
-                                <dot-file-field
-                                    [formControlName]="field.variable"
-                                    [field]="$any(field)"
-                                    [contentlet]="data().contentlet"
-                                    [hasError]="
-                                        $contentletForm()?.get(field.variable)?.invalid ?? false
-                                    "
-                                    [vertical]="true" />
-                            }
-                            @case (DotCMSClazzes.FILE) {
-                                <dot-file-field
-                                    [formControlName]="field.variable"
-                                    [field]="$any(field)"
-                                    [contentlet]="data().contentlet"
-                                    [hasError]="
-                                        $contentletForm()?.get(field.variable)?.invalid ?? false
-                                    "
-                                    [vertical]="true" />
-                            }
-                            @case (DotCMSClazzes.TAG) {
-                                <dot-tag-field
-                                    [formControlName]="field.variable"
-                                    [variableName]="field.variable"
-                                    [hasError]="
-                                        $contentletForm()?.get(field.variable)?.invalid ?? false
-                                    " />
+                                    [binary]="true"></p-checkbox>
                             }
                         }
-                    </div>
-                }
-            </div>
-        </form>
+                        @case (DotCMSClazzes.SELECT) {
+                            <p-select
+                                [formControlName]="field.variable"
+                                [inputId]="field.variable"
+                                [options]="field.options"
+                                optionLabel="label"
+                                optionValue="value"
+                                [showClear]="true"
+                                [disabled]="field.readOnly"
+                                [placeholder]="'Select ' + field.name"></p-select>
+                        }
+                        @case (DotCMSClazzes.RADIO) {
+                            <div class="flex flex-column gap-2">
+                                @for (option of field.options; track option.value) {
+                                    <p-radioButton
+                                        [formControlName]="field.variable"
+                                        [value]="option.value"
+                                        [inputId]="field.variable + '-' + option.value"
+                                        [disabled]="field.readOnly"></p-radioButton>
+                                    <label [for]="field.variable + '-' + option.value">
+                                        {{ option.label }}
+                                    </label>
+                                }
+                            </div>
+                        }
+                        @case (DotCMSClazzes.MULTI_SELECT) {
+                            <p-multiSelect
+                                [formControlName]="field.variable"
+                                [inputId]="field.variable"
+                                [options]="field.options"
+                                optionLabel="label"
+                                optionValue="value"
+                                [showClear]="true"
+                                [disabled]="field.readOnly"
+                                [placeholder]="'Select ' + field.name"></p-multiSelect>
+                        }
+                        @case (DotCMSClazzes.BINARY) {
+                            <dot-edit-content-binary-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet" />
+                        }
+                        @case (DotCMSClazzes.IMAGE) {
+                            <dot-file-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet"
+                                [hasError]="
+                                    $contentletForm()?.get(field.variable)?.invalid ?? false
+                                "
+                                [vertical]="true" />
+                        }
+                        @case (DotCMSClazzes.FILE) {
+                            <dot-file-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet"
+                                [hasError]="
+                                    $contentletForm()?.get(field.variable)?.invalid ?? false
+                                "
+                                [vertical]="true" />
+                        }
+                        @case (DotCMSClazzes.TAG) {
+                            <dot-tag-field
+                                [formControlName]="field.variable"
+                                [variableName]="field.variable"
+                                [hasError]="
+                                    $contentletForm()?.get(field.variable)?.invalid ?? false
+                                " />
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </form>
+    <div class="flex justify-end shrink-0 p-4 border-t border-gray-300">
+        <p-button
+            label="Save"
+            data-testid="save-button"
+            [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
+            (onClick)="save()" />
     </div>
 } @else {
     <div

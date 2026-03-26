@@ -880,10 +880,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         });
     }
 
-
     handleInternalNavFromIframe(e: MouseEvent): void {
         this.handleInternalNav(e);
-
     }
 
     handleInlineEditingFromIframe(e: MouseEvent): void {

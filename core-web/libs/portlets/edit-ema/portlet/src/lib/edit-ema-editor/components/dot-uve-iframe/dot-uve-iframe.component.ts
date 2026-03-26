@@ -154,7 +154,6 @@ export class DotUveIframeComponent {
 
         const doc = iframeElement.contentDocument;
 
-
         if (!doc) {
             return;
         }
@@ -165,8 +164,6 @@ export class DotUveIframeComponent {
 
         this.handleInlineScripts(enableInlineEdit);
     }
-
-
 
     /**
      * Subscribes to filtered click events and injects or removes inline-edit scripts.

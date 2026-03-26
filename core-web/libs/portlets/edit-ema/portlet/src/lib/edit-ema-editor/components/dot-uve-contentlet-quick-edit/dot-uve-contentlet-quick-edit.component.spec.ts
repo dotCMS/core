@@ -1,5 +1,5 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
 
 import { Component, input } from '@angular/core';
 import { ComponentFixture, fakeAsync, flushMicrotasks } from '@angular/core/testing';
@@ -23,6 +23,7 @@ import {
 } from './dot-uve-contentlet-quick-edit.component';
 
 import { UveOptimisticSaveService } from '../../../services/uve-optimistic-save/uve-optimistic-save.service';
+import { EDIT_ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
 
@@ -630,6 +631,195 @@ describe('DotUveContentletQuickEditComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(MockDotTagFieldComponent)?.hasError()).toBe(true);
+        }));
+    });
+
+    describe('Save button', () => {
+        const getSaveButton = () =>
+            spectator.query(byTestId('save-button'))?.querySelector('button') as HTMLButtonElement;
+
+        it('should render the save button when fields are provided', () => {
+            expect(spectator.query(byTestId('save-button'))).toBeTruthy();
+        });
+
+        it('should be disabled initially because the form is not dirty', () => {
+            expect(getSaveButton()?.disabled).toBe(true);
+        });
+
+        it('should become enabled after changing a form value', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'new value' });
+            spectator.detectChanges();
+
+            expect(getSaveButton()?.disabled).toBe(false);
+        }));
+
+        it('should be disabled when the form is invalid', fakeAsync(() => {
+            // testField is required — setting it to empty makes the form invalid
+            spectator.component.$contentletForm()?.patchValue({ testField: '' });
+            spectator.detectChanges();
+
+            expect(getSaveButton()?.disabled).toBe(true);
+        }));
+
+        it('should be disabled when loading is true even if the form is dirty', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'changed' });
+            fixture.componentRef.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(getSaveButton()?.disabled).toBe(true);
+        }));
+
+        it('should be disabled again after a successful save', fakeAsync(() => {
+            const uveStore = spectator.inject(UVEStore, true);
+            jest.spyOn(uveStore, 'editorActiveContentlet').mockReturnValue(
+                EDIT_ACTION_PAYLOAD_MOCK
+            );
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'changed' });
+            spectator.detectChanges();
+            expect(getSaveButton()?.disabled).toBe(false);
+
+            spectator.click(getSaveButton());
+            spectator.detectChanges();
+
+            expect(getSaveButton()?.disabled).toBe(true);
+        }));
+    });
+
+    describe('save()', () => {
+        let uveStore: InstanceType<typeof UVEStore>;
+        let optimisticSave: UveOptimisticSaveService;
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            uveStore = spectator.inject(UVEStore, true);
+            optimisticSave = spectator.inject(UveOptimisticSaveService, true);
+            jest.spyOn(uveStore, 'saveQuickEditFields').mockReturnValue(of({}));
+            jest.spyOn(uveStore, 'editorActiveContentlet').mockReturnValue(
+                EDIT_ACTION_PAYLOAD_MOCK
+            );
+        });
+
+        it('should not call saveQuickEditFields when the form has not changed', () => {
+            spectator.component['save']();
+
+            expect(uveStore.saveQuickEditFields).not.toHaveBeenCalled();
+        });
+
+        it('should not auto-save when form values change', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'auto-save attempt' });
+            spectator.detectChanges();
+
+            expect(uveStore.saveQuickEditFields).not.toHaveBeenCalled();
+        }));
+
+        it('should call saveQuickEditFields with filtered form values on save', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'hello' });
+            spectator.detectChanges();
+
+            spectator.component['save']();
+
+            expect(uveStore.saveQuickEditFields).toHaveBeenCalledWith(
+                expect.objectContaining({ testField: 'hello' })
+            );
+        }));
+
+        it('should call addCurrentPageToHistory before saving', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'hello' });
+            spectator.detectChanges();
+
+            spectator.component['save']();
+
+            expect(uveStore.addCurrentPageToHistory).toHaveBeenCalled();
+        }));
+
+        it('should show a success toast after saving', fakeAsync(() => {
+            const messageService = spectator.inject(MessageService, true);
+            spectator.component.$contentletForm()?.patchValue({ testField: 'hello' });
+            spectator.detectChanges();
+
+            spectator.component['save']();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
+        }));
+
+        it('should show an error toast and restore the form on save failure', fakeAsync(() => {
+            const messageService = spectator.inject(MessageService, true);
+            jest.spyOn(uveStore, 'saveQuickEditFields').mockReturnValue(
+                throwError(() => new Error('API error'))
+            );
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'hello' });
+            spectator.detectChanges();
+
+            spectator.component['save']();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'error' })
+            );
+            expect(optimisticSave.extractFromRollback).toHaveBeenCalled();
+        }));
+
+        describe('traditional page', () => {
+            beforeEach(() => {
+                jest.spyOn(uveStore, 'pageType').mockReturnValue(PageType.TRADITIONAL);
+                jest.spyOn(uveStore, 'saveQuickEditFields').mockReturnValue(of({}));
+            });
+
+            it('should call pageReload after a successful save', fakeAsync(() => {
+                spectator.component.$contentletForm()?.patchValue({ testField: 'hello' });
+                spectator.detectChanges();
+
+                spectator.component['save']();
+
+                expect(uveStore.pageReload).toHaveBeenCalled();
+            }));
+
+            it('should set UVE status to LOADING before saving', fakeAsync(() => {
+                spectator.component.$contentletForm()?.patchValue({ testField: 'hello' });
+                spectator.detectChanges();
+
+                spectator.component['save']();
+
+                expect(uveStore.setUveStatus).toHaveBeenCalledWith('loading');
+            }));
+        });
+    });
+
+    describe('optimistic updates', () => {
+        let uveStore: InstanceType<typeof UVEStore>;
+        let optimisticSave: UveOptimisticSaveService;
+
+        beforeEach(() => {
+            jest.clearAllMocks();
+            uveStore = spectator.inject(UVEStore, true);
+            optimisticSave = spectator.inject(UveOptimisticSaveService, true);
+        });
+
+        it('should call updateIframeOptimistically on headless page form changes', fakeAsync(() => {
+            jest.spyOn(uveStore, 'editorActiveContentlet').mockReturnValue(
+                EDIT_ACTION_PAYLOAD_MOCK
+            );
+            jest.spyOn(uveStore, 'pageType').mockReturnValue(PageType.HEADLESS);
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'optimistic' });
+            spectator.detectChanges();
+
+            expect(optimisticSave.updateIframeOptimistically).toHaveBeenCalled();
+        }));
+
+        it('should not call updateIframeOptimistically on traditional page form changes', fakeAsync(() => {
+            jest.spyOn(uveStore, 'editorActiveContentlet').mockReturnValue(
+                EDIT_ACTION_PAYLOAD_MOCK
+            );
+            jest.spyOn(uveStore, 'pageType').mockReturnValue(PageType.TRADITIONAL);
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'no optimistic' });
+            spectator.detectChanges();
+
+            expect(optimisticSave.updateIframeOptimistically).not.toHaveBeenCalled();
         }));
     });
 });
