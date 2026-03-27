@@ -232,11 +232,17 @@ export class ExistingContentService {
                             continue;
                         }
 
-                        const relatedChildren = parent[fieldVariable];
+                        const relatedChildren = parent[fieldVariable] as unknown;
                         if (Array.isArray(relatedChildren)) {
-                            for (const child of relatedChildren) {
+                            for (const child of relatedChildren as unknown[]) {
                                 const childId =
-                                    typeof child === 'string' ? child : child?.identifier;
+                                    typeof child === 'string'
+                                        ? child
+                                        : child != null &&
+                                            typeof child === 'object' &&
+                                            'identifier' in child
+                                          ? (child as { identifier: string }).identifier
+                                          : null;
                                 if (childId) {
                                     constrainedIds.add(childId);
                                 }

@@ -358,6 +358,55 @@ describe('ExistingContentStore', () => {
             );
         }));
 
+        it('should load constrained identifiers for ONE_TO_ONE parent field', fakeAsync(() => {
+            const constrainedSet = new Set(['taken-child-1']);
+            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+            service.getConstrainedIdentifiers.mockReturnValue(of(constrainedSet));
+
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'single',
+                selectedItemsIds: [],
+                cardinality: 2, // ONE_TO_ONE
+                parentContentTypeId: 'main-type-id',
+                parentContentTypeVariable: 'Main',
+                fieldVariable: 'relation',
+                isParentField: true,
+                currentContentIdentifier: 'current-id'
+            });
+            tick();
+
+            expect(store.constrainedIdentifiers()).toEqual(constrainedSet);
+            expect(store.isItemConstrained()('taken-child-1')).toBe(true);
+            expect(store.isItemConstrained()('free-child')).toBe(false);
+            expect(service.getConstrainedIdentifiers).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    parentContentTypeVariable: 'Main',
+                    fieldVariable: 'relation'
+                })
+            );
+        }));
+
+        it('should not load constrained identifiers for child side (isParentField=false)', fakeAsync(() => {
+            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'single',
+                selectedItemsIds: [],
+                cardinality: 0, // ONE_TO_MANY
+                parentContentTypeId: 'main-type-id',
+                parentContentTypeVariable: 'Main',
+                fieldVariable: 'relation',
+                isParentField: false,
+                currentContentIdentifier: 'current-id'
+            });
+            tick();
+
+            expect(store.constrainedIdentifiers()).toEqual(new Set());
+            expect(service.getConstrainedIdentifiers).not.toHaveBeenCalled();
+        }));
+
         it('should not load constrained identifiers for MANY_TO_MANY', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
 

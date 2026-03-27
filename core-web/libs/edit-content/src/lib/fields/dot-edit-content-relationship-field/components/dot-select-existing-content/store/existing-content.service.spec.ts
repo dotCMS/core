@@ -607,19 +607,19 @@ describe('ExistingContentService', () => {
     describe('getConstrainedIdentifiers', () => {
         it('should return child identifiers from parent contentlets excluding current content', (done) => {
             const parentContentlets = [
-                {
+                createFakeContentlet({
                     identifier: 'blog1',
                     authors: [{ identifier: 'author1' }, { identifier: 'author2' }]
-                },
-                {
+                } as Partial<DotCMSContentlet>),
+                createFakeContentlet({
                     identifier: 'blog2',
                     authors: [{ identifier: 'author3' }]
-                },
-                {
+                } as Partial<DotCMSContentlet>),
+                createFakeContentlet({
                     identifier: 'currentBlog',
                     authors: [{ identifier: 'author4' }]
-                }
-            ] as unknown as DotCMSContentlet[];
+                } as Partial<DotCMSContentlet>)
+            ];
 
             dotContentSearchService.get.mockReturnValue(
                 of({ jsonObjectView: { contentlets: parentContentlets } })
@@ -640,11 +640,11 @@ describe('ExistingContentService', () => {
 
         it('should handle children as string identifiers', (done) => {
             const parentContentlets = [
-                {
+                createFakeContentlet({
                     identifier: 'blog1',
                     authors: ['author1', 'author2']
-                }
-            ] as unknown as DotCMSContentlet[];
+                } as Partial<DotCMSContentlet>)
+            ];
 
             dotContentSearchService.get.mockReturnValue(
                 of({ jsonObjectView: { contentlets: parentContentlets } })
@@ -664,9 +664,9 @@ describe('ExistingContentService', () => {
 
         it('should return empty set when no parents have relationships', (done) => {
             const parentContentlets = [
-                { identifier: 'blog1' },
-                { identifier: 'blog2' }
-            ] as unknown as DotCMSContentlet[];
+                createFakeContentlet({ identifier: 'blog1' }),
+                createFakeContentlet({ identifier: 'blog2' })
+            ];
 
             dotContentSearchService.get.mockReturnValue(
                 of({ jsonObjectView: { contentlets: parentContentlets } })
@@ -715,7 +715,7 @@ describe('ExistingContentService', () => {
                 });
         });
 
-        it('should use correct Lucene query with depth 0 and limit 5000', (done) => {
+        it('should use correct Lucene query with depth 0, offset 0 and limit 5000', (done) => {
             dotContentSearchService.get.mockReturnValue(
                 of({ jsonObjectView: { contentlets: [] } })
             );
@@ -732,6 +732,7 @@ describe('ExistingContentService', () => {
                             query: '+contentType:Blog +working:true +deleted:false',
                             sort: 'modDate desc',
                             limit: 5000,
+                            offset: 0,
                             depth: 0
                         })
                     );
