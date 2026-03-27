@@ -3,14 +3,15 @@ import { EMPTY, Observable } from 'rxjs';
 
 import { effect, inject, untracked } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
 
 import { catchError, take } from 'rxjs/operators';
 
 import {
     DotCategoriesService,
     DotCategoryForm,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    DotMessageService
 } from '@dotcms/data-access';
 import { DotCategory } from '@dotcms/dotcms-models';
 
@@ -49,6 +50,8 @@ export const DotCategoriesListStore = signalStore(
     withMethods((store) => {
         const categoriesService = inject(DotCategoriesService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const messageService = inject(MessageService);
+        const dotMessageService = inject(DotMessageService);
 
         function loadCategories() {
             patchState(store, { status: 'loading' });
@@ -191,6 +194,44 @@ export const DotCategoriesListStore = signalStore(
                     categoriesService.importCategories(file, exportType, store.parentInode()),
                     () => loadCategories()
                 );
+            },
+
+            updateSortOrder(inode: string, sortOrder: number) {
+                const previousCategories = store.categories();
+
+                patchState(store, {
+                    categories: previousCategories.map((c) =>
+                        c.inode === inode ? { ...c, sortOrder } : c
+                    )
+                });
+
+                categoriesService
+                    .updateSortOrder(
+                        { [inode]: sortOrder },
+                        {
+                            parentInode: store.parentInode(),
+                            filter: store.filter() || undefined,
+                            page: store.page(),
+                            per_page: store.rows(),
+                            orderby: store.sortField(),
+                            direction: store.sortOrder()
+                        }
+                    )
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { categories: previousCategories });
+
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe(() => {
+                        messageService.add({
+                            severity: 'success',
+                            summary: dotMessageService.get('categories.sort-order.saved')
+                        });
+                    });
             }
         };
     }),

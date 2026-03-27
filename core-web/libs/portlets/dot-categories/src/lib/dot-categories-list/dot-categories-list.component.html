@@ -42,6 +42,7 @@
 <p-breadcrumb
     [model]="store.breadcrumbs()"
     [home]="homeItem"
+    [pt]="{ itemLink: { class: 'cursor-pointer' } }"
     (onItemClick)="
         onBreadcrumbClick($any($event).item ? store.breadcrumbs().indexOf($any($event).item) : -1)
     "
@@ -49,80 +50,115 @@
     data-testid="category-breadcrumb" />
 
 <!-- Table -->
-<p-table
-    class="w-full h-full min-h-0 block"
-    [value]="store.categories()"
-    [lazy]="true"
-    [scrollable]="true"
-    (onLazyLoad)="onLazyLoad($event)"
-    [tableStyle]="{ width: '100%', maxHeight: '100%' }"
-    scrollHeight="flex"
-    [paginator]="true"
-    [rows]="store.rows()"
-    [totalRecords]="store.totalRecords()"
-    [first]="(store.page() - 1) * store.rows()"
-    [rowsPerPageOptions]="[10, 25, 50]"
-    [loading]="store.status() === 'loading'"
-    [selection]="store.selectedCategories()"
-    (selectionChange)="store.setSelectedCategories($event)"
-    dataKey="inode"
-    data-testid="categories-table">
-    <ng-template pTemplate="header">
-        <tr>
-            <th style="width: 4rem">
-                <p-tableHeaderCheckbox />
-            </th>
-            <th pSortableColumn="category_name">
-                {{ 'categories.table.header.name' | dm }}
-                <p-sortIcon field="category_name" />
-            </th>
-            <th>{{ 'categories.table.header.key' | dm }}</th>
-            <th>{{ 'categories.table.header.variable' | dm }}</th>
-            <th>{{ 'categories.table.header.children' | dm }}</th>
-            <th pSortableColumn="sort_order">
-                {{ 'categories.table.header.sort-order' | dm }}
-                <p-sortIcon field="sort_order" />
-            </th>
-            <th style="width: 4rem"></th>
-        </tr>
-    </ng-template>
+<div class="flex-1 min-h-0 flex flex-col overflow-hidden" data-testid="categories-table-wrapper">
+    <p-table
+        [value]="store.categories()"
+        [lazy]="true"
+        [scrollable]="true"
+        [rowHover]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+        scrollHeight="flex"
+        [pt]="$ptConfig()"
+        [paginator]="true"
+        [rows]="store.rows()"
+        [totalRecords]="store.totalRecords()"
+        [first]="(store.page() - 1) * store.rows()"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [loading]="store.status() === 'loading'"
+        [selection]="store.selectedCategories()"
+        (selectionChange)="store.setSelectedCategories($event)"
+        dataKey="inode"
+        data-testid="categories-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th style="width: 4rem">
+                    <p-tableHeaderCheckbox />
+                </th>
+                <th pSortableColumn="category_name">
+                    {{ 'categories.table.header.name' | dm }}
+                    <p-sortIcon field="category_name" />
+                </th>
+                <th>{{ 'categories.table.header.key' | dm }}</th>
+                <th>{{ 'categories.table.header.variable' | dm }}</th>
+                <th class="text-center!">{{ 'categories.table.header.children' | dm }}</th>
+                <th pSortableColumn="sort_order" class="text-center!">
+                    {{ 'categories.table.header.sort-order' | dm }}
+                    <p-sortIcon field="sort_order" />
+                </th>
+                <th style="width: 7rem" class="text-center!"></th>
+            </tr>
+        </ng-template>
 
-    <ng-template pTemplate="body" let-category>
-        <tr data-testid="category-row" class="group cursor-pointer" (click)="onRowClick(category)">
-            <td (click)="$event.stopPropagation()">
-                <p-tableCheckbox [value]="category" />
-            </td>
-            <td data-testid="category-name">{{ category.categoryName }}</td>
-            <td data-testid="category-key">{{ category.key }}</td>
-            <td data-testid="category-variable">{{ category.categoryVelocityVarName }}</td>
-            <td data-testid="category-children">{{ category.childrenCount }}</td>
-            <td data-testid="category-sort-order">{{ category.sortOrder }}</td>
-            <td (click)="$event.stopPropagation()">
-                <p-button
-                    class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    icon="pi pi-ellipsis-v"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="secondary"
-                    (onClick)="openRowMenu($event, category)"
-                    [attr.aria-label]="'categories.actions' | dm"
-                    data-testid="category-actions-btn" />
-            </td>
-        </tr>
-    </ng-template>
+        <ng-template pTemplate="body" let-category>
+            <tr
+                data-testid="category-row"
+                class="group cursor-pointer transition-colors duration-200"
+                (click)="onRowClick(category)"
+                (contextmenu)="openRowMenu($event, category)">
+                <td (click)="$event.stopPropagation()">
+                    <p-tableCheckbox [value]="category" />
+                </td>
+                <td data-testid="category-name">{{ category.categoryName }}</td>
+                <td data-testid="category-key">{{ category.key }}</td>
+                <td data-testid="category-variable">{{ category.categoryVelocityVarName }}</td>
+                <td data-testid="category-children" class="text-center!">
+                    {{ category.childrenCount }}
+                </td>
+                <td
+                    data-testid="category-sort-order"
+                    class="flex justify-center items-center"
+                    (click)="$event.stopPropagation()">
+                    <p-inputNumber
+                        [ngModel]="category.sortOrder"
+                        (onInput)="onSortOrderInput(category, $event.value)"
+                        (onBlur)="onSortOrderBlur(category)"
+                        (onKeyDown)="$event.key === 'Enter' && $any($event.target).blur()"
+                        [min]="0"
+                        [showButtons]="false"
+                        inputStyleClass="w-16 text-center py-0.5 text-sm"
+                        [attr.aria-label]="'categories.table.header.sort-order' | dm"
+                        data-testid="category-sort-order-input" />
+                </td>
+                <td class="text-center!" (click)="$event.stopPropagation()">
+                    <p-button
+                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        icon="pi pi-ellipsis-v"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="secondary"
+                        (onClick)="openRowMenu($any($event), category)"
+                        [attr.aria-label]="'categories.actions' | dm"
+                        data-testid="category-actions-btn" />
+                </td>
+            </tr>
+        </ng-template>
 
-    <ng-template pTemplate="emptymessage">
-        <tr>
-            <td colspan="7" class="text-center p-4">{{ 'categories.empty' | dm }}</td>
-        </tr>
-    </ng-template>
-</p-table>
+        <ng-template pTemplate="emptymessage">
+            <tr class="hover:bg-transparent! h-full">
+                <td colspan="7" class="p-6 text-center h-full border-none">
+                    <div
+                        class="flex flex-col items-center gap-4 max-w-100 mx-auto"
+                        data-testid="categories-empty-state">
+                        <div class="flex items-center justify-center w-20 h-20 rounded-full">
+                            <i
+                                class="pi pi-tag text-[var(--surface-500)] text-6xl!"
+                                aria-hidden="true"></i>
+                        </div>
+                        <div class="flex flex-col text-center">
+                            <h3 class="m-0 text-lg font-medium text-gray-800">
+                                {{ 'categories.empty.state.title' | dm }}
+                            </h3>
+                            <p class="m-0 text-[var(--text-color)] text-base leading-6">
+                                {{ 'categories.empty.state.description' | dm }}
+                            </p>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
 
-<p-menu
-    #rowMenu
-    [model]="rowMenuItems"
-    [popup]="true"
-    appendTo="body"
-    data-testid="category-row-menu" />
+<p-contextMenu #rowMenu [model]="rowMenuItems" appendTo="body" data-testid="category-row-menu" />
 
 <p-confirmDialog />

@@ -121,6 +121,27 @@ export class DotCategoriesService {
     }
 
     /**
+     * Updates the sort order of one or more categories.
+     * @param categoryData - Map of category inode to new sort order value.
+     * @param params - Current pagination/filter context for the refreshed response.
+     * @returns Observable with the refreshed paginated category list.
+     */
+    updateSortOrder(
+        categoryData: Record<string, number>,
+        params: DotCategoriesPaginationParams & { parentInode?: string | null }
+    ): Observable<DotCMSAPIResponse<DotCategory[]>> {
+        return this.#http.put<DotCMSAPIResponse<DotCategory[]>>('/api/v1/categories/_sort', {
+            categoryData,
+            parentInode: params.parentInode ?? null,
+            filter: params.filter,
+            page: params.page,
+            perPage: params.per_page,
+            direction: params.direction,
+            orderBy: params.orderby
+        });
+    }
+
+    /**
      * Imports categories from a CSV file.
      * @param file - The CSV file to import.
      * @param exportType - Whether to replace or merge categories.

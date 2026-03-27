@@ -1,6 +1,13 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, viewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    computed,
+    inject,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -8,11 +15,12 @@ import { ConfirmationService, MenuItem } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
-import { Menu, MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -51,7 +59,8 @@ class DotCategoriesPermissionsPlaceholderComponent {}
         InputIconModule,
         ConfirmDialogModule,
         BreadcrumbModule,
-        MenuModule,
+        ContextMenuModule,
+        InputNumberModule,
         SplitButtonModule,
         ToolbarModule,
         DotMessagePipe
@@ -59,9 +68,7 @@ class DotCategoriesPermissionsPlaceholderComponent {}
     templateUrl: './dot-categories-list.component.html',
     providers: [DotCategoriesListStore, DialogService, ConfirmationService],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: {
-        class: 'w-full h-full min-h-0 grid grid-cols-1 grid-rows-[min-content_min-content_1fr]'
-    }
+    host: { class: 'flex flex-col h-full min-h-0' }
 })
 export class DotCategoriesListComponent {
     readonly store = inject(DotCategoriesListStore);
@@ -74,8 +81,20 @@ export class DotCategoriesListComponent {
     private searchSubject = new Subject<string>();
 
     readonly homeItem = { icon: 'pi pi-home' };
-    readonly rowMenu = viewChild<Menu>('rowMenu');
+    readonly rowMenu = viewChild<ContextMenu>('rowMenu');
     rowMenuItems: MenuItem[] = [];
+
+    readonly $ptConfig = computed(() => ({
+        table: {
+            style: {
+                'table-layout': 'fixed' as const,
+                ...(this.store.categories().length === 0 && {
+                    height: '100%',
+                    width: '100%'
+                })
+            }
+        }
+    }));
 
     readonly addCategoryMenuItems: MenuItem[] = [
         {
@@ -109,6 +128,22 @@ export class DotCategoriesListComponent {
         }
     }
 
+    private readonly pendingSortOrders = new Map<string, number>();
+
+    onSortOrderInput(category: DotCategory, value: number | null): void {
+        if (value !== null) {
+            this.pendingSortOrders.set(category.inode, value);
+        }
+    }
+
+    onSortOrderBlur(category: DotCategory): void {
+        const pending = this.pendingSortOrders.get(category.inode);
+        this.pendingSortOrders.delete(category.inode);
+        if (pending !== undefined && pending !== category.sortOrder) {
+            this.store.updateSortOrder(category.inode, pending);
+        }
+    }
+
     onBreadcrumbClick(index: number): void {
         this.store.navigateToBreadcrumb(index);
     }
@@ -121,7 +156,8 @@ export class DotCategoriesListComponent {
         this.store.navigateToChildren(category);
     }
 
-    openRowMenu(event: Event, category: DotCategory): void {
+    openRowMenu(event: MouseEvent, category: DotCategory): void {
+        event.preventDefault();
         this.rowMenuItems = [
             {
                 label: this.dotMessageService.get('categories.edit'),
@@ -136,7 +172,7 @@ export class DotCategoriesListComponent {
                 command: () => this.confirmDeleteSingle(category)
             }
         ];
-        this.rowMenu()?.toggle(event);
+        this.rowMenu()?.show(event);
     }
 
     openPermissionsDialog(): void {
