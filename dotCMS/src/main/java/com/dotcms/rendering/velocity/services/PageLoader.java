@@ -74,6 +74,22 @@ public class PageLoader implements DotLoader {
 
     }
 
+    /**
+     * Builds the Velocity stream for the given HTML page using the page's own language as the
+     * viewing language. Preserved for OSGi backward compatibility — new code should prefer
+     * {@link #buildStream(IHTMLPage, PageMode, String, long)}.
+     *
+     * @param htmlPage The HTML page to build the stream for.
+     * @param mode     The page mode (LIVE, PREVIEW, EDIT, etc.).
+     * @param filePath The file path used as the Velocity resource key.
+     * @return An {@link InputStream} with the compiled Velocity content.
+     * @throws DotDataException     If there is an issue retrieving data from the DB.
+     * @throws DotSecurityException If the current user doesn't have the required permissions.
+     */
+    public InputStream buildStream(final IHTMLPage htmlPage, final PageMode mode,
+            final String filePath) throws DotDataException, DotSecurityException {
+        return buildStream(htmlPage, mode, filePath, htmlPage.getLanguageId());
+    }
 
     public InputStream buildStream(IHTMLPage htmlPage, PageMode mode, final String filePath,
             final long viewingLanguageId) throws DotDataException, DotSecurityException {
