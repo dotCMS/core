@@ -1,3 +1,5 @@
+import { Subscription } from 'rxjs';
+
 import { ChangeDetectionStrategy, Component, inject, input, OnDestroy } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
@@ -23,18 +25,15 @@ export class DotEditContentSidebarRulesComponent implements OnDestroy {
     readonly #dotMessageService = inject(DotMessageService);
 
     #rulesDialogRef: DynamicDialogRef | undefined;
+    #closeSubscription: Subscription | undefined;
 
     /**
      * Contentlet identifier for the rules engine.
      */
-    readonly $identifier = input<string>('', { alias: 'identifier' });
-
-    /**
-     * Contentlet language id.
-     */
-    readonly $languageId = input<number>(0, { alias: 'languageId' });
+    readonly identifier = input<string>('');
 
     ngOnDestroy(): void {
+        this.#closeSubscription?.unsubscribe();
         this.#rulesDialogRef?.close();
     }
 
@@ -45,7 +44,7 @@ export class DotEditContentSidebarRulesComponent implements OnDestroy {
     openRulesDialog(): void {
         if (this.#rulesDialogRef) return;
 
-        const id = this.$identifier();
+        const id = this.identifier();
         if (!id) return;
 
         const header = this.#dotMessageService.get('edit.content.sidebar.rules.title');
@@ -55,14 +54,14 @@ export class DotEditContentSidebarRulesComponent implements OnDestroy {
             data: { identifier: id },
             modal: true,
             appendTo: 'body',
-            closeOnEscape: false,
+            closeOnEscape: true,
             closable: true,
             draggable: false,
             keepInViewport: false,
             resizable: false,
             position: 'center'
         });
-        this.#rulesDialogRef.onClose.subscribe({
+        this.#closeSubscription = this.#rulesDialogRef.onClose.subscribe({
             next: () => {
                 this.#rulesDialogRef = undefined;
             }

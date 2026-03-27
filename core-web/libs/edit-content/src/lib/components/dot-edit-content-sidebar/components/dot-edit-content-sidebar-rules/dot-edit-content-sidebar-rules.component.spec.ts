@@ -37,8 +37,7 @@ describe('DotEditContentSidebarRulesComponent', () => {
 
         spectator = createComponent({
             props: {
-                identifier: 'content-123',
-                languageId: 123
+                identifier: 'content-123'
             },
             providers: [
                 {
@@ -84,7 +83,7 @@ describe('DotEditContentSidebarRulesComponent', () => {
                 data: { identifier: 'content-789' },
                 modal: true,
                 appendTo: 'body',
-                closeOnEscape: false,
+                closeOnEscape: true,
                 closable: true,
                 draggable: false,
                 keepInViewport: false,

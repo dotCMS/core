@@ -562,7 +562,6 @@ describe('DotEditContentSidebarComponent', () => {
                 const rulesComponent = spectator.query(DotEditContentSidebarRulesComponent);
                 expect(rulesComponent).toBeTruthy();
             }));
-
         });
     });
 

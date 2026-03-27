@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
-import { DotRuleEngineContainerComponent, RuleEngineModule } from '@dotcms/dot-rules';
+import { RuleEngineModule } from '@dotcms/dot-rules';
 
 export interface RulesDialogData {
     identifier: string;
@@ -19,7 +19,7 @@ export interface RulesDialogData {
     selector: 'dot-rules-dialog',
     templateUrl: './rules-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotRuleEngineContainerComponent, RuleEngineModule],
+    imports: [RuleEngineModule],
     providers: [
         {
             provide: ActivatedRoute,
