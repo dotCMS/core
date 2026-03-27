@@ -9,6 +9,7 @@
                 (ngModelChange)="onSearch($event)"
                 [placeholder]="'categories.search.placeholder' | dm"
                 [attr.aria-label]="'categories.search.placeholder' | dm"
+                [disabled]="store.categories().length === 0 && !store.filter()"
                 data-testid="category-search-input"
                 class="w-80" />
         </p-iconField>
