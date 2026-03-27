@@ -10,7 +10,6 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
 import {
     DotContentSearchService,
-    DotContentTypeService,
     DotFieldService,
     DotHttpErrorManagerService,
     DotLanguagesService,
@@ -37,9 +36,6 @@ describe('ExistingContentService', () => {
             mockProvider(HttpClient),
             mockProvider(DotFieldService),
             mockProvider(DotContentSearchService),
-            mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of({ variable: 'Blog' }))
-            }),
             mockProvider(DotLanguagesService, { get: () => of(mockLocales) })
         ]
     });
@@ -639,7 +635,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeId: 'blog-type-id',
+                    parentContentTypeVariable: 'Blog',
                     fieldVariable: 'authors',
                     currentContentIdentifier: 'currentBlog'
                 })
@@ -669,7 +665,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeId: 'blog-type-id',
+                    parentContentTypeVariable: 'Blog',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
@@ -696,7 +692,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeId: 'blog-type-id',
+                    parentContentTypeVariable: 'Blog',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
@@ -725,7 +721,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeId: 'blog-type-id',
+                    parentContentTypeVariable: 'Blog',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
@@ -747,7 +743,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeId: 'blog-type-id',
+                    parentContentTypeVariable: 'Blog',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })

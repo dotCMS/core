@@ -158,6 +158,7 @@ export const ExistingContentStore = signalStore(
                 showFields?: string[] | null;
                 cardinality?: number;
                 parentContentTypeId?: string;
+                parentContentTypeVariable?: string;
                 fieldVariable?: string;
                 isParentField?: boolean;
                 currentContentIdentifier?: string;
@@ -187,6 +188,7 @@ export const ExistingContentStore = signalStore(
                             selectedItemsIds,
                             cardinality,
                             parentContentTypeId,
+                            parentContentTypeVariable,
                             fieldVariable,
                             isParentField,
                             currentContentIdentifier
@@ -201,7 +203,7 @@ export const ExistingContentStore = signalStore(
 
                         const constrainedIds$ = shouldCheckConstraints
                             ? existingContentService.getConstrainedIdentifiers({
-                                  parentContentTypeId,
+                                  parentContentTypeVariable: parentContentTypeVariable ?? null,
                                   fieldVariable,
                                   currentContentIdentifier: currentContentIdentifier ?? null
                               })

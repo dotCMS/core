@@ -7,7 +7,6 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
-    DotContentTypeService,
     DotFieldService,
     DotHttpErrorManagerService,
     DotLanguagesService,
@@ -39,7 +38,6 @@ export class ExistingContentService {
     readonly #http = inject(HttpClient);
     readonly #fieldService = inject(DotFieldService);
     readonly #contentSearchService = inject(DotContentSearchService);
-    readonly #contentTypeService = inject(DotContentTypeService);
     readonly #dotLanguagesService = inject(DotLanguagesService);
     readonly #httpErrorManagerService = inject(DotHttpErrorManagerService);
 
@@ -127,6 +125,9 @@ export class ExistingContentService {
     getColumnsAndContent(
         contentTypeId: string
     ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
+        // TODO: search() already calls #getLanguages() and #prepareContent() internally,
+        // causing duplicate language HTTP calls and double-processing of contentlets.
+        // Refactor to fetch languages once and pass them through.
         return forkJoin([
             this.getColumns(contentTypeId),
             this.search({ contentTypeId }),
@@ -205,58 +206,54 @@ export class ExistingContentService {
      * @returns Observable<Set<string>> - Set of child identifiers that are already "taken" by other parents
      */
     getConstrainedIdentifiers(params: {
-        parentContentTypeId: string;
+        parentContentTypeVariable: string;
         fieldVariable: string;
         currentContentIdentifier: string | null;
     }): Observable<Set<string>> {
-        const { parentContentTypeId, fieldVariable } = params;
+        const { parentContentTypeVariable, fieldVariable } = params;
 
-        if (!parentContentTypeId || !fieldVariable) {
+        if (!parentContentTypeVariable || !fieldVariable) {
             return of(new Set<string>());
         }
 
-        return this.#contentTypeService.getContentType(parentContentTypeId).pipe(
-            switchMap((contentType) =>
-                this.#http
-                    .post<{
-                        entity: {
-                            jsonObjectView: { contentlets: DotCMSContentlet[] };
-                        };
-                    }>('/api/content/_search', {
-                        query: `+contentType:${contentType.variable} +working:true +deleted:false`,
-                        sort: 'modDate desc',
-                        limit: CONSTRAINED_QUERY_LIMIT,
-                        offset: 0,
-                        depth: 0
-                    })
-                    .pipe(
-                        map((response) => response.entity),
-                        map(({ jsonObjectView: { contentlets } }) => {
-                            const constrainedIds = new Set<string>();
+        return this.#http
+            .post<{
+                entity: {
+                    jsonObjectView: { contentlets: DotCMSContentlet[] };
+                };
+            }>('/api/content/_search', {
+                query: `+contentType:${parentContentTypeVariable} +working:true +deleted:false`,
+                sort: 'modDate desc',
+                limit: CONSTRAINED_QUERY_LIMIT,
+                offset: 0,
+                depth: 0
+            })
+            .pipe(
+                map((response) => response.entity),
+                map(({ jsonObjectView: { contentlets } }) => {
+                    const constrainedIds = new Set<string>();
 
-                            for (const parent of contentlets) {
-                                if (parent.identifier === params.currentContentIdentifier) {
-                                    continue;
-                                }
+                    for (const parent of contentlets) {
+                        if (parent.identifier === params.currentContentIdentifier) {
+                            continue;
+                        }
 
-                                const relatedChildren = parent[fieldVariable];
-                                if (Array.isArray(relatedChildren)) {
-                                    for (const child of relatedChildren) {
-                                        const childId =
-                                            typeof child === 'string' ? child : child?.identifier;
-                                        if (childId) {
-                                            constrainedIds.add(childId);
-                                        }
-                                    }
+                        const relatedChildren = parent[fieldVariable];
+                        if (Array.isArray(relatedChildren)) {
+                            for (const child of relatedChildren) {
+                                const childId =
+                                    typeof child === 'string' ? child : child?.identifier;
+                                if (childId) {
+                                    constrainedIds.add(childId);
                                 }
                             }
+                        }
+                    }
 
-                            return constrainedIds;
-                        })
-                    )
-            ),
-            catchError(() => of(new Set<string>()))
-        );
+                    return constrainedIds;
+                }),
+                catchError(() => of(new Set<string>()))
+            );
     }
 
     /**

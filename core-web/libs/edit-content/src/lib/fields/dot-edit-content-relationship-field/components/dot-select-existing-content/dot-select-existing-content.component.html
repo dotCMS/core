@@ -89,7 +89,8 @@
                 <tr
                     [class.p-highlight]="checkIfSelected(item)"
                     [class.opacity-50]="isConstrained"
-                    [class.pointer-events-none]="isConstrained">
+                    [class.pointer-events-none]="isConstrained"
+                    [attr.aria-disabled]="isConstrained || null">
                     <td
                         class="max-w-20"
                         pFrozenColumn
