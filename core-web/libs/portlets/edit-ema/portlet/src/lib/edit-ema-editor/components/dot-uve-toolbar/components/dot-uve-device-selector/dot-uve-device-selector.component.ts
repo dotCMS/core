@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -22,7 +21,7 @@ import { Orientation } from '../../../../../store/models';
 
 @Component({
     selector: 'dot-uve-device-selector',
-    imports: [ButtonModule, TooltipModule, DotMessagePipe, NgClass, MenuModule],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe, MenuModule],
     templateUrl: './dot-uve-device-selector.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {

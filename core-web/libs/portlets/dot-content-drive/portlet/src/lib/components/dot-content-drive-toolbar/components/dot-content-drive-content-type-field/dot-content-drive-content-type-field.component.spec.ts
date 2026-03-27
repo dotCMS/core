@@ -181,7 +181,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
         it('should set loading to false when filter request fails', () => {
             mockContentTypeService.getContentTypesWithPagination.mockReturnValue(
-                throwError(() => new Error('Network error'))
+                throwError(new Error('Network error'))
             );
 
             spectator.detectChanges();
@@ -369,7 +369,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
             it('should handle filter API request errors gracefully', () => {
                 mockContentTypeService.getContentTypesWithPagination.mockReturnValue(
-                    throwError(() => new Error('Network error'))
+                    throwError(new Error('Network error'))
                 );
 
                 spectator.detectChanges();
@@ -450,7 +450,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
             it('should handle filter API request errors gracefully', () => {
                 mockContentTypeService.getContentTypesWithPagination.mockReturnValue(
-                    throwError(() => new Error('Network error'))
+                    throwError(new Error('Network error'))
                 );
 
                 spectator.detectChanges();
@@ -815,7 +815,7 @@ describe('DotContentDriveContentTypeFieldComponent', () => {
 
             it('should handle initial content types API service errors with catchError', () => {
                 mockContentTypeService.getContentTypesWithPagination.mockReturnValue(
-                    throwError(() => new Error('Service unavailable'))
+                    throwError(new Error('Service unavailable'))
                 );
 
                 spectator.detectChanges();

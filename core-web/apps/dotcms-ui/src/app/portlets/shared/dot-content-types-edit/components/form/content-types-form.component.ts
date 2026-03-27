@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { AsyncPipe, CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -70,7 +70,6 @@ import { DotFieldHelperComponent } from '../../../../../view/components/dot-fiel
     selector: 'dot-content-types-form',
     templateUrl: 'content-types-form.component.html',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         AsyncPipe,
         CheckboxModule,

@@ -12,13 +12,9 @@ import {
     DotMessageService,
     PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    DotContainersServiceMock,
-    SiteServiceMock
-} from '@dotcms/utils-testing';
+import { DotContainersServiceMock, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { JsonClassesService } from './components/add-style-classes-dialog/services/json-classes.service';
 import { DotTemplateBuilderStore } from './store/template-builder.store';
@@ -63,7 +59,6 @@ const meta: Meta<TemplateBuilderComponent> = {
                     provide: SiteService,
                     useValue: new SiteServiceMock()
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotEventsService
                 }

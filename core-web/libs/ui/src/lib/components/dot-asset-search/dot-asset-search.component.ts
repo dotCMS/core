@@ -1,6 +1,6 @@
 import { BehaviorSubject, fromEvent } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -34,7 +34,7 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
     templateUrl: './dot-asset-search.component.html',
     styleUrls: ['./dot-asset-search.component.scss'],
     providers: [DotAssetSearchStore],
-    imports: [DotAssetCardListComponent, InputText, IconField, InputIcon, CommonModule],
+    imports: [DotAssetCardListComponent, InputText, IconField, InputIcon, AsyncPipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetSearchComponent implements OnInit, AfterViewInit {
