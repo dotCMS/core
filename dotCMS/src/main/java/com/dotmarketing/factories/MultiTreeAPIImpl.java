@@ -95,9 +95,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             "delete from multi_tree where variant_id = ? and relation_type != ? and personalization = ? and multi_tree.parent1 = ? " +
                     "and child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier " +
                     "and multi_tree.parent1 = ? and (language_id = ? or language_id =?))";
-    private static final String SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD =
-            "select count(*) cc from multi_tree where relation_type = ? and personalization = ? and " +
-                    "multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ? and variant_id = ?";
+    private static final String SELECT_EXISTING_MULTI_TREE_KEYS_BY_PAGE_AND_CHILDREN =
+            "SELECT relation_type, personalization, parent2, child, variant_id FROM multi_tree " +
+                    "WHERE parent1 = ? AND child IN (%s)";
 
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
@@ -841,6 +841,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         DotPreconditions.notNull(multiTrees, () -> "multiTrees can't be null");
 
+        if (multiTrees.isEmpty()) {
+            return;
+        }
+
+        // Single query to detect duplicates — avoids N+1 SELECT round-trips.
+        // We fetch all existing rows for this page whose child matches any entry in
+        // the incoming list, then check in Java using a HashSet.
+        final Set<String> existingKeys = loadExistingMultiTreeKeys(pageId, multiTrees);
+
         final DotConnect db = new DotConnect();
         final List<Params> insertParams = Lists.newArrayList();
 
@@ -848,19 +857,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final String copiedMultiTreeVariantId =
                     UtilMethods.isSet(variantName) ? variantName : tree.getVariantId();
 
-            //This is for checking if the content we are trying to add is already added into the container
-            db.setSQL(SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD)
-                    .addParam(tree.getRelationType())
-                    .addParam(tree.getPersonalization())
-                    .addParam(pageId)
-                    .addParam(tree.getContainerAsID())
-                    .addParam(tree.getContentlet())
-                    .addParam(copiedMultiTreeVariantId);
-            final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
-            if(contentExist != 0){
-                // The contentlet already exists in this container for the given page, personalization,
-                // and variant. This can happen when DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled
-                // and a fallback-language entry was not removed by a language-scoped DELETE.
+            final String currentMultiTreeKey = MultiTree.buildMultiTreeKey(tree.getRelationType(),
+                    tree.getPersonalization(), tree.getContainerAsID(), tree.getContentlet(),
+                    copiedMultiTreeVariantId);
+
+            if (existingKeys.contains(currentMultiTreeKey)) {
                 Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
                         "Content [%s] already exists in Container '%s', skipping.",
                         tree.getContentlet(), tree.getContainer()));
@@ -868,9 +869,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             }
 
             final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
-
-            insertParams
-                    .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+            insertParams.add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                             tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(),
                             copiedMultiTreeVariantId, stylePropertiesJson));
         }
@@ -883,6 +882,40 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final Optional<Long> languageIdOpt) throws DotDataException {
         overridesMultitreesByPersonalization(pageId, personalization, multiTrees,
                 languageIdOpt, VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    /**
+     * Returns the set of composite keys for all existing multi-tree rows whose {@code child}
+     * identifier appears in the given list. Used to detect duplicates before inserting with
+     * a single round-trip.
+     * <p>
+     * Each key encodes {@code (relation_type, personalization, parent2, child, variant_id)}
+     * separated by {@code |}, matching the structure built by {@link MultiTree#buildMultiTreeKey}.
+     */
+    private Set<String> loadExistingMultiTreeKeys(final String pageId,
+            final List<MultiTree> multiTrees) throws DotDataException {
+
+        final List<String> childIds = multiTrees.stream()
+                .map(MultiTree::getContentlet)
+                .distinct()
+                .collect(Collectors.toList());
+
+        final String placeholders = childIds.stream().map(c -> "?")
+                .collect(Collectors.joining(","));
+
+        final DotConnect db = new DotConnect().setSQL(String.format(
+                SELECT_EXISTING_MULTI_TREE_KEYS_BY_PAGE_AND_CHILDREN, placeholders))
+                .addParam(pageId);
+        childIds.forEach(db::addParam);
+
+        return db.loadObjectResults().stream()
+                .map(row -> MultiTree.buildMultiTreeKey(
+                        (String) row.get("relation_type"),
+                        (String) row.get("personalization"),
+                        (String) row.get("parent2"),
+                        (String) row.get("child"),
+                        (String) row.get("variant_id")))
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -1669,19 +1702,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         // Create a "Lookup Map" from the DB multiTrees.
-        // Key: Unique combination of Container + Contentlet
+        // Key: full composite key (relationType|personalization|container|child|variantId)
         // Value: Contentlet styleProperties
         final Map<String, Map<String, Object>> dbStyleMap = multiTreesFromDB.stream()
-                .collect(Collectors.toMap(
-                        mt -> mt.getContainer() + "_" + mt.getContentlet(),
+                .collect(Collectors.toMap(mt -> MultiTree.buildMultiTreeKey(
+                                mt.getRelationType(), mt.getPersonalization(), mt.getContainerAsID(),
+                                mt.getContentlet(), mt.getVariantId()),
                         MultiTree::getStyleProperties,
-                        // In case of duplicates, keep last entrance value (shouldn't happen)
+                        // In case of duplicate keys, keep the last value (shouldn't happen)
                         (existing, replacement) -> replacement
                 ));
 
         // Update the multiTrees list to preserve existing styleProperties
-        for (MultiTree multiTree : multiTrees) {
-            String key = multiTree.getContainer() + "_" + multiTree.getContentlet();
+        for (final MultiTree multiTree : multiTrees) {
+            final String key = MultiTree.buildMultiTreeKey(multiTree.getRelationType(),
+                    multiTree.getPersonalization(), multiTree.getContainerAsID(),
+                    multiTree.getContentlet(), multiTree.getVariantId());
 
             // If this relationship already existed in DB, preserves the old styles
             if (dbStyleMap.containsKey(key)) {
