@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -31,7 +31,7 @@ export class SuggestionsService {
                 direction: 'ASC',
                 perPage: 40
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     getContentlets({
@@ -50,7 +50,7 @@ export class SuggestionsService {
                 offset: 0,
                 limit: 40
             })
-            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+            .pipe(map((x) => x?.entity?.jsonObjectView?.contentlets));
     }
 
     /**
@@ -80,6 +80,6 @@ export class SuggestionsService {
                 offset: 0,
                 limit: 40
             })
-            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+            .pipe(map((x) => x?.entity?.jsonObjectView?.contentlets));
     }
 }

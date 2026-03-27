@@ -3,7 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 
 import { Injectable, inject } from '@angular/core';
 
-import { Observable } from 'rxjs/internal/Observable';
+import { Observable } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 
 import {

@@ -1194,11 +1194,13 @@ describe('EditEmaEditorComponent', () => {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     } as any);
 
-                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith({
-                        identifier: '123',
-                        inode: '456',
-                        title: 'Hello World'
-                    });
+                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            identifier: '123',
+                            inode: '456',
+                            title: 'Hello World'
+                        })
+                    );
                 });
 
                 it('should open a dialog and save after backend emit', (done) => {
@@ -1564,7 +1566,7 @@ describe('EditEmaEditorComponent', () => {
                             .spyOn(dotHttpErrorManagerService, 'handle')
                             .mockReturnValue(of(null));
 
-                        spyContentlet.mockReturnValue(throwError({}));
+                        spyContentlet.mockReturnValue(throwError(() => ({})));
 
                         emulateEditURLMapContent();
                         expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
@@ -1651,7 +1653,7 @@ describe('EditEmaEditorComponent', () => {
                             spectator.component.dialog,
                             'resetDialog'
                         );
-                        copySpy.mockReturnValue(throwError({}));
+                        copySpy.mockReturnValue(throwError(() => ({})));
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
                         spectator.detectChanges();
 

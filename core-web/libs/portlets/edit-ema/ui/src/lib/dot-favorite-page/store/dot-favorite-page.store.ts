@@ -145,7 +145,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             return this.dotTempFileUploadService.upload(file).pipe(
                 switchMap(([{ id, image }]: DotCMSTempFile[]) => {
                     if (!image) {
-                        return throwError(
+                        return throwError(() =>
                             this.dotMessageService.get('favoritePage.dialog.error.tmpFile.upload')
                         );
                     }

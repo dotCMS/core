@@ -452,7 +452,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                 this.setSidebarStatus({
                                     status: ComponentStatus.IDLE
                                 });
-                                throwError(error);
+                                throwError(() => error);
                             }
                         })
                     )
@@ -503,7 +503,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE
                                     });
-                                    throwError(error);
+                                    throwError(() => error);
                                 }
                             })
                         )
@@ -578,7 +578,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setTrafficProportion(experiment.trafficProportion);
                                 },
-                                error: (error: HttpErrorResponse) => throwError(error)
+                                error: (error: HttpErrorResponse) => throwError(() => error)
                             })
                         )
                 )
@@ -649,7 +649,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setGoals(experiment.goals);
                                 },
-                                error: (error: HttpErrorResponse) => throwError(error)
+                                error: (error: HttpErrorResponse) => throwError(() => error)
                             })
                         )
                 )

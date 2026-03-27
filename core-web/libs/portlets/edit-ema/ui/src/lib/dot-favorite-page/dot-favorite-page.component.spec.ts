@@ -11,7 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MultiSelectModule } from 'primeng/multiselect';
 
-import { of } from 'rxjs/internal/observable/of';
+import { of } from 'rxjs';
 
 import { DotMessageService, DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';

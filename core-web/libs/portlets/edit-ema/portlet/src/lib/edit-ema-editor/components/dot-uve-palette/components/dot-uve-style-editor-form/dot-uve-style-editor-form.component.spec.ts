@@ -367,7 +367,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockUveStore.saveStyleEditor.mockReturnValue(
                 timer(0).pipe(
                     tap(() => mockUveStore.graphqlResponse.set(rolledBackResponse)),
-                    mergeMap(() => throwError(new Error('Save failed')))
+                    mergeMap(() => throwError(() => new Error('Save failed')))
                 )
             );
 
@@ -405,7 +405,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockUveStore.saveStyleEditor.mockReturnValue(
                 timer(0).pipe(
                     tap(() => mockUveStore.graphqlResponse.set(rolledBackResponse)),
-                    mergeMap(() => throwError(new Error('Save failed')))
+                    mergeMap(() => throwError(() => new Error('Save failed')))
                 )
             );
 
@@ -455,7 +455,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockUveStore.saveStyleEditor.mockReturnValue(
                 timer(0).pipe(
                     tap(() => mockUveStore.graphqlResponse.set(rolledBackResponse)),
-                    mergeMap(() => throwError(new Error('Save failed')))
+                    mergeMap(() => throwError(() => new Error('Save failed')))
                 )
             );
 
@@ -661,7 +661,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockUveStore.saveStyleEditor.mockReturnValue(
                 timer(0).pipe(
                     tap(() => mockUveStore.graphqlResponse.set(rolledBackResponse)),
-                    mergeMap(() => throwError(new Error('Save failed')))
+                    mergeMap(() => throwError(() => new Error('Save failed')))
                 )
             );
 
