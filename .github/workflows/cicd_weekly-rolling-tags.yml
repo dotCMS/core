@@ -1,0 +1,62 @@
+name: Weekly Rolling Docker Tags
+on:
+  schedule:
+    # Every Saturday at 06:00 UTC
+    - cron: '0 6 * * 6'
+  workflow_dispatch:
+
+env:
+  IMAGE: dotcms/dotcms
+  MAX_WEEKS: 4
+
+jobs:
+  rolling-tags:
+    name: Rotate Weekly Docker Tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Rotate weekly tags
+        run: |
+          set -euo pipefail
+
+          IMAGE="${{ env.IMAGE }}"
+          MAX_WEEKS="${{ env.MAX_WEEKS }}"
+
+          # Work backwards: weekly-3 -> weekly-4, weekly-2 -> weekly-3, etc.
+          for (( i = MAX_WEEKS - 1; i >= 1; i-- )); do
+            SRC="${IMAGE}:weekly-${i}"
+            DST="${IMAGE}:weekly-$(( i + 1 ))"
+
+            echo "--- Promoting ${SRC} -> ${DST} ---"
+            if docker pull "${SRC}" 2>/dev/null; then
+              docker tag "${SRC}" "${DST}"
+              docker push "${DST}"
+              echo "Pushed ${DST}"
+            else
+              echo "Skipping: ${SRC} does not exist yet"
+            fi
+          done
+
+          # weekly -> weekly-1
+          echo "--- Promoting ${IMAGE}:weekly -> ${IMAGE}:weekly-1 ---"
+          if docker pull "${IMAGE}:weekly" 2>/dev/null; then
+            docker tag "${IMAGE}:weekly" "${IMAGE}:weekly-1"
+            docker push "${IMAGE}:weekly-1"
+            echo "Pushed ${IMAGE}:weekly-1"
+          else
+            echo "Skipping: ${IMAGE}:weekly does not exist yet"
+          fi
+
+          # latest -> weekly
+          echo "--- Promoting ${IMAGE}:latest -> ${IMAGE}:weekly ---"
+          docker pull "${IMAGE}:latest"
+          docker tag "${IMAGE}:latest" "${IMAGE}:weekly"
+          docker push "${IMAGE}:weekly"
+          echo "Pushed ${IMAGE}:weekly"
+
+          echo "=== Rolling tag rotation complete ==="
