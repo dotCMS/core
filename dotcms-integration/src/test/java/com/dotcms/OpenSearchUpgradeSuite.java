@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOSIntegrationTest;
+import com.dotcms.content.index.opensearch.OSMappingAPIImplIntegrationTest;
 import com.dotcms.content.index.VersionedIndicesAPITest;
 import com.dotcms.content.index.opensearch.OSIndexAPIImplIntegrationTest;
 import com.dotcms.content.index.opensearch.OSClientConfigTest;
@@ -30,6 +31,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         VersionedIndicesAPITest.class,
         OSIndexAPIImplIntegrationTest.class,
+        OSMappingAPIImplIntegrationTest.class,
         ContentletIndexOperationsOSIntegrationTest.class,
         OSClientProviderIntegrationTest.class,
         OSClientConfigTest.class
