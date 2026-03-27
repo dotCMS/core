@@ -15,13 +15,19 @@ import { RelationshipTypes, TableColumn } from '../models/relationship.models';
 import { RelationshipFieldState } from '../store/relationship-field.store';
 
 /**
- * Get the selection mode by cardinality.
+ * Get the selection mode by cardinality and parent/child role.
  *
- * @param cardinality - The cardinality of the relationship.
+ * Mirrors the backend logic in ContentletRelationshipRecords.doesAllowOnlyOne():
+ *   - Child side (isParentField=false): only MANY_TO_MANY allows multiple
+ *   - Parent side (isParentField=true): only ONE_TO_ONE allows single
+ *
+ * @param cardinality - The cardinality of the relationship (0-3).
+ * @param isParentField - Whether this content type is the parent in the relationship.
  * @returns The selection mode.
  */
 export function getSelectionModeByCardinality(
-    cardinality: number
+    cardinality: number,
+    isParentField?: boolean
 ): RelationshipFieldState['selectionMode'] {
     const relationshipType = RELATIONSHIP_OPTIONS[cardinality];
 
@@ -29,6 +35,12 @@ export function getSelectionModeByCardinality(
         throw new Error(`Invalid relationship type for cardinality: ${cardinality}`);
     }
 
+    if (isParentField === false) {
+        // Child side: only MANY_TO_MANY allows multiple selection
+        return relationshipType === RelationshipTypes.MANY_TO_MANY ? 'multiple' : 'single';
+    }
+
+    // Parent side (or isParentField not provided - backward compatible)
     const isSingleMode =
         relationshipType === RelationshipTypes.ONE_TO_ONE ||
         relationshipType === RelationshipTypes.MANY_TO_ONE;

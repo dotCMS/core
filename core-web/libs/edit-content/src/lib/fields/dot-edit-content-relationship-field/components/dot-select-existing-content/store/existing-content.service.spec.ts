@@ -6,10 +6,11 @@ import {
 } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
 import {
     DotContentSearchService,
+    DotContentTypeService,
     DotFieldService,
     DotHttpErrorManagerService,
     DotLanguagesService,
@@ -25,6 +26,7 @@ describe('ExistingContentService', () => {
     let dotFieldService: SpyObject<DotFieldService>;
     let dotContentSearchService: SpyObject<DotContentSearchService>;
     let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
+    let httpClient: SpyObject<HttpClient>;
 
     const createService = createServiceFactory({
         service: ExistingContentService,
@@ -32,8 +34,12 @@ describe('ExistingContentService', () => {
             mockProvider(DotHttpErrorManagerService, {
                 handle: () => of(null)
             }),
+            mockProvider(HttpClient),
             mockProvider(DotFieldService),
             mockProvider(DotContentSearchService),
+            mockProvider(DotContentTypeService, {
+                getContentType: jest.fn().mockReturnValue(of({ variable: 'Blog' }))
+            }),
             mockProvider(DotLanguagesService, { get: () => of(mockLocales) })
         ]
     });
@@ -43,6 +49,7 @@ describe('ExistingContentService', () => {
         dotFieldService = spectator.inject(DotFieldService);
         dotContentSearchService = spectator.inject(DotContentSearchService);
         dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
+        httpClient = spectator.inject(HttpClient);
     });
 
     describe('getColumns', () => {
@@ -621,10 +628,12 @@ describe('ExistingContentService', () => {
                 }
             ] as unknown as DotCMSContentlet[];
 
-            dotContentSearchService.get.mockReturnValue(
+            httpClient.post.mockReturnValue(
                 of({
-                    jsonObjectView: { contentlets: parentContentlets },
-                    resultsSize: parentContentlets.length
+                    entity: {
+                        jsonObjectView: { contentlets: parentContentlets },
+                        resultsSize: parentContentlets.length
+                    }
                 })
             );
 
@@ -649,10 +658,12 @@ describe('ExistingContentService', () => {
                 }
             ] as unknown as DotCMSContentlet[];
 
-            dotContentSearchService.get.mockReturnValue(
+            httpClient.post.mockReturnValue(
                 of({
-                    jsonObjectView: { contentlets: parentContentlets },
-                    resultsSize: 1
+                    entity: {
+                        jsonObjectView: { contentlets: parentContentlets },
+                        resultsSize: 1
+                    }
                 })
             );
 
@@ -674,10 +685,12 @@ describe('ExistingContentService', () => {
                 { identifier: 'blog2' }
             ] as unknown as DotCMSContentlet[];
 
-            dotContentSearchService.get.mockReturnValue(
+            httpClient.post.mockReturnValue(
                 of({
-                    jsonObjectView: { contentlets: parentContentlets },
-                    resultsSize: 2
+                    entity: {
+                        jsonObjectView: { contentlets: parentContentlets },
+                        resultsSize: 2
+                    }
                 })
             );
 
@@ -702,15 +715,13 @@ describe('ExistingContentService', () => {
                 })
                 .subscribe((result) => {
                     expect(result).toEqual(new Set());
-                    expect(dotContentSearchService.get).not.toHaveBeenCalled();
+                    expect(httpClient.post).not.toHaveBeenCalled();
                     done();
                 });
         });
 
         it('should return empty set on error', (done) => {
-            dotContentSearchService.get.mockReturnValue(
-                throwError(() => new Error('Network error'))
-            );
+            httpClient.post.mockReturnValue(throwError(() => new Error('Network error')));
 
             spectator.service
                 .getConstrainedIdentifiers({
@@ -724,11 +735,13 @@ describe('ExistingContentService', () => {
                 });
         });
 
-        it('should use correct Lucene query for parent content type', (done) => {
-            dotContentSearchService.get.mockReturnValue(
+        it('should use correct Lucene query with depth 0', (done) => {
+            httpClient.post.mockReturnValue(
                 of({
-                    jsonObjectView: { contentlets: [] },
-                    resultsSize: 0
+                    entity: {
+                        jsonObjectView: { contentlets: [] },
+                        resultsSize: 0
+                    }
                 })
             );
 
@@ -739,9 +752,11 @@ describe('ExistingContentService', () => {
                     currentContentIdentifier: null
                 })
                 .subscribe(() => {
-                    expect(dotContentSearchService.get).toHaveBeenCalledWith(
+                    expect(httpClient.post).toHaveBeenCalledWith(
+                        '/api/content/_search',
                         expect.objectContaining({
-                            query: '+stInode:blog-type-id +working:true +deleted:false',
+                            query: '+contentType:Blog +working:true +deleted:false',
+                            depth: 0,
                             limit: 5000
                         })
                     );

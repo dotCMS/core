@@ -1,12 +1,13 @@
 import { forkJoin, Observable, of } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
+    DotContentTypeService,
     DotFieldService,
     DotHttpErrorManagerService,
     DotLanguagesService,
@@ -35,8 +36,10 @@ export interface RelationshipFieldSearchResponse {
     providedIn: 'root'
 })
 export class ExistingContentService {
+    readonly #http = inject(HttpClient);
     readonly #fieldService = inject(DotFieldService);
     readonly #contentSearchService = inject(DotContentSearchService);
+    readonly #contentTypeService = inject(DotContentTypeService);
     readonly #dotLanguagesService = inject(DotLanguagesService);
     readonly #httpErrorManagerService = inject(DotHttpErrorManagerService);
 
@@ -212,39 +215,48 @@ export class ExistingContentService {
             return of(new Set<string>());
         }
 
-        return this.#contentSearchService
-            .get<{
-                jsonObjectView: { contentlets: DotCMSContentlet[] };
-                resultsSize: number;
-            }>({
-                query: `+stInode:${parentContentTypeId} +working:true +deleted:false`,
-                limit: CONSTRAINED_QUERY_LIMIT
-            })
-            .pipe(
-                map(({ jsonObjectView: { contentlets } }) => {
-                    const constrainedIds = new Set<string>();
+        return this.#contentTypeService.getContentType(parentContentTypeId).pipe(
+            switchMap((contentType) =>
+                this.#http
+                    .post<{
+                        entity: {
+                            jsonObjectView: { contentlets: DotCMSContentlet[] };
+                        };
+                    }>('/api/content/_search', {
+                        query: `+contentType:${contentType.variable} +working:true +deleted:false`,
+                        sort: 'modDate desc',
+                        limit: CONSTRAINED_QUERY_LIMIT,
+                        offset: 0,
+                        depth: 0
+                    })
+                    .pipe(
+                        map((response) => response.entity),
+                        map(({ jsonObjectView: { contentlets } }) => {
+                            const constrainedIds = new Set<string>();
 
-                    for (const parent of contentlets) {
-                        if (parent.identifier === params.currentContentIdentifier) {
-                            continue;
-                        }
+                            for (const parent of contentlets) {
+                                if (parent.identifier === params.currentContentIdentifier) {
+                                    continue;
+                                }
 
-                        const relatedChildren = parent[fieldVariable];
-                        if (Array.isArray(relatedChildren)) {
-                            for (const child of relatedChildren) {
-                                const childId =
-                                    typeof child === 'string' ? child : child?.identifier;
-                                if (childId) {
-                                    constrainedIds.add(childId);
+                                const relatedChildren = parent[fieldVariable];
+                                if (Array.isArray(relatedChildren)) {
+                                    for (const child of relatedChildren) {
+                                        const childId =
+                                            typeof child === 'string' ? child : child?.identifier;
+                                        if (childId) {
+                                            constrainedIds.add(childId);
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    }
 
-                    return constrainedIds;
-                }),
-                catchError(() => of(new Set<string>()))
-            );
+                            return constrainedIds;
+                        })
+                    )
+            ),
+            catchError(() => of(new Set<string>()))
+        );
     }
 
     /**
