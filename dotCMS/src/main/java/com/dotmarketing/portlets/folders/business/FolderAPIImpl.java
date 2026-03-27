@@ -172,6 +172,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		try {
 			validateFolderName(folder, newName);
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
+
 			// Nav cache eviction for the folder and sub-tree is handled inside the factory.
 			// NOTE: the factory mutates the passed-in folder via folder.setName(newName), so
 			// folder.getPath() returns the new path here. refreshContentUnderFolder depends on
@@ -188,7 +189,16 @@ public class FolderAPIImpl implements FolderAPI  {
 				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder '"
 						+ safePath + "' to '" + safeNewName + "': " + e.getMessage());
 			}
-			return renamed;
+
+			if (renamed) {
+				systemEventsAPI.pushAsync(SystemEventType.UPDATE_FOLDER,
+						new Payload(folder.getMap(), Visibility.EXCLUDE_OWNER,
+								new ExcludeOwnerVerifierBean(user.getUserId(),
+										PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+			}
+  
+      return renamed;
+
 		} catch (InvalidFolderNameException e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
 					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
