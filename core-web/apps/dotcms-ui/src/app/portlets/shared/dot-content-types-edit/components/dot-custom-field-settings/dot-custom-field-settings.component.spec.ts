@@ -28,7 +28,6 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.dropzone.action.save': 'Save',
     'contenttypes.dropzone.action.cancel': 'Cancel',
-    'contenttypes.field.properties.renderOptions.title': 'Render Options',
     'contenttypes.field.properties.renderOptions.showAsModal.label': 'Show as Modal',
     'contenttypes.field.properties.renderOptions.showAsModal.helper': 'Display in overlay',
     'contenttypes.field.properties.renderOptions.width': 'Width',

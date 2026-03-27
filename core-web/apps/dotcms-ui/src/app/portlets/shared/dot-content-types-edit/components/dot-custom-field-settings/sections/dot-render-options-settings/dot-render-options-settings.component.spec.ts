@@ -22,7 +22,6 @@ import { DotRenderOptionsSettingsComponent } from './dot-render-options-settings
 import { DotFieldVariablesService } from '../../../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 const messageServiceMock = new MockDotMessageService({
-    'contenttypes.field.properties.renderOptions.title': 'Render Options',
     'contenttypes.field.properties.renderOptions.showAsModal.label': 'Show as Modal',
     'contenttypes.field.properties.renderOptions.showAsModal.helper':
         'Display this field in an overlay',
