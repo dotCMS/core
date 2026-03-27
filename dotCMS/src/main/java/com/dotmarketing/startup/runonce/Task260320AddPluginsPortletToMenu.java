@@ -14,13 +14,13 @@ import java.util.Map;
 
 import static com.dotmarketing.util.PortletID.DYNAMIC_PLUGINS;
 import static com.dotmarketing.util.PortletID.PLUGINS;
-import static com.dotmarketing.util.PortletID.PLUGINS_LEGACY;
 
 /**
- * Replaces the legacy {@code plugins-legacy} (formerly {@code dynamic-plugins}) portlet in the
- * admin menu with the Angular {@code plugins} portlet. The legacy portlet is removed from all
- * layouts so it no longer appears in the sidebar; it remains registered in {@code portlet.xml}
- * and can be added back manually if needed.
+ * Adds the Angular {@code plugins} portlet to the admin menu alongside the existing
+ * {@code dynamic-plugins} portlet. The {@code dynamic-plugins} row is intentionally left
+ * untouched in {@code cms_layouts_portlets} so that a version rollback automatically restores
+ * the JSP-based portlet — the old {@code portlet.xml} already registers {@code dynamic-plugins}
+ * and no DB repair is needed.
  *
  * @author Humberto Morera
  * @since Mar 20th, 2026
@@ -30,14 +30,6 @@ public class Task260320AddPluginsPortletToMenu implements StartupTask {
     @Override
     public boolean forceRun() {
         try {
-            final int legacyCount = new DotConnect()
-                    .setSQL("SELECT COUNT(portlet_id) AS count FROM cms_layouts_portlets WHERE portlet_id = ? OR portlet_id = ?")
-                    .addParam(PLUGINS_LEGACY.toString())
-                    .addParam(DYNAMIC_PLUGINS.toString())
-                    .getInt("count");
-            if (legacyCount > 0) {
-                return true;
-            }
             final int pluginsCount = new DotConnect()
                     .setSQL("SELECT COUNT(portlet_id) AS count FROM cms_layouts_portlets WHERE portlet_id = ?")
                     .addParam(PLUGINS.toString())
@@ -52,30 +44,18 @@ public class Task260320AddPluginsPortletToMenu implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException {
-        Logger.info(this, "Replacing legacy plugins portlet with Angular 'plugins' portlet in the admin menu");
+        Logger.info(this, "Adding Angular 'plugins' portlet to the admin menu alongside the legacy portlet");
 
-        // 1. Normalize: rename dynamic-plugins -> plugins-legacy in DB to match portlet.xml
-        final int dynamicPluginsCount = new DotConnect()
-                .setSQL("SELECT COUNT(portlet_id) AS count FROM cms_layouts_portlets WHERE portlet_id = ?")
-                .addParam(DYNAMIC_PLUGINS.toString())
-                .getInt("count");
-        if (dynamicPluginsCount > 0) {
-            new DotConnect()
-                    .setSQL("UPDATE cms_layouts_portlets SET portlet_id = ? WHERE portlet_id = ?")
-                    .addParam(PLUGINS_LEGACY.toString())
-                    .addParam(DYNAMIC_PLUGINS.toString())
-                    .loadResult();
-            Logger.info(this, "Renamed 'dynamic-plugins' to 'plugins-legacy' in cms_layouts_portlets");
-        }
-
-        // 2. Find layout and position of plugins-legacy before removing it
+        // Find layout and position of dynamic-plugins.
+        // The row is intentionally left untouched so that a version rollback finds 'dynamic-plugins'
+        // in cms_layouts_portlets and the old portlet.xml renders the JSP portlet without any DB repair.
         final List<Map<String, Object>> results = new DotConnect()
                 .setSQL("SELECT layout_id, portlet_order FROM cms_layouts_portlets WHERE portlet_id = ?")
-                .addParam(PLUGINS_LEGACY.toString())
+                .addParam(DYNAMIC_PLUGINS.toString())
                 .loadObjectResults();
 
         if (results.isEmpty() || !UtilMethods.isSet(results.get(0).getOrDefault("layout_id", "").toString())) {
-            Logger.error(this, "Could not find 'plugins-legacy' in any layout. " +
+            Logger.error(this, "Could not find 'dynamic-plugins' in any layout. " +
                     "The 'plugins' portlet cannot be added automatically. Please add it manually.");
             return;
         }
@@ -83,14 +63,8 @@ public class Task260320AddPluginsPortletToMenu implements StartupTask {
         final String layoutId = results.get(0).get("layout_id").toString();
         final int legacyOrder = Integer.parseInt(results.get(0).getOrDefault("portlet_order", "0").toString());
 
-        // 3. Remove plugins-legacy from all layouts (no longer visible in sidebar)
-        new DotConnect()
-                .setSQL("DELETE FROM cms_layouts_portlets WHERE portlet_id = ?")
-                .addParam(PLUGINS_LEGACY.toString())
-                .loadResult();
-        Logger.info(this, "Removed 'plugins-legacy' from all layouts");
-
-        // 4. Insert plugins at the same position plugins-legacy occupied
+        // Insert plugins at the same position the legacy portlet occupies.
+        // The legacy row is left untouched — see comment above.
         final int pluginsCount = new DotConnect()
                 .setSQL("SELECT COUNT(portlet_id) AS count FROM cms_layouts_portlets WHERE portlet_id = ?")
                 .addParam(PLUGINS.toString())

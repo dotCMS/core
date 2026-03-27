@@ -22,8 +22,6 @@ public class Task260320AddPluginsPortletToMenuTest {
 
     /** Matches {@link com.dotmarketing.util.PortletID#PLUGINS} */
     private static final String PLUGINS_PORTLET_ID = "plugins";
-    /** Matches {@link com.dotmarketing.util.PortletID#PLUGINS_LEGACY} */
-    private static final String PLUGINS_LEGACY_PORTLET_ID = "plugins-legacy";
     /** Matches {@link com.dotmarketing.util.PortletID#DYNAMIC_PLUGINS} */
     private static final String DYNAMIC_PLUGINS_PORTLET_ID = "dynamic-plugins";
 
@@ -33,19 +31,18 @@ public class Task260320AddPluginsPortletToMenuTest {
     }
 
     /**
-     * Requires {@code plugins-legacy} or {@code dynamic-plugins} in {@code cms_layouts_portlets},
+     * Requires {@code dynamic-plugins} in {@code cms_layouts_portlets},
      * which a normal starter-backed integration DB provides.
      */
     @Before
-    public void assumePluginsLegacyMenuExists() {
-        final int legacyOrDynamic = new DotConnect()
-                .setSQL("SELECT COUNT(*) AS count FROM cms_layouts_portlets WHERE portlet_id = ? OR portlet_id = ?")
-                .addParam(PLUGINS_LEGACY_PORTLET_ID)
+    public void assumeDynamicPluginsMenuExists() {
+        final int count = new DotConnect()
+                .setSQL("SELECT COUNT(*) AS count FROM cms_layouts_portlets WHERE portlet_id = ?")
                 .addParam(DYNAMIC_PLUGINS_PORTLET_ID)
                 .getInt("count");
         Assume.assumeTrue(
-                "Integration DB must include plugins-legacy or dynamic-plugins in a layout for this test",
-                legacyOrDynamic > 0);
+                "Integration DB must include dynamic-plugins in a layout for this test",
+                count > 0);
     }
 
     /**
@@ -69,6 +66,51 @@ public class Task260320AddPluginsPortletToMenuTest {
         assertFalse(
                 "The 'plugins' portlet has already been added, so the UT must NOT run again",
                 upgradeTask.forceRun());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link Task260320AddPluginsPortletToMenu#executeUpgrade()}</li>
+     *     <li><b>Given scenario:</b> The task runs successfully.</li>
+     *     <li><b>Expected result:</b> {@code dynamic-plugins} remains untouched in
+     *     {@code cms_layouts_portlets} so that a version rollback finds it and the old
+     *     {@code portlet.xml} renders the JSP portlet without any DB repair.</li>
+     * </ul>
+     */
+    @Test
+    public void dynamicPluginsIsPreservedForRollbackSafety() throws DotDataException {
+        deletePluginsPortlet();
+
+        new Task260320AddPluginsPortletToMenu().executeUpgrade();
+
+        final int count = new DotConnect()
+                .setSQL("SELECT COUNT(*) AS count FROM cms_layouts_portlets WHERE portlet_id = ?")
+                .addParam(DYNAMIC_PLUGINS_PORTLET_ID)
+                .getInt("count");
+        assertTrue(
+                "'dynamic-plugins' must remain in the layout after the upgrade so a rollback restores the JSP portlet",
+                count > 0);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link Task260320AddPluginsPortletToMenu#forceRun()}</li>
+     *     <li><b>Given scenario:</b> Both {@code dynamic-plugins} and {@code plugins} are present
+     *     in the layout (the steady state after a successful upgrade).</li>
+     *     <li><b>Expected result:</b> {@code forceRun()} returns {@code false} — the presence of
+     *     {@code dynamic-plugins} alone must not trigger a re-run.</li>
+     * </ul>
+     */
+    @Test
+    public void forceRunReturnsFalseWhenBothPortletsCoexist() throws DotDataException {
+        deletePluginsPortlet();
+
+        new Task260320AddPluginsPortletToMenu().executeUpgrade();
+
+        assertFalse(
+                "forceRun() must return false when both portlets are present — " +
+                        "dynamic-plugins presence alone must not trigger a re-run",
+                new Task260320AddPluginsPortletToMenu().forceRun());
     }
 
     /**
@@ -99,4 +141,5 @@ public class Task260320AddPluginsPortletToMenuTest {
             Logger.info(this, "Failed deleting the portlet_id " + PLUGINS_PORTLET_ID);
         }
     }
+
 }
