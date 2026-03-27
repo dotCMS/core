@@ -1,6 +1,8 @@
 package com.dotcms.contenttype.transform.contenttype;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotmarketing.beans.Host;
@@ -19,8 +21,6 @@ import java.net.URISyntaxException;
 import java.util.Optional;
 
 public class DetailPageTransformerImpl implements DetailPageTransformer {
-
-    private static final String PAGE_SUBTYPE = "htmlpageasset";
 
     private final ContentType contentType;
     private final User user;
@@ -117,31 +117,41 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
     /**
      * Validates the identifier of a detail page.
      *
-     * @param detailPage                The detail page.
+     * <p>A valid detail page is any page whose content type has a base type of
+     * {@link BaseContentType#HTMLPAGE}, regardless of its velocity variable name. This
+     * correctly handles custom Page content types (e.g. "Landing Page", "Detail Page") in
+     * addition to the default "Web Page Content" type.
+     *
+     * @param detailPage                The detail page URI or identifier string.
      * @param foundDetailPageIdentifier The Identifier of the detail page.
      * @return An Optional containing the identifier value if it is valid.
-     * @throws IllegalArgumentException if the identifier is invalid.
+     * @throws DotDataException         if a database error occurs looking up the content type.
+     * @throws DotSecurityException     if a permissions error occurs looking up the content type.
+     * @throws IllegalArgumentException if the identifier is not a valid detail page.
      */
     private Optional<String> validateIdentifier(
-            String detailPage, Identifier foundDetailPageIdentifier) {
+            String detailPage, Identifier foundDetailPageIdentifier)
+            throws DotDataException, DotSecurityException {
 
-        if (null != foundDetailPageIdentifier &&
-                foundDetailPageIdentifier.exists() &&
-                foundDetailPageIdentifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
-            return Optional.of(foundDetailPageIdentifier.getId());
-        } else {
-            if (null != foundDetailPageIdentifier &&
-                    foundDetailPageIdentifier.exists() &&
-                    !foundDetailPageIdentifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
-                throw new IllegalArgumentException(
-                        String.format("[%s] in Content Type [%s] is not a valid detail page.",
-                                detailPage, contentType.name()));
-            }
-
+        if (null == foundDetailPageIdentifier || !foundDetailPageIdentifier.exists()) {
             throw new IllegalArgumentException(
                     String.format("Detail page [%s] in Content Type [%s] does not exist.",
                             detailPage, contentType.name()));
         }
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(
+                APILocator.getUserAPI().getSystemUser());
+        final ContentType pageContentType = contentTypeAPI.find(
+                foundDetailPageIdentifier.getAssetSubType());
+
+        if (null != pageContentType &&
+                BaseContentType.HTMLPAGE == pageContentType.baseType()) {
+            return Optional.of(foundDetailPageIdentifier.getId());
+        }
+
+        throw new IllegalArgumentException(
+                String.format("[%s] in Content Type [%s] is not a valid detail page.",
+                        detailPage, contentType.name()));
     }
 
 }
