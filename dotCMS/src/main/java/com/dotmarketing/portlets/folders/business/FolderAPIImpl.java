@@ -171,7 +171,16 @@ public class FolderAPIImpl implements FolderAPI  {
 			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 			Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
+
+			if (renamed) {
+				systemEventsAPI.pushAsync(SystemEventType.UPDATE_FOLDER,
+						new Payload(folder.getMap(), Visibility.EXCLUDE_OWNER,
+								new ExcludeOwnerVerifierBean(user.getUserId(),
+										PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+			}
+
 			return renamed;
+
 		} catch (InvalidFolderNameException e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
 					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
