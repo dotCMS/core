@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, DecimalPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -35,7 +35,6 @@ import { WINDOW } from '@dotcms/utils';
 
 @Component({
     imports: [
-        CommonModule,
         SelectModule,
         FormsModule,
         ButtonModule,
@@ -44,7 +43,9 @@ import { WINDOW } from '@dotcms/utils';
         DividerModule,
         DotMessagePipe,
         RouterLink,
-        DividerModule
+        DividerModule,
+        AsyncPipe,
+        DecimalPipe
     ],
     providers: [
         DotDevicesService,

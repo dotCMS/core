@@ -9,7 +9,7 @@ import { DotAvatarDirective } from './dot-avatar.directive';
 @Component({
     imports: [AvatarModule, DotAvatarDirective],
     template: `
-        <p-avatar [text]="text" [image]="image" dotAvatar></p-avatar>
+        <p-avatar [text]="text" [image]="image" dotAvatar />
     `
 })
 class TestHostComponent {

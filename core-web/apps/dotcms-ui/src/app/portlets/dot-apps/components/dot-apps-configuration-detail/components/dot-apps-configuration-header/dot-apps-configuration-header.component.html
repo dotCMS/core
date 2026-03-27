@@ -24,9 +24,7 @@
             }}
         </span>
         <div
-            [ngClass]="{
-                'dot-apps-configuration__description__show-more': showMore()
-            }"
+            [class.dot-apps-configuration__description__show-more]="showMore()"
             class="dot-apps-configuration__description">
             <markdown>{{ app.description }}</markdown>
             @if (app.description.length > 270) {

@@ -134,8 +134,6 @@ const MESSAGE_KEY = {
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgClass,
-        NgStyle,
         FormsModule,
         SafeUrlPipe,
         DotEmaDialogComponent,
@@ -148,7 +146,9 @@ const MESSAGE_KEY = {
         DotUvePageVersionNotFoundComponent,
         DotUveContentletToolsComponent,
         DotUveLockOverlayComponent,
-        DotUvePaletteComponent
+        DotUvePaletteComponent,
+        NgClass,
+        NgStyle
     ],
     providers: [
         DotCopyContentModalService,
