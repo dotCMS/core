@@ -51,6 +51,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -165,12 +166,29 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId() : BLANK) + " does not have permission to edit folder " + folder.getPath());
 		}
 
+		// Sanitize user-supplied name before logging to prevent log injection via \r or \n.
+		final String safeNewName = newName.replaceAll("[\\r\\n]", " ");
+		final String safePath = folder.getPath() == null ? null : folder.getPath().replaceAll("[\\r\\n]", " ");
 		try {
 			validateFolderName(folder, newName);
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
-			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-			Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
+
+			// Nav cache eviction for the folder and sub-tree is handled inside the factory.
+			// NOTE: the factory mutates the passed-in folder via folder.setName(newName), so
+			// folder.getPath() returns the new path here. refreshContentUnderFolder depends on
+			// this side-effect to queue the reindex against the renamed path. Do not refactor
+			// the factory to work on a defensive copy without updating this call site.
+			//
+			// Queue async ES reindex. DotReindexStateException is caught here so a transient
+			// reindex-queue failure does not roll back an otherwise successful rename.
+			// DotDataException (DB-layer) is intentionally NOT caught: if the DB itself fails
+			// (e.g. the dist_reindex_journal INSERT fails), the rename transaction should roll back.
+			try {
+				contentletAPI.refreshContentUnderFolder(folder);
+			} catch (final DotReindexStateException e) {
+				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder '"
+						+ safePath + "' to '" + safeNewName + "': " + e.getMessage());
+			}
 
 			if (renamed) {
 				systemEventsAPI.pushAsync(SystemEventType.UPDATE_FOLDER,
@@ -178,18 +196,23 @@ public class FolderAPIImpl implements FolderAPI  {
 								new ExcludeOwnerVerifierBean(user.getUserId(),
 										PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 			}
-
-			return renamed;
+  
+      return renamed;
 
 		} catch (InvalidFolderNameException e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
-					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
-					+ newName + ". Error: " + e.getMessage());
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safeNewName + ". Error: " + e.getMessage());
+			throw e;
+		} catch (DotSecurityException e) {
+			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safeNewName + ". Error: " + e.getMessage());
 			throw e;
 		} catch (Exception e) {
 			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
-					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
-					+ newName + ". Error: " + e.getMessage());
+					+ safePath + "' with id: " + folder.getIdentifier() + " to name: "
+					+ safeNewName + ". Error: " + e.getMessage());
 			throw new DotDataException(e.getMessage(),e);
 		}
 	}
@@ -654,12 +677,25 @@ public class FolderAPIImpl implements FolderAPI  {
 		//if the folder was renamed, we will need to create a new identifier
 		if (!folder.getName().equalsIgnoreCase(existingID.getAssetName())){
 			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
+			// Queue async ES reindex so content under the renamed folder is re-indexed at the new
+			// path. folderFactory.renameFolder() mutates folder.setName(newName), so
+			// folder.getPath() already returns the new path when this runs.
+			// DotReindexStateException is caught to avoid rolling back the save on a transient
+			// reindex-queue failure.
+			try {
+				contentletAPI.refreshContentUnderFolder(folder);
+			} catch (final DotReindexStateException e) {
+				Logger.warn(FolderAPIImpl.class, "ES reindex failed after renaming folder via save(): "
+						+ e.getMessage());
+			}
 		} else{
 			folder.setModDate(new Date());
 			folderFactory.save(folder);
 		}
 
-        // remove folder and parent from navigation cache
+        // Nav cache: folderFactory.renameFolder() already evicts the renamed folder and its
+        // sub-tree. The two calls below are redundant for the rename path but are kept for the
+        // non-rename (else) branch where the factory does not evict nav cache.
 		if (!isNew) {
 			CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 			CacheLocator.getNavToolCache()
