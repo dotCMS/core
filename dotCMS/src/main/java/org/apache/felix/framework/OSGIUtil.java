@@ -537,7 +537,8 @@ public class OSGIUtil {
 
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
-            pushBundleUploadError("Failed to process OSGI bundle packages: " + getExceptionMessage(e));
+            pushBundleUploadError("Failed to process OSGI bundle packages for ["
+                    + String.join(", ", pathnames) + "]: " + getExceptionMessage(e));
         }
     }
 
@@ -648,7 +649,8 @@ public class OSGIUtil {
         } catch (IOException e) {
 
             Logger.error(this, e.getMessage(), e);
-            pushBundleUploadError("Failed to move OSGI bundle to deploy folder: " + getExceptionMessage(e));
+            pushBundleUploadError("Failed to move OSGI bundle to deploy folder ["
+                    + String.join(", ", pathnames) + "]: " + getExceptionMessage(e));
         }
     }
 
@@ -712,13 +714,6 @@ public class OSGIUtil {
 
 
     /**
-     * Pushes an {@link SystemEventType#OSGI_BUNDLES_LOADED} system event and a success toast
-     * to notify users that bundles have been deployed. Used by the deploy REST endpoint
-     * to provide notification parity with the upload pipeline.
-     *
-     * @param jarNames the jar file names that were deployed
-     */
-    /**
      * Pushes an {@link SystemEventType#OSGI_FRAMEWORK_RESTART} system event to notify
      * all connected users that the OSGI framework has been restarted.
      * Called from the REST restart endpoint so other users refresh their bundle table.
@@ -730,12 +725,21 @@ public class OSGIUtil {
                 .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
     }
 
+    /**
+     * Pushes an {@link SystemEventType#OSGI_BUNDLES_LOADED} system event and a success toast
+     * to notify users that bundles have been deployed. Used by the deploy REST endpoint
+     * to provide notification parity with the upload pipeline.
+     *
+     * @param jarNames the jar file names that were deployed
+     */
     public void sendBundleDeployedNotification(final String[] jarNames) {
 
+        // System event — frontend subscribes to OSGI_BUNDLES_LOADED to refresh the bundle table
         Try.run(() -> APILocator.getSystemEventsAPI()
                 .push(SystemEventType.OSGI_BUNDLES_LOADED, new Payload(jarNames)))
                 .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
 
+        // Success toast (MESSAGE event) — user sees confirmation notification
         Try.run(() -> sendOSGIBundlesLoadedMessage(jarNames))
                 .onFailure(e -> Logger.error(OSGIUtil.this, e.getMessage()));
     }
