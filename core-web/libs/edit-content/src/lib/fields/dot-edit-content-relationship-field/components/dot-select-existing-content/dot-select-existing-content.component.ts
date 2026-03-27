@@ -39,7 +39,7 @@ type DialogData = {
     currentItemsIds: string[];
     showFields?: string[] | null;
     cardinality?: number;
-    parentContentTypeVariable?: string;
+    parentContentTypeId?: string;
     fieldVariable?: string;
     isParentField?: boolean;
     currentContentIdentifier?: string;
@@ -129,7 +129,7 @@ export class DotSelectExistingContentComponent implements OnInit {
             selectedItemsIds: data.currentItemsIds,
             showFields: data.showFields,
             cardinality: data.cardinality,
-            parentContentTypeVariable: data.parentContentTypeVariable,
+            parentContentTypeId: data.parentContentTypeId,
             fieldVariable: data.fieldVariable,
             isParentField: data.isParentField,
             currentContentIdentifier: data.currentContentIdentifier

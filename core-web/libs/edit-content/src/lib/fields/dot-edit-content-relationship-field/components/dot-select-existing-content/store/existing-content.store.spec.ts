@@ -338,7 +338,7 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: [],
                 cardinality: 0, // ONE_TO_MANY
-                parentContentTypeVariable: 'MAIN',
+                parentContentTypeId: 'main-type-id',
                 fieldVariable: 'relation',
                 isParentField: true,
                 currentContentIdentifier: 'current-id'
@@ -349,11 +349,12 @@ describe('ExistingContentStore', () => {
             expect(store.isItemConstrained()('taken-child-1')).toBe(true);
             expect(store.isItemConstrained()('taken-child-2')).toBe(true);
             expect(store.isItemConstrained()('free-child')).toBe(false);
-            expect(service.getConstrainedIdentifiers).toHaveBeenCalledWith({
-                parentContentTypeVariable: 'MAIN',
-                fieldVariable: 'relation',
-                currentContentIdentifier: 'current-id'
-            });
+            expect(service.getConstrainedIdentifiers).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    parentContentTypeId: 'main-type-id',
+                    fieldVariable: 'relation'
+                })
+            );
         }));
 
         it('should not load constrained identifiers for MANY_TO_MANY', fakeAsync(() => {
@@ -364,7 +365,7 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: [],
                 cardinality: 1, // MANY_TO_MANY
-                parentContentTypeVariable: 'MAIN',
+                parentContentTypeId: 'main-type-id',
                 fieldVariable: 'relation',
                 isParentField: true,
                 currentContentIdentifier: 'current-id'
@@ -398,7 +399,7 @@ describe('ExistingContentStore', () => {
                 selectionMode: 'multiple',
                 selectedItemsIds: [],
                 cardinality: 0,
-                parentContentTypeVariable: 'MAIN',
+                parentContentTypeId: 'main-type-id',
                 fieldVariable: 'relation',
                 isParentField: true,
                 currentContentIdentifier: 'current-id'

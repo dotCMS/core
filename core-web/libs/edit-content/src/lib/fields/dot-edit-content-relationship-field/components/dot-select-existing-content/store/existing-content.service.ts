@@ -202,13 +202,13 @@ export class ExistingContentService {
      * @returns Observable<Set<string>> - Set of child identifiers that are already "taken" by other parents
      */
     getConstrainedIdentifiers(params: {
-        parentContentTypeVariable: string;
+        parentContentTypeId: string;
         fieldVariable: string;
         currentContentIdentifier: string | null;
     }): Observable<Set<string>> {
-        const { parentContentTypeVariable, fieldVariable } = params;
+        const { parentContentTypeId, fieldVariable } = params;
 
-        if (!parentContentTypeVariable || !fieldVariable) {
+        if (!parentContentTypeId || !fieldVariable) {
             return of(new Set<string>());
         }
 
@@ -217,7 +217,7 @@ export class ExistingContentService {
                 jsonObjectView: { contentlets: DotCMSContentlet[] };
                 resultsSize: number;
             }>({
-                query: `+contentType:${parentContentTypeVariable} +working:true +deleted:false`,
+                query: `+stInode:${parentContentTypeId} +working:true +deleted:false`,
                 limit: CONSTRAINED_QUERY_LIMIT
             })
             .pipe(

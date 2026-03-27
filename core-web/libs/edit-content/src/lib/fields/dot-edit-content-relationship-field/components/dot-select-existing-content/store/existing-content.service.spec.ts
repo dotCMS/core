@@ -630,7 +630,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-type-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: 'currentBlog'
                 })
@@ -658,7 +658,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-type-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
@@ -683,7 +683,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-type-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
@@ -714,7 +714,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-type-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
@@ -734,14 +734,14 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-type-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
                 .subscribe(() => {
                     expect(dotContentSearchService.get).toHaveBeenCalledWith(
                         expect.objectContaining({
-                            query: '+contentType:Blog +working:true +deleted:false',
+                            query: '+stInode:blog-type-id +working:true +deleted:false',
                             limit: 5000
                         })
                     );

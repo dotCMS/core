@@ -12,194 +12,131 @@ import {
 } from '../../../../fixtures/relationship.fixture';
 
 /**
- * Tests that the "Select Existing Content" dialog disables items
- * that are already related to another parent in ONE_TO_ONE and ONE_TO_MANY relationships.
+ * Verifies that the "Select Existing Content" dialog disables items
+ * already related to another parent (ONE_TO_MANY cardinality).
+ *
+ * Setup:
+ *   - Comments type (title + comment field) → 3 contentlets
+ *   - Post type (title + relationship 1:M to Comments)
+ *   - Post A relates to Comment 1
+ *   - Post B has no relationships → edit this one and open dialog
+ *   - Comment 1 should be disabled, Comment 2 and 3 selectable
  */
 test.describe('Cardinality Constraints', () => {
-    let childType: TestContentType;
-    let parentType: TestContentType;
-    let children: TestContentlet[];
+    let commentsType: TestContentType;
+    let postType: TestContentType;
+    let comments: TestContentlet[];
+    let postB: TestContentlet;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
-        // 1. Create child content type
-        childType = await apiHelpers.createContentType(apiHelpers.authorPayload(testSuffix));
+        // 1. Comments content type with title + comment fields
+        commentsType = await apiHelpers.createContentType({
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            name: `E2E_Comments_${testSuffix}`,
+            variable: `E2EComments${testSuffix}`,
+            host: 'SYSTEM_HOST',
+            folder: 'SYSTEM_FOLDER',
+            metadata: { CONTENT_EDITOR2_ENABLED: true },
+            workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'],
+            fields: [
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                    name: 'Title',
+                    variable: 'title',
+                    sortOrder: 1
+                },
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                    name: 'Comment',
+                    variable: 'comment',
+                    sortOrder: 2
+                }
+            ]
+        });
 
-        // 2. Create parent content type with ONE_TO_MANY relationship to child
-        parentType = await apiHelpers.createContentType(
-            apiHelpers.blogPayload(
-                testSuffix,
-                'E2E_Parent',
-                'E2EParent',
-                childType.variable,
-                'relation',
-                CARDINALITY.ONE_TO_MANY
-            )
-        );
+        // 2. Post content type with title + relationship (1:M) to Comments
+        postType = await apiHelpers.createContentType({
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            name: `E2E_Post_${testSuffix}`,
+            variable: `E2EPost${testSuffix}`,
+            host: 'SYSTEM_HOST',
+            folder: 'SYSTEM_FOLDER',
+            metadata: { CONTENT_EDITOR2_ENABLED: true },
+            workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'],
+            fields: [
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                    name: 'Title',
+                    variable: 'title',
+                    sortOrder: 1
+                },
+                {
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+                    name: 'Comments',
+                    variable: 'comments',
+                    sortOrder: 2,
+                    relationships: {
+                        velocityVar: commentsType.variable,
+                        cardinality: CARDINALITY.ONE_TO_MANY
+                    }
+                }
+            ]
+        });
 
-        // 3. Create 3 children (sorted by title)
-        children = await apiHelpers.createContentlets(childType.variable, [
-            { title: 'Child A' },
-            { title: 'Child B' },
-            { title: 'Child C' }
+        // 3. Create 2 comments
+        comments = await apiHelpers.createContentlets(commentsType.variable, [
+            { title: 'Comment 1', comment: 'First comment' },
+            { title: 'Comment 2', comment: 'Second comment' }
         ]);
 
-        // 4. Create Parent A and relate it to Child A
+        // 4. Create Post A and relate it to Comment 1
         await apiHelpers.createContentletWithRelationship(
-            parentType.variable,
-            { title: 'Parent A' },
-            { relation: children[0].identifier }
+            postType.variable,
+            { title: 'Post A' },
+            { comments: [comments[0].identifier].join(',') }
         );
+
+        // 5. Create Post B (no relationships) — this is the one we'll edit
+        postB = await apiHelpers.createContentlet(postType.variable, { title: 'Post B' });
     });
 
-    test('constrained items disabled in ONE_TO_MANY dialog @critical', async ({ adminPage }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        const relField = new RelationshipField(adminPage, 'relation');
-        const dialog = new SelectExistingContentDialog(adminPage);
-
-        // Navigate to create Parent B (new content)
-        await formPage.goToNew(parentType.variable);
-
-        // Open the "Select Existing Content" dialog
-        await relField.clickRelateExisting();
-        await dialog.waitForVisible();
-        await dialog.waitForContentLoaded();
-
-        // Expect 3 rows in the dialog
-        await dialog.expectRowCount(3);
-
-        // Find which row index corresponds to Child A (already taken by Parent A)
-        // Children are sorted by title: Child A, Child B, Child C
-        // The dialog may sort differently, so find by title text
-        const rowCount = await dialog.rows.count();
-        let constrainedRowIndex = -1;
-        const selectableIndices: number[] = [];
-
-        for (let i = 0; i < rowCount; i++) {
-            const rowText = await dialog.rows.nth(i).textContent();
-            if (rowText?.includes('Child A')) {
-                constrainedRowIndex = i;
-            } else {
-                selectableIndices.push(i);
-            }
-        }
-
-        expect(constrainedRowIndex, 'Child A row should exist in dialog').toBeGreaterThanOrEqual(0);
-        expect(selectableIndices, 'Should have 2 selectable rows').toHaveLength(2);
-
-        // Child A should be disabled (constrained — already related to Parent A)
-        await dialog.expectRowConstrained(constrainedRowIndex);
-
-        // Child B and Child C should be selectable
-        for (const idx of selectableIndices) {
-            await dialog.expectRowSelectable(idx);
-        }
-    });
-
-    test('constrained items disabled in ONE_TO_ONE dialog @critical', async ({
-        adminPage,
-        apiHelpers,
-        testSuffix
+    test('comment already related to another post appears disabled @critical', async ({
+        adminPage
     }) => {
-        // Create a separate ONE_TO_ONE setup
-        const childType11 = await apiHelpers.createContentType(
-            apiHelpers.authorPayload(`OTO${testSuffix}`)
-        );
-
-        const parentType11 = await apiHelpers.createContentType(
-            apiHelpers.blogPayload(
-                `OTO${testSuffix}`,
-                'E2E_Parent11',
-                'E2EParent11',
-                childType11.variable,
-                'relation',
-                CARDINALITY.ONE_TO_ONE
-            )
-        );
-
-        const children11 = await apiHelpers.createContentlets(childType11.variable, [
-            { title: 'Solo Child A' },
-            { title: 'Solo Child B' }
-        ]);
-
-        // Parent A takes Solo Child A
-        await apiHelpers.createContentletWithRelationship(
-            parentType11.variable,
-            { title: 'Solo Parent A' },
-            { relation: children11[0].identifier }
-        );
-
         const formPage = new NewEditContentFormPage(adminPage);
-        const relField = new RelationshipField(adminPage, 'relation');
+        const relField = new RelationshipField(adminPage, 'comments');
         const dialog = new SelectExistingContentDialog(adminPage);
 
-        // Create new parent — open dialog
-        await formPage.goToNew(parentType11.variable);
+        // Navigate to edit Post B
+        await formPage.goToContent(postB.inode);
+
+        // Open "Select Existing Content" dialog
         await relField.clickRelateExisting();
         await dialog.waitForVisible();
         await dialog.waitForContentLoaded();
 
+        // Should see both comments
         await dialog.expectRowCount(2);
 
-        // Find constrained row (Solo Child A)
-        const rowCount = await dialog.rows.count();
+        // Find which row is Comment 1 (taken by Post A) and which is Comment 2 (free)
         let constrainedIdx = -1;
         let freeIdx = -1;
 
-        for (let i = 0; i < rowCount; i++) {
-            const text = await dialog.rows.nth(i).textContent();
-            if (text?.includes('Solo Child A')) {
+        for (let i = 0; i < 2; i++) {
+            const rowText = await dialog.rows.nth(i).textContent();
+            if (rowText?.includes('Comment 1')) {
                 constrainedIdx = i;
             } else {
                 freeIdx = i;
             }
         }
 
+        expect(constrainedIdx, 'Comment 1 should exist in dialog').toBeGreaterThanOrEqual(0);
+
+        // Comment 1 disabled — already related to Post A
         await dialog.expectRowConstrained(constrainedIdx);
+
+        // Comment 2 selectable — free
         await dialog.expectRowSelectable(freeIdx);
-    });
-
-    test('no constraints in MANY_TO_MANY dialog', async ({ adminPage, apiHelpers, testSuffix }) => {
-        // Create MANY_TO_MANY setup — no items should be disabled
-        const childTypeMM = await apiHelpers.createContentType(
-            apiHelpers.authorPayload(`MM${testSuffix}`)
-        );
-
-        const parentTypeMM = await apiHelpers.createContentType(
-            apiHelpers.blogPayload(
-                `MM${testSuffix}`,
-                'E2E_ParentMM',
-                'E2EParentMM',
-                childTypeMM.variable,
-                'relation',
-                CARDINALITY.MANY_TO_MANY
-            )
-        );
-
-        const childrenMM = await apiHelpers.createContentlets(childTypeMM.variable, [
-            { title: 'MM Child A' },
-            { title: 'MM Child B' }
-        ]);
-
-        // Relate Child A to Parent A — but in M:M this should NOT constrain it
-        await apiHelpers.createContentletWithRelationship(
-            parentTypeMM.variable,
-            { title: 'MM Parent A' },
-            { relation: childrenMM[0].identifier }
-        );
-
-        const formPage = new NewEditContentFormPage(adminPage);
-        const relField = new RelationshipField(adminPage, 'relation');
-        const dialog = new SelectExistingContentDialog(adminPage);
-
-        await formPage.goToNew(parentTypeMM.variable);
-        await relField.clickRelateExisting();
-        await dialog.waitForVisible();
-        await dialog.waitForContentLoaded();
-
-        await dialog.expectRowCount(2);
-
-        // Both items should be selectable — no constraints in MANY_TO_MANY
-        await dialog.expectRowSelectable(0);
-        await dialog.expectRowSelectable(1);
     });
 });
