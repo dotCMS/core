@@ -15,6 +15,7 @@ import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TabsModule } from 'primeng/tabs';
 
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
@@ -22,6 +23,7 @@ import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-con
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
 import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
+import { DotEditContentSidebarRulesComponent } from './components/dot-edit-content-sidebar-rules/dot-edit-content-sidebar-rules.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
@@ -55,7 +57,8 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         DotEditContentSidebarLocalesComponent,
         DotEditContentSidebarActivitiesComponent,
         DotEditContentSidebarHistoryComponent,
-        DotEditContentSidebarPermissionsComponent
+        DotEditContentSidebarPermissionsComponent,
+        DotEditContentSidebarRulesComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -83,6 +86,13 @@ export class DotEditContentSidebarComponent {
     readonly $pushPublishHistoryPagination = this.$store.pushPublishHistoryPagination;
     readonly $pushPublishHistoryStatus = computed(
         () => this.$store.pushPublishHistoryStatus().status
+    );
+
+    /**
+     * Computed property that returns true when the current content type is an HTML Page.
+     */
+    readonly $isPage = computed(
+        () => this.$store.contentType()?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
     );
 
     /**
