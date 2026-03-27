@@ -20,6 +20,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Rotate weekly tags
         run: |
           set -euo pipefail
@@ -27,36 +30,29 @@ jobs:
           IMAGE="${{ env.IMAGE }}"
           MAX_WEEKS="${{ env.MAX_WEEKS }}"
 
+          # Retag manifest-side only — no layer downloads needed
+          retag() {
+            local src="$1" dst="$2"
+            echo "--- Promoting ${src} -> ${dst} ---"
+            if docker buildx imagetools inspect "${src}" > /dev/null 2>&1; then
+              docker buildx imagetools create --tag "${dst}" "${src}"
+              echo "Tagged ${dst}"
+            else
+              echo "Skipping: ${src} does not exist yet"
+            fi
+          }
+
           # Work backwards: weekly-3 -> weekly-4, weekly-2 -> weekly-3, etc.
           for (( i = MAX_WEEKS - 1; i >= 1; i-- )); do
-            SRC="${IMAGE}:weekly-${i}"
-            DST="${IMAGE}:weekly-$(( i + 1 ))"
-
-            echo "--- Promoting ${SRC} -> ${DST} ---"
-            if docker pull "${SRC}" 2>/dev/null; then
-              docker tag "${SRC}" "${DST}"
-              docker push "${DST}"
-              echo "Pushed ${DST}"
-            else
-              echo "Skipping: ${SRC} does not exist yet"
-            fi
+            retag "${IMAGE}:weekly-${i}" "${IMAGE}:weekly-$(( i + 1 ))"
           done
 
           # weekly -> weekly-1
-          echo "--- Promoting ${IMAGE}:weekly -> ${IMAGE}:weekly-1 ---"
-          if docker pull "${IMAGE}:weekly" 2>/dev/null; then
-            docker tag "${IMAGE}:weekly" "${IMAGE}:weekly-1"
-            docker push "${IMAGE}:weekly-1"
-            echo "Pushed ${IMAGE}:weekly-1"
-          else
-            echo "Skipping: ${IMAGE}:weekly does not exist yet"
-          fi
+          retag "${IMAGE}:weekly" "${IMAGE}:weekly-1"
 
           # latest -> weekly
           echo "--- Promoting ${IMAGE}:latest -> ${IMAGE}:weekly ---"
-          docker pull "${IMAGE}:latest"
-          docker tag "${IMAGE}:latest" "${IMAGE}:weekly"
-          docker push "${IMAGE}:weekly"
-          echo "Pushed ${IMAGE}:weekly"
+          docker buildx imagetools create --tag "${IMAGE}:weekly" "${IMAGE}:latest"
+          echo "Tagged ${IMAGE}:weekly"
 
           echo "=== Rolling tag rotation complete ==="
