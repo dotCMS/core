@@ -1,6 +1,6 @@
 import { forkJoin, Observable, of } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -35,7 +35,6 @@ export interface RelationshipFieldSearchResponse {
     providedIn: 'root'
 })
 export class ExistingContentService {
-    readonly #http = inject(HttpClient);
     readonly #fieldService = inject(DotFieldService);
     readonly #contentSearchService = inject(DotContentSearchService);
     readonly #dotLanguagesService = inject(DotLanguagesService);
@@ -216,12 +215,8 @@ export class ExistingContentService {
             return of(new Set<string>());
         }
 
-        return this.#http
-            .post<{
-                entity: {
-                    jsonObjectView: { contentlets: DotCMSContentlet[] };
-                };
-            }>('/api/content/_search', {
+        return this.#contentSearchService
+            .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
                 query: `+contentType:${parentContentTypeVariable} +working:true +deleted:false`,
                 sort: 'modDate desc',
                 limit: CONSTRAINED_QUERY_LIMIT,
@@ -229,7 +224,6 @@ export class ExistingContentService {
                 depth: 0
             })
             .pipe(
-                map((response) => response.entity),
                 map(({ jsonObjectView: { contentlets } }) => {
                     const constrainedIds = new Set<string>();
 
