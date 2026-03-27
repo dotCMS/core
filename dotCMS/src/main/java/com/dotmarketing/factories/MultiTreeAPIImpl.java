@@ -20,7 +20,6 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -124,6 +123,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE =
             SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + " AND child IN (SELECT DISTINCT identifier FROM contentlet, multi_tree " +
                     "WHERE multi_tree.child = contentlet.identifier AND multi_tree.parent1 = ? AND language_id = ?)";
+    private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + " AND child IN (SELECT DISTINCT identifier FROM contentlet, multi_tree " +
+                    "WHERE multi_tree.child = contentlet.identifier AND multi_tree.parent1 = ? AND (language_id = ? OR language_id = ?))";
     private static final String SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PAGE =
             SELECT_ALL + "WHERE parent1 = ? AND style_properties IS NOT NULL";
 
@@ -715,19 +717,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
 
         if (languageIdOpt.isPresent() && defaultContentToDefaultLanguage) {
-            originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
-                    personalization, variantId);
-
             final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
             // When the requested language IS the default, a single-language DELETE is sufficient.
             if (defaultLanguageId == languageIdOpt.get()) {
+                originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                        personalization, variantId, languageIdOpt.get());
                 deleteEntriesByRequestedLanguage(pageId, personalization, languageIdOpt.get(), variantId, db);
             } else {
                 // Language-pair DELETE: remove entries whose child contentlet has a version in either
                 // the requested language or the default language. This ensures that contentlets
-                // exclusive to another language (e.g. ESP-only) are not removed when editing a page
-                // in the default language.
+                // exclusive to another language (e.g. FR-only) are not removed when editing a page
+                // in a non-default language, and their cache entries are not invalidated either.
+                originalContentletIds = this.getOriginalContentlets(pageId,
+                        personalization, variantId, languageIdOpt.get(), defaultLanguageId);
                 deleteEntriesByRequestedAndDefaultLanguage(pageId, personalization, languageIdOpt.get(), defaultLanguageId, variantId, db);
             }
 
@@ -1661,6 +1664,31 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 pageId,
                 languageId);
         return this.getOriginalContentlets(SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE, params);
+    }
+
+    /**
+     * Returns the set of Contentlet IDs currently persisted in the multi_tree table for the given
+     * page, container instance, personalization, variant, and either of two language IDs. Used when
+     * {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is enabled and the requested language is not the
+     * default, so that both the requested-language rows and the fallback default-language rows are
+     * included in the original set — preventing spurious cache invalidation for contentlets that
+     * are only stored in the default language.
+     *
+     * @param pageId           The identifier of the HTML Page.
+     * @param personalization  The personalization tag (e.g., persona key tag).
+     * @param variantId        The ID of the selected Contentlet Variant.
+     * @param languageId       The requested Language ID.
+     * @param secondLanguageId The fallback (default) Language ID.
+     * @return The set of Contentlet IDs found under either language.
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getOriginalContentlets(final String pageId, final String personalization,
+            final String variantId, final Long languageId, final long secondLanguageId)
+            throws DotDataException {
+        final List<Object> params = List.of(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId,
+                pageId, languageId, secondLanguageId);
+        return this.getOriginalContentlets(
+                SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES, params);
     }
 
     /**
