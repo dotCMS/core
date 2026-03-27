@@ -60,7 +60,7 @@ export class DotMenuService {
      */
     loadMenu(force = false): Observable<DotMenu[]> {
         if (!this.menu$ || force) {
-            this.menu$ = this.http.get<DotCMSResponse<DotMenu>>(this.urlMenus).pipe(
+            this.menu$ = this.http.get<DotCMSResponse<DotMenu[]>>(this.urlMenus).pipe(
                 shareReplay({ bufferSize: 1, refCount: true }),
                 map((x) => x?.entity)
             );

@@ -154,7 +154,7 @@ export class DotPageApiService {
             .get<{
                 entity: { content: { idenfitier: string } };
             }>(`/api/v1/containers/form/${formId}?containerId=${containerId}`)
-            .pipe(map((x) => x?.entity?.content?.identifier));
+            .pipe(map((x) => x?.entity?.content?.idenfitier));
     }
 
     /**

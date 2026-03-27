@@ -526,7 +526,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         isEnterprise,
                         environments,
                         filterParams,
-                        collapsedParam
+                        collapsedParam,
+                        ,
                     ]: [
                         ESContent,
                         DotCurrentUser,
@@ -534,7 +535,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         boolean,
                         boolean,
                         DotSessionStorageFilter,
-                        boolean
+                        boolean,
+                        boolean,
+                        string[]
                     ]) => {
                         return this.dotCurrentUser
                             .getUserPermissions(

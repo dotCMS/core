@@ -30,7 +30,7 @@ export class DotCopyContentService {
             personalization: treeNode?.personalization || DEFAULT_PERSONALIZATION
         };
 
-        return this.http.put(API_ENDPOINT, body).pipe(
+        return this.http.put<{ entity: DotCMSContentlet }>(API_ENDPOINT, body).pipe(
             shareReplay(),
             map((x) => x?.entity)
         );

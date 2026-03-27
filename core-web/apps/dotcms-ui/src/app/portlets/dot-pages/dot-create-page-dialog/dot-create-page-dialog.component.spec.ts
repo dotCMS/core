@@ -2,7 +2,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { fakeAsync, tick } from '@angular/core/testing';
+import { fakeAsync, flush, tick } from '@angular/core/testing';
 
 import { DialogModule } from 'primeng/dialog';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -106,7 +106,7 @@ describe('DotCreatePageDialogComponent', () => {
 
         it('should initialize $searchTerm signal with empty string', fakeAsync(() => {
             spectator.detectChanges();
-            tick(300);
+            flush();
 
             expect(spectator.component.$searchTerm()).toBe('');
         }));
@@ -153,13 +153,13 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('blog');
-            tick(300);
+            flush();
             expect(spectator.component.$searchTerm()).toBe('blog');
 
             spectator.triggerEventHandler('p-dialog', 'onHide', null);
             expect(spectator.component.searchControl.value).toBe('');
 
-            tick(300);
+            flush();
             expect(spectator.component.$searchTerm()).toBe('');
         }));
     });
@@ -172,7 +172,7 @@ describe('DotCreatePageDialogComponent', () => {
             tick(100);
             expect(spectator.component.$searchTerm()).toBe('');
 
-            tick(200);
+            flush();
             expect(spectator.component.$searchTerm()).toBe('simple');
         }));
 
@@ -180,7 +180,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('  SIMPLE Page  ');
-            tick(300);
+            flush();
 
             expect(spectator.component.$searchTerm()).toBe('simple page');
         }));
@@ -189,7 +189,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('landing');
-            tick(300);
+            flush();
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
@@ -200,7 +200,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('blogPost');
-            tick(300);
+            flush();
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
@@ -211,7 +211,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('ADVANCED');
-            tick(300);
+            flush();
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered).toHaveLength(1);
@@ -222,7 +222,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('nonexistent');
-            tick(300);
+            flush();
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(0);
         }));
@@ -231,11 +231,11 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('landing');
-            tick(300);
+            flush();
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
 
             spectator.component.searchControl.setValue('');
-            tick(300);
+            flush();
 
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
         }));
@@ -244,7 +244,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('page');
-            tick(300);
+            flush();
 
             const filtered = spectator.component.$filteredPageTypes();
             expect(filtered.length).toBeGreaterThan(1);
@@ -290,7 +290,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('nonexistent');
-            tick(300);
+            flush();
             spectator.detectChanges();
 
             const noResults = spectator.query('.text-center');
@@ -375,7 +375,7 @@ describe('DotCreatePageDialogComponent', () => {
 
             // Step 1: User searches for page type
             spectator.component.searchControl.setValue('landing');
-            tick(300);
+            flush();
             spectator.detectChanges();
 
             // Step 2: Verify filtered results
@@ -401,7 +401,7 @@ describe('DotCreatePageDialogComponent', () => {
 
             // Step 1: User searches for non-existent type
             spectator.component.searchControl.setValue('nonexistent');
-            tick(300);
+            flush();
             spectator.detectChanges();
 
             // Step 2: Verify empty results
@@ -413,7 +413,7 @@ describe('DotCreatePageDialogComponent', () => {
 
             // Step 4: User clears search
             spectator.component.searchControl.setValue('');
-            tick(300);
+            flush();
             spectator.detectChanges();
 
             // Step 5: Verify all page types are shown again
@@ -439,7 +439,7 @@ describe('DotCreatePageDialogComponent', () => {
             // Should not update until debounce completes
             expect(spectator.component.$searchTerm()).toBe('');
 
-            tick(300);
+            flush();
 
             // Should now have the final value
             expect(spectator.component.$searchTerm()).toBe('gone');
@@ -469,7 +469,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('test');
-            tick(300);
+            flush();
             spectator.detectChanges();
 
             // Should not throw error and should render 1 row (filtering by variable)
@@ -488,7 +488,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('test');
-            tick(300);
+            flush();
 
             // Should not throw error and should filter by name
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
@@ -498,7 +498,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('   ');
-            tick(300);
+            flush();
 
             // Should trim to empty string and return all types
             expect(spectator.component.$searchTerm()).toBe('');
@@ -509,7 +509,7 @@ describe('DotCreatePageDialogComponent', () => {
             spectator.detectChanges();
 
             spectator.component.searchControl.setValue('simple@#$');
-            tick(300);
+            flush();
 
             // Should not throw error
             expect(spectator.component.$filteredPageTypes()).toHaveLength(0);
@@ -523,7 +523,7 @@ describe('DotCreatePageDialogComponent', () => {
             expect(spectator.component.$searchTerm()).toBe('');
 
             spectator.component.searchControl.setValue('test');
-            tick(300);
+            flush();
 
             expect(spectator.component.$searchTerm()).toBe('test');
         }));
@@ -534,7 +534,7 @@ describe('DotCreatePageDialogComponent', () => {
             expect(spectator.component.$filteredPageTypes()).toEqual(MOCK_PAGE_TYPES);
 
             spectator.component.searchControl.setValue('simple');
-            tick(300);
+            flush();
 
             expect(spectator.component.$filteredPageTypes()).toHaveLength(1);
         }));

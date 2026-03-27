@@ -39,7 +39,7 @@ export class DotResourceLinksService {
      * @memberof DotResourceLinksService
      */
     private getResourceLinks(url: string): Observable<DotResourceLinks> {
-        return this.httpClient.get(url).pipe(map((x) => x?.entity));
+        return this.httpClient.get<{ entity: DotResourceLinks }>(url).pipe(map((x) => x?.entity));
     }
 
     /**

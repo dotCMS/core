@@ -56,7 +56,7 @@ export class DotContentSearchService {
         sort = 'score,modDate desc'
     }: EsQueryParamsSearch): Observable<T> {
         return this.#http
-            .post('/api/content/_search', {
+            .post<{ entity: T }>('/api/content/_search', {
                 query,
                 sort,
                 limit,

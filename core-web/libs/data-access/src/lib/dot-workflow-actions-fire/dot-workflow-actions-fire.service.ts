@@ -71,7 +71,10 @@ export class DotWorkflowActionsFireService {
         const url = `${this.BASE_URL}/actions/${actionId}/fire`;
 
         return this.httpClient
-            .put(url, data, { headers: this.defaultHeaders, params: urlParams })
+            .put<{ entity: DotCMSContentlet }>(url, data, {
+                headers: this.defaultHeaders,
+                params: urlParams
+            })
             .pipe(map((x) => x?.entity));
     }
 
@@ -91,7 +94,10 @@ export class DotWorkflowActionsFireService {
         };
 
         return this.httpClient
-            .post(url, body, { headers: this.defaultHeaders, params: urlParams })
+            .post<{ entity: DotCMSContentlet[] }>(url, body, {
+                headers: this.defaultHeaders,
+                params: urlParams
+            })
             .pipe(map((x) => x?.entity));
     }
 
@@ -104,9 +110,13 @@ export class DotWorkflowActionsFireService {
      */
     bulkFire(data: DotActionBulkRequestOptions): Observable<DotActionBulkResult> {
         return this.httpClient
-            .put(`${this.BASE_URL}/contentlet/actions/bulk/fire`, data, {
-                headers: this.defaultHeaders
-            })
+            .put<{ entity: DotActionBulkResult }>(
+                `${this.BASE_URL}/contentlet/actions/bulk/fire`,
+                data,
+                {
+                    headers: this.defaultHeaders
+                }
+            )
             .pipe(map((x) => x?.entity));
     }
 
@@ -239,7 +249,7 @@ export class DotWorkflowActionsFireService {
         }
 
         return this.httpClient
-            .put(url, formData ? formData : bodyRequest, {
+            .put<{ entity: T }>(url, formData ? formData : bodyRequest, {
                 headers: formData ? new HttpHeaders() : this.defaultHeaders
             })
             .pipe(

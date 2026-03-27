@@ -22,7 +22,7 @@ export class DotVersionableService {
      */
     bringBack(inode: string): Observable<DotVersionable> {
         return this.httpClient
-            .put(`/api/v1/versionables/${inode}/_bringback`, {})
+            .put<{ entity: DotVersionable }>(`/api/v1/versionables/${inode}/_bringback`, {})
             .pipe(map((x) => x?.entity));
     }
 
@@ -34,6 +34,8 @@ export class DotVersionableService {
      * @memberof DotVersionableService
      */
     deleteVersion(inode: string): Observable<unknown> {
-        return this.httpClient.delete(`/api/v1/versionables/${inode}`).pipe(map((x) => x?.entity));
+        return this.httpClient
+            .delete<{ entity: unknown }>(`/api/v1/versionables/${inode}`)
+            .pipe(map((x) => x?.entity));
     }
 }

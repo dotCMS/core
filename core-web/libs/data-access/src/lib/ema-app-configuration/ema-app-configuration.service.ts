@@ -34,8 +34,8 @@ export class EmaAppConfigurationService {
         url = url?.replace(/^\/+|\/+$/g, '');
 
         return this.http.get<{ entity: { config: EmaAppSecretValue[] } }>(`/api/v1/ema`).pipe(
-            map((x) => x?.entity?.config),
-            map((config) => {
+            map((x): EmaAppSecretValue[] => x?.entity?.config ?? []),
+            map((config): EmaAppSecretValue => {
                 for (const secret of config) {
                     try {
                         if (doesPathMatch(secret.pattern, url)) {
@@ -48,10 +48,8 @@ export class EmaAppConfigurationService {
 
                 throw new Error('Current URL did not match any pattern');
             }),
-            catchError(() => {
-                return EMPTY;
-            }),
-            defaultIfEmpty<EmaAppSecretValue | null>(null)
+            catchError(() => EMPTY),
+            defaultIfEmpty(null)
         );
     }
 }

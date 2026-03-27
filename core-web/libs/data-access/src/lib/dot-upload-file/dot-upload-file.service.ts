@@ -66,13 +66,17 @@ export class DotUploadFileService {
                 statusCallback(FileStatus.IMPORT);
 
                 return this.#http
-                    .post(`${this.#BASE_URL}/fire/PUBLISH`, JSON.stringify({ contentlets }), {
-                        headers: {
-                            Origin: window.location.hostname,
-                            'Content-Type': 'application/json;charset=UTF-8'
+                    .post<{ entity: { results: DotCMSContentlet[] } }>(
+                        `${this.#BASE_URL}/fire/PUBLISH`,
+                        JSON.stringify({ contentlets }),
+                        {
+                            headers: {
+                                Origin: window.location.hostname,
+                                'Content-Type': 'application/json;charset=UTF-8'
+                            }
                         }
-                    })
-                    .pipe(map((x) => x?.entity?.results)) as Observable<DotCMSContentlet[]>;
+                    )
+                    .pipe(map((x) => x?.entity?.results));
             }),
             catchError((error) => throwError(() => error))
         );

@@ -24,7 +24,9 @@ export class DotWorkflowService {
      * @memberof DotWorkflowService
      */
     get(): Observable<DotCMSWorkflow[]> {
-        return this.httpClient.get(`${this.WORKFLOW_URL}/schemes`).pipe(map((x) => x?.entity));
+        return this.httpClient
+            .get<{ entity: DotCMSWorkflow[] }>(`${this.WORKFLOW_URL}/schemes`)
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -54,7 +56,12 @@ export class DotWorkflowService {
         schemes: DotCMSWorkflow[];
     }> {
         return this.httpClient
-            .get(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
+            .get<{
+                entity: {
+                    contentTypeSchemes: DotCMSWorkflow[];
+                    schemes: DotCMSWorkflow[];
+                };
+            }>(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
             .pipe(map((x) => x?.entity));
     }
 
@@ -67,7 +74,7 @@ export class DotWorkflowService {
      */
     getWorkflowStatus(inode: string): Observable<DotCMSWorkflowStatus> {
         return this.httpClient
-            .get(`${this.WORKFLOW_URL}/status/${inode}`)
+            .get<{ entity: DotCMSWorkflowStatus }>(`${this.WORKFLOW_URL}/status/${inode}`)
             .pipe(map((x) => x?.entity));
     }
 }

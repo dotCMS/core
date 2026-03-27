@@ -34,7 +34,7 @@ export class DotContentletService {
     getContentletVersions(identifier: string, language: string): Observable<DotCMSContentlet[]> {
         return this.#http
             .get<
-                DotCMSAPIResponse<DotCMSContentlet[]>
+                DotCMSAPIResponse<{ versions: Record<string, DotCMSContentlet[]> }>
             >(`${this.CONTENTLET_API_URL}versions?identifier=${identifier}&groupByLang=1`)
             .pipe(map((x) => x?.entity?.versions?.[language]));
     }

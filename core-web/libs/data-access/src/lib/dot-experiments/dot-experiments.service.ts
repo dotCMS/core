@@ -37,7 +37,7 @@ export class DotExperimentsService {
             .get<
                 DotCMSResponseExperiment<{ healthy: HealthStatusTypes }>
             >('/api/v1/experiments/health')
-            .pipe(map((x) => x?.entity?.health));
+            .pipe(map((x) => x?.entity?.healthy));
     }
     /**
      * Add a new experiment

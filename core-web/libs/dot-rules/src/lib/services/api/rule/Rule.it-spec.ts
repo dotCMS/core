@@ -1,9 +1,10 @@
 /* eslint-disable no-console, @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function, @typescript-eslint/no-explicit-any */
 import { from, merge } from 'rxjs';
-import { bufferCount, mergeMap } from 'rxjs/operators';
 
 import { ReflectiveInjector } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+
+import { bufferCount, mergeMap } from 'rxjs/operators';
 
 import { ApiRoot, UserModel, CwError } from '@dotcms/dotcms-js';
 

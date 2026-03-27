@@ -1,3 +1,5 @@
+import { lastValueFrom } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,7 +13,6 @@ import { MenuItem, MessageService } from 'primeng/api';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 
 import { take } from 'rxjs/operators';
-import { lastValueFrom } from 'rxjs';
 
 import {
     DotContentletService,

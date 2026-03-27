@@ -304,7 +304,9 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         const languageId = this.editor().storage.dotConfig.lang;
 
         return this.httpClient
-            .post('/api/content/_search', {
+            .post<{
+                entity: { jsonObjectView: { contentlets: DotCMSContentlet[] } };
+            }>('/api/content/_search', {
                 query: `+languageId:${languageId || 1} +deleted:false +working:true +(urlmap:* OR basetype:5) +deleted:false +(title:${searchTerm}* OR path:*${searchTerm}* OR urlmap:*${searchTerm}*)`,
                 sort: 'modDate desc',
                 offset: 0,

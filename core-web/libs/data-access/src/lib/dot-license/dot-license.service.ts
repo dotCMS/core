@@ -127,7 +127,7 @@ export class DotLicenseService {
             return url.indexOf(item.url) === 0;
         });
         if (urlMatch.length) {
-            this.unlicenseData.next(...urlMatch);
+            this.unlicenseData.next(urlMatch[0]);
         }
 
         return !!urlMatch.length;

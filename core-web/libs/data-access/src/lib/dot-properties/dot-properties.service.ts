@@ -42,7 +42,9 @@ export class DotPropertiesService {
      */
     getKeys(keys: string[]): Observable<Record<string, string>> {
         return this.http
-            .get('/api/v1/configuration/config', { params: { keys: keys.join() } })
+            .get<DotCMSResponse<Record<string, string>>>('/api/v1/configuration/config', {
+                params: { keys: keys.join() }
+            })
             .pipe(
                 take(1),
                 map((x) => x?.entity)
@@ -59,7 +61,9 @@ export class DotPropertiesService {
      */
     getKeyAsList(key: string): Observable<string[]> {
         return this.http
-            .get('/api/v1/configuration/config', { params: { keys: `list:${key}` } })
+            .get<DotCMSResponse<Record<string, string[]>>>('/api/v1/configuration/config', {
+                params: { keys: `list:${key}` }
+            })
             .pipe(
                 take(1),
                 map((x) => x?.entity?.[key])
