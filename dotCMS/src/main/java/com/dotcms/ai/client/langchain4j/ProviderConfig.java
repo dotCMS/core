@@ -46,6 +46,7 @@ public class ProviderConfig {
     private String provider;
     private String model;
     private Integer maxTokens;
+    private Integer maxCompletionTokens;
     private Double temperature;
     private Integer maxRetries;
     private Integer timeout;
@@ -88,6 +89,14 @@ public class ProviderConfig {
 
     public void setMaxTokens(final Integer maxTokens) {
         this.maxTokens = maxTokens;
+    }
+
+    public Integer getMaxCompletionTokens() {
+        return maxCompletionTokens;
+    }
+
+    public void setMaxCompletionTokens(final Integer maxCompletionTokens) {
+        this.maxCompletionTokens = maxCompletionTokens;
     }
 
     public Double getTemperature() {

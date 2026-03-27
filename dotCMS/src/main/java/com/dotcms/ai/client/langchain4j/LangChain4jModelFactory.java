@@ -89,7 +89,9 @@ public class LangChain4jModelFactory {
         if (config.getEndpoint() != null) {
             builder.baseUrl(config.getEndpoint());
         }
-        if (config.getMaxTokens() != null) {
+        if (config.getMaxCompletionTokens() != null) {
+            builder.maxCompletionTokens(config.getMaxCompletionTokens());
+        } else if (config.getMaxTokens() != null) {
             builder.maxTokens(config.getMaxTokens());
         }
         if (config.getTemperature() != null) {
