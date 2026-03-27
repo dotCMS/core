@@ -116,7 +116,7 @@ public class CMSUrlUtil {
 	}
 
 	boolean internalUrl(final String uri) {
-		return BACKEND_FILTERED_COLLECTION.stream().anyMatch(prefix -> uri.startsWith(prefix) );
+		return BACKEND_FILTERED_COLLECTION.stream().anyMatch(prefix -> uri.startsWith(prefix + "/") || uri.equals(prefix));
 	}
 
 	/**
