@@ -1,8 +1,15 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
-import { DotCategoriesService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { MessageService } from 'primeng/api';
+
+import {
+    DotCategoriesService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotCategory } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCategoriesListStore } from './dot-categories-list.store';
 
@@ -61,9 +68,15 @@ describe('DotCategoriesListStore', () => {
                     .fn()
                     .mockReturnValue(of({ entity: { successCount: 2, fails: [] } })),
                 exportCategories: jest.fn().mockReturnValue(of(undefined)),
-                importCategories: jest.fn().mockReturnValue(of({ entity: {} }))
+                importCategories: jest.fn().mockReturnValue(of({ entity: {} })),
+                updateSortOrder: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(MessageService, { add: jest.fn() }),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            }
         ]
     });
 
@@ -358,6 +371,63 @@ describe('DotCategoriesListStore', () => {
 
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
             expect(store.status()).toBe('loaded');
+        });
+    });
+
+    describe('updateSortOrder', () => {
+        it('should not trigger a full table reload on success (optimistic update — no getCategoriesPaginated call)', () => {
+            categoriesService.getCategoriesPaginated.mockClear();
+
+            const trigger$ = new Subject<typeof MOCK_PAGINATED_RESPONSE>();
+            categoriesService.updateSortOrder.mockReturnValue(trigger$.asObservable());
+
+            store.updateSortOrder('inode-1', 99);
+            trigger$.next(MOCK_PAGINATED_RESPONSE);
+            trigger$.complete();
+
+            // Optimistic update — no full reload after sort order save
+            expect(categoriesService.getCategoriesPaginated).not.toHaveBeenCalled();
+        });
+
+        it('should call categoriesService.updateSortOrder with correct params', () => {
+            store.updateSortOrder('inode-1', 5);
+
+            expect(categoriesService.updateSortOrder).toHaveBeenCalledWith(
+                { 'inode-1': 5 },
+                expect.objectContaining({
+                    page: 1,
+                    per_page: 25,
+                    orderby: 'category_name',
+                    direction: 'ASC'
+                })
+            );
+        });
+
+        it('should show a success toast on save', () => {
+            const messageService = spectator.inject(MessageService);
+
+            const trigger$ = new Subject<typeof MOCK_PAGINATED_RESPONSE>();
+            categoriesService.updateSortOrder.mockReturnValue(trigger$.asObservable());
+
+            store.updateSortOrder('inode-1', 5);
+            trigger$.next(MOCK_PAGINATED_RESPONSE);
+            trigger$.complete();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
+        });
+
+        it('should revert categories to previous state on error', () => {
+            const previousCategories = store.categories();
+            categoriesService.updateSortOrder.mockReturnValue(
+                throwError(() => new Error('sort fail'))
+            );
+
+            store.updateSortOrder('inode-1', 99);
+
+            expect(store.categories()).toEqual(previousCategories);
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
         });
     });
 

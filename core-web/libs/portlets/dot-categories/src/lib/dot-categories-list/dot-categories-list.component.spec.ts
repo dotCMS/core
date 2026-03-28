@@ -91,7 +91,8 @@ describe('DotCategoriesListComponent', () => {
                 importCategories: jest.fn(),
                 loadCategories: jest.fn(),
                 navigateToChildren: jest.fn(),
-                navigateToBreadcrumb: jest.fn()
+                navigateToBreadcrumb: jest.fn(),
+                updateSortOrder: jest.fn()
             }),
             mockProvider(DialogService),
             ConfirmationService
@@ -533,6 +534,37 @@ describe('DotCategoriesListComponent', () => {
             onClose.complete();
 
             expect(store.loadCategories).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Sort Order Editing', () => {
+        it('should call store.updateSortOrder when value changes on blur', () => {
+            spectator.component.onSortOrderInput(MOCK_CATEGORIES[0], 42);
+            spectator.component.onSortOrderBlur(MOCK_CATEGORIES[0]);
+
+            expect(store.updateSortOrder).toHaveBeenCalledWith('inode-1', 42);
+        });
+
+        it('should not call store.updateSortOrder when value is unchanged', () => {
+            spectator.component.onSortOrderInput(MOCK_CATEGORIES[0], MOCK_CATEGORIES[0].sortOrder);
+            spectator.component.onSortOrderBlur(MOCK_CATEGORIES[0]);
+
+            expect(store.updateSortOrder).not.toHaveBeenCalled();
+        });
+
+        it('should not call store.updateSortOrder when no input was made before blur', () => {
+            spectator.component.onSortOrderBlur(MOCK_CATEGORIES[0]);
+
+            expect(store.updateSortOrder).not.toHaveBeenCalled();
+        });
+
+        it('should clear pending value after blur so a second blur does nothing', () => {
+            spectator.component.onSortOrderInput(MOCK_CATEGORIES[0], 99);
+            spectator.component.onSortOrderBlur(MOCK_CATEGORIES[0]);
+            jest.clearAllMocks();
+
+            spectator.component.onSortOrderBlur(MOCK_CATEGORIES[0]);
+            expect(store.updateSortOrder).not.toHaveBeenCalled();
         });
     });
 
