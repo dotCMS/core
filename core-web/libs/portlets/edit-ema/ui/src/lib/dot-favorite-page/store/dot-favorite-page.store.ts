@@ -1,6 +1,6 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
-import { Observable, throwError, of } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -101,7 +101,6 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                             this.patchState({
                                 loading: false
                             });
-                            return of(null);
                         }
                     })
                 );
@@ -132,7 +131,6 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                     this.patchState({
                         loading: false
                     });
-                    return of(null);
                 }
             })
         );

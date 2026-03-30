@@ -62,7 +62,7 @@ export class DotMenuService {
         if (!this.menu$ || force) {
             this.menu$ = this.http.get<DotCMSResponse<DotMenu[]>>(this.urlMenus).pipe(
                 shareReplay({ bufferSize: 1, refCount: true }),
-                map((x) => x?.entity)
+                map((x) => x.entity)
             );
         }
 

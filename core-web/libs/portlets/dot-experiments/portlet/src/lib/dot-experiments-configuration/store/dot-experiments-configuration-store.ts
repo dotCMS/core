@@ -1,6 +1,6 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
-import { Observable, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -452,7 +452,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                 this.setSidebarStatus({
                                     status: ComponentStatus.IDLE
                                 });
-                                throwError(() => error);
+                                this.dotHttpErrorManagerService.handle(error);
                             }
                         })
                     )
@@ -503,7 +503,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.setSidebarStatus({
                                         status: ComponentStatus.IDLE
                                     });
-                                    throwError(() => error);
+                                    this.dotHttpErrorManagerService.handle(error);
                                 }
                             })
                         )
@@ -578,7 +578,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setTrafficProportion(experiment.trafficProportion);
                                 },
-                                error: (error: HttpErrorResponse) => throwError(() => error)
+                                error: (error: HttpErrorResponse) =>
+                                    this.dotHttpErrorManagerService.handle(error)
                             })
                         )
                 )
@@ -649,7 +650,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
                                     this.setGoals(experiment.goals);
                                 },
-                                error: (error: HttpErrorResponse) => throwError(() => error)
+                                error: (error: HttpErrorResponse) =>
+                                    this.dotHttpErrorManagerService.handle(error)
                             })
                         )
                 )
