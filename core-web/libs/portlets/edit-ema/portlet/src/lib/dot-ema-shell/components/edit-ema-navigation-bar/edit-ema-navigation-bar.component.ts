@@ -17,7 +17,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     templateUrl: './edit-ema-navigation-bar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ButtonModule, DotMessagePipe, TooltipModule],
-    host: { class: 'flex items-center h-full' }
+    host: { class: 'flex items-center h-full border-l border-gray-200' }
 })
 export class EditEmaNavigationBarComponent {
     items = input<NavigationBarItem[]>([]);

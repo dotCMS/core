@@ -66,11 +66,10 @@ dot-results-seo-tool {
 }
 
 .editor-content {
-    overflow: auto;
     position: relative;
     height: 100%;
     min-height: 0;
-
+    grid-template-rows: min-content 1fr;
     grid-column: 2 / 3;
 }
 
@@ -114,6 +113,7 @@ dot-results-seo-tool {
     padding: $spacing-4 0;
     position: relative;
     width: 100%;
+    overflow: auto;
     min-height: 100%;
     // IMPORTANT:
     // Do NOT use flex + justify-content:center here.

@@ -396,7 +396,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $editorContentStyles = computed<Record<string, string>>(() => {
         const socialMedia = this.uveStore.viewSocialMedia();
         return {
-            display: socialMedia ? 'none' : 'block'
+            display: socialMedia ? 'none' : 'grid'
         };
     });
 

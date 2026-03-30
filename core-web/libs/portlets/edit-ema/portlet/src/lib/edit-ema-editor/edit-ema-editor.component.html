@@ -17,7 +17,7 @@
 }
 
 @if (uveStore.editorCanEditContent()) {
-    <div class="palette-wrapper" [class.open]="$paletteOpen">
+    <div class="palette-wrapper border-r border-gray-200" [class.open]="$paletteOpen">
         <dot-uve-palette (onNodeSelect)="handlePaletteNodeSelect($event)" data-testId="palette" />
     </div>
 }
@@ -196,7 +196,7 @@
 </div>
 
 @if (uveStore.viewMode() === UVE_MODE.EDIT) {
-    <div class="edit-panel-wrapper" [class.open]="$editPanelOpen">
+    <div class="edit-panel-wrapper border-l border-gray-200" [class.open]="$editPanelOpen">
         <p-tabs
             styleClass="flex flex-column w-full h-full"
             [value]="$editorPanelActiveTab()"
