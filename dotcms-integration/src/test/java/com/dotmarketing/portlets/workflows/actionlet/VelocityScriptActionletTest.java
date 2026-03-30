@@ -154,6 +154,7 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
         final Host siteA = new SiteDataGen().nextPersisted();
         WorkflowScheme secretsScheme = null;
         ContentType secretsContentType = null;
+        Contentlet checkedIn = null;
 
         // Save the original thread-local request and clear it to simulate a background job
         final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -216,7 +217,7 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
             final Contentlet contentlet = new Contentlet();
             contentlet.setContentType(secretsContentType);
             contentlet.setHost(siteA.getIdentifier());
-            final Contentlet checkedIn = contentletAPI.checkin(contentlet, admin, false);
+            checkedIn = contentletAPI.checkin(contentlet, admin, false);
 
             // Fire the workflow action — no HTTP request in thread-local (background job)
             final Contentlet result = workflowAPI.fireContentWorkflow(checkedIn,
@@ -235,12 +236,29 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
                     "secretValueSiteA", dotJSON.get("secretValue"));
 
         } finally {
-            // Restore thread-local state and clean up test data
-            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
             DotVelocitySecretAppConfigThreadLocal.INSTANCE.clearConfig();
+
+            // Destroy the contentlet first so it is no longer in the workflow step,
+            // which would otherwise block cleanScheme() from deleting the step.
+            try {
+                if (null != checkedIn) {
+                    contentletAPI.destroy(checkedIn, admin, false);
+                }
+            } catch (Exception ignored) { /* best-effort */ }
+
+            try { appsAPI.deleteSecrets(DotVelocitySecretAppKeys.APP_KEY, siteA, admin); } catch (Exception ignored) {}
+            try { appsAPI.deleteSecrets(DotVelocitySecretAppKeys.APP_KEY, APILocator.systemHost(), admin); } catch (Exception ignored) {}
 
             if (null != secretsScheme) { cleanScheme(secretsScheme); }
             if (null != secretsContentType) { contentTypeAPI.delete(secretsContentType); }
+
+            try {
+                APILocator.getHostAPI().archive(siteA, admin, false);
+                APILocator.getHostAPI().delete(siteA, admin, false);
+            } catch (Exception ignored) { /* best-effort */ }
+
+            // Restore thread-local last so all cleanup above runs under the background-job context
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
         }
     }
 

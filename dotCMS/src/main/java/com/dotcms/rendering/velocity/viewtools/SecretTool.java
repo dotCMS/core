@@ -4,7 +4,6 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Versionable;
@@ -102,11 +101,10 @@ public class SecretTool implements ViewTool {
 	 *   <li>Real HTTP request from thread-local (web request): the host is resolved by the servlet
 	 *       container and cannot be overridden by template code, which prevents cross-site secret
 	 *       access via {@code #set($host = ...)}.</li>
-	 *   <li>Host stored in the Velocity context (background/scheduled jobs): set programmatically
-	 *       by the calling actionlet from the contentlet's own site, so it is still trustworthy.
-	 *       The {@code instanceof} guard prevents a {@link ClassCastException} if another tool
-	 *       stored a non-{@link Host} object under the {@code "host"} key.</li>
-	 *   <li>Null request fallback: returns System Host secrets when no host can be determined.</li>
+	 *   <li>Request snapshotted during {@link #init} (background/scheduled jobs): captured before
+	 *       any VTL execution begins, so it is also immune to {@code #set($host = ...)} mutations.
+	 *       The calling actionlet is responsible for building this request with the contentlet's own
+	 *       hostname so the correct site's secrets are returned.</li>
 	 * </ol>
 	 *
 	 * @return the resolved config, or {@link java.util.Optional#empty()} if none is configured
@@ -117,11 +115,9 @@ public class SecretTool implements ViewTool {
 		if (null != threadLocalRequest) {
 			return DotVelocitySecretAppConfig.config(threadLocalRequest);
 		}
-		final Object rawHost = this.context.get("host");
-		final Host contextHost = (rawHost instanceof Host) ? (Host) rawHost : null;
-		return (null != contextHost)
-				? DotVelocitySecretAppConfig.config(contextHost)
-				: DotVelocitySecretAppConfig.config((HttpServletRequest) null);
+		// Background/scheduled job: use the request set during init() — before VTL execution.
+		// Unlike this.context.get("host"), this cannot be overridden by #set($host = ...).
+		return DotVelocitySecretAppConfig.config(this.request);
 	}
 
 	public char[] getCharArraySystemSecret (final String key) {

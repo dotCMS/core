@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
 import com.dotcms.rendering.util.ActionletUtil;
@@ -15,6 +19,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -80,17 +85,22 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             final String resultKey    = keyParameter.getValue();
             final Reader reader       = new StringReader(script);
             final Contentlet contentlet = processor.getContentlet();
+
+            Host contentletHost = null;
+            if (UtilMethods.isSet(contentlet.getHost())) {
+                final Host found = APILocator.getHostAPI().find(
+                        contentlet.getHost(), APILocator.systemUser(), false);
+                if (null != found && UtilMethods.isSet(found.getIdentifier())) {
+                    contentletHost = found;
+                }
+            }
+
             final Map<String, Object> contextParams = new HashMap<>(Map.of("workflow", processor,
-                    "user", processor.getUser(),
+                    "user", currentUser,
                     "contentlet", contentlet,
                     "content", contentlet));
-
-            if (UtilMethods.isSet(contentlet.getHost())) {
-                final Host contentletHost = APILocator.getHostAPI().find(
-                        contentlet.getHost(), APILocator.systemUser(), false);
-                if (null != contentletHost && UtilMethods.isSet(contentletHost.getIdentifier())) {
-                    contextParams.put("host", contentletHost);
-                }
+            if (null != contentletHost) {
+                contextParams.put("host", contentletHost);
             }
 
             final Object result = engine.eval(request, response, reader, contextParams);
