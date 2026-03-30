@@ -199,25 +199,25 @@ export class ExistingContentService {
      *
      * Uses the ES search API to find parent contentlets and extract their related child identifiers.
      *
-     * @param params.parentContentTypeVariable - The variable of the parent content type (e.g., "MAIN")
+     * @param params.parentContentTypeId - The ID (inode) of the parent content type
      * @param params.fieldVariable - The relationship field variable (e.g., "relation")
      * @param params.currentContentIdentifier - The identifier of the contentlet being edited (to exclude its own children)
      * @returns Observable<Set<string>> - Set of child identifiers that are already "taken" by other parents
      */
     getConstrainedIdentifiers(params: {
-        parentContentTypeVariable: string;
+        parentContentTypeId: string;
         fieldVariable: string;
         currentContentIdentifier: string | null;
     }): Observable<Set<string>> {
-        const { parentContentTypeVariable, fieldVariable } = params;
+        const { parentContentTypeId, fieldVariable } = params;
 
-        if (!parentContentTypeVariable || !fieldVariable) {
+        if (!parentContentTypeId || !fieldVariable) {
             return of(new Set<string>());
         }
 
         return this.#contentSearchService
             .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                query: `+contentType:${parentContentTypeVariable} +working:true +deleted:false`,
+                query: `+structureInode:${parentContentTypeId} +working:true +deleted:false`,
                 sort: 'modDate desc',
                 limit: CONSTRAINED_QUERY_LIMIT,
                 offset: 0,
@@ -233,19 +233,25 @@ export class ExistingContentService {
                         }
 
                         const relatedChildren = parent[fieldVariable] as unknown;
-                        if (Array.isArray(relatedChildren)) {
-                            for (const child of relatedChildren as unknown[]) {
-                                const childId =
-                                    typeof child === 'string'
-                                        ? child
-                                        : child != null &&
-                                            typeof child === 'object' &&
-                                            'identifier' in child
-                                          ? (child as { identifier: string }).identifier
-                                          : null;
-                                if (childId) {
-                                    constrainedIds.add(childId);
-                                }
+
+                        // ONE_TO_ONE returns a single value; ONE_TO_MANY returns an array
+                        const children = Array.isArray(relatedChildren)
+                            ? relatedChildren
+                            : relatedChildren != null
+                              ? [relatedChildren]
+                              : [];
+
+                        for (const child of children as unknown[]) {
+                            const childId =
+                                typeof child === 'string'
+                                    ? child
+                                    : child != null &&
+                                        typeof child === 'object' &&
+                                        'identifier' in child
+                                      ? (child as { identifier: string }).identifier
+                                      : null;
+                            if (childId) {
+                                constrainedIds.add(childId);
                             }
                         }
                     }

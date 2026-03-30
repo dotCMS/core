@@ -627,7 +627,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-ct-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: 'currentBlog'
                 })
@@ -652,12 +652,66 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-ct-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
                 .subscribe((result) => {
                     expect(result).toEqual(new Set(['author1', 'author2']));
+                    done();
+                });
+        });
+
+        it('should handle ONE_TO_ONE single value (non-array) from API', (done) => {
+            // ONE_TO_ONE: backend returns a single identifier, not an array
+            const parentContentlets = [
+                createFakeContentlet({
+                    identifier: 'blog1',
+                    authors: 'author1'
+                } as Partial<DotCMSContentlet>),
+                createFakeContentlet({
+                    identifier: 'blog2',
+                    authors: 'author2'
+                } as Partial<DotCMSContentlet>)
+            ];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: parentContentlets } })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set(['author1', 'author2']));
+                    done();
+                });
+        });
+
+        it('should handle ONE_TO_ONE single object value from API', (done) => {
+            // ONE_TO_ONE with depth >= 1: backend returns a single object, not an array
+            const parentContentlets = [
+                createFakeContentlet({
+                    identifier: 'blog1',
+                    authors: { identifier: 'author1' }
+                } as Partial<DotCMSContentlet>)
+            ];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: parentContentlets } })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set(['author1']));
                     done();
                 });
         });
@@ -674,7 +728,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-ct-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
@@ -687,7 +741,7 @@ describe('ExistingContentService', () => {
         it('should return empty set for missing params', (done) => {
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: '',
+                    parentContentTypeId: '',
                     fieldVariable: '',
                     currentContentIdentifier: null
                 })
@@ -705,7 +759,7 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-ct-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
@@ -722,14 +776,14 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getConstrainedIdentifiers({
-                    parentContentTypeVariable: 'Blog',
+                    parentContentTypeId: 'blog-ct-id',
                     fieldVariable: 'authors',
                     currentContentIdentifier: null
                 })
                 .subscribe(() => {
                     expect(dotContentSearchService.get).toHaveBeenCalledWith(
                         expect.objectContaining({
-                            query: '+contentType:Blog +working:true +deleted:false',
+                            query: '+structureInode:blog-ct-id +working:true +deleted:false',
                             sort: 'modDate desc',
                             limit: 5000,
                             offset: 0,

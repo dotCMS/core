@@ -339,7 +339,6 @@ describe('ExistingContentStore', () => {
                 selectedItemsIds: [],
                 cardinality: 0, // ONE_TO_MANY
                 parentContentTypeId: 'main-type-id',
-                parentContentTypeVariable: 'Main',
                 fieldVariable: 'relation',
                 isParentField: true,
                 currentContentIdentifier: 'current-id'
@@ -352,7 +351,7 @@ describe('ExistingContentStore', () => {
             expect(store.isItemConstrained()('free-child')).toBe(false);
             expect(service.getConstrainedIdentifiers).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    parentContentTypeVariable: 'Main',
+                    parentContentTypeId: 'main-type-id',
                     fieldVariable: 'relation'
                 })
             );
@@ -369,7 +368,6 @@ describe('ExistingContentStore', () => {
                 selectedItemsIds: [],
                 cardinality: 2, // ONE_TO_ONE
                 parentContentTypeId: 'main-type-id',
-                parentContentTypeVariable: 'Main',
                 fieldVariable: 'relation',
                 isParentField: true,
                 currentContentIdentifier: 'current-id'
@@ -381,8 +379,35 @@ describe('ExistingContentStore', () => {
             expect(store.isItemConstrained()('free-child')).toBe(false);
             expect(service.getConstrainedIdentifiers).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    parentContentTypeVariable: 'Main',
+                    parentContentTypeId: 'main-type-id',
                     fieldVariable: 'relation'
+                })
+            );
+        }));
+
+        it('should load constrained identifiers for new contentlet (no currentContentIdentifier)', fakeAsync(() => {
+            const constrainedSet = new Set(['taken-child-1', 'taken-child-2']);
+            service.getColumnsAndContent.mockReturnValue(of([mockColumns, mockData]));
+            service.getConstrainedIdentifiers.mockReturnValue(of(constrainedSet));
+
+            store.initLoad({
+                contentTypeId: '123',
+                selectionMode: 'single',
+                selectedItemsIds: [],
+                cardinality: 2, // ONE_TO_ONE
+                parentContentTypeId: 'main-type-id',
+                fieldVariable: 'relation',
+                isParentField: true
+                // no currentContentIdentifier — simulates creating new content
+            });
+            tick();
+
+            expect(store.constrainedIdentifiers()).toEqual(constrainedSet);
+            expect(service.getConstrainedIdentifiers).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    parentContentTypeId: 'main-type-id',
+                    fieldVariable: 'relation',
+                    currentContentIdentifier: null
                 })
             );
         }));
@@ -396,7 +421,6 @@ describe('ExistingContentStore', () => {
                 selectedItemsIds: [],
                 cardinality: 0, // ONE_TO_MANY
                 parentContentTypeId: 'main-type-id',
-                parentContentTypeVariable: 'Main',
                 fieldVariable: 'relation',
                 isParentField: false,
                 currentContentIdentifier: 'current-id'
@@ -416,7 +440,6 @@ describe('ExistingContentStore', () => {
                 selectedItemsIds: [],
                 cardinality: 1, // MANY_TO_MANY
                 parentContentTypeId: 'main-type-id',
-                parentContentTypeVariable: 'Main',
                 fieldVariable: 'relation',
                 isParentField: true,
                 currentContentIdentifier: 'current-id'
@@ -451,7 +474,6 @@ describe('ExistingContentStore', () => {
                 selectedItemsIds: [],
                 cardinality: 0,
                 parentContentTypeId: 'main-type-id',
-                parentContentTypeVariable: 'Main',
                 fieldVariable: 'relation',
                 isParentField: true,
                 currentContentIdentifier: 'current-id'

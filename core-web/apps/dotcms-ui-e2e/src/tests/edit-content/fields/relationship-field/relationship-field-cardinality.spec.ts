@@ -16,127 +16,272 @@ import {
  * already related to another parent (ONE_TO_MANY cardinality).
  *
  * Setup:
- *   - Comments type (title + comment field) → 3 contentlets
+ *   - Comments type (title + comment field) → 2 contentlets
  *   - Post type (title + relationship 1:M to Comments)
  *   - Post A relates to Comment 1
  *   - Post B has no relationships → edit this one and open dialog
- *   - Comment 1 should be disabled, Comment 2 and 3 selectable
+ *   - Comment 1 should be disabled, Comment 2 selectable
  */
 test.describe('Cardinality Constraints', () => {
-    let commentsType: TestContentType;
-    let postType: TestContentType;
-    let comments: TestContentlet[];
-    let postB: TestContentlet;
+    test.describe('ONE_TO_MANY', () => {
+        let commentsType: TestContentType;
+        let postType: TestContentType;
+        let comments: TestContentlet[];
+        let postB: TestContentlet;
 
-    test.beforeEach(async ({ apiHelpers, testSuffix }) => {
-        // 1. Comments content type with title + comment fields
-        commentsType = await apiHelpers.createContentType({
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            name: `E2E_Comments_${testSuffix}`,
-            variable: `E2EComments${testSuffix}`,
-            host: 'SYSTEM_HOST',
-            folder: 'SYSTEM_FOLDER',
-            metadata: { CONTENT_EDITOR2_ENABLED: true },
-            workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'],
-            fields: [
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                    name: 'Title',
-                    variable: 'title',
-                    sortOrder: 1
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                    name: 'Comment',
-                    variable: 'comment',
-                    sortOrder: 2
-                }
-            ]
-        });
-
-        // 2. Post content type with title + relationship (1:M) to Comments
-        postType = await apiHelpers.createContentType({
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            name: `E2E_Post_${testSuffix}`,
-            variable: `E2EPost${testSuffix}`,
-            host: 'SYSTEM_HOST',
-            folder: 'SYSTEM_FOLDER',
-            metadata: { CONTENT_EDITOR2_ENABLED: true },
-            workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'],
-            fields: [
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
-                    name: 'Title',
-                    variable: 'title',
-                    sortOrder: 1
-                },
-                {
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
-                    name: 'Comments',
-                    variable: 'comments',
-                    sortOrder: 2,
-                    relationships: {
-                        velocityVar: commentsType.variable,
-                        cardinality: CARDINALITY.ONE_TO_MANY
+        test.beforeEach(async ({ apiHelpers, testSuffix }) => {
+            commentsType = await apiHelpers.createContentType({
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                name: `E2E_Comments_${testSuffix}`,
+                variable: `E2EComments${testSuffix}`,
+                host: 'SYSTEM_HOST',
+                folder: 'SYSTEM_FOLDER',
+                metadata: { CONTENT_EDITOR2_ENABLED: true },
+                workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'],
+                fields: [
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                        name: 'Title',
+                        variable: 'title',
+                        sortOrder: 1
+                    },
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                        name: 'Comment',
+                        variable: 'comment',
+                        sortOrder: 2
                     }
-                }
-            ]
+                ]
+            });
+
+            postType = await apiHelpers.createContentType({
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                name: `E2E_Post_${testSuffix}`,
+                variable: `E2EPost${testSuffix}`,
+                host: 'SYSTEM_HOST',
+                folder: 'SYSTEM_FOLDER',
+                metadata: { CONTENT_EDITOR2_ENABLED: true },
+                workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'],
+                fields: [
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                        name: 'Title',
+                        variable: 'title',
+                        sortOrder: 1
+                    },
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+                        name: 'Comments',
+                        variable: 'comments',
+                        sortOrder: 2,
+                        relationships: {
+                            velocityVar: commentsType.variable,
+                            cardinality: CARDINALITY.ONE_TO_MANY
+                        }
+                    }
+                ]
+            });
+
+            comments = await apiHelpers.createContentlets(commentsType.variable, [
+                { title: 'Comment 1', comment: 'First comment' },
+                { title: 'Comment 2', comment: 'Second comment' }
+            ]);
+
+            await apiHelpers.createContentletWithRelationship(
+                postType.variable,
+                { title: 'Post A' },
+                { comments: [comments[0].identifier].join(',') }
+            );
+
+            postB = await apiHelpers.createContentlet(postType.variable, { title: 'Post B' });
         });
 
-        // 3. Create 2 comments
-        comments = await apiHelpers.createContentlets(commentsType.variable, [
-            { title: 'Comment 1', comment: 'First comment' },
-            { title: 'Comment 2', comment: 'Second comment' }
-        ]);
+        test('comment already related to another post appears disabled @critical', async ({
+            adminPage
+        }) => {
+            const formPage = new NewEditContentFormPage(adminPage);
+            const relField = new RelationshipField(adminPage, 'comments');
+            const dialog = new SelectExistingContentDialog(adminPage);
 
-        // 4. Create Post A and relate it to Comment 1
-        await apiHelpers.createContentletWithRelationship(
-            postType.variable,
-            { title: 'Post A' },
-            { comments: [comments[0].identifier].join(',') }
-        );
+            await formPage.goToContent(postB.inode);
 
-        // 5. Create Post B (no relationships) — this is the one we'll edit
-        postB = await apiHelpers.createContentlet(postType.variable, { title: 'Post B' });
+            await relField.clickRelateExisting();
+            await dialog.waitForVisible();
+            await dialog.waitForContentLoaded();
+
+            await dialog.expectRowCount(2);
+
+            let constrainedIdx = -1;
+            let freeIdx = -1;
+
+            for (let i = 0; i < 2; i++) {
+                const rowText = await dialog.rows.nth(i).textContent();
+                if (rowText?.includes('Comment 1')) {
+                    constrainedIdx = i;
+                } else {
+                    freeIdx = i;
+                }
+            }
+
+            expect(constrainedIdx, 'Comment 1 should exist in dialog').toBeGreaterThanOrEqual(0);
+
+            await dialog.expectRowConstrained(constrainedIdx);
+            await dialog.expectRowSelectable(freeIdx);
+        });
     });
 
-    test('comment already related to another post appears disabled @critical', async ({
-        adminPage
-    }) => {
-        const formPage = new NewEditContentFormPage(adminPage);
-        const relField = new RelationshipField(adminPage, 'comments');
-        const dialog = new SelectExistingContentDialog(adminPage);
+    /**
+     * ONE_TO_ONE cardinality: each child can only belong to one parent.
+     *
+     * Setup:
+     *   - ChildType (title) → 2 contentlets (Child 1, Child 2)
+     *   - ParentType (title + relationship 1:1 to ChildType)
+     *   - Parent A relates to Child 1
+     *   - Edit existing Parent B (no relationships) → Child 1 disabled, Child 2 selectable
+     *   - Create NEW Parent → Child 1 disabled, Child 2 selectable
+     */
+    test.describe('ONE_TO_ONE', () => {
+        let childType: TestContentType;
+        let parentType: TestContentType;
+        let children: TestContentlet[];
+        let parentB: TestContentlet;
 
-        // Navigate to edit Post B
-        await formPage.goToContent(postB.inode);
+        test.beforeEach(async ({ apiHelpers, testSuffix }) => {
+            childType = await apiHelpers.createContentType({
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                name: `E2E_Child_${testSuffix}`,
+                variable: `E2EChild${testSuffix}`,
+                host: 'SYSTEM_HOST',
+                folder: 'SYSTEM_FOLDER',
+                metadata: { CONTENT_EDITOR2_ENABLED: true },
+                workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'],
+                fields: [
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                        name: 'Title',
+                        variable: 'title',
+                        sortOrder: 1
+                    }
+                ]
+            });
 
-        // Open "Select Existing Content" dialog
-        await relField.clickRelateExisting();
-        await dialog.waitForVisible();
-        await dialog.waitForContentLoaded();
+            parentType = await apiHelpers.createContentType({
+                clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+                name: `E2E_Parent_${testSuffix}`,
+                variable: `E2EParent${testSuffix}`,
+                host: 'SYSTEM_HOST',
+                folder: 'SYSTEM_FOLDER',
+                metadata: { CONTENT_EDITOR2_ENABLED: true },
+                workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'],
+                fields: [
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField',
+                        name: 'Title',
+                        variable: 'title',
+                        sortOrder: 1
+                    },
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableRelationshipField',
+                        name: 'Rel',
+                        variable: 'rel',
+                        sortOrder: 2,
+                        relationships: {
+                            velocityVar: childType.variable,
+                            cardinality: CARDINALITY.ONE_TO_ONE
+                        }
+                    }
+                ]
+            });
 
-        // Should see both comments
-        await dialog.expectRowCount(2);
+            children = await apiHelpers.createContentlets(childType.variable, [
+                { title: 'Child 1' },
+                { title: 'Child 2' }
+            ]);
 
-        // Find which row is Comment 1 (taken by Post A) and which is Comment 2 (free)
-        let constrainedIdx = -1;
-        let freeIdx = -1;
+            // Parent A takes Child 1
+            await apiHelpers.createContentletWithRelationship(
+                parentType.variable,
+                { title: 'Parent A' },
+                { rel: children[0].identifier }
+            );
 
-        for (let i = 0; i < 2; i++) {
-            const rowText = await dialog.rows.nth(i).textContent();
-            if (rowText?.includes('Comment 1')) {
-                constrainedIdx = i;
-            } else {
-                freeIdx = i;
+            // Parent B — no relationships (for edit test)
+            parentB = await apiHelpers.createContentlet(parentType.variable, {
+                title: 'Parent B'
+            });
+        });
+
+        test('child already related to another parent appears disabled (edit existing) @critical', async ({
+            adminPage
+        }) => {
+            const formPage = new NewEditContentFormPage(adminPage);
+            const relField = new RelationshipField(adminPage, 'rel');
+            const dialog = new SelectExistingContentDialog(adminPage);
+
+            await formPage.goToContent(parentB.inode);
+
+            await relField.clickRelateExisting();
+            await dialog.waitForVisible();
+            await dialog.waitForContentLoaded();
+
+            await dialog.expectRowCount(2);
+
+            let constrainedIdx = -1;
+            let freeIdx = -1;
+
+            for (let i = 0; i < 2; i++) {
+                const rowText = await dialog.rows.nth(i).textContent();
+                if (rowText?.includes('Child 1')) {
+                    constrainedIdx = i;
+                } else {
+                    freeIdx = i;
+                }
             }
-        }
 
-        expect(constrainedIdx, 'Comment 1 should exist in dialog').toBeGreaterThanOrEqual(0);
+            expect(constrainedIdx, 'Child 1 should exist in dialog').toBeGreaterThanOrEqual(0);
 
-        // Comment 1 disabled — already related to Post A
-        await dialog.expectRowConstrained(constrainedIdx);
+            // Child 1 disabled — already related to Parent A
+            await dialog.expectRowConstrained(constrainedIdx);
 
-        // Comment 2 selectable — free
-        await dialog.expectRowSelectable(freeIdx);
+            // Child 2 selectable — free
+            await dialog.expectRowSelectable(freeIdx);
+        });
+
+        test('child already related appears disabled when creating new parent @critical', async ({
+            adminPage
+        }) => {
+            const formPage = new NewEditContentFormPage(adminPage);
+            const relField = new RelationshipField(adminPage, 'rel');
+            const dialog = new SelectExistingContentDialog(adminPage);
+
+            // Navigate to create a NEW parent contentlet
+            await formPage.goToNew(parentType.variable);
+
+            await relField.clickRelateExisting();
+            await dialog.waitForVisible();
+            await dialog.waitForContentLoaded();
+
+            await dialog.expectRowCount(2);
+
+            let constrainedIdx = -1;
+            let freeIdx = -1;
+
+            for (let i = 0; i < 2; i++) {
+                const rowText = await dialog.rows.nth(i).textContent();
+                if (rowText?.includes('Child 1')) {
+                    constrainedIdx = i;
+                } else {
+                    freeIdx = i;
+                }
+            }
+
+            expect(constrainedIdx, 'Child 1 should exist in dialog').toBeGreaterThanOrEqual(0);
+
+            // Child 1 disabled — already related to Parent A
+            await dialog.expectRowConstrained(constrainedIdx);
+
+            // Child 2 selectable — free
+            await dialog.expectRowSelectable(freeIdx);
+        });
     });
 });
