@@ -18,7 +18,7 @@ const MOCK_COLUMNS: DotPageAssetLayoutColumn[] = [
         width: 6,
         leftOffset: 1,
         left: 0,
-        styleClass: 'column-1'
+        metadata: { name: 'column-1' }
     },
     {
         preview: false,
@@ -34,7 +34,7 @@ const MOCK_ROWS: DotPageAssetLayoutRow[] = [
     {
         identifier: 1,
         columns: MOCK_COLUMNS,
-        styleClass: 'row-1'
+        metadata: { name: 'row-1' }
     },
     {
         identifier: 2,
@@ -154,21 +154,21 @@ describe('DotRowReorderComponent', () => {
     });
 
     describe('Row Labels', () => {
-        it('should return styleClass when available', () => {
+        it('should return metadata.name when available', () => {
             expect(component.getRowLabel(MOCK_ROWS[0], 0)).toBe('row-1');
         });
 
-        it('should return default label when styleClass is not available', () => {
+        it('should return default label when metadata.name is not available', () => {
             expect(component.getRowLabel(MOCK_ROWS[1], 1)).toBe('Row 2');
         });
     });
 
     describe('Column Labels', () => {
-        it('should return styleClass when available', () => {
+        it('should return metadata.name when available', () => {
             expect(component.getColumnLabel(MOCK_COLUMNS[0], 0)).toBe('column-1');
         });
 
-        it('should return default label when styleClass is not available', () => {
+        it('should return default label when metadata.name is not available', () => {
             expect(component.getColumnLabel(MOCK_COLUMNS[1], 1)).toBe('Column 2');
         });
     });
@@ -272,7 +272,7 @@ describe('DotRowReorderComponent', () => {
                 .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
             spectator.detectChanges();
 
-            expect(component.rowStyleClassControl.value).toBe('row-1');
+            expect(component.rowNameControl.value).toBe('row-1');
         });
 
         it('should close dialog when onHide fires', () => {
@@ -336,18 +336,18 @@ describe('DotRowReorderComponent', () => {
                 .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
             spectator.detectChanges();
 
-            expect(component.rowStyleClassControl.value).toBe('column-1');
+            expect(component.rowNameControl.value).toBe('column-1');
         });
     });
 
     describe('Submit Edit Row', () => {
-        it('should update row styleClass and close dialog', () => {
+        it('should update row metadata.name and close dialog', () => {
             spectator
                 .queryAll(byTestId('row-label'))[0]
                 .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
             spectator.detectChanges();
 
-            component.rowStyleClassControl.setValue('updated-row-1');
+            component.rowNameControl.setValue('updated-row-1');
             spectator.click(spectator.query<HTMLButtonElement>('button[type="submit"]')!);
             spectator.detectChanges();
 
@@ -356,7 +356,7 @@ describe('DotRowReorderComponent', () => {
             expect(component.editRowDialogOpen()).toBe(false);
         });
 
-        it('should update column styleClass and close dialog', () => {
+        it('should update column metadata.name and close dialog', () => {
             spectator.click(spectator.queryAll(byTestId('row-toggle'))[0]);
             spectator.detectChanges();
 
@@ -365,7 +365,7 @@ describe('DotRowReorderComponent', () => {
                 .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
             spectator.detectChanges();
 
-            component.rowStyleClassControl.setValue('updated-column-1');
+            component.rowNameControl.setValue('updated-column-1');
             spectator.click(spectator.query<HTMLButtonElement>('button[type="submit"]')!);
             spectator.detectChanges();
 
@@ -374,13 +374,13 @@ describe('DotRowReorderComponent', () => {
             expect(component.editRowDialogOpen()).toBe(false);
         });
 
-        it('should remove styleClass when value is empty', () => {
+        it('should remove metadata.name when value is empty', () => {
             spectator
                 .queryAll(byTestId('row-label'))[0]
                 .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
             spectator.detectChanges();
 
-            component.rowStyleClassControl.setValue('   ');
+            component.rowNameControl.setValue('   ');
             spectator.click(spectator.query<HTMLButtonElement>('button[type="submit"]')!);
             spectator.detectChanges();
 

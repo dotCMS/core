@@ -34,15 +34,15 @@ public class TemplateLayoutDataGen  {
 
     public TemplateLayoutDataGen withContainer(final String identifier, final String UUID, final List<String> uuidsHistory){
 
-        containersIds.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, uuidsHistory) :
-                new ContainerUUID(identifier, UUID, uuidsHistory));
+        containersIds.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, uuidsHistory, null) :
+                new ContainerUUID(identifier, UUID, uuidsHistory, null));
         return this;
     }
 
     public TemplateLayoutDataGen withContainerInSidebar(final String identifier, final String UUID){
 
-        containersIdsInSidebar.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, list(UUID)) :
-                new ContainerUUID(identifier, UUID, list(UUID)));
+        containersIdsInSidebar.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, list(UUID), null) :
+                new ContainerUUID(identifier, UUID, list(UUID), null));
 
         return this;
     }
@@ -71,9 +71,9 @@ public class TemplateLayoutDataGen  {
         final List<TemplateLayoutRow> rows = new ArrayList<>();
 
         final List<TemplateLayoutColumn> columns = new ArrayList<>();
-        columns.add(new TemplateLayoutColumn(containersIds, 100, 1, null));
+        columns.add(new TemplateLayoutColumn(containersIds, 100, 1, null, null));
 
-        rows.add(new TemplateLayoutRow(columns, null));
+        rows.add(new TemplateLayoutRow(columns, null, null));
 
         return rows;
     }
@@ -109,7 +109,7 @@ public class TemplateLayoutDataGen  {
     private void createNewRow() {
         addNewColumn();
 
-        rows.add(new TemplateLayoutRow(currentColumns, null));
+        rows.add(new TemplateLayoutRow(currentColumns, null, null));
         currentColumns = new ArrayList<>();
     }
 
@@ -123,7 +123,7 @@ public class TemplateLayoutDataGen  {
     }
 
     private void addNewColumn() {
-        currentColumns.add(new TemplateLayoutColumn(containersIds, currentColumnWidthPercent, 1, null));
+        currentColumns.add(new TemplateLayoutColumn(containersIds, currentColumnWidthPercent, 1, null, null));
 
         containersIds = new ArrayList<>();
     }
