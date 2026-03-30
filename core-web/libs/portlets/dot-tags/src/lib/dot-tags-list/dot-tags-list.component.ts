@@ -18,8 +18,8 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotTag } from '@dotcms/dotcms-models';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType, DotTag } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTagsListStore } from './store/dot-tags-list.store';
@@ -67,6 +67,7 @@ export class DotTagsListComponent {
     private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
+    private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
     private readonly destroyRef = inject(DestroyRef);
 
     private searchSubject = new Subject<string>();
@@ -169,6 +170,18 @@ export class DotTagsListComponent {
         ref?.onClose.pipe(take(1)).subscribe((result) => {
             if (result) {
                 this.store.loadTags();
+                const isSuccess = result.failureCount === 0;
+                this.dotMessageDisplayService.push({
+                    life: 5000,
+                    severity: isSuccess ? DotMessageSeverity.SUCCESS : DotMessageSeverity.WARNING,
+                    message: isSuccess
+                        ? this.dotMessageService.get(
+                              'tags.import.success',
+                              `${result.successCount}`
+                          )
+                        : `${this.dotMessageService.get('tags.import.partial-success', `${result.successCount}`, `${result.totalRows}`)} ${this.dotMessageService.get('tags.import.failures', `${result.failureCount}`)}`,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
             }
         });
     }

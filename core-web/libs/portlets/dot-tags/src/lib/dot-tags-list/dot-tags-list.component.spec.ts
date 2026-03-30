@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { ConfirmationService, MenuItemCommandEvent } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -62,6 +62,7 @@ describe('DotTagsListComponent', () => {
                 loadTags: jest.fn()
             }),
             mockProvider(DialogService),
+            mockProvider(DotMessageDisplayService),
             ConfirmationService
         ],
         providers: [
@@ -187,6 +188,7 @@ describe('DotTagsListComponent', () => {
     describe('Button Interactions', () => {
         describe('Split Button', () => {
             it('should render split button with Add Tag label', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue([]);
                 spectator.detectChanges();
                 const btnHost = spectator.query(byTestId('tag-add-split-btn'));
                 expect(btnHost).toBeTruthy();
@@ -203,6 +205,8 @@ describe('DotTagsListComponent', () => {
             });
 
             it('should call openCreateDialog when split button main action clicked', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue([]);
+                spectator.detectChanges();
                 const spy = jest.spyOn(spectator.component, 'openCreateDialog');
                 const btnHost = spectator.query(byTestId('tag-add-split-btn'));
                 const button = btnHost?.querySelector('button');
@@ -220,6 +224,7 @@ describe('DotTagsListComponent', () => {
 
         describe('Conditional Buttons Visibility', () => {
             it('should show Delete and Export buttons when tags are selected', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
                 spectator.detectChanges();
                 const deleteBtn = spectator.query(byTestId('tag-delete-btn'));
                 const exportBtn = spectator.query(byTestId('tag-export-btn'));

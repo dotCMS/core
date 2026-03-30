@@ -65,13 +65,13 @@
                 [field]="loginForm.get('password')" />
         </div>
         <div class="flex justify-between items-center">
-            <div class="checkbox">
+            <div class="checkbox flex items-center gap-2">
                 <p-checkbox
                     [inputId]="'rememberMe'"
                     formControlName="rememberMe"
                     data-testId="rememberMe"
                     [binary]="true" />
-                <label [for]="'rememberMe'">
+                <label [for]="'rememberMe'" class="whitespace-nowrap">
                     {{ loginInfo.i18nMessagesMap['remember-me'] }}
                 </label>
             </div>

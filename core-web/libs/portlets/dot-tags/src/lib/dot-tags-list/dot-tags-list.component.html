@@ -16,25 +16,26 @@
         <div class="flex gap-2 ml-auto">
             @if (store.selectedTags().length > 0) {
                 <p-button
-                    [label]="store.exportLabelKey() | dm"
-                    icon="pi pi-download"
-                    [outlined]="true"
-                    (onClick)="store.exportSelectedTags()"
-                    data-testid="tag-export-btn" />
-                <p-button
                     [label]="'tags.delete' | dm"
                     icon="pi pi-trash"
                     severity="danger"
                     [outlined]="true"
                     (onClick)="confirmDelete()"
                     data-testid="tag-delete-btn" />
+                <p-button
+                    [label]="store.exportLabelKey() | dm"
+                    icon="pi pi-download"
+                    [outlined]="true"
+                    (onClick)="store.exportSelectedTags()"
+                    data-testid="tag-export-btn" />
+            } @else {
+                <p-splitButton
+                    [label]="'add' | dm"
+                    icon="pi pi-plus"
+                    (onClick)="openCreateDialog()"
+                    [model]="addTagMenuItems"
+                    data-testid="tag-add-split-btn" />
             }
-            <p-splitButton
-                [label]="'add' | dm"
-                icon="pi pi-plus"
-                (onClick)="openCreateDialog()"
-                [model]="addTagMenuItems"
-                data-testid="tag-add-split-btn" />
         </div>
     </div>
 </p-toolbar>
@@ -50,6 +51,7 @@
         [totalRecords]="store.totalRecords()"
         [first]="(store.page() - 1) * store.rows()"
         [rowsPerPageOptions]="[10, 25, 50]"
+        [rowHover]="true"
         [scrollable]="true"
         scrollHeight="flex"
         [pt]="$ptConfig()"
