@@ -698,8 +698,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 pageId, personalization, multiTrees));
 
         if (multiTrees == null) {
-            Logger.debug(MultiTreeAPIImpl.class, () -> "empty list passed in");
-            return;
+            throw new DotDataException("empty list passed in");
         }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
@@ -716,6 +715,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
                 "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
 
+        // Removed legacy MySQL multi-tree delete workaround. Updated logic leverages PostgreSQL
+        // snapshot semantics to safely perform deletes using subqueries on the same table.
+        // System is now officially PostgreSQL-exclusive.
         if (languageIdOpt.isPresent() && defaultContentToDefaultLanguage) {
             final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
@@ -865,6 +867,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                     copiedMultiTreeVariantId);
 
             if (existingKeys.contains(currentMultiTreeKey)) {
+                // Skip duplicates silently instead of throwing. The old behavior threw a
+                // DotRuntimeException on the first duplicate, which caused the caller (addContent)
+                // to hang waiting for a response that never arrived — see issue #35029. Logging at
+                // DEBUG level preserves observability without surfacing it as an error.
                 Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
                         "Content [%s] already exists in Container '%s', skipping.",
                         tree.getContentlet(), tree.getContainer()));
