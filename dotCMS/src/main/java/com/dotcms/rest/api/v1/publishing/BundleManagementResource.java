@@ -279,9 +279,7 @@ public class BundleManagementResource {
                             .errors(errors)
                             .build());
 
-        } catch (DotPublisherException e) {
-            throw new BadRequestException(e.getMessage());
-        } catch (DotDataException e) {
+        } catch (DotPublisherException | DotDataException e) {
             Logger.error(this, "Error adding assets to bundle: " + e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
         }

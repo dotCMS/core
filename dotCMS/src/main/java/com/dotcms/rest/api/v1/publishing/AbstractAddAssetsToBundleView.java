@@ -59,13 +59,15 @@ public interface AbstractAddAssetsToBundleView {
     boolean created();
 
     /**
-     * Total number of assets submitted for addition.
+     * Total number of non-duplicate assets processed.
+     * Assets already in the bundle are silently skipped and not included in this count.
      * Subtract {@code errors().size()} to get the count of successfully added assets.
      *
-     * @return Total assets submitted
+     * @return Total non-duplicate assets processed
      */
     @Schema(
-            description = "Total number of assets submitted (subtract errors count for successful adds)",
+            description = "Total non-duplicate assets processed (subtract errors count for successful adds). "
+                    + "Assets already in the bundle are skipped and excluded from this count.",
             example = "5",
             requiredMode = Schema.RequiredMode.REQUIRED
     )

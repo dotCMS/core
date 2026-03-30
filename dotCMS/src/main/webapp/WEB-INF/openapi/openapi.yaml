@@ -22240,8 +22240,9 @@ components:
         total:
           type: integer
           format: int32
-          description: Total number of assets submitted (subtract errors count for
-            successful adds)
+          description: Total non-duplicate assets processed (subtract errors count
+            for successful adds). Assets already in the bundle are skipped and excluded
+            from this count.
           example: 5
       required:
       - bundleId
