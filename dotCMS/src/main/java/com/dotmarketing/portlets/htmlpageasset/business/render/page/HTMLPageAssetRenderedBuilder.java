@@ -398,12 +398,10 @@ public class HTMLPageAssetRenderedBuilder {
      */
     private String injectUVEScript(final String html, final Collection<? extends ContainerRaw> containers) {
         if (!UtilMethods.isSet(html)) {
+            Logger.debug(this, "Skipping UVE script injection: rendered HTML is empty or null");
             return html;
         }
-        final Optional<String> styleEditorScript = Try.of(() -> buildUVEStyleEditorScripts(containers))
-                .onFailure(e -> Logger.error(this,
-                        "Failed to build UVE style editor scripts, falling back to plain script tag", e))
-                .getOrElse(Optional.empty());
+        final Optional<String> styleEditorScript = buildUVEStyleEditorScripts(containers);
         final String scripts = styleEditorScript.orElse(SDK_EDITOR_SCRIPT_SOURCE);
         Logger.debug(this, () -> styleEditorScript.isPresent()
                 ? "Injecting UVE script with style editor schemas"
@@ -412,6 +410,7 @@ public class HTMLPageAssetRenderedBuilder {
         if (closingBodyIndex != -1) {
             return html.substring(0, closingBodyIndex) + scripts + html.substring(closingBodyIndex);
         }
+        Logger.warn(this, "No </body> tag found in page HTML, appending UVE script at end");
         return html + scripts;
     }
 

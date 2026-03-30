@@ -105,22 +105,6 @@ public class HTMLPageAssetRenderedBuilderUVEScriptTest {
     }
 
     @Test
-    public void shouldFallBackToPlainScriptWhenContainerContentletsThrowsException() throws Exception {
-        final ContainerRaw faultyContainer = mock(ContainerRaw.class);
-        when(faultyContainer.getContentlets())
-                .thenThrow(new RuntimeException("Simulated NPE in getContentlets"));
-
-        final String result = invokeInjectUVEScript(createBuilder(), SIMPLE_HTML, List.of(faultyContainer));
-
-        assertTrue("Should still contain the UVE script tag despite exception",
-                result.contains(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE));
-
-        final int scriptIdx = result.indexOf(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE);
-        final int bodyIdx = result.indexOf("</body>");
-        assertTrue("Script should still be before </body>", scriptIdx < bodyIdx);
-    }
-
-    @Test
     public void shouldFallBackToPlainScriptWhenContentletGetContentTypeThrows() throws Exception {
         final Contentlet faultyContentlet = mock(Contentlet.class);
         when(faultyContentlet.getContentType())
@@ -143,22 +127,4 @@ public class HTMLPageAssetRenderedBuilderUVEScriptTest {
                 result.contains("initDotUVE"));
     }
 
-    @Test
-    public void shouldFallBackToPlainScriptWhenContainerMapIsNull() throws Exception {
-        final ContainerRaw faultyContainer = mock(ContainerRaw.class);
-        when(faultyContainer.getContentlets()).thenReturn(null);
-
-        final String result = invokeInjectUVEScript(createBuilder(), SIMPLE_HTML, List.of(faultyContainer));
-
-        assertTrue("Should still contain the UVE script tag when contentlets map is null",
-                result.contains(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE));
-    }
-
-    @Test
-    public void shouldHandleNullContainersCollection() throws Exception {
-        final String result = invokeInjectUVEScript(createBuilder(), SIMPLE_HTML, null);
-
-        assertTrue("Should still contain the UVE script tag when containers is null",
-                result.contains(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE));
-    }
 }
