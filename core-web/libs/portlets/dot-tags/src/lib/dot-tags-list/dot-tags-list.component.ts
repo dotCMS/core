@@ -179,7 +179,12 @@ export class DotTagsListComponent {
                               'tags.import.success',
                               `${result.successCount}`
                           )
-                        : `${this.dotMessageService.get('tags.import.partial-success', `${result.successCount}`, `${result.totalRows}`)} ${this.dotMessageService.get('tags.import.failures', `${result.failureCount}`)}`,
+                        : this.dotMessageService.get(
+                              'tags.import.partial-success',
+                              `${result.successCount}`,
+                              `${result.totalRows}`,
+                              `${result.failureCount}`
+                          ),
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
             }
