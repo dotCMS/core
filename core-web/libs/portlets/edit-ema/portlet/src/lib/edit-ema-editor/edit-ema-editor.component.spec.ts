@@ -637,7 +637,7 @@ describe('EditEmaEditorComponent', () => {
 
         describe('Computed Properties', () => {
             describe('$editorContentStyles', () => {
-                it('should return display block when socialMedia is null', () => {
+                it('should return display grid when socialMedia is null', () => {
                     patchState(store, {
                         viewSocialMedia: null
                     });
@@ -645,7 +645,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     expect(spectator.component.$editorContentStyles()).toEqual({
-                        display: 'block'
+                        display: 'grid'
                     });
                 });
 
@@ -2092,11 +2092,11 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('Editor content', () => {
-                it('should have display block when there is not SEO view', () => {
+                it('should have display grid when there is not SEO view', () => {
                     const editorContent = spectator.query(
                         byTestId('editor-content')
                     ) as HTMLElement;
-                    expect(editorContent.style.display).toBe('block');
+                    expect(editorContent.style.display).toBe('grid');
                 });
 
                 it('should have display none when there is SEO view', () => {

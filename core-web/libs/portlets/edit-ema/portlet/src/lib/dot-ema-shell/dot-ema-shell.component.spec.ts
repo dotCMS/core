@@ -91,13 +91,13 @@ const createDialogActionEvent = (detail: object) => ({
 
 const NAV_ITEMS = [
     {
-        icon: 'pi-file',
+        materialIcon: 'description',
         label: 'editema.editor.navbar.content',
         href: 'content',
         id: 'content'
     },
     {
-        icon: 'pi-table',
+        materialIcon: 'space_dashboard',
         label: 'editema.editor.navbar.layout',
         href: 'layout',
         isDisabled: false,
@@ -105,26 +105,26 @@ const NAV_ITEMS = [
         id: 'layout'
     },
     {
-        icon: 'pi-sliders-h',
+        materialIcon: 'rule',
         label: 'editema.editor.navbar.rules',
         href: `rules/123`,
         isDisabled: false,
         id: 'rules'
     },
     {
-        iconURL: 'experiments',
+        materialIcon: 'call_split',
         label: 'editema.editor.navbar.experiments',
         href: 'experiments/123',
         isDisabled: false,
         id: 'experiments'
     },
     {
-        icon: 'pi-th-large',
+        materialIcon: 'bar_chart',
         label: 'editema.editor.navbar.page-tools',
         id: 'page-tools'
     },
     {
-        icon: 'pi-ellipsis-v',
+        materialIcon: 'settings',
         label: 'editema.editor.navbar.properties',
         id: 'properties',
         isDisabled: false
@@ -596,7 +596,7 @@ describe('DotEmaShellComponent', () => {
             it('should have nav bar with items', () => {
                 const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
 
-                expect(navBarComponent.items).toEqual(NAV_ITEMS);
+                expect(navBarComponent.items()).toEqual(NAV_ITEMS);
             });
 
             it('should trigger action when the page-tool item is clicked', () => {
@@ -1154,7 +1154,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(menuItems).toHaveLength(6);
                 expect(menuItems[0]).toEqual({
-                    icon: 'pi-file',
+                    materialIcon: 'description',
                     label: 'editema.editor.navbar.content',
                     href: 'content',
                     id: 'content'

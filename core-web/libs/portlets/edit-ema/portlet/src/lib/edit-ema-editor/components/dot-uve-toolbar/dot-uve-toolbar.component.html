@@ -2,7 +2,16 @@
 @let live = $mode() === UVE_MODE.LIVE;
 @let runningExperiment = $toolbar().runningExperiment;
 
-<p-toolbar>
+<p-toolbar
+    [pt]="{
+        root: {
+            style: {
+                borderRadius: '0',
+                border: 'none',
+                borderBottom: 'solid 1px var(--color-gray-200)'
+            }
+        }
+    }">
     <ng-template #start>
         <div class="flex items-center gap-1" [class.p-0]="preview || live">
             @if ($isEditMode() && $canEditPage()) {
