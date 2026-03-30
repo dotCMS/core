@@ -61,7 +61,6 @@ test_types:
       base_maven_args: >-
         verify -Dit.test.forkcount=1 -pl :dotcms-integration
         -Dcoreit.test.skip=false
-        -Dopensearch.upgrade.test=true
     suites:
       - name: "Integration Tests - MainSuite 1a"
         test_class: "MainSuite1a"
@@ -81,6 +80,16 @@ test_types:
       - name: "Integration Tests - Junit5 Suite 1"
         test_class: "Junit5Suite1"
         stage_name: "IT Tests Junit5Suite1"
+      - name: "Integration Tests - OpenSearch Upgrade Suite"
+        test_class: "OpenSearchUpgradeSuite"
+        stage_name: "IT Tests OpenSearch Upgrade Suite"
+        # Override base_maven_args to activate the opensearch-upgrade Maven profile,
+        # which starts the opensearch-upgrade Docker container and restricts Failsafe
+        # to only run OpenSearchUpgradeSuite (see dotcms-integration/pom.xml:opensearch-upgrade)
+        base_maven_args: >-
+          verify -Dit.test.forkcount=1 -pl :dotcms-integration
+          -Dcoreit.test.skip=false
+          -Dopensearch.upgrade.test=true
 
   postman:
     condition_input: postman
