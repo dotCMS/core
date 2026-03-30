@@ -21,6 +21,7 @@ export interface EsQueryParamsSearch {
     limit?: number;
     sort?: string;
     sortOrder?: ESOrderDirectionSearch;
+    depth?: number;
 }
 export interface DotContentSearchParams {
     globalSearch?: string;
@@ -53,16 +54,16 @@ export class DotContentSearchService {
         query,
         limit = 0,
         offset = 0,
-        sort = 'score,modDate desc'
+        sort = 'score,modDate desc',
+        depth
     }: EsQueryParamsSearch): Observable<T> {
-        return this.#http
-            .post('/api/content/_search', {
-                query,
-                sort,
-                limit,
-                offset
-            })
-            .pipe(pluck('entity'));
+        const body: Record<string, unknown> = { query, sort, limit, offset };
+
+        if (depth != null) {
+            body['depth'] = depth;
+        }
+
+        return this.#http.post('/api/content/_search', body).pipe(pluck('entity'));
     }
 
     /**
