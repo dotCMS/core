@@ -11,6 +11,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
+import com.dotcms.saml.SamlNameID;
 import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
@@ -108,6 +109,9 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
         @Override
         public String getValue(Object samlObject) {
+            if (samlObject instanceof SamlNameID) {
+                return ((SamlNameID) samlObject).getValue();
+            }
             return samlObject.toString();
         }
 
@@ -116,6 +120,14 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
             return Stream.of((Object[])samlObject).map(Object::toString).collect(Collectors.toList());
         }
+    }
+
+    /**
+     * Creates a minimal {@link SamlNameID} suitable for tests that do not need real SAML XML.
+     * The XML stub is not valid OpenSAML XML; it only satisfies the non-blank invariant.
+     */
+    private static SamlNameID testNameID(final String value) {
+        return new SamlNameID("<nameID>" + value + "</nameID>", value);
     }
 
     /**
@@ -204,7 +216,7 @@ public class SAMLHelperTest extends IntegrationTestBase {
         additionalAttributes.put("prop-key2", "prop-value2");
 
         final Attributes nativeUserAttributes = new Attributes.Builder().firstName(nativeFirstName + "Updated")
-                .lastName(nativeLastName).nameID(nativeUser.getUserId()).email(nativeEmailAddress).additionalAttributes(additionalAttributes).build();
+                .lastName(nativeLastName).nameID(testNameID(nativeUser.getUserId())).email(nativeEmailAddress).additionalAttributes(additionalAttributes).build();
 
         // recover with SAML the native user
         final User recoveredNativeUser = samlHelper.resolveUser(nativeUserAttributes, identityProviderConfiguration);
@@ -220,7 +232,7 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
         // creates an user from saml
         final Attributes samlUserAttributes = new Attributes.Builder().firstName(samlFirstName)
-                .lastName(samlLastName).nameID(samlNameId).email(samlEmailAddress).build();
+                .lastName(samlLastName).nameID(testNameID(samlNameId)).email(samlEmailAddress).build();
 
         // recover with SAML the new saml user
         final User samlUser = samlHelper.resolveUser(samlUserAttributes, identityProviderConfiguration);
@@ -283,7 +295,7 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
         // creates an user from saml
         final Attributes samlUserAttributes = new Attributes.Builder().firstName(nativeFirstName)
-                .lastName(nativeLastName).nameID("123" + nativeNameId).email(email).build(); // diff id, same email
+                .lastName(nativeLastName).nameID(testNameID("123" + nativeNameId)).email(email).build(); // diff id, same email
 
         // recover with SAML the new user
         final User recoveredNewUser = samlHelper.resolveUser(samlUserAttributes, identityProviderConfiguration);
@@ -338,7 +350,7 @@ public class SAMLHelperTest extends IntegrationTestBase {
                 .emailAddress(nativeEmailAddress).nextPersisted();
 
         final Attributes nativeUserAttributes = new Attributes.Builder().firstName(nativeFirstName + "Updated")
-                .lastName(nativeLastName).nameID("xxxxxxxxxxx").email(nativeEmailAddress).build();
+                .lastName(nativeLastName).nameID(testNameID("xxxxxxxxxxx")).email(nativeEmailAddress).build();
 
         // recover with SAML the native user
         final User recoveredNativeUser = samlHelper.resolveUser(nativeUserAttributes, identityProviderConfiguration);
@@ -423,12 +435,13 @@ public class SAMLHelperTest extends IntegrationTestBase {
         company.setAuthType(Company.AUTH_TYPE_EA);
         when(companyAPI.getDefaultCompany()).thenReturn(company);
         final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
-        final Attributes attrs = new Attributes.Builder().nameID(UUID.randomUUID()).build();
+        final String nameIdValue = UUID.randomUUID().toString();
+        final Attributes attrs = new Attributes.Builder().nameID(testNameID(nameIdValue)).build();
 
         final User user = samlHelper.createNewUser(APILocator.systemUser(), attrs, identityProviderConfiguration);
 
         Assert.assertNotNull(user);
-        Assert.assertEquals(samlHelper.hashIt(attrs.getNameID().toString()), user.getUserId());
+        Assert.assertEquals(samlHelper.hashIt(nameIdValue), user.getUserId());
     }
 
     /**
@@ -449,12 +462,12 @@ public class SAMLHelperTest extends IntegrationTestBase {
         when(companyAPI.getDefaultCompany()).thenReturn(company);
         final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
         final String uuid = UUID.randomUUID().toString();
-        final Attributes attrs = new Attributes.Builder().nameID(uuid).email(uuid+"@dotcms.com.cr").firstName("John").lastName("Sn").build();
+        final Attributes attrs = new Attributes.Builder().nameID(testNameID(uuid)).email(uuid+"@dotcms.com.cr").firstName("John").lastName("Sn").build();
 
         final User user = samlHelper.createNewUser(APILocator.systemUser(), attrs, identityProviderConfiguration);
 
         Assert.assertNotNull(user);
-        Assert.assertEquals(samlHelper.hashIt(attrs.getNameID().toString()), user.getUserId());
+        Assert.assertEquals(samlHelper.hashIt(uuid), user.getUserId());
         Assert.assertEquals(uuid+"@dotcms.com.cr", attrs.getEmail());
         Assert.assertEquals("John", attrs.getFirstName());
         Assert.assertEquals("Sn", attrs.getLastName());
