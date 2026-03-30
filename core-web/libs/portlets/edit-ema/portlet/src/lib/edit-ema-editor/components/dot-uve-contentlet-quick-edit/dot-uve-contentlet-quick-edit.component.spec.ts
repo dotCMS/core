@@ -24,6 +24,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
     ContentletEditData,
+    CopyMode,
     DotUveContentletQuickEditComponent
 } from './dot-uve-contentlet-quick-edit.component';
 
@@ -194,7 +195,12 @@ describe('DotUveContentletQuickEditComponent', () => {
                 useValue: new MockDotMessageService({
                     'message.content.saved': 'Saved',
                     'message.content.note.already.published': 'Already published',
-                    'editpage.content.update.contentlet.error': 'Error updating contentlet'
+                    'editpage.content.update.contentlet.error': 'Error updating contentlet',
+                    'uve.quick-edit.empty.no-selection.title': 'Select a contentlet',
+                    'uve.quick-edit.empty.no-fields.title': 'No editable fields',
+                    'uve.quick-edit.copy-decision.confirm': 'Confirm',
+                    'uve.quick-edit.copy-decision.confirm.all-pages': 'Edit All Pages',
+                    'uve.quick-edit.copy-decision.confirm.this-page': 'Copy & Edit'
                 })
             }
         ]
@@ -954,6 +960,40 @@ describe('DotUveContentletQuickEditComponent', () => {
 
             expect(httpErrorManager.handle).toHaveBeenCalled();
         }));
+
+        describe('confirm button label', () => {
+            it('should show "Confirm" when no mode is selected', () => {
+                const btn = spectator.query(byTestId('copy-confirm-button'));
+                expect(btn?.querySelector('button')?.textContent?.trim()).toBe('Confirm');
+            });
+
+            it('should show "Edit All Pages" when ALL_PAGES is selected', () => {
+                spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+                spectator.detectChanges();
+
+                expect(spectator.component.$confirmLabel()).toBe(
+                    'uve.quick-edit.copy-decision.confirm.all-pages'
+                );
+                const btn = spectator.query(byTestId('copy-confirm-button'));
+                expect(btn?.querySelector('button')?.textContent?.trim()).toBe('Edit All Pages');
+            });
+
+            it('should show "Copy & Edit" when THIS_PAGE is selected', () => {
+                spectator.click(spectator.query(byTestId('copy-mode-this-page')) as HTMLElement);
+                spectator.detectChanges();
+
+                expect(spectator.component.$confirmLabel()).toBe(
+                    'uve.quick-edit.copy-decision.confirm.this-page'
+                );
+                const btn = spectator.query(byTestId('copy-confirm-button'));
+                expect(btn?.querySelector('button')?.textContent?.trim()).toBe('Copy & Edit');
+            });
+
+            it('should return the correct key for each CopyMode value', () => {
+                expect(CopyMode.ALL_PAGES).toBe('all-pages');
+                expect(CopyMode.THIS_PAGE).toBe('this-page');
+            });
+        });
 
         it('should reset the copy decision when the contentlet identifier changes', fakeAsync(() => {
             // confirm decision so form shows

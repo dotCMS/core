@@ -1,73 +1,79 @@
-@if ($needsCopyDecision()) {
+@let needsCopyDecision = $needsCopyDecision();
+@let selectedCopyMode = $selectedCopyMode();
+
+@if (needsCopyDecision) {
     <div class="flex h-full w-full flex-col overflow-auto flex-1 min-h-0">
-        <div class="flex flex-col items-center justify-center gap-4 px-6 py-8 text-center flex-1">
-            <div class="rounded-full bg-gray-100 p-6">
-                <i class="pi pi-copy text-[3rem]! text-gray-500"></i>
-            </div>
+        <div class="flex flex-col gap-5 px-5 py-6 flex-1 justify-center">
             <div class="space-y-1">
-                <div class="font-bold text-gray-900">This content is shared</div>
-                <p class="m-0 text-sm text-gray-600">
-                    It's used on multiple pages. How do you want to edit it?
+                <div class="font-semibold text-gray-900 text-base">
+                    {{ 'uve.quick-edit.copy-decision.title' | dm }}
+                </div>
+                <p class="m-0 text-sm text-gray-500">
+                    {{ 'uve.quick-edit.copy-decision.description' | dm }}
                 </p>
             </div>
-            <div class="flex w-full gap-3 mt-2">
+            <div class="flex flex-col gap-3">
                 <button
                     type="button"
                     data-testid="copy-mode-all-pages"
-                    class="flex flex-col flex-1 items-center gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors bg-white"
-                    [class.border-blue-500]="$selectedCopyMode() === 'all-pages'"
-                    [class.bg-blue-50]="$selectedCopyMode() === 'all-pages'"
-                    [class.border-gray-200]="$selectedCopyMode() !== 'all-pages'"
-                    (click)="selectCopyMode('all-pages')">
+                    class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
+                    [class.border-blue-500]="selectedCopyMode === CopyMode.ALL_PAGES"
+                    [class.bg-blue-50]="selectedCopyMode === CopyMode.ALL_PAGES"
+                    [class.border-gray-200]="selectedCopyMode !== CopyMode.ALL_PAGES"
+                    (click)="selectCopyMode(CopyMode.ALL_PAGES)">
                     <div
-                        class="rounded-lg p-3 bg-gray-100"
-                        [class.bg-blue-100]="$selectedCopyMode() === 'all-pages'">
+                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5"
+                        [class.bg-blue-100]="selectedCopyMode === CopyMode.ALL_PAGES">
                         <i
-                            class="pi pi-objects-column text-xl text-gray-400"
-                            [class.text-blue-600]="$selectedCopyMode() === 'all-pages'"></i>
+                            class="pi pi-objects-column text-base text-gray-400"
+                            [class.text-blue-600]="selectedCopyMode === CopyMode.ALL_PAGES"></i>
                     </div>
-                    <span
-                        class="font-semibold text-sm text-gray-700"
-                        [class.text-blue-700]="$selectedCopyMode() === 'all-pages'">
-                        All Pages
-                    </span>
-                    <span class="text-xs text-gray-500 text-center">
-                        Edits will affect every page using this content
-                    </span>
+                    <div class="flex flex-col gap-0.5">
+                        <span
+                            class="font-semibold text-sm text-gray-700"
+                            [class.text-blue-700]="selectedCopyMode === CopyMode.ALL_PAGES">
+                            {{ 'uve.quick-edit.copy-decision.all-pages.title' | dm }}
+                        </span>
+                        <span class="text-xs text-gray-500">
+                            {{ 'uve.quick-edit.copy-decision.all-pages.description' | dm }}
+                        </span>
+                    </div>
                 </button>
                 <button
                     type="button"
                     data-testid="copy-mode-this-page"
-                    class="flex flex-col flex-1 items-center gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors bg-white"
-                    [class.border-blue-500]="$selectedCopyMode() === 'this-page'"
-                    [class.bg-blue-50]="$selectedCopyMode() === 'this-page'"
-                    [class.border-gray-200]="$selectedCopyMode() !== 'this-page'"
-                    (click)="selectCopyMode('this-page')">
+                    class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
+                    [class.border-blue-500]="selectedCopyMode === CopyMode.THIS_PAGE"
+                    [class.bg-blue-50]="selectedCopyMode === CopyMode.THIS_PAGE"
+                    [class.border-gray-200]="selectedCopyMode !== CopyMode.THIS_PAGE"
+                    (click)="selectCopyMode(CopyMode.THIS_PAGE)">
                     <div
-                        class="rounded-lg p-3 bg-gray-100"
-                        [class.bg-blue-100]="$selectedCopyMode() === 'this-page'">
+                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5"
+                        [class.bg-blue-100]="selectedCopyMode === CopyMode.THIS_PAGE">
                         <i
-                            class="pi pi-file-edit text-xl text-gray-400"
-                            [class.text-blue-600]="$selectedCopyMode() === 'this-page'"></i>
+                            class="pi pi-file-edit text-base text-gray-400"
+                            [class.text-blue-600]="selectedCopyMode === CopyMode.THIS_PAGE"></i>
                     </div>
-                    <span
-                        class="font-semibold text-sm text-gray-700"
-                        [class.text-blue-700]="$selectedCopyMode() === 'this-page'">
-                        This Page Only
-                    </span>
-                    <span class="text-xs text-gray-500 text-center">
-                        Creates a copy just for this page
-                    </span>
+                    <div class="flex flex-col gap-0.5">
+                        <span
+                            class="font-semibold text-sm text-gray-700"
+                            [class.text-blue-700]="selectedCopyMode === CopyMode.THIS_PAGE">
+                            {{ 'uve.quick-edit.copy-decision.this-page.title' | dm }}
+                        </span>
+                        <span class="text-xs text-gray-500">
+                            {{ 'uve.quick-edit.copy-decision.this-page.description' | dm }}
+                        </span>
+                    </div>
                 </button>
             </div>
-        </div>
-        <div class="flex justify-end shrink-0 p-4 border-t border-gray-300">
-            <p-button
-                label="Confirm"
-                data-testid="copy-confirm-button"
-                [disabled]="!$selectedCopyMode() || $isCopying()"
-                [loading]="$isCopying()"
-                (onClick)="confirmCopyDecision()" />
+            <div class="flex justify-end">
+                <p-button
+                    [label]="$confirmLabel() | dm"
+                    data-testid="copy-confirm-button"
+                    [disabled]="!selectedCopyMode || $isCopying()"
+                    [loading]="$isCopying()"
+                    (onClick)="confirmCopyDecision()" />
+            </div>
         </div>
     </div>
 } @else if ($contentletForm() && data().fields.length > 0) {
@@ -213,7 +219,7 @@
             data-testid="open-full-editor-button"
             (onClick)="openFullEditor.emit()" />
         <p-button
-            label="Save"
+            [label]="'uve.quick-edit.save' | dm"
             data-testid="save-button"
             [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
             (onClick)="save()" />
@@ -226,14 +232,16 @@
             <i class="pi pi-ban text-[5rem]! text-gray-500"></i>
         </div>
         <div class="space-y-2">
-            <div class="font-bold text-gray-900">No editable fields</div>
+            <div class="font-bold text-gray-900">
+                {{ 'uve.quick-edit.empty.no-fields.title' | dm }}
+            </div>
             <p class="m-0 text-sm text-gray-800">
-                This content type has no supported fields for quick editing.
+                {{ 'uve.quick-edit.empty.no-fields.description' | dm }}
             </p>
             <p-button
                 [text]="true"
                 size="small"
-                label="Click here to open the full editor"
+                [label]="'uve.quick-edit.empty.no-fields.open-full-editor' | dm"
                 data-testid="empty-open-full-editor-button"
                 (onClick)="openFullEditor.emit()" />
         </div>
@@ -246,9 +254,11 @@
             <i class="pi pi-file-edit text-[5rem]! text-gray-500"></i>
         </div>
         <div class="space-y-2">
-            <div class="font-bold text-gray-900">Select a contentlet</div>
+            <div class="font-bold text-gray-900">
+                {{ 'uve.quick-edit.empty.no-selection.title' | dm }}
+            </div>
             <p class="m-0 text-sm text-gray-800">
-                Click on a content block in the editor to view and edit its properties.
+                {{ 'uve.quick-edit.empty.no-selection.description' | dm }}
             </p>
         </div>
     </div>

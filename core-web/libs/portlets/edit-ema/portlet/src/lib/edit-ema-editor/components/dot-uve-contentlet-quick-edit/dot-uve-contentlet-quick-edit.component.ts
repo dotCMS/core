@@ -51,6 +51,13 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
 import { filterFormValues } from '../dot-uve-palette/utils';
 
+export const CopyMode = {
+    ALL_PAGES: 'all-pages',
+    THIS_PAGE: 'this-page'
+} as const;
+
+export type CopyMode = (typeof CopyMode)[keyof typeof CopyMode];
+
 /**
  * Pick only the fields needed for the quick-edit form from DotCMSContentTypeField.
  * Extends with options property for dropdown/checkbox/radio rendering.
@@ -127,8 +134,9 @@ export class DotUveContentletQuickEditComponent {
 
     // Copy decision state
     readonly #copyDecisionMade = signal(false);
-    readonly #selectedCopyMode = signal<'all-pages' | 'this-page' | null>(null);
+    readonly #selectedCopyMode = signal<CopyMode | null>(null);
     readonly #isCopying = signal(false);
+    readonly #lastResetIdentifier = signal<string | undefined>(undefined);
 
     readonly $needsCopyDecision = computed(
         () => !this.#copyDecisionMade() && Number(this.data().contentlet?.onNumberOfPages ?? 1) > 1
@@ -136,6 +144,14 @@ export class DotUveContentletQuickEditComponent {
 
     protected readonly $selectedCopyMode = this.#selectedCopyMode;
     protected readonly $isCopying = this.#isCopying;
+
+    readonly $confirmLabel = computed(() => {
+        const mode = this.#selectedCopyMode();
+        if (mode === CopyMode.ALL_PAGES) return 'uve.quick-edit.copy-decision.confirm.all-pages';
+        if (mode === CopyMode.THIS_PAGE) return 'uve.quick-edit.copy-decision.confirm.this-page';
+
+        return 'uve.quick-edit.copy-decision.confirm';
+    });
 
     // Internal form state
     private readonly contentletForm = signal<FormGroup | null>(null);
@@ -160,6 +176,7 @@ export class DotUveContentletQuickEditComponent {
     });
 
     protected readonly DotCMSClazzes = DotCMSClazzes;
+    protected readonly CopyMode = CopyMode;
 
     // Build form when data changes
     protected readonly $buildFormEffect = effect(() => {
@@ -187,11 +204,12 @@ export class DotUveContentletQuickEditComponent {
         }
     });
 
-    /** Resets copy decision whenever the selected contentlet changes. */
+    /** Resets copy decision only when the selected contentlet actually changes. */
     protected readonly $resetCopyDecisionEffect = effect(() => {
         const identifier = this.data().contentlet?.identifier;
         untracked(() => {
-            if (identifier !== undefined) {
+            if (identifier !== undefined && identifier !== this.#lastResetIdentifier()) {
+                this.#lastResetIdentifier.set(identifier);
                 this.#copyDecisionMade.set(false);
                 this.#selectedCopyMode.set(null);
             }
@@ -202,7 +220,7 @@ export class DotUveContentletQuickEditComponent {
         this.#listenToFormChanges();
     }
 
-    protected selectCopyMode(mode: 'all-pages' | 'this-page'): void {
+    protected selectCopyMode(mode: CopyMode): void {
         this.#selectedCopyMode.set(mode);
     }
 
@@ -213,7 +231,7 @@ export class DotUveContentletQuickEditComponent {
             return;
         }
 
-        if (mode === 'all-pages') {
+        if (mode === CopyMode.ALL_PAGES) {
             this.#copyDecisionMade.set(true);
 
             return;
