@@ -37,6 +37,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -428,6 +429,7 @@ public class HTMLPageAssetRenderedBuilder {
      * found.
      */
     private Optional<String> buildUVEStyleEditorScripts(final Collection<? extends ContainerRaw> containers) {
+        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         final List<Object> schemas = containers.stream()
                 .flatMap(container -> container.getContentlets().values().stream())
                 .flatMap(List::stream)
@@ -439,7 +441,10 @@ public class HTMLPageAssetRenderedBuilder {
                         (existing, replacement) -> existing))
                 .values().stream()
                 .map(ct -> Optional.ofNullable(ct.metadata())
-                        .map(meta -> meta.get("DOT_STYLE_EDITOR_SCHEMA"))
+                        .map(meta -> Try.of(() -> {
+                            final String schemaStr = (String) meta.get("DOT_STYLE_EDITOR_SCHEMA");
+                            return mapper.readTree(schemaStr);
+                        }).getOrNull())
                         .orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
