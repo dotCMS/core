@@ -26,6 +26,7 @@ import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { ExistingContentStore } from '../../store/existing-content.store';
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 
@@ -159,6 +160,12 @@ export class SearchComponent implements AfterViewInit {
     readonly #globalStore = inject(GlobalStore);
 
     /**
+     * Existing content store for accessing preselection data passed from the relationship field.
+     * @private
+     */
+    readonly #existingContentStore = inject(ExistingContentStore);
+
+    /**
      * Flag to track if the component has been destroyed.
      * @private
      */
@@ -198,13 +205,23 @@ export class SearchComponent implements AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        const siteDetails = this.#globalStore.siteDetails();
-        if (siteDetails?.identifier) {
+        const preselection = this.#existingContentStore.siteOrFolderPreselection();
+
+        if (preselection?.value) {
             this.form.patchValue({
                 systemSearchableFields: {
-                    siteOrFolderId: `site:${siteDetails.identifier}`
+                    siteOrFolderId: preselection.value
                 }
             });
+        } else {
+            const siteDetails = this.#globalStore.siteDetails();
+            if (siteDetails?.identifier) {
+                this.form.patchValue({
+                    systemSearchableFields: {
+                        siteOrFolderId: `site:${siteDetails.identifier}`
+                    }
+                });
+            }
         }
     }
 

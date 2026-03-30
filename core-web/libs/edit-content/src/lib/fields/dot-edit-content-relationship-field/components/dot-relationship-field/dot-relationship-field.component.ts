@@ -24,7 +24,7 @@ import { TableModule, TableRowReorderEvent } from 'primeng/table';
 import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField, DotCMSFieldTypes } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
@@ -34,6 +34,7 @@ import { DotSelectExistingContentComponent } from './../dot-select-existing-cont
 import { PaginationComponent } from './../pagination/pagination.component';
 
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
+import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
@@ -77,6 +78,12 @@ export class DotRelationshipFieldComponent
      * This service is used for handling message-related functionalities within the component.
      */
     readonly #dotMessageService = inject(DotMessageService);
+
+    /**
+     * A readonly instance of the DotEditContentStore injected into the component.
+     * Used to access the parent content type and determine host/folder preselection.
+     */
+    readonly #editContentStore = inject(DotEditContentStore);
 
     /**
      * A readonly private field that holds a reference to the `DestroyRef` service.
@@ -219,6 +226,27 @@ export class DotRelationshipFieldComponent
             return;
         }
 
+        const contentlet = this.$contentlet();
+        const parentContentType = this.#editContentStore.contentType();
+        const hasHostFolderField =
+            parentContentType?.fields?.some((f) => f.fieldType === DotCMSFieldTypes.HOST_FOLDER) ??
+            false;
+
+        let siteOrFolderPreselection = null;
+        if (hasHostFolderField && contentlet) {
+            if (contentlet.folder && contentlet.folder !== 'SYSTEM_FOLDER') {
+                siteOrFolderPreselection = {
+                    value: `folder:${contentlet.folder}`,
+                    label: contentlet.hostName || contentlet.host
+                };
+            } else if (contentlet.host) {
+                siteOrFolderPreselection = {
+                    value: `site:${contentlet.host}`,
+                    label: contentlet.hostName || contentlet.host
+                };
+            }
+        }
+
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
@@ -235,7 +263,8 @@ export class DotRelationshipFieldComponent
             data: {
                 contentTypeId: contentType.id,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.inode)
+                currentItemsIds: this.store.data().map((item) => item.inode),
+                siteOrFolderPreselection
             },
             templates: {
                 header: HeaderComponent,

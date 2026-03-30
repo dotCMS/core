@@ -23,6 +23,8 @@ import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, DotBrowsingService } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
+import { ExistingContentStore } from '../../store/existing-content.store';
+
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 import { SearchComponent, DEBOUNCE_TIME } from './search.component';
@@ -150,6 +152,10 @@ describe('SearchComponent', () => {
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(null),
                 currentSiteId: jest.fn().mockReturnValue(null)
+            }),
+            mockProvider(ExistingContentStore, {
+                siteOrFolderPreselection: jest.fn().mockReturnValue(null),
+                isLoading: jest.fn().mockReturnValue(false)
             })
         ]
     });
@@ -906,6 +912,10 @@ describe('SearchComponent - Site Pre-population', () => {
                         aliases: null
                     }),
                     currentSiteId: jest.fn().mockReturnValue(MOCK_SITE_ID)
+                }),
+                mockProvider(ExistingContentStore, {
+                    siteOrFolderPreselection: jest.fn().mockReturnValue(null),
+                    isLoading: jest.fn().mockReturnValue(false)
                 })
             ]
         });
@@ -966,6 +976,10 @@ describe('SearchComponent - Site Pre-population', () => {
                 mockProvider(GlobalStore, {
                     siteDetails: jest.fn().mockReturnValue(null),
                     currentSiteId: jest.fn().mockReturnValue(null)
+                }),
+                mockProvider(ExistingContentStore, {
+                    siteOrFolderPreselection: jest.fn().mockReturnValue(null),
+                    isLoading: jest.fn().mockReturnValue(false)
                 })
             ]
         });
@@ -987,6 +1001,166 @@ describe('SearchComponent - Site Pre-population', () => {
             const formValues = component.form.getRawValue();
             expect(formValues.systemSearchableFields.siteOrFolderId).toBe('');
             expect(searchSpy).not.toHaveBeenCalled();
+        });
+    });
+});
+
+describe('SearchComponent - Site Pre-population from Dialog Config', () => {
+    const MOCK_SITE_ID = 'site-abc-123';
+    const MOCK_HOSTNAME = 'demo.dotcms.com';
+    const MOCK_FOLDER_ID = 'folder-123';
+
+    const messageServiceMock = new MockDotMessageService({
+        'dot.file.relationship.dialog.search.language.failed': 'Failed to load languages'
+    });
+
+    const mockSites: TreeNodeItem[] = [
+        {
+            label: MOCK_HOSTNAME,
+            data: {
+                id: MOCK_SITE_ID,
+                hostname: MOCK_HOSTNAME,
+                path: '',
+                type: 'site'
+            },
+            icon: 'pi pi-globe',
+            leaf: false,
+            children: []
+        }
+    ];
+
+    const mockFolders = {
+        parent: {
+            id: 'parent-id',
+            hostName: MOCK_HOSTNAME,
+            path: '/parent',
+            addChildrenAllowed: true
+        },
+        folders: []
+    };
+
+    describe('when ExistingContentStore has siteOrFolderPreselection', () => {
+        let spectator: Spectator<SearchComponent>;
+        let component: SearchComponent;
+
+        const createComponent = createComponentFactory({
+            component: SearchComponent,
+            imports: [
+                ReactiveFormsModule,
+                ButtonModule,
+                SelectModule,
+                InputGroupModule,
+                InputTextModule,
+                PopoverModule,
+                ChipModule,
+                MockLanguageFieldComponent,
+                MockSiteFieldComponent
+            ],
+            mocks: [DotMessagePipe],
+            detectChanges: false,
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                mockProvider(DotBrowsingService, {
+                    getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
+                    getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+                }),
+                mockProvider(DotLanguagesService, {
+                    get: jest.fn().mockReturnValue(of(mockLocales))
+                }),
+                mockProvider(GlobalStore, {
+                    siteDetails: jest.fn().mockReturnValue({
+                        identifier: MOCK_SITE_ID,
+                        hostname: MOCK_HOSTNAME,
+                        aliases: null
+                    }),
+                    currentSiteId: jest.fn().mockReturnValue(MOCK_SITE_ID)
+                }),
+                mockProvider(ExistingContentStore, {
+                    siteOrFolderPreselection: jest.fn().mockReturnValue({
+                        value: `folder:${MOCK_FOLDER_ID}`,
+                        label: MOCK_HOSTNAME
+                    }),
+                    isLoading: jest.fn().mockReturnValue(false)
+                })
+            ]
+        });
+
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    isLoading: false
+                } as unknown
+            });
+            component = spectator.component;
+        });
+
+        it('should pre-populate with store preselection instead of GlobalStore', () => {
+            spectator.detectChanges();
+
+            const formValues = component.form.getRawValue();
+            expect(formValues.systemSearchableFields.siteOrFolderId).toBe(
+                `folder:${MOCK_FOLDER_ID}`
+            );
+        });
+    });
+
+    describe('when ExistingContentStore has null preselection', () => {
+        let spectator: Spectator<SearchComponent>;
+        let component: SearchComponent;
+
+        const createComponent = createComponentFactory({
+            component: SearchComponent,
+            imports: [
+                ReactiveFormsModule,
+                ButtonModule,
+                SelectModule,
+                InputGroupModule,
+                InputTextModule,
+                PopoverModule,
+                ChipModule,
+                MockLanguageFieldComponent,
+                MockSiteFieldComponent
+            ],
+            mocks: [DotMessagePipe],
+            detectChanges: false,
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                mockProvider(DotBrowsingService, {
+                    getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
+                    getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+                }),
+                mockProvider(DotLanguagesService, {
+                    get: jest.fn().mockReturnValue(of(mockLocales))
+                }),
+                mockProvider(GlobalStore, {
+                    siteDetails: jest.fn().mockReturnValue({
+                        identifier: MOCK_SITE_ID,
+                        hostname: MOCK_HOSTNAME,
+                        aliases: null
+                    }),
+                    currentSiteId: jest.fn().mockReturnValue(MOCK_SITE_ID)
+                }),
+                mockProvider(ExistingContentStore, {
+                    siteOrFolderPreselection: jest.fn().mockReturnValue(null),
+                    isLoading: jest.fn().mockReturnValue(false)
+                })
+            ]
+        });
+
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    isLoading: false
+                } as unknown
+            });
+            component = spectator.component;
+        });
+
+        it('should fall back to GlobalStore when preselection is null', () => {
+            spectator.detectChanges();
+
+            const formValues = component.form.getRawValue();
+            expect(formValues.systemSearchableFields.siteOrFolderId).toBe(`site:${MOCK_SITE_ID}`);
         });
     });
 });

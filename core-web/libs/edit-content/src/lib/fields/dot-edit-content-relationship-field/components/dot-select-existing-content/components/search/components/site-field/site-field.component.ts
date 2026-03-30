@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     OnInit,
+    computed,
     effect,
     forwardRef,
     inject,
@@ -20,6 +21,7 @@ import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
 
 import { SiteFieldStore } from './site-field.store';
+import { ExistingContentStore } from '../../../../store/existing-content.store';
 
 /**
  * Component for selecting a site from a tree structure.
@@ -53,10 +55,20 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     readonly #globalStore = inject(GlobalStore);
 
     /**
+     * Existing content store for accessing preselection data passed from the relationship field.
+     */
+    readonly #existingContentStore = inject(ExistingContentStore);
+
+    /**
      * Form control for the site selection.
      * Binds to the TreeSelect component and manages the selected site value.
      */
     readonly siteControl = new FormControl<string>('');
+
+    /**
+     * Computed property that returns the selected node.
+     */
+    readonly $nodeSelected = computed(() => this.store.nodeSelected());
 
     /**
      * View child for the TreeSelect component.
@@ -125,11 +137,20 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
         if (value.includes(':')) {
             const [type, id] = value.split(':');
             if (id && (type === 'site' || type === 'folder')) {
-                const siteDetails = this.#globalStore.siteDetails();
-                const label =
-                    type === 'site' && siteDetails?.identifier === id ? siteDetails.hostname : id;
+                const preselection = this.#existingContentStore.siteOrFolderPreselection();
+                let label: string;
+
+                if (preselection?.value === value && preselection?.label) {
+                    label = preselection.label;
+                } else {
+                    const siteDetails = this.#globalStore.siteDetails();
+                    label =
+                        type === 'site' && siteDetails?.identifier === id
+                            ? siteDetails.hostname
+                            : id;
+                }
+
                 this.store.setInitialSelection(id, type, label);
-                // Set siteControl to the TreeNodeItem so PrimeNG TreeSelect displays it
                 this.siteControl.setValue(this.store.nodeSelected() as unknown as string);
             }
         }

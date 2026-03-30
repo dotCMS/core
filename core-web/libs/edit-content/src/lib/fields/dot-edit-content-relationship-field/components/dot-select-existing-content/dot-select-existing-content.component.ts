@@ -37,6 +37,10 @@ type DialogData = {
     selectionMode: SelectionMode;
     currentItemsIds: string[];
     showFields?: string[] | null;
+    siteOrFolderPreselection?: {
+        value: string;
+        label: string;
+    } | null;
 };
 
 const STATIC_COLUMNS = 6;
@@ -120,7 +124,8 @@ export class DotSelectExistingContentComponent implements OnInit {
             contentTypeId: data.contentTypeId,
             selectionMode: data.selectionMode,
             selectedItemsIds: data.currentItemsIds,
-            showFields: data.showFields
+            showFields: data.showFields,
+            siteOrFolderPreselection: data.siteOrFolderPreselection
         });
     }
 

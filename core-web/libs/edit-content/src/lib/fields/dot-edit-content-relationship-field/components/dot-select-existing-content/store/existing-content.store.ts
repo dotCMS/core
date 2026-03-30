@@ -25,6 +25,11 @@ const ViewMode = {
 
 type ViewMode = (typeof ViewMode)[keyof typeof ViewMode];
 
+export interface SiteOrFolderPreselection {
+    value: string;
+    label: string;
+}
+
 export interface ExistingContentState {
     contentTypeId: string;
     data: DotCMSContentlet[];
@@ -47,6 +52,7 @@ export interface ExistingContentState {
     };
     selectionItems: DotCMSContentlet[] | DotCMSContentlet | null;
     viewMode: ViewMode;
+    siteOrFolderPreselection: SiteOrFolderPreselection | null;
 }
 
 const paginationInitialState: ExistingContentState['pagination'] = {
@@ -67,7 +73,8 @@ const initialState: ExistingContentState = {
     pagination: { ...paginationInitialState },
     previousPagination: { ...paginationInitialState },
     selectionItems: null,
-    viewMode: ViewMode.all
+    viewMode: ViewMode.all,
+    siteOrFolderPreselection: null
 };
 
 /**
@@ -143,14 +150,16 @@ export const ExistingContentStore = signalStore(
                 selectionMode: SelectionMode;
                 selectedItemsIds: string[];
                 showFields?: string[] | null;
+                siteOrFolderPreselection?: SiteOrFolderPreselection | null;
             }>(
                 pipe(
-                    tap(({ selectionMode }) =>
+                    tap(({ selectionMode, siteOrFolderPreselection }) =>
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             selectionMode,
                             viewMode: ViewMode.all,
-                            pagination: { ...paginationInitialState }
+                            pagination: { ...paginationInitialState },
+                            siteOrFolderPreselection: siteOrFolderPreselection ?? null
                         })
                     ),
                     tap(({ contentTypeId }) => {

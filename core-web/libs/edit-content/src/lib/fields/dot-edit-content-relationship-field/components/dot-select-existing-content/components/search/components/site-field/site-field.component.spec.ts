@@ -12,6 +12,8 @@ import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, DotTruncatePathPipe, DotBrowsingService } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import { ExistingContentStore } from '../../../../store/existing-content.store';
+
 import { SiteFieldComponent } from './site-field.component';
 import { SiteFieldStore } from './site-field.store';
 
@@ -79,6 +81,10 @@ describe('SiteFieldComponent', () => {
                     aliases: null
                 }),
                 currentSiteId: jest.fn().mockReturnValue('123')
+            }),
+            mockProvider(ExistingContentStore, {
+                siteOrFolderPreselection: jest.fn().mockReturnValue(null),
+                isLoading: jest.fn().mockReturnValue(false)
             })
         ]
     });
@@ -356,5 +362,102 @@ describe('SiteFieldComponent', () => {
 
             expect(onChangeSpy).not.toHaveBeenCalled();
         });
+    });
+});
+
+describe('SiteFieldComponent - Dialog Config Preselection', () => {
+    const MOCK_SITE_ID = '123';
+    const MOCK_HOSTNAME = 'demo.dotcms.com';
+    const MOCK_FOLDER_ID = 'folder-789';
+
+    let spectator: Spectator<SiteFieldComponent>;
+    let component: SiteFieldComponent;
+    let store: InstanceType<typeof SiteFieldStore>;
+
+    const messageServiceMock = new MockDotMessageService({
+        'dot.file.relationship.dialog.search.language.failed': 'Failed to load languages'
+    });
+
+    const mockSites: TreeNodeItem[] = [
+        {
+            label: MOCK_HOSTNAME,
+            data: {
+                id: MOCK_SITE_ID,
+                hostname: MOCK_HOSTNAME,
+                path: '',
+                type: 'site'
+            },
+            icon: 'pi pi-globe',
+            leaf: false,
+            children: []
+        }
+    ];
+
+    const mockFolders = {
+        parent: {
+            id: 'parent-id',
+            hostName: MOCK_HOSTNAME,
+            path: '/parent',
+            addChildrenAllowed: true
+        },
+        folders: []
+    };
+
+    const createComponent = createComponentFactory({
+        component: SiteFieldComponent,
+        imports: [ReactiveFormsModule, TreeSelectModule, DotTruncatePathPipe, DotMessagePipe],
+        componentProviders: [SiteFieldStore],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotBrowsingService, {
+                getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
+                getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue({
+                    identifier: MOCK_SITE_ID,
+                    hostname: MOCK_HOSTNAME,
+                    aliases: null
+                }),
+                currentSiteId: jest.fn().mockReturnValue(MOCK_SITE_ID)
+            }),
+            mockProvider(ExistingContentStore, {
+                siteOrFolderPreselection: jest.fn().mockReturnValue({
+                    value: `folder:${MOCK_FOLDER_ID}`,
+                    label: MOCK_HOSTNAME
+                }),
+                isLoading: jest.fn().mockReturnValue(false)
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({
+            detectChanges: false
+        });
+        component = spectator.component;
+        store = spectator.inject(SiteFieldStore, true);
+    });
+
+    it('should use preselection label from dialog config when value matches', () => {
+        const setInitialSelectionSpy = jest.spyOn(store, 'setInitialSelection');
+        spectator.detectChanges();
+
+        component.writeValue(`folder:${MOCK_FOLDER_ID}`);
+
+        expect(setInitialSelectionSpy).toHaveBeenCalledWith(
+            MOCK_FOLDER_ID,
+            'folder',
+            MOCK_HOSTNAME
+        );
+    });
+
+    it('should fall back to GlobalStore when value does not match preselection', () => {
+        const setInitialSelectionSpy = jest.spyOn(store, 'setInitialSelection');
+        spectator.detectChanges();
+
+        component.writeValue(`site:${MOCK_SITE_ID}`);
+
+        expect(setInitialSelectionSpy).toHaveBeenCalledWith(MOCK_SITE_ID, 'site', MOCK_HOSTNAME);
     });
 });
