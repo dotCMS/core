@@ -36,7 +36,9 @@
                         (click)="emitColumnNumber()"
                         [class.active]="i === selectedColumnIndex"
                         [class]="{
-                            'bg-primary-50 ring-2 ring-primary-200': i === selectedColumnIndex,
+                            'bg-primary-50': i === selectedColumnIndex,
+                            'ring-2': i === selectedColumnIndex,
+                            'ring-primary-200': i === selectedColumnIndex,
                             'bg-gray-200': i !== selectedColumnIndex
                         }"
                         class="cursor-pointer block grow mr-3 outline-none p-3 last:mr-0 transition-colors duration-200 rounded-md"
