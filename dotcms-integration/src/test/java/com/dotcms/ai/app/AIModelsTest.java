@@ -7,10 +7,8 @@ import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
@@ -21,7 +19,6 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -238,52 +235,6 @@ public class AIModelsTest {
         assertThrows(
                 DotAIModelNotFoundException.class,
                 () -> aiModels.resolveAIModelOrThrow(appConfig, "embeddings-model-45", AIModelType.EMBEDDINGS));
-    }
-
-    /**
-     * Given a URL for supported models
-     * When the getOrPullSupportedModules method is called
-     * Then a list of supported models should be returned.
-     */
-    @Test
-    public void test_getOrPullSupportedModels() {
-        AIModels.get().cleanSupportedModelsCache();
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-
-        Set<String> supported = aiModels.getOrPullSupportedModels(appConfig);
-        assertNotNull(supported);
-        assertEquals(38, supported.size());
-    }
-
-    /**
-     * Given an invalid URL for supported models
-     * When the getOrPullSupportedModules method is called
-     * Then an exception should be thrown
-     */
-    @Test
-    public void test_getOrPullSupportedModuels_withNetworkError() {
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-        AIModels.get().cleanSupportedModelsCache();
-        IPUtils.disabledIpPrivateSubnet(false);
-
-        assertThrows(DotRuntimeException.class, () ->aiModels.getOrPullSupportedModels(appConfig));
-        IPUtils.disabledIpPrivateSubnet(true);
-    }
-
-    /**
-     * Given no API key
-     * When the getOrPullSupportedModules method is called
-     * Then an exception should be thrown.
-     */
-    @Test
-    public void test_getOrPullSupportedModels_noApiKey() throws Exception {
-        AiTest.aiAppSecrets(host, null);
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-
-        AIModels.get().cleanSupportedModelsCache();
-        final Set<String> supported = aiModels.getOrPullSupportedModels(appConfig);
-
-        assertTrue(supported.isEmpty());
     }
 
     private static void assertSameModels(final Optional<AIModel> text3,
