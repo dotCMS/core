@@ -129,6 +129,8 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
                 const label =
                     type === 'site' && siteDetails?.identifier === id ? siteDetails.hostname : id;
                 this.store.setInitialSelection(id, type, label);
+                // Set siteControl to the TreeNodeItem so PrimeNG TreeSelect displays it
+                this.siteControl.setValue(this.store.nodeSelected() as unknown as string);
             }
         }
     }

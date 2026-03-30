@@ -920,33 +920,18 @@ describe('SearchComponent - Site Pre-population', () => {
         });
 
         it('should pre-populate siteOrFolderId when GlobalStore has current site', () => {
-            const searchSpy = jest.spyOn(component.onSearch, 'emit');
-
             spectator.detectChanges();
 
             const formValues = component.form.getRawValue();
             expect(formValues.systemSearchableFields.siteOrFolderId).toBe(`site:${MOCK_SITE_ID}`);
-            expect(searchSpy).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    systemSearchableFields: expect.objectContaining({
-                        siteId: MOCK_SITE_ID
-                    })
-                })
-            );
         });
 
-        it('should trigger search with site filter on init', () => {
+        it('should not trigger search automatically on init', () => {
             const searchSpy = jest.spyOn(component.onSearch, 'emit');
 
             spectator.detectChanges();
 
-            expect(searchSpy).toHaveBeenCalledTimes(1);
-            expect(searchSpy).toHaveBeenCalledWith({
-                query: '',
-                systemSearchableFields: {
-                    siteId: MOCK_SITE_ID
-                }
-            });
+            expect(searchSpy).not.toHaveBeenCalled();
         });
     });
 

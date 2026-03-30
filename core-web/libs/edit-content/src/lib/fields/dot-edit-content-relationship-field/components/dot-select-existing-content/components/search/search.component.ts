@@ -205,7 +205,6 @@ export class SearchComponent implements AfterViewInit {
                     siteOrFolderId: `site:${siteDetails.identifier}`
                 }
             });
-            this.doSearch();
         }
     }
 
@@ -344,11 +343,14 @@ export class SearchComponent implements AfterViewInit {
      */
     private getSiteDisplayLabel(siteOrFolderId: string): string {
         const siteFieldValue = this.$siteField()?.siteControl?.value as TreeNodeItem;
+        const nodeSelected = this.$siteField()?.store?.nodeSelected();
         let label: string;
 
-        // Try to get the site/folder name from the child component if available
-        if (siteFieldValue) {
+        // Try to get the site/folder name from the TreeSelect control or the store
+        if (siteFieldValue?.label) {
             label = siteFieldValue.label;
+        } else if (nodeSelected?.label) {
+            label = nodeSelected.label;
         } else {
             // Fallback to ID only
             label = siteOrFolderId;
