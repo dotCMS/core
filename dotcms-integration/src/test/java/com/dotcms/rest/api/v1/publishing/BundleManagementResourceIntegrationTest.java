@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.publishing;
 
-import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestUserUtils;
@@ -58,6 +57,8 @@ public class BundleManagementResourceIntegrationTest {
     private static PublisherAPI publisherQueueAPI;
     private static ContentType testContentType;
 
+    private static User contributorUser;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -65,6 +66,8 @@ public class BundleManagementResourceIntegrationTest {
 
         final Role backendRole = TestUserUtils.getBackendRole();
         APILocator.getRoleAPI().addRoleToUser(backendRole, adminUser);
+
+        contributorUser = TestUserUtils.getJoeContributorUser();
 
         createdBundleIds = new ArrayList<>();
         resource = new BundleManagementResource();
@@ -198,6 +201,81 @@ public class BundleManagementResourceIntegrationTest {
     @Test(expected = BadRequestException.class)
     public void test_addAssets_nullForm_returns400() {
         resource.addAssetsToBundle(mockAuthRequest(), mockResponse, null);
+    }
+
+    /**
+     * Given: A contributor user (no publish permission) adding assets
+     * When: Adding assets to a new bundle
+     * Then: Assets appear in the errors list (permission denied), not as HTTP error
+     */
+    @Test
+    public void test_addAssets_nonAdminNoPublishPermission_reportsPerAssetErrors() throws Exception {
+        final Contentlet contentlet = createContentlet();
+
+        final String bundleName = "contributor-test-" + System.currentTimeMillis();
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                null, bundleName, List.of(contentlet.getIdentifier()));
+
+        final ResponseEntityAddAssetsToBundleView result =
+                resource.addAssetsToBundle(
+                        mockAuthRequest(contributorUser), mockResponse, form);
+
+        final AddAssetsToBundleView view = result.getEntity();
+        assertNotNull(view);
+        assertTrue("Bundle should have been created", view.created());
+        assertFalse("Errors list should not be empty for unpermitted assets",
+                view.errors().isEmpty());
+        createdBundleIds.add(view.bundleId());
+    }
+
+    /**
+     * Given: A bundle with an asset already added
+     * When: Adding the same asset again
+     * Then: Duplicate is silently skipped, no error, total=0
+     */
+    @Test
+    public void test_addAssets_duplicateAssets_skippedSilently() throws Exception {
+        final Contentlet contentlet = createContentlet();
+        final Bundle bundle = createBundleWithAssets(
+                "duplicate-test", List.of(contentlet.getIdentifier()));
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                bundle.getId(), null, List.of(contentlet.getIdentifier()));
+
+        final ResponseEntityAddAssetsToBundleView result =
+                resource.addAssetsToBundle(mockAuthRequest(), mockResponse, form);
+
+        final AddAssetsToBundleView view = result.getEntity();
+        assertNotNull(view);
+        assertEquals(bundle.getId(), view.bundleId());
+        assertFalse("Should not create new bundle", view.created());
+        assertEquals("Duplicate should be skipped, total=0", 0, view.total());
+        assertTrue("No errors expected for duplicates", view.errors().isEmpty());
+    }
+
+    /**
+     * Given: A bundle with one existing asset
+     * When: Adding a mix of new and duplicate assets
+     * Then: Only new assets are processed, duplicates skipped
+     */
+    @Test
+    public void test_addAssets_mixOfNewAndDuplicate_onlyNewProcessed() throws Exception {
+        final Contentlet existing = createContentlet();
+        final Contentlet newContent = createContentlet();
+        final Bundle bundle = createBundleWithAssets(
+                "mix-test", List.of(existing.getIdentifier()));
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                bundle.getId(), null,
+                List.of(existing.getIdentifier(), newContent.getIdentifier()));
+
+        final ResponseEntityAddAssetsToBundleView result =
+                resource.addAssetsToBundle(mockAuthRequest(), mockResponse, form);
+
+        final AddAssetsToBundleView view = result.getEntity();
+        assertNotNull(view);
+        assertEquals("Only the new asset should be counted", 1, view.total());
+        assertTrue("No errors expected", view.errors().isEmpty());
     }
 
     // =========================================================================
@@ -401,6 +479,10 @@ public class BundleManagementResourceIntegrationTest {
     // =========================================================================
 
     private HttpServletRequest mockAuthRequest() {
+        return mockAuthRequest(adminUser);
+    }
+
+    private HttpServletRequest mockAuthRequest(final User user) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(
@@ -409,15 +491,13 @@ public class BundleManagementResourceIntegrationTest {
                                         .request())
                                 .request())
                         .request());
-        request.setAttribute(WebKeys.USER, adminUser);
+        request.setAttribute(WebKeys.USER, user);
         return request;
     }
 
     private Bundle createBundle(final String name) throws DotDataException {
-        final Bundle bundle = new BundleDataGen()
-                .name(name)
-                .owner(adminUser)
-                .nextPersisted();
+        final Bundle bundle = new Bundle(name, null, null, adminUser.getUserId());
+        bundleAPI.saveBundle(bundle);
         createdBundleIds.add(bundle.getId());
         return bundle;
     }

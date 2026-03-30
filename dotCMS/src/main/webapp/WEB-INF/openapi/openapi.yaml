@@ -4211,8 +4211,9 @@ paths:
         \ resolution: (1) look up by bundleId, (2) if not found, look up unsent bundles\
         \ by bundleName, (3) if still not found, auto-create a new bundle. A non-matching\
         \ bundleId does NOT return 404 — it falls through to name lookup and then\
-        \ auto-creation. Individual asset failures (e.g., no publish permission) are\
-        \ reported in the errors list as human-readable strings, not as HTTP errors."
+        \ auto-creation. Assets already in the bundle are silently skipped (idempotent).\
+        \ Individual asset failures (e.g., no publish permission) are reported in\
+        \ the errors list as human-readable strings, not as HTTP errors."
       operationId: addAssetsToBundle
       requestBody:
         content:
@@ -4231,8 +4232,7 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Invalid request (e.g., empty assetIds) or publisher error\
-            \ (e.g., asset already linked to the bundle)"
+          description: "Invalid request (e.g., empty assetIds)"
         "401":
           content:
             application/json: {}

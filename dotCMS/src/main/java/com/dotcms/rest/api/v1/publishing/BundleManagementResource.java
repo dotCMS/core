@@ -109,7 +109,8 @@ public class BundleManagementResource {
      * </ol>
      *
      * <p>Assets that cannot be added (e.g., no publish permission) are reported
-     * in the {@code errors} list — they do not fail the entire request.</p>
+     * in the {@code errors} list — they do not fail the entire request.
+     * Assets already present in the bundle are silently skipped (idempotent).</p>
      *
      * @param request  The HTTP request
      * @param response The HTTP response
@@ -123,6 +124,7 @@ public class BundleManagementResource {
                     "look up unsent bundles by bundleName, (3) if still not found, " +
                     "auto-create a new bundle. A non-matching bundleId does NOT return " +
                     "404 — it falls through to name lookup and then auto-creation. " +
+                    "Assets already in the bundle are silently skipped (idempotent). " +
                     "Individual asset failures (e.g., no publish permission) are reported " +
                     "in the errors list as human-readable strings, not as HTTP errors."
     )
@@ -137,8 +139,7 @@ public class BundleManagementResource {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Invalid request (e.g., empty assetIds) or publisher error " +
-                            "(e.g., asset already linked to the bundle)",
+                    description = "Invalid request (e.g., empty assetIds)",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -220,21 +221,54 @@ public class BundleManagementResource {
                 created = true;
             }
 
-            // Step 3: Save bundle assets
-            final Map<String, Object> resultMap = publisherQueueAPI.get()
-                    .saveBundleAssets(form.getAssetIds(), bundle.getId(), user);
+            // Step 3: Pre-filter assets already in the bundle to avoid
+            // AssetAlreadyLinkWithBundleException which would fail the entire batch
+            // inside PublisherAPIImpl.addAssetsToQueue() (the check and our check
+            // both read the 'asset' column from publishing_queue for this bundle).
+            final Set<String> existingAssets = publisherQueueAPI.get()
+                    .getQueueElementsByBundleId(bundle.getId())
+                    .stream()
+                    .map(e -> e.getAsset())
+                    .collect(Collectors.toSet());
 
-            // Step 4: Build response
-            @SuppressWarnings("unchecked")
-            final List<String> errorMessages =
-                    (List<String>) resultMap.get("errorMessages");
+            final List<String> newAssets = form.getAssetIds().stream()
+                    .filter(id -> !existingAssets.contains(id))
+                    .collect(Collectors.toList());
 
-            final int total = (int) resultMap.get("total");
-            final List<String> errors = errorMessages != null ? errorMessages : List.of();
+            final List<String> duplicateAssets = form.getAssetIds().stream()
+                    .filter(existingAssets::contains)
+                    .collect(Collectors.toList());
 
+            if (!duplicateAssets.isEmpty()) {
+                Logger.info(this, String.format(
+                        "Skipping %d asset(s) already in bundle '%s': %s",
+                        duplicateAssets.size(), bundle.getId(), duplicateAssets));
+            }
+
+            // Step 4: Save non-duplicate assets (skip call if nothing new)
+            final int total;
+            final List<String> errors;
+
+            if (newAssets.isEmpty()) {
+                total = 0;
+                errors = List.of();
+            } else {
+                final Map<String, Object> resultMap = publisherQueueAPI.get()
+                        .saveBundleAssets(newAssets, bundle.getId(), user);
+
+                @SuppressWarnings("unchecked")
+                final List<String> errorMessages =
+                        (List<String>) resultMap.get("errorMessages");
+
+                total = (int) resultMap.get("total");
+                errors = errorMessages != null ? errorMessages : List.of();
+            }
+
+            // Step 5: Build response
             Logger.info(this, String.format(
-                    "Added %d assets to bundle '%s' (created=%s) by user '%s'. Errors: %d",
-                    total, bundle.getId(), created, user.getUserId(), errors.size()));
+                    "Added %d assets to bundle '%s' (created=%s, skippedDuplicates=%d) by user '%s'. Errors: %d",
+                    total, bundle.getId(), created, duplicateAssets.size(),
+                    user.getUserId(), errors.size()));
 
             return new ResponseEntityAddAssetsToBundleView(
                     AddAssetsToBundleView.builder()
