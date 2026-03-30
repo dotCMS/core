@@ -28,7 +28,17 @@
     [ngStyle]="$editorContentStyles()"
     [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
     data-testId="editor-content">
-    <p-toolbar class="browser-toolbar">
+    <p-toolbar
+        class="browser-toolbar"
+        [pt]="{
+            root: {
+                style: {
+                    borderRadius: '0',
+                    border: 'none',
+                    borderBottom: 'solid 1px var(--color-gray-200)'
+                }
+            }
+        }">
         <ng-template #start>
             <div class="flex items-center gap-1">
                 @if (uveStore.viewMode() === UVE_MODE.EDIT) {
@@ -196,7 +206,10 @@
 </div>
 
 @if (uveStore.viewMode() === UVE_MODE.EDIT) {
-    <div class="edit-panel-wrapper border-l border-gray-200" [class.open]="$editPanelOpen">
+    <div
+        class="edit-panel-wrapper border-gray-200"
+        [class.border-l]="$editPanelOpen"
+        [class.open]="$editPanelOpen">
         <p-tabs
             styleClass="flex flex-column w-full h-full"
             [value]="$editorPanelActiveTab()"
