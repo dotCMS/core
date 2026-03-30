@@ -65,7 +65,7 @@ tags:
     description: Additional Page API information
     url: https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
   name: Page
-- description: Bundle asset management endpoints
+- description: Push publishing job management endpoints
   name: Publishing
 - description: Content relationship management
   name: Relationships
