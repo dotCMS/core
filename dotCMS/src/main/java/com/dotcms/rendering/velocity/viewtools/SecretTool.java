@@ -96,28 +96,21 @@ public class SecretTool implements ViewTool {
 	/**
 	 * Resolves the {@link DotVelocitySecretAppConfig} for the current execution context.
 	 * <p>
-	 * Priority:
-	 * <ol>
-	 *   <li>Real HTTP request from thread-local (web request): the host is resolved by the servlet
-	 *       container and cannot be overridden by template code, which prevents cross-site secret
-	 *       access via {@code #set($host = ...)}.</li>
-	 *   <li>Request snapshotted during {@link #init} (background/scheduled jobs): captured before
-	 *       any VTL execution begins, so it is also immune to {@code #set($host = ...)} mutations.
-	 *       The calling actionlet is responsible for building this request with the contentlet's own
-	 *       hostname so the correct site's secrets are returned.</li>
-	 * </ol>
+	 * Uses {@code this.request}, which is snapshotted at {@link #init} time — before any VTL
+	 * executes — making it immune to {@code #set($host = ...)} mutations.
+	 * <ul>
+	 *   <li><b>Velocity page rendering:</b> {@code init(ViewContext)} sets {@code this.request}
+	 *       from the real HTTP request, so host resolution matches the browser's site.</li>
+	 *   <li><b>Workflow actionlet (HTTP or background):</b> the actionlet builds a mock request
+	 *       scoped to the contentlet's own site and passes it to {@code engine.eval()}, which
+	 *       propagates it here via {@code init(ViewContext)}. This ensures secrets resolve for
+	 *       the contentlet's site regardless of which site the triggering browser is on.</li>
+	 * </ul>
 	 *
 	 * @return the resolved config, or {@link java.util.Optional#empty()} if none is configured
 	 */
 	private Optional<DotVelocitySecretAppConfig> resolveConfig() {
 
-		final HttpServletRequest threadLocalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		if (null != threadLocalRequest) {
-			return DotVelocitySecretAppConfig.config(threadLocalRequest);
-		}
-		// Background/scheduled job: use the request set during init() — before VTL execution.
-		// Unlike this.context.get("host"), this cannot be overridden by #set($host = ...).
-		// Guard against null (e.g. else-branch of init() running with no thread-local request).
 		if (null == this.request) {
 			return Optional.empty();
 		}

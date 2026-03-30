@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -97,15 +96,18 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
                 }
             }
 
-            final HttpServletRequest request = (null != HttpServletRequestThreadLocal.INSTANCE.getRequest())
-                    ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
-                    : new MockAttributeRequest(new MockSessionRequest(
-                            new FakeHttpRequest(
-                                    null != contentletHost
-                                            ? contentletHost.getHostname()
-                                            : APILocator.systemHost().getHostname(),
-                                    StringPool.FORWARD_SLASH).request()
-                      ).request()).request();
+            // Always build a mock request scoped to the contentlet's own site so that
+            // SecretTool.this.request (snapshotted at init-time, before VTL executes) resolves
+            // secrets for the contentlet's site — not the caller's browser host. This is correct
+            // for both background jobs (no thread-local request) and HTTP-triggered workflows
+            // (where the thread-local carries the browser's site, not the contentlet's site).
+            final HttpServletRequest request = new MockAttributeRequest(new MockSessionRequest(
+                    new FakeHttpRequest(
+                            null != contentletHost
+                                    ? contentletHost.getHostname()
+                                    : APILocator.systemHost().getHostname(),
+                            StringPool.FORWARD_SLASH).request()
+              ).request()).request();
 
             final Map<String, Object> contextParams = new HashMap<>(Map.of("workflow", processor,
                     "user", currentUser,
