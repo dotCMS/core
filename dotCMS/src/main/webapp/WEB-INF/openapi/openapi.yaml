@@ -23317,6 +23317,10 @@ components:
             type: string
         identifier:
           type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         uuid:
           type: string
     ContainerView:
@@ -33261,6 +33265,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutColumn"
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
     TemplateLayoutRowView:
@@ -33270,6 +33278,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutColumnView"
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
     TemplateLayoutView:

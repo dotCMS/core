@@ -65,7 +65,7 @@ export class DotRowReorderComponent {
     private readonly editingRowIndex = signal<number | null>(null);
     readonly editingColumn = signal<{ rowIndex: number; columnIndex: number } | null>(null);
 
-    readonly rowStyleClassControl = new FormControl<string>('', { nonNullable: true });
+    readonly rowNameControl = new FormControl<string>('', { nonNullable: true });
 
     rows = computed(() => {
         const pageLayout = this.uveStore.pageAsset()?.layout;
@@ -73,11 +73,11 @@ export class DotRowReorderComponent {
     });
 
     getRowLabel(row: DotPageAssetLayoutRow, index: number): string {
-        return row.styleClass || `Row ${index + 1}`;
+        return (row.metadata?.['name'] as string) || `Row ${index + 1}`;
     }
 
     getColumnLabel(column: DotPageAssetLayoutColumn, index: number): string {
-        return column.styleClass || `Column ${index + 1}`;
+        return (column.metadata?.['name'] as string) || `Column ${index + 1}`;
     }
 
     getColumnContainers(column: DotPageAssetLayoutColumn): { title: string }[] {
@@ -101,7 +101,7 @@ export class DotRowReorderComponent {
         const row = this.rows()[rowIndex];
         this.editingRowIndex.set(rowIndex);
         this.editingColumn.set(null);
-        this.rowStyleClassControl.setValue(row?.styleClass ?? '');
+        this.rowNameControl.setValue((row?.metadata?.['name'] as string) ?? '');
         this.editRowDialogOpen.set(true);
     }
 
@@ -111,7 +111,7 @@ export class DotRowReorderComponent {
 
         this.editingRowIndex.set(null);
         this.editingColumn.set({ rowIndex, columnIndex });
-        this.rowStyleClassControl.setValue(column?.styleClass ?? '');
+        this.rowNameControl.setValue((column?.metadata?.['name'] as string) ?? '');
         this.editRowDialogOpen.set(true);
     }
 
@@ -122,7 +122,7 @@ export class DotRowReorderComponent {
     }
 
     protected submitEditRow(): void {
-        const nextStyleClass = this.rowStyleClassControl.value.trim();
+        const nextName = this.rowNameControl.value.trim();
 
         const currentRows = this.rows();
         const columnEdit = this.editingColumn();
@@ -144,7 +144,7 @@ export class DotRowReorderComponent {
 
                 const updatedColumns = (r.columns ?? []).map((c, cIdx) => {
                     return cIdx === columnIndex
-                        ? { ...c, styleClass: nextStyleClass || undefined }
+                        ? { ...c, metadata: { ...(c.metadata ?? {}), name: nextName || undefined } }
                         : c;
                 });
 
@@ -173,7 +173,9 @@ export class DotRowReorderComponent {
         }
 
         const updatedRows = currentRows.map((row, idx) => {
-            return idx === rowEditIndex ? { ...row, styleClass: nextStyleClass || undefined } : row;
+            return idx === rowEditIndex
+                ? { ...row, metadata: { ...(row.metadata ?? {}), name: nextName || undefined } }
+                : row;
         });
 
         // Optimistic UI update (so the label changes immediately)
