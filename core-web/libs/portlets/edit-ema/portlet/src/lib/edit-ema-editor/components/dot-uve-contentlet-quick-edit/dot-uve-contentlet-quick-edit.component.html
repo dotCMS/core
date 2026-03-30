@@ -1,4 +1,76 @@
-@if ($contentletForm() && data().fields.length > 0) {
+@if ($needsCopyDecision()) {
+    <div class="flex h-full w-full flex-col overflow-auto flex-1 min-h-0">
+        <div class="flex flex-col items-center justify-center gap-4 px-6 py-8 text-center flex-1">
+            <div class="rounded-full bg-gray-100 p-6">
+                <i class="pi pi-copy text-[3rem]! text-gray-500"></i>
+            </div>
+            <div class="space-y-1">
+                <div class="font-bold text-gray-900">This content is shared</div>
+                <p class="m-0 text-sm text-gray-600">
+                    It's used on multiple pages. How do you want to edit it?
+                </p>
+            </div>
+            <div class="flex w-full gap-3 mt-2">
+                <button
+                    type="button"
+                    data-testid="copy-mode-all-pages"
+                    class="flex flex-col flex-1 items-center gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors bg-white"
+                    [class.border-blue-500]="$selectedCopyMode() === 'all-pages'"
+                    [class.bg-blue-50]="$selectedCopyMode() === 'all-pages'"
+                    [class.border-gray-200]="$selectedCopyMode() !== 'all-pages'"
+                    (click)="selectCopyMode('all-pages')">
+                    <div
+                        class="rounded-lg p-3 bg-gray-100"
+                        [class.bg-blue-100]="$selectedCopyMode() === 'all-pages'">
+                        <i
+                            class="pi pi-objects-column text-xl text-gray-400"
+                            [class.text-blue-600]="$selectedCopyMode() === 'all-pages'"></i>
+                    </div>
+                    <span
+                        class="font-semibold text-sm text-gray-700"
+                        [class.text-blue-700]="$selectedCopyMode() === 'all-pages'">
+                        All Pages
+                    </span>
+                    <span class="text-xs text-gray-500 text-center">
+                        Edits will affect every page using this content
+                    </span>
+                </button>
+                <button
+                    type="button"
+                    data-testid="copy-mode-this-page"
+                    class="flex flex-col flex-1 items-center gap-3 rounded-lg border-2 p-4 cursor-pointer transition-colors bg-white"
+                    [class.border-blue-500]="$selectedCopyMode() === 'this-page'"
+                    [class.bg-blue-50]="$selectedCopyMode() === 'this-page'"
+                    [class.border-gray-200]="$selectedCopyMode() !== 'this-page'"
+                    (click)="selectCopyMode('this-page')">
+                    <div
+                        class="rounded-lg p-3 bg-gray-100"
+                        [class.bg-blue-100]="$selectedCopyMode() === 'this-page'">
+                        <i
+                            class="pi pi-file-edit text-xl text-gray-400"
+                            [class.text-blue-600]="$selectedCopyMode() === 'this-page'"></i>
+                    </div>
+                    <span
+                        class="font-semibold text-sm text-gray-700"
+                        [class.text-blue-700]="$selectedCopyMode() === 'this-page'">
+                        This Page Only
+                    </span>
+                    <span class="text-xs text-gray-500 text-center">
+                        Creates a copy just for this page
+                    </span>
+                </button>
+            </div>
+        </div>
+        <div class="flex justify-end shrink-0 p-4 border-t border-gray-300">
+            <p-button
+                label="Confirm"
+                data-testid="copy-confirm-button"
+                [disabled]="!$selectedCopyMode() || $isCopying()"
+                [loading]="$isCopying()"
+                (onClick)="confirmCopyDecision()" />
+        </div>
+    </div>
+} @else if ($contentletForm() && data().fields.length > 0) {
     <!-- inert: blocks all user interaction (clicks, keyboard, focus) on this element and its subtree while saving.
          Must use [attr.inert]="'' : null" — setting to null removes the attribute entirely.
          [inert]="false" would set inert="false" which still activates it (any presence triggers it). -->

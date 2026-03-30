@@ -30,7 +30,11 @@ import { TextareaModule } from 'primeng/textarea';
 
 import { distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotCopyContentService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotCMSClazzes, DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotEditContentBinaryFieldComponent,
@@ -42,7 +46,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { UveOptimisticSaveService } from '../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../shared/enums';
-import { ActionPayload, ContainerPayload } from '../../../shared/models';
+import { ActionPayload, ContainerPayload, ContentletPayload } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
 import { filterFormValues } from '../dot-uve-palette/utils';
@@ -95,7 +99,12 @@ export interface ContentletEditData {
         DotTagFieldComponent,
         DotMessagePipe
     ],
-    providers: [UveOptimisticSaveService, DotEditContentService],
+    providers: [
+        UveOptimisticSaveService,
+        DotEditContentService,
+        DotCopyContentService,
+        DotHttpErrorManagerService
+    ],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
     host: { class: 'flex flex-col h-full' },
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -107,12 +116,26 @@ export class DotUveContentletQuickEditComponent {
     readonly #destroyRef = inject(DestroyRef);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotCopyContentService = inject(DotCopyContentService);
+    readonly #dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
     // Inputs (data down from parent container)
     data = input.required<ContentletEditData>({ alias: 'data' });
     loading = input<boolean>(false, { alias: 'loading' });
 
     readonly openFullEditor = output<void>();
+
+    // Copy decision state
+    readonly #copyDecisionMade = signal(false);
+    readonly #selectedCopyMode = signal<'all-pages' | 'this-page' | null>(null);
+    readonly #isCopying = signal(false);
+
+    readonly $needsCopyDecision = computed(
+        () => !this.#copyDecisionMade() && Number(this.data().contentlet?.onNumberOfPages ?? 1) > 1
+    );
+
+    protected readonly $selectedCopyMode = this.#selectedCopyMode;
+    protected readonly $isCopying = this.#isCopying;
 
     // Internal form state
     private readonly contentletForm = signal<FormGroup | null>(null);
@@ -164,8 +187,72 @@ export class DotUveContentletQuickEditComponent {
         }
     });
 
+    /** Resets copy decision whenever the selected contentlet changes. */
+    protected readonly $resetCopyDecisionEffect = effect(() => {
+        const identifier = this.data().contentlet?.identifier;
+        untracked(() => {
+            if (identifier !== undefined) {
+                this.#copyDecisionMade.set(false);
+                this.#selectedCopyMode.set(null);
+            }
+        });
+    });
+
     constructor() {
         this.#listenToFormChanges();
+    }
+
+    protected selectCopyMode(mode: 'all-pages' | 'this-page'): void {
+        this.#selectedCopyMode.set(mode);
+    }
+
+    protected confirmCopyDecision(): void {
+        const mode = this.#selectedCopyMode();
+
+        if (!mode) {
+            return;
+        }
+
+        if (mode === 'all-pages') {
+            this.#copyDecisionMade.set(true);
+
+            return;
+        }
+
+        this.#isCopying.set(true);
+        const { container, contentlet } = this.data();
+        const treeNode = this.#uveStore.getCurrentTreeNode(container, contentlet);
+
+        this.#dotCopyContentService
+            .copyInPage(treeNode)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (copiedContentlet) => {
+                    const newContentletPayload: ContentletPayload = {
+                        ...contentlet,
+                        identifier: copiedContentlet.identifier,
+                        inode: copiedContentlet.inode,
+                        title: copiedContentlet.title,
+                        contentType: copiedContentlet.contentType,
+                        onNumberOfPages: 1
+                    };
+
+                    const activeContentlet = this.#uveStore.getPageSavePayload({
+                        container,
+                        contentlet: newContentletPayload
+                    });
+
+                    this.#uveStore.setActiveContentlet(activeContentlet);
+
+                    // We need to reload the page, so the page has the new inode
+                    this.#uveStore.pageReload();
+                    this.#isCopying.set(false);
+                },
+                error: (error) => {
+                    this.#dotHttpErrorManagerService.handle(error).subscribe();
+                    this.#isCopying.set(false);
+                }
+            });
     }
 
     private buildForm(fields: ContentletField[], contentlet: DotCMSContentlet): void {
