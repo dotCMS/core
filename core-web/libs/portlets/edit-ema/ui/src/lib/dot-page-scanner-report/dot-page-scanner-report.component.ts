@@ -15,6 +15,7 @@ import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
+import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -51,6 +52,26 @@ interface GeoCategory {
     signals: Array<{ key: string; score: number; message: string }>;
 }
 
+/** CSS custom property overrides for p-chip color variants */
+const CHIP_STYLES = {
+    red: {
+        '--p-chip-background': 'var(--p-red-100)',
+        '--p-chip-color': 'var(--p-red-700)'
+    },
+    yellow: {
+        '--p-chip-background': 'var(--p-yellow-100)',
+        '--p-chip-color': 'var(--p-yellow-700)'
+    },
+    blue: {
+        '--p-chip-background': 'var(--p-blue-100)',
+        '--p-chip-color': 'var(--p-blue-700)'
+    },
+    green: {
+        '--p-chip-background': 'var(--p-green-100)',
+        '--p-chip-color': 'var(--p-green-800)'
+    }
+} as const;
+
 @Component({
     selector: 'dot-page-scanner-report',
     standalone: true,
@@ -63,6 +84,7 @@ interface GeoCategory {
         ButtonModule,
         CardModule,
         ChartModule,
+        ChipModule,
         SkeletonModule,
         DotMessagePipe
     ],
@@ -110,10 +132,44 @@ export class DotPageScannerReportComponent implements OnDestroy {
         return 'Needs Work';
     }
 
-    getScoreClass(score: number): string {
-        if (score >= 80) return 'bg-green-100 text-green-800';
-        if (score >= 50) return 'bg-yellow-100 text-yellow-800';
-        return 'bg-red-100 text-red-800';
+    /**
+     * Returns CSS custom property overrides for a score-based chip.
+     * score 80-100 → green, 50-79 → yellow, 0-49 → red
+     */
+    getScoreChipStyle(score: number): Record<string, string> {
+        if (score >= 80) return CHIP_STYLES.green;
+        if (score >= 50) return CHIP_STYLES.yellow;
+        return CHIP_STYLES.red;
+    }
+
+    /**
+     * Returns CSS custom property overrides for an impact-severity chip.
+     * critical / serious → red, moderate → yellow, minor / _ → blue
+     */
+    getImpactChipStyle(impact: string): Record<string, string> {
+        if (impact === 'critical' || impact === 'serious') return CHIP_STYLES.red;
+        if (impact === 'moderate') return CHIP_STYLES.yellow;
+        return CHIP_STYLES.blue;
+    }
+
+    /**
+     * Returns CSS custom property overrides for a finding-type chip.
+     * error → red, warning → yellow, notice → blue
+     */
+    getTypeChipStyle(type: string): Record<string, string> {
+        if (type === 'error') return CHIP_STYLES.red;
+        if (type === 'warning') return CHIP_STYLES.yellow;
+        return CHIP_STYLES.blue;
+    }
+
+    /**
+     * Returns CSS custom property overrides for a geo severity chip.
+     * high → red, medium → yellow, low → blue
+     */
+    getSeverityChipStyle(severity: string): Record<string, string> {
+        if (severity === 'high') return CHIP_STYLES.red;
+        if (severity === 'medium') return CHIP_STYLES.yellow;
+        return CHIP_STYLES.blue;
     }
 
     camelToTitle(key: string): string {
