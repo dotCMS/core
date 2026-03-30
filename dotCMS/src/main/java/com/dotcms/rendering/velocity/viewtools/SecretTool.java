@@ -117,6 +117,10 @@ public class SecretTool implements ViewTool {
 		}
 		// Background/scheduled job: use the request set during init() — before VTL execution.
 		// Unlike this.context.get("host"), this cannot be overridden by #set($host = ...).
+		// Guard against null (e.g. else-branch of init() running with no thread-local request).
+		if (null == this.request) {
+			return Optional.empty();
+		}
 		return DotVelocitySecretAppConfig.config(this.request);
 	}
 

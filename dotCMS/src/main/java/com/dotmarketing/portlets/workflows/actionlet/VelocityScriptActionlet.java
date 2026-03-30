@@ -76,7 +76,6 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
 
         try {
             final User  currentUser            = processor.getUser();
-            final HttpServletRequest request   = ActionletUtil.getRequest(currentUser);
             final HttpServletResponse response = ActionletUtil.getResponse();
             final WorkflowActionClassParameter scriptParameter = params.get("script");
             final WorkflowActionClassParameter keyParameter    = params.get("resultKey");
@@ -86,6 +85,9 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             final Reader reader       = new StringReader(script);
             final Contentlet contentlet = processor.getContentlet();
 
+            // Resolve the contentlet's site first so the mock request (background/Quartz threads)
+            // carries the correct hostname. SecretTool snapshots this.request during init() —
+            // before any VTL executes — making it immune to #set($host = ...) overrides.
             Host contentletHost = null;
             if (UtilMethods.isSet(contentlet.getHost())) {
                 final Host found = APILocator.getHostAPI().find(
@@ -94,6 +96,16 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
                     contentletHost = found;
                 }
             }
+
+            final HttpServletRequest request = (null != HttpServletRequestThreadLocal.INSTANCE.getRequest())
+                    ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
+                    : new MockAttributeRequest(new MockSessionRequest(
+                            new FakeHttpRequest(
+                                    null != contentletHost
+                                            ? contentletHost.getHostname()
+                                            : APILocator.systemHost().getHostname(),
+                                    StringPool.FORWARD_SLASH).request()
+                      ).request()).request();
 
             final Map<String, Object> contextParams = new HashMap<>(Map.of("workflow", processor,
                     "user", currentUser,
