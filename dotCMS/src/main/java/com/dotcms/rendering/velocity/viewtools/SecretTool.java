@@ -58,10 +58,7 @@ public class SecretTool implements ViewTool {
 
 		canUserEvaluate();
 
-		final Host contextHost = (Host) this.context.get("host");
-		final Optional<DotVelocitySecretAppConfig> config = (null != contextHost)
-				? DotVelocitySecretAppConfig.config(contextHost)
-				: DotVelocitySecretAppConfig.config(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+		final Optional<DotVelocitySecretAppConfig> config = resolveConfig();
 		return config.isPresent()? config.get().getStringOrNull(key) : null;
 	}
 
@@ -93,11 +90,38 @@ public class SecretTool implements ViewTool {
 	public char[] getCharArray(final String key) {
 
 		canUserEvaluate();
-		final Host contextHost = (Host) this.context.get("host");
-		final Optional<DotVelocitySecretAppConfig> config = (null != contextHost)
-				? DotVelocitySecretAppConfig.config(contextHost)
-				: DotVelocitySecretAppConfig.config(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+		final Optional<DotVelocitySecretAppConfig> config = resolveConfig();
 		return config.isPresent()? config.get().getCharArrayOrNull(key) : null;
+	}
+
+	/**
+	 * Resolves the {@link DotVelocitySecretAppConfig} for the current execution context.
+	 * <p>
+	 * Priority:
+	 * <ol>
+	 *   <li>Real HTTP request from thread-local (web request): the host is resolved by the servlet
+	 *       container and cannot be overridden by template code, which prevents cross-site secret
+	 *       access via {@code #set($host = ...)}.</li>
+	 *   <li>Host stored in the Velocity context (background/scheduled jobs): set programmatically
+	 *       by the calling actionlet from the contentlet's own site, so it is still trustworthy.
+	 *       The {@code instanceof} guard prevents a {@link ClassCastException} if another tool
+	 *       stored a non-{@link Host} object under the {@code "host"} key.</li>
+	 *   <li>Null request fallback: returns System Host secrets when no host can be determined.</li>
+	 * </ol>
+	 *
+	 * @return the resolved config, or {@link java.util.Optional#empty()} if none is configured
+	 */
+	private Optional<DotVelocitySecretAppConfig> resolveConfig() {
+
+		final HttpServletRequest threadLocalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		if (null != threadLocalRequest) {
+			return DotVelocitySecretAppConfig.config(threadLocalRequest);
+		}
+		final Object rawHost = this.context.get("host");
+		final Host contextHost = (rawHost instanceof Host) ? (Host) rawHost : null;
+		return (null != contextHost)
+				? DotVelocitySecretAppConfig.config(contextHost)
+				: DotVelocitySecretAppConfig.config((HttpServletRequest) null);
 	}
 
 	public char[] getCharArraySystemSecret (final String key) {

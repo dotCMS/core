@@ -88,7 +88,7 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             if (UtilMethods.isSet(contentlet.getHost())) {
                 final Host contentletHost = APILocator.getHostAPI().find(
                         contentlet.getHost(), APILocator.systemUser(), false);
-                if (UtilMethods.isSet(contentletHost)) {
+                if (null != contentletHost && UtilMethods.isSet(contentletHost.getIdentifier())) {
                     contextParams.put("host", contentletHost);
                 }
             }
