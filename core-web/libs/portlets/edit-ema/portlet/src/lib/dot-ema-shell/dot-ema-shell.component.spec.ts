@@ -106,7 +106,7 @@ const NAV_ITEMS = [
         id: 'layout'
     },
     {
-        materialIcon: 'call_split',
+        materialIcon: 'rule',
         label: 'editema.editor.navbar.rules',
         href: `rules/123`,
         isDisabled: false,

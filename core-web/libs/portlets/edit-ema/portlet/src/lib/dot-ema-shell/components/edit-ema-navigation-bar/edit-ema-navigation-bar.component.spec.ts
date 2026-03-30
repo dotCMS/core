@@ -47,7 +47,7 @@ const MOCK_ITEMS = [
         tooltip: 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
     },
     {
-        materialIcon: 'call_split',
+        materialIcon: 'rule',
         label: 'editema.editor.navbar.rules',
         href: 'rules',
         id: 'rules'
@@ -182,7 +182,7 @@ describe('EditEmaNavigationBarComponent', () => {
                 expect(icons.length).toBe(5);
                 expect(icons[0].textContent.trim()).toBe('description');
                 expect(icons[1].textContent.trim()).toBe('space_dashboard');
-                expect(icons[2].textContent.trim()).toBe('call_split');
+                expect(icons[2].textContent.trim()).toBe('rule');
                 expect(icons[3].textContent.trim()).toBe('call_split');
                 expect(icons[4].textContent.trim()).toBe('bar_chart');
             });

@@ -120,7 +120,7 @@ export class DotEmaShellComponent implements OnInit {
                     : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
             },
             {
-                materialIcon: 'call_split',
+                materialIcon: 'rule',
                 label: 'editema.editor.navbar.rules',
                 id: 'rules',
                 href: `rules/${page?.identifier}`,
