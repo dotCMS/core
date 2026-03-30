@@ -235,7 +235,12 @@ export class DotRelationshipFieldComponent
             data: {
                 contentTypeId: contentType.id,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.inode)
+                currentItemsIds: this.store.data().map((item) => item.inode),
+                cardinality: this.$field().relationships?.cardinality,
+                parentContentTypeId: this.$field().contentTypeId,
+                fieldVariable: this.$field().variable,
+                isParentField: this.$field().relationships?.isParentField,
+                currentContentIdentifier: this.$contentlet()?.identifier ?? null
             },
             templates: {
                 header: HeaderComponent,
@@ -289,7 +294,7 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                isParent: true // This could be determined based on relationship configuration
+                isParent: this.$field().relationships?.isParentField ?? true
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
