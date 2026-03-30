@@ -19,6 +19,7 @@ import { SelectModule } from 'primeng/select';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { TreeNodeItem } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, DotBrowsingService } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
@@ -145,6 +146,10 @@ describe('SearchComponent', () => {
             }),
             mockProvider(DotLanguagesService, {
                 get: jest.fn().mockReturnValue(of(mockLocales))
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue(null),
+                currentSiteId: jest.fn().mockReturnValue(null)
             })
         ]
     });
@@ -829,6 +834,174 @@ describe('SearchComponent', () => {
             component.removeFilter('language');
 
             expect(searchSpy).toHaveBeenCalled();
+        });
+    });
+});
+
+describe('SearchComponent - Site Pre-population', () => {
+    const MOCK_SITE_ID = 'site-abc-123';
+    const MOCK_HOSTNAME = 'demo.dotcms.com';
+
+    const messageServiceMock = new MockDotMessageService({
+        'dot.file.relationship.dialog.search.language.failed': 'Failed to load languages'
+    });
+
+    const mockSites: TreeNodeItem[] = [
+        {
+            label: MOCK_HOSTNAME,
+            data: {
+                id: MOCK_SITE_ID,
+                hostname: MOCK_HOSTNAME,
+                path: '',
+                type: 'site'
+            },
+            icon: 'pi pi-globe',
+            leaf: false,
+            children: []
+        }
+    ];
+
+    const mockFolders = {
+        parent: {
+            id: 'parent-id',
+            hostName: MOCK_HOSTNAME,
+            path: '/parent',
+            addChildrenAllowed: true
+        },
+        folders: []
+    };
+
+    describe('when GlobalStore has current site', () => {
+        let spectator: Spectator<SearchComponent>;
+        let component: SearchComponent;
+
+        const createComponent = createComponentFactory({
+            component: SearchComponent,
+            imports: [
+                ReactiveFormsModule,
+                ButtonModule,
+                SelectModule,
+                InputGroupModule,
+                InputTextModule,
+                PopoverModule,
+                ChipModule,
+                MockLanguageFieldComponent,
+                MockSiteFieldComponent
+            ],
+            mocks: [DotMessagePipe],
+            detectChanges: false,
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                mockProvider(DotBrowsingService, {
+                    getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
+                    getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+                }),
+                mockProvider(DotLanguagesService, {
+                    get: jest.fn().mockReturnValue(of(mockLocales))
+                }),
+                mockProvider(GlobalStore, {
+                    siteDetails: jest.fn().mockReturnValue({
+                        identifier: MOCK_SITE_ID,
+                        hostname: MOCK_HOSTNAME,
+                        aliases: null
+                    }),
+                    currentSiteId: jest.fn().mockReturnValue(MOCK_SITE_ID)
+                })
+            ]
+        });
+
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    isLoading: false
+                } as unknown
+            });
+            component = spectator.component;
+        });
+
+        it('should pre-populate siteOrFolderId when GlobalStore has current site', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            spectator.detectChanges();
+
+            const formValues = component.form.getRawValue();
+            expect(formValues.systemSearchableFields.siteOrFolderId).toBe(`site:${MOCK_SITE_ID}`);
+            expect(searchSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    systemSearchableFields: expect.objectContaining({
+                        siteId: MOCK_SITE_ID
+                    })
+                })
+            );
+        });
+
+        it('should trigger search with site filter on init', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            spectator.detectChanges();
+
+            expect(searchSpy).toHaveBeenCalledTimes(1);
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: '',
+                systemSearchableFields: {
+                    siteId: MOCK_SITE_ID
+                }
+            });
+        });
+    });
+
+    describe('when GlobalStore has no current site', () => {
+        let spectator: Spectator<SearchComponent>;
+        let component: SearchComponent;
+
+        const createComponent = createComponentFactory({
+            component: SearchComponent,
+            imports: [
+                ReactiveFormsModule,
+                ButtonModule,
+                SelectModule,
+                InputGroupModule,
+                InputTextModule,
+                PopoverModule,
+                ChipModule,
+                MockLanguageFieldComponent,
+                MockSiteFieldComponent
+            ],
+            mocks: [DotMessagePipe],
+            detectChanges: false,
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                mockProvider(DotBrowsingService, {
+                    getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
+                    getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+                }),
+                mockProvider(DotLanguagesService, {
+                    get: jest.fn().mockReturnValue(of(mockLocales))
+                }),
+                mockProvider(GlobalStore, {
+                    siteDetails: jest.fn().mockReturnValue(null),
+                    currentSiteId: jest.fn().mockReturnValue(null)
+                })
+            ]
+        });
+
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    isLoading: false
+                } as unknown
+            });
+            component = spectator.component;
+        });
+
+        it('should not pre-populate when GlobalStore has no current site', () => {
+            const searchSpy = jest.spyOn(component.onSearch, 'emit');
+
+            spectator.detectChanges();
+
+            const formValues = component.form.getRawValue();
+            expect(formValues.systemSearchableFields.siteOrFolderId).toBe('');
+            expect(searchSpy).not.toHaveBeenCalled();
         });
     });
 });

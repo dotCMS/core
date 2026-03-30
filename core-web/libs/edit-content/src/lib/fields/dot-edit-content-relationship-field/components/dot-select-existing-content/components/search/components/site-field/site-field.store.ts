@@ -136,6 +136,29 @@ export const SiteFieldStore = signalStore(
              */
             clearSelection: () => {
                 patchState(store, { nodeSelected: null });
+            },
+            /**
+             * Sets an initial selection from external data (e.g., GlobalStore current site).
+             * Creates a synthetic TreeNodeItem and patches the store state.
+             * @method setInitialSelection
+             * @param {string} id - The site or folder identifier
+             * @param {'site' | 'folder'} type - Whether this is a site or folder
+             * @param {string} label - Display label (e.g., hostname)
+             */
+            setInitialSelection: (id: string, type: 'site' | 'folder', label: string) => {
+                const nodeSelected: TreeNodeItem = {
+                    label,
+                    data: {
+                        id,
+                        type,
+                        hostname: label,
+                        path: ''
+                    },
+                    icon: type === 'site' ? 'pi pi-globe' : 'pi pi-folder',
+                    leaf: type === 'folder',
+                    children: []
+                };
+                patchState(store, { nodeSelected });
             }
         };
     })

@@ -6,7 +6,8 @@ import {
     viewChild,
     signal,
     computed,
-    DestroyRef
+    DestroyRef,
+    AfterViewInit
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -22,6 +23,7 @@ import { SelectModule } from 'primeng/select';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { TreeNodeItem } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
@@ -63,7 +65,7 @@ interface ActiveFilter {
     ],
     templateUrl: './search.component.html'
 })
-export class SearchComponent {
+export class SearchComponent implements AfterViewInit {
     /**
      * Reference to the Popover component used for advanced search options.
      */
@@ -151,6 +153,12 @@ export class SearchComponent {
     readonly #destroyRef = inject(DestroyRef);
 
     /**
+     * Global store for accessing current site information.
+     * @private
+     */
+    readonly #globalStore = inject(GlobalStore);
+
+    /**
      * Flag to track if the component has been destroyed.
      * @private
      */
@@ -187,6 +195,18 @@ export class SearchComponent {
             .subscribe(() => {
                 this.doSearch();
             });
+    }
+
+    ngAfterViewInit(): void {
+        const siteDetails = this.#globalStore.siteDetails();
+        if (siteDetails?.identifier) {
+            this.form.patchValue({
+                systemSearchableFields: {
+                    siteOrFolderId: `site:${siteDetails.identifier}`
+                }
+            });
+            this.doSearch();
+        }
     }
 
     /**

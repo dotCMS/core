@@ -328,6 +328,71 @@ describe('SiteFieldStore', () => {
         });
     });
 
+    describe('setInitialSelection', () => {
+        it('should set initial selection with site type', () => {
+            store.setInitialSelection('site-123', 'site', 'demo.dotcms.com');
+
+            const nodeSelected = store.nodeSelected();
+            expect(nodeSelected).toEqual({
+                label: 'demo.dotcms.com',
+                data: {
+                    id: 'site-123',
+                    type: 'site',
+                    hostname: 'demo.dotcms.com',
+                    path: ''
+                },
+                icon: 'pi pi-globe',
+                leaf: false,
+                children: []
+            });
+            expect(store.valueToSave()).toBe('site:site-123');
+        });
+
+        it('should set initial selection with folder type', () => {
+            store.setInitialSelection('folder-456', 'folder', 'my-folder');
+
+            const nodeSelected = store.nodeSelected();
+            expect(nodeSelected).toEqual({
+                label: 'my-folder',
+                data: {
+                    id: 'folder-456',
+                    type: 'folder',
+                    hostname: 'my-folder',
+                    path: ''
+                },
+                icon: 'pi pi-folder',
+                leaf: true,
+                children: []
+            });
+            expect(store.valueToSave()).toBe('folder:folder-456');
+        });
+
+        it('should overwrite previous selection', () => {
+            const mockEvent: TreeNodeSelectItem = {
+                originalEvent: createFakeEvent('click'),
+                node: {
+                    label: 'Previous Node',
+                    data: {
+                        id: 'prev-id',
+                        hostname: 'prev.com',
+                        path: 'prev',
+                        type: 'folder' as const
+                    },
+                    icon: 'pi pi-folder',
+                    leaf: true,
+                    children: []
+                }
+            };
+
+            store.chooseNode(mockEvent);
+            expect(store.valueToSave()).toBe('folder:prev-id');
+
+            store.setInitialSelection('new-id', 'site', 'new.dotcms.com');
+            expect(store.valueToSave()).toBe('site:new-id');
+            expect(store.nodeSelected().label).toBe('new.dotcms.com');
+        });
+    });
+
     describe('clearSelection', () => {
         it('should clear the selected node', () => {
             // First select a node

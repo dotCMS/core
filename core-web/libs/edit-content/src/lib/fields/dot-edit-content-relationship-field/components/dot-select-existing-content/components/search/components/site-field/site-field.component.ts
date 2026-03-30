@@ -16,6 +16,7 @@ import {
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
 
 import { SiteFieldStore } from './site-field.store';
@@ -45,6 +46,11 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      * Handles loading sites and managing selection state.
      */
     protected readonly store = inject(SiteFieldStore);
+
+    /**
+     * Global store for accessing current site details when pre-populating.
+     */
+    readonly #globalStore = inject(GlobalStore);
 
     /**
      * Form control for the site selection.
@@ -106,11 +112,24 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     /**
      * Writes a new value to the form control.
      * Implements ControlValueAccessor method to update the control's value programmatically.
+     * Handles both clearing (falsy value) and pre-populating (e.g., "site:{id}").
      */
     writeValue(value: string): void {
         if (!value) {
             this.siteControl.setValue('');
             this.store.clearSelection();
+
+            return;
+        }
+
+        if (value.includes(':')) {
+            const [type, id] = value.split(':');
+            if (id && (type === 'site' || type === 'folder')) {
+                const siteDetails = this.#globalStore.siteDetails();
+                const label =
+                    type === 'site' && siteDetails?.identifier === id ? siteDetails.hostname : id;
+                this.store.setInitialSelection(id, type, label);
+            }
         }
     }
 

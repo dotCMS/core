@@ -8,6 +8,7 @@ import { TreeSelectModule } from 'primeng/treeselect';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, DotTruncatePathPipe, DotBrowsingService } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -70,6 +71,14 @@ describe('SiteFieldComponent', () => {
             mockProvider(DotBrowsingService, {
                 getSitesTreePath: jest.fn().mockReturnValue(of(mockSites)),
                 getFoldersTreeNode: jest.fn().mockReturnValue(of(mockFolders))
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: jest.fn().mockReturnValue({
+                    identifier: '123',
+                    hostname: 'demo.dotcms.com',
+                    aliases: null
+                }),
+                currentSiteId: jest.fn().mockReturnValue('123')
             })
         ]
     });
@@ -226,6 +235,28 @@ describe('SiteFieldComponent', () => {
 
     describe('ControlValueAccessor Implementation', () => {
         const testValue = 'test-site-id';
+
+        it('should handle writeValue with a valid site value', () => {
+            const setInitialSelectionSpy = jest.spyOn(store, 'setInitialSelection');
+            spectator.detectChanges();
+
+            component.writeValue('site:123');
+
+            expect(setInitialSelectionSpy).toHaveBeenCalledWith('123', 'site', 'demo.dotcms.com');
+        });
+
+        it('should handle writeValue with a folder value', () => {
+            const setInitialSelectionSpy = jest.spyOn(store, 'setInitialSelection');
+            spectator.detectChanges();
+
+            component.writeValue('folder:folder-456');
+
+            expect(setInitialSelectionSpy).toHaveBeenCalledWith(
+                'folder-456',
+                'folder',
+                'folder-456'
+            );
+        });
 
         it('should write value to form control', () => {
             spectator.detectChanges();
