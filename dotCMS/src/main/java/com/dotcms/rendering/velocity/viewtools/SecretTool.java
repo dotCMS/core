@@ -4,6 +4,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Versionable;
@@ -57,8 +58,10 @@ public class SecretTool implements ViewTool {
 
 		canUserEvaluate();
 
-		final HttpServletRequest requestFromThreadLocal = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(requestFromThreadLocal);
+		final Host contextHost = (Host) this.context.get("host");
+		final Optional<DotVelocitySecretAppConfig> config = (null != contextHost)
+				? DotVelocitySecretAppConfig.config(contextHost)
+				: DotVelocitySecretAppConfig.config(HttpServletRequestThreadLocal.INSTANCE.getRequest());
 		return config.isPresent()? config.get().getStringOrNull(key) : null;
 	}
 

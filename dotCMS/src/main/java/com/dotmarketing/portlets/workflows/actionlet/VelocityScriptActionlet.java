@@ -4,11 +4,15 @@ import com.dotcms.rendering.engine.ScriptEngine;
 import com.dotcms.rendering.engine.ScriptEngineFactory;
 import com.dotcms.rendering.util.ActionletUtil;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 
@@ -75,11 +79,21 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             final String script       = scriptParameter.getValue();
             final String resultKey    = keyParameter.getValue();
             final Reader reader       = new StringReader(script);
-            final Object result       = engine.eval(request, response, reader,
-                    new HashMap<>(Map.of("workflow", processor,
-                            "user", processor.getUser(),
-                            "contentlet", processor.getContentlet(),
-                            "content", processor.getContentlet())));
+            final Contentlet contentlet = processor.getContentlet();
+            final Map<String, Object> contextParams = new HashMap<>(Map.of("workflow", processor,
+                    "user", processor.getUser(),
+                    "contentlet", contentlet,
+                    "content", contentlet));
+
+            if (UtilMethods.isSet(contentlet.getHost())) {
+                final Host contentletHost = APILocator.getHostAPI().find(
+                        contentlet.getHost(), APILocator.systemUser(), false);
+                if (UtilMethods.isSet(contentletHost)) {
+                    contextParams.put("host", contentletHost);
+                }
+            }
+
+            final Object result = engine.eval(request, response, reader, contextParams);
 
             this.stop = processor.abort();
             if (null != result && null != resultKey) {
