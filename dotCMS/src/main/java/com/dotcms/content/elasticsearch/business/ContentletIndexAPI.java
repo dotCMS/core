@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
+import com.dotcms.content.index.domain.InitIndexInfo;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.content.index.domain.IndexBulkListener;
@@ -12,6 +13,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.io.IOException;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +29,11 @@ import java.util.Optional;
 @IndexLibraryIndependent
 public interface ContentletIndexAPI {
 
-    public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
+    @Deprecated(forRemoval = true)
+    SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
+
+    /** Thread-safe formatter for index timestamp suffixes ({@code yyyyMMddHHmmss}). */
+    DateTimeFormatter threadSafeTimestampFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     void getRidOfOldIndex() throws DotDataException;
 
@@ -46,7 +52,7 @@ public interface ContentletIndexAPI {
      * @throws DotDataException
      * @throws DotIndexException
      */
-    String fullReindexStart() throws DotIndexException, DotDataException;
+    InitIndexInfo fullReindexStart() throws DotIndexException, DotDataException;
 
     /**
      * Returns {@code true} if the system is currently in a full reindex.

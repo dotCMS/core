@@ -20,13 +20,18 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexStartupValidator;
 import com.dotcms.content.index.PhaseRouter;
+import com.dotcms.content.index.opensearch.OSClientProvider;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.VersionedIndicesImpl;
+import com.dotcms.content.index.domain.ImmutableInitIndexInfo;
 import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
+import com.dotcms.content.index.domain.InitIndexInfo;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
@@ -236,8 +241,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return new ProviderIndices(
                 vi.working().orElse(null),
                 vi.live().orElse(null),
-                null,   // OS reindex-working not yet implemented
-                null);  // OS reindex-live not yet implemented
+                vi.reindexWorking().orElse(null),
+                vi.reindexLive().orElse(null));
     }
 
     /**
@@ -369,6 +374,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     public synchronized void checkAndInitialiazeIndex() {
         try {
+            if (isMigrationStarted() || isReadEnabled() || isMigrationComplete()) {
+                new IndexStartupValidator(CDIUtils.getBeanThrows(OSClientProvider.class)).validate();
+            }
+
             // if we don't have a working index, create it
             if (!indexReady()) {
                 Logger.info(this.getClass(), "No indexes found, creating live and working indexes");
@@ -435,95 +444,150 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @Override
     public synchronized boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
-        // Each provider loads its own settings file and applies its own mapping,
-        // so the router can fan out uniformly without knowing which backend is active.
+        // The router applies a name transformation before calling each provider:
+        // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
+        //   ES:  plain name → "cluster_{clusterId}.{indexName}"  (cluster-prefixed physical name)
+        //   OS:  plain name → "{indexName}"                      (used as-is)
+        // If the name is already cluster-prefixed it is passed through unchanged (idempotent).
+        // ── END LEGACY ES ─────────────────────────────────────────────────────
         boolean result = true;
         for (final ContentletIndexOperations ops : router.writeProviders()) {
-            result &= ops.createContentIndex(indexName, shards);
+            // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
+            final String physicalName = (ops == operationsES) ? toESPhysicalName(indexName) : indexName;
+            // ── END LEGACY ES ─────────────────────────────────────────────────────
+            result &= ops.createContentIndex(physicalName, shards);
         }
         return result;
     }
 
+    // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
+    /**
+     * Returns the ES physical index name for the given logical (plain) name.
+     * Prepends {@code cluster_{clusterId}.} unless the name is already cluster-prefixed.
+     * Applies to phases 0, 1, and 2.
+     *
+     * @param indexName plain index name (e.g. {@code working_20240101})
+     *                  or a cluster-prefixed name (returned unchanged)
+     * @return physical ES index name
+     */
+    private static String toESPhysicalName(final String indexName) {
+        if (indexName.startsWith(IndiciesInfo.CLUSTER_PREFIX)) {
+            return indexName;
+        }
+        return IndiciesInfo.CLUSTER_PREFIX + ClusterFactory.getClusterId() + "." + indexName;
+    }
+    // ── END LEGACY ES ─────────────────────────────────────────────────────
+
 
     /**
-     * Creates new indexes /working_TIMESTAMP (aliases working_read, working_write and workinglive)
-     * and /live_TIMESTAMP with (aliases live_read, live_write, workinglive)
+     * Ensures that working and live indices exist for all applicable providers.
      *
-     * @return the timestamp string used as suffix for indices
-     * @throws DotDataException
+     * <p>Generates a single timestamp and delegates to
+     * {@link #bootstrapAndPoint(String, boolean, boolean)}.
+     * Returns {@link InitIndexInfo#empty()} immediately when all required indices already exist.</p>
+     *
+     * <ul>
+     *   <li>Phase 0: creates 2 ES indices; {@code timeStampOS} = {@code ""}.</li>
+     *   <li>Phases 1/2/3 (fresh install): creates 2 ES + 2 OS indices sharing the same timestamp.</li>
+     *   <li>Migration catchup (ES exists, OS missing): creates only the 2 missing OS indices.</li>
+     * </ul>
+     *
+     * @return index-creation metadata; empty if all indices were already present
+     * @throws DotDataException on persistence or creation failure
      */
-    private synchronized String initIndex() throws DotDataException {
+    private synchronized InitIndexInfo initIndex() throws DotDataException {
         if (indexReady()) {
-            return "";
+            return InitIndexInfo.empty();
         }
 
-        if(isReadEnabled() || isMigrationComplete()) {
-           return initIndexOS();
-        }
+        final boolean esNeeded = !indexReadyES();
+        final boolean osNeeded = !isMigrationNotStarted() && !indexReadyOS();
 
-        if(isMigrationStarted()){
-            initIndexOS();
-        }
+        final String ts = ContentletIndexAPI.threadSafeTimestampFormatter.format(LocalDateTime.now());
+        bootstrapAndPoint(ts, esNeeded, osNeeded);
 
-        return initIndexES();
+        return ImmutableInitIndexInfo.builder()
+                .timeStampES(esNeeded ? ts : "")
+                .timeStampOS(osNeeded ? ts : "")
+                .build();
     }
 
     /**
-     * ES index Initializer
-     * @return
+     * Creates and registers working/live indices for the providers that need them.
+     *
+     * <p>The two guard flags allow independent control over each provider so that a
+     * migration-catchup run (ES already present, OS missing) only touches the missing
+     * provider without attempting to re-create indices that already exist.</p>
+     *
+     * <p>Invariant: the same {@code ts} is used for all indices created in this call,
+     * guaranteeing that all four physical index names share an identical timestamp suffix.</p>
+     *
+     * <p>Applies to all phases.</p>
+     *
+     * @param ts       timestamp string produced by {@link ContentletIndexAPI#threadSafeTimestampFormatter}
+     * @param needsES  {@code true} when ES working/live indices must be created
+     * @param needsOS  {@code true} when OS working/live indices must be created
+     * @throws DotDataException on persistence or creation failure
      */
-    private String initIndexES() {
-        try {
+    private void bootstrapAndPoint(final String ts,
+                                   final boolean needsES,
+                                   final boolean needsOS) throws DotDataException {
 
-            final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
-            final IndiciesInfo oldInfo = legacyIndiciesAPI.loadIndicies();
+        final String workingName = IndexType.WORKING.getPrefix() + "_" + ts;
+        final String liveName    = IndexType.LIVE.getPrefix()    + "_" + ts;
 
-            if (oldInfo != null && oldInfo.getSiteSearch() != null) {
-                builder.setSiteSearch(oldInfo.getSiteSearch());
+        if (needsES) {
+            // createContentIndex fans out to all write providers:
+            //   ES receives the cluster-prefixed physical name (via toESPhysicalName inside the method)
+            //   OS receives the plain name — both created in one logical call per slot (invariant 2)
+            try {
+                createContentIndex(workingName, 0);
+                createContentIndex(liveName, 0);
+            } catch (IOException e) {
+                throw new DotDataException("Error creating content indices for ts=" + ts + ": "
+                        + e.getMessage(), e);
             }
 
-            final IndiciesInfo info = builder.build();
-            final String timeStamp = info.createNewIndiciesName(IndexType.WORKING, IndexType.LIVE);
+            // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
+            // Persist cluster-prefixed ES names to the legacy IndiciesInfo store
+            final String esWorking = toESPhysicalName(workingName);
+            final String esLive    = toESPhysicalName(liveName);
+            final IndiciesInfo oldInfo = legacyIndiciesAPI.loadIndicies();
+            final IndiciesInfo.Builder esBuilder = new IndiciesInfo.Builder();
+            if (oldInfo != null && oldInfo.getSiteSearch() != null) {
+                esBuilder.setSiteSearch(oldInfo.getSiteSearch());
+            }
+            esBuilder.setWorking(esWorking);
+            esBuilder.setLive(esLive);
+            legacyIndiciesAPI.point(esBuilder.build());
+            ESMappingUtilHelper.getInstance().addCustomMapping(esWorking, esLive);
+            // ── END LEGACY ES ─────────────────────────────────────────────────────
 
-            createContentIndex(info.getWorking(), 0);
-            createContentIndex(info.getLive(), 0);
-
-            legacyIndiciesAPI.point(info);
-
-            ESMappingUtilHelper.getInstance()
-                    .addCustomMapping(info.getWorking(), info.getLive());
-            return timeStamp;
-        } catch (Exception e) {
-            throw new DotRuntimeException(e.getMessage(), e);
-        }
-    }
-
-    /**
-     * OS index initializer
-     * @return
-     * @throws DotDataException
-     */
-    private String initIndexOS() throws DotDataException {
-        final String timeStamp = ContentletIndexAPI.timestampFormatter.format(LocalDateTime.now());
-
-        final String workingName = IndexType.WORKING.getPrefix() + "_" + timeStamp;
-        final String liveName    = IndexType.LIVE.getPrefix()    + "_" + timeStamp;
-
-        try {
-            indexAPI.createIndex(workingName, 0);
-            indexAPI.createIndex(liveName, 0);
-        } catch (final Exception e) {
-            throw new DotDataException("Error creating OS indices: " + e.getMessage(), e);
+        } else if (needsOS) {
+            // Migration-catchup path: ES already exists — only OS needs to be created.
+            // Cannot use the createContentIndex fan-out here because it would also
+            // attempt to re-create the existing ES index.  Direct call is intentional.
+            try {
+                operationsOS.createContentIndex(workingName, 0);
+                operationsOS.createContentIndex(liveName, 0);
+            } catch (IOException e) {
+                throw new DotDataException(
+                        "Error creating OS indices during catchup for ts=" + ts + ": "
+                                + e.getMessage(), e);
+            }
         }
 
-        final VersionedIndices osInfo = VersionedIndicesImpl.builder()
-                .working(workingName)
-                .live(liveName)
-                .build();
-        versionedIndicesAPI.saveIndices(osInfo);
-
-        ESMappingUtilHelper.getInstance().addCustomMapping(workingName, liveName);
-        return timeStamp;
+        // Persist plain OS names to the versioned-indices store when OS was created.
+        // This covers both the normal fresh-install path (needsES + migration active)
+        // and the OS-only catchup path.
+        if (needsOS || (needsES && !isMigrationNotStarted())) {
+            final VersionedIndices osInfo = VersionedIndicesImpl.builder()
+                    .working(workingName)
+                    .live(liveName)
+                    .build();
+            versionedIndicesAPI.saveIndices(osInfo);
+            ESMappingUtilHelper.getInstance().addCustomMapping(workingName, liveName);
+        }
     }
 
     /**
@@ -581,51 +645,106 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
-     * creates new working and live indexes with reading aliases pointing to old index and write
-     * aliases pointing to both old and new indexes
+     * Creates new reindex (working and live) indices so that a full reindex can proceed in the
+     * background while the current indices remain live.  The reindex-slot names are derived from
+     * a single timestamp so that ES and OS reindex indices always share the same suffix.
      *
-     * @return the timestamp string used as suffix for indices
-     * @throws DotDataException
+     * <p>When the main indices are not yet ready (or a reindex is already in progress) this method
+     * delegates to {@link #initIndex()} instead of starting a second reindex cycle.</p>
+     *
+     * <p>Applies to all phases.  The returned {@link InitIndexInfo} always satisfies
+     * {@code timeStampES().equals(timeStampOS())} when both providers are active.</p>
+     *
+     * @return creation metadata; {@code timeStampES()} and {@code timeStampOS()} are equal when
+     *         both providers were written to
+     * @throws DotDataException on persistence or creation failure
      */
+    @Override
     @WrapInTransaction
-    public synchronized String fullReindexStart() throws DotDataException {
+    public synchronized InitIndexInfo fullReindexStart() throws DotDataException {
         if (indexReady() && !isInFullReindex()) {
-            try {
-
-                final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
-                final IndiciesInfo oldInfo = legacyIndiciesAPI.loadIndicies();
-
-                builder.setWorking(oldInfo.getWorking());
-                builder.setLive(oldInfo.getLive());
-                builder.setSiteSearch(oldInfo.getSiteSearch());
-
-
-                final User currentUser = Try.of(() -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
-                        .getOrNull();
-                if (currentUser != null) {
-                    Logger.info(this, "Full reindex started by user: " + currentUser.getUserId() + " (" + currentUser.getEmailAddress() + ") at " + new java.util.Date());
-                } else {
-                    Logger.info(this, "Full reindex started by system user at " + new java.util.Date());
-                }
-
-                final IndiciesInfo info = builder.build();
-                final String timeStamp = info.createNewIndiciesName(IndexType.REINDEX_WORKING,
-                        IndexType.REINDEX_LIVE);
-
-                createContentIndex(info.getReindexWorking(), 0);
-                createContentIndex(info.getReindexLive(), 0);
-
-                legacyIndiciesAPI.point(info);
-
-                ESMappingUtilHelper.getInstance()
-                        .addCustomMapping(info.getReindexWorking(), info.getReindexLive());
-
-                return timeStamp;
-            } catch (Exception e) {
-                throw new DotRuntimeException(e.getMessage(), e);
+            final User currentUser = Try.of(
+                    () -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
+                    .getOrNull();
+            if (currentUser != null) {
+                Logger.info(this, "Full reindex started by user: "
+                        + currentUser.getUserId() + " (" + currentUser.getEmailAddress()
+                        + ") at " + new java.util.Date());
+            } else {
+                Logger.info(this, "Full reindex started by system user at " + new java.util.Date());
             }
+
+            final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
+                    .format(LocalDateTime.now());
+            initAndPointReindex(ts);
+
+            return ImmutableInitIndexInfo.builder()
+                    .timeStampES(ts)
+                    .timeStampOS(isMigrationNotStarted() ? "" : ts)
+                    .build();
         } else {
             return initIndex();
+        }
+    }
+
+    /**
+     * Creates reindex working and live indices for all applicable providers from a single
+     * timestamp, then updates both stores so that each provider points to the new reindex slots
+     * while preserving its existing working/live pointers.
+     *
+     * <p>Name transformation rules (same as {@link #createContentIndex}):</p>
+     * <ul>
+     *   <li>ES: cluster-prefixed physical name</li>
+     *   <li>OS: plain name</li>
+     * </ul>
+     *
+     * <p>Applies to all phases; OS store is skipped in phase 0.</p>
+     *
+     * @param ts timestamp string produced by {@link ContentletIndexAPI#threadSafeTimestampFormatter}
+     * @throws DotDataException on persistence or creation failure
+     */
+    private void initAndPointReindex(final String ts) throws DotDataException {
+        final String reindexWorkingName = IndexType.REINDEX_WORKING.getPrefix() + "_" + ts;
+        final String reindexLiveName    = IndexType.REINDEX_LIVE.getPrefix()    + "_" + ts;
+
+        // Physical index creation — router fan-out applies name transformation per provider
+        try {
+            createContentIndex(reindexWorkingName, 0);
+            createContentIndex(reindexLiveName, 0);
+        } catch (IOException e) {
+            throw new DotDataException(
+                    "Error creating reindex indices for ts=" + ts + ": " + e.getMessage(), e);
+        }
+
+        // ── LEGACY ES — remove after Phase 3 migration ────────────────────────
+        // Persist reindex slots to the legacy ES store, preserving existing working/live pointers
+        final IndiciesInfo oldInfo = legacyIndiciesAPI.loadIndicies();
+        final String esReindexWorking = toESPhysicalName(reindexWorkingName);
+        final String esReindexLive    = toESPhysicalName(reindexLiveName);
+        final IndiciesInfo.Builder esBuilder = new IndiciesInfo.Builder();
+        esBuilder.setWorking(oldInfo.getWorking());
+        esBuilder.setLive(oldInfo.getLive());
+        esBuilder.setSiteSearch(oldInfo.getSiteSearch());
+        esBuilder.setReindexWorking(esReindexWorking);
+        esBuilder.setReindexLive(esReindexLive);
+        legacyIndiciesAPI.point(esBuilder.build());
+        ESMappingUtilHelper.getInstance().addCustomMapping(esReindexWorking, esReindexLive);
+        // ── END LEGACY ES ─────────────────────────────────────────────────────
+
+        // Persist reindex slots to the OS versioned-indices store (plain names)
+        if (!isMigrationNotStarted()) {
+            final Optional<VersionedIndices> existingOpt =
+                    versionedIndicesAPI.loadDefaultVersionedIndices();
+            final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder()
+                    .reindexWorking(reindexWorkingName)
+                    .reindexLive(reindexLiveName);
+            // Preserve existing working/live pointers in the OS store
+            existingOpt.ifPresent(vi -> {
+                vi.working().ifPresent(osBuilder::working);
+                vi.live().ifPresent(osBuilder::live);
+            });
+            versionedIndicesAPI.saveIndices(osBuilder.build());
+            ESMappingUtilHelper.getInstance().addCustomMapping(reindexWorkingName, reindexLiveName);
         }
     }
 

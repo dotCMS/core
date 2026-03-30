@@ -146,7 +146,7 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public List<String> getLiveWorkingIndicesSortedByCreationDateDesc() {
-        return router.read(impl -> impl.getLiveWorkingIndicesSortedByCreationDateDesc());
+        return router.read(IndexAPI::getLiveWorkingIndicesSortedByCreationDateDesc);
     }
 
     @Override
@@ -167,12 +167,12 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public boolean waitUtilIndexReady() {
-        return router.read(impl -> impl.waitUtilIndexReady());
+        return router.read(IndexAPI::waitUtilIndexReady);
     }
 
     @Override
     public ClusterStats getClusterStats() {
-        return router.read(impl -> impl.getClusterStats());
+        return router.read(IndexAPI::getClusterStats);
     }
 
     // -------------------------------------------------------------------------

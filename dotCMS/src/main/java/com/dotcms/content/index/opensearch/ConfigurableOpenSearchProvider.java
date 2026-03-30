@@ -159,7 +159,7 @@ class ConfigurableOpenSearchProvider {
     private String[] getDefaultEndpoints() {
         String hostname = IndexConfigHelper.getString(OSIndexProperty.HOSTNAME, "localhost");
         String protocol = IndexConfigHelper.getString(OSIndexProperty.PROTOCOL, HTTPS_PROTOCOL);
-        int port = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9200);
+        int port = IndexConfigHelper.getInt(OSIndexProperty.PORT, 9201);
 
         return new String[] { protocol + "://" + hostname + ":" + port };
     }

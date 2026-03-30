@@ -117,6 +117,7 @@ public class BulkProcessorListener implements IndexBulkListener {
             if (!successful.isEmpty()) {
                 APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
                 CacheLocator.getESQueryCache().clearCache();
+                CacheLocator.getOSQueryCache().clearCache();
             }
         } catch (DotDataException e) {
             Logger.warnAndDebug(this.getClass(),
