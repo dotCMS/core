@@ -4,7 +4,16 @@
 @let runningExperiment = $runningExperiment();
 @let lockOptions = $lockOptions();
 
-<p-toolbar>
+<p-toolbar
+    [pt]="{
+        root: {
+            style: {
+                borderRadius: '0',
+                border: 'none',
+                borderBottom: 'solid 1px var(--color-gray-200)'
+            }
+        }
+    }">
     <ng-template #start>
         <div class="flex items-center gap-1" [ngClass]="{ 'p-0': preview || live }">
             <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />

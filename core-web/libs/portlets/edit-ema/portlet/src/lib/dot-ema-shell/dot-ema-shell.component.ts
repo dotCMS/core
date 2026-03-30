@@ -104,13 +104,13 @@ export class DotEmaShellComponent implements OnInit {
 
         return [
             {
-                icon: 'pi-file',
+                materialIcon: 'description',
                 label: 'editema.editor.navbar.content',
                 href: 'content',
                 id: 'content'
             },
             {
-                icon: 'pi-table',
+                materialIcon: 'space_dashboard',
                 label: 'editema.editor.navbar.layout',
                 href: 'layout',
                 id: 'layout',
@@ -120,26 +120,26 @@ export class DotEmaShellComponent implements OnInit {
                     : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
             },
             {
-                icon: 'pi-sliders-h',
+                materialIcon: 'rule',
                 label: 'editema.editor.navbar.rules',
                 id: 'rules',
                 href: `rules/${page?.identifier}`,
                 isDisabled: (canSeeRulesExists && !page.canSeeRules) || !page?.canEdit
             },
             {
-                iconURL: 'experiments',
+                materialIcon: 'call_split',
                 label: 'editema.editor.navbar.experiments',
                 href: `experiments/${page?.identifier}`,
                 id: 'experiments',
                 isDisabled: !page?.canEdit
             },
             {
-                icon: 'pi-th-large',
+                materialIcon: 'bar_chart',
                 label: 'editema.editor.navbar.page-tools',
                 id: 'page-tools'
             },
             {
-                icon: 'pi-ellipsis-v',
+                materialIcon: 'settings',
                 label: 'editema.editor.navbar.properties',
                 id: 'properties',
                 isDisabled: isLoading
