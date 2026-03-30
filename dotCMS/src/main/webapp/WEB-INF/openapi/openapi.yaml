@@ -11463,6 +11463,40 @@ paths:
       summary: stops bundle
       tags:
       - OSGi Plugins
+  /v1/page-scanner/a11y/check:
+    post:
+      operationId: a11yCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Checker
+  /v1/page-scanner/geo/check:
+    post:
+      operationId: geoCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Checker
   /v1/page/_check-permission:
     post:
       description: Returns true if the page exists and the current user has the specified
@@ -33233,6 +33267,10 @@ components:
         leftOffset:
           type: integer
           format: int32
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         preview:
           type: boolean
         styleClass:
@@ -33253,6 +33291,10 @@ components:
         leftOffset:
           type: integer
           format: int32
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
         width:

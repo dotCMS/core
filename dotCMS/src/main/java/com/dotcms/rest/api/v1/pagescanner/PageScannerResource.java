@@ -1,0 +1,239 @@
+package com.dotcms.rest.api.v1.pagescanner;
+
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.Date;
+import java.util.Map;
+
+/**
+ * REST resource that proxies requests to the remote Page Scanner service for
+ * accessibility (a11y) and geo checks. Both endpoints require an authenticated
+ * backend user and inject a short-lived JWT so the upstream service can
+ * call back into dotCMS on behalf of the requesting user.
+ */
+@Path("/v1/page-scanner")
+@Tag(name = "Accessibility Checker", description = "Web accessibility checking and compliance")
+public class PageScannerResource {
+
+    public static final String API_URL_PROPERTY        = "DOT_PAGE_SCANNER_API_URL";
+    public static final String API_AUTH_TOKEN_PROPERTY = "DOT_PAGE_SCANNER_API_AUTH_TOKEN";
+
+    static final String DEFAULT_API_URL =
+            "https://a11y.api.dotcms.site";
+    static final String DEFAULT_API_AUTH_TOKEN =
+            "AYddCh9S6YHW_t_HUNAA1oKevRdyjZCnn5A_asvqXTkca6IdVRfnR_LydQzeaDgR";
+
+    private static final String NOT_CONFIGURED_MSG =
+            "Page Scanner is not configured. Environment variables "
+            + "DOT_PAGE_SCANNER_API_URL and DOT_PAGE_SCANNER_API_AUTH_TOKEN are required.";
+
+    /** Short-lived token TTL: 5 minutes */
+    private static final long TOKEN_TTL_MS = 5L * 60L * 1000L;
+
+    private final WebResource webResource;
+
+    public PageScannerResource() {
+        this.webResource = new WebResource();
+    }
+
+    /**
+     * Proxies a POST request to the upstream {@code /a11y/check} endpoint.
+     *
+     * @param request  the HTTP servlet request
+     * @param response the HTTP servlet response
+     * @param body     JSON object containing at minimum {@code { "url": "..." }}
+     * @return the upstream response, status code preserved
+     */
+    @POST
+    @Path("/a11y/check")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response a11yCheck(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final Map<String, Object> body) {
+
+        return proxyCheck(request, response, body, "a11y");
+    }
+
+    /**
+     * Proxies a POST request to the upstream {@code /geo/check} endpoint.
+     *
+     * @param request  the HTTP servlet request
+     * @param response the HTTP servlet response
+     * @param body     JSON object containing at minimum {@code { "url": "..." }}
+     * @return the upstream response, status code preserved
+     */
+    @POST
+    @Path("/geo/check")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response geoCheck(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final Map<String, Object> body) {
+
+        return proxyCheck(request, response, body, "geo");
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    private Response proxyCheck(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final Map<String, Object> body,
+            final String checkType) {
+
+        // Require authenticated backend user
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final String apiUrl       = Config.getStringProperty(API_URL_PROPERTY, DEFAULT_API_URL);
+        final String apiAuthToken = Config.getStringProperty(API_AUTH_TOKEN_PROPERTY, DEFAULT_API_AUTH_TOKEN);
+
+        if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
+            Logger.warn(PageScannerResource.class,
+                    "Page Scanner not configured: missing DOT_PAGE_SCANNER_API_URL or DOT_PAGE_SCANNER_API_AUTH_TOKEN");
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(NOT_CONFIGURED_MSG)
+                    .build();
+        }
+
+        final User user = initData.getUser();
+        final String pageUrl = body != null ? String.valueOf(body.getOrDefault("url", "")) : "";
+
+        // Generate a short-lived JWT for the current user
+        final String shortLivedToken = generateShortLivedToken(user, request);
+
+        if (!UtilMethods.isSet(shortLivedToken)) {
+            Logger.error(PageScannerResource.class,
+                    "Failed to generate short-lived token for user: " + user.getUserId());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Unable to generate authentication token.")
+                    .build();
+        }
+
+        // Build the JSON payload for the upstream service
+        final String upstreamPayload = buildPayload(pageUrl, shortLivedToken);
+
+        // Build the upstream URL
+        final String upstreamUrl = buildUpstreamUrl(apiUrl, checkType);
+
+        Logger.debug(PageScannerResource.class,
+                "Forwarding " + checkType + " check to: " + upstreamUrl);
+
+        return forwardRequest(upstreamUrl, upstreamPayload, apiAuthToken);
+    }
+
+    private String generateShortLivedToken(final User user, final HttpServletRequest request) {
+        try {
+            final Date expiry = new Date(System.currentTimeMillis() + TOKEN_TTL_MS);
+            final String ipAddress = request.getRemoteAddr();
+
+            final ApiToken apiToken = APILocator.getApiTokenAPI()
+                    .persistApiToken(user.getUserId(), expiry, user.getUserId(), ipAddress, "page-scanner-short-lived");
+
+            return APILocator.getApiTokenAPI().getJWT(apiToken, user);
+        } catch (Exception e) {
+            Logger.error(PageScannerResource.class,
+                    "Error generating short-lived token: " + e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private String buildPayload(final String url, final String shortLivedToken) {
+        // Simple JSON construction — avoids pulling in a full mapper dependency
+        final String safeUrl   = escapeJson(url);
+        final String safeToken = escapeJson(shortLivedToken);
+        return "{\"url\":\"" + safeUrl + "\",\"shortLivedToken\":\"" + safeToken + "\"}";
+    }
+
+    private String buildUpstreamUrl(final String apiUrl, final String checkType) {
+        final String base = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
+        return base + "/" + checkType + "/check";
+    }
+
+    private Response forwardRequest(
+            final String upstreamUrl,
+            final String payload,
+            final String authToken) {
+
+        try {
+            final HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(30))
+                    .build();
+
+            final HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(upstreamUrl))
+                    .timeout(Duration.ofSeconds(60))
+                    .header("Content-Type", MediaType.APPLICATION_JSON)
+                    .header("auth-token", authToken)
+                    .POST(HttpRequest.BodyPublishers.ofString(payload))
+                    .build();
+
+            final HttpResponse<String> upstreamResponse =
+                    client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+            Logger.debug(PageScannerResource.class,
+                    "Upstream responded with status: " + upstreamResponse.statusCode());
+
+            return Response.status(upstreamResponse.statusCode())
+                    .entity(upstreamResponse.body())
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+
+        } catch (Exception e) {
+            Logger.error(PageScannerResource.class,
+                    "Network error forwarding to upstream Page Scanner: " + e.getMessage(), e);
+            return Response.status(Response.Status.BAD_GATEWAY)
+                    .entity("Unable to reach the Page Scanner service: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * Minimal JSON string escaping to prevent injection in the payload JSON.
+     */
+    private String escapeJson(final String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+}

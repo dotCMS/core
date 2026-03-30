@@ -1,0 +1,308 @@
+<p-dialog
+    [visible]="visible()"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [maximizable]="true"
+    [style]="{ height: '90vh', width: '860px' }"
+    [appendTo]="'body'"
+    (onHide)="onDialogHide()"
+    (visibleChange)="visible.set($event)">
+    <ng-template pTemplate="header">
+        <div class="flex items-center gap-2">
+            @if (reportType() === 'a11y') {
+                <span class="material-icons text-primary">accessibility</span>
+                <span class="font-semibold text-lg">
+                    {{ 'page.scanner.a11y.dialog.title' | dm }}
+                </span>
+            } @else {
+                <span class="material-icons text-primary">language</span>
+                <span class="font-semibold text-lg">
+                    {{ 'page.scanner.geo.dialog.title' | dm }}
+                </span>
+            }
+        </div>
+    </ng-template>
+
+    <div class="p-4">
+        @if (loading()) {
+            <!-- Skeleton loading state -->
+            <div class="flex gap-3 mb-6">
+                @for (i of [1, 2, 3, 4]; track i) {
+                    <div class="flex-1">
+                        <p-skeleton height="80px" borderRadius="8px" />
+                    </div>
+                }
+            </div>
+            @for (i of [1, 2, 3]; track i) {
+                <p-skeleton height="48px" borderRadius="8px" styleClass="mb-2" />
+            }
+        } @else if (error()) {
+            <!-- Error state -->
+            <div class="flex flex-col items-center justify-center py-12 gap-4">
+                <span class="material-icons text-5xl text-red-500">error_outline</span>
+                <p class="text-center text-color-secondary">{{ error() }}</p>
+            </div>
+        } @else if (reportType() === 'a11y' && a11yData()) {
+            <!-- A11y report -->
+            <div class="flex gap-3 mb-6">
+                <div class="flex-1 p-3 rounded-lg border border-solid border-gray-200 bg-gray-50">
+                    <p class="text-xs text-color-secondary mb-1">
+                        {{ 'page.scanner.a11y.standard' | dm }}
+                    </p>
+                    <p class="font-semibold text-sm">{{ a11yData()!.standard }}</p>
+                </div>
+                <div class="flex-1 p-3 rounded-lg border border-solid border-red-200 bg-red-50">
+                    <p class="text-xs text-color-secondary mb-1">
+                        {{ 'page.scanner.a11y.errors' | dm }}
+                    </p>
+                    <p class="font-semibold text-sm text-red-700">
+                        {{ a11yData()!.findings?.byType?.errors ?? 0 }}
+                    </p>
+                </div>
+                <div
+                    class="flex-1 p-3 rounded-lg border border-solid border-yellow-200 bg-yellow-50">
+                    <p class="text-xs text-color-secondary mb-1">
+                        {{ 'page.scanner.a11y.warnings' | dm }}
+                    </p>
+                    <p class="font-semibold text-sm text-yellow-700">
+                        {{ a11yData()!.findings?.byType?.warnings ?? 0 }}
+                    </p>
+                </div>
+                <div class="flex-1 p-3 rounded-lg border border-solid border-blue-200 bg-blue-50">
+                    <p class="text-xs text-color-secondary mb-1">
+                        {{ 'page.scanner.a11y.notices' | dm }}
+                    </p>
+                    <p class="font-semibold text-sm text-blue-700">
+                        {{ a11yData()!.findings?.byType?.notices ?? 0 }}
+                    </p>
+                </div>
+            </div>
+
+            @if (a11yGroups().length > 0) {
+                <p-accordion [multiple]="true">
+                    @for (group of a11yGroups(); track group.code) {
+                        <p-accordion-panel [value]="group.code">
+                            <p-accordion-header>
+                                <div class="flex items-center gap-2 w-full">
+                                    @if (group.type === 'error') {
+                                        <span class="material-icons text-red-500 text-base">
+                                            cancel
+                                        </span>
+                                    } @else if (group.type === 'warning') {
+                                        <span class="material-icons text-yellow-500 text-base">
+                                            warning
+                                        </span>
+                                    } @else {
+                                        <span class="material-icons text-blue-500 text-base">
+                                            info
+                                        </span>
+                                    }
+                                    <span
+                                        class="font-mono text-xs flex-1 truncate"
+                                        [title]="group.code">
+                                        {{ group.code }}
+                                    </span>
+                                    @if (group.impact) {
+                                        <span
+                                            class="text-xs px-2 py-0.5 rounded-full font-medium mr-1"
+                                            [class]="
+                                                group.impact === 'critical' ||
+                                                group.impact === 'serious'
+                                                    ? 'bg-red-100 text-red-800'
+                                                    : group.impact === 'moderate'
+                                                      ? 'bg-yellow-100 text-yellow-800'
+                                                      : 'bg-gray-100 text-gray-700'
+                                            ">
+                                            {{ group.impact }}
+                                        </span>
+                                    }
+                                    <span
+                                        class="text-xs px-2 py-0.5 rounded-full font-medium mr-1"
+                                        [class]="
+                                            group.type === 'error'
+                                                ? 'bg-red-100 text-red-800'
+                                                : group.type === 'warning'
+                                                  ? 'bg-yellow-100 text-yellow-800'
+                                                  : 'bg-blue-100 text-blue-800'
+                                        ">
+                                        {{ group.type }}
+                                    </span>
+                                    <span
+                                        class="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
+                                        {{ group.count }}
+                                    </span>
+                                </div>
+                            </p-accordion-header>
+                            <p-accordion-content>
+                                @if (group.helpUrl) {
+                                    <div class="mb-3">
+                                        <a
+                                            [href]="group.helpUrl"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="text-primary text-sm underline flex items-center gap-1">
+                                            <span class="material-icons text-base">
+                                                open_in_new
+                                            </span>
+                                            {{ 'page.scanner.a11y.learn.how.to.fix' | dm }}
+                                        </a>
+                                    </div>
+                                }
+                                <div class="flex flex-col gap-2">
+                                    @for (item of group.items; track $index) {
+                                        <div
+                                            class="p-2 rounded border border-solid border-gray-200 bg-gray-50">
+                                            <p
+                                                class="text-xs text-color-secondary mb-1 font-medium">
+                                                {{ 'page.scanner.a11y.element' | dm }}
+                                            </p>
+                                            <code
+                                                class="text-xs block bg-white rounded p-1 mb-2 overflow-x-auto">
+                                                {{ item.context }}
+                                            </code>
+                                            <p
+                                                class="text-xs text-color-secondary mb-1 font-medium">
+                                                {{ 'page.scanner.a11y.selector' | dm }}
+                                            </p>
+                                            <code
+                                                class="text-xs block bg-white rounded p-1 overflow-x-auto">
+                                                {{ item.selector }}
+                                            </code>
+                                        </div>
+                                    }
+                                </div>
+                            </p-accordion-content>
+                        </p-accordion-panel>
+                    }
+                </p-accordion>
+            } @else {
+                <div class="flex flex-col items-center justify-center py-12 gap-4">
+                    <span class="material-icons text-5xl text-green-500">check_circle</span>
+                    <p class="text-center text-color-secondary">
+                        {{ 'page.scanner.a11y.no.issues' | dm }}
+                    </p>
+                </div>
+            }
+        } @else if (reportType() === 'geo' && geoData()) {
+            <!-- GEO report -->
+            <div class="grid gap-4">
+                <!-- Score card -->
+                <p-card>
+                    <div class="flex items-center gap-6">
+                        <div class="w-32 h-32 flex-shrink-0">
+                            @if (geoChartData()) {
+                                <p-chart
+                                    type="doughnut"
+                                    [data]="geoChartData()"
+                                    [options]="{
+                                        cutout: '75%',
+                                        plugins: { legend: { display: false } }
+                                    }" />
+                            }
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-bold">{{ geoData()!.score }}</span>
+                                <span class="text-lg text-color-secondary">/100</span>
+                            </div>
+                            <span
+                                class="text-sm px-3 py-1 rounded-full font-semibold self-start"
+                                [class]="getScoreClass(geoData()!.score)">
+                                {{ getScoreLabel(geoData()!.score) }}
+                            </span>
+                        </div>
+                        @if (geoData()!.topIssues?.length > 0) {
+                            <div class="ml-auto flex flex-col gap-1">
+                                @for (severity of ['high', 'medium', 'low']; track severity) {
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="w-2 h-2 rounded-full flex-shrink-0"
+                                            [class]="
+                                                severity === 'high'
+                                                    ? 'bg-red-500'
+                                                    : severity === 'medium'
+                                                      ? 'bg-yellow-500'
+                                                      : 'bg-blue-400'
+                                            "></span>
+                                        <span class="text-xs capitalize">{{ severity }}</span>
+                                        <span class="text-xs font-semibold ml-1">
+                                            {{ countBySeverity(geoData()!.topIssues, severity) }}
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </p-card>
+
+                <!-- Category breakdown -->
+                <p-accordion [multiple]="true">
+                    @for (cat of geoCategories(); track cat.key) {
+                        <p-accordion-panel [value]="cat.key">
+                            <p-accordion-header>
+                                <div class="flex items-center gap-2 w-full">
+                                    <span
+                                        class="text-xs px-2 py-0.5 rounded-full font-bold w-12 text-center"
+                                        [class]="getScoreClass(cat.score)">
+                                        {{ cat.score }}
+                                    </span>
+                                    <span class="flex-1 font-medium text-sm">{{ cat.label }}</span>
+                                    <span class="text-xs text-color-secondary mr-2">
+                                        {{ cat.weight * 100 | number: '1.0-0' }}%
+                                    </span>
+                                    <span class="text-xs text-color-secondary">
+                                        {{ cat.passedCount }}/{{ cat.totalCount }}
+                                        {{ 'page.scanner.geo.passed' | dm }}
+                                    </span>
+                                </div>
+                            </p-accordion-header>
+                            <p-accordion-content>
+                                <div class="flex flex-col gap-2">
+                                    @for (sig of cat.signals; track sig.key) {
+                                        <div
+                                            class="flex items-start gap-3 p-2 rounded border border-solid border-gray-100">
+                                            <span
+                                                class="text-xs px-2 py-0.5 rounded font-semibold flex-shrink-0 mt-0.5"
+                                                [class]="getScoreClass(sig.score)">
+                                                {{ sig.score }}
+                                            </span>
+                                            <p class="text-sm text-color-secondary m-0">
+                                                {{ sig.message }}
+                                            </p>
+                                        </div>
+                                    }
+                                </div>
+                            </p-accordion-content>
+                        </p-accordion-panel>
+                    }
+                </p-accordion>
+
+                <!-- Top Issues card -->
+                @if (geoData()!.topIssues?.length > 0) {
+                    <p-card [header]="'page.scanner.geo.top.issues' | dm">
+                        <div class="flex flex-col gap-2">
+                            @for (issue of geoData()!.topIssues; track $index) {
+                                <div class="flex items-start gap-3">
+                                    <span
+                                        class="text-xs px-2 py-0.5 rounded-full font-medium capitalize flex-shrink-0 mt-0.5"
+                                        [class]="
+                                            issue.severity === 'high'
+                                                ? 'bg-red-100 text-red-800'
+                                                : issue.severity === 'medium'
+                                                  ? 'bg-orange-100 text-orange-800'
+                                                  : 'bg-blue-100 text-blue-800'
+                                        ">
+                                        {{ issue.severity }}
+                                    </span>
+                                    <p class="text-sm m-0">{{ issue.message }}</p>
+                                </div>
+                            }
+                        </div>
+                    </p-card>
+                }
+            </div>
+        }
+    </div>
+</p-dialog>

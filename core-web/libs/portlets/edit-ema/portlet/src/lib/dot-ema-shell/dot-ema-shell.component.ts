@@ -23,8 +23,12 @@ import { ToastModule } from 'primeng/toast';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { FeaturedFlags, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import {
+    DotPageToolsSeoComponent,
+    DotPageScannerReportComponent,
+    PageScannerToolType
+} from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
@@ -59,6 +63,7 @@ import {
         EditEmaNavigationBarComponent,
         RouterModule,
         DotPageToolsSeoComponent,
+        DotPageScannerReportComponent,
         DotEmaDialogComponent,
         DotInfoPageComponent,
         DotNotLicenseComponent,
@@ -70,6 +75,7 @@ import {
 export class DotEmaShellComponent implements OnInit {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
+    @ViewChild('pageScanner') pageScanner!: DotPageScannerReportComponent;
 
     readonly uveStore = inject(UVEStore);
     readonly destroyRef = inject(DestroyRef);
@@ -92,6 +98,10 @@ export class DotEmaShellComponent implements OnInit {
     });
 
     protected readonly $showBanner = signal<boolean>(true);
+
+    protected readonly $showPageScanner = computed<boolean>(
+        () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER] === true
+    );
 
     // Component builds its own menu items locally
     protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
@@ -293,6 +303,18 @@ export class DotEmaShellComponent implements OnInit {
                 angularCurrentPortlet: 'edit-page'
             });
         }
+    }
+
+    /**
+     * Handle scanner tool click from the page tools panel.
+     * Opens the page scanner report dialog with the selected tool type.
+     *
+     * @param {PageScannerToolType} type
+     * @memberof DotEmaShellComponent
+     */
+    handleScannerToolClick(type: PageScannerToolType): void {
+        const pageUrl = this.$seoParams().currentUrl ?? '';
+        this.pageScanner.open(type, pageUrl);
     }
 
     /**

@@ -42,7 +42,10 @@ import {
     LoginService,
     SiteService
 } from '@dotcms/dotcms-js';
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DotPageScannerReportComponent,
+    DotPageToolsSeoComponent
+} from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
@@ -242,7 +245,8 @@ describe('DotEmaShellComponent', () => {
         ],
         declarations: [
             MockComponent(DotEmaDialogComponent),
-            MockComponent(DotPageToolsSeoComponent)
+            MockComponent(DotPageToolsSeoComponent),
+            MockComponent(DotPageScannerReportComponent)
         ],
         componentProviders: [
             MessageService,
@@ -1047,6 +1051,7 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
+
                 expect(reloadSpy).toHaveBeenCalled();
             });
         });

@@ -12,6 +12,35 @@
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}">
     @if (tools$ | async; as tools) {
         <div class="page-tools">
+            @if (showPageScanner()) {
+                <div class="page-scanner-section mb-4">
+                    <p class="text-sm font-semibold text-color-secondary mb-2">
+                        {{ 'page.tools.scanner.section.title' | dm }}
+                    </p>
+                    <div class="flex gap-2">
+                        <button
+                            type="button"
+                            class="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-solid border-gray-200 flex-1 cursor-pointer bg-white hover:bg-primary-50 transition-colors"
+                            data-testid="page-scanner-a11y-btn"
+                            (click)="onScannerToolClick('a11y')">
+                            <span class="material-icons text-3xl text-primary">accessibility</span>
+                            <span class="text-sm font-medium">
+                                {{ 'page.tools.scanner.a11y.title' | dm }}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            class="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-solid border-gray-200 flex-1 cursor-pointer bg-white hover:bg-primary-50 transition-colors"
+                            data-testid="page-scanner-geo-btn"
+                            (click)="onScannerToolClick('geo')">
+                            <span class="material-icons text-3xl text-primary">language</span>
+                            <span class="text-sm font-medium">
+                                {{ 'page.tools.scanner.geo.title' | dm }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            }
             <ul class="page-tools-list">
                 @for (tool of tools.pageTools; track tool) {
                     <li class="page-tools-list__item" data-testId="page-tools-list-item">
@@ -32,7 +61,7 @@
                                     {{ tool.title }}
                                     <i class="pi pi-external-link page-tools-external-link"></i>
                                 </span>
-                                <p class="page-tools-list__description">
+                                <p class="page-tools-list__description line-clamp-2">
                                     {{ tool.description }}
                                 </p>
                                 <div class="page-tools-list__chips">

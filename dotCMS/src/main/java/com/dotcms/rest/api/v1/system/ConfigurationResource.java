@@ -6,6 +6,7 @@ import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
+import com.dotcms.rest.api.v1.pagescanner.PageScannerResource;
 import com.dotmarketing.util.StringUtils;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
@@ -71,11 +72,24 @@ public class ConfigurationResource implements Serializable {
 							FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS, FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP, "CONTENT_EDITOR2_ENABLED", "CONTENT_EDITOR2_CONTENT_TYPE",
 							FeatureFlagName.FEATURE_FLAG_NEW_BINARY_FIELD, FeatureFlagName.FEATURE_FLAG_ANNOUNCEMENTS, FeatureFlagName.FEATURE_FLAG_NEW_EDIT_PAGE,
 							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
-                            FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES }));
+                            FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES,
+							FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
+							PageScannerResource.API_URL_PROPERTY,
+							PageScannerResource.API_AUTH_TOKEN_PROPERTY }));
 
+	/**
+	 * Keys that are explicitly whitelisted but whose names happen to match the
+	 * obfuscate pattern (e.g. contain "token" or "key"). These are intentionally
+	 * exposed and must not be suppressed by the blacklist check.
+	 */
+	private static final Set<String> BLACKLIST_EXEMPTIONS = ImmutableSet.of(
+			PageScannerResource.API_AUTH_TOKEN_PROPERTY);
 
 	private boolean isOnBlackList(final String key) {
 
+		if (BLACKLIST_EXEMPTIONS.contains(key)) {
+			return false;
+		}
 		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;
 	}
 	/**
@@ -145,6 +159,9 @@ public class ConfigurationResource implements Serializable {
 		} else if (key.startsWith("number:")) {
 
 			return Config.getIntProperty(key.replace("number:", StringPool.BLANK), 0);
+		} else if (key.startsWith("FEATURE_FLAG_")) {
+
+			return Config.getBooleanProperty(key, false);
 		}
 
 		return Config.getStringProperty(key, "NOT_FOUND");
