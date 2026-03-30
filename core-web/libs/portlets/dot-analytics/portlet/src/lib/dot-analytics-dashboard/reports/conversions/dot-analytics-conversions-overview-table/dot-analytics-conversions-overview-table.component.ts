@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
@@ -20,13 +20,13 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
 @Component({
     selector: 'dot-analytics-conversions-overview-table',
     imports: [
-        CommonModule,
         SkeletonModule,
         TableModule,
         TagModule,
         DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DecimalPipe
     ],
     templateUrl: './dot-analytics-conversions-overview-table.component.html',
     styleUrl: './dot-analytics-conversions-overview-table.component.scss',

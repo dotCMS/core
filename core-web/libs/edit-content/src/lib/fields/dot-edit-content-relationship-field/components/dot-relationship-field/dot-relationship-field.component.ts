@@ -33,7 +33,6 @@ import { HeaderComponent } from './../dot-select-existing-content/components/hea
 import { DotSelectExistingContentComponent } from './../dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './../pagination/pagination.component';
 
-import { DotEditContentDialogComponent } from '../../../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
@@ -49,13 +48,13 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         ChipModule,
         ContentletStatusPipe,
         LanguagePipe,
-        PaginationComponent,
-        DotMessagePipe
+        PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
+        RelationshipFieldStore,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -189,7 +188,7 @@ export class DotRelationshipFieldComponent
      * @memberof DotEditContentRelationshipFieldComponent
      */
     ngOnInit() {
-        this.initialize(this.$inputs);
+        this.initialize(this.$inputs());
     }
 
     /**
@@ -215,8 +214,8 @@ export class DotRelationshipFieldComponent
 
         const contentType = this.store.contentType();
 
-        // Don't open dialog if contentTypeId is null (invalid field data)
-        if (!contentType.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data)
+        if (!contentType?.id) {
             return;
         }
 
@@ -255,11 +254,17 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Reorders the data in the store.
-     * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
+     * Persists row order after a PrimeNG table row reorder.
+     *
+     * PrimeNG mutates the bound `[value]` array in-place via `ObjectUtils.reorderArray` before
+     * emitting `onRowReorder` (see `Table.onRowDrop` in `primeng/table`). `dragIndex` / `dropIndex`
+     * describe that mutation; re-applying them here would corrupt the order. The store must only
+     * take an immutable snapshot so signal consumers re-run (`setData` clones the array).
      */
     onRowReorder(event: TableRowReorderEvent) {
-        if (this.$isDisabled() || event?.dragIndex == null || event?.dropIndex == null) {
+        const dragIndex = event?.dragIndex;
+        const dropIndex = event?.dropIndex;
+        if (this.$isDisabled() || dragIndex == null || dropIndex == null) {
             return;
         }
 
@@ -269,11 +274,14 @@ export class DotRelationshipFieldComponent
     /**
      * Opens the new content dialog for creating content using the Angular editor
      */
-    showCreateNewContentDialog(): void {
+    async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
         if (this.$isDisabled() || !contentType) {
             return;
         }
+
+        const { DotEditContentDialogComponent } =
+            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
 
         const dialogData: EditContentDialogData = {
             mode: 'new',
@@ -293,6 +301,7 @@ export class DotRelationshipFieldComponent
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
+            closable: true,
             closeOnEscape: true,
             draggable: false,
             keepInViewport: true,

@@ -12,7 +12,7 @@ import { DotLinkComponent } from '../dot-link/dot-link.component';
 @Component({
     standalone: false,
     template: `
-        <dot-api-link [href]="href"></dot-api-link>
+        <dot-api-link [href]="href" />
     `
 })
 class TestHostComponent {

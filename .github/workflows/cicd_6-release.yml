@@ -160,6 +160,20 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 
+  # Release Notes - AI-generated changelog for the GitHub release description
+  # Runs after the release job succeeds; non-blocking for finalize/report
+  release-notes:
+    name: Release Notes
+    needs: [ release-prepare, release ]
+    if: success()
+    uses: ./.github/workflows/cicd_comp_ai-release-notes-phase.yml
+    with:
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      allow_failure: true
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
   # Finalize - standard finalization phase (required for phase pattern)
   finalize:
     name: Finalize

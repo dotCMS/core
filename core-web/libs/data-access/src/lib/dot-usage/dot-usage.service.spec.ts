@@ -11,31 +11,31 @@ describe('DotUsageService', () => {
     const mockSummary: UsageSummary = {
         metrics: {
             content: {
-                COUNT_CONTENT: {
-                    name: 'COUNT_CONTENT',
+                CONTENTLETS_COUNT: {
+                    name: 'CONTENTLETS_COUNT',
                     value: 1500,
-                    displayLabel: 'usage.metric.COUNT_CONTENT'
+                    displayLabel: 'usage.metric.CONTENTLETS_COUNT'
                 }
             },
             site: {
-                COUNT_OF_SITES: {
-                    name: 'COUNT_OF_SITES',
+                SITES_COUNT_OF_SITES: {
+                    name: 'SITES_COUNT_OF_SITES',
                     value: 5,
-                    displayLabel: 'usage.metric.COUNT_OF_SITES'
+                    displayLabel: 'usage.metric.SITES_COUNT_OF_SITES'
                 }
             },
             user: {
-                COUNT_OF_USERS: {
-                    name: 'COUNT_OF_USERS',
+                USERS_COUNT_OF_USERS: {
+                    name: 'USERS_COUNT_OF_USERS',
                     value: 60,
-                    displayLabel: 'usage.metric.COUNT_OF_USERS'
+                    displayLabel: 'usage.metric.USERS_COUNT_OF_USERS'
                 }
             },
             system: {
-                COUNT_LANGUAGES: {
-                    name: 'COUNT_LANGUAGES',
+                LANGUAGES_COUNT: {
+                    name: 'LANGUAGES_COUNT',
                     value: 3,
-                    displayLabel: 'usage.metric.COUNT_LANGUAGES'
+                    displayLabel: 'usage.metric.LANGUAGES_COUNT'
                 }
             }
         },

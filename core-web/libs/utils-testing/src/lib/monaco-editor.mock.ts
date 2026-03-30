@@ -53,7 +53,8 @@ export const monacoMock = {
                 endLineNumber: 1,
                 endColumn: 1
             }),
-            executeEdits: () => {}
+            executeEdits: () => {},
+            focus: () => {}
         }),
         setModelLanguage: () => {},
         createModel: () => ({

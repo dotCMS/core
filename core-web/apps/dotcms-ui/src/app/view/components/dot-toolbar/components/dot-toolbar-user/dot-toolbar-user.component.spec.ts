@@ -3,7 +3,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -11,8 +12,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService, DotUiColorsService } from '@dotcms/data-access';
-import { CoreWebService, LoggerService, LoginService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
+import { LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
@@ -31,6 +32,8 @@ describe('DotToolbarUserComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 {
                     provide: LOCATION_TOKEN,
                     useValue: {
@@ -46,16 +49,10 @@ describe('DotToolbarUserComponent', () => {
                 },
                 { provide: LoggerService, useValue: { error: jest.fn() } },
                 { provide: DotMessageService, useValue: { get: (key: string) => key } },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotToolbarUserStore
             ],
-            imports: [
-                BrowserAnimationsModule,
-                RouterTestingModule,
-                HttpClientTestingModule,
-                DotToolbarUserComponent
-            ]
+            imports: [BrowserAnimationsModule, RouterTestingModule, DotToolbarUserComponent]
         });
 
         fixture = TestBed.createComponent(DotToolbarUserComponent);

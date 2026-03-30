@@ -11,7 +11,7 @@ import { TabViewInsertDirective } from './tab-view-insert.directive';
 @Component({
     template: `
         <p-tabs [value]="0">
-            <ng-template [dotTabViewAppend]="appendContent"></ng-template>
+            <ng-template [dotTabViewAppend]="appendContent" />
             <p-tablist>
                 <p-tab [value]="0">Tab 1</p-tab>
                 <p-tab [value]="1">Tab 2</p-tab>

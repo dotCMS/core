@@ -17,7 +17,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
@@ -26,7 +26,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotSiteComponent } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     DotWorkflowServiceMock,
@@ -162,7 +161,6 @@ describe('ContentTypesFormComponent', () => {
             },
             { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
             { provide: DotLicenseService, useClass: MockDotLicenseService },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: ActivatedRoute, useValue: mockActivatedRoute },
             {
                 provide: DotcmsEventsService,

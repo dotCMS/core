@@ -1,7 +1,7 @@
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
@@ -32,8 +32,6 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotPushPublishDialogService,
@@ -148,8 +146,9 @@ describe('DotPageStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotEventsService,
                 DotGlobalMessageService,
                 DotIframeService,
@@ -168,7 +167,6 @@ describe('DotPageStore', () => {
                 DotPushPublishDialogService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 {
                     provide: DotMessageDisplayService,

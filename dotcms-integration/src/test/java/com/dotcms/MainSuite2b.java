@@ -107,13 +107,13 @@ import com.dotcms.rest.api.v1.asset.AssetPathResolverImplIntegrationTest;
 import com.dotcms.rest.api.v1.asset.WebAssetHelperIntegrationTest;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtilTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
+import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.publishing.BundleManagementResourceIntegrationTest;
 import com.dotcms.rest.api.v1.publishing.PublishingResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
-import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
@@ -251,6 +251,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
+
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
@@ -468,6 +469,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.PermissionAPITest.class,
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
+        com.dotmarketing.servlets.InitRunnerTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
