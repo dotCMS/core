@@ -360,7 +360,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(
                 tokens.size(),
-                sendTokensToOpenAI(contentId, tokens, userId));
+                sendTokensToOpenAI(contentId, tokens, content, userId));
         saveEmbeddingsForCache(content, openAiEmbeddings);
         EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
 
@@ -436,10 +436,11 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
      */
     private List<Float> sendTokensToOpenAI(final String contentId,
                                            @NotNull final List<Integer> tokens,
+                                           @NotNull final String content,
                                            final String userId) {
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MODEL, config.getEmbeddingsModel().getCurrentModel());
-        json.put(AiKeys.INPUT, tokens);
+        json.put(AiKeys.INPUT, content);
         config.debugLogger(this.getClass(), () -> String.format("Content tokens for content ID '%s': %s", contentId, tokens));
         final String responseString = AIProxyClient.get()
                 .callToAI(JSONObjectAIRequest.quickEmbeddings(config, json, userId))
