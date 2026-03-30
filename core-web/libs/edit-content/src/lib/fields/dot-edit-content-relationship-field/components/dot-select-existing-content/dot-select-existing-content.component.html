@@ -6,7 +6,8 @@
 <div class="w-full h-full">
     @if (store.errorMessage()) {
         <div
-            class="flex justify-center border border-solid border-gray-400 p-12 rounded-border text-base">
+            class="flex justify-center border border-solid border-gray-400 p-12 rounded-border text-base"
+            data-testid="error-message">
             <p>{{ store.errorMessage() | dm }}</p>
         </div>
     } @else {
@@ -74,7 +75,9 @@
             <ng-template pTemplate="emptymessage">
                 <tr>
                     <td [colSpan]="columns.length + $staticColumns()" class="border-0">
-                        <div class="flex justify-center p-12 text-base gap-2">
+                        <div
+                            class="flex justify-center p-12 text-base gap-2"
+                            data-testid="relationship-dialog-empty">
                             <i class="pi pi-folder-open"></i>
                             <p>{{ 'dot.file.relationship.dialog.search.empty.content' | dm }}</p>
                         </div>
@@ -82,12 +85,29 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-item let-columns="columns">
-                <tr [class.p-highlight]="checkIfSelected(item)">
+                @let isConstrained = store.isItemConstrained()(item.identifier);
+                <tr
+                    [class.p-highlight]="checkIfSelected(item)"
+                    [class.opacity-50]="isConstrained"
+                    [class.pointer-events-none]="isConstrained"
+                    [attr.aria-disabled]="isConstrained || null"
+                    [pTooltip]="
+                        isConstrained
+                            ? ('dot.file.relationship.dialog.content.already.related' | dm)
+                            : null
+                    "
+                    tooltipPosition="top">
                     <td class="max-w-20" pFrozenColumn alignFrozen="left" [frozen]="true">
                         @if (selectionMode === 'multiple') {
-                            <p-tableCheckbox [value]="item" />
+                            <p-tableCheckbox
+                                [value]="item"
+                                [disabled]="isConstrained"
+                                data-testid="row-checkbox" />
                         } @else {
-                            <p-tableRadioButton [value]="item" />
+                            <p-tableRadioButton
+                                [value]="item"
+                                [disabled]="isConstrained"
+                                data-testid="row-radio" />
                         }
                     </td>
                     <td class="w-[6rem] h-[6rem]">

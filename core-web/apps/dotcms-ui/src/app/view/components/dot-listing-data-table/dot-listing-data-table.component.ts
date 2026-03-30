@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectorRef,
@@ -66,7 +66,6 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     templateUrl: 'dot-listing-data-table.component.html',
     imports: [
         ActionHeaderComponent,
-        CommonModule,
         FormsModule,
         RouterModule,
         TableModule,
@@ -77,7 +76,8 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
         DotIconComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
-        DotStringFormatPipe
+        DotStringFormatPipe,
+        NgTemplateOutlet
     ]
 })
 export class DotListingDataTableComponent implements OnInit, AfterViewInit {

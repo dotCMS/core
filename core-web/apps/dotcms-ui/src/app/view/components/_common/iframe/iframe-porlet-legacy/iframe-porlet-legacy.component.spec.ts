@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -31,7 +32,6 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -43,12 +43,7 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import {
-    CoreWebServiceMock,
-    LoginServiceMock,
-    MockDotRouterService,
-    SiteServiceMock
-} from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
@@ -92,13 +87,10 @@ xdescribe('IframePortletLegacyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [],
-            imports: [
-                IFrameModule,
-                RouterTestingModule,
-                DotDownloadBundleDialogComponent,
-                HttpClientTestingModule
-            ],
+            imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogComponent],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentTypeService,
                 DotCustomEventHandlerService,
                 DotPushPublishDialogService,
@@ -112,7 +104,6 @@ xdescribe('IframePortletLegacyComponent', () => {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotContentletEditorService,

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, TemplateRef, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -14,7 +14,7 @@ import { Drawer } from 'primeng/drawer';
  */
 @Component({
     selector: 'dot-sidebar-header',
-    imports: [CommonModule, ButtonModule],
+    imports: [ButtonModule, NgTemplateOutlet],
     templateUrl: './dot-sidebar-header.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {

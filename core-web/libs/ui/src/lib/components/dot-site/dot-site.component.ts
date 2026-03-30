@@ -1,6 +1,5 @@
 import { signalState, patchState } from '@ngrx/signals';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -70,14 +69,7 @@ interface DotSiteState {
 
 @Component({
     selector: 'dot-site',
-    imports: [
-        CommonModule,
-        FormsModule,
-        SelectModule,
-        IconFieldModule,
-        InputIconModule,
-        InputTextModule
-    ],
+    imports: [FormsModule, SelectModule, IconFieldModule, InputIconModule, InputTextModule],
     templateUrl: './dot-site.component.html',
     styles: [
         `

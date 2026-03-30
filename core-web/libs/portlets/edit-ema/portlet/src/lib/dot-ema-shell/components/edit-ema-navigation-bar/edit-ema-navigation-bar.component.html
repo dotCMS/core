@@ -13,7 +13,7 @@
         <a
             [routerLink]="item.isDisabled ? null : item.href"
             [queryParams]="params"
-            [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
+            [class.edit-ema-nav-bar__item--disabled]="item.isDisabled"
             [pTooltip]="item.tooltip | dm"
             class="edit-ema-nav-bar__item"
             data-testId="nav-bar-item"
@@ -40,7 +40,7 @@
 <ng-template #button let-item="item">
     <button
         (click)="item.isDisabled ? null : itemAction(item)"
-        [ngClass]="{ 'edit-ema-nav-bar__item--disabled': item.isDisabled }"
+        [class.edit-ema-nav-bar__item--disabled]="item.isDisabled"
         [disabled]="item.isDisabled"
         class="edit-ema-nav-bar__item edit-ema-nav-bar__item--button"
         data-testId="nav-bar-item">

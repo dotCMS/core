@@ -52,6 +52,16 @@ export function withView() {
         withComputed((store) => ({
             viewMode: computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN),
 
+            $isEditMode: computed(
+                () => (store.pageParams()?.mode ?? UVE_MODE.UNKNOWN) === UVE_MODE.EDIT
+            ),
+            $isPreviewMode: computed(
+                () => (store.pageParams()?.mode ?? UVE_MODE.UNKNOWN) === UVE_MODE.PREVIEW
+            ),
+            $isLiveMode: computed(
+                () => (store.pageParams()?.mode ?? UVE_MODE.UNKNOWN) === UVE_MODE.LIVE
+            ),
+
             $urlContentMap: computed<DotCMSURLContentMap | null>(() => {
                 const urlContentMap = store.pageAsset()?.urlContentMap;
                 // GQL may return an empty object; treat it as null when there are no entries

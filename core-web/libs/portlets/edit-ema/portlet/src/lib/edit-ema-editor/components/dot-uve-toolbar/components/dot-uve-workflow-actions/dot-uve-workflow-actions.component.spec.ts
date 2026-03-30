@@ -2,7 +2,8 @@ import { describe, it } from '@jest/globals';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { Subject, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -22,7 +23,7 @@ import {
     DotWorkflowEventHandlerService,
     PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotProcessedWorkflowPayload, DotWorkflowPayload } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
@@ -129,7 +130,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUveWorkflowActionsComponent,
-        imports: [HttpClientTestingModule],
+        providers: [provideHttpClient(), provideHttpClientTesting()],
         componentProviders: [
             DotWizardService,
             DotWorkflowEventHandlerService,
@@ -143,7 +144,6 @@ describe('DotUveWorkflowActionsComponent', () => {
             mockProvider(PushPublishService),
             mockProvider(DotCurrentUserService),
             mockProvider(DotFormatDateService),
-            mockProvider(CoreWebService),
             mockProvider(DotIframeService),
             mockProvider(DotGlobalMessageService),
             {

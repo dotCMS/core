@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -81,7 +81,6 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
 @Component({
     selector: 'dot-edit-content-form-layout',
     imports: [
-        CommonModule,
         DotMessagePipe,
         ButtonModule,
         ToastModule,
@@ -90,7 +89,8 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
         ConfirmDialogModule,
-        DotEditContentCompareComponent
+        DotEditContentCompareComponent,
+        NgClass
     ],
     providers: [
         DotContentletService,

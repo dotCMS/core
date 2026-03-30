@@ -6,14 +6,7 @@
         tooltipPosition="bottom"
         [text]="true"
         [rounded]="true"
-        [pt]="{
-            root: {
-                class:
-                    device.inode === $state().device?.inode
-                        ? 'bg-(--color-palette-primary-op-20)!'
-                        : ''
-            }
-        }"
+        [class.active]="device.inode === $currentDevice()?.inode"
         (click)="onDeviceSelect(device)"
         [attr.data-testId]="device.inode" />
 }
@@ -28,10 +21,10 @@
     <!-- ROTATE THE ICON WHEN THE ORIENTATION IS LANDSCAPE -->
     <ng-template pTemplate="content">
         <svg
-            class="origin-center transition-transform duration-300 ease-in-out motion-reduce:transition-none"
-            [ngClass]="{
-                'rotate-90': $state().orientation === Orientation.LANDSCAPE,
-                'rotate-0': $state().orientation !== Orientation.LANDSCAPE
+            class="origin-center transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+            [class]="{
+                'rotate-90': $currentOrientation() === Orientation.LANDSCAPE,
+                'rotate-0': $currentOrientation() !== Orientation.LANDSCAPE
             }"
             fill="currentColor"
             viewBox="0 0 24 24"
@@ -52,11 +45,7 @@
         size="small"
         iconPos="right"
         [label]="$moreButtonLabel() | dm"
-        [pt]="{
-            root: {
-                class: $isMoreButtonActive() ? 'bg-(--color-palette-primary-op-20)!' : ''
-            }
-        }"
+        [class.active]="$isMoreButtonActive()"
         [text]="true"
         (click)="menu.toggle($event)"
         data-testId="more-button" />

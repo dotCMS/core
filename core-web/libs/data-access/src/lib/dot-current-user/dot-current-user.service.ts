@@ -6,13 +6,14 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
 import {
-    DotCMSAPIResponse,
+    DotCMSResponse,
     DotCurrentUser,
     DotPermissionsType,
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
 import { formatMessage } from '@dotcms/utils';
+
 @Injectable()
 export class DotCurrentUserService {
     readonly #http = inject(HttpClient);
@@ -28,9 +29,7 @@ export class DotCurrentUserService {
      * @memberof DotCurrentUserService
      */
     getCurrentUser(): Observable<DotCurrentUser> {
-        return this.#http
-            .get<DotCurrentUser>(this.#URL_CURRENT_USER)
-            .pipe(map((res: DotCurrentUser) => res));
+        return this.#http.get<DotCurrentUser>(this.#URL_CURRENT_USER);
     }
 
     /**
@@ -58,7 +57,7 @@ export class DotCurrentUserService {
         ]);
 
         return this.#http
-            .get<DotCMSAPIResponse<DotPermissionsType>>(permissionsUrl)
+            .get<DotCMSResponse<DotPermissionsType>>(permissionsUrl)
             .pipe(map((res) => res.entity));
     }
 
@@ -71,7 +70,7 @@ export class DotCurrentUserService {
     hasAccessToPortlet(portletid: string): Observable<boolean> {
         return this.#http
             .get<
-                DotCMSAPIResponse<{ response: boolean }>
+                DotCMSResponse<{ response: boolean }>
             >(this.#URL_PORLET_ACCESS.replace('{0}', portletid))
             .pipe(map((res) => res.entity.response));
     }

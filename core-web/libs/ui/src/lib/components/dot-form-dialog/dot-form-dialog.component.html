@@ -5,7 +5,7 @@
     <div
         class="flex shrink-0 justify-end gap-2 bg-white py-6"
         data-testid="dot-form-dialog-actions">
-        <ng-content select="[footerActions]"></ng-content>
+        <ng-content select="[footerActions]" />
         <p-button
             (click)="onSecondaryClick($event)"
             [label]="'cancel' | dm"

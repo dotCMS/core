@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -38,7 +37,7 @@ export type DeviceSelectorChange =
 
 @Component({
     selector: 'dot-uve-device-selector',
-    imports: [ButtonModule, TooltipModule, DotMessagePipe, NgClass, MenuModule],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe, MenuModule],
     templateUrl: './dot-uve-device-selector.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -119,6 +118,8 @@ export class DotUveDeviceSelectorComponent {
         return socialMedia || deviceInode;
     });
 
+    readonly $currentDevice = computed(() => this.$state().device);
+    readonly $currentOrientation = computed(() => this.$state().orientation);
     readonly $isMoreButtonActive = computed(() => !this.$state().device?._isDefault);
 
     /**
