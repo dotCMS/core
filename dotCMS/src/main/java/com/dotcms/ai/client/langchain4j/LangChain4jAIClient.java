@@ -216,7 +216,14 @@ public class LangChain4jAIClient implements AIClient {
 
     static String toImageResponseJson(final Image image) {
         final JSONObject data = new JSONObject();
-        data.put(AiKeys.URL, image.url() != null ? image.url().toString() : "");
+        if (image != null && image.url() != null) {
+            data.put(AiKeys.URL, image.url().toString());
+        } else if (image != null && image.base64Data() != null) {
+            data.put(AiKeys.URL, "");
+            data.put(AiKeys.B64_JSON, image.base64Data());
+        } else {
+            data.put(AiKeys.URL, "");
+        }
 
         final JSONArray dataArray = new JSONArray();
         dataArray.put(data);
