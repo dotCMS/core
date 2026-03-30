@@ -73,7 +73,7 @@
         </ng-template>
 
         <ng-template pTemplate="body" let-tag>
-            @if (store.status() === 'loading' || !store.tags().length) {
+            @if (store.status() === 'loading') {
                 <tr
                     data-testid="tags-loading-row"
                     class="cursor-default h-17 hover:bg-transparent!">
