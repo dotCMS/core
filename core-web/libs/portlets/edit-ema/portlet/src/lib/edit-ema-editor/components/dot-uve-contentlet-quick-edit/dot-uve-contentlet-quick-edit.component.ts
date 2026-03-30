@@ -139,7 +139,7 @@ export class DotUveContentletQuickEditComponent {
 
     // Internal form state
     private readonly contentletForm = signal<FormGroup | null>(null);
-    protected readonly $contentletForm = computed(() => this.contentletForm());
+    readonly $contentletForm = computed(() => this.contentletForm());
 
     private readonly currentIdentifier = signal<string | null>(null);
 

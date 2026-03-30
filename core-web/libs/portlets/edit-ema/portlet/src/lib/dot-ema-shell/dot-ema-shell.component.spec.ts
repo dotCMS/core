@@ -132,7 +132,7 @@ const NAV_ITEMS = [
 ];
 
 const INITIAL_PAGE_PARAMS = {
-    language_id: 1,
+    language_id: '1',
     url: 'index',
     variantName: 'DEFAULT',
     [PERSONA_KEY]: 'modes.persona.no.persona',

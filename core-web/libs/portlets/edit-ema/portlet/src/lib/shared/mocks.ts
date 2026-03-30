@@ -1050,6 +1050,7 @@ export const dotPropertiesServiceMock = {
 };
 
 export const mockCurrentUser: CurrentUser = {
+    admin: false,
     email: 'test@example.com',
     givenName: 'Test',
     loginAs: false,

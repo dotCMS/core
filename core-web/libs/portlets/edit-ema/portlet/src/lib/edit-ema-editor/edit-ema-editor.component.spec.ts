@@ -1293,7 +1293,9 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     // Unlock the page
-                    const lockedResponse = componentStore.pageAsset()!;
+                    const lockedResponse = componentStore.pageAsset() as NonNullable<
+                        ReturnType<typeof componentStore.pageAsset>
+                    >;
                     componentStore.updatePageResponse({
                         ...lockedResponse,
                         page: {
