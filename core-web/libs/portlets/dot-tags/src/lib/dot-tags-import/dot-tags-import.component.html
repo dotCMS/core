@@ -58,7 +58,7 @@
 </div>
 
 <div class="flex justify-end gap-2 mt-4">
-    <p-button [label]="'tags.cancel' | dm" text (onClick)="close()" />
+    <p-button [label]="'tags.cancel' | dm" text [disabled]="importing()" (onClick)="close()" />
     <p-button
         [label]="'tags.import.download-template' | dm"
         severity="secondary"

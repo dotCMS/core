@@ -154,6 +154,17 @@ describe('DotTagsImportComponent', () => {
             spectator.detectChanges();
             expect(innerButton!.disabled).toBe(false);
         });
+
+        it('should disable Cancel button while importing', () => {
+            spectator.detectChanges();
+            const cancelBtnHost = spectator.query('p-button[text]');
+            const cancelBtn = cancelBtnHost?.querySelector('button');
+            expect(cancelBtn?.disabled).toBe(false);
+
+            component.importing.set(true);
+            spectator.detectChanges();
+            expect(cancelBtn?.disabled).toBe(true);
+        });
     });
 
     describe('downloadTemplate', () => {
