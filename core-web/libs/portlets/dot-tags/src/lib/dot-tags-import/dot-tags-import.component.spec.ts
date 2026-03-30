@@ -155,9 +155,14 @@ describe('DotTagsImportComponent', () => {
             expect(innerButton!.disabled).toBe(false);
         });
 
+        it('should render Cancel button', () => {
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('tag-import-cancel-btn'))).toBeTruthy();
+        });
+
         it('should disable Cancel button while importing', () => {
             spectator.detectChanges();
-            const cancelBtnHost = spectator.query('p-button[text]');
+            const cancelBtnHost = spectator.query(byTestId('tag-import-cancel-btn'));
             const cancelBtn = cancelBtnHost?.querySelector('button');
             expect(cancelBtn?.disabled).toBe(false);
 

@@ -5,7 +5,7 @@ import { ConfirmationService, MenuItemCommandEvent } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
-import { DotTag } from '@dotcms/dotcms-models';
+import { DotMessageSeverity, DotMessageType, DotTag } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsListComponent } from './dot-tags-list.component';
@@ -76,7 +76,9 @@ describe('DotTagsListComponent', () => {
                     'tags.delete': 'Delete',
                     'tags.cancel': 'Cancel',
                     'tags.confirm.delete.message': 'tags.confirm.delete.message',
-                    'tags.confirm.delete.header': 'tags.confirm.delete.header'
+                    'tags.confirm.delete.header': 'tags.confirm.delete.header',
+                    'tags.import.success': 'Imported {0} tags successfully.',
+                    'tags.import.partial-success': 'Imported {0} of {1} tags. {2} failed.'
                 })
             }
         ]
@@ -521,7 +523,7 @@ describe('DotTagsListComponent', () => {
             } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
-            onClose.next(true);
+            onClose.next({ successCount: 5, failureCount: 0, totalRows: 5 });
             onClose.complete();
 
             expect(store.loadTags).toHaveBeenCalled();
@@ -539,6 +541,63 @@ describe('DotTagsListComponent', () => {
             onClose.complete();
 
             expect(store.loadTags).not.toHaveBeenCalled();
+        });
+
+        it('should push a SUCCESS message when all tags imported successfully', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            onClose.next({ successCount: 5, failureCount: 0, totalRows: 5 });
+            onClose.complete();
+
+            expect(displayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    life: 5000,
+                    severity: DotMessageSeverity.SUCCESS,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                })
+            );
+        });
+
+        it('should push a WARNING message when import has failures', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            onClose.next({ successCount: 3, failureCount: 2, totalRows: 5 });
+            onClose.complete();
+
+            expect(displayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    life: 5000,
+                    severity: DotMessageSeverity.WARNING,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                })
+            );
+        });
+
+        it('should not push a message when import dialog is cancelled', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            onClose.next(undefined);
+            onClose.complete();
+
+            expect(displayService.push).not.toHaveBeenCalled();
         });
     });
 });
