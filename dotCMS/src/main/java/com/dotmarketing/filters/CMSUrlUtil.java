@@ -190,7 +190,7 @@ public class CMSUrlUtil {
 		}
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
-			if((id == null || !UtilMethods.isSet(id.getId())) && uri.endsWith("/")
+			if((id == null || !id.exists()) && uri.endsWith("/")
 					&& Config.getBooleanProperty("STRIP_TRAILING_SLASH_FROM_PAGES", true)) {
 				id = APILocator.getIdentifierAPI().find(host, uri.substring(0, uri.length() - 1));
 			}
@@ -200,7 +200,7 @@ public class CMSUrlUtil {
 		}
 
 		Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Id " + id == null? "Not Found" : id.toString());
-		if (id == null || !UtilMethods.isSet(id.getId())) {
+		if (id == null || id.getId() == null) {
 			return Tuple.of(false, IAmSubType.NONE);
 		}
 		if (HTMLPAGE.equals(id.getAssetType())) {
