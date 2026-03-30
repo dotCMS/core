@@ -93,8 +93,10 @@ public class SecretTool implements ViewTool {
 	public char[] getCharArray(final String key) {
 
 		canUserEvaluate();
-		final HttpServletRequest requestFromThreadLocal = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(requestFromThreadLocal);
+		final Host contextHost = (Host) this.context.get("host");
+		final Optional<DotVelocitySecretAppConfig> config = (null != contextHost)
+				? DotVelocitySecretAppConfig.config(contextHost)
+				: DotVelocitySecretAppConfig.config(HttpServletRequestThreadLocal.INSTANCE.getRequest());
 		return config.isPresent()? config.get().getCharArrayOrNull(key) : null;
 	}
 
