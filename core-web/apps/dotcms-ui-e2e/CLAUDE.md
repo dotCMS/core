@@ -423,3 +423,6 @@ await page.waitForResponse(...);  // May miss the response
 11. **Direct URL navigation** — Don't go directly to `/content/new/{type}`. Use `goToNew()` which goes through the content listing (Dojo) first
 12. **Dojo widget IDs are fragile** — Never use `#dijit_form_DropDownButton_0`. Use role or class selectors instead
 13. **Multiple instances** — When a page has multiple relationship fields, pass `fieldVariable` to scope the helper to a specific field via `data-testid="field-{variable}"`
+14. **HTML page navigation** — HTML pages don't have `data-testid="title"`, so `goToContent()` (which waits for that field) hangs. Navigate directly with `page.goto('/dotAdmin/#/content/{inode}')` and wait for `dot-edit-content-sidebar` instead.
+15. **`hostFolder` for HTML pages** — The API rejects the string `'default'`. Resolve the default site via `GET /api/v1/site` and use `defaultSite.identifier` as `hostFolder`.
+16. **New editor for custom content types** — Navigating to `/dotAdmin/#/content/{inode}` shows the legacy editor unless the content type has `metadata: { CONTENT_EDITOR2_ENABLED: true }`. HTML pages have this enabled by default; custom types created in tests must set it explicitly.
