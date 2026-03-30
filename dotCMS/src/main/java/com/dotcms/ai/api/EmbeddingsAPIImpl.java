@@ -343,9 +343,11 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 .getEncoding()
                 .map(encoding -> encoding.encode(content))
                 .orElse(List.of());
+        final int tokenCount = tokens.isEmpty() ? content.split("\\s+").length : tokens.size();
         if (tokens.isEmpty()) {
-            config.debugLogger(this.getClass(), () -> String.format("No tokens for content ID '%s' were encoded: %s", contentId, content));
-            return Tuple.of(0, List.of());
+            config.debugLogger(this.getClass(), () -> String.format(
+                    "Encoding unavailable for content ID '%s', using word count (%d) as token estimate",
+                    contentId, tokenCount));
         }
 
         final Tuple3<String, Integer, List<Float>> dbEmbeddings =
@@ -359,7 +361,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         }
 
         final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(
-                tokens.size(),
+                tokenCount,
                 sendTokensToOpenAI(contentId, tokens, content, userId));
         saveEmbeddingsForCache(content, openAiEmbeddings);
         EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
