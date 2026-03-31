@@ -348,7 +348,9 @@ describe('DotRowReorderComponent', () => {
             spectator.detectChanges();
 
             component.rowNameControl.setValue('updated-row-1');
-            spectator.click(spectator.query<HTMLButtonElement>('button[type="submit"]')!);
+            spectator.click(
+                spectator.query<HTMLButtonElement>('button[type="submit"]') as HTMLButtonElement
+            );
             spectator.detectChanges();
 
             expect(mockUVEStore.updateLayout).toHaveBeenCalled();
@@ -366,7 +368,9 @@ describe('DotRowReorderComponent', () => {
             spectator.detectChanges();
 
             component.rowNameControl.setValue('updated-column-1');
-            spectator.click(spectator.query<HTMLButtonElement>('button[type="submit"]')!);
+            spectator.click(
+                spectator.query<HTMLButtonElement>('button[type="submit"]') as HTMLButtonElement
+            );
             spectator.detectChanges();
 
             expect(mockUVEStore.updateLayout).toHaveBeenCalled();
@@ -381,7 +385,9 @@ describe('DotRowReorderComponent', () => {
             spectator.detectChanges();
 
             component.rowNameControl.setValue('   ');
-            spectator.click(spectator.query<HTMLButtonElement>('button[type="submit"]')!);
+            spectator.click(
+                spectator.query<HTMLButtonElement>('button[type="submit"]') as HTMLButtonElement
+            );
             spectator.detectChanges();
 
             expect(mockUVEStore.updateRows).toHaveBeenCalled();

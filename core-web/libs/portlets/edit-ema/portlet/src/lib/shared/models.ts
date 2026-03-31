@@ -98,8 +98,7 @@ export interface SaveStylePropertiesPayload {
 }
 
 export interface NavigationBarItem {
-    icon?: string;
-    iconURL?: string;
+    materialIcon: string;
     label: string;
     href?: string;
     id: string;

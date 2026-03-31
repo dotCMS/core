@@ -57,3 +57,20 @@ export function createFormBridge(config: BridgeConfig): FormBridge {
 
     return new DojoFormBridge();
 }
+
+/**
+ * Saves the current form bridge singleton onto an internal stack
+ * so a nested context (e.g. a dialog) can create its own bridge.
+ * Call `popFormBridge()` when the nested context is destroyed.
+ */
+export function pushFormBridge(): void {
+    AngularFormBridge.pushInstance();
+}
+
+/**
+ * Destroys the current form bridge singleton and restores the
+ * previous one from the stack (saved by `pushFormBridge()`).
+ */
+export function popFormBridge(): void {
+    AngularFormBridge.popInstance();
+}

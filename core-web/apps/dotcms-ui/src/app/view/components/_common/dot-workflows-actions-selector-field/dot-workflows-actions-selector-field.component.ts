@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     forwardRef,
@@ -34,7 +34,7 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
             useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
         }
     ],
-    imports: [CommonModule, FormsModule, SelectModule, DotMessagePipe]
+    imports: [FormsModule, SelectModule, DotMessagePipe, AsyncPipe]
 })
 export class DotWorkflowsActionsSelectorFieldComponent
     implements ControlValueAccessor, OnChanges, OnInit

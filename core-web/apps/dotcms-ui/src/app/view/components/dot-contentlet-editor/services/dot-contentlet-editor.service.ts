@@ -1,13 +1,12 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, filter, map, mergeMap, pluck, take } from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType, DotCMSResponse } from '@dotcms/dotcms-models';
 
 interface DotAddEditEvents {
     load?: ($event: Event) => void;
@@ -32,7 +31,7 @@ export interface DotEditorAction {
     providedIn: 'root'
 })
 export class DotContentletEditorService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     close$: Subject<boolean> = new Subject<boolean>();
@@ -151,12 +150,10 @@ export class DotContentletEditorService {
      * @memberof DotContentletEditorService
      */
     getActionUrl(contentTypeVariable: string): Observable<string> {
-        return this.coreWebService
-            .requestView({
-                url: `v1/portlet/_actionurl/${contentTypeVariable}`
-            })
+        return this.http
+            .get<DotCMSResponse<string>>(`/api/v1/portlet/_actionurl/${contentTypeVariable}`)
             .pipe(
-                pluck('entity'),
+                map((response) => response.entity),
                 catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),

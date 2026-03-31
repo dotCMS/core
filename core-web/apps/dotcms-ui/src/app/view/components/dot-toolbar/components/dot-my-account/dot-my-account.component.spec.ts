@@ -42,7 +42,7 @@ describe('DotMyAccountComponent', () => {
         component: DotMyAccountComponent,
         providers: [
             mockProvider(DotAccountService, {
-                updateUser: () => of({ entity: { user: mockUser, reauthenticate: false } }) as any,
+                updateUser: () => of({ user: mockUser, reauthenticate: false }) as any,
                 addStarterPage: () => of('') as any,
                 removeStarterPage: () => of('') as any
             }),
@@ -327,7 +327,7 @@ describe('DotMyAccountComponent', () => {
             // Spy on updateUser and setAuth methods
             const updateUserSpy = jest
                 .spyOn(accountService, 'updateUser')
-                .mockReturnValue(of({ entity: { user: mockUser, reauthenticate: false } }) as any);
+                .mockReturnValue(of({ user: mockUser, reauthenticate: false }) as any);
             const setAuthSpy = jest.spyOn(loginService, 'setAuth');
 
             // Fill form with valid data
@@ -545,7 +545,7 @@ describe('DotMyAccountComponent', () => {
             const accountService = spectator.inject(DotAccountService);
             const routerService = spectator.inject(DotRouterService);
             jest.spyOn(accountService, 'updateUser').mockReturnValue(
-                of({ entity: { user: mockUser, reauthenticate: true } })
+                of({ user: mockUser, reauthenticate: true }) as any
             );
             jest.spyOn(routerService, 'doLogOut');
 

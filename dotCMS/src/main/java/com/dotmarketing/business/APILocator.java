@@ -26,11 +26,13 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
+import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.content.index.IndexAPI;
@@ -728,14 +730,6 @@ public class APILocator extends Locator<APIIndex> {
         return (VersionedIndicesAPI)getInstance(APIIndex.VERSIONED_INDICES_API);
     }
 
-    /**
-     * Vendor-neutral Index API router (currently routes to Elasticsearch).
-     * @return {@link IndexAPI}
-     */
-    public static IndexAPI getIndexAPI(){
-        return (IndexAPI) getInstance(APIIndex.INDEX_API);
-    }
-
 	/**
 	 * Creates a single instance of the {@link ContentletIndexAPI} class.
 	 *
@@ -752,6 +746,15 @@ public class APILocator extends Locator<APIIndex> {
 	 */
 	public static IndexAPI getESIndexAPI() {
 	    return (IndexAPI) getInstance(APIIndex.ES_INDEX_API);
+	}
+
+	/**
+	 * Returns the singleton {@link ContentMappingAPI} instance.
+	 *
+	 * @return The {@link ContentMappingAPI} instance.
+	 */
+	public static ContentMappingAPI getContentMappingAPI() {
+	    return (ContentMappingAPI) getInstance(APIIndex.CONTENT_MAPPING_API);
 	}
 
 	/**
@@ -1432,7 +1435,7 @@ enum APIIndex
     ANALYTICS_CUSTOM_ATTRIBUTE_API,
     VERSIONED_INDICES_API,
     OPENSEARCH_INDEX_API,
-    INDEX_API
+    CONTENT_MAPPING_API
     ;
 
 	Object create() {
@@ -1535,7 +1538,7 @@ enum APIIndex
             case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
             case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
             case OPENSEARCH_INDEX_API: return new OSIndexAPIImpl();
-            case INDEX_API: return new IndexAPIImpl();
+            case CONTENT_MAPPING_API: return new ESMappingAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

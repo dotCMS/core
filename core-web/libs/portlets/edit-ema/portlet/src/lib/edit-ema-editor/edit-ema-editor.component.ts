@@ -92,7 +92,6 @@ import {
 import {
     ActionPayload,
     ClientData,
-    ContentletPayload,
     DeletePayload,
     DialogAction,
     InsertPayloadFromDelete,
@@ -165,8 +164,8 @@ const MESSAGE_KEY = {
     ],
     providers: [
         DotPaletteListStore,
-        DotCopyContentModalService,
         DotCopyContentService,
+        DotCopyContentModalService,
         DotHttpErrorManagerService,
         DotContentletService,
         DotTempFileUploadService,
@@ -249,9 +248,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     private readonly cd = inject(ChangeDetectorRef);
-    private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
-    private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotContentletService = inject(DotContentletService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -262,61 +260,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
     #iframeResizeObserver: ResizeObserver | null = null;
-
-    /**
-     * Copy-check effect: fires once when a new contentlet opens for quick-edit.
-     * If the contentlet is on more than one page, shows a copy dialog. On copy,
-     * updates the active contentlet to the copy before auto-save begins.
-     */
-    readonly #copyCheckEffect = effect(() => {
-        const activeContentlet = this.uveStore.editorActiveContentlet();
-
-        if (!activeContentlet) {
-            return;
-        }
-
-        const onNumberOfPages = Number(activeContentlet.contentlet?.onNumberOfPages || '1');
-
-        if (onNumberOfPages <= 1) {
-            return;
-        }
-
-        untracked(() => {
-            const { container, contentlet } = this.$contentletEditData();
-            const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
-
-            this.dotCopyContentModalService
-                .open()
-                .pipe(
-                    switchMap(({ shouldCopy }) => {
-                        if (!shouldCopy) {
-                            return of(contentlet);
-                        }
-
-                        this.dialog.showLoadingIframe(contentlet.title);
-                        return this.handleCopyContent(currentTreeNode);
-                    }),
-                    catchError(() => EMPTY)
-                )
-                .subscribe((resultContentlet: DotCMSContentlet) => {
-                    if (resultContentlet.inode !== contentlet.inode) {
-                        const newContentletPayload: ContentletPayload = {
-                            identifier: resultContentlet.identifier,
-                            inode: resultContentlet.inode,
-                            title: resultContentlet.title,
-                            contentType: resultContentlet.contentType,
-                            onNumberOfPages: 1
-                        };
-                        this.uveStore.setActiveContentlet(
-                            this.uveStore.getPageSavePayload({
-                                container,
-                                contentlet: newContentletPayload
-                            })
-                        );
-                    }
-                });
-        });
-    });
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -396,7 +339,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $editorContentStyles = computed<Record<string, string>>(() => {
         const socialMedia = this.uveStore.viewSocialMedia();
         return {
-            display: socialMedia ? 'none' : 'block'
+            display: socialMedia ? 'none' : 'grid'
         };
     });
 
@@ -1143,33 +1086,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     protected handleEditContentlet(payload: ActionPayload) {
-        const { contentlet, container } = payload;
-        const { onNumberOfPages = '1', title } = contentlet;
+        this.dialog?.editContentlet(payload.contentlet);
+    }
 
-        if (Number(onNumberOfPages) <= 1) {
-            this.dialog?.editContentlet(contentlet);
-
-            return;
-        }
-
-        const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
-
-        this.dotCopyContentModalService
-            .open()
-            .pipe(
-                switchMap(({ shouldCopy }) => {
-                    if (!shouldCopy) {
-                        return of(contentlet);
-                    }
-
-                    this.dialog.showLoadingIframe(title);
-
-                    return this.handleCopyContent(currentTreeNode);
-                })
-            )
-            .subscribe((contentlet) => {
-                this.dialog.editContentlet(contentlet);
-            });
+    private handleCopyContent(treeNode: DotTreeNode): Observable<DotCMSContentlet> {
+        return this.dotCopyContentService.copyInPage(treeNode);
     }
 
     /**
@@ -1191,25 +1112,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      */
     protected editContentMap(contentlet: DotCMSURLContentMap): void {
         this.dialog.editUrlContentMapContentlet(contentlet);
-    }
-
-    /**
-     * Handle copy content
-     *
-     * @private
-     * @return {*}
-     * @memberof DotEmaDialogComponent
-     */
-    private handleCopyContent(currentTreeNode: DotTreeNode): Observable<DotCMSContentlet> {
-        return this.dotCopyContentService.copyInPage(currentTreeNode).pipe(
-            catchError((error) =>
-                this.dotHttpErrorManagerService.handle(error).pipe(
-                    tap(() => this.dialog.resetDialog()), // If there is an error, we set the status to idle
-                    map(() => null)
-                )
-            ),
-            filter((contentlet: DotCMSContentlet) => !!contentlet?.inode)
-        );
     }
 
     /**

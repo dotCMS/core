@@ -1,4 +1,4 @@
-import { AsyncPipe, CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -24,7 +24,6 @@ import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.componen
     templateUrl: './dot-toolbar-user.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         DotGravatarDirective,
         AvatarModule,
         DotLoginAsComponent,

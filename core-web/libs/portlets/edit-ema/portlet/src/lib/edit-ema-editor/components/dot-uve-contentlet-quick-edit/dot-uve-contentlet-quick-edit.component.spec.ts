@@ -4,10 +4,15 @@ import { of, throwError } from 'rxjs';
 import { Component, input } from '@angular/core';
 import { ComponentFixture, fakeAsync, flushMicrotasks } from '@angular/core/testing';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { MessageService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotCopyContentService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotCMSClazzes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotEditContentBinaryFieldComponent,
@@ -19,6 +24,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
     ContentletEditData,
+    CopyMode,
     DotUveContentletQuickEditComponent
 } from './dot-uve-contentlet-quick-edit.component';
 
@@ -140,6 +146,7 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUveContentletQuickEditComponent,
+        imports: [NoopAnimationsModule],
         overrideComponents: [
             [
                 DotUveContentletQuickEditComponent,
@@ -166,7 +173,9 @@ describe('DotUveContentletQuickEditComponent', () => {
                 updateIframeOptimistically: jest.fn(),
                 extractFromRollback: jest.fn().mockReturnValue({})
             }),
-            mockProvider(DotEditContentService)
+            mockProvider(DotEditContentService),
+            mockProvider(DotCopyContentService),
+            mockProvider(DotHttpErrorManagerService)
         ],
         providers: [
             mockProvider(UVEStore, {
@@ -175,7 +184,10 @@ describe('DotUveContentletQuickEditComponent', () => {
                 addCurrentPageToHistory: jest.fn(),
                 setUveStatus: jest.fn(),
                 pageReload: jest.fn(),
-                saveQuickEditFields: jest.fn().mockReturnValue(of({}))
+                saveQuickEditFields: jest.fn().mockReturnValue(of({})),
+                getCurrentTreeNode: jest.fn().mockReturnValue(null),
+                getPageSavePayload: jest.fn().mockReturnValue(null),
+                setActiveContentlet: jest.fn()
             }),
             mockProvider(MessageService),
             {
@@ -183,7 +195,12 @@ describe('DotUveContentletQuickEditComponent', () => {
                 useValue: new MockDotMessageService({
                     'message.content.saved': 'Saved',
                     'message.content.note.already.published': 'Already published',
-                    'editpage.content.update.contentlet.error': 'Error updating contentlet'
+                    'editpage.content.update.contentlet.error': 'Error updating contentlet',
+                    'uve.quick-edit.empty.no-selection.title': 'Select a contentlet',
+                    'uve.quick-edit.empty.no-fields.title': 'No editable fields',
+                    'uve.quick-edit.copy-decision.confirm': 'Confirm',
+                    'uve.quick-edit.copy-decision.confirm.all-pages': 'Edit All Pages',
+                    'uve.quick-edit.copy-decision.confirm.this-page': 'Copy & Edit'
                 })
             }
         ]
@@ -850,6 +867,154 @@ describe('DotUveContentletQuickEditComponent', () => {
                 expect(uveStore.setUveStatus).toHaveBeenCalledWith('loading');
             }));
         });
+    });
+
+    describe('copy decision state', () => {
+        const mockMultiPageContentlet = {
+            ...mockContentlet,
+            onNumberOfPages: 2
+        } as DotCMSContentlet;
+
+        const mockMultiPageEditData: ContentletEditData = {
+            ...mockContentletEditData,
+            contentlet: mockMultiPageContentlet
+        };
+
+        const getCopyConfirmButton = () =>
+            spectator
+                .query(byTestId('copy-confirm-button'))
+                ?.querySelector('button') as HTMLButtonElement;
+
+        beforeEach(() => {
+            fixture.componentRef.setInput('data', mockMultiPageEditData);
+            spectator.detectChanges();
+        });
+
+        it('should show the copy decision screen when contentlet is on multiple pages', () => {
+            expect(spectator.query(byTestId('copy-mode-all-pages'))).toBeTruthy();
+            expect(spectator.query(byTestId('copy-mode-this-page'))).toBeTruthy();
+            expect(spectator.query('form')).toBeFalsy();
+        });
+
+        it('should keep the confirm button disabled when no mode is selected', () => {
+            expect(getCopyConfirmButton()?.disabled).toBe(true);
+        });
+
+        it('should enable the confirm button after selecting a mode', () => {
+            spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+            spectator.detectChanges();
+
+            expect(getCopyConfirmButton()?.disabled).toBe(false);
+        });
+
+        it('should show the form after confirming "All Pages"', () => {
+            spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+            spectator.detectChanges();
+            spectator.click(getCopyConfirmButton());
+            spectator.detectChanges();
+
+            expect(spectator.query('form')).toBeTruthy();
+            expect(spectator.query(byTestId('copy-mode-all-pages'))).toBeFalsy();
+        });
+
+        it('should call copyInPage and setActiveContentlet after confirming "This Page Only"', fakeAsync(() => {
+            const uveStore = spectator.inject(UVEStore, true);
+            const copyContentService = spectator.inject(DotCopyContentService, true);
+            const copiedContentlet = {
+                ...mockContentlet,
+                identifier: 'copied-123',
+                inode: 'copied-inode'
+            } as DotCMSContentlet;
+
+            jest.spyOn(uveStore, 'getCurrentTreeNode').mockReturnValue({} as never);
+            jest.spyOn(uveStore, 'getPageSavePayload').mockReturnValue({} as never);
+            jest.spyOn(copyContentService, 'copyInPage').mockReturnValue(of(copiedContentlet));
+
+            spectator.click(spectator.query(byTestId('copy-mode-this-page')) as HTMLElement);
+            spectator.detectChanges();
+            spectator.click(getCopyConfirmButton());
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            expect(copyContentService.copyInPage).toHaveBeenCalled();
+            expect(uveStore.setActiveContentlet).toHaveBeenCalled();
+            expect(uveStore.pageReload).toHaveBeenCalled();
+        }));
+
+        it('should call dotHttpErrorManagerService.handle on copyInPage error', fakeAsync(() => {
+            const uveStore = spectator.inject(UVEStore, true);
+            const copyContentService = spectator.inject(DotCopyContentService, true);
+            const httpErrorManager = spectator.inject(DotHttpErrorManagerService, true);
+
+            jest.spyOn(uveStore, 'getCurrentTreeNode').mockReturnValue({} as never);
+            jest.spyOn(copyContentService, 'copyInPage').mockReturnValue(
+                throwError(() => new Error('copy failed'))
+            );
+            jest.spyOn(httpErrorManager, 'handle').mockReturnValue(of(null));
+
+            spectator.click(spectator.query(byTestId('copy-mode-this-page')) as HTMLElement);
+            spectator.detectChanges();
+            spectator.click(getCopyConfirmButton());
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+        }));
+
+        describe('confirm button label', () => {
+            it('should show "Confirm" when no mode is selected', () => {
+                const btn = spectator.query(byTestId('copy-confirm-button'));
+                expect(btn?.querySelector('button')?.textContent?.trim()).toBe('Confirm');
+            });
+
+            it('should show "Edit All Pages" when ALL_PAGES is selected', () => {
+                spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+                spectator.detectChanges();
+
+                expect(spectator.component.$confirmLabel()).toBe(
+                    'uve.quick-edit.copy-decision.confirm.all-pages'
+                );
+                const btn = spectator.query(byTestId('copy-confirm-button'));
+                expect(btn?.querySelector('button')?.textContent?.trim()).toBe('Edit All Pages');
+            });
+
+            it('should show "Copy & Edit" when THIS_PAGE is selected', () => {
+                spectator.click(spectator.query(byTestId('copy-mode-this-page')) as HTMLElement);
+                spectator.detectChanges();
+
+                expect(spectator.component.$confirmLabel()).toBe(
+                    'uve.quick-edit.copy-decision.confirm.this-page'
+                );
+                const btn = spectator.query(byTestId('copy-confirm-button'));
+                expect(btn?.querySelector('button')?.textContent?.trim()).toBe('Copy & Edit');
+            });
+
+            it('should return the correct key for each CopyMode value', () => {
+                expect(CopyMode.ALL_PAGES).toBe('all-pages');
+                expect(CopyMode.THIS_PAGE).toBe('this-page');
+            });
+        });
+
+        it('should reset the copy decision when the contentlet identifier changes', fakeAsync(() => {
+            // confirm decision so form shows
+            spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+            spectator.detectChanges();
+            spectator.click(getCopyConfirmButton());
+            spectator.detectChanges();
+            expect(spectator.query('form')).toBeTruthy();
+
+            // switch to a different contentlet that also spans multiple pages
+            fixture.componentRef.setInput('data', {
+                ...mockMultiPageEditData,
+                contentlet: { ...mockMultiPageContentlet, identifier: 'new-multi-page-id' }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('copy-mode-all-pages'))).toBeTruthy();
+            expect(spectator.query('form')).toBeFalsy();
+        }));
     });
 
     describe('optimistic updates', () => {

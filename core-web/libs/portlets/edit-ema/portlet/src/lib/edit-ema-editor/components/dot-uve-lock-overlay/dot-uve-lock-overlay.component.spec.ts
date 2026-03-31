@@ -19,7 +19,8 @@ describe('DotUveLockOverlayComponent', () => {
         isLocked: false,
         lockedBy: '',
         canLock: true,
-        isLockedByCurrentUser: false
+        isLockedByCurrentUser: false,
+        shouldShowButton: false
     });
 
     const createComponent = createComponentFactory({
@@ -56,7 +57,8 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: false,
                 lockedBy: '',
                 canLock: true,
-                isLockedByCurrentUser: false
+                isLockedByCurrentUser: false,
+                shouldShowButton: false
             });
             spectator.detectChanges();
         });
@@ -101,7 +103,8 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: true,
                 lockedBy: 'another-user',
                 canLock: false,
-                isLockedByCurrentUser: false
+                isLockedByCurrentUser: false,
+                shouldShowButton: false
             });
             spectator.detectChanges();
         });
@@ -132,7 +135,8 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: false,
                 lockedBy: '',
                 canLock: true,
-                isLockedByCurrentUser: false
+                isLockedByCurrentUser: false,
+                shouldShowButton: false
             });
             spectator.detectChanges();
 
@@ -150,7 +154,8 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: true,
                 lockedBy: 'another-user',
                 canLock: false,
-                isLockedByCurrentUser: false
+                isLockedByCurrentUser: false,
+                shouldShowButton: false
             });
             spectator.detectChanges();
 
@@ -168,7 +173,8 @@ describe('DotUveLockOverlayComponent', () => {
                 isLocked: true,
                 lockedBy: 'current-user',
                 canLock: true,
-                isLockedByCurrentUser: true
+                isLockedByCurrentUser: true,
+                shouldShowButton: false
             });
             spectator.detectChanges();
 

@@ -63,8 +63,8 @@ describe('withPageApi', () => {
     let spectator: SpectatorService<InstanceType<ReturnType<typeof buildTestStore>>>;
     let store: InstanceType<ReturnType<typeof buildTestStore>>;
 
-    const getSpy = jest.fn(() => of(MOCK_RESPONSE_HEADLESS));
-    const getGraphQLPageSpy = jest.fn(() =>
+    const getSpy = jest.fn((_params?: unknown) => of(MOCK_RESPONSE_HEADLESS));
+    const getGraphQLPageSpy = jest.fn((_params?: unknown) =>
         of({
             pageAsset: MOCK_RESPONSE_HEADLESS,
             content: { source: 'graphql' }

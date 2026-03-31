@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     OnInit,
@@ -55,7 +55,6 @@ export interface DotFavoritePageFormData {
     selector: 'dot-favorite-page',
     templateUrl: 'dot-favorite-page.component.html',
     imports: [
-        CommonModule,
         ButtonModule,
         DotFormDialogComponent,
         DotFieldValidationMessageComponent,
@@ -63,7 +62,8 @@ export interface DotFavoritePageFormData {
         InputTextModule,
         ReactiveFormsModule,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        AsyncPipe
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [

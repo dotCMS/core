@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgClass, AsyncPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -23,12 +23,15 @@ import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experi
 @Component({
     selector: 'dot-experiments-configuration-scheduling',
     imports: [
-        CommonModule,
         DotDynamicDirective,
         DotMessagePipe,
         CardModule,
         ButtonModule,
-        TooltipModule
+        TooltipModule,
+        AsyncPipe,
+        DatePipe,
+        NgClass,
+        TitleCasePipe
     ],
     templateUrl: './dot-experiments-configuration-scheduling.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

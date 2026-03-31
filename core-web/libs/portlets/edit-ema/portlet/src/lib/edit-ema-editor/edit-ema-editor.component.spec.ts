@@ -7,9 +7,10 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { Observable, of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, EventEmitter, Input, Output, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -52,18 +53,12 @@ import {
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoginService
-} from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
-import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
+import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     CONTENT_TYPE_MOCK_FOR_EDITOR,
@@ -108,11 +103,9 @@ import {
     MOCK_RESPONSE_HEADLESS,
     PAYLOAD_MOCK,
     QUERY_PARAMS_MOCK,
-    TREE_NODE_MOCK,
     UVE_PAGE_RESPONSE_MAP,
     dotPropertiesServiceMock,
-    mockCurrentUser,
-    newContentlet
+    mockCurrentUser
 } from '../shared/mocks';
 import { ActionPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
@@ -205,7 +198,7 @@ class DotUvePaletteStubComponent {
 const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
+        imports: [RouterTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
@@ -327,6 +320,8 @@ const createRouting = () =>
             }
         ],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             {
                 provide: GlobalStore,
                 useValue: mockGlobalStore
@@ -430,10 +425,6 @@ const createRouting = () =>
                 useValue: new MockDotMessageService(messagesMock)
             },
             {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
-            },
-            {
                 provide: WINDOW,
                 useValue: window
             },
@@ -465,9 +456,6 @@ describe('EditEmaEditorComponent', () => {
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: jest.SpyInstance;
-        let dotCopyContentModalService: DotCopyContentModalService;
-        let dotCopyContentService: DotCopyContentService;
-        let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
         const createComponent = createRouting();
 
@@ -492,9 +480,6 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(UVEStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
-            dotCopyContentModalService = spectator.inject(DotCopyContentModalService, true);
-            dotCopyContentService = spectator.inject(DotCopyContentService, true);
-            dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
 
             store.pageLoad({
@@ -652,7 +637,7 @@ describe('EditEmaEditorComponent', () => {
 
         describe('Computed Properties', () => {
             describe('$editorContentStyles', () => {
-                it('should return display block when socialMedia is null', () => {
+                it('should return display grid when socialMedia is null', () => {
                     patchState(store, {
                         viewSocialMedia: null
                     });
@@ -660,7 +645,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     expect(spectator.component.$editorContentStyles()).toEqual({
-                        display: 'block'
+                        display: 'grid'
                     });
                 });
 
@@ -1301,7 +1286,9 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     // Unlock the page
-                    const lockedResponse = componentStore.pageAsset()!;
+                    const lockedResponse = componentStore.pageAsset() as NonNullable<
+                        ReturnType<typeof componentStore.pageAsset>
+                    >;
                     componentStore.updatePageResponse({
                         ...lockedResponse,
                         page: {
@@ -1399,124 +1386,6 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     afterEach(() => jest.clearAllMocks());
-                });
-
-                describe('Copy content', () => {
-                    let copySpy: jest.SpyInstance<Observable<DotCMSContentlet>>;
-                    let dialogLoadingSpy: jest.SpyInstance;
-                    let editContentletSpy: jest.SpyInstance;
-                    let modalSpy: jest.SpyInstance<Observable<ModelCopyContentResponse>>;
-                    let reloadIframeSpy: jest.SpyInstance;
-
-                    const EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES = {
-                        ...EDIT_ACTION_PAYLOAD_MOCK,
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 2
-                        }
-                    };
-
-                    const CONTENTLET_MOCK = {
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload: EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
-                    };
-
-                    beforeEach(() => {
-                        copySpy = jest.spyOn(dotCopyContentService, 'copyInPage');
-                        dialogLoadingSpy = jest.spyOn(
-                            spectator.component.dialog,
-                            'showLoadingIframe'
-                        );
-                        editContentletSpy = jest.spyOn(
-                            spectator.component.dialog,
-                            'editContentlet'
-                        );
-                        modalSpy = jest.spyOn(dotCopyContentModalService, 'open');
-                        reloadIframeSpy = jest.spyOn(
-                            spectator.component.iframe.nativeElement.contentWindow,
-                            'postMessage'
-                        );
-                        jest.spyOn(store, 'getCurrentTreeNode').mockReturnValue(TREE_NODE_MOCK);
-                    });
-
-                    it('should copy and open edit dialog', () => {
-                        copySpy.mockReturnValue(of(newContentlet));
-                        modalSpy.mockReturnValue(of({ shouldCopy: true }));
-
-                        spectator.detectChanges();
-
-                        store.setContentletArea(CONTENTLET_MOCK);
-                        store.setActiveContentlet(EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
-
-                        spectator.detectComponentChanges();
-
-                        spectator.component['handleOpenFullEditor']();
-
-                        spectator.detectComponentChanges();
-
-                        expect(copySpy).toHaveBeenCalledWith(TREE_NODE_MOCK); // It's not being called
-                        expect(dialogLoadingSpy).toHaveBeenCalledWith('Hello World');
-                        expect(editContentletSpy).toHaveBeenCalledWith(newContentlet);
-                        expect(modalSpy).toHaveBeenCalled();
-                    });
-
-                    it('should show an error if the copy content fails', () => {
-                        const handleErrorSpy = jest.spyOn(dotHttpErrorManagerService, 'handle');
-                        const resetDialogSpy = jest.spyOn(
-                            spectator.component.dialog,
-                            'resetDialog'
-                        );
-                        copySpy.mockReturnValue(throwError({}));
-                        modalSpy.mockReturnValue(of({ shouldCopy: true }));
-                        spectator.detectChanges();
-
-                        store.setContentletArea(CONTENTLET_MOCK);
-                        store.setActiveContentlet(EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
-
-                        spectator.detectComponentChanges();
-
-                        spectator.component['handleOpenFullEditor']();
-
-                        spectator.detectComponentChanges();
-
-                        expect(copySpy).toHaveBeenCalled();
-                        expect(dialogLoadingSpy).toHaveBeenCalledWith('Hello World');
-                        expect(editContentletSpy).not.toHaveBeenCalled();
-                        expect(handleErrorSpy).toHaveBeenCalled();
-                        expect(modalSpy).toHaveBeenCalled();
-                        expect(reloadIframeSpy).not.toHaveBeenCalledWith();
-                        expect(resetDialogSpy).toHaveBeenCalled();
-                    });
-
-                    it('should ask to copy and not copy content', () => {
-                        copySpy.mockReturnValue(of(newContentlet));
-                        modalSpy.mockReturnValue(of({ shouldCopy: false }));
-
-                        spectator.detectChanges();
-
-                        store.setContentletArea(CONTENTLET_MOCK);
-                        store.setActiveContentlet(EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES);
-
-                        spectator.detectComponentChanges();
-
-                        spectator.component['handleOpenFullEditor']();
-
-                        spectator.detectComponentChanges();
-
-                        expect(copySpy).not.toHaveBeenCalled();
-                        expect(dialogLoadingSpy).not.toHaveBeenCalled();
-                        expect(editContentletSpy).toHaveBeenCalledWith(
-                            EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES.contentlet
-                        );
-                        expect(modalSpy).toHaveBeenCalled();
-                        expect(reloadIframeSpy).not.toHaveBeenCalledWith();
-                    });
                 });
 
                 beforeEach(() => {
@@ -2223,11 +2092,11 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('Editor content', () => {
-                it('should have display block when there is not SEO view', () => {
+                it('should have display grid when there is not SEO view', () => {
                     const editorContent = spectator.query(
                         byTestId('editor-content')
                     ) as HTMLElement;
-                    expect(editorContent.style.display).toBe('block');
+                    expect(editorContent.style.display).toBe('grid');
                 });
 
                 it('should have display none when there is SEO view', () => {
