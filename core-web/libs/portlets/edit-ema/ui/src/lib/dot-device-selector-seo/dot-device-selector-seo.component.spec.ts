@@ -77,7 +77,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                },
+                }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
