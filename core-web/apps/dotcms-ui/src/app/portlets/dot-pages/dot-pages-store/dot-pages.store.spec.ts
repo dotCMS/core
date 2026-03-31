@@ -21,7 +21,6 @@ import {
     DotMessageDisplayService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
-    DotPropertiesService,
     DotRenderMode,
     DotRouterService,
     DotWizardService,
@@ -141,7 +140,6 @@ describe('DotPageStore', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
     let dotLocalstorageService: DotLocalstorageService;
-    let dotPropertiesService: DotPropertiesService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
 
     beforeEach(() => {
@@ -163,7 +161,6 @@ describe('DotPageStore', () => {
                 StringUtils,
                 DotFavoritePageService,
                 DotLocalstorageService,
-                DotPropertiesService,
                 DotPushPublishDialogService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
@@ -196,14 +193,11 @@ describe('DotPageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotLocalstorageService = TestBed.inject(DotLocalstorageService);
-        dotPropertiesService = TestBed.inject(DotPropertiesService);
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
 
         jest.spyOn(dialogService, 'open');
         jest.spyOn(dotHttpErrorManagerService, 'handle');
         jest.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(`true`);
-        jest.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('*'));
-        jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');
