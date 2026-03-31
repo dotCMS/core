@@ -25,16 +25,20 @@ public class Task260331AddBaseTypeColumnToIdentifier implements StartupTask {
 
     @Override
     public boolean forceRun() {
-
-        // only run if the index has not been built yet
         try {
+            // Run if the index has not been created yet
             final List<Map<String, Object>> result = new DotConnect()
                     .setSQL("SELECT 1 FROM pg_indexes WHERE tablename = 'identifier' AND indexname = ?")
                     .addParam(INDEX_NAME)
                     .loadObjectResults();
-            return result.isEmpty();
+            if (result.isEmpty()) {
+                return true;
+            }
+            // Also run if the backfill is incomplete — handles server restarts mid-migration.
+            // DDL uses IF NOT EXISTS so re-running executeUpgrade() is always safe.
+            return PopulateIdentifierBaseTypeJob.hasPendingRows();
         } catch (final DotDataException e) {
-            Logger.error(this, "Error checking for index " + INDEX_NAME + ": " + e.getMessage(), e);
+            Logger.error(this, "Error in forceRun() for " + INDEX_NAME + ": " + e.getMessage(), e);
             return false;
         }
     }
