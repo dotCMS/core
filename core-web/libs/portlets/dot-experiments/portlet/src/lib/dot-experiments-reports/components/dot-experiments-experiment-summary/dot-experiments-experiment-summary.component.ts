@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { Goals, RangeOfDateAndTime, SummaryLegend } from '@dotcms/dotcms-models';
@@ -6,7 +6,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-experiment-summary',
-    imports: [CommonModule, DotMessagePipe],
+    imports: [DotMessagePipe, DatePipe, DecimalPipe],
     templateUrl: './dot-experiments-experiment-summary.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {

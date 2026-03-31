@@ -12,7 +12,7 @@ import {
     DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { UVE_MODE } from '@dotcms/types';
+import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
 
 import { withPageApi } from './withPageApi';
 
@@ -63,8 +63,8 @@ describe('withPageApi', () => {
     let spectator: SpectatorService<InstanceType<ReturnType<typeof buildTestStore>>>;
     let store: InstanceType<ReturnType<typeof buildTestStore>>;
 
-    const getSpy = jest.fn(() => of(MOCK_RESPONSE_HEADLESS));
-    const getGraphQLPageSpy = jest.fn(() =>
+    const getSpy = jest.fn((_params?: unknown) => of(MOCK_RESPONSE_HEADLESS));
+    const getGraphQLPageSpy = jest.fn((_params?: unknown) =>
         of({
             pageAsset: MOCK_RESPONSE_HEADLESS,
             content: { source: 'graphql' }
@@ -171,6 +171,98 @@ describe('withPageApi', () => {
             const response = store.pageAssetResponse();
             expect(response?.pageAsset).toEqual(MOCK_RESPONSE_HEADLESS);
             expect(response?.content).toEqual({ source: 'graphql' });
+        });
+    });
+
+    describe('updateRows', () => {
+        const MOCK_ROWS: DotPageAssetLayoutRow[] = [
+            {
+                identifier: 1,
+                styleClass: 'row-class',
+                metadata: { name: 'Hero Section' },
+                columns: [
+                    {
+                        preview: false,
+                        containers: [{ identifier: 'container-1', uuid: '1', historyUUIDs: [] }],
+                        widthPercent: 100,
+                        width: 12,
+                        leftOffset: 1,
+                        left: 0,
+                        styleClass: 'col-class',
+                        metadata: { name: 'Main Column' }
+                    }
+                ]
+            }
+        ];
+
+        it('should include column metadata in the save payload', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            const layoutService = spectator.inject(DotPageLayoutService);
+
+            store.updateRows(MOCK_ROWS);
+            spectator.flushEffects();
+
+            expect(layoutService.save).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    layout: expect.objectContaining({
+                        body: expect.objectContaining({
+                            rows: expect.arrayContaining([
+                                expect.objectContaining({
+                                    columns: expect.arrayContaining([
+                                        expect.objectContaining({
+                                            metadata: { name: 'Main Column' }
+                                        })
+                                    ])
+                                })
+                            ])
+                        })
+                    })
+                })
+            );
+        });
+
+        it('should handle columns without metadata', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            const layoutService = spectator.inject(DotPageLayoutService);
+
+            const rowsWithoutMetadata: DotPageAssetLayoutRow[] = [
+                {
+                    identifier: 1,
+                    columns: [
+                        {
+                            preview: false,
+                            containers: [],
+                            widthPercent: 100,
+                            width: 12,
+                            leftOffset: 1,
+                            left: 0
+                        }
+                    ]
+                }
+            ];
+
+            store.updateRows(rowsWithoutMetadata);
+            spectator.flushEffects();
+
+            expect(layoutService.save).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    layout: expect.objectContaining({
+                        body: expect.objectContaining({
+                            rows: expect.arrayContaining([
+                                expect.objectContaining({
+                                    columns: expect.arrayContaining([
+                                        expect.objectContaining({
+                                            metadata: undefined
+                                        })
+                                    ])
+                                })
+                            ])
+                        })
+                    })
+                })
+            );
         });
     });
 

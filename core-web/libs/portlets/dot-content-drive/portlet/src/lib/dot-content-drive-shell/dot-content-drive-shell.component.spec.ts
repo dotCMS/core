@@ -28,7 +28,7 @@ import {
     DotLocalstorageService,
     DotMessageService
 } from '@dotcms/data-access';
-import { LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
+import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotContentDriveFolder,
@@ -41,7 +41,6 @@ import {
     ALL_FOLDER
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
@@ -110,7 +109,6 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(DotContentDriveNavigationService, {
                 editContent: jest.fn()
             }),
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             LoggerService,
             StringUtils,
             mockProvider(AddToBundleService, {
@@ -703,7 +701,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should show error message on upload failure', () => {
             const error = new Error('Upload failed');
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
+            uploadService.uploadDotAsset.mockReturnValue(throwError(error));
             store.selectedNode.mockReturnValue({
                 ...ALL_FOLDER,
                 data: {
@@ -737,7 +735,7 @@ describe('DotContentDriveShellComponent', () => {
                     errors: [{ message: 'Upload failed' }]
                 }
             };
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
+            uploadService.uploadDotAsset.mockReturnValue(throwError(error));
             store.selectedNode.mockReturnValue({
                 ...ALL_FOLDER,
                 data: {
@@ -766,7 +764,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(addSpy).toHaveBeenNthCalledWith(2, {
                 severity: 'error',
                 summary: 'content-drive.add-dotasset-error',
-                detail: 'content-drive.add-dotasset-error-detail',
+                detail: 'Upload failed',
                 life: ERROR_MESSAGE_LIFE
             });
         });
@@ -972,7 +970,7 @@ describe('DotContentDriveShellComponent', () => {
                 label: 'folder-123'
             };
             const error = new Error('Upload failed');
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
+            uploadService.uploadDotAsset.mockReturnValue(throwError(error));
 
             const addSpy = jest.spyOn(messageService, 'add');
 
@@ -1555,9 +1553,7 @@ describe('DotContentDriveShellComponent', () => {
                     contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
                 };
                 store.dragItems.mockReturnValue(mockDragItems);
-                workflowService.bulkFire.mockReturnValue(
-                    throwError(() => new Error('Workflow error'))
-                );
+                workflowService.bulkFire.mockReturnValue(throwError(new Error('Workflow error')));
 
                 const mockMoveEvent: DotContentDriveMoveItems = {
                     targetFolder: {
@@ -1746,7 +1742,7 @@ describe('DotContentDriveShellComponent', () => {
             };
             store.dragItems.mockReturnValue(mockDragItems);
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            workflowService.bulkFire.mockReturnValue(throwError(() => new Error('Workflow error')));
+            workflowService.bulkFire.mockReturnValue(throwError(new Error('Workflow error')));
 
             const folderItem = {
                 ...MOCK_ITEMS[0],

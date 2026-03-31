@@ -6,7 +6,6 @@ import { DotEventsService } from '@dotcms/data-access';
 import {
     ApiRoot,
     BrowserUtil,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -43,7 +42,6 @@ export class SharedModule {
             providers: [
                 ApiRoot,
                 BrowserUtil,
-                CoreWebService,
                 DotEventsService,
                 DotNavigationService,
                 DotcmsConfigService,

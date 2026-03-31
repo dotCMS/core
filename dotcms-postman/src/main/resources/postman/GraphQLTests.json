@@ -1348,7 +1348,7 @@
 											"    pm.expect(host[\"keywords\"], 'FAILED:[keywords]').equal(\"CMS, Web Content Management, Open Source, Java, J2EE, DXP, NoCode, OSGI, Apache Velocity, Elasticsearch, RESTful Services, REST API, Workflows, Personalization, Multilingual, I18N, L10N, Internationalization, Localization, Docker CMS, Containerized CMS\");",
 											"    pm.expect(host[\"description\"], 'FAILED:[description]').equal(\"dotCMS starter site was designed to demonstrate what you can do with dotCMS.\");",
 											"    pm.expect(host[\"hostAliases\"], 'FAILED:[hostAliases]').equal(\"localhost\\n127.0.0.1\");",
-											"    pm.expect(host[\"title\"], 'FAILED:[title]').equal(\"localhost\\n127.0.0.1\");",
+											"    pm.expect(host[\"title\"], 'FAILED:[title]').equal(\"demo.dotcms.com\");",
 											"    pm.expect(host[\"baseType\"], 'FAILED:[baseType]').equal(\"CONTENT\");",
 											"    pm.expect(host[\"archived\"], 'FAILED:[archived]').equal(false);",
 											"    pm.expect(host[\"addThis\"], 'FAILED:[addThis]').equal(\"ra-4e02119211875e7b\");",

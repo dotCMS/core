@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -26,7 +26,6 @@ interface ContentSidebarInformation {
 @Component({
     selector: 'dot-edit-content-sidebar-information',
     imports: [
-        CommonModule,
         RouterLink,
         TooltipModule,
         SkeletonModule,
@@ -34,7 +33,8 @@ interface ContentSidebarInformation {
         ContentletStatusTagPipe,
         DotRelativeDatePipe,
         DotMessagePipe,
-        DotNameFormatPipe
+        DotNameFormatPipe,
+        DatePipe
     ],
     templateUrl: './dot-edit-content-sidebar-information.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

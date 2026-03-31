@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By, Title } from '@angular/platform-browser';
@@ -21,7 +22,6 @@ import {
     DotUiColorsService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -31,7 +31,6 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import {
-    CoreWebServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService
@@ -72,10 +71,11 @@ describe('DotContentletWrapperComponent', () => {
                 DotContentletWrapperComponent,
                 DotIframeDialogComponent,
                 RouterTestingModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule
+                BrowserAnimationsModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentletEditorService,
                 DotIframeService,
                 DotAlertConfirmService,
@@ -110,10 +110,6 @@ describe('DotContentletWrapperComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },

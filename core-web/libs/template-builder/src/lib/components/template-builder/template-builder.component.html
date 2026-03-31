@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-toolbar>
         <ng-template #start>
-            <ng-content select="[toolbar-left]"></ng-content>
+            <ng-content select="[toolbar-left]" />
         </ng-template>
         <ng-template #end>
             <div class="flex gap-2">
@@ -26,8 +26,8 @@
                 [themeId]="template.themeId"
                 (selectTheme)="updateTheme($event)"
                 [layoutProperties]="vm.layoutProperties"
-                data-testId="template-builder-actions"></dotcms-template-builder-actions>
-            <ng-content select="[toolbar-actions-right]"></ng-content>
+                data-testId="template-builder-actions" />
+            <ng-content select="[toolbar-actions-right]" />
         </ng-template>
     </p-toolbar>
     <div
@@ -45,14 +45,13 @@
             </dotcms-template-builder-section>
         }
         <div
-            [ngClass]="{
-                'template-builder__container--right':
-                    vm.layoutProperties.sidebar.location === 'right'
-            }"
+            [class.template-builder__container--right]="
+                vm.layoutProperties.sidebar.location === 'right'
+            "
             class="template-builder__container">
             @if (vm.layoutProperties.sidebar.location?.length) {
                 <dotcms-template-builder-sidebar
-                    [ngClass]="{
+                    [class]="{
                         'template-builder__sidebar--small':
                             vm.layoutProperties.sidebar.width === 'small',
                         'template-builder__sidebar--large':
@@ -71,9 +70,7 @@
                         [attr.gs-h]="row.h"
                         [row]="row"
                         [isResizing]="vm.resizingRowID === row.id"
-                        [ngClass]="{
-                            'template-builder-row--wont-fit': addBoxIsDragging && !row.willBoxFit
-                        }"
+                        [class.template-builder-row--wont-fit]="addBoxIsDragging && !row.willBoxFit"
                         [attr.data-wont-fit]="'dot.template.builder.row.box.wont.fit' | dm"
                         class="grid-stack-item"
                         #rowElement

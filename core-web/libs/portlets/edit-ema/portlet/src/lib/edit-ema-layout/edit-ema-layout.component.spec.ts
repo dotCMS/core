@@ -1,10 +1,11 @@
 import { expect, describe } from '@jest/globals';
 import { SpyObject } from '@ngneat/spectator';
 import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
-import { MockComponent } from 'ng-mocks';
+import { MockComponent, MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -23,11 +24,10 @@ import {
     DotMessageService,
     DotPageLayoutService,
     DotRouterService,
-    DotSystemConfigService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { WINDOW } from '@dotcms/utils';
@@ -93,8 +93,10 @@ describe('EditEmaLayoutComponent', () => {
 
     const createComponent = createComponentFactory({
         component: EditEmaLayoutComponent,
-        imports: [HttpClientTestingModule, MockComponent(TemplateBuilderComponent)],
+        imports: [MockComponent(TemplateBuilderComponent)],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             UVEStore,
             DotMessageService,
             DotActionUrlService,
@@ -103,7 +105,6 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotContentTypeService),
-            mockProvider(CoreWebService),
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
@@ -119,29 +120,39 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn(() => of([]))
             }),
-            mockProvider(ConfirmationService),
-            { provide: DotExperimentsService, useValue: DotExperimentsServiceMock },
-            { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
-            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
-            { provide: DotLicenseService, useValue: { isEnterprise: () => of(true) } },
-            {
-                provide: DotContentletLockerService,
-                useValue: { unlock: (_inode: string) => of({}) }
-            },
-            { provide: LoginService, useValue: { getCurrentUser: () => of({}) } },
-            {
-                provide: WINDOW,
-                useValue: window
-            },
-            mockProvider(DotSystemConfigService, {
-                getSystemConfig: () => of({})
-            }),
-            mockProvider(DotWorkflowActionsFireService, {
-                saveContentlet: jest.fn().mockReturnValue(of({}))
-            }),
+            mockProvider(DotWorkflowActionsFireService),
             {
                 provide: GlobalStore,
                 useValue: { loggedUser: signal(CurrentUserDataMock) }
+            },
+            mockProvider(ConfirmationService),
+            MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
+            MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
+            MockProvider(DotLanguagesService, new DotLanguagesServiceMock(), 'useValue'),
+            MockProvider(
+                DotLicenseService,
+                {
+                    isEnterprise: () => of(true)
+                },
+                'useValue'
+            ),
+            MockProvider(
+                DotContentletLockerService,
+                {
+                    unlock: (_inode: string) => of({})
+                },
+                'useValue'
+            ),
+            MockProvider(
+                LoginService,
+                {
+                    getCurrentUser: () => of({})
+                },
+                'useValue'
+            ),
+            {
+                provide: WINDOW,
+                useValue: window
             }
         ]
     });

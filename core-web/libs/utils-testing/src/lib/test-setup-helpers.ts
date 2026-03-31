@@ -28,7 +28,7 @@ export class MockDotGlobalMessage {}
 
 @Component({
     selector: 'dot-portlet-base',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content />'
 })
 export class MockDotPortletBase {}
 
@@ -46,13 +46,13 @@ export class MockDotSpinner {}
 
 @Component({
     selector: 'dot-empty-state',
-    template: '<div data-testid="mock-empty-state"><ng-content></ng-content></div>'
+    template: '<div data-testid="mock-empty-state"><ng-content /></div>'
 })
 export class MockDotEmptyState {}
 
 @Component({
     selector: 'dot-dialog',
-    template: '<div data-testid="mock-dialog"><ng-content></ng-content></div>'
+    template: '<div data-testid="mock-dialog"><ng-content /></div>'
 })
 export class MockDotDialog {}
 
@@ -73,31 +73,31 @@ export const MOCK_DOTCMS_COMPONENTS = [
  */
 @Component({
     selector: 'p-tabs, p-tabView',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content />'
 })
 export class MockPTabView {}
 
 @Component({
     selector: 'p-tabPanel, p-tabpanel',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content />'
 })
 export class MockPTabPanel {}
 
 @Component({
     selector: 'p-tablist',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content />'
 })
 export class MockPTabList {}
 
 @Component({
     selector: 'p-tab',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content />'
 })
 export class MockPTab {}
 
 @Component({
     selector: 'p-tabpanels',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content />'
 })
 export class MockPTabPanels {}
 
@@ -109,7 +109,7 @@ export class MockPDropdown {}
 
 @Component({
     selector: 'p-button',
-    template: '<button data-testid="mock-p-button"><ng-content></ng-content></button>'
+    template: '<button data-testid="mock-p-button"><ng-content /></button>'
 })
 export class MockPButton {}
 

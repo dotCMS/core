@@ -13,7 +13,7 @@ import {
     output,
     signal
 } from '@angular/core';
-import { ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -24,6 +24,19 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
+/** Payload emitted when the user selects a layout row in the palette (for editor focus). */
+export interface DotRowReorderSelectEvent {
+    selector: string;
+    type: string;
+}
+
+/**
+ * Palette tree for the Universal Visual Editor: reorder rows and columns via drag-and-drop,
+ * expand/collapse sections, and rename rows or columns through a shared dialog.
+ *
+ * Mutations call {@link UVEStore.updateLayout} for immediate UI feedback and
+ * {@link UVEStore.updateRows} to persist the row model.
+ */
 @Component({
     selector: 'dot-row-reorder',
     standalone: true,
@@ -56,114 +69,117 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 export class DotRowReorderComponent {
     protected readonly uveStore = inject(UVEStore);
 
-    onRowSelect = output<{ selector: string; type: string }>();
+    /** Fired when the user clicks a row label to focus that section in the editor. */
+    readonly onRowSelect = output<DotRowReorderSelectEvent>();
+
+    // --- Edit dialog (row or column name) ---
+
+    readonly editRowDialogOpen = signal<boolean>(false);
+    readonly editingColumn = signal<{ rowIndex: number; columnIndex: number } | null>(null);
+    readonly rowNameControl = new FormControl<string>('', { nonNullable: true });
+
+    private readonly editingRowIndex = signal<number | null>(null);
+
+    // --- Expand/collapse ---
 
     private readonly expandedRowIndexes = signal<Set<number>>(new Set());
     private readonly expandedColumnKeys = signal<Set<string>>(new Set());
+
+    // --- Drag state (disables row drag while a column is dragging) ---
+
     private readonly columnDragging = signal<boolean>(false);
-    readonly editRowDialogOpen = signal<boolean>(false);
-    private readonly editingRowIndex = signal<number | null>(null);
-    readonly editingColumn = signal<{ rowIndex: number; columnIndex: number } | null>(null);
 
-    readonly rowNameControl = new FormControl<string>('', { nonNullable: true });
-
-    rows = computed(() => {
+    /** Layout rows from the current page asset (empty array when none). */
+    readonly rows = computed(() => {
         const pageLayout = this.uveStore.pageAsset()?.layout;
         return pageLayout?.body?.rows ?? [];
     });
 
+    /**
+     * Display label for a row: metadata name or a default "Row N".
+     */
     getRowLabel(row: DotPageAssetLayoutRow, index: number): string {
-        return (row.metadata?.['name'] as string) || `Row ${index + 1}`;
+        return this.metadataDisplayName(row.metadata) || `Row ${index + 1}`;
     }
 
+    /**
+     * Display label for a column: metadata name or a default "Column N".
+     */
     getColumnLabel(column: DotPageAssetLayoutColumn, index: number): string {
-        return (column.metadata?.['name'] as string) || `Column ${index + 1}`;
+        return this.metadataDisplayName(column.metadata) || `Column ${index + 1}`;
     }
 
+    /**
+     * Resolves each column container to a display title using page asset container data.
+     */
     getColumnContainers(column: DotPageAssetLayoutColumn): { title: string }[] {
         const containersData = this.uveStore.pageAsset()?.containers ?? {};
 
         return (column.containers ?? []).map(({ identifier }) => {
             const title = containersData[identifier]?.container?.title ?? identifier;
-
             return { title };
         });
     }
 
-    protected selectRow(index: number): void {
+    /**
+     * Notifies the parent to select the row in the iframe/editor.
+     * @param sectionIndex 1-based index used in the DOM selector (`#section-{n}`).
+     */
+    protected selectRow(sectionIndex: number): void {
         this.onRowSelect.emit({
-            selector: `#section-${index}`,
+            selector: `#section-${sectionIndex}`,
             type: 'row'
         });
     }
 
+    /** Opens the rename dialog for the given row. */
     protected openEditRowDialog(rowIndex: number): void {
         const row = this.rows()[rowIndex];
         this.editingRowIndex.set(rowIndex);
         this.editingColumn.set(null);
-        this.rowNameControl.setValue((row?.metadata?.['name'] as string) ?? '');
+        this.rowNameControl.setValue(this.metadataDisplayName(row?.metadata) ?? '');
         this.editRowDialogOpen.set(true);
     }
 
+    /** Opens the rename dialog for a column within a row. */
     protected openEditColumnDialog(rowIndex: number, columnIndex: number): void {
         const row = this.rows()[rowIndex];
         const column = row?.columns?.[columnIndex];
 
         this.editingRowIndex.set(null);
         this.editingColumn.set({ rowIndex, columnIndex });
-        this.rowNameControl.setValue((column?.metadata?.['name'] as string) ?? '');
+        this.rowNameControl.setValue(this.metadataDisplayName(column?.metadata) ?? '');
         this.editRowDialogOpen.set(true);
     }
 
+    /** Resets dialog state when the dialog is closed or after a successful save. */
     protected closeEditRowDialog(): void {
         this.editRowDialogOpen.set(false);
         this.editingRowIndex.set(null);
         this.editingColumn.set(null);
     }
 
+    /**
+     * Persists the trimmed name from the dialog to either the active column or row,
+     * then syncs layout + rows on the store (optimistic UI).
+     */
     protected submitEditRow(): void {
         const nextName = this.rowNameControl.value.trim();
-
         const currentRows = this.rows();
         const columnEdit = this.editingColumn();
         const rowEditIndex = this.editingRowIndex();
 
         if (columnEdit) {
-            const { rowIndex, columnIndex } = columnEdit;
-            const row = currentRows[rowIndex];
-            const column = row?.columns?.[columnIndex];
-
-            if (!row || !column) {
+            const updatedRows = this.replaceColumnMetadataName(
+                currentRows,
+                columnEdit.rowIndex,
+                columnEdit.columnIndex,
+                nextName
+            );
+            if (!updatedRows) {
                 return;
             }
-
-            const updatedRows = currentRows.map((r, rIdx) => {
-                if (rIdx !== rowIndex) {
-                    return r;
-                }
-
-                const updatedColumns = (r.columns ?? []).map((c, cIdx) => {
-                    return cIdx === columnIndex
-                        ? { ...c, metadata: { ...(c.metadata ?? {}), name: nextName || undefined } }
-                        : c;
-                });
-
-                return { ...r, columns: updatedColumns };
-            });
-
-            // Optimistic UI update
-            // Removed pageAPIResponse - use normalized accessors
-            if (this.uveStore.pageAsset()?.layout) {
-                this.uveStore.updateLayout({
-                    ...this.uveStore.pageAsset()?.layout,
-                    body: {
-                        ...this.uveStore.pageAsset()?.layout.body,
-                        rows: updatedRows
-                    }
-                });
-            }
-
-            this.uveStore.updateRows(updatedRows);
+            this.persistRows(updatedRows);
             this.closeEditRowDialog();
             return;
         }
@@ -172,25 +188,8 @@ export class DotRowReorderComponent {
             return;
         }
 
-        const updatedRows = currentRows.map((row, idx) => {
-            return idx === rowEditIndex
-                ? { ...row, metadata: { ...(row.metadata ?? {}), name: nextName || undefined } }
-                : row;
-        });
-
-        // Optimistic UI update (so the label changes immediately)
-        // Removed pageAPIResponse - use normalized accessors
-        if (this.uveStore.pageAsset()?.layout) {
-            this.uveStore.updateLayout({
-                ...this.uveStore.pageAsset()?.layout,
-                body: {
-                    ...this.uveStore.pageAsset()?.layout.body,
-                    rows: updatedRows
-                }
-            });
-        }
-
-        this.uveStore.updateRows(updatedRows);
+        const updatedRows = this.replaceRowMetadataName(currentRows, rowEditIndex, nextName);
+        this.persistRows(updatedRows);
         this.closeEditRowDialog();
     }
 
@@ -209,11 +208,11 @@ export class DotRowReorderComponent {
     }
 
     protected isColumnExpanded(rowIndex: number, colIndex: number): boolean {
-        return this.expandedColumnKeys().has(`${rowIndex}-${colIndex}`);
+        return this.expandedColumnKeys().has(this.columnExpansionKey(rowIndex, colIndex));
     }
 
     protected toggleColumn(rowIndex: number, colIndex: number): void {
-        const key = `${rowIndex}-${colIndex}`;
+        const key = this.columnExpansionKey(rowIndex, colIndex);
         const next = new Set(this.expandedColumnKeys());
         if (next.has(key)) {
             next.delete(key);
@@ -231,16 +230,19 @@ export class DotRowReorderComponent {
         this.columnDragging.set(isDragging);
     }
 
-    protected drop(event: CdkDragDrop<DotPageAssetLayoutRow[]>) {
+    /** Handles reordering top-level layout rows. */
+    protected drop(event: CdkDragDrop<DotPageAssetLayoutRow[]>): void {
         const currentRows = this.rows();
         const newRows = [...currentRows];
         moveItemInArray(newRows, event.previousIndex, event.currentIndex);
-
-        this.optimisticUpdateRows(newRows);
-        this.uveStore.updateRows(newRows);
+        this.persistRows(newRows);
     }
 
-    protected dropColumn(event: CdkDragDrop<DotPageAssetLayoutColumn[]>, rowIndex: number) {
+    /**
+     * Reorders columns within a single row and recomputes `leftOffset` from column widths.
+     * Ignores cross-list drops.
+     */
+    protected dropColumn(event: CdkDragDrop<DotPageAssetLayoutColumn[]>, rowIndex: number): void {
         if (event.previousContainer !== event.container) {
             return;
         }
@@ -256,14 +258,16 @@ export class DotRowReorderComponent {
         moveItemInArray(newColumns, event.previousIndex, event.currentIndex);
         const updatedColumns = this.recomputeLeftOffsets(newColumns);
 
-        const newRows = currentRows.map((row, idx) => {
-            return idx === rowIndex ? { ...row, columns: updatedColumns } : row;
-        });
+        const newRows = currentRows.map((row, idx) =>
+            idx === rowIndex ? { ...row, columns: updatedColumns } : row
+        );
 
-        this.optimisticUpdateRows(newRows);
-        this.uveStore.updateRows(newRows);
+        this.persistRows(newRows);
     }
 
+    /**
+     * After reordering columns, assigns sequential `leftOffset` values from each column's `width`.
+     */
     private recomputeLeftOffsets(columns: DotPageAssetLayoutColumn[]): DotPageAssetLayoutColumn[] {
         let offset = 1;
 
@@ -271,23 +275,86 @@ export class DotRowReorderComponent {
             const width = Math.max(0, column.width ?? 0);
             const next = { ...column, leftOffset: offset };
             offset += width;
-
             return next;
         });
     }
 
+    /**
+     * Writes rows into `pageAsset.layout` (when present) and delegates to the store row updater.
+     */
     private optimisticUpdateRows(rows: DotPageAssetLayoutRow[]): void {
-        // Removed pageAPIResponse - use normalized accessors
-        if (!this.uveStore.pageAsset()?.layout) {
+        const layout = this.uveStore.pageAsset()?.layout;
+        if (!layout) {
             return;
         }
 
         this.uveStore.updateLayout({
-            ...this.uveStore.pageAsset()?.layout,
+            ...layout,
             body: {
-                ...this.uveStore.pageAsset()?.layout.body,
+                ...layout.body,
                 rows
             }
         });
+    }
+
+    /** Applies optimistic layout patch and persists rows on the store. */
+    private persistRows(rows: DotPageAssetLayoutRow[]): void {
+        this.optimisticUpdateRows(rows);
+        this.uveStore.updateRows(rows);
+    }
+
+    private metadataDisplayName(metadata: DotPageAssetLayoutRow['metadata']): string | undefined {
+        const name = metadata?.['name'];
+        return typeof name === 'string' ? name : undefined;
+    }
+
+    private columnExpansionKey(rowIndex: number, colIndex: number): string {
+        return `${rowIndex}-${colIndex}`;
+    }
+
+    /**
+     * Returns a new rows array with the column's `metadata.name` updated, or `undefined` if indices are invalid.
+     */
+    private replaceColumnMetadataName(
+        currentRows: DotPageAssetLayoutRow[],
+        rowIndex: number,
+        columnIndex: number,
+        nextName: string
+    ): DotPageAssetLayoutRow[] | undefined {
+        const row = currentRows[rowIndex];
+        const column = row?.columns?.[columnIndex];
+
+        if (!row || !column) {
+            return undefined;
+        }
+
+        return currentRows.map((r, rIdx) => {
+            if (rIdx !== rowIndex) {
+                return r;
+            }
+
+            const updatedColumns = (r.columns ?? []).map((c, cIdx) =>
+                cIdx === columnIndex
+                    ? {
+                          ...c,
+                          metadata: { ...(c.metadata ?? {}), name: nextName || undefined }
+                      }
+                    : c
+            );
+
+            return { ...r, columns: updatedColumns };
+        });
+    }
+
+    private replaceRowMetadataName(
+        currentRows: DotPageAssetLayoutRow[],
+        rowIndex: number,
+        nextName: string
+    ): DotPageAssetLayoutRow[] {
+        return currentRows.map((row, idx) =>
+            idx === rowIndex
+                ? { ...row, metadata: { ...(row.metadata ?? {}), name: nextName || undefined } }
+                : row
+        );
     }
 }

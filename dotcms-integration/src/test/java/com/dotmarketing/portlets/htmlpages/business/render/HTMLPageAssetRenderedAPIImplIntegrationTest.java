@@ -3233,9 +3233,15 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 .field(new FieldDataGen().velocityVarName("title").next())
                 .nextPersisted();
 
-        final Map<String, Object> schema = new HashMap<>();
-        schema.put("contentType", contentType.variable());
-        schema.put("sections", List.of());
+        final String schema = String.format("{"
+                + "\"contentType\":\"%s\","
+                + "\"sections\":[{"
+                    + "\"title\":\"Layout\","
+                    + "\"fields\":["
+                        + "{\"type\":\"input\",\"label\":\"New Field\",\"id\":\"newField\",\"config\":{\"inputType\":\"text\"}},"
+                        + "{\"type\":\"input\",\"label\":\"New Field\",\"id\":\"newField\",\"config\":{\"inputType\":\"text\"}}"
+                    + "]"
+                + "}]}", contentType.variable());
 
         contentType = ContentTypeBuilder.builder(contentType)
                 .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))

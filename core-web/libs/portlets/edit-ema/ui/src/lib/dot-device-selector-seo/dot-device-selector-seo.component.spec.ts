@@ -11,7 +11,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { PopoverModule } from 'primeng/popover';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { WINDOW } from '@dotcms/utils';
 import {
     DotDevicesServiceMock,
@@ -78,10 +77,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
                 }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]

@@ -45,9 +45,11 @@
     } @else {
         <div
             class="grid h-full gap-4"
-            [ngClass]="{
-                'grid-cols-2 auto-rows-[7.5rem]': !listStyle,
-                'grid-cols-1 auto-rows-[4.5rem]': listStyle,
+            [class]="{
+                'grid-cols-2': !listStyle,
+                'auto-rows-[7.5rem]': !listStyle,
+                'grid-cols-1': listStyle,
+                'auto-rows-[4.5rem]': listStyle,
                 'overflow-auto': !$isLoading()
             }">
             @if ($isLoading()) {
@@ -80,7 +82,7 @@
             </div>
             <p
                 data-testid="empty-state-message"
-                class="m-0 text-sm text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-[var(--color-palette-primary-500)] [&_span]:underline hover:[&_span]:text-[var(--color-palette-primary-600)]"
+                class="m-0 text-sm text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-(--color-palette-primary-500) [&_span]:underline hover:[&_span]:text-(--color-palette-primary-600)"
                 [innerHTML]="$emptyState().message | dm"
                 (click)="onEmptyStateClick($event)"></p>
         </div>

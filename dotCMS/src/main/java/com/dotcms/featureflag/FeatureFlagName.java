@@ -49,6 +49,8 @@ public interface FeatureFlagName {
 
     String FEATURE_FLAG_PAGE_SCANNER = "FEATURE_FLAG_PAGE_SCANNER";
 
+    String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
+
     /**
      * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
      *

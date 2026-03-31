@@ -1,5 +1,4 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -49,13 +48,13 @@ import { PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
     convertUTCToLocalTime,
-    createFavoritePagesURL
+    createFavoritePagesURL,
+    createFullURL
 } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
     imports: [
-        NgClass,
         FormsModule,
         ReactiveFormsModule,
         ButtonModule,
@@ -121,8 +120,29 @@ export class DotUveToolbarComponent {
         return isExperimentRunning ? experiment : null;
     });
 
+    readonly $toolbar = computed(() => ({
+        runningExperiment: this.$runningExperiment(),
+        editor: { bookmarksUrl: this.$bookmarksUrl() },
+        currentLanguage: this.$currentLanguage()
+    }));
+
+    readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
+        const params = this.#store.pageParams();
+        const site = this.#store.pageAsset()?.site;
+
+        return [
+            {
+                label: 'uve.toolbar.page.url',
+                value: createFullURL(params, site?.identifier)
+            }
+        ];
+    });
+
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $mode = this.#store.viewMode;
+    readonly $isPreviewMode = this.#store.$isPreviewMode;
+    readonly $isLiveMode = this.#store.$isLiveMode;
+    readonly $isEditMode = this.#store.$isEditMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
@@ -352,6 +372,13 @@ export class DotUveToolbarComponent {
      *
      * @memberof DotUveToolbarComponent
      */
+    triggerCopyToast(): void {
+        this.#messageService.add({
+            severity: 'success',
+            summary: this.#dotMessageService.get('Copied!'),
+            life: 3000
+        });
+    }
 
     /**
      * Handle the persona selection

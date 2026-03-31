@@ -1,32 +1,4 @@
 @charset "UTF-8";
-/*
-  ========================== WARNING ==========================
-  Don't use this in your components, use $font-size-md instead,
-  this is only for the root element
-  =============================================================
-*/
-@font-face {
-  font-family: "Material Icons";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/dotAdmin/assets/MaterialIconsOutlined-Regular.otf") format("truetype");
-}
-.material-icons {
-  font-family: "Material Icons";
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  -webkit-font-smoothing: antialiased;
-}
-
 /* FONT PATH
  * -------------------------- */
 @font-face {
@@ -3240,6 +3212,7 @@
 .dijitDropDownButton .dijitArrowButtonInner,
 .dijitSelect .dijitArrowButtonContainer,
 .dijitSpinner .dijitSpinnerButtonContainer {
+  appearance: none;
   height: 100%;
   border: none;
   position: relative;
@@ -3607,6 +3580,14 @@
   margin: 0;
 }
 
+.dj_a11y .dijitButtonNode {
+  border: none !important;
+  padding: 0 1rem !important;
+}
+.dj_a11y .dijitArrowButton {
+  padding: 0 !important;
+}
+
 .dijitButton {
   background-color: #ffffff;
   border: solid 1.5px var(--color-palette-primary-500);
@@ -3614,6 +3595,7 @@
   box-shadow: 0;
 }
 .dijitButtonNode {
+  appearance: none;
   border: none;
   font-size: 0.875rem;
 }
@@ -8825,6 +8807,7 @@ Styles for commons fields along the backend
   border: solid 1px var(--gray-500);
   width: 100%;
 }
+.fileAjaxUploader input[type=file]::file-selector-button,
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button {
   background-color: var(--color-palette-primary-500);
   height: 36px;
@@ -8833,6 +8816,7 @@ Styles for commons fields along the backend
   cursor: pointer;
   padding: 0 1rem;
 }
+.fileAjaxUploader input[type=file]::file-selector-button:hover,
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button:hover {
   background-color: var(--color-palette-primary-400);
 }
@@ -11254,6 +11238,13 @@ Resize Handle
   font-display: swap;
   src: local(""), url("/dotAdmin/assets/Assistant-Bold.woff2") format("woff2"), url("/dotAdmin/assets/Assistant-Bold.woff") format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
+@font-face {
+  font-family: "Material Icons";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/dotAdmin/assets/MaterialIcons-Regular.ttf") format("truetype");
+}
 #structure_inode_popup .dijitMenuItem .label {
   display: flex;
   align-items: center;
@@ -11297,6 +11288,38 @@ blockquote,
 th,
 td {
   font-size: 0.875rem;
+}
+
+.material-icons {
+  font-family: "Material Icons", sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px; /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+dialog:modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  border: none;
+  border-radius: 0.375rem;
+  box-shadow: 0px 10px 18px 0px hsla(230deg, 13%, 9%, 0.1);
+  padding: 1.5rem;
+}
+dialog:modal::backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
 .edit-content-full-screen {

@@ -38,7 +38,7 @@
                 [disabled]="dialogActions.cancel.disabled"
                 severity="secondary"
                 (click)="dialogActions.cancel.action?.()"
-                data-testId="dotDialogCancelAction"></p-button>
+                data-testId="dotDialogCancelAction" />
         }
         @if (dialogActions?.accept) {
             <p-button
@@ -46,7 +46,7 @@
                 [disabled]="dialogActions.accept.disabled || savingContentType()"
                 [loading]="savingContentType()"
                 (click)="dialogActions.accept.action?.()"
-                data-testId="dotDialogAcceptAction"></p-button>
+                data-testId="dotDialogAcceptAction" />
         }
     </ng-template>
 </p-dialog>

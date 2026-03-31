@@ -19,7 +19,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { ToastModule } from 'primeng/toast';
 
 import {
     DotAnalyticsTrackerService,
@@ -136,7 +135,7 @@ const NAV_ITEMS = [
 ];
 
 const INITIAL_PAGE_PARAMS = {
-    language_id: 1,
+    language_id: '1',
     url: 'index',
     variantName: 'DEFAULT',
     [PERSONA_KEY]: 'modes.persona.no.persona',
@@ -1143,10 +1142,13 @@ describe('DotEmaShellComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should not render components', () => {
-            expect(spectator.query(EditEmaNavigationBarComponent)).toBeNull();
-            expect(spectator.query(ToastModule)).toBeNull();
-            expect(spectator.query(DotPageToolsSeoComponent)).toBeNull();
+        it('should not render the router outlet', () => {
+            expect(spectator.query('router-outlet')).toBeNull();
+        });
+
+        it('should still render the navigation bar, toast, and seo tools', () => {
+            expect(spectator.query(EditEmaNavigationBarComponent)).toBeTruthy();
+            expect(spectator.query(DotPageToolsSeoComponent)).toBeTruthy();
         });
     });
 

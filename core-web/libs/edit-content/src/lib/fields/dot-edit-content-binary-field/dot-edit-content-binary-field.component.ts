@@ -1,6 +1,6 @@
 import { MonacoEditorConstructionOptions, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -77,7 +77,6 @@ type SystemOptionsType = {
 @Component({
     selector: 'dot-edit-content-binary-field',
     imports: [
-        CommonModule,
         ButtonModule,
         DialogModule,
         DotDropZoneComponent,
@@ -89,7 +88,8 @@ type SystemOptionsType = {
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
         DotBinaryFieldPreviewComponent,
-        TooltipModule
+        TooltipModule,
+        AsyncPipe
     ],
     providers: [
         DialogService,

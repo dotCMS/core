@@ -34,15 +34,15 @@ public class TemplateLayoutDataGen  {
 
     public TemplateLayoutDataGen withContainer(final String identifier, final String UUID, final List<String> uuidsHistory){
 
-        containersIds.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, uuidsHistory, null) :
-                new ContainerUUID(identifier, UUID, uuidsHistory, null));
+        containersIds.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, uuidsHistory) :
+                new ContainerUUID(identifier, UUID, uuidsHistory));
         return this;
     }
 
     public TemplateLayoutDataGen withContainerInSidebar(final String identifier, final String UUID){
 
-        containersIdsInSidebar.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, list(UUID), null) :
-                new ContainerUUID(identifier, UUID, list(UUID), null));
+        containersIdsInSidebar.add(UUID == null ? new ContainerUUID(identifier, ContainerUUID.UUID_START_VALUE, list(UUID)) :
+                new ContainerUUID(identifier, UUID, list(UUID)));
 
         return this;
     }

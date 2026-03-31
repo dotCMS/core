@@ -21,6 +21,7 @@ import { SafeUrlPipe } from '@dotcms/ui';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
+import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
 
 /**
  * Renders the UVE (Universal Visual Editor) page preview inside an iframe.
@@ -92,6 +93,11 @@ export class DotUveIframeComponent {
      */
     readonly $enableInlineEdit = this.uveStore.editorEnableInlineEdit;
     /**
+     * Whether the legacy UVE script injection is enabled via feature flag.
+     * @type {Signal<boolean>}
+     */
+    readonly $isEmaLegacyScriptInjectionEnabled = this.uveStore.$isEmaLegacyScriptInjectionEnabled;
+    /**
      * Effect that injects rendered content into traditional pages when ready.
      * @type {EffectRef}
      */
@@ -158,8 +164,12 @@ export class DotUveIframeComponent {
             return;
         }
 
+        const content = this.$isEmaLegacyScriptInjectionEnabled()
+            ? addEditorPageScript(pageRender)
+            : pageRender;
+
         doc.open();
-        doc.write(pageRender);
+        doc.write(content);
         doc.close();
 
         this.handleInlineScripts(enableInlineEdit);

@@ -15,16 +15,12 @@ import io.vavr.Tuple2;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
-
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -34,7 +30,6 @@ import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Config;
-import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,9 +68,13 @@ public class ConfigurationResource implements Serializable {
 							FeatureFlagName.FEATURE_FLAG_NEW_BINARY_FIELD, FeatureFlagName.FEATURE_FLAG_ANNOUNCEMENTS, FeatureFlagName.FEATURE_FLAG_NEW_EDIT_PAGE,
 							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
                             FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES,
+<<<<<<< HEAD
 							FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
 							PageScannerResource.API_URL_PROPERTY,
 							PageScannerResource.API_AUTH_TOKEN_PROPERTY }));
+=======
+                            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION }));
+>>>>>>> uve-experiment
 
 	/**
 	 * Keys that are explicitly whitelisted but whose names happen to match the

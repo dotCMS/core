@@ -1045,11 +1045,13 @@ export const dotPropertiesServiceMock = {
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,
             [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK]: false,
             [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: false,
-            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false
+            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false,
+            [FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION]: false
         })
 };
 
 export const mockCurrentUser: CurrentUser = {
+    admin: false,
     email: 'test@example.com',
     givenName: 'Test',
     loginAs: false,

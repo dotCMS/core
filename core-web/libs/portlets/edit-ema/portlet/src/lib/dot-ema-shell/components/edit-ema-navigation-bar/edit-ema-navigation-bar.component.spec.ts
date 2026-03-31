@@ -103,14 +103,14 @@ describe('EditEmaNavigationBarComponent', () => {
         describe('Navigation', () => {
             it('should navigate with query params when clicking a link item', () => {
                 const router = spectator.inject(Router);
-                const navigateSpy = jest.spyOn(router, 'navigate');
+                const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
 
                 const contentHost = spectator.queryAll(byTestId('nav-bar-item'))[0];
                 const innerButton = contentHost.querySelector('button');
                 spectator.click(innerButton);
 
                 expect(navigateSpy).toHaveBeenCalledWith(
-                    ['content'],
+                    ['edit-page', 'content'],
                     expect.objectContaining({ queryParams: store.pageParams() })
                 );
             });
@@ -138,28 +138,26 @@ describe('EditEmaNavigationBarComponent', () => {
         });
 
         describe('Active state', () => {
-            it('should apply border-l-4 to the wrapper div of the active item after navigation', async () => {
+            it('should set opacity 1 on the indicator span of the active item after navigation', async () => {
                 await spectator.router.navigate(['content']);
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
 
-                // The wrapper div is the parent of the p-button host
                 const contentHost = spectator.queryAll(byTestId('nav-bar-item'))[0];
-                const wrapper = contentHost.parentElement;
-                expect(wrapper.classList).toContain('border-l-4');
-                expect(wrapper.classList).toContain('border-primary');
+                const indicator = contentHost.parentElement.querySelector('span');
+                expect(indicator.style.opacity).toBe('1');
             });
 
-            it('should not apply border-l-4 to inactive items', () => {
+            it('should set opacity 0 on the indicator span of inactive items', () => {
                 const rulesHost = spectator.queryAll(byTestId('nav-bar-item'))[2];
-                const wrapper = rulesHost.parentElement;
-                expect(wrapper.classList).not.toContain('border-l-4');
+                const indicator = rulesHost.parentElement.querySelector('span');
+                expect(indicator.style.opacity).toBe('0');
             });
 
-            it('should not apply border-l-4 to action items (no href)', () => {
+            it('should set opacity 0 on the indicator span of action items (no href)', () => {
                 const actionHost = spectator.queryAll(byTestId('nav-bar-item'))[4];
-                const wrapper = actionHost.parentElement;
-                expect(wrapper.classList).not.toContain('border-l-4');
+                const indicator = actionHost.parentElement.querySelector('span');
+                expect(indicator.style.opacity).toBe('0');
             });
         });
 

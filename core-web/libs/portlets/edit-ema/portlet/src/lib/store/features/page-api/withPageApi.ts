@@ -404,7 +404,8 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                             leftOffset: column.leftOffset,
                                                             styleClass: column.styleClass,
                                                             width: column.width,
-                                                            containers: column.containers
+                                                            containers: column.containers,
+                                                            metadata: column.metadata
                                                         };
                                                     })
                                                 };
