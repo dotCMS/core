@@ -235,7 +235,12 @@ export class DotRelationshipFieldComponent
             data: {
                 contentTypeId: contentType.id,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.inode)
+                currentItemsIds: this.store.data().map((item) => item.inode),
+                cardinality: this.$field().relationships?.cardinality,
+                parentContentTypeId: this.$field().contentTypeId,
+                fieldVariable: this.$field().variable,
+                isParentField: this.$field().relationships?.isParentField,
+                currentContentIdentifier: this.$contentlet()?.identifier ?? null
             },
             templates: {
                 header: HeaderComponent,
@@ -256,10 +261,11 @@ export class DotRelationshipFieldComponent
     /**
      * Persists row order after a PrimeNG table row reorder.
      *
-     * PrimeNG mutates the bound `[value]` array in-place via `ObjectUtils.reorderArray` before
-     * emitting `onRowReorder` (see `Table.onRowDrop` in `primeng/table`). `dragIndex` / `dropIndex`
-     * describe that mutation; re-applying them here would corrupt the order. The store must only
-     * take an immutable snapshot so signal consumers re-run (`setData` clones the array).
+     * Since `[value]` is now bound to a paginated slice (a new array from a computed signal),
+     * PrimeNG mutates that transient slice in-place via `ObjectUtils.reorderArray`, leaving
+     * the full `store.data()` untouched. We translate the slice-local `dragIndex` / `dropIndex`
+     * to global indices using the current pagination offset, then apply the reorder on a copy
+     * of the full data array and persist it back to the store.
      */
     onRowReorder(event: TableRowReorderEvent) {
         const dragIndex = event?.dragIndex;
@@ -268,7 +274,15 @@ export class DotRelationshipFieldComponent
             return;
         }
 
-        this.store.setData(this.store.data());
+        const offset = this.store.pagination().offset;
+        const globalDragIndex = offset + dragIndex;
+        const globalDropIndex = offset + dropIndex;
+
+        const reorderedData = [...this.store.data()];
+        const [movedItem] = reorderedData.splice(globalDragIndex, 1);
+        reorderedData.splice(globalDropIndex, 0, movedItem);
+
+        this.store.setData(reorderedData);
     }
 
     /**
@@ -289,7 +303,7 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                isParent: true // This could be determined based on relationship configuration
+                isParent: this.$field().relationships?.isParentField ?? true
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
