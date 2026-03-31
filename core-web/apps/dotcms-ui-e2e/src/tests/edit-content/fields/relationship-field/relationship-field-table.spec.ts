@@ -295,16 +295,10 @@ test.describe('Table Pagination', () => {
         blogTypeVariable = blogType.variable;
     });
 
-    test.fixme('paginates at 10 items per page @smoke', async ({
-        adminPage,
-        apiHelpers,
-        testSuffix
-    }) => {
-        // BUG: pagination shows all items instead of 10 per page.
-        // Remove fixme once the bug is fixed.
+    test('paginates at 6 items per page @smoke', async ({ adminPage, apiHelpers, testSuffix }) => {
         const authors = await apiHelpers.createContentlets(
             authorTypeVariable,
-            Array.from({ length: 12 }, (_, j) => {
+            Array.from({ length: 8 }, (_, j) => {
                 const i = j + 1;
                 return {
                     title: `TablePag Author ${i} ${testSuffix}`,
@@ -324,21 +318,33 @@ test.describe('Table Pagination', () => {
 
         const relationshipField = new RelationshipField(adminPage);
 
-        await relationshipField.expectRowCount(10);
+        await relationshipField.expectRowCount(6);
         await relationshipField.expectPaginationVisible();
+
+        // Capture page 1 titles
+        const page1Titles: string[] = [];
+        for (let i = 0; i < 6; i++) {
+            page1Titles.push(await relationshipField.getRowTitle(i));
+        }
+
         await relationshipField.clickNextPage();
         await relationshipField.expectRowCount(2);
+
+        // Verify page 2 shows different items than page 1
+        const page2Titles: string[] = [];
+        for (let i = 0; i < 2; i++) {
+            page2Titles.push(await relationshipField.getRowTitle(i));
+        }
+
+        for (const title of page2Titles) {
+            expect(page1Titles).not.toContain(title);
+        }
     });
 
-    test.fixme('no pagination with 10 or fewer items', async ({
-        adminPage,
-        apiHelpers,
-        testSuffix
-    }) => {
-        // BUG: pagination appears even with fewer items. Same pagination bug as above.
+    test('no pagination with 6 or fewer items', async ({ adminPage, apiHelpers, testSuffix }) => {
         const authors = await apiHelpers.createContentlets(
             authorTypeVariable,
-            Array.from({ length: 9 }, (_, j) => {
+            Array.from({ length: 5 }, (_, j) => {
                 const i = j + 1;
                 return {
                     title: `NoPag Author ${i} ${testSuffix}`,
@@ -358,7 +364,7 @@ test.describe('Table Pagination', () => {
 
         const relationshipField = new RelationshipField(adminPage);
 
-        await relationshipField.expectRowCount(9);
+        await relationshipField.expectRowCount(5);
         await relationshipField.expectPaginationHidden();
     });
 });

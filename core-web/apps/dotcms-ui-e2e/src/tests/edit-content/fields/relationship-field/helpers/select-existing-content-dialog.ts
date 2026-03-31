@@ -189,6 +189,38 @@ export class SelectExistingContentDialog {
         await expect(this.dialog.locator('.p-paginator')).toBeVisible();
     }
 
+    // ─── Constrained Items (Cardinality) ──────────────────────────────
+
+    /**
+     * Returns the row at the given index.
+     */
+    getRow(index: number): Locator {
+        return this.rows.nth(index);
+    }
+
+    /**
+     * Asserts a row is constrained (disabled, grayed out — already related to another parent).
+     */
+    async expectRowConstrained(rowIndex: number): Promise<void> {
+        const row = this.rows.nth(rowIndex);
+        await expect(row).toHaveClass(/opacity-50/);
+        await expect(row).toHaveClass(/pointer-events-none/);
+
+        // Checkbox or radio should be disabled
+        const checkbox = row.getByTestId('row-checkbox');
+        const radio = row.getByTestId('row-radio');
+        const control = (await checkbox.count()) > 0 ? checkbox : radio;
+        await expect(control.locator('.p-disabled')).toBeVisible();
+    }
+
+    /**
+     * Asserts a row is NOT constrained (enabled, full opacity).
+     */
+    async expectRowSelectable(rowIndex: number): Promise<void> {
+        const row = this.rows.nth(rowIndex);
+        await expect(row).not.toHaveClass(/opacity-50/);
+    }
+
     // ─── Error State ─────────────────────────────────────────────────
 
     async expectErrorMessage(): Promise<void> {
