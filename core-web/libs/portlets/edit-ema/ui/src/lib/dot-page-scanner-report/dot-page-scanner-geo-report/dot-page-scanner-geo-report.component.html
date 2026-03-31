@@ -1,0 +1,120 @@
+<div class="grid gap-4">
+    <!-- Score card -->
+    <p-card>
+        <div class="flex items-center gap-6">
+            <!-- Left: doughnut chart with center overlay -->
+            <div class="relative w-40 h-40 shrink-0">
+                @if (geoChartData()) {
+                    <p-chart
+                        type="doughnut"
+                        [data]="geoChartData()"
+                        [options]="{
+                            cutout: '75%',
+                            plugins: { legend: { display: false } },
+                            animation: false
+                        }" />
+                }
+                <div
+                    class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span class="text-4xl font-bold text-foreground">
+                        {{ geoData().score }}
+                    </span>
+                    <span class="font-medium" [class]="getScoreLabelClass(geoData().score)">
+                        {{ getScoreLabel(geoData().score) }}
+                    </span>
+                </div>
+            </div>
+            <!-- Right: heading, description, severity counts -->
+            <div class="space-y-6">
+                <header>
+                    <h3 class="font-bold text-xl m-0 mb-2">
+                        {{ 'page.scanner.geo.score.heading' | dm }}
+                    </h3>
+                    <p class="text-gray-600 m-0">
+                        {{ 'page.scanner.geo.score.description' | dm }}
+                    </p>
+                </header>
+                @if (geoData().topIssues?.length > 0) {
+                    <div class="flex gap-6">
+                        @for (severity of ['high', 'medium', 'low']; track severity) {
+                            <div class="flex items-center gap-1">
+                                <span
+                                    class="w-2 h-2 rounded-full shrink-0"
+                                    [class]="
+                                        severity === 'high'
+                                            ? 'bg-red-500'
+                                            : severity === 'medium'
+                                              ? 'bg-yellow-500'
+                                              : 'bg-blue-400'
+                                    "></span>
+                                <span>
+                                    <span class="font-semibold">
+                                        {{ countBySeverity(geoData().topIssues, severity) }}
+                                    </span>
+                                    <span class="capitalize text-color-secondary">
+                                        {{ severity }}
+                                    </span>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </p-card>
+
+    <!-- Category breakdown -->
+    <p-accordion [multiple]="true">
+        @for (cat of geoCategories(); track cat.key) {
+            <p-accordion-panel [value]="cat.key">
+                <p-accordion-header>
+                    <div class="flex items-center gap-2 w-full">
+                        <p-chip
+                            [label]="cat.score.toString()"
+                            [style]="getScoreChipStyle(cat.score)"
+                            styleClass="font-bold w-12 text-center" />
+                        <span class="flex-1 font-medium">{{ cat.label }}</span>
+                        <span class="text-color-secondary mr-2">
+                            {{ cat.weight * 100 | number: '1.0-0' }}%
+                        </span>
+                        <span class="text-color-secondary">
+                            {{ cat.passedCount }}/{{ cat.totalCount }}
+                            {{ 'page.scanner.geo.passed' | dm }}
+                        </span>
+                    </div>
+                </p-accordion-header>
+                <p-accordion-content>
+                    <div class="flex flex-col gap-2">
+                        @for (sig of cat.signals; track sig.key) {
+                            <div
+                                class="flex items-start gap-3 p-2 rounded border border-solid border-gray-100">
+                                <p-chip
+                                    [label]="sig.score.toString()"
+                                    [style]="getScoreChipStyle(sig.score)"
+                                    styleClass="font-semibold flex-shrink-0" />
+                                <p class="text-color-secondary m-0">{{ sig.message }}</p>
+                            </div>
+                        }
+                    </div>
+                </p-accordion-content>
+            </p-accordion-panel>
+        }
+    </p-accordion>
+
+    <!-- Top Issues card -->
+    @if (geoData().topIssues?.length > 0) {
+        <p-card [header]="'page.scanner.geo.top.issues' | dm">
+            <div class="flex flex-col gap-2">
+                @for (issue of geoData().topIssues; track $index) {
+                    <div class="flex items-start gap-3">
+                        <p-chip
+                            [label]="issue.severity"
+                            [style]="getSeverityChipStyle(issue.severity)"
+                            styleClass="capitalize flex-shrink-0" />
+                        <p class="m-0">{{ issue.message }}</p>
+                    </div>
+                }
+            </div>
+        </p-card>
+    }
+</div>

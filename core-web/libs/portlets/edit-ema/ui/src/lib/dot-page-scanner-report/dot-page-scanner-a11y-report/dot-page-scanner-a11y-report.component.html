@@ -1,0 +1,106 @@
+<div class="flex gap-3 mb-6">
+    <div class="flex-1 p-3 rounded-lg border border-solid border-gray-200 bg-gray-50">
+        <p class="text-color-secondary mb-1">
+            {{ 'page.scanner.a11y.standard' | dm }}
+        </p>
+        <p class="font-semibold">{{ a11yData().standard }}</p>
+    </div>
+    <div class="flex-1 p-3 rounded-lg border border-solid border-red-200 bg-red-50">
+        <p class="text-color-secondary mb-1">
+            {{ 'page.scanner.a11y.errors' | dm }}
+        </p>
+        <p class="font-semibold text-red-700">
+            {{ a11yData().findings?.byType?.errors ?? 0 }}
+        </p>
+    </div>
+    <div class="flex-1 p-3 rounded-lg border border-solid border-yellow-200 bg-yellow-50">
+        <p class="text-color-secondary mb-1">
+            {{ 'page.scanner.a11y.warnings' | dm }}
+        </p>
+        <p class="font-semibold text-yellow-700">
+            {{ a11yData().findings?.byType?.warnings ?? 0 }}
+        </p>
+    </div>
+    <div class="flex-1 p-3 rounded-lg border border-solid border-blue-200 bg-blue-50">
+        <p class="text-color-secondary mb-1">
+            {{ 'page.scanner.a11y.notices' | dm }}
+        </p>
+        <p class="font-semibold text-blue-700">
+            {{ a11yData().findings?.byType?.notices ?? 0 }}
+        </p>
+    </div>
+</div>
+
+@if (a11yGroups().length > 0) {
+    <p-accordion [multiple]="true">
+        @for (group of a11yGroups(); track group.code) {
+            <p-accordion-panel [value]="group.code">
+                <p-accordion-header>
+                    <div class="flex items-center gap-2 w-full">
+                        @if (group.type === 'error') {
+                            <span class="material-icons text-red-500 text-base">cancel</span>
+                        } @else if (group.type === 'warning') {
+                            <span class="material-icons text-yellow-500 text-base">warning</span>
+                        } @else {
+                            <span class="material-icons text-blue-500 text-base">info</span>
+                        }
+                        <span class="font-mono flex-1 truncate" [title]="group.code">
+                            {{ group.code }}
+                        </span>
+                        @if (group.impact) {
+                            <p-chip
+                                [label]="group.impact"
+                                [style]="getImpactChipStyle(group.impact)" />
+                        }
+                        <p-chip [label]="group.type" [style]="getTypeChipStyle(group.type)" />
+                        <p-chip
+                            [label]="group.count.toString()"
+                            [style]="{
+                                '--p-chip-background': 'var(--p-surface-200)',
+                                '--p-chip-color': 'var(--p-surface-700)'
+                            }" />
+                    </div>
+                </p-accordion-header>
+                <p-accordion-content>
+                    @if (group.helpUrl) {
+                        <div class="mb-3">
+                            <a
+                                [href]="group.helpUrl"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="text-primary underline flex items-center gap-1">
+                                <span class="material-icons text-base">open_in_new</span>
+                                {{ 'page.scanner.a11y.learn.how.to.fix' | dm }}
+                            </a>
+                        </div>
+                    }
+                    <div class="flex flex-col gap-2">
+                        @for (item of group.items; track $index) {
+                            <div class="p-2 rounded border border-solid border-gray-200 bg-gray-50">
+                                <p class="text-color-secondary mb-1 font-medium">
+                                    {{ 'page.scanner.a11y.element' | dm }}
+                                </p>
+                                <code class="block bg-white rounded p-1 mb-2 overflow-x-auto">
+                                    {{ item.context }}
+                                </code>
+                                <p class="text-color-secondary mb-1 font-medium">
+                                    {{ 'page.scanner.a11y.selector' | dm }}
+                                </p>
+                                <code class="block bg-white rounded p-1 overflow-x-auto">
+                                    {{ item.selector }}
+                                </code>
+                            </div>
+                        }
+                    </div>
+                </p-accordion-content>
+            </p-accordion-panel>
+        }
+    </p-accordion>
+} @else {
+    <div class="flex flex-col items-center justify-center py-12 gap-4">
+        <span class="material-icons text-5xl text-green-500">check_circle</span>
+        <p class="text-center text-color-secondary">
+            {{ 'page.scanner.a11y.no.issues' | dm }}
+        </p>
+    </div>
+}
