@@ -262,6 +262,7 @@ import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMult
 import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTable;
 import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenu;
 import com.dotmarketing.startup.runonce.Task260324AddIdentifierPathTriggerIndex;
+import com.dotmarketing.startup.runonce.Task260331AddBaseTypeColumnToIdentifier;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -598,6 +599,7 @@ public class TaskLocatorUtil {
         .add(Task251212AddVersionColumnIndicesTable.class)
         .add(Task260206AddUsagePortletToMenu.class)
         .add(Task260324AddIdentifierPathTriggerIndex.class)
+        .add(Task260331AddBaseTypeColumnToIdentifier.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
