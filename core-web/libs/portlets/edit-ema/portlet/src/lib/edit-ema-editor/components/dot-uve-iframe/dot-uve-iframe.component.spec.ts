@@ -12,6 +12,7 @@ import { DotUveIframeComponent } from './dot-uve-iframe.component';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
+import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils/ema-legacy-script-injection';
 
 describe('DotUveIframeComponent', () => {
     let spectator: Spectator<DotUveIframeComponent>;
@@ -25,6 +26,7 @@ describe('DotUveIframeComponent', () => {
     let pageRenderSignal: WritableSignal<string>;
     let editorEnableInlineEditSignal: WritableSignal<boolean>;
     let iframeDocHeightSignal: WritableSignal<number>;
+    let legacyScriptInjectionEnabledSignal: WritableSignal<boolean>;
 
     const mockPageRender = '<html><head></head><body>Test Content</body></html>';
     const mockSeoResults: SeoMetaTagsResult[] = [
@@ -64,7 +66,7 @@ describe('DotUveIframeComponent', () => {
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
                     $viewIframeDocHeight: iframeDocHeightSignal,
-                    $isEmaLegacyScriptInjectionEnabled: signal(false),
+                    $isEmaLegacyScriptInjectionEnabled: legacyScriptInjectionEnabledSignal,
                     setSeoData: jest.fn()
                 })
             }
@@ -76,6 +78,7 @@ describe('DotUveIframeComponent', () => {
         pageRenderSignal = signal(mockPageRender);
         editorEnableInlineEditSignal = signal(false);
         iframeDocHeightSignal = signal(0);
+        legacyScriptInjectionEnabledSignal = signal(false);
 
         spectator = createComponent({
             props: {
@@ -248,6 +251,28 @@ describe('DotUveIframeComponent', () => {
             const openSpy = jest.spyOn(mockDoc, 'open');
             component.onIframeLoad();
             expect(openSpy).not.toHaveBeenCalled();
+        });
+
+        describe('legacy script injection (FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION)', () => {
+            it('should inject the UVE script when the flag is enabled', () => {
+                legacyScriptInjectionEnabledSignal.set(true);
+                const writeSpy = jest.spyOn(mockDoc, 'write');
+                component.onIframeLoad();
+                expect(writeSpy).toHaveBeenCalledWith(
+                    expect.stringContaining(`<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`)
+                );
+            });
+
+            it('should NOT inject the UVE script when the flag is disabled', () => {
+                legacyScriptInjectionEnabledSignal.set(false);
+                const writeSpy = jest.spyOn(mockDoc, 'write');
+                component.onIframeLoad();
+                expect(writeSpy).toHaveBeenCalledWith(
+                    expect.not.stringContaining(
+                        `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                    )
+                );
+            });
         });
     });
 

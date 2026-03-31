@@ -12,7 +12,7 @@
         </p-iconField>
         <p-button
             (onClick)="store.openAddEditDialog(null)"
-            [label]="'locales.add.locale' | dm"
+            [label]="'add' | dm"
             icon="pi pi-plus" />
     </div>
     <div class="flex-1 pb-3">
@@ -24,6 +24,7 @@
             stateKey="state-locales-session"
             dotStateRestore
             #dt
+            [rowHover]="true"
             styleClass="dotTable h-full">
             <ng-template pTemplate="header">
                 <tr>
@@ -44,7 +45,10 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-locale>
-                <tr (click)="store.openAddEditDialog(locale.id)" data-testId="locale-row">
+                <tr
+                    (click)="store.openAddEditDialog(locale.id)"
+                    data-testId="locale-row"
+                    class="cursor-pointer">
                     <td [class.tag-padding]="locale.defaultLanguage" data-testId="locale-cell">
                         {{ locale.language }} ({{ locale.isoCode }})
                         @if (locale.defaultLanguage) {

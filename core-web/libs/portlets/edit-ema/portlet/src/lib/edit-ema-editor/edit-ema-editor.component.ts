@@ -113,7 +113,6 @@ import {
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
-
 // Message keys constants
 const MESSAGE_KEY = {
     DUPLICATE_CONTENT: {
