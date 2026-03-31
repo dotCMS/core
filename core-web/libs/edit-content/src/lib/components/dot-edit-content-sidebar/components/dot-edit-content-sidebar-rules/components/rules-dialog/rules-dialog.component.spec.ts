@@ -1,8 +1,8 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+
+import { DotMessageService } from '@dotcms/data-access';
 
 import { DotRulesDialogComponent, RulesDialogData } from './rules-dialog.component';
 
@@ -17,23 +17,15 @@ describe('DotRulesDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotRulesDialogComponent,
-        schemas: [CUSTOM_ELEMENTS_SCHEMA],
         providers: [
             {
                 provide: DynamicDialogConfig,
                 useValue: configRef
+            },
+            {
+                provide: DotMessageService,
+                useValue: { get: (key: string) => key }
             }
-        ],
-        overrideComponents: [
-            [
-                DotRulesDialogComponent,
-                {
-                    set: {
-                        imports: [],
-                        providers: []
-                    }
-                }
-            ]
         ]
     });
 
@@ -46,69 +38,66 @@ describe('DotRulesDialogComponent', () => {
         expect(spectator.component).toBeTruthy();
     });
 
-    describe('Elements by data-testId - Success', () => {
-        it('should render rules-container when identifier is valid', () => {
-            expect(spectator.query(byTestId('rules-container'))).toBeTruthy();
+    describe('with valid identifier', () => {
+        it('should render the iframe', () => {
+            expect(spectator.query(byTestId('rules-iframe'))).toBeTruthy();
         });
 
-        it('should NOT render rules-empty when data is valid', () => {
+        it('should NOT render the empty state', () => {
             expect(spectator.query(byTestId('rules-empty'))).toBeFalsy();
         });
 
-        it('should expose the identifier from config data', () => {
-            expect(spectator.component.identifier).toBe('page-123');
+        it('should build the iframe url with the page identifier as realmId', () => {
+            const iframe = spectator.query<HTMLIFrameElement>(byTestId('rules-iframe'));
+            expect(iframe?.src).toContain('fromCore/rules');
+            expect(iframe?.src).toContain('realmId=page-123');
+        });
+
+        it('should build the correct iframe url for a different identifier', () => {
+            configRef.data = { identifier: 'abc-xyz-789' };
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            const iframe = spectator.query<HTMLIFrameElement>(byTestId('rules-iframe'));
+            expect(iframe?.src).toContain('realmId=abc-xyz-789');
         });
     });
 
-    describe('Elements by data-testId - Failure and Edge Cases', () => {
-        it('should render rules-empty when data is undefined', () => {
+    describe('without valid identifier', () => {
+        it('should render the empty state when data is undefined', () => {
             configRef.data = undefined;
             spectator = createComponent();
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('rules-empty'))).toBeTruthy();
-            expect(spectator.query(byTestId('rules-empty'))?.textContent?.trim()).toContain(
-                'No content selected'
-            );
-            expect(spectator.query(byTestId('rules-container'))).toBeFalsy();
+            expect(spectator.query(byTestId('rules-iframe'))).toBeFalsy();
         });
 
-        it('should render rules-empty when data is null', () => {
+        it('should render the empty state when data is null', () => {
             configRef.data = null;
             spectator = createComponent();
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('rules-empty'))).toBeTruthy();
-            expect(spectator.query(byTestId('rules-container'))).toBeFalsy();
+            expect(spectator.query(byTestId('rules-iframe'))).toBeFalsy();
         });
 
-        it('should render rules-empty when identifier is empty string', () => {
+        it('should render the empty state when identifier is empty string', () => {
             configRef.data = { identifier: '' };
             spectator = createComponent();
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('rules-empty'))).toBeTruthy();
-            expect(spectator.query(byTestId('rules-container'))).toBeFalsy();
+            expect(spectator.query(byTestId('rules-iframe'))).toBeFalsy();
         });
 
-        it('should render rules-empty when data is empty object', () => {
+        it('should render the empty state when data is empty object', () => {
             configRef.data = {} as RulesDialogData;
             spectator = createComponent();
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('rules-empty'))).toBeTruthy();
-            expect(spectator.query(byTestId('rules-container'))).toBeFalsy();
-        });
-    });
-
-    describe('identifier computed - Edge Cases', () => {
-        it('should expose identifier value correctly for different identifiers', () => {
-            configRef.data = { identifier: 'abc-xyz-789' };
-            spectator = createComponent();
-            spectator.detectChanges();
-
-            expect(spectator.component.identifier).toBe('abc-xyz-789');
-            expect(spectator.query(byTestId('rules-container'))).toBeTruthy();
+            expect(spectator.query(byTestId('rules-iframe'))).toBeFalsy();
         });
     });
 });
