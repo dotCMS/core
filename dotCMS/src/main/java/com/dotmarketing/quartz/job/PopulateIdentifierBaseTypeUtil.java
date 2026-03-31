@@ -2,10 +2,12 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import java.sql.Connection;
 
 /**
  * Populates the {@code base_type} column on the {@code identifier} table in small, independently
@@ -111,11 +113,13 @@ public class PopulateIdentifierBaseTypeUtil {
      *
      * @return Number of rows updated in this batch; 0 means all rows are already populated.
      */
-    @WrapInTransaction
     private int processBatch() {
-        try {
-            return new DotConnect().executeUpdate(UPDATE_BATCH);
-        } catch (final DotDataException e) {
+        try(Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            int result= new DotConnect().executeUpdate(UPDATE_BATCH, conn);
+            conn.commit();
+            return result;
+        } catch (final Exception e) {
             throw new DotRuntimeException(
                     "PopulateIdentifierBaseType: error executing batch update", e);
         }
