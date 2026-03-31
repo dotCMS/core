@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -91,7 +92,7 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             if (UtilMethods.isSet(contentlet.getHost())) {
                 final Host found = APILocator.getHostAPI().find(
                         contentlet.getHost(), APILocator.systemUser(), false);
-                if (null != found && UtilMethods.isSet(found.getIdentifier())) {
+                if (null != found && UtilMethods.isSet(found.getIdentifier()) && !found.isArchived()) {
                     contentletHost = found;
                 }
             }
@@ -125,8 +126,8 @@ public class VelocityScriptActionlet extends WorkFlowActionlet {
             }
         } catch (Exception e) {
 
-            Logger.error(this, e.getMessage(), e);
-            throw new WorkflowActionFailureException(e.getMessage(), e);
+            Logger.error(this, ExceptionUtil.getErrorMessage(e), e);
+            throw new WorkflowActionFailureException(ExceptionUtil.getErrorMessage(e), e);
         }
     }
 
