@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.transform.contenttype;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotmarketing.beans.Host;
@@ -19,8 +20,6 @@ import java.net.URISyntaxException;
 import java.util.Optional;
 
 public class DetailPageTransformerImpl implements DetailPageTransformer {
-
-    private static final String PAGE_SUBTYPE = "htmlpageasset";
 
     private final ContentType contentType;
     private final User user;
@@ -125,22 +124,40 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
     private Optional<String> validateIdentifier(
             String detailPage, Identifier foundDetailPageIdentifier) {
 
-        if (null != foundDetailPageIdentifier &&
-                foundDetailPageIdentifier.exists() &&
-                foundDetailPageIdentifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
-            return Optional.of(foundDetailPageIdentifier.getId());
-        } else {
-            if (null != foundDetailPageIdentifier &&
-                    foundDetailPageIdentifier.exists() &&
-                    !foundDetailPageIdentifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
-                throw new IllegalArgumentException(
-                        String.format("[%s] in Content Type [%s] is not a valid detail page.",
-                                detailPage, contentType.name()));
+        if (null != foundDetailPageIdentifier && foundDetailPageIdentifier.exists()) {
+            if (isPageContentType(foundDetailPageIdentifier.getAssetSubType())) {
+                return Optional.of(foundDetailPageIdentifier.getId());
             }
-
             throw new IllegalArgumentException(
-                    String.format("Detail page [%s] in Content Type [%s] does not exist.",
+                    String.format("[%s] in Content Type [%s] is not a valid detail page.",
                             detailPage, contentType.name()));
+        }
+
+        throw new IllegalArgumentException(
+                String.format("Detail page [%s] in Content Type [%s] does not exist.",
+                        detailPage, contentType.name()));
+    }
+
+    /**
+     * Checks if the given content type variable name corresponds to a Page content type.
+     *
+     * @param contentTypeVariable The velocity variable name of the content type.
+     * @return true if the content type has base type HTMLPAGE, false otherwise.
+     */
+    private boolean isPageContentType(final String contentTypeVariable) {
+        if (!UtilMethods.isSet(contentTypeVariable)) {
+            return false;
+        }
+        try {
+            final ContentType detailPageContentType = APILocator.getContentTypeAPI(
+                    APILocator.systemUser()).find(contentTypeVariable);
+            return detailPageContentType != null &&
+                    detailPageContentType.baseType() == BaseContentType.HTMLPAGE;
+        } catch (DotSecurityException | DotDataException e) {
+            Logger.debug(this, String.format(
+                    "Unable to find content type for variable [%s]: %s",
+                    contentTypeVariable, e.getMessage()));
+            return false;
         }
     }
 
