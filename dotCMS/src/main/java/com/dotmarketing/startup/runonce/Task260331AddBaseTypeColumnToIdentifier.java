@@ -38,8 +38,10 @@ public class Task260331AddBaseTypeColumnToIdentifier implements StartupTask {
             // DDL uses IF NOT EXISTS so re-running executeUpgrade() is always safe.
             return PopulateIdentifierBaseTypeJob.hasPendingRows();
         } catch (final DotDataException e) {
-            Logger.error(this, "Error in forceRun() for " + INDEX_NAME + ": " + e.getMessage(), e);
-            return false;
+            // Fail open — a transient DB error during startup must not permanently skip the
+            // migration. executeUpgrade() uses IF NOT EXISTS so re-running is always safe.
+            Logger.error(this, "Error in forceRun() for " + INDEX_NAME + ", defaulting to run: " + e.getMessage(), e);
+            return true;
         }
     }
 
