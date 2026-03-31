@@ -37,9 +37,16 @@ public class PopulateIdentifierBaseTypeJob extends DotStatefulJob {
     private static final Lazy<Integer> HOURS_INTERVAL = Lazy.of(
             () -> Config.getIntProperty(CONFIG_PROPERTY_HOURS_INTERVAL, 4));
 
+    /**
+     * Counts only rows that can actually be resolved by the populate query — i.e. rows with a
+     * matching entry in the structure table. Orphaned identifiers whose asset_subtype no longer
+     * exists in structure are intentionally excluded: the populate loop returns 0 for them and
+     * they must not keep the job alive indefinitely.
+     */
     private static final String PENDING_ROWS_QUERY =
-            "SELECT 1 FROM identifier " +
-            "WHERE base_type IS NULL AND asset_subtype IS NOT NULL LIMIT 1";
+            "SELECT 1 FROM identifier i " +
+            "INNER JOIN structure s ON s.velocity_var_name = i.asset_subtype " +
+            "WHERE i.base_type IS NULL LIMIT 1";
 
     @Override
     public void run(final JobExecutionContext jobContext) throws JobExecutionException {
@@ -121,7 +128,9 @@ public class PopulateIdentifierBaseTypeJob extends DotStatefulJob {
 
     /**
      * Returns {@code true} if any {@code identifier} rows still have a null {@code base_type}
-     * with a non-null {@code asset_subtype} — i.e., there is migration work remaining.
+     * and have a matching entry in the {@code structure} table — i.e., there is migration work
+     * that the populate query can actually complete. Orphaned rows (asset_subtype with no
+     * matching structure entry) are excluded so they cannot keep the job running indefinitely.
      */
     static boolean hasPendingRows() {
         try {

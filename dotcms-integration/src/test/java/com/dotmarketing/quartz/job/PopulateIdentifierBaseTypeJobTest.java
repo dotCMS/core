@@ -144,6 +144,29 @@ public class PopulateIdentifierBaseTypeJobTest extends IntegrationTestBase {
                 PopulateIdentifierBaseTypeJob.hasPendingRows());
     }
 
+    /**
+     * Method to test: {@link PopulateIdentifierBaseTypeJob#hasPendingRows()}
+     * When: Identifier rows have null base_type but their asset_subtype has no matching structure
+     * Should: Return false — orphaned rows cannot be populated and must not keep the job alive
+     */
+    @Test
+    public void test_hasPendingRows_returnsFalseForOrphanedRows() throws Exception {
+        final String orphanSubtype = "zz_nonexistent_type_" + System.currentTimeMillis();
+
+        // Insert an identifier row with a bogus asset_subtype that has no structure entry
+        new DotConnect().executeStatement(
+                "INSERT INTO identifier (id, parent_path, asset_name, host_inode, asset_type, asset_subtype, syspublish_date, sysexpire_date) " +
+                "VALUES ('" + orphanSubtype + "', '/', 'orphan_test', 'SYSTEM_HOST', 'contentlet', '" + orphanSubtype + "', NULL, NULL)");
+
+        try {
+            assertFalse("hasPendingRows() should return false when only orphaned rows remain",
+                    PopulateIdentifierBaseTypeJob.hasPendingRows());
+        } finally {
+            new DotConnect().executeStatement(
+                    "DELETE FROM identifier WHERE id = '" + orphanSubtype + "'");
+        }
+    }
+
     // -----------------------------------------------------------------------
 
     private static void removeJob() throws SchedulerException {
