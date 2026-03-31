@@ -11,6 +11,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.SchedulerException;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -103,10 +107,21 @@ public class PopulateIdentifierBaseTypeJobTest extends IntegrationTestBase {
     public void test_fireJob_skipsSchedulingWhenNoWorkPending() throws Exception {
         removeJob();
 
-        // Temporarily back-fill any NULLs so hasPendingRows() returns false
-        new DotConnect().executeStatement(
-                "UPDATE identifier SET base_type = 1 " +
-                "WHERE base_type IS NULL AND asset_subtype IS NOT NULL");
+        // Capture only the IDs that are currently NULL so we restore exactly those rows
+        final List<String> nullIds = new DotConnect()
+                .setSQL("SELECT id FROM identifier WHERE base_type IS NULL AND asset_subtype IS NOT NULL")
+                .loadObjectResults()
+                .stream()
+                .map(row -> (String) row.get("id"))
+                .collect(Collectors.toList());
+
+        if (!nullIds.isEmpty()) {
+            final String idList = nullIds.stream()
+                    .map(id -> "'" + id + "'")
+                    .collect(Collectors.joining(","));
+            new DotConnect().executeStatement(
+                    "UPDATE identifier SET base_type = 1 WHERE id IN (" + idList + ")");
+        }
 
         try {
             assertFalse("hasPendingRows() should return false when all rows are populated",
@@ -121,9 +136,14 @@ public class PopulateIdentifierBaseTypeJobTest extends IntegrationTestBase {
             final var jobDetail = Try.of(() -> scheduler.getJobDetail(jobName, groupName)).getOrNull();
             assertNull("Job should NOT be scheduled when migration is already complete", jobDetail);
         } finally {
-            // Restore NULL so other tests stay valid
-            new DotConnect().executeStatement(
-                    "UPDATE identifier SET base_type = NULL WHERE base_type = 1 AND asset_subtype IS NOT NULL");
+            // Restore only the rows we modified
+            if (!nullIds.isEmpty()) {
+                final String idList = nullIds.stream()
+                        .map(id -> "'" + id + "'")
+                        .collect(Collectors.joining(","));
+                new DotConnect().executeStatement(
+                        "UPDATE identifier SET base_type = NULL WHERE id IN (" + idList + ")");
+            }
         }
     }
 

@@ -11,6 +11,8 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -73,16 +75,34 @@ public class Task260407AddBaseTypeColumnToIdentifierTest {
         final var task = new Task260407AddBaseTypeColumnToIdentifier();
         task.executeUpgrade();
 
-        // Ensure no pending rows remain
-        new DotConnect().executeStatement(
-                "UPDATE identifier SET base_type = 1 WHERE base_type IS NULL AND asset_subtype IS NOT NULL");
+        // Capture only the IDs that are currently NULL so we restore exactly those rows
+        final List<String> nullIds = new DotConnect()
+                .setSQL("SELECT id FROM identifier WHERE base_type IS NULL AND asset_subtype IS NOT NULL")
+                .loadObjectResults()
+                .stream()
+                .map(row -> (String) row.get("id"))
+                .collect(Collectors.toList());
+
+        if (!nullIds.isEmpty()) {
+            final String idList = nullIds.stream()
+                    .map(id -> "'" + id + "'")
+                    .collect(Collectors.joining(","));
+            new DotConnect().executeStatement(
+                    "UPDATE identifier SET base_type = 1 WHERE id IN (" + idList + ")");
+        }
 
         try {
             assertFalse("forceRun() should return false when index exists and no pending rows remain",
                     task.forceRun());
         } finally {
-            new DotConnect().executeStatement(
-                    "UPDATE identifier SET base_type = NULL WHERE base_type = 1 AND asset_subtype IS NOT NULL");
+            // Restore only the rows we modified
+            if (!nullIds.isEmpty()) {
+                final String idList = nullIds.stream()
+                        .map(id -> "'" + id + "'")
+                        .collect(Collectors.joining(","));
+                new DotConnect().executeStatement(
+                        "UPDATE identifier SET base_type = NULL WHERE id IN (" + idList + ")");
+            }
         }
     }
 
