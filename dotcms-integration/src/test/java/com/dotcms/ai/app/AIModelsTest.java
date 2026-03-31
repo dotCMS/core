@@ -7,6 +7,7 @@ import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.github.tomakehurst.wiremock.WireMockServer;
