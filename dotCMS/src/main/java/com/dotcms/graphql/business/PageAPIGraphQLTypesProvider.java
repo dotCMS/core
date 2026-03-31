@@ -90,6 +90,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     public static final String DOT_PAGE_CONTAINER = "DotPageContainer";
     public static final String DOT_PAGE_VANITY_URL = "DotPageVanityURL";
     public static final String DOT_PAGE_BODY = "DotPageBody";
+    public static final String DOT_PAGE_METADATA = "DotPageMetadata";
     Map<String, GraphQLOutputType> typesMap = new HashMap<>();
 
     @Override
@@ -375,12 +376,19 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         typesMap.put(DOT_PAGE_BODY, TypeUtil.createObjectType(DOT_PAGE_BODY,
                 bodyFields));
 
+        // DotPageMetadata type — shared by rows, columns, and containers
+        final Map<String, TypeFetcher> metadataFields = new HashMap<>();
+        metadataFields.put("name", new TypeFetcher(GraphQLString, new MapFieldPropertiesDataFetcher()));
+        typesMap.put(DOT_PAGE_METADATA, TypeUtil.createObjectType(DOT_PAGE_METADATA, metadataFields));
+
         // LayoutRow type
         final Map<String, TypeFetcher> rowFields = new HashMap<>();
         rowFields.put("columns", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_LAYOUT_COLUMN)),
                 new PropertyDataFetcher<TemplateLayoutRow>("columns")));
         rowFields.put("styleClass", new TypeFetcher((GraphQLString),
                 new PropertyDataFetcher<TemplateLayoutRow>("styleClass")));
+        rowFields.put("metadata", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_METADATA),
+                new PropertyDataFetcher<TemplateLayoutRow>("metadata")));
 
         typesMap.put(DOT_PAGE_LAYOUT_ROW, TypeUtil.createObjectType(DOT_PAGE_LAYOUT_ROW,
                 rowFields));
@@ -401,6 +409,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<TemplateLayoutColumn>("preview")));
         columnFields.put("containers", new TypeFetcher(list(GraphQLTypeReference.typeRef(DOT_PAGE_CONTAINER_UUID)),
                 new PropertyDataFetcher<ContainerHolder>("containers")));
+        columnFields.put("metadata", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_METADATA),
+                new PropertyDataFetcher<TemplateLayoutColumn>("metadata")));
 
         typesMap.put(DOT_PAGE_LAYOUT_COLUMN, TypeUtil.createObjectType(DOT_PAGE_LAYOUT_COLUMN,
                 columnFields));
@@ -411,6 +421,8 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<ContainerUUID>("identifier")));
         containerUUIDFields.put("uuid", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<ContainerUUID>("uuid")));
+        containerUUIDFields.put("metadata", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_METADATA),
+                new PropertyDataFetcher<ContainerUUID>("metadata")));
 
         typesMap.put(DOT_PAGE_CONTAINER_UUID, TypeUtil.createObjectType(DOT_PAGE_CONTAINER_UUID,
                 containerUUIDFields));

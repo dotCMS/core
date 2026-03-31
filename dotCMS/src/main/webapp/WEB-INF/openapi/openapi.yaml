@@ -33233,6 +33233,10 @@ components:
         leftOffset:
           type: integer
           format: int32
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         preview:
           type: boolean
         styleClass:
@@ -33253,6 +33257,10 @@ components:
         leftOffset:
           type: integer
           format: int32
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
         width:
