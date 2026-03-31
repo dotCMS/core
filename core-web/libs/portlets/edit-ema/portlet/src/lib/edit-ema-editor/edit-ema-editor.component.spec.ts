@@ -101,8 +101,6 @@ import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     EDIT_ACTION_PAYLOAD_MOCK,
     MOCK_RESPONSE_HEADLESS,
-    MOCK_RESPONSE_VTL,
-    PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK,
     PAYLOAD_MOCK,
     QUERY_PARAMS_MOCK,
     UVE_PAGE_RESPONSE_MAP,
@@ -111,9 +109,6 @@ import {
 } from '../shared/mocks';
 import { ActionPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import * as uveUtils from '../utils';
-import { TEMPORAL_DRAG_ITEM } from '../utils';
-import { SDK_EDITOR_SCRIPT_SOURCE } from '../utils/ema-legacy-script-injection';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -461,7 +456,6 @@ describe('EditEmaEditorComponent', () => {
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: jest.SpyInstance;
-        let dotPageApiService: InstanceType<typeof DotPageApiService>;
 
         const createComponent = createRouting();
 
@@ -486,7 +480,6 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(UVEStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
-            dotPageApiService = spectator.inject(DotPageApiService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
 
             store.pageLoad({
@@ -1994,309 +1987,6 @@ describe('EditEmaEditorComponent', () => {
 
                     componentsToHide.forEach((testId) => {
                         expect(spectator.query(byTestId(testId))).not.toBeNull();
-                    });
-                });
-
-                // Skipped: styles/script injection is handled by dot-uve-iframe on this branch
-                describe.skip('styles injection', () => {
-                    describe('designer templates', () => {
-                        beforeEach(() => {
-                            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
-                                of(MOCK_RESPONSE_VTL)
-                            );
-                            store.pageLoad({ url: 'index', clientHost: null });
-                        });
-
-                        it('should call injectBaseTag with the right data', () => {
-                            const origin = window.location.origin;
-                            const injectBaseTagSpy = jest.spyOn(uveUtils, 'injectBaseTag');
-
-                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                            iframe.dispatchEvent(new Event('load'));
-
-                            spectator.detectChanges();
-
-                            expect(injectBaseTagSpy).toHaveBeenCalledWith({
-                                html: MOCK_RESPONSE_VTL.page.rendered,
-                                url: MOCK_RESPONSE_VTL.page.pageURI,
-                                origin
-                            });
-                        });
-
-                        it('should add styles to iframe', () => {
-                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                            const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-                            iframe.dispatchEvent(new Event('load'));
-
-                            spectator.detectChanges();
-
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining(`[data-dot-object="container"]:empty`)
-                            );
-
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining(
-                                    '[data-dot-object="contentlet"].empty-contentlet'
-                                )
-                            );
-                        });
-                    });
-
-                    describe('advance templates', () => {
-                        beforeEach(() => {
-                            jest.spyOn(dotPageApiService, 'get').mockReturnValue(
-                                of(PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK)
-                            );
-                            store.pageLoad({ url: 'index', clientHost: null });
-                        });
-
-                        it('should add styles to iframe for advance templates', () => {
-                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                            const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-
-                            iframe.dispatchEvent(new Event('load'));
-                            spectator.detectChanges();
-
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining('[data-dot-object="container"]:empty')
-                            );
-                            expect(spyWrite).toHaveBeenCalledWith(
-                                expect.stringContaining(
-                                    '[data-dot-object="contentlet"].empty-contentlet'
-                                )
-                            );
-                        });
-                    });
-                });
-
-                describe.skip('legacy script injection (FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION)', () => {
-                    let componentStore: InstanceType<typeof UVEStore>;
-
-                    beforeEach(() => {
-                        componentStore = (
-                            spectator.component as unknown as {
-                                uveStore: InstanceType<typeof UVEStore>;
-                            }
-                        ).uveStore;
-
-                        jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(MOCK_RESPONSE_VTL));
-                        store.pageLoad({ url: 'index', clientHost: null });
-                    });
-
-                    it('should inject the UVE script when the flag is enabled', () => {
-                        patchState(componentStore, {
-                            flags: {
-                                ...componentStore.flags(),
-                                [FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION]: true
-                            }
-                        });
-
-                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-
-                        iframe.dispatchEvent(new Event('load'));
-                        spectator.detectChanges();
-
-                        expect(spyWrite).toHaveBeenCalledWith(
-                            expect.stringContaining(
-                                `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                            )
-                        );
-                    });
-
-                    it('should NOT inject the UVE script when the flag is disabled', () => {
-                        patchState(componentStore, {
-                            flags: {
-                                ...componentStore.flags(),
-                                [FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION]: false
-                            }
-                        });
-
-                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-
-                        iframe.dispatchEvent(new Event('load'));
-                        spectator.detectChanges();
-
-                        expect(spyWrite).toHaveBeenCalledWith(
-                            expect.not.stringContaining(
-                                `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                            )
-                        );
-                    });
-
-                    it('should NOT inject the UVE script when the flag is not set', () => {
-                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-
-                        iframe.dispatchEvent(new Event('load'));
-                        spectator.detectChanges();
-
-                        expect(spyWrite).toHaveBeenCalledWith(
-                            expect.not.stringContaining(
-                                `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                            )
-                        );
-                    });
-                });
-
-                describe.skip('when pageRender is undefined', () => {
-                    beforeEach(() => {
-                        jest.spyOn(dotPageApiService, 'get').mockReturnValue(
-                            of({
-                                ...MOCK_RESPONSE_VTL,
-                                page: { ...MOCK_RESPONSE_VTL.page, rendered: undefined }
-                            })
-                        );
-                        store.pageLoad({ url: 'index', clientHost: null });
-                    });
-
-                    it('should not write to the iframe document', () => {
-                        spectator.detectChanges();
-
-                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
-                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
-
-                        iframe.dispatchEvent(new Event('load'));
-                        spectator.detectChanges();
-
-                        expect(spyWrite).not.toHaveBeenCalled();
-                    });
-                });
-            });
-
-            // Skipped: inline editing message handler not yet ported to this branch
-            describe.skip('inline editing', () => {
-                it('should save from inline edited contentlet', () => {
-                    const saveContentletSpy = jest.spyOn(dotPageApiService, 'saveContentlet');
-
-                    window.dispatchEvent(
-                        new MessageEvent('message', {
-                            origin: HOST,
-                            data: {
-                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
-                                payload: {
-                                    dataset: {
-                                        inode: '123',
-                                        fieldName: 'title',
-                                        mode: 'full',
-                                        language: '1'
-                                    },
-                                    content: 'Hello World',
-                                    element: {},
-                                    eventType: '',
-                                    isNotDirty: false
-                                }
-                            }
-                        })
-                    );
-
-                    expect(saveContentletSpy).toHaveBeenCalledWith({
-                        contentlet: {
-                            inode: '123',
-                            title: 'Hello World'
-                        }
-                    });
-                });
-
-                it('should not trigger save from inline edited contentlet when dont have changes', () => {
-                    const saveContentletSpy = jest
-                        .spyOn(dotPageApiService, 'saveContentlet')
-                        .mockClear();
-
-                    const setEditorState = jest.spyOn(store, 'setEditorState');
-
-                    window.dispatchEvent(
-                        new MessageEvent('message', {
-                            origin: HOST,
-                            data: {
-                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
-                                payload: null
-                            }
-                        })
-                    );
-
-                    expect(saveContentletSpy).not.toHaveBeenCalled();
-                    expect(setEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
-                });
-
-                it('should show a helper message when save content when inline editing', () => {
-                    const messageSpy = jest.spyOn(messageService, 'add');
-
-                    window.dispatchEvent(
-                        new MessageEvent('message', {
-                            origin: HOST,
-                            data: {
-                                action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING,
-                                payload: {
-                                    dataset: {
-                                        inode: '123',
-                                        fieldName: 'title',
-                                        mode: 'full',
-                                        language: '1'
-                                    },
-                                    content: 'Hello World II',
-                                    element: {},
-                                    eventType: '',
-                                    isNotDirty: false
-                                }
-                            }
-                        })
-                    );
-
-                    expect(messageSpy).toHaveBeenCalledWith({
-                        severity: 'success',
-                        summary: 'Content saved',
-                        detail: 'Note: If you edit auto-published content, changes apply immediately.',
-                        life: 2000
-                    });
-                });
-            });
-
-            // Skipped: setCustomGraphQL/reloadCurrentPage not yet ported to this branch
-            describe.skip('CUSTOMER ACTIONS', () => {
-                describe('CLIENT_READY', () => {
-                    it('should set client GraphQL configuration and call the reload', () => {
-                        const setClientConfigurationSpy = jest.spyOn(store, 'setCustomGraphQL');
-                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
-
-                        const config = {
-                            query: '{ query: { hello } }',
-                            variables: undefined
-                        };
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: HOST,
-                                data: {
-                                    action: DotCMSUVEAction.CLIENT_READY,
-                                    payload: config
-                                }
-                            })
-                        );
-
-                        expect(setClientConfigurationSpy).toHaveBeenCalledWith(config, true);
-                        expect(reloadSpy).toHaveBeenCalled();
-                    });
-
-                    it('should set call reloadCurrentPage when client is ready', () => {
-                        const setCustomGraphQLSpy = jest.spyOn(store, 'setCustomGraphQL');
-                        const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
-
-                        const config = { params: { depth: '1' } };
-
-                        window.dispatchEvent(
-                            new MessageEvent('message', {
-                                origin: HOST,
-                                data: {
-                                    action: DotCMSUVEAction.CLIENT_READY,
-                                    payload: config
-                                }
-                            })
-                        );
-
-                        expect(setCustomGraphQLSpy).not.toHaveBeenCalled();
-                        expect(reloadSpy).toHaveBeenCalled();
                     });
                 });
             });
