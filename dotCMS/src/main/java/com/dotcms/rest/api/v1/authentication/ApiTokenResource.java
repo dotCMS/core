@@ -460,7 +460,7 @@ public class ApiTokenResource implements Serializable {
             return ExceptionMapperUtil.createResponse(new DotStateException("No user found"), Response.Status.NOT_FOUND);
         }
 
-        if (requestingUser != forUser && !requestingUser.isAdmin()) {
+        if (!requestingUser.getUserId().equals(forUser.getUserId()) && !requestingUser.isAdmin()) {
             throw new DotDataException("Only Admin user can request a token for another user");
         }
 
