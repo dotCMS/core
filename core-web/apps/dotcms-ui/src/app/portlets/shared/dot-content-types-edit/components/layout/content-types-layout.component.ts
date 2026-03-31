@@ -30,7 +30,7 @@ import {
     DotPropertiesService
 } from '@dotcms/data-access';
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
+import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
@@ -53,8 +53,6 @@ import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor
         InputTextModule,
         MenuModule,
         DotMessagePipe,
-        DotAutofocusDirective,
-        DotInlineEditComponent,
         DotPortletBoxComponent,
         IframeComponent,
         DotAddToMenuComponent,
