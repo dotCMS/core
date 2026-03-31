@@ -113,6 +113,7 @@ import {
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
+import { addEditorPageScript } from '../utils/ema-legacy-script-injection';
 
 // Message keys constants
 const MESSAGE_KEY = {
@@ -658,6 +659,76 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.#clampScrollWithinBounds();
     }
 
+    /**
+     * Add custom styles to the rendered content
+     *
+     * @param {string} rendered
+     * @return {*}
+     * @memberof EditEmaEditorComponent
+     */
+    addCustomStyles(rendered = ''): string {
+        const styles = `<style>
+
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="contentlet"].empty-contentlet {
+            min-height: 4rem;
+            width: 100%;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
+        }
+        </style>
+        `;
+
+        const headExists = rendered.includes('</head>');
+
+        /*
+         * For advance template case. It might not include `head` tag.
+         */
+        if (!headExists) {
+            return rendered + styles;
+        }
+
+        return rendered.replace('</head>', styles + '</head>');
+    }
+
+    /**
+     * Inject the editor page styles (and optionally the legacy UVE script)
+     * into the VTL content before writing it to the iframe.
+     *
+     * When `FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION` is enabled, the
+     * `dot-uve.js` script tag is also injected. This restores the pre-PR
+     * #34995 behavior for EMA customers whose headless frontends do not
+     * consume the backend-rendered output where the script now lives.
+     *
+     * @private
+     * @param html - Raw rendered HTML from the Page API.
+     * @returns Transformed HTML ready for `document.write()`.
+     * @see {@link addEditorPageScript} for the legacy script injection logic.
+     */
+    private injectCodeToVTL(html: string): string {
+        const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
+        const origin = this.window.location.origin;
+        const fileWithBase = injectBaseTag({ html, url, origin });
+        const fileWithStyles = this.addCustomStyles(fileWithBase);
+
+        if (this.uveStore.$isEmaLegacyScriptInjectionEnabled()) {
+            return addEditorPageScript(fileWithStyles);
+        }
+
+        return fileWithStyles;
+    }
+
     ngOnDestroy(): void {
         this.#iframeResizeObserver?.disconnect();
         this.#iframeResizeObserver = null;
@@ -825,6 +896,42 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     handleInternalNavFromIframe(e: MouseEvent): void {
         this.handleInternalNav(e);
+    }
+
+    /**
+     * Sets up the iframe content for traditional (VTL) pages.
+     *
+     * The `dot-uve.js` editor script is normally included by the backend
+     * directly in `entity.page.rendered` (see PR #34927). However, when
+     * `FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION` is enabled, the script
+     * is also injected from the frontend to support EMA customers whose
+     * headless setup does not consume the backend-rendered output.
+     *
+     * @memberof EditEmaEditorComponent
+     */
+    #insertPageContent(): void {
+        const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement) {
+            return;
+        }
+
+        const doc = iframeElement.contentDocument;
+
+        const enableInlineEdit = this.uveStore.$enableInlineEdit();
+        const pageRender = this.uveStore.$pageRender();
+
+        if (!doc || !pageRender) {
+            return;
+        }
+
+        const newDoc = this.injectCodeToVTL(pageRender);
+
+        doc.open();
+        doc.write(newDoc);
+        doc.close();
+
+        this.handleInlineScripts(enableInlineEdit);
     }
 
     handleInlineEditingFromIframe(e: MouseEvent): void {

@@ -28,8 +28,8 @@
  * delete this file and remove:
  * - `FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION` from `FeaturedFlags` enum
  * - The flag entry from `UVE_FEATURE_FLAGS` in `consts.ts`
- * - `$isEmaLegacyScriptInjectionEnabled` from `withEditor.ts`
- * - The conditional call in `DotUveIframeComponent.insertPageContent`
+ * - `$isEmaLegacyScriptInjectionEnabled` from `withPageContext.ts`
+ * - The conditional call in `EditEmaEditorComponent.injectCodeToVTL`
  *
  * @see {@link https://github.com/dotCMS/core/pull/34927 PR #34927 — backend script injection}
  * @see {@link https://github.com/dotCMS/core/pull/34995 PR #34995 — frontend injection removal}
