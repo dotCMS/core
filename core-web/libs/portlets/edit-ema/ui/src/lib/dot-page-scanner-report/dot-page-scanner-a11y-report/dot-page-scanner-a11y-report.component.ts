@@ -5,7 +5,6 @@ import { ChipModule } from 'primeng/chip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { CHIP_STYLES } from '../chip-styles';
 import { PageScannerA11yItem, PageScannerA11yResponse } from '../dot-page-scanner.service';
 import { A11yGroup } from '../models';
 
@@ -20,18 +19,6 @@ export class DotPageScannerA11yReportComponent {
     a11yData = input.required<PageScannerA11yResponse>();
 
     protected a11yGroups = computed(() => this.buildA11yGroups(this.a11yData()));
-
-    private getImpactChipStyle(impact: string): Record<string, string> {
-        if (impact === 'critical' || impact === 'serious') return CHIP_STYLES.red;
-        if (impact === 'moderate') return CHIP_STYLES.yellow;
-        return CHIP_STYLES.blue;
-    }
-
-    private getTypeChipStyle(type: string): Record<string, string> {
-        if (type === 'error') return CHIP_STYLES.red;
-        if (type === 'warning') return CHIP_STYLES.yellow;
-        return CHIP_STYLES.blue;
-    }
 
     private buildA11yGroups(data: PageScannerA11yResponse): A11yGroup[] {
         const items: PageScannerA11yItem[] = data.findings?.items ?? data.issues ?? [];
@@ -50,9 +37,7 @@ export class DotPageScannerA11yReportComponent {
                     impact,
                     helpUrl: item.runnerExtras?.helpUrl ?? '',
                     items: [item],
-                    count: 1,
-                    impactChipStyle: this.getImpactChipStyle(impact),
-                    typeChipStyle: this.getTypeChipStyle(type)
+                    count: 1
                 });
             }
         }

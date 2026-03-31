@@ -48,9 +48,43 @@
                             {{ group.code }}
                         </span>
                         @if (group.impact) {
-                            <p-chip [label]="group.impact" [style]="group.impactChipStyle" />
+                            <p-chip
+                                [label]="group.impact"
+                                [style]="
+                                    group.impact === 'critical' || group.impact === 'serious'
+                                        ? {
+                                              '--p-chip-background': 'var(--p-red-100)',
+                                              '--p-chip-color': 'var(--p-red-700)'
+                                          }
+                                        : group.impact === 'moderate'
+                                          ? {
+                                                '--p-chip-background': 'var(--p-yellow-100)',
+                                                '--p-chip-color': 'var(--p-yellow-700)'
+                                            }
+                                          : {
+                                                '--p-chip-background': 'var(--p-blue-100)',
+                                                '--p-chip-color': 'var(--p-blue-700)'
+                                            }
+                                " />
                         }
-                        <p-chip [label]="group.type" [style]="group.typeChipStyle" />
+                        <p-chip
+                            [label]="group.type"
+                            [style]="
+                                group.type === 'error'
+                                    ? {
+                                          '--p-chip-background': 'var(--p-red-100)',
+                                          '--p-chip-color': 'var(--p-red-700)'
+                                      }
+                                    : group.type === 'warning'
+                                      ? {
+                                            '--p-chip-background': 'var(--p-yellow-100)',
+                                            '--p-chip-color': 'var(--p-yellow-700)'
+                                        }
+                                      : {
+                                            '--p-chip-background': 'var(--p-blue-100)',
+                                            '--p-chip-color': 'var(--p-blue-700)'
+                                        }
+                            " />
                         <p-chip
                             [label]="group.count.toString()"
                             [style]="{

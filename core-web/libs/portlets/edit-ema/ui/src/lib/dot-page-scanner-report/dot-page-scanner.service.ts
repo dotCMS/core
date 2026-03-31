@@ -71,7 +71,6 @@ export interface PageScannerGeoIssue {
     severity: 'high' | 'medium' | 'low';
     signal: string;
     message: string;
-    chipStyle?: Record<string, string>;
 }
 
 export interface PageScannerGeoResponse {

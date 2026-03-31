@@ -8,7 +8,6 @@ import { ChipModule } from 'primeng/chip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { CHIP_STYLES } from '../chip-styles';
 import { PageScannerGeoResponse } from '../dot-page-scanner.service';
 import { GeoCategory } from '../models';
 
@@ -39,8 +38,6 @@ export class DotPageScannerGeoReportComponent {
         return 'text-red-500';
     });
 
-    protected scoreChipStyle = computed(() => this.getScoreChipStyle(this.geoData().score));
-
     protected severityCounts = computed<Record<string, number>>(() => {
         const issues = this.geoData().topIssues ?? [];
         return {
@@ -50,33 +47,8 @@ export class DotPageScannerGeoReportComponent {
         };
     });
 
-    protected topIssuesWithStyle = computed(() =>
-        (this.geoData().topIssues ?? []).map((issue) => ({
-            ...issue,
-            chipStyle: this.getSeverityChipStyle(issue.severity)
-        }))
-    );
-
     camelToTitle(key: string): string {
         return key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
-    }
-
-    private getScoreChipStyle(score: number): Record<string, string> {
-        if (score >= 80) return CHIP_STYLES.green;
-        if (score >= 50) return CHIP_STYLES.yellow;
-        return CHIP_STYLES.red;
-    }
-
-    private getScoreBadgeClass(score: number): string {
-        if (score >= 80) return 'bg-green-100 text-green-800 border-green-200';
-        if (score >= 50) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-        return 'bg-red-100 text-red-700 border-red-200';
-    }
-
-    private getSeverityChipStyle(severity: string): Record<string, string> {
-        if (severity === 'high') return CHIP_STYLES.red;
-        if (severity === 'medium') return CHIP_STYLES.yellow;
-        return CHIP_STYLES.blue;
     }
 
     private buildGeoCategories(data: PageScannerGeoResponse): GeoCategory[] {
@@ -84,8 +56,7 @@ export class DotPageScannerGeoReportComponent {
             const signals = Object.entries(cat.signals ?? {}).map(([sKey, sig]) => ({
                 key: sKey,
                 score: sig.score,
-                message: sig.message,
-                chipStyle: this.getScoreChipStyle(sig.score)
+                message: sig.message
             }));
             const passed = signals.filter((s) => s.score >= 80).length;
 
@@ -96,8 +67,6 @@ export class DotPageScannerGeoReportComponent {
                 weight: cat.weight,
                 passedCount: passed,
                 totalCount: signals.length,
-                chipStyle: this.getScoreChipStyle(cat.score),
-                badgeClass: this.getScoreBadgeClass(cat.score),
                 signals
             };
         });
