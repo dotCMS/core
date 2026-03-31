@@ -69,7 +69,7 @@ public class CMSUrlUtil {
 	private static final String UNABLE_TO_FIND = "Unable to find ";
 
 	public static final Set<String> BACKEND_FILTERED_COLLECTION =
-			Stream.of("/api", "/webdav", "/dA", "/c/", "/contentAsset", "/DOTSASS", "/DOTLESS",
+			Stream.of("/api", "/webdav", "/dA", "/c", "/contentAsset", "/DOTSASS", "/DOTLESS",
 					"/html", "/dotAdmin", "/custom-elements","/dotcms-webcomponents","/dwr")
 					.collect(Collectors.collectingAndThen(toSet(), Collections::unmodifiableSet));
 
