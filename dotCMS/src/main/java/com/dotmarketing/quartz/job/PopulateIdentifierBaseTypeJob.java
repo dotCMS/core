@@ -46,21 +46,25 @@ public class PopulateIdentifierBaseTypeJob extends DotStatefulJob {
         Logger.info(this, "PopulateIdentifierBaseTypeJob: starting");
         try {
             if (!hasPendingRows()) {
-                Logger.info(this, "PopulateIdentifierBaseTypeJob: no rows with null base_type found — migration already complete, unscheduling");
+                Logger.info(this, "PopulateIdentifierBaseTypeJob: no rows with null base_type — migration already complete, unscheduling");
                 removeJob();
                 return;
             }
 
             final int updated = new PopulateIdentifierBaseTypeUtil().populate();
+            Logger.info(this, "PopulateIdentifierBaseTypeJob: populate() returned — " + updated + " rows updated");
 
-            if (updated == 0) {
-                Logger.info(this, "PopulateIdentifierBaseTypeJob: no rows updated — migration already complete, unscheduling");
+            // Only unschedule when the migration is confirmed complete.
+            // populate() may return early due to interruption, leaving pending rows;
+            // in that case we keep the job scheduled so it resumes on the next trigger.
+            if (!hasPendingRows()) {
+                Logger.info(this, "PopulateIdentifierBaseTypeJob: migration complete, unscheduling");
+                removeJob();
             } else {
-                Logger.info(this, "PopulateIdentifierBaseTypeJob: completed — " + updated + " rows updated, unscheduling");
+                Logger.info(this, "PopulateIdentifierBaseTypeJob: pending rows remain (interrupted or partial run) — will resume on next trigger");
             }
-            removeJob();
         } catch (final SchedulerException e) {
-            Logger.error(this, "PopulateIdentifierBaseTypeJob: unable to remove job after completion", e);
+            Logger.error(this, "PopulateIdentifierBaseTypeJob: unable to remove job", e);
             throw new DotRuntimeException(e);
         }
     }
