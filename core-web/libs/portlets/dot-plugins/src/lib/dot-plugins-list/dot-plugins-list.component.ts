@@ -18,6 +18,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
@@ -49,6 +50,7 @@ import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upl
         FormsModule,
         MenuModule,
         TableModule,
+        ProgressSpinnerModule,
         SkeletonModule,
         ButtonModule,
         ChipModule,

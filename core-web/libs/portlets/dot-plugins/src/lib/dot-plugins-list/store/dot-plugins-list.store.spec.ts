@@ -11,7 +11,7 @@ import {
     DotOsgiService
 } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotCMSAPIResponse } from '@dotcms/dotcms-models';
+import { DotCMSAPIResponse, DotMessageSeverity } from '@dotcms/dotcms-models';
 
 import { DotPluginsListStore } from './dot-plugins-list.store';
 
@@ -75,6 +75,7 @@ describe('DotPluginsListStore', () => {
 
     const osgiFrameworkRestartSubject = new Subject<void>();
     const osgiBundlesLoadedSubject = new Subject<void>();
+    const osgiUploadFailedSubject = new Subject<void>();
 
     const createService = createServiceFactory({
         service: DotPluginsListStore,
@@ -101,6 +102,8 @@ describe('DotPluginsListStore', () => {
                         return osgiFrameworkRestartSubject.asObservable();
                     if (event === 'OSGI_BUNDLES_LOADED')
                         return osgiBundlesLoadedSubject.asObservable();
+                    if (event === 'OSGI_BUNDLES_UPLOAD_FAILED')
+                        return osgiUploadFailedSubject.asObservable();
                     return of();
                 })
             })
@@ -364,6 +367,25 @@ describe('DotPluginsListStore', () => {
 
             expect((osgiService.getInstalledBundles as jest.Mock).mock.calls.length).toBe(
                 initialCalls
+            );
+        });
+
+        it('should reset status to loaded on OSGI_BUNDLES_UPLOAD_FAILED', () => {
+            store.uploadBundles([new File(['content'], 'plugin.jar')]);
+            expect(store.status()).toBe('uploading');
+
+            osgiUploadFailedSubject.next();
+
+            expect(store.status()).toBe('loaded');
+        });
+
+        it('should show an error message on OSGI_BUNDLES_UPLOAD_FAILED', () => {
+            const messageDisplayService = spectator.inject(DotMessageDisplayService);
+
+            osgiUploadFailedSubject.next();
+
+            expect(messageDisplayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: DotMessageSeverity.ERROR })
             );
         });
 

@@ -16,10 +16,13 @@ import { catchError, debounceTime, delay, take } from 'rxjs/operators';
 import {
     BundleMap,
     DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
     DotOsgiService,
     PluginRow
 } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 /** Delay after OSGi mutating calls before reload; matches backend / websocket timing for bundle state to settle. */
 const OSGI_ACTION_DELAY_MS = 5000;
@@ -249,6 +252,8 @@ export const DotPluginsListStore = signalStore(
         /** Initial full load; listens for OSGi websocket events to update status and refresh data. */
         onInit() {
             const dotcmsEventsService = inject(DotcmsEventsService);
+            const dotMessageDisplayService = inject(DotMessageDisplayService);
+            const dotMessageService = inject(DotMessageService);
             const destroyRef = inject(DestroyRef);
 
             store.loadAll(undefined, true);
@@ -268,6 +273,19 @@ export const DotPluginsListStore = signalStore(
                         store.status() === 'uploading' ? 'uploading' : 'refreshing'
                     )
                 );
+
+            dotcmsEventsService
+                .subscribeTo('OSGI_BUNDLES_UPLOAD_FAILED')
+                .pipe(takeUntilDestroyed(destroyRef))
+                .subscribe(() => {
+                    patchState(store, { status: 'loaded' });
+                    dotMessageDisplayService.push({
+                        life: 5000,
+                        message: dotMessageService.get('plugins.upload.failed'),
+                        severity: DotMessageSeverity.ERROR,
+                        type: DotMessageType.SIMPLE_MESSAGE
+                    });
+                });
         }
     }))
 );
