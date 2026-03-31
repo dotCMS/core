@@ -172,47 +172,71 @@
                 <!-- Score card -->
                 <p-card>
                     <div class="flex items-center gap-6">
-                        <div class="w-32 h-32 flex-shrink-0">
+                        <!-- Left: doughnut chart with center overlay -->
+                        <div class="relative w-40 h-40 shrink-0">
                             @if (geoChartData()) {
                                 <p-chart
                                     type="doughnut"
                                     [data]="geoChartData()"
                                     [options]="{
                                         cutout: '75%',
-                                        plugins: { legend: { display: false } }
+                                        plugins: { legend: { display: false } },
+                                        animation: false
                                     }" />
                             }
-                        </div>
-                        <div class="flex flex-col gap-2">
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-4xl font-bold">{{ geoData()!.score }}</span>
-                                <span class="text-lg text-color-secondary">/100</span>
+                            <div
+                                class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-4xl font-bold text-foreground">
+                                    {{ geoData()!.score }}
+                                </span>
+                                <span
+                                    class="font-medium"
+                                    [style.color]="scoreColor(geoData()!.score)">
+                                    {{ getScoreLabel(geoData()!.score) }}
+                                </span>
                             </div>
-                            <p-chip
-                                [label]="getScoreLabel(geoData()!.score)"
-                                [style]="getScoreChipStyle(geoData()!.score)" />
                         </div>
-                        @if (geoData()!.topIssues?.length > 0) {
-                            <div class="ml-auto flex flex-col gap-1">
-                                @for (severity of ['high', 'medium', 'low']; track severity) {
-                                    <div class="flex items-center gap-2">
-                                        <span
-                                            class="w-2 h-2 rounded-full flex-shrink-0"
-                                            [class]="
-                                                severity === 'high'
-                                                    ? 'bg-red-500'
-                                                    : severity === 'medium'
-                                                      ? 'bg-yellow-500'
-                                                      : 'bg-blue-400'
-                                            "></span>
-                                        <span class="capitalize">{{ severity }}</span>
-                                        <span class="font-semibold ml-1">
-                                            {{ countBySeverity(geoData()!.topIssues, severity) }}
-                                        </span>
-                                    </div>
-                                }
-                            </div>
-                        }
+                        <!-- Right: heading, description, severity counts -->
+                        <div class="space-y-6">
+                            <header>
+                                <h3 class="font-bold text-xl m-0 mb-2">
+                                    {{ 'page.scanner.geo.score.heading' | dm }}
+                                </h3>
+                                <p class="text-gray-600 m-0">
+                                    {{ 'page.scanner.geo.score.description' | dm }}
+                                </p>
+                            </header>
+                            @if (geoData()!.topIssues?.length > 0) {
+                                <div class="flex gap-6">
+                                    @for (severity of ['high', 'medium', 'low']; track severity) {
+                                        <div class="flex items-center gap-1">
+                                            <span
+                                                class="w-2 h-2 rounded-full shrink-0"
+                                                [class]="
+                                                    severity === 'high'
+                                                        ? 'bg-red-500'
+                                                        : severity === 'medium'
+                                                          ? 'bg-yellow-500'
+                                                          : 'bg-blue-400'
+                                                "></span>
+                                            <span>
+                                                <span class="font-semibold">
+                                                    {{
+                                                        countBySeverity(
+                                                            geoData()!.topIssues,
+                                                            severity
+                                                        )
+                                                    }}
+                                                </span>
+                                                <span class="capitalize text-color-secondary">
+                                                    {{ severity }}
+                                                </span>
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
                     </div>
                 </p-card>
 
