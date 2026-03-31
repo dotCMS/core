@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -105,13 +106,10 @@ public class ApiTokenResourceTest {
                 .expirationSeconds(3600)
                 .build();
 
-        try {
-            resource.issueApiToken(request, response, form);
-            Assert.fail("Expected DotDataException when non-admin requests token for another user");
-        } catch (DotDataException e) {
-            assertTrue("Exception message should indicate admin-only restriction",
-                    e.getMessage().contains("Only Admin user"));
-        }
+        final DotDataException e = assertThrows(DotDataException.class,
+                () -> resource.issueApiToken(request, response, form));
+        assertTrue("Exception message should indicate admin-only restriction",
+                e.getMessage().contains("Only Admin user"));
     }
 
     @Test()
