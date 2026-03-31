@@ -376,7 +376,7 @@ public class ESMappingUtilHelper {
                     final Map<String, Object> jsonFileContent = JsonUtil.getJsonFileContent(
                             "es-content-mapping.json");
 
-                    mappingForField += String.format("\"format\": \"%s\"\n}",
+                    mappingForField += String.format("\"format\": \"%s\"%n}",
                             ((List) jsonFileContent.get("dynamic_date_formats")).get(0));
                 } catch (IOException e) {
                     Logger.error("Error getting es-content-mapping.json file: " + e.getMessage(), e);
@@ -389,7 +389,7 @@ public class ESMappingUtilHelper {
 
                 if (dataTypesMap.containsKey(field.dataType())) {
                     mappingForField = String
-                            .format("{\n\"type\":\"%s\"\n}",
+                            .format("%n\"type\":\"%s\"%n}",
                                     dataTypesMap.get(field.dataType()));
                 } else {
                     if (field.unique() || field instanceof TagField) {

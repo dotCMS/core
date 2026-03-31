@@ -20,6 +20,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexStartupValidator;
 import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.opensearch.OSClientProvider;
@@ -32,6 +33,7 @@ import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.content.index.domain.InitIndexInfo;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
@@ -237,12 +239,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.debug(this, "OS provider: no versioned-indices record — skipping OS write");
             return null;
         }
+        // Strip the "os::" vendor tag before passing names to ContentletIndexOperationsOS.
+        // The tag is a DB storage artifact only; the OS client requires the bare physical name.
         final VersionedIndices vi = opt.get();
         return new ProviderIndices(
-                vi.working().orElse(null),
-                vi.live().orElse(null),
-                vi.reindexWorking().orElse(null),
-                vi.reindexLive().orElse(null));
+                vi.working().map(IndexTag::strip).orElse(null),
+                vi.live().map(IndexTag::strip).orElse(null),
+                vi.reindexWorking().map(IndexTag::strip).orElse(null),
+                vi.reindexLive().map(IndexTag::strip).orElse(null));
     }
 
     /**
@@ -324,23 +328,48 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return indexReadyES() && indexReadyOS();
     }
 
+    /**
+     * Returns {@code true} when the ES cluster holds both the working and live indices
+     * recorded in {@link IndiciesAPI}.
+     *
+     * <p>Existence is verified directly against the ES provider, bypassing the
+     * read-path {@link PhaseRouter}. This ensures the result reflects the actual
+     * ES cluster state regardless of the current migration phase (0, 1, or 2).</p>
+     *
+     * <p>Applies to phases 0, 1, and 2.</p>
+     */
+    // ── LEGACY ES — remove after Phase 3 migration ────────────────────────────
     private boolean indexReadyES() throws DotDataException {
         final IndiciesInfo info = legacyIndiciesAPI.loadIndicies();
+        final IndexAPIImpl impl = (IndexAPIImpl) indexAPI;
 
-        final boolean hasWorking  = Try.of(()-> indexAPI.indexExists(info.getWorking()))
+        final boolean hasWorking = Try.of(() -> impl.esImpl().indexExists(info.getWorking()))
                 .getOrElse(false);
-        final  boolean hasLive  = Try.of(()-> indexAPI.indexExists(info.getLive()))
+        final boolean hasLive    = Try.of(() -> impl.esImpl().indexExists(info.getLive()))
                 .getOrElse(false);
 
-        if(!hasWorking){
-            Logger.debug(this.getClass(), "-- WORKING INDEX DOES NOT EXIST");
+        if (!hasWorking) {
+            Logger.debug(this.getClass(), "-- ES: WORKING INDEX DOES NOT EXIST");
         }
-        if(!hasLive){
-            Logger.debug(this.getClass(), "-- LIVE INDEX DOES NOT EXIST");
+        if (!hasLive) {
+            Logger.debug(this.getClass(), "-- ES: LIVE INDEX DOES NOT EXIST");
         }
         return hasWorking && hasLive;
     }
+    // ── END LEGACY ES ─────────────────────────────────────────────────────────
 
+    /**
+     * Returns {@code true} when the OS cluster holds both the working and live indices
+     * recorded in {@link VersionedIndicesAPI}.
+     *
+     * <p>Existence is verified directly against the OS provider, bypassing the
+     * read-path {@link PhaseRouter}. This ensures the result reflects the actual
+     * OS cluster state regardless of the current migration phase (1, 2, or 3).
+     * In Phase 1, the read provider is ES; without this bypass, the check would
+     * silently query the ES cluster and return a false positive for OS indices.</p>
+     *
+     * <p>Applies to phases 1, 2, and 3.</p>
+     */
     private boolean indexReadyOS() {
         final Optional<VersionedIndices> indicesOpt;
         indicesOpt = Try.of(versionedIndicesAPI::loadDefaultVersionedIndices)
@@ -351,12 +380,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return false;
         }
 
+        final IndexAPIImpl impl = (IndexAPIImpl) indexAPI;
         final VersionedIndices indices = indicesOpt.get();
         final boolean hasWorking = indices.working()
-                .map(name -> Try.of(() -> indexAPI.indexExists(name)).getOrElse(false))
+                .map(name -> Try.of(() -> impl.osImpl().indexExists(name)).getOrElse(false))
                 .orElse(false);
         final boolean hasLive = indices.live()
-                .map(name -> Try.of(() -> indexAPI.indexExists(name)).getOrElse(false))
+                .map(name -> Try.of(() -> impl.osImpl().indexExists(name)).getOrElse(false))
                 .orElse(false);
 
         if (!hasWorking) {
@@ -396,7 +426,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private void reindexIfNoIndicesFound() throws DotDataException {
 
-        // if there are indexes, but they are empty, start reindex process
+        // if there are indexes, but they are empty, start a reindex process
         if(hasEmptyIndices()) {
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
                 try {
@@ -429,6 +459,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return versionedIndicesAPI
                 .loadDefaultVersionedIndices()
                 .flatMap(VersionedIndices::working)
+                .map(IndexTag::strip)  // strip "os::" tag before passing to OS client
                 .map(workingIndex -> getIndexDocumentCount(workingIndex) == 0)
                 .orElse(false);
     }
@@ -478,6 +509,38 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
     // ── END LEGACY ES ─────────────────────────────────────────────────────
 
+    /**
+     * Returns the OS storage name for the given logical (plain) name.
+     *
+     * <p>The result has the form {@code os::cluster_{id}.{indexName}}, e.g.
+     * {@code os::cluster_08abc3.working_20240101}.  The {@code os::} vendor tag
+     * ({@link IndexTag#OS}) serves two purposes:</p>
+     * <ol>
+     *   <li><strong>Collision avoidance</strong>: ES and OS share the {@code indicies}
+     *       table (primary key on {@code index_name}).  Without the tag, identical
+     *       cluster-prefixed names would violate the unique constraint in phases 1/2.</li>
+     *   <li><strong>Origin discernment</strong>: a DBA or diagnostic query can tell which
+     *       rows belong to OS vs ES at a glance.</li>
+     * </ol>
+     *
+     * <p>The tag is <em>storage-only</em>: OS providers strip it transparently before
+     * passing the name to the OpenSearch client (see
+     * {@link com.dotcms.content.index.opensearch.OSIndexAPIImpl#getNameWithClusterIDPrefix}
+     * and the OS consumer call sites).</p>
+     *
+     * <p>{@link IndexTag#OS}.tag() is idempotent — already-tagged names are returned
+     * unchanged, making this method safe to call multiple times on the same name.</p>
+     *
+     * <p>Applies to phases 1, 2, and 3.</p>
+     *
+     * @param indexName plain name (e.g. {@code working_20240101}),
+     *                  cluster-prefixed name, or already-tagged OS name
+     * @return OS storage name, e.g. {@code os::cluster_08abc3.working_20240101}
+     */
+    private String toOSPhysicalName(final String indexName) {
+        final IndexAPIImpl impl = (IndexAPIImpl) indexAPI;
+        return IndexTag.OS.tag(impl.osImpl().getNameWithClusterIDPrefix(indexName));
+    }
 
     /**
      * Ensures that working and live indices exist for all applicable providers.
@@ -577,16 +640,22 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             }
         }
 
-        // Persist plain OS names to the versioned-indices store when OS was created.
+        // Persist cluster-prefixed OS names to the versioned-indices store when OS was created.
+        // Mirrors the ES pattern: IndiciesAPI stores cluster-prefixed names; VersionedIndicesAPI
+        // must also store cluster-prefixed names so that consumers (e.g. ContentFactoryIndexOperationsOS,
+        // ContentletIndexOperationsOS) can pass index names directly to the OS client without an
+        // extra prefix step.  toOSPhysicalName() is idempotent — already-prefixed names pass through.
         // This covers both the normal fresh-install path (needsES + migration active)
         // and the OS-only catchup path.
         if (needsOS || (needsES && !isMigrationNotStarted())) {
+            final String osWorking = toOSPhysicalName(workingName);
+            final String osLive    = toOSPhysicalName(liveName);
             final VersionedIndices osInfo = VersionedIndicesImpl.builder()
-                    .working(workingName)
-                    .live(liveName)
+                    .working(osWorking)
+                    .live(osLive)
                     .build();
             versionedIndicesAPI.saveIndices(osInfo);
-            ESMappingUtilHelper.getInstance().addCustomMapping(workingName, liveName);
+            ESMappingUtilHelper.getInstance().addCustomMapping(osWorking, osLive);
         }
     }
 
@@ -731,20 +800,24 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         ESMappingUtilHelper.getInstance().addCustomMapping(esReindexWorking, esReindexLive);
         // ── END LEGACY ES ─────────────────────────────────────────────────────
 
-        // Persist reindex slots to the OS versioned-indices store (plain names)
+        // Persist cluster-prefixed OS reindex slots to the versioned-indices store.
+        // Mirrors the ES pattern: prefixes are applied by the caller, not inside the API.
+        // toOSPhysicalName() is idempotent — already-prefixed names pass through unchanged.
         if (!isMigrationNotStarted()) {
+            final String osReindexWorking = toOSPhysicalName(reindexWorkingName);
+            final String osReindexLive    = toOSPhysicalName(reindexLiveName);
             final Optional<VersionedIndices> existingOpt =
                     versionedIndicesAPI.loadDefaultVersionedIndices();
             final VersionedIndicesImpl.Builder osBuilder = VersionedIndicesImpl.builder()
-                    .reindexWorking(reindexWorkingName)
-                    .reindexLive(reindexLiveName);
-            // Preserve existing working/live pointers in the OS store
+                    .reindexWorking(osReindexWorking)
+                    .reindexLive(osReindexLive);
+            // Preserve existing working/live pointers — already stored with cluster prefix
             existingOpt.ifPresent(vi -> {
                 vi.working().ifPresent(osBuilder::working);
                 vi.live().ifPresent(osBuilder::live);
             });
             versionedIndicesAPI.saveIndices(osBuilder.build());
-            ESMappingUtilHelper.getInstance().addCustomMapping(reindexWorkingName, reindexLiveName);
+            ESMappingUtilHelper.getInstance().addCustomMapping(osReindexWorking, osReindexLive);
         }
     }
 
@@ -995,6 +1068,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         this.setRefreshPolicy(bulkRequest, IndexBulkRequest.RefreshPolicy.IMMEDIATE);
         putToIndex(bulkRequest);
         CacheLocator.getESQueryCache().clearCache();
+        CacheLocator.getOSQueryCache().clearCache();
     } // indexContentListNow.
 
     private void indexContentListWaitFor(final List<Contentlet> contentToIndex) {

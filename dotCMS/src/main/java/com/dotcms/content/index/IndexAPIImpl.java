@@ -95,6 +95,32 @@ public class IndexAPIImpl implements IndexAPI {
         this.router  = new PhaseRouter<>(esImpl, osImpl);
     }
 
+    /**
+     * Direct access to the ES implementation, bypassing the read-path router.
+     *
+     * <p>Use only in bootstrap readiness checks ({@code indexReadyES}) that must
+     * verify ES cluster state regardless of the current migration phase.
+     * Do NOT use for normal read operations — use {@link #indexExists(String)} instead.</p>
+     *
+     * <p>Applies to phases 0, 1, and 2.</p>
+     */
+    public ESIndexAPI esImpl() {
+        return esImpl;
+    }
+
+    /**
+     * Direct access to the OS implementation, bypassing the read-path router.
+     *
+     * <p>Use only in bootstrap readiness checks ({@code indexReadyOS}) that must
+     * verify OS cluster state regardless of the current migration phase.
+     * Do NOT use for normal read operations — use {@link #indexExists(String)} instead.</p>
+     *
+     * <p>Applies to phases 1, 2, and 3.</p>
+     */
+    public OSIndexAPIImpl osImpl() {
+        return osImpl;
+    }
+
     // -------------------------------------------------------------------------
     // Read operations — uniform pattern: router.read(impl -> ...)
     // -------------------------------------------------------------------------

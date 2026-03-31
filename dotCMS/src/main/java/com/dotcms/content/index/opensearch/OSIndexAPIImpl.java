@@ -5,6 +5,7 @@ import static com.dotcms.content.index.opensearch.ConfigurableOpenSearchProvider
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
@@ -459,7 +460,12 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public String getNameWithClusterIDPrefix(final String name) {
-        return hasClusterPrefix(name) ? name : clusterPrefix.get() + name;
+        // Strip the "os::" vendor tag before resolving the physical name.
+        // The tag is added by ContentletIndexAPIImpl.toOSPhysicalName() for storage-only
+        // purposes (collision avoidance in the shared indicies table); it must never reach
+        // the OpenSearch client.
+        final String raw = IndexTag.strip(name);
+        return hasClusterPrefix(raw) ? raw : clusterPrefix.get() + raw;
     }
 
     /**

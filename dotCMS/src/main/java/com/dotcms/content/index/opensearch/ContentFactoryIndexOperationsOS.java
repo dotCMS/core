@@ -3,6 +3,7 @@ package com.dotcms.content.index.opensearch;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.IndexContentletScroll;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.cost.RequestCost;
@@ -366,13 +367,15 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             final Optional<String> working = versionedIndices.working();
             if(query.contains("+live:true") && !query.contains("+deleted:true")) {
                 if(live.isPresent()){
-                    indexNameToHit = live.get();
+                    // Strip "os::" vendor tag — the OpenSearch client requires the bare physical name
+                    indexNameToHit = IndexTag.strip(live.get());
                 } else {
                     Logger.warn(this, "No live index found when inferring index for query: " + query);
                 }
             } else {
                 if(working.isPresent()){
-                    indexNameToHit = working.get();
+                    // Strip "os::" vendor tag — the OpenSearch client requires the bare physical name
+                    indexNameToHit = IndexTag.strip(working.get());
                 } else {
                     Logger.warn(this, "No working index found when inferring index for query: " + query);
                 }
