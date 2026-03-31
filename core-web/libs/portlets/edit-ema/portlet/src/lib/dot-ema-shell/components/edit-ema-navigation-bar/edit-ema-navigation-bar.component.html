@@ -1,9 +1,9 @@
 <nav class="flex flex-col items-center" aria-label="Page editor navigation">
     @for (item of items(); track item.id) {
-        <div
-            class="w-full p-2"
-            [class.border-l-4]="item.href && $activeHrefs().has(item.href)"
-            [class.border-primary]="item.href && $activeHrefs().has(item.href)">
+        <div class="w-full p-2 flex justify-center relative">
+            <span
+                class="absolute left-0 inset-y-0 w-1 bg-primary rounded-r"
+                [style.opacity]="item.href === $activeHref() ? 1 : 0"></span>
             <p-button
                 [text]="true"
                 [disabled]="item.isDisabled"

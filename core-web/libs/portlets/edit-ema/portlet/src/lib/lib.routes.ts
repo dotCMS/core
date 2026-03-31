@@ -19,7 +19,6 @@ import {
     DotSeoMetaTagsUtilService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotExperimentExperimentResolver,
     DotExperimentsConfigResolver
@@ -52,9 +51,7 @@ export const dotEmaRoutes: Route[] = [
             DotPageLayoutService,
             DotAnalyticsTrackerService,
             DotPropertiesService,
-            // DotMessageService is providedIn: 'root', so it's available globally
             DotLicenseService,
-            LoginService,
             MessageService,
             ConfirmationService,
             DialogService,
