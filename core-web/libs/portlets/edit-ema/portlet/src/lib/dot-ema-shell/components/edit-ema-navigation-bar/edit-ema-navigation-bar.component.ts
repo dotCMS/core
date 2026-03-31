@@ -38,24 +38,18 @@ export class EditEmaNavigationBarComponent {
     );
 
     // Computed set of active hrefs — recalculates whenever the URL signal changes
-    readonly $activeHrefs = computed<Set<string>>(() => {
-        this.#currentUrl(); // track the signal
-        const active = new Set<string>();
+    readonly $activeHref = computed<string>(() => {
+        const currentUrl = this.#currentUrl().split('?').shift(); // track the signal
+
         for (const item of this.items()) {
-            if (
-                item.href &&
-                this.#router.isActive(item.href, {
-                    paths: 'subset',
-                    queryParams: 'ignored',
-                    matrixParams: 'ignored',
-                    fragment: 'ignored'
-                })
-            ) {
-                active.add(item.href);
+            const url = item.href.split('/').shift();
+
+            if (currentUrl.includes(url)) {
+                return item.href;
             }
         }
 
-        return active;
+        return '';
     });
 
     navigate(item: NavigationBarItem): void {
@@ -63,7 +57,9 @@ export class EditEmaNavigationBarComponent {
 
         if (item.href) {
             const params = this.$params();
-            this.#router.navigate([item.href], {
+
+            const urlFragments = item.href.split('/');
+            this.#router.navigate(['edit-page'].concat(urlFragments), {
                 queryParams: params,
                 queryParamsHandling: 'merge'
             });
