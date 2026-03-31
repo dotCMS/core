@@ -148,7 +148,7 @@ test.describe('Rules Dialog', () => {
             await page.getByTestId('rules-card').click();
 
             await expect(page.locator('.p-dialog')).toBeVisible({ timeout: 10000 });
-            await expect(page.getByTestId('rules-container')).toBeVisible({ timeout: 10000 });
+            await expect(page.getByTestId('rules-iframe')).toBeVisible({ timeout: 10000 });
             await expect(page.getByTestId('rules-empty')).not.toBeAttached();
         });
     });
@@ -165,16 +165,16 @@ test.describe('Rules Dialog', () => {
             await expect(page.getByTestId('rules-card')).toBeVisible();
         });
 
-        test('escape key does NOT close the rules dialog @smoke', async ({ page }) => {
+        test('escape key closes the rules dialog @smoke', async ({ page }) => {
             await navigateToSettingsTab(page, htmlPage.inode);
             await page.getByTestId('rules-card').click();
 
             await expect(page.locator('.p-dialog')).toBeVisible({ timeout: 10000 });
             await page.keyboard.press('Escape');
 
-            // Dialog must remain open — closeOnEscape: false by design
-            await expect(page.locator('.p-dialog')).toBeVisible();
-            await expect(page.getByTestId('rules-container')).toBeVisible();
+            // Dialog closes on ESC — closeOnEscape: true by design
+            await expect(page.locator('.p-dialog')).toBeHidden();
+            await expect(page.getByTestId('rules-card')).toBeVisible();
         });
     });
 
