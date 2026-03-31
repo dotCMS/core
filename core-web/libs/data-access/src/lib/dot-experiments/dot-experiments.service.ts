@@ -35,9 +35,9 @@ export class DotExperimentsService {
     healthCheck(): Observable<HealthStatusTypes> {
         return this.http
             .get<
-                DotCMSResponseExperiment<{ healthy: HealthStatusTypes }>
+                DotCMSResponseExperiment<{ health: HealthStatusTypes }>
             >('/api/v1/experiments/health')
-            .pipe(map((x) => x?.entity?.healthy));
+            .pipe(map((x) => x?.entity?.health));
     }
     /**
      * Add a new experiment
