@@ -8,14 +8,9 @@
     <div class="bg-(--color-palette-black-op-30) w-full h-full"></div>
 }
 @if (!loading && globalError()?.message) {
-    <div class="ui negative message first:my-8 first:mx-8 first:mb-4">
+    <div class="ui negative message first:my-8 first:mx-8 first:mb-4 font-bold text-red-600">
         <div class="header">{{ globalError().message }}</div>
         <p>{{ getI18nLabel('contact.admin.error') | async }}</p>
-        @if (showCloseButton()) {
-            <i
-                (click)="clearGlobalError()"
-                class="pi pi-times text-sm absolute right-2 top-2 cursor-pointer not-italic"></i>
-        }
     </div>
 }
 @if (!loading && showRules) {
