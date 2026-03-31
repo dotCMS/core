@@ -63,17 +63,49 @@ public class Task260407AddBaseTypeColumnToIdentifierTest {
 
     /**
      * Method to test: {@link Task260407AddBaseTypeColumnToIdentifier#forceRun()}
-     * When: Index already exists
-     * Should: Return false (task should not re-run)
+     * When: Index exists AND all rows are already populated (migration complete)
+     * Should: Return false — no work to do
      */
     @Test
-    public void test_forceRun_returnsFalseWhenIndexExists() throws DotDataException, SQLException {
+    public void test_forceRun_returnsFalseWhenMigrationComplete() throws DotDataException, SQLException {
         cleanUp();
 
         final var task = new Task260407AddBaseTypeColumnToIdentifier();
         task.executeUpgrade();
 
-        assertFalse("forceRun() should return false when index already exists", task.forceRun());
+        // Ensure no pending rows remain
+        new DotConnect().executeStatement(
+                "UPDATE identifier SET base_type = 1 WHERE base_type IS NULL AND asset_subtype IS NOT NULL");
+
+        try {
+            assertFalse("forceRun() should return false when index exists and no pending rows remain",
+                    task.forceRun());
+        } finally {
+            new DotConnect().executeStatement(
+                    "UPDATE identifier SET base_type = NULL WHERE base_type = 1 AND asset_subtype IS NOT NULL");
+        }
+    }
+
+    /**
+     * Method to test: {@link Task260407AddBaseTypeColumnToIdentifier#forceRun()}
+     * When: Index exists BUT rows still have null base_type (server restarted mid-backfill)
+     * Should: Return true so the backfill job is re-scheduled
+     */
+    @Test
+    public void test_forceRun_returnsTrueWhenBackfillIncomplete() throws DotDataException, SQLException {
+        cleanUp();
+
+        final var task = new Task260407AddBaseTypeColumnToIdentifier();
+        task.executeUpgrade();
+
+        // Simulate mid-backfill restart: index exists but some rows are still NULL
+        new DotConnect().executeStatement(
+                "UPDATE identifier SET base_type = NULL " +
+                "WHERE asset_subtype IS NOT NULL AND id = (" +
+                "  SELECT id FROM identifier WHERE asset_subtype IS NOT NULL LIMIT 1)");
+
+        assertTrue("forceRun() should return true when index exists but backfill is incomplete",
+                task.forceRun());
     }
 
     /**
