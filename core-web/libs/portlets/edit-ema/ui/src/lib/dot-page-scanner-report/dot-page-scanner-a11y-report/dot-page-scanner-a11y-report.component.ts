@@ -21,13 +21,13 @@ export class DotPageScannerA11yReportComponent {
 
     protected a11yGroups = computed(() => this.buildA11yGroups(this.a11yData()));
 
-    getImpactChipStyle(impact: string): Record<string, string> {
+    private getImpactChipStyle(impact: string): Record<string, string> {
         if (impact === 'critical' || impact === 'serious') return CHIP_STYLES.red;
         if (impact === 'moderate') return CHIP_STYLES.yellow;
         return CHIP_STYLES.blue;
     }
 
-    getTypeChipStyle(type: string): Record<string, string> {
+    private getTypeChipStyle(type: string): Record<string, string> {
         if (type === 'error') return CHIP_STYLES.red;
         if (type === 'warning') return CHIP_STYLES.yellow;
         return CHIP_STYLES.blue;
@@ -42,13 +42,17 @@ export class DotPageScannerA11yReportComponent {
                 map.get(item.code)!.items.push(item);
                 map.get(item.code)!.count++;
             } else {
+                const impact = item.runnerExtras?.impact ?? '';
+                const type = item.type;
                 map.set(item.code, {
                     code: item.code,
-                    type: item.type,
-                    impact: item.runnerExtras?.impact ?? '',
+                    type,
+                    impact,
                     helpUrl: item.runnerExtras?.helpUrl ?? '',
                     items: [item],
-                    count: 1
+                    count: 1,
+                    impactChipStyle: this.getImpactChipStyle(impact),
+                    typeChipStyle: this.getTypeChipStyle(type)
                 });
             }
         }

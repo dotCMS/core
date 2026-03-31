@@ -9,6 +9,15 @@ export interface A11yGroup {
     helpUrl: string;
     items: PageScannerA11yItem[];
     count: number;
+    impactChipStyle: Record<string, string>;
+    typeChipStyle: Record<string, string>;
+}
+
+export interface GeoCategorySignal {
+    key: string;
+    score: number;
+    message: string;
+    chipStyle: Record<string, string>;
 }
 
 export interface GeoCategory {
@@ -18,5 +27,7 @@ export interface GeoCategory {
     weight: number;
     passedCount: number;
     totalCount: number;
-    signals: Array<{ key: string; score: number; message: string }>;
+    chipStyle: Record<string, string>;
+    badgeClass: string;
+    signals: GeoCategorySignal[];
 }

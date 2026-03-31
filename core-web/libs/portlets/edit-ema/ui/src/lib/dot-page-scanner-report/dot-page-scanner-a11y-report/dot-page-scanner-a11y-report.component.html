@@ -48,11 +48,9 @@
                             {{ group.code }}
                         </span>
                         @if (group.impact) {
-                            <p-chip
-                                [label]="group.impact"
-                                [style]="getImpactChipStyle(group.impact)" />
+                            <p-chip [label]="group.impact" [style]="group.impactChipStyle" />
                         }
-                        <p-chip [label]="group.type" [style]="getTypeChipStyle(group.type)" />
+                        <p-chip [label]="group.type" [style]="group.typeChipStyle" />
                         <p-chip
                             [label]="group.count.toString()"
                             [style]="{
