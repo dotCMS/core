@@ -113,12 +113,12 @@
                     </div>
                 </p-accordion-header>
                 <p-accordion-content>
-                    <div class="flex flex-col gap-2">
+                    <div class="space-y-2">
                         @for (sig of cat.signals; track sig.key) {
                             <div
-                                class="flex items-start gap-3 p-2 rounded border border-solid border-gray-100">
-                                <p-chip [label]="sig.score.toString()" [style]="sig.chipStyle" />
+                                class="border-b border-solid border-gray-100 pb-2 flex items-center justify-between">
                                 <p class="m-0">{{ sig.message }}</p>
+                                <p-chip [label]="sig.score.toString()" [style]="sig.chipStyle" />
                             </div>
                         }
                     </div>
