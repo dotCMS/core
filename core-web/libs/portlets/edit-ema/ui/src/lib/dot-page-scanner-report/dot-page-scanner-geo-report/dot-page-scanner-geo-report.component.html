@@ -68,17 +68,43 @@
         <p-accordion [multiple]="false">
             <p-accordion-panel [value]="cat.key">
                 <p-accordion-header>
-                    <div class="flex items-center gap-2 w-full">
-                        <div
-                            [class]="
-                                'font-bold w-12 h-12 rounded-lg border flex items-center justify-center text-center ' +
-                                cat.badgeClass
-                            ">
-                            {{ cat.score }}
+                    <div class="flex items-center gap-2 w-full justify-between pr-4">
+                        <div class="flex items-center gap-4">
+                            <div
+                                [class]="
+                                    'font-bold w-14 h-14 rounded-2xl flex items-center justify-center text-center text-xl ' +
+                                    cat.badgeClass
+                                ">
+                                {{ cat.score }}
+                            </div>
+
+                            <div class="flex flex-col gap-1">
+                                <div class="flex gap-2 items-center">
+                                    <span class="text-lg font-semibold text-gray-900">
+                                        {{ cat.label }}
+                                    </span>
+                                    <p-chip
+                                        [pt]="{
+                                            label: 'text-sm font-normal text-gray-700'
+                                        }"
+                                        [dt]="{
+                                            root: {
+                                                background: 'var(--p-gray-200)',
+                                                color: 'var(--p-gray-500)',
+                                                paddingX: '0.5rem',
+                                                paddingY: '0.1rem'
+                                            }
+                                        }"
+                                        [label]="
+                                            (cat.weight * 100 | number: '1.0-0') + '% weight'
+                                        " />
+                                </div>
+                                <p class="font-normal text-gray-700">
+                                    How likely AI models are to cite your content
+                                </p>
+                            </div>
                         </div>
-                        <span class="flex-1 font-medium">{{ cat.label }}</span>
-                        <span class="mr-2">{{ cat.weight * 100 | number: '1.0-0' }}%</span>
-                        <span>
+                        <span class="text-sm font-normal text-gray-700">
                             {{ cat.passedCount }}/{{ cat.totalCount }}
                             {{ 'page.scanner.geo.passed' | dm }}
                         </span>
