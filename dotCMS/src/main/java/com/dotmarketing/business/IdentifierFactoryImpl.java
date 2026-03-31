@@ -358,6 +358,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			identifier.setParentPath(folder.getPath());
 			identifier.setAssetName(uri);
 			identifier.setAssetSubType(contentlet.getContentType().variable());
+			identifier.setBaseType(contentlet.getContentType().baseType().getType());
 		} else if (versionable instanceof WebAsset) {
 			identifier.setURI(((WebAsset) versionable).getURI(folder));
 			identifier.setAssetType(versionable.getVersionType());
@@ -440,6 +441,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setParentPath("/");
 				identifier.setAssetName(uri);
 				identifier.setAssetSubType(cont.getContentType().variable());
+				identifier.setBaseType(cont.getContentType().baseType().getType());
 			} else if (versionable instanceof Link) {
 				identifier.setAssetName(versionable.getInode());
 				identifier.setParentPath("/");
@@ -448,6 +450,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 				identifier.setAssetType(Identifier.ASSET_TYPE_CONTENTLET);
 				identifier.setParentPath("/");
 				identifier.setAssetSubType(Host.HOST_VELOCITY_VAR_NAME);
+				identifier.setBaseType(((Contentlet) versionable).getContentType().baseType().getType());
 			} else {
 				identifier.setURI(uri);
 			}
@@ -517,13 +520,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         String query;
         if (UtilMethods.isSet(id.getId())) {
             if (isIdentifier(id.getId())) {
-                query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=?, owner=?, create_date=?, asset_subtype=? where id=?";
+                query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=?, owner=?, create_date=?, asset_subtype=?, base_type=? where id=?";
             } else {
-                query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
+                query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,base_type,id) values (?,?,?,?,?,?,?,?,?,?,?)";
             }
         } else {
             id.setId(UUIDGenerator.generateUuid());
-            query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,id) values (?,?,?,?,?,?,?,?,?,?)";
+            query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,base_type,id) values (?,?,?,?,?,?,?,?,?,?,?)";
         }
 
         DotConnect dc = new DotConnect();
@@ -539,6 +542,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         dc.addParam(id.getOwner());
         dc.addParam(id.getCreateDate());
         dc.addParam(id.getAssetSubType());
+        dc.addParam(id.getBaseType());
         dc.addParam(id.getId());
 
         
