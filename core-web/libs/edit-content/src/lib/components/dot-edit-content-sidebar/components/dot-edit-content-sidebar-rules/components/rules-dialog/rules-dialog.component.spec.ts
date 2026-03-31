@@ -9,23 +9,14 @@ import { DotRulesDialogComponent, RulesDialogData } from './rules-dialog.compone
 describe('DotRulesDialogComponent', () => {
     let spectator: Spectator<DotRulesDialogComponent>;
 
-    const defaultData: RulesDialogData = {
-        identifier: 'page-123'
-    };
-
+    const defaultData: RulesDialogData = { identifier: 'page-123' };
     const configRef: { data: RulesDialogData | null | undefined } = { data: defaultData };
 
     const createComponent = createComponentFactory({
         component: DotRulesDialogComponent,
         providers: [
-            {
-                provide: DynamicDialogConfig,
-                useValue: configRef
-            },
-            {
-                provide: DotMessageService,
-                useValue: { get: (key: string) => key }
-            }
+            { provide: DynamicDialogConfig, useValue: configRef },
+            { provide: DotMessageService, useValue: { get: (key: string) => key } }
         ]
     });
 
@@ -56,7 +47,6 @@ describe('DotRulesDialogComponent', () => {
         it('should build the correct iframe url for a different identifier', () => {
             configRef.data = { identifier: 'abc-xyz-789' };
             spectator = createComponent();
-            spectator.detectChanges();
 
             const iframe = spectator.query<HTMLIFrameElement>(byTestId('rules-iframe'));
             expect(iframe?.src).toContain('realmId=abc-xyz-789');
@@ -67,7 +57,6 @@ describe('DotRulesDialogComponent', () => {
         it('should render the empty state when data is undefined', () => {
             configRef.data = undefined;
             spectator = createComponent();
-            spectator.detectChanges();
 
             expect(spectator.query(byTestId('rules-empty'))).toBeTruthy();
             expect(spectator.query(byTestId('rules-iframe'))).toBeFalsy();
@@ -76,7 +65,6 @@ describe('DotRulesDialogComponent', () => {
         it('should render the empty state when data is null', () => {
             configRef.data = null;
             spectator = createComponent();
-            spectator.detectChanges();
 
             expect(spectator.query(byTestId('rules-empty'))).toBeTruthy();
             expect(spectator.query(byTestId('rules-iframe'))).toBeFalsy();
@@ -85,7 +73,6 @@ describe('DotRulesDialogComponent', () => {
         it('should render the empty state when identifier is empty string', () => {
             configRef.data = { identifier: '' };
             spectator = createComponent();
-            spectator.detectChanges();
 
             expect(spectator.query(byTestId('rules-empty'))).toBeTruthy();
             expect(spectator.query(byTestId('rules-iframe'))).toBeFalsy();
@@ -94,7 +81,6 @@ describe('DotRulesDialogComponent', () => {
         it('should render the empty state when data is empty object', () => {
             configRef.data = {} as RulesDialogData;
             spectator = createComponent();
-            spectator.detectChanges();
 
             expect(spectator.query(byTestId('rules-empty'))).toBeTruthy();
             expect(spectator.query(byTestId('rules-iframe'))).toBeFalsy();

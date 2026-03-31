@@ -1,5 +1,6 @@
 import { Observable, Subject, merge, from as observableFrom } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
@@ -95,7 +96,10 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             });
 
         this._ruleService._errors$.subscribe((res) => {
-            const message = (res.error?.message || '').replace(/ user-\S+/gi, '');
+            const message = (res.error?.message || res.error?.error || res.message || '').replace(
+                / user-\S+/gi,
+                ''
+            );
             const errorKey = res.headers?.get('error-key') ?? '';
             this.ruleViewService.showErrorMessage(message, false, errorKey);
             this.loading.set(false);
@@ -708,12 +712,12 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.loading.set(false);
     }
 
-    private _handle403Error(e): boolean {
+    private _handle403Error(e: CwError): boolean {
         let handled = false;
-
+        const error = e as unknown as HttpErrorResponse;
         try {
-            if (e && e?.status === HttpCode.FORBIDDEN) {
-                const errorJson = e.error;
+            if (error && error?.status === HttpCode.FORBIDDEN) {
+                const errorJson = error.error;
 
                 if (errorJson && errorJson.error) {
                     this.ruleViewService.showErrorMessage(
