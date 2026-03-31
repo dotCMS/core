@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -89,8 +88,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
         ConfirmDialogModule,
-        DotEditContentCompareComponent,
-        NgClass
+        DotEditContentCompareComponent
     ],
     providers: [
         DotContentletService,
