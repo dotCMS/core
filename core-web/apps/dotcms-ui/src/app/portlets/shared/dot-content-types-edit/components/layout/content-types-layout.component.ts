@@ -21,8 +21,6 @@ import { MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabsModule } from 'primeng/tabs';
 
-import { take } from 'rxjs/operators';
-
 import {
     DotCurrentUserService,
     DotEventsService,
@@ -32,7 +30,6 @@ import {
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
@@ -62,7 +59,6 @@ import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor
 })
 export class ContentTypesLayoutComponent implements OnInit {
     #dotMessageService = inject(DotMessageService);
-    #dotMenuService = inject(DotMenuService);
     #fieldDragDropService = inject(FieldDragDropService);
     #dotEventsService = inject(DotEventsService);
     #dotCurrentUserService = inject(DotCurrentUserService);
@@ -77,7 +73,6 @@ export class ContentTypesLayoutComponent implements OnInit {
 
     permissionURL: string;
     pushHistoryURL: string;
-    relationshipURL: string;
     contentTypeNameInputSize: number;
     showPermissionsTab: Observable<boolean>;
     readonly $showStyleEditorTab = toSignal(
@@ -131,12 +126,6 @@ export class ContentTypesLayoutComponent implements OnInit {
         effect(() => {
             const ct = this.$contentType();
             if (ct) {
-                this.#dotMenuService
-                    .getDotMenuId('content-types-angular')
-                    .pipe(take(1))
-                    .subscribe((id: string) => {
-                        this.relationshipURL = `/c/portal/layout?p_l_id=${id}&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=${ct.id}`;
-                    });
                 this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${ct.id}&popup=true`;
                 this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${ct.id}&popup=true`;
             }
