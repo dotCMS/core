@@ -10,7 +10,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
@@ -30,7 +29,6 @@ public class ContainerUUID implements Serializable{
 
     private final String identifier;
     private String uuid;
-    private Map<String, Object> metadata;
 
     /**x
      * History of Changes: This section lists all the UUIDs that have been assigned to this Container. For example,
@@ -61,12 +59,10 @@ public class ContainerUUID implements Serializable{
 
     public ContainerUUID(final @JsonProperty("identifier") String containerIdOrPath,
                          final @JsonProperty("uuid") String containerInstanceID,
-                         final @JsonProperty("historyUUIDs") List<String> historyUUIDs,
-                         final @JsonProperty("metadata") Map<String, Object> metadata) {
+                         final @JsonProperty("historyUUIDs") List<String> historyUUIDs) {
 
         this.identifier = containerIdOrPath;
         this.uuid = containerInstanceID == null ? UUID_DEFAULT_VALUE : containerInstanceID;
-        this.metadata = metadata;
 
         if (isNew(containerInstanceID)) {
             this.historyUUIDs = new ArrayList<>();
@@ -103,14 +99,6 @@ public class ContainerUUID implements Serializable{
      */
     public String getUUID() {
         return uuid;
-    }
-
-    public Map<String, Object> getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(final Map<String, Object> metadata) {
-        this.metadata = metadata;
     }
 
     @Override

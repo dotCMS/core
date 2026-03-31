@@ -421,8 +421,6 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 new PropertyDataFetcher<ContainerUUID>("identifier")));
         containerUUIDFields.put("uuid", new TypeFetcher(GraphQLString,
                 new PropertyDataFetcher<ContainerUUID>("uuid")));
-        containerUUIDFields.put("metadata", new TypeFetcher(GraphQLTypeReference.typeRef(DOT_PAGE_METADATA),
-                new PropertyDataFetcher<ContainerUUID>("metadata")));
 
         typesMap.put(DOT_PAGE_CONTAINER_UUID, TypeUtil.createObjectType(DOT_PAGE_CONTAINER_UUID,
                 containerUUIDFields));
