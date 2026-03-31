@@ -1,12 +1,12 @@
 <div class="flex gap-3 mb-6">
     <div class="flex-1 p-3 rounded-lg border border-solid border-gray-200 bg-gray-50">
-        <p class="text-color-secondary mb-1">
+        <p class="mb-1">
             {{ 'page.scanner.a11y.standard' | dm }}
         </p>
         <p class="font-semibold">{{ a11yData().standard }}</p>
     </div>
     <div class="flex-1 p-3 rounded-lg border border-solid border-red-200 bg-red-50">
-        <p class="text-color-secondary mb-1">
+        <p class="mb-1">
             {{ 'page.scanner.a11y.errors' | dm }}
         </p>
         <p class="font-semibold text-red-700">
@@ -14,7 +14,7 @@
         </p>
     </div>
     <div class="flex-1 p-3 rounded-lg border border-solid border-yellow-200 bg-yellow-50">
-        <p class="text-color-secondary mb-1">
+        <p class="mb-1">
             {{ 'page.scanner.a11y.warnings' | dm }}
         </p>
         <p class="font-semibold text-yellow-700">
@@ -22,7 +22,7 @@
         </p>
     </div>
     <div class="flex-1 p-3 rounded-lg border border-solid border-blue-200 bg-blue-50">
-        <p class="text-color-secondary mb-1">
+        <p class="mb-1">
             {{ 'page.scanner.a11y.notices' | dm }}
         </p>
         <p class="font-semibold text-blue-700">
@@ -75,13 +75,13 @@
                     <div class="flex flex-col gap-2">
                         @for (item of group.items; track $index) {
                             <div class="p-2 rounded border border-solid border-gray-200 bg-gray-50">
-                                <p class="text-color-secondary mb-1 font-medium">
+                                <p class="mb-1 font-medium">
                                     {{ 'page.scanner.a11y.element' | dm }}
                                 </p>
                                 <code class="block bg-white rounded p-1 mb-2 overflow-x-auto">
                                     {{ item.context }}
                                 </code>
-                                <p class="text-color-secondary mb-1 font-medium">
+                                <p class="mb-1 font-medium">
                                     {{ 'page.scanner.a11y.selector' | dm }}
                                 </p>
                                 <code class="block bg-white rounded p-1 overflow-x-auto">
@@ -97,7 +97,7 @@
 } @else {
     <div class="flex flex-col items-center justify-center py-12 gap-4">
         <span class="material-icons text-5xl text-green-500">check_circle</span>
-        <p class="text-center text-color-secondary">
+        <p class="text-center">
             {{ 'page.scanner.a11y.no.issues' | dm }}
         </p>
     </div>

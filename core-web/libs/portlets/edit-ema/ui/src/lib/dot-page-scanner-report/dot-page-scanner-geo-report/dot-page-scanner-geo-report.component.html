@@ -51,7 +51,7 @@
                                     <span class="font-semibold">
                                         {{ severityCounts()[severity] }}
                                     </span>
-                                    <span class="capitalize text-color-secondary">
+                                    <span class="capitalize">
                                         {{ severity }}
                                     </span>
                                 </span>
@@ -77,10 +77,8 @@
                             {{ cat.score }}
                         </div>
                         <span class="flex-1 font-medium">{{ cat.label }}</span>
-                        <span class="text-color-secondary mr-2">
-                            {{ cat.weight * 100 | number: '1.0-0' }}%
-                        </span>
-                        <span class="text-color-secondary">
+                        <span class="mr-2">{{ cat.weight * 100 | number: '1.0-0' }}%</span>
+                        <span>
                             {{ cat.passedCount }}/{{ cat.totalCount }}
                             {{ 'page.scanner.geo.passed' | dm }}
                         </span>
@@ -92,7 +90,7 @@
                             <div
                                 class="flex items-start gap-3 p-2 rounded border border-solid border-gray-100">
                                 <p-chip [label]="sig.score.toString()" [style]="sig.chipStyle" />
-                                <p class="text-color-secondary m-0">{{ sig.message }}</p>
+                                <p class="m-0">{{ sig.message }}</p>
                             </div>
                         }
                     </div>

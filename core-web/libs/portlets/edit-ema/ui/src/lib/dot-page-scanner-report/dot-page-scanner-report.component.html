@@ -42,7 +42,7 @@
             <!-- Error state -->
             <div class="flex flex-col items-center justify-center py-12 gap-4">
                 <span class="material-icons text-5xl text-red-500">error_outline</span>
-                <p class="text-center text-color-secondary">{{ error() }}</p>
+                <p class="text-center">{{ error() }}</p>
             </div>
         } @else if (reportType() === 'a11y' && a11yData()) {
             <dot-page-scanner-a11y-report [a11yData]="a11yData()!" />
