@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.api.vtl.model.DotJSON;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -10,6 +11,11 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfigThreadLocal;
+import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppKeys;
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -24,6 +30,7 @@ import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
@@ -31,6 +38,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -133,6 +141,126 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
 
         cleanupDebug(VelocityScriptActionletTest.class);
     } // cleanup
+
+    /**
+     * Given Scenario: background/scheduled-job context. SiteA and System Host sites each with same secret name but different value
+     * Expected result: {@code $dotsecrets.get("mySecret")} returns the siteA value, not the System Host value.
+     */
+    @Test
+    public void Test_Velocity_Script_Get_ResolvesSiteSpecificSecret_InBackgroundJob() throws Exception {
+
+        final User admin = APILocator.systemUser();
+        final AppsAPI appsAPI = APILocator.getAppsAPI();
+        final Host siteA = new SiteDataGen().nextPersisted();
+        WorkflowScheme secretsScheme = null;
+        ContentType secretsContentType = null;
+        Contentlet checkedIn = null;
+
+        // Save the original thread-local request and clear it to simulate a background job
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        // Clear the per-thread secrets cache so stale entries do not interfere
+        DotVelocitySecretAppConfigThreadLocal.INSTANCE.clearConfig();
+
+        try {
+            // Configure dotVelocitySecretApp for siteA
+            final AppSecrets siteASecrets = new AppSecrets.Builder()
+                    .withKey(DotVelocitySecretAppKeys.APP_KEY)
+                    .withSecret(DotVelocitySecretAppKeys.TITLE.key, "SiteA Config")
+                    .withHiddenSecret("mySecret", "secretValueSiteA")
+                    .build();
+            appsAPI.saveSecrets(siteASecrets, siteA, admin);
+
+            // Configure dotVelocitySecretApp for System Host with a different value
+            final AppSecrets systemSecrets = new AppSecrets.Builder()
+                    .withKey(DotVelocitySecretAppKeys.APP_KEY)
+                    .withSecret(DotVelocitySecretAppKeys.TITLE.key, "System Config")
+                    .withHiddenSecret("mySecret", "secretValueSystemHost")
+                    .build();
+            appsAPI.saveSecrets(systemSecrets, APILocator.systemHost(), admin);
+
+            // Create a content type and workflow scheme for this test
+            secretsContentType = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
+                            .folder(FolderAPI.SYSTEM_FOLDER)
+                            .host(siteA.getIdentifier())
+                            .name("SecretsTest" + System.currentTimeMillis())
+                            .variable("SecretsTest" + System.currentTimeMillis())
+                            .build());
+
+            final CreateSchemeStepActionResult secretsSchemeResult = createSchemeStepActionActionlet(
+                    "SecretsScheme" + UUIDGenerator.generateUuid(), "step1", "action1",
+                    VelocityScriptActionlet.class);
+            secretsScheme = secretsSchemeResult.getScheme();
+
+            // Script reads the site-specific secret and stores it in dotJSON for assertion
+            final String script = "$dotJSON.put(\"secretValue\", $dotsecrets.get(\"mySecret\"))";
+            final WorkflowActionClass actionClass = secretsSchemeResult.getActionClass();
+            final List<WorkflowActionClassParameter> params = new ArrayList<>();
+            final WorkflowActionClassParameter scriptParam = new WorkflowActionClassParameter();
+            scriptParam.setActionClassId(actionClass.getId());
+            scriptParam.setKey("script");
+            scriptParam.setValue(script);
+            params.add(scriptParam);
+            final WorkflowActionClassParameter resultKeyParam = new WorkflowActionClassParameter();
+            resultKeyParam.setActionClassId(actionClass.getId());
+            resultKeyParam.setKey("resultKey");
+            resultKeyParam.setValue("result");
+            params.add(resultKeyParam);
+            workflowAPI.saveWorkflowActionClassParameters(params, admin);
+
+            workflowAPI.saveSchemesForStruct(
+                    new StructureTransformer(secretsContentType).asStructure(),
+                    List.of(secretsScheme));
+
+            // Create a contentlet assigned to siteA
+            final Contentlet contentlet = new Contentlet();
+            contentlet.setContentType(secretsContentType);
+            contentlet.setHost(siteA.getIdentifier());
+            checkedIn = contentletAPI.checkin(contentlet, admin, false);
+
+            // Fire the workflow action — no HTTP request in thread-local (background job)
+            final Contentlet result = workflowAPI.fireContentWorkflow(checkedIn,
+                    new ContentletDependencies.Builder()
+                            .modUser(admin)
+                            .workflowActionId(secretsSchemeResult.getAction().getId())
+                            .build());
+
+            Assert.assertNotNull(result);
+            final Map<String, Object> resultMap = (Map<String, Object>) result.get("result");
+            Assert.assertNotNull("Actionlet must store a result map", resultMap);
+            final DotJSON dotJSON = (DotJSON) resultMap.get("dotJSON");
+            Assert.assertNotNull("dotJSON must be present in the result", dotJSON);
+            Assert.assertEquals(
+                    "Expected site-specific secret from siteA, not System Host fallback",
+                    "secretValueSiteA", dotJSON.get("secretValue"));
+
+        } finally {
+            DotVelocitySecretAppConfigThreadLocal.INSTANCE.clearConfig();
+
+            // Destroy the contentlet first so it is no longer in the workflow step,
+            // which would otherwise block cleanScheme() from deleting the step.
+            try {
+                if (null != checkedIn) {
+                    contentletAPI.destroy(checkedIn, admin, false);
+                }
+            } catch (Exception ignored) { /* best-effort */ }
+
+            try { appsAPI.deleteSecrets(DotVelocitySecretAppKeys.APP_KEY, siteA, admin); } catch (Exception ignored) {}
+            try { appsAPI.deleteSecrets(DotVelocitySecretAppKeys.APP_KEY, APILocator.systemHost(), admin); } catch (Exception ignored) {}
+
+            if (null != secretsScheme) { cleanScheme(secretsScheme); }
+            if (null != secretsContentType) { contentTypeAPI.delete(secretsContentType); }
+
+            try {
+                APILocator.getHostAPI().archive(siteA, admin, false);
+                APILocator.getHostAPI().delete(siteA, admin, false);
+            } catch (Exception ignored) { /* best-effort */ }
+
+            // Restore thread-local last so all cleanup above runs under the background-job context
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+        }
+    }
 
     @Test
     public void Test_Velocity_Script_Actionlet_Expect_Success() throws Exception {
