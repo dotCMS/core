@@ -144,7 +144,7 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
 
     /**
      * Given Scenario: background/scheduled-job context. SiteA and System Host sites each with same secret name but different value
-     * Expected result: {@code $secrets.get("mySecret")} returns the siteA value, not the System Host value.
+     * Expected result: {@code $dotsecrets.get("mySecret")} returns the siteA value, not the System Host value.
      */
     @Test
     public void Test_Velocity_Script_Get_ResolvesSiteSpecificSecret_InBackgroundJob() throws Exception {
@@ -194,7 +194,7 @@ public class VelocityScriptActionletTest extends BaseWorkflowIntegrationTest {
             secretsScheme = secretsSchemeResult.getScheme();
 
             // Script reads the site-specific secret and stores it in dotJSON for assertion
-            final String script = "$dotJSON.put(\"secretValue\", $secrets.get(\"mySecret\"))";
+            final String script = "$dotJSON.put(\"secretValue\", $dotsecrets.get(\"mySecret\"))";
             final WorkflowActionClass actionClass = secretsSchemeResult.getActionClass();
             final List<WorkflowActionClassParameter> params = new ArrayList<>();
             final WorkflowActionClassParameter scriptParam = new WorkflowActionClassParameter();
