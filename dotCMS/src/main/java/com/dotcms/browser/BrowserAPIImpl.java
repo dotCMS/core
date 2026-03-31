@@ -1621,10 +1621,12 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private String buildSelectBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
 
-        final String baseClause = " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
-                + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
-                + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
-                + DEFAULT_VARIANT.name() + "' ";
+        // structure join removed — base_type on identifier replaces struc.structuretype,
+        // and content-type-ID filters use subqueries into the (small) structure table.
+        final String baseClause = " from contentlet_version_info cvi, identifier id, contentlet c "
+                + " where cvi.identifier = id.id"
+                + " and c.inode = cvi." + workingLiveInode
+                + " and cvi.variant_id='" + DEFAULT_VARIANT.name() + "' ";
 
         final StringBuilder baseQuery = new StringBuilder(
                 "select cvi." + workingLiveInode + " as inode " + baseClause);
@@ -1634,21 +1636,24 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType()))
                             .collect(Collectors.toList());
-            baseQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes))
+            baseQuery.append(" and id.base_type in (").append(String.join(" , ", baseTypes))
                     .append(") ");
         }
 
         if (!browserQuery.contentTypeIds.isEmpty()) {
-            baseQuery.append(" and struc.inode in (").append(browserQuery.contentTypeIds.stream()
-                    .map(id -> "'" + id + "'")
-                    .collect(Collectors.joining(" , "))).append(") ");
+            baseQuery.append(" and id.asset_subtype in (select velocity_var_name from structure where inode in (")
+                    .append(browserQuery.contentTypeIds.stream()
+                            .map(id -> "'" + id + "'")
+                            .collect(Collectors.joining(" , ")))
+                    .append(")) ");
         }
 
         if (!browserQuery.excludedContentTypeIds.isEmpty()) {
-            baseQuery.append(" and struc.inode not in (")
+            baseQuery.append(" and id.asset_subtype not in (select velocity_var_name from structure where inode in (")
                     .append(browserQuery.excludedContentTypeIds.stream()
                             .map(id -> "'" + id + "'")
-                            .collect(Collectors.joining(" , "))).append(") ");
+                            .collect(Collectors.joining(" , ")))
+                    .append(")) ");
         }
 
         return baseQuery.toString();

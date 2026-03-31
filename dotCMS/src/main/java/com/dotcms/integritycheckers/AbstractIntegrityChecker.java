@@ -147,9 +147,8 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                     .append("cvi.working_inode, cvi.live_inode, i.parent_path, i.asset_name, i.host_inode, c.language_id ")
                     .append("FROM contentlet_version_info cvi ")
                     .append("INNER JOIN contentlet c ON (c.identifier = cvi.identifier AND c.language_id = cvi.lang) ")
-                    .append("INNER JOIN structure s ON (s.inode = c.structure_inode AND s.structuretype = ")
-                    .append(structureTypeId).append(") ")
-                    .append("INNER JOIN identifier i ON (i.id = c.identifier)").toString();
+                    .append("INNER JOIN identifier i ON (i.id = c.identifier) ")
+                    .append("WHERE i.base_type = ").append(structureTypeId).toString();
 
             final Connection conn = DbConnectionFactory.getConnection();
             try (final PreparedStatement statement = conn.prepareStatement(query)) {
@@ -272,8 +271,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                 .append("FROM  identifier li ")
                 .append("INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet') ")
                 .append("INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) ")
-                .append("INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = ")
-                .append(structureType).append(") ").append("INNER JOIN ").append(tempTableName)
+                .append("AND li.base_type = ").append(structureType).append(" INNER JOIN ").append(tempTableName)
                 .append(" t ON (li.full_path_lc = t.full_path_lc ")
                 .append("AND li.host_inode = host_identifier AND lc.identifier <> t.identifier ")
                 .append("AND lc.language_id = t.language_id)").toString();
@@ -306,9 +304,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                     .append("FROM identifier li ")
                     .append("INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet') ")
                     .append("INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) ")
-                    .append("INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = ")
-                    .append(structureType)
-                    .append(") INNER JOIN ")
+                    .append("AND li.base_type = ").append(structureType).append(" INNER JOIN ")
                     .append(tempTableName)
                     .append(" t ON (li.full_path_lc = t.full_path_lc ")
                     .append("AND li.host_inode = host_identifier AND lc.identifier <> t.identifier AND lc.language_id = t.language_id )")

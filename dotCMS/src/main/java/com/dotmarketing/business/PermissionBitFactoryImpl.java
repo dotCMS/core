@@ -322,7 +322,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             " UNION ALL" +
                 " SELECT distinct li.id FROM identifier li" +
                     " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + BaseContentType.HTMLPAGE.getType() + ")" +
+                    " AND li.base_type = " + BaseContentType.HTMLPAGE.getType() +
                     " AND li.host_inode = ? and li.parent_path like ?";
 
 	private static final String SELECT_CHILD_HTMLPAGE_ON_PERMISSIONS_SQL =
@@ -332,8 +332,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             " UNION ALL" +
                     " SELECT distinct li.id FROM identifier li" +
                     " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + BaseContentType.HTMLPAGE.getType() + ")" +
                     " JOIN permission_reference ON permission_type = '" + IHTMLPage.class.getCanonicalName() + "' and asset_id = li.id" +
+                    " AND li.base_type = " + BaseContentType.HTMLPAGE.getType() +
                     " AND li.host_inode = ? and li.parent_path like ?";
 
 	/*
@@ -349,8 +349,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             " UNION ALL" +
                     " SELECT distinct li.id from identifier li" +
                         " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-                        " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + BaseContentType.HTMLPAGE.getType() + ")" +
                         " JOIN permission lp ON (lp.inode_id = li.id) " +
+                        " AND li.base_type = " + BaseContentType.HTMLPAGE.getType() +
                         " AND li.host_inode = ? and li.parent_path like ?" +
                         " AND lp.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
@@ -490,9 +490,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             "select distinct li.id from identifier li" +
                 " join permission lp on (lp.inode_id = li.id) " +
                 " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-                " INNER JOIN structure ls ON (lc.structure_inode = ls.inode)" +
                 " where li.asset_type='contentlet' and lp.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
-                " AND ls.structuretype <> " + BaseContentType.HTMLPAGE.getType() +
+                " AND li.base_type <> " + BaseContentType.HTMLPAGE.getType() +
                 " and li.id <> li.host_inode and li.host_inode = ? " +
                 " and li.parent_path like ?";
 
@@ -2910,7 +2909,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		            " UNION ALL" +
 		            " SELECT distinct li.id as li_id FROM identifier li" +
 		                " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
-		                " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + BaseContentType.HTMLPAGE.getType() + ")" +
+				" AND li.base_type = " + BaseContentType.HTMLPAGE.getType() + " " +
 		                " AND li.host_inode = ? and li.parent_path like ?" + 
 		                " and" +
 		            "		li.id not in (" +

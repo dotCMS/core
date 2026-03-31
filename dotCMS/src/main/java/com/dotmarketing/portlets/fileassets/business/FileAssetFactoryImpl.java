@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -20,13 +21,12 @@ public class FileAssetFactoryImpl implements FileAssetFactory {
 
     private final String FIND_FILE_ASSETS_BY_FOLDER_QUERY =
             "SELECT contentlet.inode as mynode " +
-            "FROM identifier, contentlet_version_info, contentlet, structure " +
+            "FROM identifier, contentlet_version_info, contentlet " +
             "WHERE identifier.parent_path = ? and " +
                 "identifier.host_inode = ? and " +
                 "contentlet_version_info.identifier = identifier.id and " +
                 "contentlet_version_info.%s_inode = contentlet.inode and " +
-                "contentlet.structure_inode = structure.inode and " +
-                "structure.structuretype =4";
+                "identifier.base_type = " + BaseContentType.FILEASSET.getType();
 
     public FileAssetFactoryImpl() {
         permissionAPI = APILocator.getPermissionAPI();
