@@ -31,6 +31,9 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'categories',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-categories/portlet').then((m) => m.dotCategoriesRoutes)
     },
