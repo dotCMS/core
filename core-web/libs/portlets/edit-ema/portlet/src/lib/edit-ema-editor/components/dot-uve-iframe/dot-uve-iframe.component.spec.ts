@@ -64,6 +64,7 @@ describe('DotUveIframeComponent', () => {
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
                     $viewIframeDocHeight: iframeDocHeightSignal,
+                    $isEmaLegacyScriptInjectionEnabled: signal(false),
                     setSeoData: jest.fn()
                 })
             }

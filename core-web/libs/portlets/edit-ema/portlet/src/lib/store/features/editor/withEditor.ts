@@ -148,11 +148,16 @@ export function withEditor() {
                 return store.viewMode() === UVE_MODE.EDIT;
             });
 
+            const $isEmaLegacyScriptInjectionEnabled = computed(
+                () => store.flags()?.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION === true
+            );
+
             return {
                 editorCanEditContent,
                 editorCanEditLayout,
                 editorCanEditStyles,
                 editorEnableInlineEdit,
+                $isEmaLegacyScriptInjectionEnabled,
                 editorHasAccessToEditMode,
 
                 $allowContentDelete: computed<boolean>(() => {

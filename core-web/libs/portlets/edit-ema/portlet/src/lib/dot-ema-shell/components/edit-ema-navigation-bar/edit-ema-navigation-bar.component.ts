@@ -42,6 +42,8 @@ export class EditEmaNavigationBarComponent {
         const currentUrl = this.#currentUrl().split('?').shift(); // track the signal
 
         for (const item of this.items()) {
+            if (!item.href) continue;
+
             const url = item.href.split('/').shift();
 
             if (currentUrl.includes(url)) {
