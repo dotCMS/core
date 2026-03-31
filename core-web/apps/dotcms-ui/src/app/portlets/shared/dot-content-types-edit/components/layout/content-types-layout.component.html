@@ -11,18 +11,13 @@
                     {{ 'contenttypes.tab.style.editor.header' | dm }}
                 </p-tab>
             }
-            @if ($contentType()) {
-                <p-tab [value]="2">
-                    {{ 'contenttypes.tab.relationship.header' | dm }}
-                </p-tab>
-            }
             @if ($contentType() && showPermissionsTab | async) {
-                <p-tab [value]="3">
+                <p-tab [value]="2">
                     {{ 'contenttypes.tab.permissions.header' | dm }}
                 </p-tab>
             }
             @if ($contentType()) {
-                <p-tab [value]="$contentType() && (showPermissionsTab | async) ? 4 : 3">
+                <p-tab [value]="$contentType() && (showPermissionsTab | async) ? 3 : 2">
                     {{ 'contenttypes.tab.publisher.push.history.header' | dm }}
                 </p-tab>
             }
@@ -70,17 +65,8 @@
                     <dot-style-editor-builder [contentType]="$contentType()" />
                 </p-tabpanel>
             }
-            @if ($contentType()) {
-                <p-tabpanel [value]="2" class="h-full">
-                    <div class="h-full">
-                        <dot-portlet-box class="h-full">
-                            <dot-iframe class="h-full" [src]="relationshipURL" />
-                        </dot-portlet-box>
-                    </div>
-                </p-tabpanel>
-            }
             @if ($contentType() && showPermissionsTab | async) {
-                <p-tabpanel [value]="3" class="h-full">
+                <p-tabpanel [value]="2" class="h-full">
                     <div class="h-full">
                         <dot-portlet-box class="h-full">
                             <dot-iframe class="h-full" [src]="permissionURL" />
@@ -90,7 +76,7 @@
             }
             @if ($contentType()) {
                 <p-tabpanel
-                    [value]="$contentType() && (showPermissionsTab | async) ? 4 : 3"
+                    [value]="$contentType() && (showPermissionsTab | async) ? 3 : 2"
                     class="h-full">
                     <div class="h-full">
                         <dot-portlet-box class="h-full">
