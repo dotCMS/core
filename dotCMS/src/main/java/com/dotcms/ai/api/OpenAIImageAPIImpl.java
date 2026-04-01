@@ -25,6 +25,7 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -109,7 +110,7 @@ public class OpenAIImageAPIImpl implements ImageAPI {
             final String fileName = generateFileName(imageResponse.getString(AiKeys.ORIGINAL_PROMPT));
             imageResponse.put("tempFileName", fileName);
 
-            final DotTempFile file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
+            final DotTempFile file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), URI.create(url).toURL(), 20);
             imageResponse.put(AiKeys.RESPONSE, file.id);
             imageResponse.put("tempFile", file.file.getAbsolutePath());
 

@@ -1,6 +1,7 @@
 package com.dotcms.ai;
 
 import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.util.WireMockTestHelper;
@@ -10,7 +11,9 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 
 public interface AiTest {
 
@@ -59,7 +62,7 @@ public interface AiTest {
 
         final AppSecrets appSecrets = builder.build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
-        TimeUnit.SECONDS.sleep(1);
+        await().atMost(5, SECONDS).until(() -> ConfigService.INSTANCE.config(host).isEnabled());
         return appSecrets.getSecrets();
     }
 
@@ -81,6 +84,42 @@ public interface AiTest {
 
     static void removeAiAppSecrets(final Host host) throws Exception {
         APILocator.getAppsAPI().deleteSecrets(AppKeys.APP_KEY, host, APILocator.systemUser());
+    }
+
+    static String providerConfigJson(final int port, final String chatModel) {
+        return "{"
+                + "\"chat\":{"
+                + "\"provider\":\"openai\","
+                + "\"apiKey\":\"" + API_KEY + "\","
+                + "\"model\":\"" + chatModel + "\","
+                + "\"maxRetries\":0,"
+                + "\"endpoint\":\"http://localhost:" + port + "/\""
+                + "},"
+                + "\"embeddings\":{"
+                + "\"provider\":\"openai\","
+                + "\"apiKey\":\"" + API_KEY + "\","
+                + "\"model\":\"" + EMBEDDINGS_MODEL + "\","
+                + "\"endpoint\":\"http://localhost:" + port + "/\""
+                + "},"
+                + "\"image\":{"
+                + "\"provider\":\"openai\","
+                + "\"apiKey\":\"" + API_KEY + "\","
+                + "\"model\":\"" + IMAGE_MODEL + "\","
+                + "\"endpoint\":\"http://localhost:" + port + "/\""
+                + "}"
+                + "}";
+    }
+
+    static void aiAppSecretsWithProviderConfig(final Host host, final String providerConfigJson) throws Exception {
+        final AppSecrets appSecrets = new AppSecrets.Builder()
+                .withKey(AppKeys.APP_KEY)
+                .withSecret(AppKeys.PROVIDER_CONFIG.key, providerConfigJson)
+                .withSecret(AppKeys.COMPLETION_ROLE_PROMPT.key, AppKeys.COMPLETION_ROLE_PROMPT.defaultValue)
+                .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue)
+                .withSecret(AppKeys.LISTENER_INDEXER.key, "{\"default\":\"blog\"}")
+                .build();
+        APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
+        await().atMost(5, SECONDS).until(() -> ConfigService.INSTANCE.config(host).isEnabled());
     }
 
 }
