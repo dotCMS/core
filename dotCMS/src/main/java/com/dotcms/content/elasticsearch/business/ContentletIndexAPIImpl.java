@@ -655,7 +655,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     .live(osLive)
                     .build();
             versionedIndicesAPI.saveIndices(osInfo);
-            ESMappingUtilHelper.getInstance().addCustomMapping(osWorking, osLive);
+            // Use plain logical names (not the os::-tagged storage names) so that
+            // MappingOperationsES.getNameWithClusterIDPrefix() can correctly add the
+            // cluster prefix. Passing os::-tagged names would cause ES to construct a
+            // malformed index name ("cluster_<id>.os::cluster_<id>.working_...") and
+            // fail the PUT mapping request in dual-write phases (1/2).
+            // MappingOperationsOS handles both plain and tagged names via IndexTag.strip().
+            ESMappingUtilHelper.getInstance().addCustomMapping(workingName, liveName);
         }
     }
 
@@ -1389,7 +1395,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         for (final ContentletIndexOperations ops : router.writeProviders()) {
             final ProviderIndices indices = loadProviderIndicesQuietly(ops);
             if (indices == null) {
-                // OS record not yet initialised — skip silently (logged inside loadProviderIndices)
+                // OS record not yet initialized — skip silently (logged inside loadProviderIndices)
                 continue;
             }
             // Resolve which native batch this provider should write into.

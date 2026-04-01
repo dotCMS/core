@@ -300,7 +300,7 @@ public class ESMappingUtilHelper {
      */
     private void addMappingForContentTypeIfNeeded(final ContentType contentType,
             final Set<String> mappedFields, final String... indexes) {
-        final Map<String, JSONObject> contentTypeMapping = new HashMap();
+        final Map<String, JSONObject> contentTypeMapping = new HashMap<>();
         try {
             contentType.fields().forEach(field-> {
                     try {
@@ -389,7 +389,7 @@ public class ESMappingUtilHelper {
 
                 if (dataTypesMap.containsKey(field.dataType())) {
                     mappingForField = String
-                            .format("%n\"type\":\"%s\"%n}",
+                            .format("{%n\"type\":\"%s\"%n}",
                                     dataTypesMap.get(field.dataType()));
                 } else {
                     if (field.unique() || field instanceof TagField) {
