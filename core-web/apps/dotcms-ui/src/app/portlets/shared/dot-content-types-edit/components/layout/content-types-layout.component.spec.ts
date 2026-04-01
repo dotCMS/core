@@ -15,11 +15,11 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -58,7 +58,6 @@ import {
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
 import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
@@ -103,13 +102,6 @@ class TestHostComponent {
 }
 
 @Component({
-    selector: 'dot-content-types-relationship-listing',
-    template: '',
-    standalone: false
-})
-class TestContentTypesRelationshipListingComponent {}
-
-@Component({
     selector: 'dot-add-to-menu',
     template: ``,
     standalone: true
@@ -126,17 +118,6 @@ class MockDotAddToMenuComponent {
 })
 class MockDotStyleEditorBuilderComponent {
     @Input() contentType: DotCMSContentType;
-}
-
-@Injectable()
-export class MockDotMenuService {
-    getDotMenuId(): Observable<string> {
-        return of('1234');
-    }
-
-    loadMenu(_reload?: boolean): Observable<any> {
-        return of([{ id: 'menu-1' }]);
-    }
 }
 
 class FieldDragDropServiceMock {
@@ -167,7 +148,6 @@ describe('ContentTypesLayoutComponent', () => {
             'contenttypes.sidebar.layouts.title': 'Layout Title',
             'contenttypes.tab.permissions.header': 'Permissions Tab',
             'contenttypes.tab.publisher.push.history.header': 'Push History',
-            'contenttypes.tab.relationship.header': 'Relationship',
             'contenttypes.action.edit': 'Edit',
             'contenttypes.content.variable': 'Variable',
             'contenttypes.form.identifier': 'Identifier',
@@ -180,7 +160,6 @@ describe('ContentTypesLayoutComponent', () => {
             declarations: [
                 TestContentTypeFieldsListComponent,
                 TestContentTypeFieldsRowListComponent,
-                TestContentTypesRelationshipListingComponent,
                 TestHostComponent
             ],
             imports: [
@@ -201,7 +180,6 @@ describe('ContentTypesLayoutComponent', () => {
                 provideHttpClient(),
                 provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotMenuService, useClass: MockDotMenuService },
                 { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
                 DotCurrentUserService,
                 DotEventsService,
@@ -309,35 +287,18 @@ describe('ContentTypesLayoutComponent', () => {
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
 
-    it('should have dot-portlet-box in the Relationship tab after it has been clicked', fakeAsync(() => {
-        fixture.componentRef.setInput('contentType', fakeContentType);
-
-        fixture.detectChanges();
-
-        const tabs = de.queryAll(By.css('p-tab'));
-        // tabs[0]=Fields, [1]=StyleEditor, [2]=Relationship
-        tabs[2].nativeElement.click();
-        fixture.detectChanges();
-
-        fixture.whenStable().then(() => {
-            const panels = de.queryAll(By.css('p-tabpanel'));
-            const contentTypeRelationshipsPortletBox = panels[2].query(By.css('dot-portlet-box'));
-            expect(contentTypeRelationshipsPortletBox).not.toBeNull();
-        });
-    }));
-
     it('should have dot-portlet-box in the Permissions tab after it has been clicked', fakeAsync(() => {
         fixture.componentRef.setInput('contentType', fakeContentType);
         fixture.detectChanges();
 
         const tabs = de.queryAll(By.css('p-tab'));
-        // tabs[0]=Fields, [1]=StyleEditor, [2]=Relationship, [3]=Permissions
-        tabs[3].nativeElement.click();
+        // tabs[0]=Fields, [1]=StyleEditor, [2]=Permissions
+        tabs[2].nativeElement.click();
         fixture.detectChanges();
 
         fixture.whenStable().then(() => {
             const panels = de.queryAll(By.css('p-tabpanel'));
-            const contentTypePushHistoryPortletBox = panels[3].query(By.css('dot-portlet-box'));
+            const contentTypePushHistoryPortletBox = panels[2].query(By.css('dot-portlet-box'));
             expect(contentTypePushHistoryPortletBox).not.toBeNull();
         });
     }));
@@ -470,8 +431,8 @@ describe('ContentTypesLayoutComponent', () => {
             let pTabPanel;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
-                // panels[0]=Fields, [1]=StyleEditor, [2]=Relationship, [3]=Permissions
-                pTabPanel = panels[3];
+                // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions
+                pTabPanel = panels[2];
                 fixture.detectChanges();
                 iframe = pTabPanel.query(By.css('dot-iframe'));
             });
@@ -497,8 +458,8 @@ describe('ContentTypesLayoutComponent', () => {
             let pTabPanel;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
-                // panels[0]=Fields, [1]=StyleEditor, [2]=Relationship, [3]=Permissions, [4]=PushHistory
-                pTabPanel = panels[4];
+                // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions, [3]=PushHistory
+                pTabPanel = panels[3];
                 fixture.detectChanges();
                 iframe = pTabPanel.query(By.css('dot-iframe'));
             });
@@ -545,37 +506,6 @@ describe('ContentTypesLayoutComponent', () => {
 
                 expect(styleEditorPanel).toBeNull();
                 expect(styleEditorTab).toBeNull();
-            });
-        });
-
-        describe('Relationship', () => {
-            let pTabPanel;
-            beforeEach(() => {
-                const panels = de.queryAll(By.css('p-tabpanel'));
-                // panels[0]=Fields, [1]=StyleEditor, [2]=Relationship
-                pTabPanel = panels[2];
-                fixture.detectChanges();
-                iframe = pTabPanel.query(By.css('dot-iframe'));
-            });
-
-            it('should have a Relationship tab', () => {
-                expect(pTabPanel).toBeDefined();
-            });
-
-            it('should have a right header', () => {
-                const tabs = de.queryAll(By.css('p-tab'));
-                expect(tabs.length).toBeGreaterThanOrEqual(2);
-            });
-
-            it('should have a iframe', () => {
-                expect(iframe).not.toBeNull();
-            });
-
-            it('should set the src attribute', () => {
-                expect(iframe.componentInstance.src).toBe(
-                    // tslint:disable-next-line:max-line-length
-                    '/c/portal/layout?p_l_id=1234&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=1234567890'
-                );
             });
         });
     });

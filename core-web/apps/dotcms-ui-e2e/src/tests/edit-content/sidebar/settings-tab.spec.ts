@@ -148,7 +148,7 @@ test.describe('Rules Dialog', () => {
             await page.getByTestId('rules-card').click();
 
             await expect(page.locator('.p-dialog')).toBeVisible({ timeout: 10000 });
-            await expect(page.getByTestId('rules-container')).toBeVisible({ timeout: 10000 });
+            await expect(page.getByTestId('rules-iframe')).toBeVisible({ timeout: 10000 });
             await expect(page.getByTestId('rules-empty')).not.toBeAttached();
         });
     });
@@ -174,7 +174,7 @@ test.describe('Rules Dialog', () => {
 
             // Dialog must remain open — closeOnEscape: false by design
             await expect(page.locator('.p-dialog')).toBeVisible();
-            await expect(page.getByTestId('rules-container')).toBeVisible();
+            await expect(page.getByTestId('rules-iframe')).toBeVisible();
         });
     });
 

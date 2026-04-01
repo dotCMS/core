@@ -83,7 +83,7 @@ describe('DotEditContentSidebarRulesComponent', () => {
                 data: { identifier: 'content-789' },
                 modal: true,
                 appendTo: 'body',
-                closeOnEscape: true,
+                closeOnEscape: false,
                 closable: true,
                 draggable: false,
                 keepInViewport: false,
