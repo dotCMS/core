@@ -16,6 +16,7 @@ export interface PageContextComputed {
     $isPageLocked: Signal<boolean>;
     $isLockFeatureEnabled: Signal<boolean>;
     $isStyleEditorEnabled: Signal<boolean>;
+    $isEmaLegacyScriptInjectionEnabled: Signal<boolean>;
     $hasAccessToEditMode: Signal<boolean>;
     $languageId: Signal<number>;
     $isPreviewMode: Signal<boolean>;
@@ -60,6 +61,9 @@ export function withPageContext() {
 
                     return flags().FEATURE_FLAG_UVE_STYLE_EDITOR;
                 });
+                const $isEmaLegacyScriptInjectionEnabled = computed(
+                    () => flags().FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION === true
+                );
                 const $isPageLocked = computed(() => {
                     return computeIsPageLocked(page(), currentUser());
                 });
@@ -79,6 +83,7 @@ export function withPageContext() {
                     $isPageLocked,
                     $isLockFeatureEnabled,
                     $isStyleEditorEnabled,
+                    $isEmaLegacyScriptInjectionEnabled,
                     $hasAccessToEditMode,
                     $languageId: computed(() => viewAs()?.language?.id || 1),
                     $pageURI: computed(() => page()?.pageURI ?? ''),
