@@ -1,19 +1,12 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.ai.domain.Model;
-import com.dotcms.ai.domain.ModelStatus;
-import com.dotcms.ai.model.SimpleModel;
 import io.vavr.Lazy;
-import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
 
 /**
  * Manages the AI models used in the application. This class handles loading, caching,
@@ -33,53 +26,6 @@ public class AIModels {
 
     private AIModels() {
         internalModels = new ConcurrentHashMap<>();
-    }
-
-    /**
-     * Loads the given list of AI models for the specified host. If models for the host
-     * are already loaded, this method does nothing. It also maps model names to their
-     * corresponding AIModel instances.
-     *
-     * @param appConfig app config
-     * @param loading the list of AI models to load
-     */
-    public void loadModels(final AppConfig appConfig, final List<AIModel> loading) {
-        final String host = appConfig.getHost();
-
-       final List<Tuple2<AIModelType, AIModel>> currentModels = internalModels.get(host);
-
-        if (UtilMethods.isSet(currentModels)) {
-            for (AIModel loadingAIModel : loading) {
-                final AIModelType type = loadingAIModel.getType();
-
-                for (Tuple2<AIModelType, AIModel> currentTupla : currentModels) {
-                    if(type == currentTupla._1()) {
-                        final AIModel currentAIModel = currentTupla._2;
-
-                        for (Model currentModel : currentAIModel.getModels()) {
-                            final Optional<Model> optionalModel = loadingAIModel.getModels().stream()
-                                    .filter(model -> model.getName().equals(currentModel.getName()))
-                                    .findFirst();
-
-                            if (optionalModel.isPresent() && optionalModel.get().getStatus() == null) {
-                                optionalModel.get().setStatus(currentModel.getStatus());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
-        final List<Tuple2<AIModelType, AIModel>> added = internalModels.put(
-                host,
-                loading.stream()
-                        .map(model -> Tuple.of(model.getType(), model))
-                        .collect(Collectors.toList()));
-
-        if (added == null) {
-            activateModels(host);
-        }
     }
 
     /**
@@ -117,48 +63,6 @@ public class AIModels {
             models.clear();
             internalModels.remove(host);
         });
-    }
-
-    /**
-     * Retrieves the list of available models that are both configured and supported.
-     *
-     * @return a list of available model names
-     */
-    public List<SimpleModel> getAvailableModels() {
-        return internalModels.entrySet()
-                .stream()
-                .flatMap(entry -> entry.getValue().stream())
-                .map(Tuple2::_2)
-                .filter(AIModel::isOperational)
-                .flatMap(aiModel -> aiModel.getModels()
-                        .stream()
-                        .filter(Model::isOperational)
-                        .map(model -> new SimpleModel(
-                                model.getName(),
-                                aiModel.getType(),
-                                aiModel.getCurrentModelIndex() == model.getIndex())))
-                .distinct()
-                .collect(Collectors.toList());
-    }
-
-    private void activateModels(final String host) {
-        final List<AIModel> aiModels = internalModels.get(host)
-                .stream()
-                .map(tuple -> tuple._2)
-                .collect(Collectors.toList());
-
-        aiModels.forEach(aiModel ->
-            aiModel.getModels().forEach(model -> {
-                final String modelName = model.getName().trim().toLowerCase();
-                final ModelStatus status = ModelStatus.ACTIVE;
-                if (aiModel.getCurrentModelIndex() == AIModel.NOOP_INDEX) {
-                    aiModel.setCurrentModelIndex(model.getIndex());
-                }
-                Logger.debug(
-                        this,
-                        String.format("Model [%s] activated with status [%s]", modelName, status));
-                model.setStatus(status);
-            }));
     }
 
 }
