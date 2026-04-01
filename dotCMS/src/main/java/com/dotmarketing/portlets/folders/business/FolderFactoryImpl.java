@@ -805,41 +805,20 @@ public class FolderFactoryImpl extends FolderFactory {
     // Snapshot sub-folder old-path data BEFORE any update so targeted cache eviction is possible
     final List<Map<String, Object>> subFolderSnapshot = loadSubFolderSnapshot(oldPath, hostId);
 
-    // Capture the old values before mutation so they can be restored if a subsequent DB
-    // operation fails. @WrapInTransaction rolls back DB changes, but Java object state is
-    // not rolled back automatically — callers that retain a reference after failure would
-    // otherwise observe the new name permanently despite the rename not completing.
-    final String oldFolderName = folder.getName();
-    final String oldAssetName  = ident.getAssetName();
+    // Set the new name on the folder object so getNewFolderRecord() picks it up via
+    // initialFolder.getName(). Restore the original name if a subsequent DB operation fails,
+    // since @WrapInTransaction rolls back DB changes but Java object state is not automatically
+    // restored.
+    folder.setName(newName);
 
-    // Update the folder record in-place.
-    // save() uses upsertFolder keyed on the existing inode — the inode is NOT regenerated.
-    // Because the inode is preserved, the old updateOtherFolderReferences calls (which updated
-    // structure.folder, permission.inode_id, permission_reference.asset_id from oldInode to
-    // newInode) are pure no-ops (SET x = X WHERE x = X) and have been removed.
-    //
-    // save() internally calls APILocator.getIdentifierAPI().find() to get the identifier for
-    // FolderCache eviction. At this point the identifier cache still holds asset_name=oldName, so
-    // save() correctly evicts the old path-keyed cache entry. The identifier cache is evicted on
-    // the next line, AFTER save() reads it, preserving the correct ordering.
+    // Create a new folder record
+    // getNewFolderRecord() calls IdentifierAPI.createNew() which generates the deterministic hash
+    // based on assetType:hostname:parentPath:folderName — changing the URL changes the identity.
+    final Folder newFolder;
     try {
-      folder.setName(newName);
-      save(folder);
-
-      // Evict old identifier URI cache entry BEFORE mutating asset_name: removeFromCacheByIdentifier
-      // looks up the identifier by ID from cache (still holds old URI) and evicts by that key.
-      // After save(ident), the new URI key is stored normally.
-      CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
-      ident.setAssetName(newName);
-      APILocator.getIdentifierAPI().save(ident);
-
-      // Evict again AFTER the DB identifier row has been updated. This prevents a race where the
-      // identifier can be cached by another thread (e.g. reindex) after the pre-update eviction
-      // but before/while the asset_name mutation becomes visible.
-      CacheLocator.getIdentifierCache().removeFromCacheDirect(ident.getId(), hostId, null);
+      newFolder = getNewFolderRecord(folder, APILocator.systemUser(), parentPath, hostId);
     } catch (final DotDataException | RuntimeException e) {
-      folder.setName(oldFolderName);
-      ident.setAssetName(oldAssetName);
+      folder.setName(ident.getAssetName()); // restore original name
       // A concurrent rename to the same destination path can race past the collision check and
       // hit the DB unique constraint on identifier(parent_path, asset_name, host_inode).
       // Treat this the same as a pre-checked collision: restore state and return false.
@@ -849,31 +828,42 @@ public class FolderFactoryImpl extends FolderFactory {
       throw e;
     }
 
-    // Evict identifier cache for the entire subtree BEFORE the bulk UPDATE so the eviction can
-    // reliably find the old-path-keyed cache entries. removeFromCacheByIdentifier() uses the
-    // cached identifier's current URI (old path) to evict the path-keyed entry; if we waited
-    // until after the UPDATE, those URI-keyed entries might already have been LRU-evicted and
-    // the stale old-path keys would survive indefinitely.
+    // Evict identifier cache for the entire old subtree BEFORE the bulk UPDATE so the eviction
+    // can reliably find the old-path-keyed cache entries.
     clearIdentifierCacheForSubtree(oldPath, hostId);
 
     // Bulk-update every child identifier's parent_path, processing parent folders before children.
-    // The snapshot already contains all sub-folder paths so no extra SELECTs are needed.
+    // The new folder identifier already exists in the DB (created above), so the trigger's
+    // parent-path existence check passes at every depth level as parents are updated first.
     updateChildPaths(oldPath, newPath, hostId, subFolderSnapshot);
 
-    // Evict identifier caches rooted at the *new* parent path after the bulk update.
-    // This closes the window where other threads could have cached descendants with the old
-    // parent_path during the rename transaction.
+    // Evict identifier caches rooted at the new path after the bulk update.
     clearIdentifierCacheForSubtree(newPath, hostId);
 
-    // Targeted folder cache eviction for affected sub-folders (using old path data from snapshot)
+    // Targeted folder cache eviction for affected sub-folders (using old path data from snapshot).
     evictSubFolderCache(subFolderSnapshot, hostId);
 
-    // Nav cache cleanup — evict the renamed folder, its parent, and every sub-folder in the tree
+    // Nav cache cleanup — evict the renamed folder, its parent, and every sub-folder in the tree.
+    // Uses folder.getInode() (old inode) before it is replaced below.
     CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
     CacheLocator.getNavToolCache().removeNavByPath(hostId, parentPath);
     for (final Map<String, Object> row : subFolderSnapshot) {
       CacheLocator.getNavToolCache().removeNav(hostId, (String) row.get("inode"));
     }
+
+    // Transfer content-type structure and permission references from old inode to new inode.
+    updateOtherFolderReferences(newFolder.getInode(), folder.getInode());
+
+    // Delete old folder. All children have been moved to the new path by updateChildPaths(),
+    // so check_child_assets() finds no remaining children pointing to the old path and the
+    // delete succeeds without a constraint violation.
+    delete(folder);
+
+    // Update the caller's folder reference to the new inode and identifier so that
+    // FolderAPIImpl.refreshContentUnderFolder() targets the correct renamed folder.
+    // folder.getName() was already set to newName above.
+    folder.setInode(newFolder.getInode());
+    folder.setIdentifier(newFolder.getIdentifier());
 
     return true;
   }
