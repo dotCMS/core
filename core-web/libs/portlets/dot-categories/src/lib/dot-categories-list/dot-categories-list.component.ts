@@ -29,23 +29,16 @@ import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotCategoryForm, DotMessageService } from '@dotcms/data-access';
 import { DotCategory } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotPermissionsIframeDialogComponent,
+    DotPermissionsIframeDialogData
+} from '@dotcms/ui';
 
 import { DotCategoriesListStore } from './store/dot-categories-list.store';
 
 import { DotCategoriesCreateComponent } from '../dot-categories-create/dot-categories-create.component';
 import { DotCategoriesImportComponent } from '../dot-categories-import/dot-categories-import.component';
-
-@Component({
-    selector: 'dot-categories-permissions-placeholder',
-    standalone: true,
-    imports: [DotMessagePipe],
-    template: `
-        <p class="p-4 text-center">{{ 'categories.permissions.placeholder' | dm }}</p>
-    `,
-    changeDetection: ChangeDetectionStrategy.OnPush
-})
-class DotCategoriesPermissionsPlaceholderComponent {}
 
 @Component({
     selector: 'dot-categories-list',
@@ -165,7 +158,7 @@ export class DotCategoriesListComponent {
             },
             {
                 label: this.dotMessageService.get('categories.permissions'),
-                command: () => this.openPermissionsDialog()
+                command: () => this.openPermissionsDialog(category)
             },
             {
                 label: this.dotMessageService.get('categories.delete'),
@@ -175,13 +168,30 @@ export class DotCategoriesListComponent {
         this.rowMenu()?.show(event);
     }
 
-    openPermissionsDialog(): void {
-        this.dialogService.open(DotCategoriesPermissionsPlaceholderComponent, {
+    openPermissionsDialog(category: DotCategory): void {
+        this.dialogService.open(DotPermissionsIframeDialogComponent, {
             header: this.dotMessageService.get('categories.permissions'),
-            width: '500px',
+            width: 'min(92vw, 75rem)',
+            contentStyle: { overflow: 'hidden' },
+            data: {
+                url: this.#buildPermissionsUrl(category.inode)
+            } satisfies DotPermissionsIframeDialogData,
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            modal: true,
+            appendTo: 'body',
+            draggable: false,
+            resizable: false,
+            position: 'center'
         });
+    }
+
+    #buildPermissionsUrl(inode: string): string {
+        const params = new URLSearchParams({
+            categoryInode: inode,
+            popup: 'true'
+        });
+        return `/html/portlet/ext/categories/permissions.jsp?${params.toString()}`;
     }
 
     confirmDeleteSingle(category: DotCategory): void {
