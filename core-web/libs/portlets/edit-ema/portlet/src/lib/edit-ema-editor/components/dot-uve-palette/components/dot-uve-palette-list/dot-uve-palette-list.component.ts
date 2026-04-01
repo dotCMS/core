@@ -416,6 +416,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @private
      */
     #updateControlsVisibility() {
+        this.$shouldHideControls.set(false);
         this.status$
             .pipe(
                 filter(
