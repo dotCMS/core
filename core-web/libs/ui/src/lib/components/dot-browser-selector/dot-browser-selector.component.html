@@ -15,7 +15,8 @@
                 [data]="content.data"
                 [loading]="store.contentIsLoading()"
                 [error]="content.error"
-                (onRowSelect)="store.setSelectedContent($event)" />
+                (onRowSelect)="store.setSelectedContent($event)"
+                (onUploadFile)="onFileUpload($event)" />
         </div>
     </div>
     <div class="flex flex-none justify-end flex-wrap gap-4">

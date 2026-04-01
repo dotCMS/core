@@ -79,4 +79,20 @@ export class DotDataViewComponent {
      * Emits the selected `DotCMSContentlet` when a row is selected.
      */
     onRowSelect = output<DotCMSContentlet>();
+
+    /**
+     * Emits the `File` selected by the user via the OS file picker.
+     */
+    onUploadFile = output<File>();
+
+    onFileSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0];
+
+        if (file) {
+            this.onUploadFile.emit(file);
+        }
+
+        input.value = '';
+    }
 }

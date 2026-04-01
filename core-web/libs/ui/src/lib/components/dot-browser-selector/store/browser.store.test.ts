@@ -12,6 +12,7 @@ import { fakeAsync, tick } from '@angular/core/testing';
 
 import { delay } from 'rxjs/operators';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ContentByFolderParams,
@@ -135,6 +136,7 @@ describe('DotBrowserSelectorStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotBrowserSelectorStore>>;
     let store: InstanceType<typeof DotBrowserSelectorStore>;
     let dotBrowsingService: SpyObject<DotBrowsingService>;
+    let dotUploadFileService: SpyObject<DotUploadFileService>;
 
     const createService = createServiceFactory({
         service: DotBrowserSelectorStore,
@@ -153,6 +155,9 @@ describe('DotBrowserSelectorStore', () => {
                         folders: []
                     })
                 )
+            }),
+            mockProvider(DotUploadFileService, {
+                uploadDotAsset: jest.fn().mockReturnValue(of({}))
             })
         ]
     });
@@ -161,6 +166,7 @@ describe('DotBrowserSelectorStore', () => {
         spectator = createService();
         store = spectator.service;
         dotBrowsingService = spectator.inject(DotBrowsingService);
+        dotUploadFileService = spectator.inject(DotUploadFileService);
         // Wait for onInit to complete (it calls loadFolders)
         tick(50);
     }));
@@ -522,5 +528,66 @@ describe('DotBrowserSelectorStore', () => {
             expect(store.folders().status).toBe(ComponentStatus.LOADED);
             expect(store.folders().data).toEqual(TREE_SELECT_SITES_MOCK);
         });
+    });
+
+    describe('Method: uploadFile', () => {
+        const folderParams: ContentByFolderParams = {
+            hostFolderId: 'demo.dotcms.com',
+            mimeTypes: ['image/jpeg', 'image/png']
+        };
+
+        it('should set content status to LOADING when upload starts', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            dotUploadFileService.uploadDotAsset.mockReturnValue(
+                of(createFakeContentlet()).pipe(delay(1))
+            );
+
+            store.uploadFile({ file: mockFile, folderParams });
+            expect(store.content().status).toBe(ComponentStatus.LOADING);
+
+            tick(50);
+        }));
+
+        it('should call uploadDotAsset with the file and hostFolder', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            dotUploadFileService.uploadDotAsset.mockReturnValue(of(createFakeContentlet()));
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(dotUploadFileService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
+                hostFolder: folderParams.hostFolderId
+            });
+        }));
+
+        it('should reload content after a successful upload', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            const uploadedContentlet = createFakeContentlet({ title: 'Uploaded' });
+            const refreshedContentlets = [uploadedContentlet];
+
+            dotUploadFileService.uploadDotAsset.mockReturnValue(of(uploadedContentlet));
+            dotBrowsingService.getContentByFolder.mockReturnValue(of(refreshedContentlets));
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith(folderParams);
+            expect(store.content().data).toEqual(refreshedContentlets);
+            expect(store.content().status).toBe(ComponentStatus.LOADED);
+        }));
+
+        it('should set content status to ERROR when upload fails', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            dotUploadFileService.uploadDotAsset.mockReturnValue(
+                throwError(new Error('Upload failed'))
+            );
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(store.content().status).toBe(ComponentStatus.ERROR);
+            expect(store.content().error).toBe('dot.file.field.dialog.upload.file.error');
+            expect(store.content().data).toEqual([]);
+        }));
     });
 });

@@ -14,6 +14,7 @@ import { computed, inject } from '@angular/core';
 
 import { exhaustMap, switchMap, tap } from 'rxjs/operators';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ContentByFolderParams,
@@ -184,5 +185,37 @@ export const DotBrowserSelectorStore = signalStore(
         onInit: () => {
             store.loadFolders();
         }
-    }))
+    })),
+    withMethods((store) => {
+        const dotUploadFileService = inject(DotUploadFileService);
+
+        return {
+            uploadFile: rxMethod<{ file: File; folderParams: ContentByFolderParams }>(
+                pipe(
+                    tap(() =>
+                        patchState(store, {
+                            content: { ...store.content(), status: ComponentStatus.LOADING }
+                        })
+                    ),
+                    switchMap(({ file, folderParams }) =>
+                        dotUploadFileService
+                            .uploadDotAsset(file, { hostFolder: folderParams.hostFolderId })
+                            .pipe(
+                                tapResponse({
+                                    next: () => store.loadContent(folderParams),
+                                    error: () =>
+                                        patchState(store, {
+                                            content: {
+                                                data: [],
+                                                status: ComponentStatus.ERROR,
+                                                error: 'dot.file.field.dialog.upload.file.error'
+                                            }
+                                        })
+                                })
+                            )
+                    )
+                )
+            )
+        };
+    })
 );

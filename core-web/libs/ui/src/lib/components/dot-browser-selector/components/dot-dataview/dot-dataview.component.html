@@ -26,7 +26,7 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="caption">
-        <div class="flex">
+        <div class="w-full flex justify-between">
             <p-iconField iconPosition="left">
                 <p-inputIcon styleClass="pi pi-search" />
                 <input
@@ -36,6 +36,20 @@
                     [placeholder]="'dot.file.field.dialog.select.existing.file.table.search' | dm"
                     (input)="datatable.filterGlobal(searchInput.value, 'contains')" />
             </p-iconField>
+
+            <input
+                #fileInput
+                data-testid="file-input"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                (change)="onFileSelected($event)" />
+            <p-button
+                data-testid="upload-btn"
+                [rounded]="true"
+                variant="outlined"
+                label="Upload"
+                (click)="fileInput.click()" />
         </div>
     </ng-template>
     <ng-template pTemplate="header">

@@ -113,6 +113,14 @@ export class DotBrowserSelectorComponent implements OnInit {
     }
 
     /**
+     * Handles the file selected via the OS file picker in the dataview,
+     * uploading it as a dotAsset to the current folder and refreshing the list.
+     */
+    onFileUpload(file: File): void {
+        this.store.uploadFile({ file, folderParams: this.$folderParams() });
+    }
+
+    /**
      * Retrieves the selected content from the store, fetches it by ID using the upload service,
      * and closes the dialog with the retrieved content.
      */
