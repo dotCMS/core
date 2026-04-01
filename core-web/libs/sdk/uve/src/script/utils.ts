@@ -2,6 +2,7 @@
 import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
+import { observeDocumentHeight } from '../lib/dom/document-height-observer';
 import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
@@ -203,99 +204,18 @@ export function shouldReportIframeHeightToParent(): boolean {
  * all listeners and disconnects the observers.
  */
 export function reportIframeHeight(): { destroyHeightReporter: () => void } {
-    const html = document.documentElement;
-
-    const measureAndSend = () => {
-        const height = html.offsetHeight;
-
-        // Skip zero — layout hasn't settled yet (mid-parse or mid-reflow).
-        // Sending 0 would reset the iframe to its default height and cause a flicker.
-        if (!height) {
-            return;
-        }
-
+    const { destroy } = observeDocumentHeight({
+        onHeightChange: (height) => {
         sendMessageToUVE({
             action: DotCMSUVEAction.IFRAME_HEIGHT,
             payload: { height }
         });
-    };
-
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    let rafOuter: number | null = null;
-    let rafInner: number | null = null;
-    let destroyed = false;
-
-    const scheduleSend = () => {
-        if (destroyed) {
-            return;
         }
-
-        // Debounce: reset on every call so rapid-fire changes (doc.write, DOM mutations,
-        // resize) collapse into a single measurement instead of causing repeated sends.
-        if (debounceTimer !== null) {
-            clearTimeout(debounceTimer);
-        }
-
-        debounceTimer = setTimeout(() => {
-            debounceTimer = null;
-            if (destroyed) {
-                return;
-            }
-
-            // Double rAF after debounce: the script can run mid-parse (doc.write /
-            // interactive readyState), so the first rAF may fire before the browser has
-            // finished reflowing the newly written DOM. The second rAF defers to the
-            // frame after layout is settled.
-            rafOuter = requestAnimationFrame(() => {
-                rafOuter = null;
-                if (destroyed) {
-                    return;
-                }
-                rafInner = requestAnimationFrame(() => {
-                    rafInner = null;
-                    if (!destroyed) {
-                        measureAndSend();
-                    }
-                });
-            });
-        }, 50);
-    };
-
-    const onLoad = () => scheduleSend();
-
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        scheduleSend();
-    } else {
-        window.addEventListener('load', onLoad);
-    }
-
-    // Catches viewport/font/image-driven height changes on the <html> element.
-    const ro = new ResizeObserver(() => scheduleSend());
-    ro.observe(html);
-
-    // Catches DOM removals and additions (e.g. contentlets deleted by the editor)
-    // that change the page height without firing a resize event on the window.
-    const mo = new MutationObserver(() => scheduleSend());
-    mo.observe(document.body ?? html, { childList: true, subtree: true });
+    });
 
     return {
         destroyHeightReporter: () => {
-            destroyed = true;
-            if (debounceTimer !== null) {
-                clearTimeout(debounceTimer);
-                debounceTimer = null;
-            }
-            if (rafOuter !== null) {
-                cancelAnimationFrame(rafOuter);
-                rafOuter = null;
-            }
-            if (rafInner !== null) {
-                cancelAnimationFrame(rafInner);
-                rafInner = null;
-            }
-            ro.disconnect();
-            mo.disconnect();
-            window.removeEventListener('load', onLoad);
+            destroy();
         }
     };
 }

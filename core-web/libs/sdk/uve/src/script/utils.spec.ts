@@ -9,262 +9,52 @@ import {
     setClientIsReady
 } from './utils';
 
+import * as documentHeightObserver from '../lib/dom/document-height-observer';
+
 describe('reportIframeHeight', () => {
     let postMessageSpy: jest.SpyInstance;
-    let roObserveSpy: jest.Mock;
-    let roDisconnectSpy: jest.Mock;
-    let roCallback: ResizeObserverCallback;
-    let moObserveSpy: jest.Mock;
-    let moDisconnectSpy: jest.Mock;
-    let moCallback: MutationCallback;
+    let destroySpy: jest.Mock;
+    let observeDocumentHeightSpy: jest.SpyInstance;
 
     beforeEach(() => {
-        jest.useFakeTimers();
-
         postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
-
-        roObserveSpy = jest.fn();
-        roDisconnectSpy = jest.fn();
-        global.ResizeObserver = jest.fn((cb: ResizeObserverCallback) => {
-            roCallback = cb;
-
-            return { observe: roObserveSpy, disconnect: roDisconnectSpy, unobserve: jest.fn() };
-        }) as unknown as typeof ResizeObserver;
-
-        moObserveSpy = jest.fn();
-        moDisconnectSpy = jest.fn();
-        global.MutationObserver = jest.fn((cb: MutationCallback) => {
-            moCallback = cb;
-
-            return {
-                observe: moObserveSpy,
-                disconnect: moDisconnectSpy,
-                takeRecords: jest.fn()
-            };
-        }) as unknown as typeof MutationObserver;
-
-        Object.defineProperty(document, 'readyState', {
-            configurable: true,
-            get: jest.fn().mockReturnValue('complete')
-        });
-
-        Object.defineProperty(document.documentElement, 'offsetHeight', {
-            configurable: true,
-            get: jest.fn().mockReturnValue(1000)
-        });
+        destroySpy = jest.fn();
+        observeDocumentHeightSpy = jest
+            .spyOn(documentHeightObserver, 'observeDocumentHeight')
+            .mockReturnValue({ destroy: destroySpy });
     });
 
     afterEach(() => {
-        jest.useRealTimers();
         jest.clearAllMocks();
     });
 
-    /** Flush debounce (50 ms) then both animation frames. */
-    const flushAll = () => {
-        jest.advanceTimersByTime(50);
-        jest.runAllTimers();
-    };
+    it('delegates observation to the shared height observer', () => {
+        reportIframeHeight();
 
-    describe('measurement', () => {
-        it('sends IFRAME_HEIGHT with document.documentElement.offsetHeight after debounce and double rAF', () => {
-            reportIframeHeight();
-            flushAll();
-
-            expect(postMessageSpy).toHaveBeenCalledWith(
-                { action: DotCMSUVEAction.IFRAME_HEIGHT, payload: { height: 1000 } },
-                '*'
-            );
-        });
-
-        it('does not send when offsetHeight is 0 (layout not yet settled)', () => {
-            Object.defineProperty(document.documentElement, 'offsetHeight', {
-                configurable: true,
-                get: jest.fn().mockReturnValue(0)
-            });
-
-            reportIframeHeight();
-            flushAll();
-
-            expect(postMessageSpy).not.toHaveBeenCalledWith(
-                expect.objectContaining({ action: DotCMSUVEAction.IFRAME_HEIGHT }),
-                expect.anything()
-            );
-        });
+        expect(observeDocumentHeightSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                onHeightChange: expect.any(Function)
+            })
+        );
     });
 
-    describe('scheduling', () => {
-        it('does not send before the debounce timer fires', () => {
-            reportIframeHeight();
+    it('sends IFRAME_HEIGHT when the shared observer reports a height', () => {
+        reportIframeHeight();
 
-            // Advance less than the 50 ms debounce — the timer is still pending
-            jest.advanceTimersByTime(49);
+        const onHeightChange = observeDocumentHeightSpy.mock.calls[0][0].onHeightChange;
+        onHeightChange(1000);
 
-            expect(postMessageSpy).not.toHaveBeenCalled();
-        });
-
-        it('collapses rapid-fire observer callbacks into a single send', () => {
-            reportIframeHeight();
-
-            // Simulate MO + RO firing multiple times before the debounce expires
-            roCallback([], {} as ResizeObserver);
-            moCallback([], {} as MutationObserver);
-            roCallback([], {} as ResizeObserver);
-
-            flushAll();
-
-            expect(postMessageSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('schedules a new send after the debounce settles when observers fire again', () => {
-            reportIframeHeight();
-            flushAll();
-            postMessageSpy.mockClear();
-
-            roCallback([], {} as ResizeObserver);
-            flushAll();
-
-            expect(postMessageSpy).toHaveBeenCalledTimes(1);
-        });
+        expect(postMessageSpy).toHaveBeenCalledWith(
+            { action: DotCMSUVEAction.IFRAME_HEIGHT, payload: { height: 1000 } },
+            '*'
+        );
     });
 
-    describe('initial readyState handling', () => {
-        it('schedules immediately when readyState is "complete"', () => {
-            Object.defineProperty(document, 'readyState', {
-                configurable: true,
-                get: jest.fn().mockReturnValue('complete')
-            });
+    it('destroys the shared observer when destroyHeightReporter is called', () => {
+        const { destroyHeightReporter } = reportIframeHeight();
+        destroyHeightReporter();
 
-            reportIframeHeight();
-            flushAll();
-
-            expect(postMessageSpy).toHaveBeenCalled();
-        });
-
-        it('schedules immediately when readyState is "interactive"', () => {
-            Object.defineProperty(document, 'readyState', {
-                configurable: true,
-                get: jest.fn().mockReturnValue('interactive')
-            });
-
-            reportIframeHeight();
-            flushAll();
-
-            expect(postMessageSpy).toHaveBeenCalled();
-        });
-
-        it('waits for the load event when readyState is "loading"', () => {
-            Object.defineProperty(document, 'readyState', {
-                configurable: true,
-                get: jest.fn().mockReturnValue('loading')
-            });
-
-            const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-            reportIframeHeight();
-
-            expect(addEventListenerSpy).toHaveBeenCalledWith('load', expect.any(Function));
-            // Nothing sent yet — load hasn't fired
-            jest.runAllTimers();
-            expect(postMessageSpy).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('observers', () => {
-        it('observes document.documentElement with ResizeObserver', () => {
-            reportIframeHeight();
-            expect(roObserveSpy).toHaveBeenCalledWith(document.documentElement);
-        });
-
-        it('observes document.body with MutationObserver (childList + subtree)', () => {
-            reportIframeHeight();
-            expect(moObserveSpy).toHaveBeenCalledWith(document.body, {
-                childList: true,
-                subtree: true
-            });
-        });
-
-        it('sends when ResizeObserver fires (e.g. image load changes html height)', () => {
-            reportIframeHeight();
-            flushAll();
-            postMessageSpy.mockClear();
-
-            roCallback([], {} as ResizeObserver);
-            flushAll();
-
-            expect(postMessageSpy).toHaveBeenCalledWith(
-                { action: DotCMSUVEAction.IFRAME_HEIGHT, payload: { height: 1000 } },
-                '*'
-            );
-        });
-
-        it('sends when MutationObserver fires (e.g. contentlet removed from DOM)', () => {
-            reportIframeHeight();
-            flushAll();
-            postMessageSpy.mockClear();
-
-            moCallback([], {} as MutationObserver);
-            flushAll();
-
-            expect(postMessageSpy).toHaveBeenCalledWith(
-                { action: DotCMSUVEAction.IFRAME_HEIGHT, payload: { height: 1000 } },
-                '*'
-            );
-        });
-    });
-
-    describe('destroyHeightReporter', () => {
-        it('stops sending after destroy is called', () => {
-            const { destroyHeightReporter } = reportIframeHeight();
-            destroyHeightReporter();
-            flushAll();
-
-            expect(postMessageSpy).not.toHaveBeenCalled();
-        });
-
-        it('cancels a pending debounce timer', () => {
-            const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
-            const { destroyHeightReporter } = reportIframeHeight();
-
-            // Debounce timer is pending; destroy should cancel it
-            destroyHeightReporter();
-
-            expect(clearTimeoutSpy).toHaveBeenCalled();
-        });
-
-        it('disconnects the ResizeObserver', () => {
-            const { destroyHeightReporter } = reportIframeHeight();
-            destroyHeightReporter();
-            expect(roDisconnectSpy).toHaveBeenCalled();
-        });
-
-        it('disconnects the MutationObserver', () => {
-            const { destroyHeightReporter } = reportIframeHeight();
-            destroyHeightReporter();
-            expect(moDisconnectSpy).toHaveBeenCalled();
-        });
-
-        it('removes the load event listener', () => {
-            Object.defineProperty(document, 'readyState', {
-                configurable: true,
-                get: jest.fn().mockReturnValue('loading')
-            });
-
-            const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
-            const { destroyHeightReporter } = reportIframeHeight();
-            destroyHeightReporter();
-
-            expect(removeEventListenerSpy).toHaveBeenCalledWith('load', expect.any(Function));
-        });
-
-        it('ignores observer callbacks fired after destroy', () => {
-            const { destroyHeightReporter } = reportIframeHeight();
-            destroyHeightReporter();
-
-            roCallback([], {} as ResizeObserver);
-            moCallback([], {} as MutationObserver);
-            flushAll();
-
-            expect(postMessageSpy).not.toHaveBeenCalled();
-        });
+        expect(destroySpy).toHaveBeenCalled();
     });
 });
 

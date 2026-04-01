@@ -18,6 +18,7 @@ import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SafeUrlPipe } from '@dotcms/ui';
+import { DocumentHeightObserverHandle, observeDocumentHeight } from '@dotcms/uve/internal';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
@@ -71,11 +72,7 @@ export class DotUveIframeComponent implements OnDestroy {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly destroyRef = inject(DestroyRef);
-    private iframeHeightObserver: ResizeObserver | null = null;
-    private iframeHeightResizeWindow: Window | null = null;
-    private iframeHeightResizeHandler: (() => void) | null = null;
-    private iframeHeightOuterRaf: number | null = null;
-    private iframeHeightInnerRaf: number | null = null;
+    private iframeHeightObserverHandle: DocumentHeightObserverHandle | null = null;
 
     /**
      * Current height of the iframe document content.
@@ -278,65 +275,17 @@ export class DotUveIframeComponent implements OnDestroy {
             return;
         }
 
-        const emitHeight = () => {
-            const height = Math.max(
-                doc.body?.scrollHeight ?? 0,
-                doc.documentElement?.scrollHeight ?? 0
-            );
-
-            this.iframeDocHeightChange.emit(height);
-        };
-
-        const scheduleEmit = () => {
-            if (this.iframeHeightOuterRaf !== null) {
-                return;
+        this.iframeHeightObserverHandle = observeDocumentHeight({
+            documentRef: doc,
+            windowRef: win,
+            onHeightChange: (height) => {
+                this.iframeDocHeightChange.emit(height);
             }
-
-            this.iframeHeightOuterRaf = requestAnimationFrame(() => {
-                this.iframeHeightOuterRaf = null;
-
-                this.iframeHeightInnerRaf = requestAnimationFrame(() => {
-                    this.iframeHeightInnerRaf = null;
-                    emitHeight();
-                });
-            });
-        };
-
-        this.iframeHeightResizeWindow = win;
-        this.iframeHeightResizeHandler = scheduleEmit;
-        this.iframeHeightObserver = new ResizeObserver(() => scheduleEmit());
-
-        this.iframeHeightObserver.observe(doc.documentElement);
-        if (doc.body) {
-            this.iframeHeightObserver.observe(doc.body);
-        }
-
-        win.addEventListener('resize', scheduleEmit);
-        scheduleEmit();
+        });
     }
 
     private stopIframeHeightTracking(): void {
-        this.iframeHeightObserver?.disconnect();
-        this.iframeHeightObserver = null;
-
-        if (this.iframeHeightResizeWindow && this.iframeHeightResizeHandler) {
-            this.iframeHeightResizeWindow.removeEventListener(
-                'resize',
-                this.iframeHeightResizeHandler
-            );
-        }
-
-        this.iframeHeightResizeWindow = null;
-        this.iframeHeightResizeHandler = null;
-
-        if (this.iframeHeightOuterRaf !== null) {
-            cancelAnimationFrame(this.iframeHeightOuterRaf);
-            this.iframeHeightOuterRaf = null;
-        }
-
-        if (this.iframeHeightInnerRaf !== null) {
-            cancelAnimationFrame(this.iframeHeightInnerRaf);
-            this.iframeHeightInnerRaf = null;
-        }
+        this.iframeHeightObserverHandle?.destroy();
+        this.iframeHeightObserverHandle = null;
     }
 }
