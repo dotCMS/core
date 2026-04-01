@@ -54,7 +54,7 @@ export class DotEditContentSidebarRulesComponent implements OnDestroy {
             data: { identifier: id },
             modal: true,
             appendTo: 'body',
-            closeOnEscape: true,
+            closeOnEscape: false,
             closable: true,
             draggable: false,
             keepInViewport: false,
