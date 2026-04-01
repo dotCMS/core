@@ -1,6 +1,5 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -116,7 +115,7 @@ public class PopulateIdentifierBaseTypeUtil {
     private int processBatch() {
         try(Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
-            int result= new DotConnect().executeUpdate(UPDATE_BATCH, conn);
+            int result = new DotConnect().executeUpdate(conn, UPDATE_BATCH);
             conn.commit();
             return result;
         } catch (final Exception e) {
