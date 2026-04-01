@@ -132,7 +132,7 @@ public class PopulateIdentifierBaseTypeJob extends DotStatefulJob {
      * that the populate query can actually complete. Orphaned rows (asset_subtype with no
      * matching structure entry) are excluded so they cannot keep the job running indefinitely.
      */
-    static boolean hasPendingRows() {
+    public static boolean hasPendingRows() {
         try {
             final List<?> result = new DotConnect()
                     .setSQL(PENDING_ROWS_QUERY)
