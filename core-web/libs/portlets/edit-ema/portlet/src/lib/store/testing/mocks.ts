@@ -1,5 +1,5 @@
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
-import { Orientation, PageType, UVEState } from '../models';
+import { IframeAccessMode, Orientation, PageType, UVEState } from '../models';
 
 /**
  * Base UVEState for store tests.
@@ -12,6 +12,7 @@ export const BASE_UVE_STATE: UVEState = {
     pageParams: null,
     pageLanguages: [],
     pageType: PageType.HEADLESS,
+    iframeAccessMode: IframeAccessMode.CROSS_ORIGIN,
     pageExperiment: null,
     pageErrorCode: null,
     workflowActions: [],
