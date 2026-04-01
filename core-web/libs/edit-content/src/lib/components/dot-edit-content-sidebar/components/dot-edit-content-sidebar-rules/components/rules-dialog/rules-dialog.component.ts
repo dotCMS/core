@@ -1,14 +1,16 @@
-import { of } from 'rxjs';
-
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
-import { RuleEngineModule } from '@dotcms/dot-rules';
+import { DotMessagePipe } from '@dotcms/ui';
 
 export interface RulesDialogData {
     identifier: string;
+}
+
+function buildRulesIframeUrl(identifier: string): string {
+    return `/dotAdmin/#/fromCore/rules?realmId=${identifier}`;
 }
 
 /**
@@ -19,20 +21,15 @@ export interface RulesDialogData {
     selector: 'dot-rules-dialog',
     templateUrl: './rules-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [RuleEngineModule],
-    providers: [
-        {
-            provide: ActivatedRoute,
-            useFactory: (config: DynamicDialogConfig<RulesDialogData>) => ({
-                params: of({ pageId: config.data?.identifier ?? '' }),
-                queryParams: of({})
-            }),
-            deps: [DynamicDialogConfig]
-        }
-    ]
+    imports: [DotMessagePipe]
 })
 export class DotRulesDialogComponent {
     readonly #config = inject(DynamicDialogConfig<RulesDialogData>);
+    readonly #sanitizer = inject(DomSanitizer);
 
-    readonly identifier = this.#config.data?.identifier ?? '';
+    readonly iframeSrc: SafeResourceUrl | null = (() => {
+        const id = this.#config.data?.identifier;
+        if (!id) return null;
+        return this.#sanitizer.bypassSecurityTrustResourceUrl(buildRulesIframeUrl(id));
+    })();
 }
