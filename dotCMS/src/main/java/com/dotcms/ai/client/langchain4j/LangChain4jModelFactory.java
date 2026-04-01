@@ -9,6 +9,7 @@ import dev.langchain4j.model.openai.OpenAiImageModel;
 
 import java.time.Duration;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Factory for creating LangChain4J model instances from a {@link ProviderConfig}.
@@ -31,16 +32,7 @@ public class LangChain4jModelFactory {
      * @return a configured {@link ChatModel}, or {@code null} if config is null
      */
     public static ChatModel buildChatModel(final ProviderConfig config) {
-        if (config == null || config.getProvider() == null) {
-            return null;
-        }
-        switch (config.getProvider().toLowerCase()) {
-            case "openai":
-                return buildOpenAiChatModel(config);
-            default:
-                throw new IllegalArgumentException("Unsupported chat provider: " + config.getProvider()
-                        + ". Supported in Phase 1: openai");
-        }
+        return build(config, "chat", LangChain4jModelFactory::buildOpenAiChatModel);
     }
 
     /**
@@ -50,16 +42,7 @@ public class LangChain4jModelFactory {
      * @return a configured {@link EmbeddingModel}, or {@code null} if config is null
      */
     public static EmbeddingModel buildEmbeddingModel(final ProviderConfig config) {
-        if (config == null || config.getProvider() == null) {
-            return null;
-        }
-        switch (config.getProvider().toLowerCase()) {
-            case "openai":
-                return buildOpenAiEmbeddingModel(config);
-            default:
-                throw new IllegalArgumentException("Unsupported embedding provider: " + config.getProvider()
-                        + ". Supported in Phase 1: openai");
-        }
+        return build(config, "embeddings", LangChain4jModelFactory::buildOpenAiEmbeddingModel);
     }
 
     /**
@@ -69,15 +52,21 @@ public class LangChain4jModelFactory {
      * @return a configured {@link ImageModel}, or {@code null} if config is null
      */
     public static ImageModel buildImageModel(final ProviderConfig config) {
+        return build(config, "image", LangChain4jModelFactory::buildOpenAiImageModel);
+    }
+
+    private static <T> T build(final ProviderConfig config,
+                                final String modelType,
+                                final Function<ProviderConfig, T> openAiFn) {
         if (config == null || config.getProvider() == null) {
             return null;
         }
         switch (config.getProvider().toLowerCase()) {
             case "openai":
-                return buildOpenAiImageModel(config);
+                return openAiFn.apply(config);
             default:
-                throw new IllegalArgumentException("Unsupported image provider: " + config.getProvider()
-                        + ". Supported in Phase 1: openai");
+                throw new IllegalArgumentException("Unsupported " + modelType + " provider: "
+                        + config.getProvider() + ". Supported in Phase 1: openai");
         }
     }
 
