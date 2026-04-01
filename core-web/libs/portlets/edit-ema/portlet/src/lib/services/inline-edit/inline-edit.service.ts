@@ -30,10 +30,7 @@ export const INLINE_CONTENT_STYLES = `
     }    
 `;
 
-/**
- * Shared TinyMCE options for EMA inline editing (excluding per-instance `setup`).
- * Exported so URL-handling defaults (e.g. convert_urls) stay covered by unit tests.
- */
+/** Shared TinyMCE options for EMA inline editing (excluding per-instance `setup`). */
 export const INLINE_EDIT_TINYMCE_BASE_OPTIONS = {
     menubar: false,
     inline: true,

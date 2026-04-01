@@ -2,11 +2,7 @@ import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
 import { ElementRef } from '@angular/core';
 
-import {
-    INLINE_CONTENT_STYLES,
-    INLINE_EDIT_TINYMCE_BASE_OPTIONS,
-    InlineEditService
-} from './inline-edit.service';
+import { INLINE_CONTENT_STYLES, InlineEditService } from './inline-edit.service';
 
 import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
@@ -16,8 +12,28 @@ describe('InlineEditService', () => {
 
     beforeEach(() => (spectator = createService()));
 
-    it('should disable TinyMCE URL conversion so root-relative paths are preserved on serialize', () => {
-        expect(INLINE_EDIT_TINYMCE_BASE_OPTIONS.convert_urls).toBe(false);
+    it.each([
+        { mode: 'minimal', label: 'minimal' },
+        { mode: 'full', label: 'full' },
+        { mode: '', label: 'default (minimal)' }
+    ])('should pass convert_urls: false to tinymce.init ($label)', ({ mode }) => {
+        const initMock = jest.fn().mockResolvedValue([]);
+        const iframeWindow = {
+            tinymce: { init: initMock }
+        } as unknown as Window;
+
+        spectator.service.setIframeWindow(iframeWindow);
+        spectator.service.setTargetInlineMCEDataset({
+            inode: '1',
+            fieldName: 'body',
+            language: 'en',
+            mode
+        });
+
+        spectator.service.initEditor();
+
+        expect(initMock).toHaveBeenCalledTimes(1);
+        expect(initMock.mock.calls[0][0].convert_urls).toBe(false);
     });
 
     it('should inject inline edit', () => {
