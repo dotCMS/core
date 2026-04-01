@@ -14,25 +14,6 @@
     }">
     <ng-template #start>
         <div class="flex items-center gap-1" [class.p-0]="preview || live">
-            @if ($isEditMode() && $canEditPage()) {
-                <p-button
-                    [text]="true"
-                    size="small"
-                    [rounded]="true"
-                    (click)="togglePalette()"
-                    data-testId="uve-toolbar-palette-toggle">
-                    <img
-                        src="./assets/edit-uve-toolbar/left_panel_open.svg"
-                        alt="Left Panel Open"
-                        [class.hidden]="!$isPaletteOpen()"
-                        data-testId="palette-open-icon" />
-                    <img
-                        src="./assets/edit-uve-toolbar/left_panel_close.svg"
-                        alt="Left Panel Close"
-                        [class.hidden]="$isPaletteOpen()"
-                        data-testId="palette-close-icon" />
-                </p-button>
-            }
             <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
             <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
             <p-button
@@ -54,7 +35,7 @@
                                 <div class="flex min-w-0 items-center gap-2">
                                     <a
                                         [href]="url.value"
-                                        class="block min-w-0 flex-1 truncate text-gray-900 !no-underline hover:underline"
+                                        class="block min-w-0 flex-1 truncate text-gray-900 no-underline! hover:underline"
                                         target="_blank"
                                         rel="noreferrer noopener">
                                         {{ url.value }}
@@ -80,7 +61,7 @@
                 [pTooltip]="'uve.toolbar.page.api.url' | dm"
                 tooltipPosition="bottom"
                 pButton
-                class="text-[var(--color-palette-primary)]! visited:text-[var(--color-palette-primary)]! !no-underline"
+                class="text-(--color-palette-primary)! visited:text-(--color-palette-primary)! no-underline!"
                 target="_blank"
                 data-testId="uve-toolbar-api-link"
                 [href]="$apiURL()">

@@ -261,10 +261,6 @@ export class DotUveToolbarComponent {
         this.#store.pageReload({ publishDate: publishDateUTC });
     }
 
-    protected togglePalette(): void {
-        this.#store.setPaletteOpen(!this.$isPaletteOpen());
-    }
-
     /**
      * Handle toggle lock event from presentational DotToggleLockButtonComponent
      * @param event Lock toggle event with inode and lock states

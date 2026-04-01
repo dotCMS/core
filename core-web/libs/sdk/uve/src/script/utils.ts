@@ -168,24 +168,31 @@ export function listenBlockEditorInlineEvent() {
 /**
  * Reports the iframe document height to the parent UVE shell via postMessage.
  *
- * Uses ResizeObserver + resize/load events so the parent is notified whenever
- * the page height changes — not just on initial load. Works for both traditional
- * (VTL) and headless pages.
+ * Uses ResizeObserver on <html> for viewport/font/image-driven size changes, and
+ * MutationObserver on <body> to catch DOM removals (e.g. contentlets deleted by
+ * the editor) that shrink the page without triggering a resize event.
  *
- * Measurement is scheduled with double requestAnimationFrame so it runs after
- * the browser has finished layout and paint. That avoids posting a height while
- * subtree/layout is still settling (fonts, images, late injects). ResizeObserver
- * and resize bursts are coalesced to at most one post per frame pair.
+ * Measurement reads `document.documentElement.offsetHeight` — the actual rendered
+ * height of the <html> element after layout. `scrollHeight` is intentionally avoided
+ * because it does not reliably decrease when content is removed from the DOM.
+ *
+ * Height sends are coalesced to at most one per double-requestAnimationFrame pair
+ * so they always run after layout and paint have settled.
  *
  * @returns {{ destroyHeightReporter: () => void }} Cleanup function that removes
- * all listeners and disconnects the ResizeObserver.
+ * all listeners and disconnects the observers.
  */
 export function reportIframeHeight(): { destroyHeightReporter: () => void } {
+    const html = document.documentElement;
+
     const measureAndSend = () => {
-        const height = Math.max(
-            document.body?.scrollHeight ?? 0,
-            document.documentElement?.scrollHeight ?? 0
-        );
+        const height = html.offsetHeight;
+
+        // Skip zero — layout hasn't settled yet (mid-parse or mid-reflow).
+        // Sending 0 would reset the iframe to its default height and cause a flicker.
+        if (!height) {
+            return;
+        }
 
         sendMessageToUVE({
             action: DotCMSUVEAction.IFRAME_HEIGHT,
@@ -193,30 +200,48 @@ export function reportIframeHeight(): { destroyHeightReporter: () => void } {
         });
     };
 
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     let rafOuter: number | null = null;
     let rafInner: number | null = null;
     let destroyed = false;
 
     const scheduleSend = () => {
-        if (destroyed || rafOuter !== null) {
+        if (destroyed) {
             return;
         }
-        rafOuter = requestAnimationFrame(() => {
-            rafOuter = null;
+
+        // Debounce: reset on every call so rapid-fire changes (doc.write, DOM mutations,
+        // resize) collapse into a single measurement instead of causing repeated sends.
+        if (debounceTimer !== null) {
+            clearTimeout(debounceTimer);
+        }
+
+        debounceTimer = setTimeout(() => {
+            debounceTimer = null;
             if (destroyed) {
                 return;
             }
-            rafInner = requestAnimationFrame(() => {
-                rafInner = null;
-                if (!destroyed) {
-                    measureAndSend();
+
+            // Double rAF after debounce: the script can run mid-parse (doc.write /
+            // interactive readyState), so the first rAF may fire before the browser has
+            // finished reflowing the newly written DOM. The second rAF defers to the
+            // frame after layout is settled.
+            rafOuter = requestAnimationFrame(() => {
+                rafOuter = null;
+                if (destroyed) {
+                    return;
                 }
+                rafInner = requestAnimationFrame(() => {
+                    rafInner = null;
+                    if (!destroyed) {
+                        measureAndSend();
+                    }
+                });
             });
-        });
+        }, 50);
     };
 
     const onLoad = () => scheduleSend();
-    const onResize = () => scheduleSend();
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         scheduleSend();
@@ -224,17 +249,22 @@ export function reportIframeHeight(): { destroyHeightReporter: () => void } {
         window.addEventListener('load', onLoad);
     }
 
-    window.addEventListener('resize', onResize);
-
+    // Catches viewport/font/image-driven height changes on the <html> element.
     const ro = new ResizeObserver(() => scheduleSend());
-    ro.observe(document.documentElement);
-    if (document.body) {
-        ro.observe(document.body);
-    }
+    ro.observe(html);
+
+    // Catches DOM removals and additions (e.g. contentlets deleted by the editor)
+    // that change the page height without firing a resize event on the window.
+    const mo = new MutationObserver(() => scheduleSend());
+    mo.observe(document.body ?? html, { childList: true, subtree: true });
 
     return {
         destroyHeightReporter: () => {
             destroyed = true;
+            if (debounceTimer !== null) {
+                clearTimeout(debounceTimer);
+                debounceTimer = null;
+            }
             if (rafOuter !== null) {
                 cancelAnimationFrame(rafOuter);
                 rafOuter = null;
@@ -244,8 +274,8 @@ export function reportIframeHeight(): { destroyHeightReporter: () => void } {
                 rafInner = null;
             }
             ro.disconnect();
+            mo.disconnect();
             window.removeEventListener('load', onLoad);
-            window.removeEventListener('resize', onResize);
         }
     };
 }
