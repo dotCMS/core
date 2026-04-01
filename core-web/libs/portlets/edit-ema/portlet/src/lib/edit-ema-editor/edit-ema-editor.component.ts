@@ -101,7 +101,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { PageType } from '../store/models';
+import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     areContainersEquals,
@@ -113,8 +113,6 @@ import {
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
-
-type IframeHeightSyncSource = 'unknown' | 'local' | 'message';
 
 // Message keys constants
 const MESSAGE_KEY = {
@@ -262,7 +260,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
     #iframeResizeObserver: ResizeObserver | null = null;
-    #iframeHeightSyncSource: IframeHeightSyncSource = 'unknown';
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -408,12 +405,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const url = this.uveStore.$iframeURL();
         return (typeof url === 'string' ? url : '') || '';
     });
-    readonly $resetIframeHeightSyncSourceEffect = effect(() => {
-        this.$iframeSrc();
-        untracked(() => {
-            this.#iframeHeightSyncSource = 'unknown';
-        });
-    });
     readonly $iframePointerEvents = computed((): string => {
         const { dragIsActive } = getEditorStates(this.uveStore.editorState());
         return dragIsActive ? 'none' : 'auto';
@@ -507,7 +498,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 if (this.#isUvePostMessage(data)) {
                     if (
                         data.action === DotCMSUVEAction.IFRAME_HEIGHT &&
-                        !this.#shouldHandleIframeHeightMessage()
+                        this.uveStore.iframeAccessMode() === IframeAccessMode.LOCAL
                     ) {
                         return;
                     }
@@ -662,7 +653,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     onIframePageLoad(): void {
-        this.#iframeHeightSyncSource = this.#canMeasureIframeLocally() ? 'local' : 'message';
         this.iframeMessenger.setIframeWindow(this.iframe?.nativeElement.contentWindow ?? null);
 
         if (this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
@@ -671,7 +661,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     onIframeDocHeightChange(height: number): void {
-        this.#iframeHeightSyncSource = 'local';
         this.uveStore.viewSetIframeDocHeight(height);
         this.#clampScrollWithinBounds();
     }
@@ -1051,34 +1040,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     #isUvePostMessage(data: unknown): data is PostMessage {
         return !!data && typeof data === 'object' && 'action' in data;
-    }
-
-    #shouldHandleIframeHeightMessage(): boolean {
-        if (this.#iframeHeightSyncSource === 'local') {
-            return false;
-        }
-
-        if (this.#canMeasureIframeLocally()) {
-            this.#iframeHeightSyncSource = 'local';
-            return false;
-        }
-
-        this.#iframeHeightSyncSource = 'message';
-        return true;
-    }
-
-    #canMeasureIframeLocally(): boolean {
-        const iframeElement = this.iframe?.nativeElement;
-
-        if (!iframeElement) {
-            return false;
-        }
-
-        try {
-            return !!iframeElement.contentDocument?.documentElement && !!iframeElement.contentWindow;
-        } catch {
-            return false;
-        }
     }
 
     private handleDuplicatedContentlet() {

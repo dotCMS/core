@@ -16,6 +16,7 @@ import {
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
 
 import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
@@ -25,7 +26,7 @@ import {
     PageContainer,
     SaveStylePropertiesPayload
 } from '../../../shared/models';
-import { isForwardOrPage } from '../../../utils';
+import { getIframeAccessMode, isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { PageSnapshot } from '../page/withPage';
 
@@ -104,17 +105,21 @@ export function withPageApi(deps: WithPageApiDeps) {
                  * Does not trigger a page load - call pageLoad() or pageReload() after this
                  */
                 pageUpdateParams: (params: Partial<DotPageAssetParams>) => {
+                    const nextPageParams = {
+                        ...store.pageParams(),
+                        ...params
+                    };
+
                     patchState(store, {
-                        pageParams: {
-                            ...store.pageParams(),
-                            ...params
-                        }
+                        pageParams: nextPageParams,
+                        iframeAccessMode: getIframeAccessMode(nextPageParams.clientHost)
                     });
                 }
             };
         }),
         withMethods((store) => {
             const router = inject(Router);
+            const dotWindow = inject(WINDOW);
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
             const dotExperimentsService = inject(DotExperimentsService);
@@ -230,6 +235,10 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                 pageType: pageParams.clientHost
                                                     ? PageType.HEADLESS
                                                     : PageType.TRADITIONAL,
+                                                iframeAccessMode: getIframeAccessMode(
+                                                    pageParams.clientHost,
+                                                    dotWindow.location.origin
+                                                ),
                                                 uveStatus: UVE_STATUS.LOADED
                                             });
                                         })

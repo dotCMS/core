@@ -31,6 +31,11 @@ export enum PageType {
     HEADLESS = 'headless'
 }
 
+export enum IframeAccessMode {
+    LOCAL = 'local',
+    CROSS_ORIGIN = 'cross-origin'
+}
+
 /**
  * View State (transient)
  * Manages editor view modes (edit vs preview) and preview configuration.
@@ -80,6 +85,7 @@ export interface UVEState {
     pageParams: DotPageAssetParams | null;
     pageLanguages: DotLanguage[];
     pageType: PageType;
+    iframeAccessMode: IframeAccessMode;
     pageExperiment: DotExperiment | null;
     pageErrorCode: number | null;
 

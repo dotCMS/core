@@ -11,7 +11,7 @@ import { DotUveIframeComponent } from './dot-uve-iframe.component';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { PageType } from '../../../store/models';
+import { IframeAccessMode, PageType } from '../../../store/models';
 import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils/ema-legacy-script-injection';
 
 describe('DotUveIframeComponent', () => {
@@ -27,6 +27,7 @@ describe('DotUveIframeComponent', () => {
     let editorEnableInlineEditSignal: WritableSignal<boolean>;
     let iframeDocHeightSignal: WritableSignal<number>;
     let legacyScriptInjectionEnabledSignal: WritableSignal<boolean>;
+    let iframeAccessModeSignal: WritableSignal<IframeAccessMode>;
     let resizeObserverObserve: jest.Mock;
     let resizeObserverDisconnect: jest.Mock;
     let originalResizeObserver: typeof ResizeObserver;
@@ -70,6 +71,7 @@ describe('DotUveIframeComponent', () => {
                     $pageRender: pageRenderSignal,
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
+                    iframeAccessMode: iframeAccessModeSignal,
                     $viewIframeDocHeight: iframeDocHeightSignal,
                     $isEmaLegacyScriptInjectionEnabled: legacyScriptInjectionEnabledSignal,
                     setSeoData: jest.fn()
@@ -96,6 +98,7 @@ describe('DotUveIframeComponent', () => {
         global.cancelAnimationFrame = jest.fn();
 
         pageTypeSignal = signal(PageType.HEADLESS);
+        iframeAccessModeSignal = signal(IframeAccessMode.CROSS_ORIGIN);
         pageRenderSignal = signal(mockPageRender);
         editorEnableInlineEditSignal = signal(false);
         iframeDocHeightSignal = signal(0);
@@ -205,6 +208,7 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should emit iframe document height when the iframe document is accessible', () => {
+            iframeAccessModeSignal.set(IframeAccessMode.LOCAL);
             const mockIframe = document.createElement('iframe');
             const mockDoc = document.implementation.createHTMLDocument();
             const addEventListenerSpy = jest.fn();
@@ -253,6 +257,7 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should skip local height tracking when iframe access is blocked', () => {
+            iframeAccessModeSignal.set(IframeAccessMode.LOCAL);
             const mockIframe = document.createElement('iframe');
 
             Object.defineProperty(mockIframe, 'contentDocument', {
@@ -267,6 +272,14 @@ describe('DotUveIframeComponent', () => {
             expect(() => component.onIframeLoad()).not.toThrow();
             expect(resizeObserverObserve).not.toHaveBeenCalled();
         });
+
+        it('should skip local height tracking when iframe access mode is cross-origin', () => {
+            iframeAccessModeSignal.set(IframeAccessMode.CROSS_ORIGIN);
+
+            component.onIframeLoad();
+
+            expect(resizeObserverObserve).not.toHaveBeenCalled();
+        });
     });
 
     describe('onIframeLoad - TRADITIONAL page type', () => {
@@ -276,6 +289,7 @@ describe('DotUveIframeComponent', () => {
 
         beforeEach(() => {
             pageTypeSignal.set(PageType.TRADITIONAL);
+            iframeAccessModeSignal.set(IframeAccessMode.LOCAL);
 
             // Create mock iframe with contentDocument and contentWindow
             mockIframe = document.createElement('iframe');

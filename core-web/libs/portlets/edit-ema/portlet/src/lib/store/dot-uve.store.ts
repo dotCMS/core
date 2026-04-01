@@ -11,7 +11,7 @@ import { withPageApi } from './features/page-api/withPageApi';
 import { withTrack } from './features/track/withTrack';
 import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
-import { Orientation, PageType, UVEState } from './models';
+import { IframeAccessMode, Orientation, PageType, UVEState } from './models';
 
 import {
     DEFAULT_DEVICE,
@@ -33,6 +33,7 @@ const initialState: UVEState = {
     pageParams: null,
     pageLanguages: [],
     pageType: PageType.TRADITIONAL,
+    iframeAccessMode: IframeAccessMode.LOCAL,
     pageExperiment: null,
     pageErrorCode: null,
     // Workflow state (managed by withWorkflow)

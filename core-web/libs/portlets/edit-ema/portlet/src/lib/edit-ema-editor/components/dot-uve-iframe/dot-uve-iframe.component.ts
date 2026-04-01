@@ -21,7 +21,7 @@ import { SafeUrlPipe } from '@dotcms/ui';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { PageType } from '../../../store/models';
+import { IframeAccessMode, PageType } from '../../../store/models';
 import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
 
 /**
@@ -253,6 +253,10 @@ export class DotUveIframeComponent implements OnDestroy {
 
     private startIframeHeightTracking(): void {
         this.stopIframeHeightTracking();
+
+        if (this.uveStore.iframeAccessMode() !== IframeAccessMode.LOCAL) {
+            return;
+        }
 
         const iframeElement = this.iframe?.nativeElement;
 

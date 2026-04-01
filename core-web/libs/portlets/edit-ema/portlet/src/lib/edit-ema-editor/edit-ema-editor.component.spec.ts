@@ -109,6 +109,7 @@ import {
 } from '../shared/mocks';
 import { ActionPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { IframeAccessMode } from '../store/models';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -565,6 +566,8 @@ describe('EditEmaEditorComponent', () => {
                 const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
                 const mockDoc = document.implementation.createHTMLDocument();
 
+                patchState(store, { iframeAccessMode: IframeAccessMode.LOCAL });
+
                 Object.defineProperty(iframe.nativeElement, 'contentDocument', {
                     configurable: true,
                     value: mockDoc
@@ -584,6 +587,8 @@ describe('EditEmaEditorComponent', () => {
 
             it('should handle iframe height postMessage when the iframe is cross-origin', () => {
                 const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                patchState(store, { iframeAccessMode: IframeAccessMode.CROSS_ORIGIN });
 
                 Object.defineProperty(iframe.nativeElement, 'contentDocument', {
                     configurable: true,
