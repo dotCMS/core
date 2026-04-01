@@ -1,9 +1,9 @@
-import { from as observableFrom, Subject, Observable, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, from as observableFrom, Subject } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 
-import { mergeMap, reduce, map, tap } from 'rxjs/operators';
+import { map, mergeMap, reduce, tap } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
 
 import { ApiRoot, CwError, SiteService } from '@dotcms/dotcms-js';
@@ -268,7 +268,7 @@ export class RuleService {
     _ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
     _conditionTypes: { [key: string]: ServerSideTypeModel } = {};
 
-    public _errors$: Subject<{ message: string; response: Response }> = new Subject();
+    public _errors$: Subject<HttpErrorResponse> = new Subject();
 
     protected _actionsEndpointUrl: string;
     // tslint:disable-next-line:no-unused-variable

@@ -1,9 +1,12 @@
-@if (identifier) {
-    <div data-testId="rules-container" class="w-full h-full">
-        <dot-rule-engine-container />
-    </div>
+@if (iframeSrc) {
+    <iframe
+        [src]="iframeSrc"
+        class="block w-full border-none"
+        [style.min-height]="'70vh'"
+        title="Content rules"
+        data-testId="rules-iframe"></iframe>
 } @else {
-    <div data-testId="rules-empty" class="flex align-items-center justify-content-center p-4">
-        No content selected
-    </div>
+    <p class="p-3 m-0 text-500" data-testId="rules-empty">
+        {{ 'edit.content.sidebar.rules.no.content' | dm }}
+    </p>
 }
