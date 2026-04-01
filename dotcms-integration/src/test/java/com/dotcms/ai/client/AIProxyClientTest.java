@@ -70,7 +70,7 @@ public class AIProxyClientTest {
      * Then the response should contain a non-null JSON with model name "gpt-4o-mini"
      */
     @Test
-    public void test_callToAI_happiestPath() {
+    public void test_callToAI_withGpt4oMini_happiestPath() {
         final JSONObjectAIRequest request = textRequest(
                 "gpt-4o-mini",
                 "What are the major achievements of the Apollo space program?");
@@ -89,7 +89,7 @@ public class AIProxyClientTest {
      * Then the response body goes to the stream; AIResponse.getResponse() is null
      */
     @Test
-    public void test_callToAI_withProvidedOutput() {
+    public void test_callToAI_withGpt4oMini_andProvidedOutput() {
         final JSONObjectAIRequest request = textRequest(
                 "gpt-4o-mini",
                 "What are the major achievements of the Apollo space program?");
@@ -109,7 +109,7 @@ public class AIProxyClientTest {
      * Then a RuntimeException is thrown (LangChain4J wraps the connection error)
      */
     @Test
-    public void test_callToAI_withNetworkIssues() {
+    public void test_callToAI_withGpt4oMini_andNetworkIssues() {
         final JSONObjectAIRequest request = textRequest(
                 "gpt-4o-mini",
                 "What are the major achievements of the Apollo space program?");

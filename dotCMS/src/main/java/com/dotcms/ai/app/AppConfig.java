@@ -1,6 +1,8 @@
 package com.dotcms.ai.app;
 
 import com.dotcms.ai.domain.Model;
+import com.dotcms.ai.exception.DotAIModelNotFoundException;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -8,6 +10,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +32,7 @@ public class AppConfig implements Serializable {
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
     private static final String AI_DEBUG_LOGGING_KEY = "AI_DEBUG_LOGGING";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
@@ -279,7 +282,12 @@ public class AppConfig implements Serializable {
      * @param type the type of the model to find
      */
     public AIModel resolveModel(final AIModelType type) {
-        return AIModels.get().resolveModel(host, type);
+        switch (type) {
+            case TEXT: return model;
+            case IMAGE: return imageModel;
+            case EMBEDDINGS: return embeddingsModel;
+            default: return AIModel.NOOP_MODEL;
+        }
     }
 
     /**
@@ -291,7 +299,12 @@ public class AppConfig implements Serializable {
      * @return the resolved Model
      */
     public Tuple2<AIModel, Model> resolveModelOrThrow(final String modelName, final AIModelType type) {
-        return AIModels.get().resolveModelOrThrow(this, modelName, type);
+        final AIModel aiModel = resolveModel(type);
+        if (aiModel == AIModel.NOOP_MODEL) {
+            throw new DotAIModelNotFoundException(
+                    String.format("Unable to find model: [%s] of type [%s].", modelName, type));
+        }
+        return Tuple.of(aiModel, aiModel.getModel(modelName));
     }
 
     /**

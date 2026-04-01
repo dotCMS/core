@@ -26,6 +26,7 @@ import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
+import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
@@ -110,7 +111,7 @@ public class OpenAIImageAPIImpl implements ImageAPI {
             final DotTempFile file;
 
             if (!UtilMethods.isEmpty(() -> url)) {
-                file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
+                file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), URI.create(url).toURL(), 20);
             } else if (!UtilMethods.isEmpty(() -> b64)) {
                 final byte[] imageBytes = Base64.getDecoder().decode(b64);
                 file = tempFileApi.createTempFile(fileName, getRequest(), new ByteArrayInputStream(imageBytes));

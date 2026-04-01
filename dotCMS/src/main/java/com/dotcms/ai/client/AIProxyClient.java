@@ -38,9 +38,9 @@ public class AIProxyClient {
     private AIProxyClient() {
         proxiedClients = new ConcurrentHashMap<>();
         addClient(
-                AIProvider.OPEN_AI.name(),
+                AIProvider.NONE.name(),
                 AIProxiedClient.of(LangChain4jAIClient.get(), AIProxyStrategy.DEFAULT));
-        currentProvider = new AtomicReference<>(AIProvider.OPEN_AI);
+        currentProvider = new AtomicReference<>(AIProvider.NONE);
     }
 
     public static AIProxyClient get() {

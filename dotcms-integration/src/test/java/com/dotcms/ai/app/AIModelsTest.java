@@ -1,9 +1,6 @@
 package com.dotcms.ai.app;
 
 import com.dotcms.ai.AiTest;
-import com.dotcms.ai.domain.Model;
-import com.dotcms.ai.domain.ModelStatus;
-import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -11,7 +8,6 @@ import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.github.tomakehurst.wiremock.WireMockServer;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -19,14 +15,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -63,83 +53,6 @@ public class AIModelsTest {
         host = new SiteDataGen().nextPersisted();
         otherHost = new SiteDataGen().nextPersisted();
         List.of(host, otherHost).forEach(h -> Try.of(() -> AiTest.aiAppSecrets(h)).get());
-    }
-
-    /**
-     * Given a set of models loaded into the AIModels instance
-     * When the findModel method is called with various model names and types
-     * Then the correct models should be found and returned.
-     */
-    @Test
-    public void test_loadModels_andFindThem() throws Exception {
-        AiTest.aiAppSecrets(
-                    host,
-                    "text-model-1,text-model-2",
-                    "image-model-3,image-model-4",
-                    "embeddings-model-5,embeddings-model-6");
-        AiTest.aiAppSecrets(otherHost, "text-model-1", null, null);
-
-        final String hostId = host.getHostname();
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-
-        final Optional<AIModel> notFound = aiModels.findModel(appConfig, "some-invalid-model-name", AIModelType.TEXT);
-        assertTrue(notFound.isEmpty());
-
-        final Optional<AIModel> text1 = aiModels.findModel(appConfig, "text-model-1", AIModelType.TEXT);
-        final Optional<AIModel> text2 = aiModels.findModel(appConfig, "text-model-2", AIModelType.TEXT);
-        assertModels(text1, text2, AIModelType.TEXT, true);
-
-        final Optional<AIModel> image1 = aiModels.findModel(appConfig, "image-model-3", AIModelType.IMAGE);
-        final Optional<AIModel> image2 = aiModels.findModel(appConfig, "image-model-4", AIModelType.IMAGE);
-        assertModels(image1, image2, AIModelType.IMAGE, true);
-
-        final Optional<AIModel> embeddings1 = aiModels.findModel(appConfig, "embeddings-model-5", AIModelType.EMBEDDINGS);
-        final Optional<AIModel> embeddings2 = aiModels.findModel(appConfig, "embeddings-model-6", AIModelType.EMBEDDINGS);
-        assertModels(embeddings1, embeddings2, AIModelType.EMBEDDINGS, true);
-
-        assertNotSame(text1.get(), image1.get());
-        assertNotSame(text1.get(), embeddings1.get());
-        assertNotSame(image1.get(), embeddings1.get());
-
-        final Optional<AIModel> text3 = aiModels.findModel(hostId, AIModelType.TEXT);
-        assertSameModels(text3, text1, text2);
-
-        final Optional<AIModel> image3 = aiModels.findModel(hostId, AIModelType.IMAGE);
-        assertSameModels(image3, image1, image2);
-
-        final Optional<AIModel> embeddings3 = aiModels.findModel(hostId, AIModelType.EMBEDDINGS);
-        assertSameModels(embeddings3, embeddings1, embeddings2);
-
-        final AppConfig otherAppConfig = ConfigService.INSTANCE.config(otherHost);
-        final Optional<AIModel> text4 = aiModels.findModel(otherAppConfig, "text-model-1", AIModelType.TEXT);
-        assertTrue(text3.isPresent());
-        assertNotSame(text1.get(), text4.get());
-
-        AiTest.aiAppSecrets(
-                host,
-                "text-model-7,text-model-8",
-                "image-model-9,image-model-10",
-                "embeddings-model-11, embeddings-model-12");
-
-        final Optional<AIModel> text7 = aiModels.findModel(otherAppConfig, "text-model-7", AIModelType.TEXT);
-        final Optional<AIModel> text8 = aiModels.findModel(otherAppConfig, "text-model-8", AIModelType.TEXT);
-        assertNotPresentModels(text7, text8);
-
-        final Optional<AIModel> image9 = aiModels.findModel(otherAppConfig, "image-model-9", AIModelType.IMAGE);
-        final Optional<AIModel> image10 = aiModels.findModel(otherAppConfig, "image-model-10", AIModelType.IMAGE);
-        assertNotPresentModels(image9, image10);
-
-        final Optional<AIModel> embeddings11 = aiModels.findModel(otherAppConfig, "embeddings-model-11", AIModelType.EMBEDDINGS);
-        final Optional<AIModel> embeddings12 = aiModels.findModel(otherAppConfig, "embeddings-model-12", AIModelType.EMBEDDINGS);
-        assertNotPresentModels(embeddings11, embeddings12);
-
-        final List<SimpleModel> available = aiModels.getAvailableModels();
-        final List<String> availableNames = List.of(
-                "gpt-3.5-turbo-16k", "dall-e-3", "text-embedding-ada-002",
-                "text-model-1", "text-model-7", "text-model-8",
-                "image-model-9", "image-model-10",
-                "embeddings-model-11", "embeddings-model-12");
-        assertTrue(available.stream().anyMatch(model -> availableNames.contains(model.getName())));
     }
 
     /**

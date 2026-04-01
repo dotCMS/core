@@ -2,12 +2,10 @@ package com.dotcms.ai.app;
 
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.domain.ModelStatus;
-import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.ai.model.SimpleModel;
 import io.vavr.Lazy;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import io.vavr.Tuple3;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -28,7 +26,6 @@ public class AIModels {
     private static final Lazy<AIModels> INSTANCE = Lazy.of(AIModels::new);
 
     private final ConcurrentMap<String, List<Tuple2<AIModelType, AIModel>>> internalModels;
-    private final ConcurrentMap<Tuple3<String, Model, AIModelType>, AIModel> modelsByName;
 
     public static AIModels get() {
         return INSTANCE.get();
@@ -36,7 +33,6 @@ public class AIModels {
 
     private AIModels() {
         internalModels = new ConcurrentHashMap<>();
-        modelsByName = new ConcurrentHashMap<>();
     }
 
     /**
@@ -81,36 +77,9 @@ public class AIModels {
                         .map(model -> Tuple.of(model.getType(), model))
                         .collect(Collectors.toList()));
 
-        loading.forEach(aiModel -> aiModel
-                .getModels()
-                .forEach(model -> {
-                    final Tuple3<String, Model, AIModelType> key = Tuple.of(host, model, aiModel.getType());
-                    modelsByName.put(key, aiModel);
-                }));
-
         if (added == null) {
             activateModels(host);
         }
-    }
-
-    /**
-     * Finds an AI model by the host and model name. The search is case-insensitive.
-     *
-     * @param appConfig the AppConfig for the host
-     * @param modelName the name of the model to find
-     * @param type the type of the model to find
-     * @return an Optional containing the found AIModel, or an empty Optional if not found
-     */
-    public Optional<AIModel> findModel(final AppConfig appConfig,
-                                       final String modelName,
-                                       final AIModelType type) {
-        final String lowered = modelName.toLowerCase();
-        return Optional.ofNullable(
-                modelsByName.get(
-                        Tuple.of(
-                                appConfig.getHost(),
-                                Model.builder().withName(lowered).build(),
-                                type)));
     }
 
     /**
@@ -139,35 +108,6 @@ public class AIModels {
     }
 
     /**
-     * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
-     *
-     * @param appConfig the AppConfig for the host
-     * @param modelName the name of the model to find
-     * @param type the type of the model to find
-     */
-    public AIModel resolveAIModelOrThrow(final AppConfig appConfig, final String modelName, final AIModelType type) {
-        return findModel(appConfig, modelName, type)
-                .orElseThrow(() -> new DotAIModelNotFoundException(
-                            String.format("Unable to find model: [%s] of type [%s].", modelName, type)));
-    }
-
-    /**
-     * Resolves a model-specific secret value from the provided secrets map using the specified key and model type.
-     * If the model is not found or is not operational, it throws an appropriate exception.
-     *
-     * @param appConfig the AppConfig for the host
-     * @param modelName the name of the model to find
-     * @param type the type of the model to find
-     * @return  a Tuple2 containing the AIModel and the Model
-     */
-    public Tuple2<AIModel, Model> resolveModelOrThrow(final AppConfig appConfig,
-                                                      final String modelName,
-                                                      final AIModelType type) {
-        final AIModel aiModel = resolveAIModelOrThrow(appConfig, modelName, type);
-        return Tuple.of(aiModel, aiModel.getModel(modelName));
-    }
-
-    /**
      * Resets the internal models cache for the specified host.
      *
      * @param host the host for which the models are being reset
@@ -177,11 +117,6 @@ public class AIModels {
             models.clear();
             internalModels.remove(host);
         });
-        modelsByName.keySet()
-                .stream()
-                .filter(key -> key._1.equals(host))
-                .collect(Collectors.toSet())
-                .forEach(modelsByName::remove);
     }
 
     /**

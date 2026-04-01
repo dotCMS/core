@@ -132,7 +132,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
     @Override
     public void shutdown() {
 
-        Try.run(()->DotConcurrentFactory.getInstance().shutdown(OPEN_AI_THREAD_POOL_KEY));
+        Try.run(()->DotConcurrentFactory.getInstance().shutdown(AI_THREAD_POOL_KEY));
     }
 
     @Override
@@ -196,7 +196,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return false;
         }
 
-        DotConcurrentFactory.getInstance().getSubmitter(OPEN_AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(this, contentlet, parsed.get(), indexName));
+        DotConcurrentFactory.getInstance().getSubmitter(AI_THREAD_POOL_KEY).submit(new EmbeddingsRunner(this, contentlet, parsed.get(), indexName));
 
         return true;
     }
@@ -362,7 +362,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(
                 tokenCount,
-                sendTokensToOpenAI(contentId, tokens, content, userId));
+                generateEmbeddings(contentId, tokens, content, userId));
         saveEmbeddingsForCache(content, openAiEmbeddings);
         EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
 
@@ -436,7 +436,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
      *
      * @return A {@link List} of {@link Float} values representing the embeddings.
      */
-    private List<Float> sendTokensToOpenAI(final String contentId,
+    private List<Float> generateEmbeddings(final String contentId,
                                            @NotNull final List<Integer> tokens,
                                            @NotNull final String content,
                                            final String userId) {
@@ -447,10 +447,10 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         final String responseString = AIProxyClient.get()
                 .callToAI(JSONObjectAIRequest.quickEmbeddings(config, json, userId))
                 .getResponse();
-        config.debugLogger(this.getClass(), () -> String.format("OpenAI Response for content ID '%s': %s",
+        config.debugLogger(this.getClass(), () -> String.format("AI Response for content ID '%s': %s",
                 contentId, responseString.replace("\n", BLANK)));
         final JSONObject jsonResponse = Try.of(() -> new JSONObject(responseString)).getOrElseThrow(e -> {
-            Logger.error(this, "OpenAI Response String is not a valid JSON", e);
+            Logger.error(this, "AI Response String is not a valid JSON", e);
             config.debugLogger(this.getClass(), () -> String.format("Invalid JSON Response: %s", responseString));
             return new DotCorruptedDataException(e);
         });

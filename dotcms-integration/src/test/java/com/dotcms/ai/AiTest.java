@@ -1,6 +1,7 @@
 package com.dotcms.ai;
 
 import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.util.WireMockTestHelper;
@@ -10,7 +11,9 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.awaitility.Awaitility.await;
 
 public interface AiTest {
 
@@ -59,7 +62,7 @@ public interface AiTest {
 
         final AppSecrets appSecrets = builder.build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
-        TimeUnit.SECONDS.sleep(1);
+        await().atMost(5, SECONDS).until(() -> ConfigService.INSTANCE.config(host).isEnabled());
         return appSecrets.getSecrets();
     }
 
@@ -106,7 +109,7 @@ public interface AiTest {
                 .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue)
                 .build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
-        TimeUnit.SECONDS.sleep(1);
+        await().atMost(5, SECONDS).until(() -> ConfigService.INSTANCE.config(host).isEnabled());
         return appSecrets.getSecrets();
     }
 

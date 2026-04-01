@@ -68,7 +68,7 @@ public class LangChain4jAIClient implements AIClient {
 
     @Override
     public AIProvider getProvider() {
-        return AIProvider.OPEN_AI;
+        return AIProvider.NONE;
     }
 
     /**

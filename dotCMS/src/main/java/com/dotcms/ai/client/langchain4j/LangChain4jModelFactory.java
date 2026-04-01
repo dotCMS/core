@@ -8,6 +8,7 @@ import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiImageModel;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 
 /**
  * Factory for creating LangChain4J model instances from a {@link ProviderConfig}.
@@ -82,13 +83,20 @@ public class LangChain4jModelFactory {
 
     // ── OpenAI builders ───────────────────────────────────────────────────────
 
+    private static void applyCommonConfig(final ProviderConfig config,
+                                          final Consumer<String> baseUrlFn,
+                                          final Consumer<Integer> retriesFn,
+                                          final Consumer<Duration> timeoutFn) {
+        if (config.getEndpoint() != null) baseUrlFn.accept(config.getEndpoint());
+        if (config.getMaxRetries() != null) retriesFn.accept(config.getMaxRetries());
+        if (config.getTimeout() != null) timeoutFn.accept(Duration.ofSeconds(config.getTimeout()));
+    }
+
     private static ChatModel buildOpenAiChatModel(final ProviderConfig config) {
         final OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .apiKey(config.getApiKey())
                 .modelName(config.getModel());
-        if (config.getEndpoint() != null) {
-            builder.baseUrl(config.getEndpoint());
-        }
+        applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
         if (config.getMaxCompletionTokens() != null) {
             builder.maxCompletionTokens(config.getMaxCompletionTokens());
         } else if (config.getMaxTokens() != null) {
@@ -97,12 +105,6 @@ public class LangChain4jModelFactory {
         if (config.getTemperature() != null) {
             builder.temperature(config.getTemperature());
         }
-        if (config.getMaxRetries() != null) {
-            builder.maxRetries(config.getMaxRetries());
-        }
-        if (config.getTimeout() != null) {
-            builder.timeout(Duration.ofSeconds(config.getTimeout()));
-        }
         return builder.build();
     }
 
@@ -110,15 +112,7 @@ public class LangChain4jModelFactory {
         final OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder builder = OpenAiEmbeddingModel.builder()
                 .apiKey(config.getApiKey())
                 .modelName(config.getModel());
-        if (config.getEndpoint() != null) {
-            builder.baseUrl(config.getEndpoint());
-        }
-        if (config.getMaxRetries() != null) {
-            builder.maxRetries(config.getMaxRetries());
-        }
-        if (config.getTimeout() != null) {
-            builder.timeout(Duration.ofSeconds(config.getTimeout()));
-        }
+        applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
         return builder.build();
     }
 
@@ -126,17 +120,9 @@ public class LangChain4jModelFactory {
         final OpenAiImageModel.OpenAiImageModelBuilder builder = OpenAiImageModel.builder()
                 .apiKey(config.getApiKey())
                 .modelName(config.getModel());
-        if (config.getEndpoint() != null) {
-            builder.baseUrl(config.getEndpoint());
-        }
+        applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
         if (config.getSize() != null) {
             builder.size(config.getSize());
-        }
-        if (config.getMaxRetries() != null) {
-            builder.maxRetries(config.getMaxRetries());
-        }
-        if (config.getTimeout() != null) {
-            builder.timeout(Duration.ofSeconds(config.getTimeout()));
         }
         return builder.build();
     }
