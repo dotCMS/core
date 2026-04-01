@@ -166,6 +166,26 @@ export function listenBlockEditorInlineEvent() {
 }
 
 /**
+ * Returns whether iframe height must be synchronized via postMessage.
+ *
+ * Same-origin parents can measure iframe content directly, so they do not need
+ * child-driven height reporting. Cross-origin parents cannot access the iframe
+ * DOM, so they still need the reporter fallback.
+ */
+export function shouldReportIframeHeightToParent(): boolean {
+    if (window.parent === window) {
+        return false;
+    }
+
+    try {
+        void window.parent.document;
+        return false;
+    } catch {
+        return true;
+    }
+}
+
+/**
  * Reports the iframe document height to the parent UVE shell via postMessage.
  *
  * Uses ResizeObserver on <html> for viewport/font/image-driven size changes, and

@@ -27,6 +27,11 @@ describe('DotUveIframeComponent', () => {
     let editorEnableInlineEditSignal: WritableSignal<boolean>;
     let iframeDocHeightSignal: WritableSignal<number>;
     let legacyScriptInjectionEnabledSignal: WritableSignal<boolean>;
+    let resizeObserverObserve: jest.Mock;
+    let resizeObserverDisconnect: jest.Mock;
+    let originalResizeObserver: typeof ResizeObserver;
+    let originalRequestAnimationFrame: typeof requestAnimationFrame;
+    let originalCancelAnimationFrame: typeof cancelAnimationFrame;
 
     const mockPageRender = '<html><head></head><body>Test Content</body></html>';
     const mockSeoResults: SeoMetaTagsResult[] = [
@@ -74,6 +79,22 @@ describe('DotUveIframeComponent', () => {
     });
 
     beforeEach(() => {
+        originalResizeObserver = global.ResizeObserver;
+        originalRequestAnimationFrame = global.requestAnimationFrame;
+        originalCancelAnimationFrame = global.cancelAnimationFrame;
+        resizeObserverObserve = jest.fn();
+        resizeObserverDisconnect = jest.fn();
+
+        global.ResizeObserver = jest.fn().mockImplementation(() => ({
+            observe: resizeObserverObserve,
+            disconnect: resizeObserverDisconnect
+        })) as unknown as typeof ResizeObserver;
+        global.requestAnimationFrame = jest.fn().mockImplementation((cb: FrameRequestCallback) => {
+            cb(0);
+            return 1;
+        });
+        global.cancelAnimationFrame = jest.fn();
+
         pageTypeSignal = signal(PageType.HEADLESS);
         pageRenderSignal = signal(mockPageRender);
         editorEnableInlineEditSignal = signal(false);
@@ -95,6 +116,12 @@ describe('DotUveIframeComponent', () => {
         mockDotSeoMetaTagsService = spectator.inject(DotSeoMetaTagsService, true);
         mockDotSeoMetaTagsUtilService = spectator.inject(DotSeoMetaTagsUtilService, true);
         mockInlineEditService = spectator.inject(InlineEditService, true);
+    });
+
+    afterEach(() => {
+        global.ResizeObserver = originalResizeObserver;
+        global.requestAnimationFrame = originalRequestAnimationFrame;
+        global.cancelAnimationFrame = originalCancelAnimationFrame;
     });
 
     describe('Component Creation', () => {
@@ -175,6 +202,70 @@ describe('DotUveIframeComponent', () => {
             const insertSpy = jest.spyOn(component as any, 'insertPageContent');
             component.onIframeLoad();
             expect(insertSpy).not.toHaveBeenCalled();
+        });
+
+        it('should emit iframe document height when the iframe document is accessible', () => {
+            const mockIframe = document.createElement('iframe');
+            const mockDoc = document.implementation.createHTMLDocument();
+            const addEventListenerSpy = jest.fn();
+            const removeEventListenerSpy = jest.fn();
+            const mockWindow = {
+                addEventListener: addEventListenerSpy,
+                removeEventListener: removeEventListenerSpy
+            } as unknown as Window;
+
+            Object.defineProperty(mockDoc.documentElement, 'scrollHeight', {
+                value: 700,
+                configurable: true
+            });
+            Object.defineProperty(mockDoc.body, 'scrollHeight', {
+                value: 900,
+                configurable: true
+            });
+
+            Object.defineProperty(mockIframe, 'contentDocument', {
+                value: mockDoc,
+                writable: true
+            });
+            Object.defineProperty(mockIframe, 'contentWindow', {
+                value: mockWindow,
+                writable: true
+            });
+
+            component.iframe = { nativeElement: mockIframe } as any;
+
+            const iframeDocHeightChangeSpy = jest.spyOn(component.iframeDocHeightChange, 'emit');
+
+            component.onIframeLoad();
+
+            expect(iframeDocHeightChangeSpy).toHaveBeenCalledWith(900);
+            expect(resizeObserverObserve).toHaveBeenCalledWith(mockDoc.documentElement);
+            expect(resizeObserverObserve).toHaveBeenCalledWith(mockDoc.body);
+            expect(addEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function));
+
+            component.ngOnDestroy();
+
+            expect(resizeObserverDisconnect).toHaveBeenCalled();
+            expect(removeEventListenerSpy).toHaveBeenCalledWith(
+                'resize',
+                expect.any(Function)
+            );
+        });
+
+        it('should skip local height tracking when iframe access is blocked', () => {
+            const mockIframe = document.createElement('iframe');
+
+            Object.defineProperty(mockIframe, 'contentDocument', {
+                configurable: true,
+                get: () => {
+                    throw new DOMException('Blocked', 'SecurityError');
+                }
+            });
+
+            component.iframe = { nativeElement: mockIframe } as any;
+
+            expect(() => component.onIframeLoad()).not.toThrow();
+            expect(resizeObserverObserve).not.toHaveBeenCalled();
         });
     });
 

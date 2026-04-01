@@ -266,6 +266,7 @@ export class DotUveActionsHandlerService {
                 /* Get page data - handled by bridge service */
             },
             [DotCMSUVEAction.IFRAME_HEIGHT]: (payload: { height: number }) => {
+                console.log('IFRAME_HEIGHT', payload.height);
                 uveStore.viewSetIframeDocHeight(payload.height);
             }
         };

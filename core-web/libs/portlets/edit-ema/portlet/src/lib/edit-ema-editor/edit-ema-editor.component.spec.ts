@@ -57,7 +57,7 @@ import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/
 import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
+import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -481,6 +481,7 @@ describe('EditEmaEditorComponent', () => {
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
+            mockDotUveActionsHandlerService.handleAction.mockClear();
 
             store.pageLoad({
                 clientHost: 'http://localhost:3000',
@@ -558,6 +559,54 @@ describe('EditEmaEditorComponent', () => {
 
                 // Palette wrapper should no longer have the open class
                 expect(wrapper.classList).not.toContain('open');
+            });
+
+            it('should ignore iframe height postMessage when the iframe is locally accessible', () => {
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                const mockDoc = document.implementation.createHTMLDocument();
+
+                Object.defineProperty(iframe.nativeElement, 'contentDocument', {
+                    configurable: true,
+                    value: mockDoc
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        data: {
+                            action: DotCMSUVEAction.IFRAME_HEIGHT,
+                            payload: { height: 321 }
+                        }
+                    })
+                );
+
+                expect(mockDotUveActionsHandlerService.handleAction).not.toHaveBeenCalled();
+            });
+
+            it('should handle iframe height postMessage when the iframe is cross-origin', () => {
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                Object.defineProperty(iframe.nativeElement, 'contentDocument', {
+                    configurable: true,
+                    get: () => {
+                        throw new DOMException('Blocked', 'SecurityError');
+                    }
+                });
+
+                const message = {
+                    action: DotCMSUVEAction.IFRAME_HEIGHT,
+                    payload: { height: 321 }
+                };
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        data: message
+                    })
+                );
+
+                expect(mockDotUveActionsHandlerService.handleAction).toHaveBeenCalledWith(
+                    message,
+                    expect.any(Object)
+                );
             });
 
             it('should have a toolbar', () => {
