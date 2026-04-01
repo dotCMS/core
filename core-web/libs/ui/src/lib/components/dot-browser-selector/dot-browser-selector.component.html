@@ -15,6 +15,7 @@
                 [data]="content.data"
                 [loading]="store.contentIsLoading()"
                 [error]="content.error"
+                [accept]="$acceptAttr()"
                 (onRowSelect)="store.setSelectedContent($event)"
                 (onUploadFile)="onFileUpload($event)" />
         </div>

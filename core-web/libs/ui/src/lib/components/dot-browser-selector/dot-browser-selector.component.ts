@@ -3,6 +3,7 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     inject,
     OnInit,
     signal,
@@ -32,12 +33,6 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     providers: [DotBrowserSelectorStore]
 })
 export class DotBrowserSelectorComponent implements OnInit {
-    /**
-     * Injects the SelectExistingFileStore into the component.
-     *
-     * @readonly
-     * @type {SelectExistingFileStore}
-     */
     /**
      * A readonly property that injects the `DotBrowserSelectorStore` service.
      * This store is used to manage the state and actions related to selecting existing files.
@@ -79,6 +74,17 @@ export class DotBrowserSelectorComponent implements OnInit {
         mimeTypes: []
     });
 
+    /**
+     * Derives the file input accept attribute from the mimeTypes in folderParams.
+     * e.g. ['image'] → 'image/*', [] → '*'
+     */
+    $acceptAttr = computed(() => {
+        const { mimeTypes = [] } = this.$folderParams();
+        if (mimeTypes.length === 0) return '*';
+
+        return mimeTypes.map((m) => (m.includes('/') ? m : `${m}/*`)).join(',');
+    });
+
     constructor() {
         this.loadContent(this.$folderParams);
         this.sideBarRefresh(this.store.folders);
@@ -90,23 +96,16 @@ export class DotBrowserSelectorComponent implements OnInit {
     }
 
     onNodeSelect(event: TreeNodeSelectItem): void {
-        const hostFolderId = event?.node?.data?.id;
-        if (!hostFolderId) {
+        const { id } = event?.node?.data ?? {};
+        if (!id) {
             throw new Error('Host folder ID is required');
         }
 
-        this.$folderParams.update((prev) => ({
-            ...prev,
-            hostFolderId
-        }));
+        this.$folderParams.update((prev) => ({ ...prev, hostFolderId: id }));
     }
 
     /**
      * Cancels the current file upload and closes the dialog.
-     *
-     * @remarks
-     * This method is used to terminate the ongoing file upload process and
-     * close the associated dialog reference.
      */
     closeDialog(): void {
         this.#dialogRef.close();
@@ -135,9 +134,6 @@ export class DotBrowserSelectorComponent implements OnInit {
 
     /**
      * Loads the content for the given folder parameters.
-     *
-     * @param {ContentByFolderParams} params - The folder parameters.
-     * @returns {void}
      */
     readonly loadContent = signalMethod<ContentByFolderParams>((params) => {
         this.store.loadContent(params);
@@ -145,9 +141,6 @@ export class DotBrowserSelectorComponent implements OnInit {
 
     /**
      * Refreshes the sidebar when the node is expanded.
-     *
-     * @param {BrowserSelectorState['folders']} folders - The folders state.
-     * @returns {void}
      */
     readonly sideBarRefresh = signalMethod<BrowserSelectorState['folders']>((folders) => {
         if (folders.nodeExpaned) {

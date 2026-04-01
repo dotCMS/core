@@ -81,6 +81,12 @@ export class DotDataViewComponent {
     onRowSelect = output<DotCMSContentlet>();
 
     /**
+     * Controls the accepted file types for the OS file picker.
+     * Defaults to '*' (all files). Pass 'image/*' to restrict to images only.
+     */
+    $accept = input<string>('*', { alias: 'accept' });
+
+    /**
      * Emits the `File` selected by the user via the OS file picker.
      */
     onUploadFile = output<File>();

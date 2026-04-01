@@ -11,8 +11,8 @@
     selectionMode="single"
     dataKey="identifier"
     [(selection)]="$selectedProduct"
-    (onRowSelect)="onRowSelect.emit($event.data)"
     [globalFilterFields]="['title', 'modUserName']"
+    (onRowSelect)="onRowSelect.emit($event.data)"
     styleClass="flex flex-col h-full justify-between">
     <ng-template pTemplate="emptymessage">
         <tr>
@@ -41,7 +41,7 @@
                 #fileInput
                 data-testid="file-input"
                 type="file"
-                accept="image/*"
+                [attr.accept]="$accept()"
                 class="hidden"
                 (change)="onFileSelected($event)" />
             <p-button
