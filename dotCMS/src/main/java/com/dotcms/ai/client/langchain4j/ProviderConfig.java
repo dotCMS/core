@@ -1,9 +1,14 @@
 package com.dotcms.ai.client.langchain4j;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.immutables.value.Value;
+
+import javax.annotation.Nullable;
 
 /**
- * Deserializable POJO for a single provider section in the {@code providerConfig} JSON.
+ * Immutable representation of a single provider section in the {@code providerConfig} JSON.
  *
  * <p>Each section (chat, embeddings, image) in the JSON maps to one instance of this class.
  * Unknown fields are ignored to allow forward-compatible configuration.
@@ -40,167 +45,34 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  *   <li>{@code location}</li>
  * </ul>
  */
+@Value.Immutable
+@JsonSerialize(as = ImmutableProviderConfig.class)
+@JsonDeserialize(as = ImmutableProviderConfig.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ProviderConfig {
+public interface ProviderConfig {
 
-    private String provider;
-    private String model;
-    private Integer maxTokens;
-    private Integer maxCompletionTokens;
-    private Double temperature;
-    private Integer maxRetries;
-    private Integer timeout;
+    @Nullable String provider();
+    @Nullable String model();
+    @Nullable Integer maxTokens();
+    @Nullable Integer maxCompletionTokens();
+    @Nullable Double temperature();
+    @Nullable Integer maxRetries();
+    @Nullable Integer timeout();
 
     // OpenAI / Azure OpenAI
-    private String apiKey;
-    private String size;
-    private String endpoint;
-    private String deploymentName;
-    private String apiVersion;
+    @Nullable String apiKey();
+    @Nullable String size();
+    @Nullable String endpoint();
+    @Nullable String deploymentName();
+    @Nullable String apiVersion();
 
     // AWS Bedrock
-    private String region;
-    private String accessKeyId;
-    private String secretAccessKey;
+    @Nullable String region();
+    @Nullable String accessKeyId();
+    @Nullable String secretAccessKey();
 
     // Google Vertex AI
-    private String projectId;
-    private String location;
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public void setProvider(final String provider) {
-        this.provider = provider;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public void setModel(final String model) {
-        this.model = model;
-    }
-
-    public Integer getMaxTokens() {
-        return maxTokens;
-    }
-
-    public void setMaxTokens(final Integer maxTokens) {
-        this.maxTokens = maxTokens;
-    }
-
-    public Integer getMaxCompletionTokens() {
-        return maxCompletionTokens;
-    }
-
-    public void setMaxCompletionTokens(final Integer maxCompletionTokens) {
-        this.maxCompletionTokens = maxCompletionTokens;
-    }
-
-    public Double getTemperature() {
-        return temperature;
-    }
-
-    public void setTemperature(final Double temperature) {
-        this.temperature = temperature;
-    }
-
-    public Integer getMaxRetries() {
-        return maxRetries;
-    }
-
-    public void setMaxRetries(final Integer maxRetries) {
-        this.maxRetries = maxRetries;
-    }
-
-    public Integer getTimeout() {
-        return timeout;
-    }
-
-    public void setTimeout(final Integer timeout) {
-        this.timeout = timeout;
-    }
-
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public void setApiKey(final String apiKey) {
-        this.apiKey = apiKey;
-    }
-
-    public String getSize() {
-        return size;
-    }
-
-    public void setSize(final String size) {
-        this.size = size;
-    }
-
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(final String endpoint) {
-        this.endpoint = endpoint;
-    }
-
-    public String getDeploymentName() {
-        return deploymentName;
-    }
-
-    public void setDeploymentName(final String deploymentName) {
-        this.deploymentName = deploymentName;
-    }
-
-    public String getApiVersion() {
-        return apiVersion;
-    }
-
-    public void setApiVersion(final String apiVersion) {
-        this.apiVersion = apiVersion;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(final String region) {
-        this.region = region;
-    }
-
-    public String getAccessKeyId() {
-        return accessKeyId;
-    }
-
-    public void setAccessKeyId(final String accessKeyId) {
-        this.accessKeyId = accessKeyId;
-    }
-
-    public String getSecretAccessKey() {
-        return secretAccessKey;
-    }
-
-    public void setSecretAccessKey(final String secretAccessKey) {
-        this.secretAccessKey = secretAccessKey;
-    }
-
-    public String getProjectId() {
-        return projectId;
-    }
-
-    public void setProjectId(final String projectId) {
-        this.projectId = projectId;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(final String location) {
-        this.location = location;
-    }
+    @Nullable String projectId();
+    @Nullable String location();
 
 }

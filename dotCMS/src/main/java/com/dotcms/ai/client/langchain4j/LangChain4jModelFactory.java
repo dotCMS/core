@@ -58,15 +58,15 @@ public class LangChain4jModelFactory {
     private static <T> T build(final ProviderConfig config,
                                 final String modelType,
                                 final Function<ProviderConfig, T> openAiFn) {
-        if (config == null || config.getProvider() == null) {
+        if (config == null || config.provider() == null) {
             return null;
         }
-        switch (config.getProvider().toLowerCase()) {
+        switch (config.provider().toLowerCase()) {
             case "openai":
                 return openAiFn.apply(config);
             default:
                 throw new IllegalArgumentException("Unsupported " + modelType + " provider: "
-                        + config.getProvider() + ". Supported in Phase 1: openai");
+                        + config.provider() + ". Supported in Phase 1: openai");
         }
     }
 
@@ -76,42 +76,42 @@ public class LangChain4jModelFactory {
                                           final Consumer<String> baseUrlFn,
                                           final Consumer<Integer> retriesFn,
                                           final Consumer<Duration> timeoutFn) {
-        if (config.getEndpoint() != null) baseUrlFn.accept(config.getEndpoint());
-        if (config.getMaxRetries() != null) retriesFn.accept(config.getMaxRetries());
-        if (config.getTimeout() != null) timeoutFn.accept(Duration.ofSeconds(config.getTimeout()));
+        if (config.endpoint() != null) baseUrlFn.accept(config.endpoint());
+        if (config.maxRetries() != null) retriesFn.accept(config.maxRetries());
+        if (config.timeout() != null) timeoutFn.accept(Duration.ofSeconds(config.timeout()));
     }
 
     private static ChatModel buildOpenAiChatModel(final ProviderConfig config) {
         final OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
-                .apiKey(config.getApiKey())
-                .modelName(config.getModel());
+                .apiKey(config.apiKey())
+                .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
-        if (config.getMaxCompletionTokens() != null) {
-            builder.maxCompletionTokens(config.getMaxCompletionTokens());
-        } else if (config.getMaxTokens() != null) {
-            builder.maxTokens(config.getMaxTokens());
+        if (config.maxCompletionTokens() != null) {
+            builder.maxCompletionTokens(config.maxCompletionTokens());
+        } else if (config.maxTokens() != null) {
+            builder.maxTokens(config.maxTokens());
         }
-        if (config.getTemperature() != null) {
-            builder.temperature(config.getTemperature());
+        if (config.temperature() != null) {
+            builder.temperature(config.temperature());
         }
         return builder.build();
     }
 
     private static EmbeddingModel buildOpenAiEmbeddingModel(final ProviderConfig config) {
         final OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder builder = OpenAiEmbeddingModel.builder()
-                .apiKey(config.getApiKey())
-                .modelName(config.getModel());
+                .apiKey(config.apiKey())
+                .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
         return builder.build();
     }
 
     private static ImageModel buildOpenAiImageModel(final ProviderConfig config) {
         final OpenAiImageModel.OpenAiImageModelBuilder builder = OpenAiImageModel.builder()
-                .apiKey(config.getApiKey())
-                .modelName(config.getModel());
+                .apiKey(config.apiKey())
+                .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
-        if (config.getSize() != null) {
-            builder.size(config.getSize());
+        if (config.size() != null) {
+            builder.size(config.size());
         }
         return builder.build();
     }
