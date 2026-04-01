@@ -5,6 +5,7 @@ import {
     Component,
     DestroyRef,
     ElementRef,
+    OnDestroy,
     ViewChild,
     effect,
     inject,
@@ -38,7 +39,7 @@ import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection'
     imports: [SafeUrlPipe],
     host: { class: 'block relative' }
 })
-export class DotUveIframeComponent {
+export class DotUveIframeComponent implements OnDestroy {
     /**
      * Reference to the iframe element.
      * @type {ElementRef<HTMLIFrameElement>}
@@ -70,6 +71,11 @@ export class DotUveIframeComponent {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly destroyRef = inject(DestroyRef);
+    private iframeHeightObserver: ResizeObserver | null = null;
+    private iframeHeightResizeWindow: Window | null = null;
+    private iframeHeightResizeHandler: (() => void) | null = null;
+    private iframeHeightOuterRaf: number | null = null;
+    private iframeHeightInnerRaf: number | null = null;
 
     /**
      * Current height of the iframe document content.
@@ -136,6 +142,7 @@ export class DotUveIframeComponent {
      */
     onIframeLoad(): void {
         if (this.uveStore.pageType() === PageType.HEADLESS) {
+            this.startIframeHeightTracking();
             this.load.emit();
             return;
         }
@@ -173,6 +180,7 @@ export class DotUveIframeComponent {
         doc.close();
 
         this.handleInlineScripts(enableInlineEdit);
+        this.startIframeHeightTracking();
     }
 
     /**
@@ -237,5 +245,94 @@ export class DotUveIframeComponent {
                 const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
                 this.uveStore.setSeoData({ ogTags, ogTagsResults: results });
             });
+    }
+
+    ngOnDestroy(): void {
+        this.stopIframeHeightTracking();
+    }
+
+    private startIframeHeightTracking(): void {
+        this.stopIframeHeightTracking();
+
+        const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement) {
+            return;
+        }
+
+        let doc: Document | null = null;
+        let win: Window | null = null;
+
+        try {
+            doc = iframeElement.contentDocument;
+            win = iframeElement.contentWindow;
+        } catch {
+            return;
+        }
+
+        if (!doc || !win) {
+            return;
+        }
+
+        const emitHeight = () => {
+            const height = Math.max(
+                doc.body?.scrollHeight ?? 0,
+                doc.documentElement?.scrollHeight ?? 0
+            );
+
+            this.iframeDocHeightChange.emit(height);
+        };
+
+        const scheduleEmit = () => {
+            if (this.iframeHeightOuterRaf !== null) {
+                return;
+            }
+
+            this.iframeHeightOuterRaf = requestAnimationFrame(() => {
+                this.iframeHeightOuterRaf = null;
+
+                this.iframeHeightInnerRaf = requestAnimationFrame(() => {
+                    this.iframeHeightInnerRaf = null;
+                    emitHeight();
+                });
+            });
+        };
+
+        this.iframeHeightResizeWindow = win;
+        this.iframeHeightResizeHandler = scheduleEmit;
+        this.iframeHeightObserver = new ResizeObserver(() => scheduleEmit());
+
+        this.iframeHeightObserver.observe(doc.documentElement);
+        if (doc.body) {
+            this.iframeHeightObserver.observe(doc.body);
+        }
+
+        win.addEventListener('resize', scheduleEmit);
+        scheduleEmit();
+    }
+
+    private stopIframeHeightTracking(): void {
+        this.iframeHeightObserver?.disconnect();
+        this.iframeHeightObserver = null;
+
+        if (this.iframeHeightResizeWindow && this.iframeHeightResizeHandler) {
+            this.iframeHeightResizeWindow.removeEventListener(
+                'resize',
+                this.iframeHeightResizeHandler
+            );
+        }
+
+        this.iframeHeightResizeWindow = null;
+        this.iframeHeightResizeHandler = null;
+
+        if (this.iframeHeightOuterRaf !== null) {
+            cancelAnimationFrame(this.iframeHeightOuterRaf);
+            this.iframeHeightOuterRaf = null;
+        }
+
+        if (this.iframeHeightInnerRaf !== null) {
+            cancelAnimationFrame(this.iframeHeightInnerRaf);
+            this.iframeHeightInnerRaf = null;
+        }
     }
 }
