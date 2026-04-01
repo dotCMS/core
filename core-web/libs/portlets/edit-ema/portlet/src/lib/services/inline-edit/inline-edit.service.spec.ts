@@ -2,7 +2,11 @@ import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 
 import { ElementRef } from '@angular/core';
 
-import { INLINE_CONTENT_STYLES, InlineEditService } from './inline-edit.service';
+import {
+    INLINE_CONTENT_STYLES,
+    INLINE_EDIT_TINYMCE_BASE_OPTIONS,
+    InlineEditService
+} from './inline-edit.service';
 
 import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
@@ -11,6 +15,10 @@ describe('InlineEditService', () => {
     const createService = createServiceFactory(InlineEditService);
 
     beforeEach(() => (spectator = createService()));
+
+    it('should disable TinyMCE URL conversion so root-relative paths are preserved on serialize', () => {
+        expect(INLINE_EDIT_TINYMCE_BASE_OPTIONS.convert_urls).toBe(false);
+    });
 
     it('should inject inline edit', () => {
         const iframe = document.createElement('iframe');
