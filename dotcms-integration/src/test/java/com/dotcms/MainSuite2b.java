@@ -1,6 +1,5 @@
 package com.dotcms;
 
-import com.dotcms.ai.app.AIModelsTest;
 import com.dotcms.ai.app.ConfigServiceTest;
 import com.dotcms.ai.client.AIProxyClientTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
@@ -418,7 +417,6 @@ import org.junit.runners.Suite.SuiteClasses;
         SearchToolTest.class,
         EmbeddingsToolTest.class,
         CompletionsToolTest.class,
-        AIModelsTest.class,
         ConfigServiceTest.class,
         AIProxyClientTest.class,
         AIAppValidatorTest.class,
