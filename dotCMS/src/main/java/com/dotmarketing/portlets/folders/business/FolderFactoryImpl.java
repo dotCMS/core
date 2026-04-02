@@ -641,8 +641,8 @@ public class FolderFactoryImpl extends FolderFactory {
         "UPDATE permission SET inode_id = ? WHERE inode_id = ?", newFolderInode, oldFolderInode);
     dc.executeUpdate(
         "UPDATE permission_reference SET asset_id = ? WHERE asset_id = ?", newFolderInode, oldFolderInode);
-    CacheLocator.getPermissionCache().remove(oldFolderInode);
-    CacheLocator.getPermissionCache().remove(newFolderInode);
+    APILocator.getPermissionAPI().removePermissionableFromCache(oldFolderInode);
+    APILocator.getPermissionAPI().removePermissionableFromCache(newFolderInode);
   }
 
   /**
