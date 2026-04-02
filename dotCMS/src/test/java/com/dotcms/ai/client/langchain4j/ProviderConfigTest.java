@@ -23,22 +23,22 @@ public class ProviderConfigTest {
 
         final ProviderConfig config = MAPPER.readValue(json, ProviderConfig.class);
 
-        assertEquals("openai", config.getProvider());
-        assertEquals("gpt-4o", config.getModel());
-        assertEquals("sk-test", config.getApiKey());
-        assertEquals(Integer.valueOf(1024), config.getMaxTokens());
-        assertEquals(Double.valueOf(0.7), config.getTemperature());
-        assertEquals(Integer.valueOf(3), config.getMaxRetries());
-        assertEquals(Integer.valueOf(30), config.getTimeout());
-        assertEquals("1024x1024", config.getSize());
-        assertEquals("https://my.endpoint.com", config.getEndpoint());
-        assertEquals("my-deploy", config.getDeploymentName());
-        assertEquals("2024-02-01", config.getApiVersion());
-        assertEquals("us-east-1", config.getRegion());
-        assertEquals("AKID", config.getAccessKeyId());
-        assertEquals("secret", config.getSecretAccessKey());
-        assertEquals("my-project", config.getProjectId());
-        assertEquals("us-central1", config.getLocation());
+        assertEquals("openai", config.provider());
+        assertEquals("gpt-4o", config.model());
+        assertEquals("sk-test", config.apiKey());
+        assertEquals(Integer.valueOf(1024), config.maxTokens());
+        assertEquals(Double.valueOf(0.7), config.temperature());
+        assertEquals(Integer.valueOf(3), config.maxRetries());
+        assertEquals(Integer.valueOf(30), config.timeout());
+        assertEquals("1024x1024", config.size());
+        assertEquals("https://my.endpoint.com", config.endpoint());
+        assertEquals("my-deploy", config.deploymentName());
+        assertEquals("2024-02-01", config.apiVersion());
+        assertEquals("us-east-1", config.region());
+        assertEquals("AKID", config.accessKeyId());
+        assertEquals("secret", config.secretAccessKey());
+        assertEquals("my-project", config.projectId());
+        assertEquals("us-central1", config.location());
     }
 
     @Test
@@ -47,12 +47,12 @@ public class ProviderConfigTest {
 
         final ProviderConfig config = MAPPER.readValue(json, ProviderConfig.class);
 
-        assertEquals("openai", config.getProvider());
-        assertEquals("gpt-4o-mini", config.getModel());
-        assertNull(config.getMaxTokens());
-        assertNull(config.getTemperature());
-        assertNull(config.getMaxRetries());
-        assertNull(config.getEndpoint());
+        assertEquals("openai", config.provider());
+        assertEquals("gpt-4o-mini", config.model());
+        assertNull(config.maxTokens());
+        assertNull(config.temperature());
+        assertNull(config.maxRetries());
+        assertNull(config.endpoint());
     }
 
     @Test
@@ -63,7 +63,7 @@ public class ProviderConfigTest {
         final ProviderConfig config = MAPPER.readValue(json, ProviderConfig.class);
 
         assertNotNull(config);
-        assertEquals("openai", config.getProvider());
+        assertEquals("openai", config.provider());
     }
 
 }

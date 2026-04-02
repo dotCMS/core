@@ -24,10 +24,11 @@ public class LangChain4jModelFactoryTest {
 
     @Test
     public void test_buildChatModel_unknownProvider_throws() {
-        final ProviderConfig config = new ProviderConfig();
-        config.setProvider("unknown-provider");
-        config.setModel("some-model");
-        config.setApiKey("key");
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("unknown-provider")
+                .model("some-model")
+                .apiKey("key")
+                .build();
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
     }
 
@@ -44,10 +45,11 @@ public class LangChain4jModelFactoryTest {
 
     @Test
     public void test_buildEmbeddingModel_unknownProvider_throws() {
-        final ProviderConfig config = new ProviderConfig();
-        config.setProvider("unknown-provider");
-        config.setModel("some-model");
-        config.setApiKey("key");
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("unknown-provider")
+                .model("some-model")
+                .apiKey("key")
+                .build();
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildEmbeddingModel(config));
     }
 
@@ -64,19 +66,20 @@ public class LangChain4jModelFactoryTest {
 
     @Test
     public void test_buildImageModel_unknownProvider_throws() {
-        final ProviderConfig config = new ProviderConfig();
-        config.setProvider("unknown-provider");
-        config.setModel("some-model");
-        config.setApiKey("key");
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("unknown-provider")
+                .model("some-model")
+                .apiKey("key")
+                .build();
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
     }
 
     private static ProviderConfig openAiConfig(final String model) {
-        final ProviderConfig config = new ProviderConfig();
-        config.setProvider("openai");
-        config.setModel(model);
-        config.setApiKey("test-key");
-        return config;
+        return ImmutableProviderConfig.builder()
+                .provider("openai")
+                .model(model)
+                .apiKey("test-key")
+                .build();
     }
 
 }
