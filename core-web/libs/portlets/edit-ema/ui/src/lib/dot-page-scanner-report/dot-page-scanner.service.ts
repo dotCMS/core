@@ -83,32 +83,15 @@ export interface PageScannerGeoResponse {
     topIssues: PageScannerGeoIssue[];
 }
 
-const CLOUDFLARE_BASE = 'https://words-organised-beads-html.trycloudflare.com';
-
 @Injectable()
 export class DotPageScannerService {
     private http = inject(HttpClient);
 
     checkA11y(url: string): Observable<PageScannerA11yResponse> {
-        return this.http.post<PageScannerA11yResponse>('/api/v1/page-scanner/a11y/check', {
-            url: this.#toCloudflareUrl(url)
-        });
+        return this.http.post<PageScannerA11yResponse>('/api/v1/page-scanner/a11y/check', { url });
     }
 
     checkGeo(url: string): Observable<PageScannerGeoResponse> {
-        return this.http.post<PageScannerGeoResponse>('/api/v1/page-scanner/geo/check', {
-            url: this.#toCloudflareUrl(url)
-        });
-    }
-
-    #toCloudflareUrl(url: string): string {
-        let pathname: string;
-        try {
-            pathname = new URL(url).pathname;
-        } catch {
-            pathname = url.startsWith('/') ? url : `/${url}`;
-        }
-
-        return `${CLOUDFLARE_BASE}${pathname}?mode=EDIT_MODE`;
+        return this.http.post<PageScannerGeoResponse>('/api/v1/page-scanner/geo/check', { url });
     }
 }

@@ -318,7 +318,8 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     handleScannerToolClick(type: PageScannerToolType): void {
-        const pageUrl = this.$seoParams().currentUrl ?? '';
+        const { currentUrl, requestHostName } = this.$seoParams();
+        const pageUrl = `${requestHostName}${currentUrl ?? '/'}`;
         this.pageScanner.open(type, pageUrl);
     }
 
