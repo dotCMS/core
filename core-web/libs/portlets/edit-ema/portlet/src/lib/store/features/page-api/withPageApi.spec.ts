@@ -13,6 +13,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
 
 import { withPageApi } from './withPageApi';
 
@@ -21,7 +22,7 @@ import { UveIframeMessengerService } from '../../../services/iframe-messenger/uv
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
-import { UVEState } from '../../models';
+import { IframeAccessMode, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
 import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
@@ -91,6 +92,14 @@ describe('withPageApi', () => {
             mockProvider(UveIframeMessengerService, {
                 sendPageData: jest.fn()
             }),
+            {
+                provide: WINDOW,
+                useValue: {
+                    location: {
+                        origin: 'https://editor.dotcms.com'
+                    }
+                }
+            },
             mockProvider(DotWorkflowActionsFireService, {
                 saveContentlet: jest.fn().mockReturnValue(of({}))
             }),
@@ -114,6 +123,14 @@ describe('withPageApi', () => {
     });
 
     describe('pageLoad – fetch vs GraphQL', () => {
+        it('should use the injected window origin when computing iframe access mode in pageUpdateParams', () => {
+            store.pageUpdateParams({
+                clientHost: 'https://editor.dotcms.com/headless'
+            });
+
+            expect(store.iframeAccessMode()).toBe(IframeAccessMode.LOCAL);
+        });
+
         it('should use regular get(pageParams) when requestMetadata is null', () => {
             expect(store.requestMetadata()).toBeNull();
 

@@ -304,6 +304,18 @@ describe('DotUveIframeComponent', () => {
             expect(setSeoSpy).toHaveBeenCalledTimes(1);
         });
 
+        it('should start local height tracking for TRADITIONAL pages when the iframe is accessible', () => {
+            component.onIframeLoad();
+
+            expect(observeDocumentHeightSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    documentRef: mockDoc,
+                    windowRef: mockWindow,
+                    onHeightChange: expect.any(Function)
+                })
+            );
+        });
+
         it('should write content to iframe document', () => {
             const openSpy = jest.spyOn(mockDoc, 'open');
             const writeSpy = jest.spyOn(mockDoc, 'write');

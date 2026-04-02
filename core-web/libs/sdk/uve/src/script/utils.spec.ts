@@ -275,4 +275,21 @@ describe('injectEmptyStateStyles', () => {
 
         expect(style.textContent).toContain("content: 'Empty container'");
     });
+
+    it('escapes CSS-breaking characters in the empty container label', () => {
+        localStorage.setItem(
+            'dotMessagesKeys',
+            JSON.stringify({
+                'editpage.container.is.empty': "Ain't \\ broken\nlabel"
+            })
+        );
+
+        injectEmptyStateStyles();
+
+        const style = document.head.querySelector(
+            '[data-dot-styles="uve-empty-state"]'
+        ) as HTMLStyleElement;
+
+        expect(style.textContent).toContain("content: 'Ain\\'t \\\\ broken\\a label'");
+    });
 });

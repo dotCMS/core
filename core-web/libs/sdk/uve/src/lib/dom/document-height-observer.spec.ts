@@ -104,6 +104,18 @@ describe('observeDocumentHeight', () => {
         expect(onHeightChange).toHaveBeenCalledTimes(1);
     });
 
+    it('does not notify again when the measured height did not change', () => {
+        observeDocumentHeight({ onHeightChange });
+        flushAll();
+        onHeightChange.mockClear();
+
+        roCallback([], {} as ResizeObserver);
+        moCallback([], {} as MutationObserver);
+        flushAll();
+
+        expect(onHeightChange).not.toHaveBeenCalled();
+    });
+
     it('waits for the load event when document is still loading', () => {
         Object.defineProperty(document, 'readyState', {
             configurable: true,

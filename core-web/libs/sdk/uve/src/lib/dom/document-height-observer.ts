@@ -27,15 +27,17 @@ export function observeDocumentHeight({
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     let rafOuter: number | null = null;
     let rafInner: number | null = null;
+    let lastHeight: number | null = null;
     let destroyed = false;
 
     const measureAndNotify = () => {
         const height = html.offsetHeight;
 
-        if (!height) {
+        if (!height || height === lastHeight) {
             return;
         }
 
+        lastHeight = height;
         onHeightChange(height);
     };
 
@@ -106,6 +108,7 @@ export function observeDocumentHeight({
                 rafInner = null;
             }
 
+            lastHeight = null;
             resizeObserver.disconnect();
             mutationObserver.disconnect();
             windowRef.removeEventListener('load', onLoad);

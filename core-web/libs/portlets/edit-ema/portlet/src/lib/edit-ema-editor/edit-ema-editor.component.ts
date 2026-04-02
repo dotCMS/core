@@ -496,17 +496,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             .subscribe((event) => {
                 const data = event.data;
                 if (this.#isUvePostMessage(data)) {
-                    if (
-                        data.action === DotCMSUVEAction.IFRAME_HEIGHT &&
-                        this.uveStore.iframeAccessMode() === IframeAccessMode.LOCAL
-                    ) {
-                        return;
-                    }
-
                     this.handleUveMessage(data);
-                    if (data.action === DotCMSUVEAction.IFRAME_HEIGHT) {
-                        this.#clampScrollWithinBounds();
-                    }
                 }
             });
 
@@ -556,6 +546,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     private handleUveMessage(message: PostMessage): void {
+        if (
+            message.action === DotCMSUVEAction.IFRAME_HEIGHT &&
+            this.uveStore.iframeAccessMode() === IframeAccessMode.LOCAL
+        ) {
+            return;
+        }
+
         this.actionsHandler.handleAction(message, {
             uveStore: this.uveStore,
             dialog: this.dialog,
@@ -566,6 +563,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             host: this.host,
             onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode)
         });
+
+        if (message.action === DotCMSUVEAction.IFRAME_HEIGHT) {
+            this.#clampScrollWithinBounds();
+        }
     }
 
     private handleDrop(event: DragEvent): void {

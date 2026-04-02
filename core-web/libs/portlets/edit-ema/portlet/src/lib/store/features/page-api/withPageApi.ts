@@ -99,6 +99,8 @@ export function withPageApi(deps: WithPageApiDeps) {
             state: type<UVEState>()
         },
         withMethods((store) => {
+            const dotWindow = inject(WINDOW);
+
             return {
                 /**
                  * Update page parameters (language, variant, etc.)
@@ -112,7 +114,10 @@ export function withPageApi(deps: WithPageApiDeps) {
 
                     patchState(store, {
                         pageParams: nextPageParams,
-                        iframeAccessMode: getIframeAccessMode(nextPageParams.clientHost)
+                        iframeAccessMode: getIframeAccessMode(
+                            nextPageParams.clientHost,
+                            dotWindow.location.origin
+                        )
                     });
                 }
             };

@@ -133,19 +133,18 @@ export class DotUveIframeComponent implements OnDestroy {
     /**
      * Handles the iframe load event.
      *
-     * For headless pages, emits load immediately. For traditional pages, injects
-     * content, sets SEO data, then emits load.
+     * For headless pages, emits load without rewriting the document. For traditional
+     * pages, injects content and SEO data before emitting load. Local iframe height
+     * tracking is started for any locally accessible iframe regardless of page type.
      * @returns {void}
      */
     onIframeLoad(): void {
-        if (this.uveStore.pageType() === PageType.HEADLESS) {
-            this.startIframeHeightTracking();
-            this.load.emit();
-            return;
+        if (this.uveStore.pageType() !== PageType.HEADLESS) {
+            this.insertPageContent(this.$pageRender(), this.$enableInlineEdit());
+            this.setSeoData();
         }
 
-        this.insertPageContent(this.$pageRender(), this.$enableInlineEdit());
-        this.setSeoData();
+        this.startIframeHeightTracking();
         this.load.emit();
     }
 
@@ -177,7 +176,6 @@ export class DotUveIframeComponent implements OnDestroy {
         doc.close();
 
         this.handleInlineScripts(enableInlineEdit);
-        this.startIframeHeightTracking();
     }
 
     /**

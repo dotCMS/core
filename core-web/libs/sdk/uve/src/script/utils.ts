@@ -7,6 +7,14 @@ import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
 
+function escapeCssContentValue(value: string): string {
+    return value
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r\n|\r|\n/g, '\\a ')
+        .replace(/\f/g, ' ');
+}
+
 /**
  * Sets up scroll event handlers for the window to notify the editor about scroll events.
  * Adds listeners for both 'scroll' and 'scrollend' events, sending appropriate messages
@@ -206,10 +214,10 @@ export function shouldReportIframeHeightToParent(): boolean {
 export function reportIframeHeight(): { destroyHeightReporter: () => void } {
     const { destroy } = observeDocumentHeight({
         onHeightChange: (height) => {
-        sendMessageToUVE({
-            action: DotCMSUVEAction.IFRAME_HEIGHT,
-            payload: { height }
-        });
+            sendMessageToUVE({
+                action: DotCMSUVEAction.IFRAME_HEIGHT,
+                payload: { height }
+            });
         }
     });
 
@@ -238,6 +246,8 @@ export function injectEmptyStateStyles(): void {
         // localStorage unavailable or JSON malformed — use default
     }
 
+    const escapedEmptyContainerLabel = escapeCssContentValue(emptyContainerLabel);
+
     const style = document.createElement('style');
     style.dataset['dotStyles'] = 'uve-empty-state';
     style.textContent = `
@@ -257,7 +267,7 @@ export function injectEmptyStateStyles(): void {
         }
 
         [data-dot-object="container"]:empty::after {
-            content: '${emptyContainerLabel}';
+            content: '${escapedEmptyContainerLabel}';
         }
     `;
     document.head?.appendChild(style);
