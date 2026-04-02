@@ -1943,9 +1943,14 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
+                    const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                    const previewWindow = iframe?.contentWindow;
+                    expect(previewWindow).toBeTruthy();
+
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             origin: HOST,
+                            source: previewWindow,
                             data: {
                                 action: 'set-url',
                                 payload: {
