@@ -1438,7 +1438,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     #clampScrollWithinBounds(): void {
-        console.log('clampScrollWithinBounds');
         const el = this.editorContent?.nativeElement;
         if (!el) {
             return;
