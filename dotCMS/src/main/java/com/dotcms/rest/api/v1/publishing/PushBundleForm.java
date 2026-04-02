@@ -7,6 +7,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 
@@ -34,14 +37,16 @@ public class PushBundleForm extends Validated {
     private String operation;
 
     @Schema(
-            description = "Scheduled publish date in ISO 8601 format with timezone offset (required for publish/publishexpire)",
+            description = "Scheduled publish date in ISO 8601 format with timezone offset (required for publish/publishexpire). " +
+                    "Dates without timezone offset are rejected.",
             example = "2025-03-15T14:30:00-05:00",
             format = "date-time"
     )
     private String publishDate;
 
     @Schema(
-            description = "Scheduled expire date in ISO 8601 format with timezone offset (required for expire/publishexpire)",
+            description = "Scheduled expire date in ISO 8601 format with timezone offset (required for expire/publishexpire). " +
+                    "Dates without timezone offset are rejected.",
             example = "2025-04-15T14:30:00-05:00",
             format = "date-time"
     )
@@ -117,6 +122,14 @@ public class PushBundleForm extends Validated {
             throw new BadRequestException("expireDate is required for " + normalizedOperation + " operation");
         }
 
+        // Validate date format (ISO 8601 with timezone offset) before any downstream lookup
+        if (UtilMethods.isSet(publishDate)) {
+            validateDateFormat(publishDate, "publishDate");
+        }
+        if (UtilMethods.isSet(expireDate)) {
+            validateDateFormat(expireDate, "expireDate");
+        }
+
         // Validate environments
         if (!UtilMethods.isSet(environments) || environments.isEmpty()) {
             throw new BadRequestException("At least one environment ID is required");
@@ -166,6 +179,25 @@ public class PushBundleForm extends Validated {
 
     public void setFilterKey(final String filterKey) {
         this.filterKey = filterKey;
+    }
+
+    /**
+     * Validates that a date string is ISO 8601 format with a timezone offset.
+     * Mirrors the parsing logic in {@code PublishingJobsHelper#parseISO8601Date} so that
+     * format errors are caught during form validation (400) before any bundle lookup (404).
+     *
+     * @param dateStr   the date string to validate
+     * @param fieldName the field name used in the error message
+     * @throws BadRequestException if the format is invalid or the timezone offset is missing
+     */
+    private static void validateDateFormat(final String dateStr, final String fieldName) {
+        try {
+            OffsetDateTime.parse(dateStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } catch (DateTimeParseException e) {
+            throw new BadRequestException(String.format(
+                    "Invalid %s format: '%s'. Expected ISO 8601 with timezone offset (e.g., 2025-03-15T14:30:00-05:00)",
+                    fieldName, dateStr));
+        }
     }
 
 }

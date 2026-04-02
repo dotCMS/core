@@ -47,6 +47,8 @@ public interface FeatureFlagName {
 
     String FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES = "FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES";
 
+    String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
+
     /**
      * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
      *

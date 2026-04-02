@@ -3,7 +3,8 @@
 import { of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -25,7 +26,7 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentType,
@@ -35,7 +36,6 @@ import {
 import { DotIconComponent } from '@dotcms/ui';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     createFakeEvent,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
@@ -151,11 +151,12 @@ describe('DotContentTypesEditComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 DotIconComponent,
-                HttpClientTestingModule,
                 ButtonModule,
                 DialogModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -173,7 +174,6 @@ describe('DotContentTypesEditComponent', () => {
                     useValue: { data: of(route) }
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
@@ -219,7 +219,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should have dialog opened by default & has css base-type class', () => {
             expect(dialog).not.toBeNull();
-            expect(comp.show).toBeTruthy();
+            expect(comp.show()).toBeTruthy();
         });
 
         it('should set dialog actions set correctly', () => {
@@ -238,7 +238,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should close the dialog when cancel button is clicked', fakeAsync(() => {
             // Open the dialog first
-            comp.show = true;
+            comp.show.set(true);
             fixture.detectChanges();
             tick();
 
@@ -440,7 +440,7 @@ describe('DotContentTypesEditComponent', () => {
             it('should open form dialog by default in create mode', () => {
                 const dialog = de.query(By.css('p-dialog'));
                 expect(dialog).not.toBeNull();
-                expect(comp.show).toBeTruthy();
+                expect(comp.show()).toBeTruthy();
             });
         });
     });
@@ -520,7 +520,6 @@ describe('DotContentTypesEditComponent', () => {
                     { provide: SiteService, useClass: SiteServiceMock },
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
                     { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                     ConfirmationService,
                     DotAlertConfirmService,
@@ -590,7 +589,7 @@ describe('DotContentTypesEditComponent', () => {
             clickEditButton();
 
             expect(dialog).not.toBeNull();
-            expect(comp.show).toBeTruthy();
+            expect(comp.show()).toBeTruthy();
         });
 
         it('should send notifications to add rows & tab divider', () => {
@@ -965,6 +964,39 @@ describe('DotContentTypesEditComponent', () => {
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
                 expect(comp.savingContentType()).toBe(false);
             });
+
+            it('should close the dialog after a successful update', fakeAsync(() => {
+                const response$ = new Subject<DotCMSContentType>();
+                jest.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
+
+                contentTypeForm.triggerEventHandler('$send', fakeContentType);
+                fixture.detectChanges();
+
+                expect(comp.show()).toBe(true);
+
+                response$.next(fakeContentType);
+                response$.complete();
+                tick();
+                fixture.detectChanges();
+
+                expect(comp.show()).toBe(false);
+            }));
+
+            it('should keep dialog closed after update (no reopen)', fakeAsync(() => {
+                const response$ = new Subject<DotCMSContentType>();
+                jest.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
+                jest.spyOn(comp, 'startFormDialog');
+
+                contentTypeForm.triggerEventHandler('$send', fakeContentType);
+
+                response$.next(fakeContentType);
+                response$.complete();
+                tick();
+                fixture.detectChanges();
+
+                expect(comp.show()).toBe(false);
+                expect(comp.startFormDialog).not.toHaveBeenCalled();
+            }));
         });
 
         describe('checkAndOpenFormDialog', () => {
@@ -1017,6 +1049,26 @@ describe('DotContentTypesEditComponent', () => {
                 tick();
 
                 expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+            }));
+
+            it('should not reopen dialog when route.data emits again after update', fakeAsync(() => {
+                // Simulate successful update: dialog opens, update fires, dialog closes
+                queryParams.next({ 'open-config': 'true' });
+                tick();
+
+                expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+                expect(comp.show()).toBe(true);
+
+                comp.show.set(false); // simulates show.set(false) from updateContentType
+
+                // Simulate route.data re-emitting (e.g. triggered by onDialogHide navigation)
+                // Since isFirstLoad = false (data was already set on first emission),
+                // checkAndOpenFormDialog should NOT run again
+                queryParams.next({ 'open-config': 'true' });
+                tick();
+
+                expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+                expect(comp.show()).toBe(false);
             }));
         });
     });

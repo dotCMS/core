@@ -102,7 +102,6 @@ import {
 import { UVEStore } from '../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../store/features/editor/models';
 import {
-    SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
     areContainersEquals,
     compareUrlPaths,
@@ -116,6 +115,7 @@ import {
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
+import { addEditorPageScript } from '../utils/ema-legacy-script-injection';
 
 // Message keys constants
 const MESSAGE_KEY = {
@@ -135,8 +135,6 @@ const MESSAGE_KEY = {
     styleUrls: ['./edit-ema-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        NgClass,
-        NgStyle,
         FormsModule,
         SafeUrlPipe,
         DotEmaDialogComponent,
@@ -149,7 +147,9 @@ const MESSAGE_KEY = {
         DotUvePageVersionNotFoundComponent,
         DotUveContentletToolsComponent,
         DotUveLockOverlayComponent,
-        DotUvePaletteComponent
+        DotUvePaletteComponent,
+        NgClass,
+        NgStyle
     ],
     providers: [
         DotCopyContentModalService,
@@ -523,29 +523,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
-     * Add the editor page script to VTL pages
-     *
-     * @param {string} rendered
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
-        const bodyExists = rendered.includes('</body>');
-
-        /*
-         * For advance template case. It might not include `body` tag.
-         */
-        if (!bodyExists) {
-            return rendered + scriptString;
-        }
-
-        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
-
-        return updatedRendered;
-    }
-
-    /**
      * Add custom styles to the rendered content
      *
      * @param {string} rendered
@@ -589,21 +566,30 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
-     * Inject the editor page script and styles to the VTL content
+     * Inject the editor page styles (and optionally the legacy UVE script)
+     * into the VTL content before writing it to the iframe.
+     *
+     * When `FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION` is enabled, the
+     * `dot-uve.js` script tag is also injected. This restores the pre-PR
+     * #34995 behavior for EMA customers whose headless frontends do not
+     * consume the backend-rendered output where the script now lives.
      *
      * @private
-     * @param {string} html
-     * @return {*}  {string}
-     * @memberof EditEmaEditorComponent
+     * @param html - Raw rendered HTML from the Page API.
+     * @returns Transformed HTML ready for `document.write()`.
+     * @see {@link addEditorPageScript} for the legacy script injection logic.
      */
-    private inyectCodeToVTL(html: string): string {
+    private injectCodeToVTL(html: string): string {
         const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
         const origin = this.window.location.origin;
         const fileWithBase = injectBaseTag({ html, url, origin });
-        const fileWithScript = this.addEditorPageScript(fileWithBase);
-        const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
+        const fileWithStyles = this.addCustomStyles(fileWithBase);
 
-        return fileWithStylesAndScript;
+        if (this.uveStore.$isEmaLegacyScriptInjectionEnabled()) {
+            return addEditorPageScript(fileWithStyles);
+        }
+
+        return fileWithStyles;
     }
 
     ngOnDestroy(): void {
@@ -772,9 +758,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
+     * Sets up the iframe content for traditional (VTL) pages.
      *
-     * Sets the content of the iframe with the provided code.
-     * @param code - The code to be added to the iframe.
+     * The `dot-uve.js` editor script is normally included by the backend
+     * directly in `entity.page.rendered` (see PR #34927). However, when
+     * `FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION` is enabled, the script
+     * is also injected from the frontend to support EMA customers whose
+     * headless setup does not consume the backend-rendered output.
+     *
      * @memberof EditEmaEditorComponent
      */
     #insertPageContent(): void {
@@ -789,11 +780,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const enableInlineEdit = this.uveStore.$enableInlineEdit();
         const pageRender = this.uveStore.$pageRender();
 
-        const newDoc = this.inyectCodeToVTL(pageRender);
-
-        if (!doc) {
+        if (!doc || !pageRender) {
             return;
         }
+
+        const newDoc = this.injectCodeToVTL(pageRender);
 
         doc.open();
         doc.write(newDoc);

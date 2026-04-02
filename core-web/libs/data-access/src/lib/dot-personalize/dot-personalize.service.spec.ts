@@ -1,50 +1,117 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import {
+    createHttpFactory,
+    HttpMethod,
+    mockProvider,
+    SpectatorHttp,
+    SpyObject
+} from '@ngneat/spectator/jest';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotCMSPersonalizedItem } from '@dotcms/dotcms-models';
 
 import { DotPersonalizeService } from './dot-personalize.service';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 describe('DotPersonalizeService', () => {
-    let dotPersonalizeService: DotPersonalizeService;
-    let httpMock: HttpTestingController;
+    let spectator: SpectatorHttp<DotPersonalizeService>;
+    let sessionStorageService: SpyObject<DotSessionStorageService>;
+
+    const createHttp = createHttpFactory({
+        service: DotPersonalizeService,
+        providers: [mockProvider(DotSessionStorageService)]
+    });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                DotSessionStorageService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotPersonalizeService
-            ]
+        spectator = createHttp();
+        sessionStorageService = spectator.inject(DotSessionStorageService);
+        sessionStorageService.getVariationId.mockReturnValue('');
+    });
+
+    describe('personalized', () => {
+        it('should personalize a page without variant name', () => {
+            const mockResponse: DotCMSPersonalizedItem[] = [
+                {
+                    relationType: 'relation-type',
+                    treeOrder: 1,
+                    personalization: 'persona-tag',
+                    container: 'container-id',
+                    contentlet: 'contentlet-id',
+                    htmlPage: 'page-id'
+                }
+            ];
+
+            spectator.service.personalized('page-id', 'persona-tag').subscribe((response) => {
+                expect(response).toEqual(mockResponse);
+            });
+
+            const req = spectator.expectOne(
+                '/api/v1/personalization/pagepersonas',
+                HttpMethod.POST
+            );
+            expect(req.request.body).toEqual({ pageId: 'page-id', personaTag: 'persona-tag' });
+            expect(req.request.params.has('variantName')).toBe(false);
+            req.flush({ entity: mockResponse });
         });
-        dotPersonalizeService = TestBed.inject(DotPersonalizeService);
-        httpMock = TestBed.inject(HttpTestingController);
+
+        it('should personalize a page with variant name when available', () => {
+            sessionStorageService.getVariationId.mockReturnValue('test-variant');
+
+            const mockResponse: DotCMSPersonalizedItem[] = [
+                {
+                    relationType: 'relation-type',
+                    treeOrder: 1,
+                    personalization: 'persona-tag',
+                    container: 'container-id',
+                    contentlet: 'contentlet-id',
+                    htmlPage: 'page-id'
+                }
+            ];
+
+            spectator.service.personalized('page-id', 'persona-tag').subscribe((response) => {
+                expect(response).toEqual(mockResponse);
+            });
+
+            const req = spectator.expectOne(
+                '/api/v1/personalization/pagepersonas?variantName=test-variant',
+                HttpMethod.POST
+            );
+            expect(req.request.body).toEqual({ pageId: 'page-id', personaTag: 'persona-tag' });
+            expect(req.request.params.get('variantName')).toBe('test-variant');
+            req.flush({ entity: mockResponse });
+        });
     });
 
-    it('should set Personalized', () => {
-        dotPersonalizeService.personalized('a', 'b').subscribe();
+    describe('despersonalized', () => {
+        it('should despersonalize a page without variant name', () => {
+            const mockResponse = 'success';
 
-        const req = httpMock.expectOne('/api/v1/personalization/pagepersonas?variantName=DEFAULT');
-        expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual({ pageId: 'a', personaTag: 'b' });
-    });
+            spectator.service.despersonalized('page-id', 'persona-tag').subscribe((response) => {
+                expect(response).toEqual(mockResponse);
+            });
 
-    it('should despersonalized', () => {
-        const pageId = 'a';
-        const personaTag = 'b';
-        dotPersonalizeService.despersonalized(pageId, personaTag).subscribe();
+            const req = spectator.expectOne(
+                '/api/v1/personalization/pagepersonas/page/page-id/personalization/persona-tag',
+                HttpMethod.DELETE
+            );
+            expect(req.request.params.has('variantName')).toBe(false);
+            req.flush({ entity: mockResponse });
+        });
 
-        const req = httpMock.expectOne(
-            `/api/v1/personalization/pagepersonas/page/${pageId}/personalization/${personaTag}?variantName=DEFAULT`
-        );
-        expect(req.request.method).toBe('DELETE');
-    });
+        it('should despersonalize a page with variant name when available', () => {
+            sessionStorageService.getVariationId.mockReturnValue('test-variant');
 
-    afterEach(() => {
-        httpMock.verify();
+            const mockResponse = 'success';
+
+            spectator.service.despersonalized('page-id', 'persona-tag').subscribe((response) => {
+                expect(response).toEqual(mockResponse);
+            });
+
+            const req = spectator.expectOne(
+                '/api/v1/personalization/pagepersonas/page/page-id/personalization/persona-tag?variantName=test-variant',
+                HttpMethod.DELETE
+            );
+            expect(req.request.params.get('variantName')).toBe('test-variant');
+            req.flush({ entity: mockResponse });
+        });
     });
 });

@@ -16,7 +16,12 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PersonaContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -24,6 +29,7 @@ import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
@@ -37,6 +43,10 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -536,10 +546,61 @@ public class ContentTypeResourceTest {
 		assertEquals(testCase.typesIncluded, types.stream().anyMatch(this::isEnterpriseBaseType));
 	}
 
-	private boolean isEnterpriseBaseType(final BaseContentTypesView baseContentTypesView) {
-		return baseContentTypesView.getName().equals(BaseContentType.FORM.name())
-			|| baseContentTypesView.getName().equals(BaseContentType.PERSONA.name());
-	}
+    private boolean isEnterpriseBaseType(final BaseContentTypesView baseContentTypesView) {
+        return baseContentTypesView.getName().equals(BaseContentType.FORM.name())
+                || baseContentTypesView.getName().equals(BaseContentType.PERSONA.name());
+    }
+
+    /**
+     * Method to test: {@link ContentTypeResource#getPagesContentTypes}
+     * Given Scenario: A page whose container holds both a regular and a system content type
+     * ExpectedResult: System content types are excluded from the response; regular ones are included
+     */
+    @Test
+    public void test_getPagesContentTypes_excludesSystemContentTypes() throws Exception {
+
+        final User adminUser = APILocator.getUserAPI().loadUserById("dotcms.org.1");
+
+        final ContentType regularContentType = new ContentTypeDataGen().nextPersisted();
+        final ContentType systemContentType = new ContentTypeDataGen().system(true).nextPersisted();
+
+        try {
+            final Container container = new ContainerDataGen()
+                    .withContentType(regularContentType, "")
+                    .withContentType(systemContentType, "")
+                    .nextPersisted();
+            ContainerDataGen.publish(container);
+
+            final Template template = new TemplateDataGen()
+                    .withContainer(container.getIdentifier())
+                    .nextPersisted();
+            APILocator.getVersionableAPI().setLive(template);
+
+            final Host systemHost = APILocator.getHostAPI()
+                    .findSystemHost(adminUser, false);
+            final Folder folder = new FolderDataGen().site(systemHost).nextPersisted();
+            final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+            APILocator.getContentletAPI().publish(page, adminUser, false);
+
+            final ContentTypeResource resource = new ContentTypeResource();
+            final ResponseEntityPaginatedDataView response = resource.getPagesContentTypes(
+                    getHttpRequest(), new EmptyHttpResponse(),
+                    page.getIdentifier(), "-1", null, 1, 10, "name", "ASC", null, null);
+
+            @SuppressWarnings("unchecked") final List<Map<String, Object>> contentTypes = (List<Map<String, Object>>) response.getEntity();
+            final List<String> variables = contentTypes.stream()
+                    .map(ct -> (String) ct.get(ContentTypesPaginator.VARIABLE))
+                    .collect(Collectors.toList());
+
+            assertTrue("Regular content type should be included in the palette",
+                    variables.contains(regularContentType.variable()));
+            assertFalse("System content type should be excluded from the palette",
+                    variables.contains(systemContentType.variable()));
+        } finally {
+            ContentTypeDataGen.remove(regularContentType);
+            ContentTypeDataGen.remove(systemContentType);
+        }
+    }
 
 	private static class TestHashMap<K, V> extends HashMap<K, V> {
 		@Override

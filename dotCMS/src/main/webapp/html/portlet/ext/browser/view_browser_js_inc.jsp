@@ -684,13 +684,16 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         //Showing the loading message
         Element.show('loadingContentListing');
 
-        //Calling ajax
-        BrowserAjax.openFolderContent (inode, '', showArchived, lang, selectFolderContentCallBack);
 
-        //Opening folder at the left side
-        if(!openFolders.contains(inode)) {
-            treeFolderSignSelected(inode);
-        }
+        var needsTreeExpansion = !openFolders.contains(inode);
+
+        BrowserAjax.openFolderContent(inode, '', showArchived, lang, function(content) {
+            selectFolderContentCallBack(content);
+            // Opening folder at the left side - sequential to avoid race condition
+            if(needsTreeExpansion) {
+                treeFolderSignSelected(inode);
+            }
+        });
 
     }
 

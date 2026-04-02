@@ -7,7 +7,7 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { signalStore, withState, patchState } from '@ngrx/signals';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -202,9 +202,7 @@ describe('ContentFeature', () => {
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
-            contentTypeService.getContentTypeWithRender.mockReturnValue(
-                throwError(() => mockError)
-            );
+            contentTypeService.getContentTypeWithRender.mockReturnValue(throwError(mockError));
 
             store.initializeNewContent('testContentType');
             tick();
@@ -317,11 +315,21 @@ describe('ContentFeature', () => {
             expect(title.setTitle).toHaveBeenCalledWith('New Test - DotCMS');
         }));
 
+        it('should reset hiddenFields immediately when initializing new content', fakeAsync(() => {
+            contentTypeService.getContentTypeWithRender.mockReturnValue(NEVER);
+            patchState(store, { hiddenFields: { field1: true, field2: true } });
+
+            store.initializeNewContent('testContentType');
+
+            expect(store.hiddenFields()).toEqual({});
+            expect(store.state()).toBe(ComponentStatus.LOADING);
+
+            tick();
+        }));
+
         it('should handle error when initializing new content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
-            contentTypeService.getContentTypeWithRender.mockReturnValue(
-                throwError(() => mockError)
-            );
+            contentTypeService.getContentTypeWithRender.mockReturnValue(throwError(mockError));
 
             store.initializeNewContent('testContentType');
             tick();
@@ -363,6 +371,18 @@ describe('ContentFeature', () => {
             expect(store.state()).toBe(ComponentStatus.LOADED);
         }));
 
+        it('should reset hiddenFields immediately when initializing existing content', fakeAsync(() => {
+            dotEditContentService.getContentById.mockReturnValue(NEVER);
+            patchState(store, { hiddenFields: { field1: true, field2: true } });
+
+            store.initializeExistingContent({ inode: '123' });
+
+            expect(store.hiddenFields()).toEqual({});
+            expect(store.state()).toBe(ComponentStatus.LOADING);
+
+            tick();
+        }));
+
         it('should set the correct title for existing content', fakeAsync(() => {
             store.initializeExistingContent({ inode: '123' });
             tick();
@@ -375,7 +395,7 @@ describe('ContentFeature', () => {
 
         it('should handle error when initializing existing content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
-            dotEditContentService.getContentById.mockReturnValue(throwError(() => mockError));
+            dotEditContentService.getContentById.mockReturnValue(throwError(mockError));
 
             store.initializeExistingContent({ inode: '123' });
             tick();

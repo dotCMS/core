@@ -1,6 +1,5 @@
 import { MarkdownModule } from 'ngx-markdown';
 
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -24,7 +23,6 @@ import { OnboardingFramework } from './models';
         AccordionModule,
         DotCopyButtonComponent,
         ButtonModule,
-        CommonModule,
         FormsModule,
         KnobModule,
         MarkdownModule,

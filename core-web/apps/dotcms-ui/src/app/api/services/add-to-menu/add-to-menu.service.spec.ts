@@ -1,30 +1,15 @@
-import { mockProvider } from '@ngneat/spectator/jest';
-import { throwError } from 'rxjs';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
-
-import { ConfirmationService } from 'primeng/api';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { MockDotHttpErrorManagerService } from '@dotcms/utils-testing';
 
 import {
-    DotHttpErrorManagerService,
-    DotMessageDisplayService,
-    DotRouterService,
-    DotAlertConfirmService,
-    DotMessageService,
-    DotFormatDateService
-} from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import {
-    CoreWebServiceMock,
-    LoginServiceMock,
-    DotMessageDisplayServiceMock,
-    MockDotRouterService,
-    DotFormatDateServiceMock,
-    mockResponseView
-} from '@dotcms/utils-testing';
-
-import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
+    DotAddToMenuService,
+    DotCreateCustomTool,
+    DotCustomToolToLayout
+} from './add-to-menu.service';
 
 const customToolData: DotCreateCustomTool = {
     contentTypes: 'Blog',
@@ -33,39 +18,30 @@ const customToolData: DotCreateCustomTool = {
 };
 
 describe('DotAddToMenuService', () => {
-    let injector: TestBed;
     let dotAddToMenuService: DotAddToMenuService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let coreWebService: CoreWebService;
-    let httpMock: HttpTestingController;
+    let httpTesting: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: DotMessageDisplayService,
-                    useClass: DotMessageDisplayServiceMock
-                },
-                { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
-                ConfirmationService,
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotAddToMenuService,
-                DotAlertConfirmService,
-                DotHttpErrorManagerService,
-                mockProvider(DotMessageService)
+                {
+                    provide: DotHttpErrorManagerService,
+                    useClass: MockDotHttpErrorManagerService
+                }
             ]
         });
-        injector = getTestBed();
-        dotAddToMenuService = injector.inject(DotAddToMenuService);
-        dotHttpErrorManagerService = injector.inject(DotHttpErrorManagerService);
-        coreWebService = injector.inject(CoreWebService);
-        httpMock = injector.inject(HttpTestingController);
+
+        dotAddToMenuService = TestBed.inject(DotAddToMenuService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        httpTesting = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => {
+        httpTesting.verify();
     });
 
     it('should clean up Portlet Id value', () => {
@@ -75,13 +51,11 @@ describe('DotAddToMenuService', () => {
     });
 
     it('should create a custom tool portlet', () => {
-        const url = `v1/portlet/custom`;
-
         dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
             expect(response).toEqual('ok');
         });
 
-        const req = httpMock.expectOne(url);
+        const req = httpTesting.expectOne('/api/v1/portlet/custom');
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual({
             ...customToolData,
@@ -93,41 +67,45 @@ describe('DotAddToMenuService', () => {
     });
 
     it('should throw null on create custom tool error 400', () => {
-        const error404 = mockResponseView(400);
         jest.spyOn(dotHttpErrorManagerService, 'handle');
-        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
             expect(response).toEqual(null);
         });
+
+        const req = httpTesting.expectOne('/api/v1/portlet/custom');
+        req.flush(null, { status: 400, statusText: 'Bad Request' });
+
         expect(dotHttpErrorManagerService.handle).not.toHaveBeenCalled();
     });
 
     it('should throw error 500 on create custom tool error', () => {
-        const error404 = mockResponseView(500);
         jest.spyOn(dotHttpErrorManagerService, 'handle');
-        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
             expect(response).toEqual(null);
         });
-        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(500));
+
+        const req = httpTesting.expectOne('/api/v1/portlet/custom');
+        req.flush(null, { status: 500, statusText: 'Internal Server Error' });
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
     });
 
     it('should add to layout a custom tool portlet', () => {
-        const url = `v1/portlet/custom/c_${customToolData.portletName}_${customToolData.dataViewMode}/_addtolayout/123`;
+        const layoutData: DotCustomToolToLayout = {
+            portletName: customToolData.portletName,
+            dataViewMode: customToolData.dataViewMode,
+            layoutId: '123'
+        };
 
-        dotAddToMenuService
-            .addToLayout({
-                portletName: customToolData.portletName,
-                dataViewMode: customToolData.dataViewMode,
-                layoutId: '123'
-            })
-            .subscribe((response: string) => {
-                expect(response).toEqual('ok');
-            });
+        dotAddToMenuService.addToLayout(layoutData).subscribe((response: string) => {
+            expect(response).toEqual('ok');
+        });
 
-        const req = httpMock.expectOne(url);
+        const req = httpTesting.expectOne(
+            `/api/v1/portlet/custom/c_${customToolData.portletName}_${customToolData.dataViewMode}/_addtolayout/123`
+        );
         expect(req.request.method).toBe('PUT');
         req.flush({
             entity: 'ok'
@@ -135,23 +113,23 @@ describe('DotAddToMenuService', () => {
     });
 
     it('should throw error 400 on add to layout custom portlet', () => {
-        const error404 = mockResponseView(400);
         jest.spyOn(dotHttpErrorManagerService, 'handle');
-        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
-        dotAddToMenuService
-            .addToLayout({
-                portletName: customToolData.portletName,
-                dataViewMode: customToolData.dataViewMode,
-                layoutId: '123'
-            })
-            .subscribe((response: string) => {
-                expect(response).toEqual(null);
-            });
-        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
-    });
+        const layoutData: DotCustomToolToLayout = {
+            portletName: customToolData.portletName,
+            dataViewMode: customToolData.dataViewMode,
+            layoutId: '123'
+        };
 
-    afterEach(() => {
-        httpMock.verify();
+        dotAddToMenuService.addToLayout(layoutData).subscribe((response: string) => {
+            expect(response).toEqual(null);
+        });
+
+        const req = httpTesting.expectOne(
+            `/api/v1/portlet/custom/c_${customToolData.portletName}_${customToolData.dataViewMode}/_addtolayout/123`
+        );
+        req.flush(null, { status: 400, statusText: 'Bad Request' });
+
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
     });
 });

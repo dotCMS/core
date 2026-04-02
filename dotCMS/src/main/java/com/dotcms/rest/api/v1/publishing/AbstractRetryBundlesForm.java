@@ -29,7 +29,7 @@ public interface AbstractRetryBundlesForm {
      */
     @Schema(
             description = "List of bundle identifiers to retry",
-            example = "[\"bundle-123\", \"bundle-456\"]",
+            example = "[\"01KJWNJM2C67DM56GHBJ4S7B89\", \"01KJWNJM2C67DM56GHBJ4S7B90\"]",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     List<String> bundleIds();
@@ -58,9 +58,10 @@ public interface AbstractRetryBundlesForm {
      */
     @Schema(
             description = "Which endpoints to retry: ALL_ENDPOINTS sends to all, " +
-                    "FAILED_ENDPOINTS sends only to previously failed endpoints. Case-sensitive.",
+                    "FAILED_ENDPOINTS sends only to previously failed endpoints. " +
+                    "Case-sensitive: must be uppercase.",
             example = "FAILED_ENDPOINTS",
-            allowableValues = {"ALL_ENDPOINTS", "FAILED_ENDPOINTS"}
+            defaultValue = "ALL_ENDPOINTS"
     )
     @JsonDeserialize(using = DeliveryStrategyDeserializer.class)
     @Value.Default
