@@ -491,16 +491,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         fromEvent<MessageEvent>(this.window, 'message')
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((event) => {
-                const data = event.data;
-                if (this.#isUvePostMessage(data)) {
-                    this.handleUveMessage(data);
-                    if (data.action === DotCMSUVEAction.IFRAME_HEIGHT) {
-                        this.#clampScrollWithinBounds();
-                    }
-                }
-            });
+            .pipe(
+                filter((event) => this.#isMessageFromUvePreviewFrame(event)),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((event) => this.handleUveMessage(event.data));
 
         this.setupDragDrop();
     }
@@ -547,8 +542,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         );
     }
 
-    private handleUveMessage(message: PostMessage): void {
-        this.actionsHandler.handleAction(message, {
+    private handleUveMessage(data: unknown): void {
+        if (!this.#isUvePostMessage(data)) {
+            return;
+        }
+
+        this.actionsHandler.handleAction(data, {
             uveStore: this.uveStore,
             dialog: this.dialog,
             blockSidebar: this.blockSidebar,
@@ -556,7 +555,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             dotPageApiService: this.dotPageApiService,
             contentWindow: this.contentWindow,
             host: this.host,
-            onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode)
+            onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
+            clampScrollWithinBounds: () => this.#clampScrollWithinBounds()
         });
     }
 
@@ -1030,6 +1030,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.iframe?.nativeElement.contentWindow?.postMessage(message, host);
     }
 
+    /**
+     * Only handle postMessage events sent from the UVE preview iframe (or a nested frame
+     * inside it). Ignores same-window messages (e.g. dot-html-to-image thumbnail iframes).
+     */
+    #isMessageFromUvePreviewFrame(event: MessageEvent): boolean {
+        const previewWindow = this.iframe?.nativeElement?.contentWindow;
+        const source = event.source as Window;
+        if (!previewWindow || !source) {
+            return false;
+        }
+        return source === previewWindow || source === previewWindow.parent;
+    }
+
     #isUvePostMessage(data: unknown): data is PostMessage {
         return !!data && typeof data === 'object' && 'action' in data;
     }
@@ -1425,6 +1438,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     #clampScrollWithinBounds(): void {
+        console.log('clampScrollWithinBounds');
         const el = this.editorContent?.nativeElement;
         if (!el) {
             return;
