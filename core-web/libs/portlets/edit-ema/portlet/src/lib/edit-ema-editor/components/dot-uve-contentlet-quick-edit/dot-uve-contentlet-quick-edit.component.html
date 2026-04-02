@@ -220,6 +220,7 @@
         <p-button
             [text]="true"
             [label]="'uve.quick-edit.open-full-editor' | dm"
+            [disabled]="loading()"
             data-testid="open-full-editor-button"
             (onClick)="openFullEditor.emit()" />
         <p-button

@@ -492,6 +492,17 @@ describe('DotUveContentletQuickEditComponent', () => {
 
             expect(handler).toHaveBeenCalled();
         });
+
+        it('should disable the "Go to full editor" button when loading', () => {
+            fixture.componentRef.setInput('loading', true);
+            spectator.detectChanges();
+
+            const btn = spectator
+                .query(byTestId('open-full-editor-button'))
+                ?.querySelector('button') as HTMLButtonElement;
+
+            expect(btn.disabled).toBe(true);
+        });
     });
 
     describe('field labels', () => {
