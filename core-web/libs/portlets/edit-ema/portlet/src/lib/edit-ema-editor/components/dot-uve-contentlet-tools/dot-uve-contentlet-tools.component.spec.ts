@@ -740,4 +740,88 @@ describe('DotUveContentletToolsComponent', () => {
             expect(parsedItem.move).toBe(true);
         });
     });
+
+    describe('isSameContentlet', () => {
+        it('should return true when both identifier and uuid match', () => {
+            expect(
+                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, MOCK_CONTENTLET_AREA)
+            ).toBe(true);
+        });
+
+        it('should return false when same contentlet is in a different container', () => {
+            const differentContainer: ContentletArea = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    container: {
+                        ...MOCK_CONTENTLET_AREA.payload.container,
+                        identifier: 'container-identifier-456',
+                        uuid: 'uuid-123'
+                    }
+                }
+            };
+
+            expect(
+                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentContainer)
+            ).toBe(false);
+        });
+
+        it('should return false when same contentlet is in a different instance of the same container type', () => {
+            const differentInstance: ContentletArea = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    container: {
+                        ...MOCK_CONTENTLET_AREA.payload.container,
+                        identifier: 'container-identifier-123',
+                        uuid: 'uuid-456'
+                    }
+                }
+            };
+
+            expect(
+                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentInstance)
+            ).toBe(false);
+        });
+
+        it('should return false when uuid matches but identifier differs', () => {
+            const differentContentlet: ContentletArea = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                        identifier: 'other-id'
+                    }
+                }
+            };
+
+            expect(
+                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentContentlet)
+            ).toBe(false);
+        });
+
+        it('should return false for two different empty containers', () => {
+            const emptyContainer2: ContentletArea = {
+                ...MOCK_EMPTY_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_EMPTY_CONTENTLET_AREA.payload,
+                    container: {
+                        ...MOCK_EMPTY_CONTENTLET_AREA.payload.container,
+                        identifier: 'container-identifier-999',
+                        uuid: 'uuid-123'
+                    }
+                }
+            };
+
+            expect(
+                spectator.component.isSameContentlet(MOCK_EMPTY_CONTENTLET_AREA, emptyContainer2)
+            ).toBe(false);
+        });
+
+        it('should return false when either area is null', () => {
+            expect(spectator.component.isSameContentlet(null, MOCK_CONTENTLET_AREA)).toBe(false);
+            expect(spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, null)).toBe(false);
+        });
+    });
 });

@@ -57,7 +57,7 @@ import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/
 import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
+import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -109,6 +109,7 @@ import {
 } from '../shared/mocks';
 import { ActionPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { IframeAccessMode } from '../store/models';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -481,6 +482,7 @@ describe('EditEmaEditorComponent', () => {
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
             addMessageSpy = jest.spyOn(messageService, 'add');
+            mockDotUveActionsHandlerService.handleAction.mockClear();
 
             store.pageLoad({
                 clientHost: 'http://localhost:3000',
@@ -558,6 +560,58 @@ describe('EditEmaEditorComponent', () => {
 
                 // Palette wrapper should no longer have the open class
                 expect(wrapper.classList).not.toContain('open');
+            });
+
+            it('should ignore iframe height postMessage when the iframe is locally accessible', () => {
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                const mockDoc = document.implementation.createHTMLDocument();
+
+                patchState(store, { iframeAccessMode: IframeAccessMode.LOCAL });
+
+                Object.defineProperty(iframe.nativeElement, 'contentDocument', {
+                    configurable: true,
+                    value: mockDoc
+                });
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        data: {
+                            action: DotCMSUVEAction.IFRAME_HEIGHT,
+                            payload: { height: 321 }
+                        }
+                    })
+                );
+
+                expect(mockDotUveActionsHandlerService.handleAction).not.toHaveBeenCalled();
+            });
+
+            it('should handle iframe height postMessage when the iframe is cross-origin', () => {
+                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+
+                patchState(store, { iframeAccessMode: IframeAccessMode.CROSS_ORIGIN });
+
+                Object.defineProperty(iframe.nativeElement, 'contentDocument', {
+                    configurable: true,
+                    get: () => {
+                        throw new DOMException('Blocked', 'SecurityError');
+                    }
+                });
+
+                const message = {
+                    action: DotCMSUVEAction.IFRAME_HEIGHT,
+                    payload: { height: 321 }
+                };
+
+                window.dispatchEvent(
+                    new MessageEvent('message', {
+                        data: message
+                    })
+                );
+
+                expect(mockDotUveActionsHandlerService.handleAction).toHaveBeenCalledWith(
+                    message,
+                    expect.any(Object)
+                );
             });
 
             it('should have a toolbar', () => {
@@ -1943,9 +1997,14 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
+                    const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                    const previewWindow = iframe?.contentWindow;
+                    expect(previewWindow).toBeTruthy();
+
                     window.dispatchEvent(
                         new MessageEvent('message', {
                             origin: HOST,
+                            source: previewWindow,
                             data: {
                                 action: 'set-url',
                                 payload: {

@@ -310,7 +310,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private createEditContentletUrl(inode: string, angularCurrentPortlet: string): string {
+    private createEditContentletUrl(
+        inode: string,
+        angularCurrentPortlet: string | null | undefined
+    ): string {
         const queryParams = new URLSearchParams({
             p_p_id: 'content',
             p_p_action: '1',
@@ -319,7 +322,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: inode,
-            angularCurrentPortlet: angularCurrentPortlet,
+            angularCurrentPortlet: angularCurrentPortlet ?? 'edit-page',
             variantName: this.uveStore.pageVariantId()
         });
 

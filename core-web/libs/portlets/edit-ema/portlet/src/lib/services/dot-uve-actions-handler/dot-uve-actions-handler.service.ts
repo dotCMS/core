@@ -48,6 +48,8 @@ export interface ActionsHandlerDependencies {
     contentWindow: Window | null;
     host: string;
     onCopyContent: (currentTreeNode: DotTreeNode) => Observable<DotCMSContentlet>;
+    /** Called after iframe document height is applied (e.g. keep editor scroll in bounds). */
+    clampScrollWithinBounds?: () => void;
 }
 
 @Injectable()
@@ -64,7 +66,8 @@ export class DotUveActionsHandlerService {
             dotPageApiService,
             contentWindow,
             host,
-            onCopyContent
+            onCopyContent,
+            clampScrollWithinBounds
         } = deps;
 
         const CLIENT_ACTIONS_FUNC_MAP: Record<DotCMSUVEAction, (payload: unknown) => void> = {
@@ -267,6 +270,7 @@ export class DotUveActionsHandlerService {
             },
             [DotCMSUVEAction.IFRAME_HEIGHT]: (payload: { height: number }) => {
                 uveStore.viewSetIframeDocHeight(payload.height);
+                clampScrollWithinBounds?.();
             }
         };
 

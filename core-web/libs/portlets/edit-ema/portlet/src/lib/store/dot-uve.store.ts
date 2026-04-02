@@ -2,6 +2,7 @@ import { signalStore, withFeature, withMethods, withState } from '@ngrx/signals'
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
+import { withContentTypeCache } from './features/content-type-cache/withContentTypeCache';
 import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
@@ -11,7 +12,7 @@ import { withPageApi } from './features/page-api/withPageApi';
 import { withTrack } from './features/track/withTrack';
 import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
-import { Orientation, PageType, UVEState } from './models';
+import { IframeAccessMode, Orientation, PageType, UVEState } from './models';
 
 import {
     DEFAULT_DEVICE,
@@ -33,6 +34,7 @@ const initialState: UVEState = {
     pageParams: null,
     pageLanguages: [],
     pageType: PageType.TRADITIONAL,
+    iframeAccessMode: IframeAccessMode.LOCAL,
     pageExperiment: null,
     pageErrorCode: null,
     // Workflow state (managed by withWorkflow)
@@ -128,7 +130,9 @@ export const UVEStore = signalStore(
     withView(),
     // 10. Editor UI
     withEditor(),
-    // 11. Backend API (must be last - needs all dependencies above)
+    // 11. Content type cache (on-demand fetch + permanent session cache)
+    withContentTypeCache(),
+    // 12. Backend API (must be last - needs all dependencies above)
     withFeature((store) =>
         withPageApi({
             // Client configuration

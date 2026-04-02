@@ -258,14 +258,7 @@ export class DotUveToolbarComponent {
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
-        this.#store.pageLoad({
-            mode: UVE_MODE.LIVE,
-            publishDate: publishDateUTC
-        });
-    }
-
-    protected togglePalette(): void {
-        this.#store.setPaletteOpen(!this.$isPaletteOpen());
+        this.#store.pageReload({ publishDate: publishDateUTC });
     }
 
     /**

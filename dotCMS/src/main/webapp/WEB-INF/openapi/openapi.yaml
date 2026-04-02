@@ -23654,10 +23654,6 @@ components:
             type: string
         identifier:
           type: string
-        metadata:
-          type: object
-          additionalProperties:
-            type: object
         uuid:
           type: string
     ContainerView:

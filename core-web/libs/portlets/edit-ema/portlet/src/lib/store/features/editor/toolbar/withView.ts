@@ -139,6 +139,7 @@ export function withView() {
             $viewCanvasOuterStyles: computed(() => {
                 const zoom = store.viewZoomLevel() / 100;
                 const height = store.viewZoomIframeDocHeight();
+
                 return {
                     width: `${DEFAULT_IFRAME_DOC_WIDTH * zoom}px`,
                     height: `${height * zoom}px`

@@ -2,9 +2,18 @@
 import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
+import { observeDocumentHeight } from '../lib/dom/document-height-observer';
 import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
+
+function escapeCssContentValue(value: string): string {
+    return value
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r\n|\r|\n/g, '\\a ')
+        .replace(/\f/g, ' ');
+}
 
 /**
  * Sets up scroll event handlers for the window to notify the editor about scroll events.
@@ -166,86 +175,56 @@ export function listenBlockEditorInlineEvent() {
 }
 
 /**
+ * Returns whether iframe height must be synchronized via postMessage.
+ *
+ * Same-origin parents can measure iframe content directly, so they do not need
+ * child-driven height reporting. Cross-origin parents cannot access the iframe
+ * DOM, so they still need the reporter fallback.
+ */
+export function shouldReportIframeHeightToParent(): boolean {
+    if (window.parent === window) {
+        return false;
+    }
+
+    try {
+        const parentDocument = window.parent.document;
+
+        return !parentDocument;
+    } catch {
+        return true;
+    }
+}
+
+/**
  * Reports the iframe document height to the parent UVE shell via postMessage.
  *
- * Uses ResizeObserver + resize/load events so the parent is notified whenever
- * the page height changes — not just on initial load. Works for both traditional
- * (VTL) and headless pages.
+ * Uses ResizeObserver on <html> for viewport/font/image-driven size changes, and
+ * MutationObserver on <body> to catch DOM removals (e.g. contentlets deleted by
+ * the editor) that shrink the page without triggering a resize event.
  *
- * Measurement is scheduled with double requestAnimationFrame so it runs after
- * the browser has finished layout and paint. That avoids posting a height while
- * subtree/layout is still settling (fonts, images, late injects). ResizeObserver
- * and resize bursts are coalesced to at most one post per frame pair.
+ * Measurement reads `document.documentElement.offsetHeight` — the actual rendered
+ * height of the <html> element after layout. `scrollHeight` is intentionally avoided
+ * because it does not reliably decrease when content is removed from the DOM.
+ *
+ * Height sends are coalesced to at most one per double-requestAnimationFrame pair
+ * so they always run after layout and paint have settled.
  *
  * @returns {{ destroyHeightReporter: () => void }} Cleanup function that removes
- * all listeners and disconnects the ResizeObserver.
+ * all listeners and disconnects the observers.
  */
 export function reportIframeHeight(): { destroyHeightReporter: () => void } {
-    const measureAndSend = () => {
-        const height = Math.max(
-            document.body?.scrollHeight ?? 0,
-            document.documentElement?.scrollHeight ?? 0
-        );
-
-        sendMessageToUVE({
-            action: DotCMSUVEAction.IFRAME_HEIGHT,
-            payload: { height }
-        });
-    };
-
-    let rafOuter: number | null = null;
-    let rafInner: number | null = null;
-    let destroyed = false;
-
-    const scheduleSend = () => {
-        if (destroyed || rafOuter !== null) {
-            return;
-        }
-        rafOuter = requestAnimationFrame(() => {
-            rafOuter = null;
-            if (destroyed) {
-                return;
-            }
-            rafInner = requestAnimationFrame(() => {
-                rafInner = null;
-                if (!destroyed) {
-                    measureAndSend();
-                }
+    const { destroy } = observeDocumentHeight({
+        onHeightChange: (height) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.IFRAME_HEIGHT,
+                payload: { height }
             });
-        });
-    };
-
-    const onLoad = () => scheduleSend();
-    const onResize = () => scheduleSend();
-
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        scheduleSend();
-    } else {
-        window.addEventListener('load', onLoad);
-    }
-
-    window.addEventListener('resize', onResize);
-
-    const ro = new ResizeObserver(() => scheduleSend());
-    ro.observe(document.documentElement);
-    if (document.body) {
-        ro.observe(document.body);
-    }
+        }
+    });
 
     return {
         destroyHeightReporter: () => {
-            destroyed = true;
-            if (rafOuter !== null) {
-                cancelAnimationFrame(rafOuter);
-                rafOuter = null;
-            }
-            if (rafInner !== null) {
-                cancelAnimationFrame(rafInner);
-                rafInner = null;
-            }
-            ro.disconnect();
-            window.removeEventListener('load', onLoad);
-            window.removeEventListener('resize', onResize);
+            destroy();
         }
     };
 }
@@ -268,6 +247,8 @@ export function injectEmptyStateStyles(): void {
         // localStorage unavailable or JSON malformed — use default
     }
 
+    const escapedEmptyContainerLabel = escapeCssContentValue(emptyContainerLabel);
+
     const style = document.createElement('style');
     style.dataset['dotStyles'] = 'uve-empty-state';
     style.textContent = `
@@ -287,7 +268,7 @@ export function injectEmptyStateStyles(): void {
         }
 
         [data-dot-object="container"]:empty::after {
-            content: '${emptyContainerLabel}';
+            content: '${escapedEmptyContainerLabel}';
         }
     `;
     document.head?.appendChild(style);
