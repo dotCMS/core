@@ -5,6 +5,7 @@ export type ReportType = 'a11y' | 'geo';
 export interface A11yGroup {
     code: string;
     type: 'error' | 'warning' | 'notice';
+    message: string;
     impact: string;
     helpUrl: string;
     items: PageScannerA11yItem[];

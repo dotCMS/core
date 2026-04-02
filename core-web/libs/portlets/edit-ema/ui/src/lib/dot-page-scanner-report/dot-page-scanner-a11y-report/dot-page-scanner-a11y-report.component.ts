@@ -47,6 +47,7 @@ export class DotPageScannerA11yReportComponent {
                 const impact = item.runnerExtras?.impact ?? '';
                 const type = item.type;
                 map.set(item.code, {
+                    message: item.runnerExtras?.description ?? '',
                     code: item.code,
                     type,
                     impact,

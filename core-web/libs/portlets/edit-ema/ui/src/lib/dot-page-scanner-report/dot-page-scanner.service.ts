@@ -83,7 +83,7 @@ export interface PageScannerGeoResponse {
     topIssues: PageScannerGeoIssue[];
 }
 
-const CLOUDFLARE_BASE = 'https://intervention-gardening-designer-arguments.trycloudflare.com';
+const CLOUDFLARE_BASE = 'https://words-organised-beads-html.trycloudflare.com';
 
 @Injectable()
 export class DotPageScannerService {
