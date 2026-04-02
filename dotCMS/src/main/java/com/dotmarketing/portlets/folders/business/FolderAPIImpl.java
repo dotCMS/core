@@ -677,7 +677,10 @@ public class FolderAPIImpl implements FolderAPI  {
 		final boolean isNew = folder.getInode() == null;
 		//if the folder was renamed, we will need to create a new identifier
 		if (!folder.getName().equalsIgnoreCase(existingID.getAssetName())){
-			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
+			if (!folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions)) {
+				throw new DotDataException("Could not rename folder '" + existingID.getAssetName()
+						+ "' to '" + folder.getName() + "': a folder with that name already exists.");
+			}
 			// Queue async ES reindex so content under the renamed folder is re-indexed at the new
 			// path. folderFactory.renameFolder() mutates folder.setName(newName), so
 			// folder.getPath() already returns the new path when this runs.

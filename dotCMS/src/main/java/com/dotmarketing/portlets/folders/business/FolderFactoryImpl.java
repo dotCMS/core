@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CO
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
 
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
@@ -52,7 +53,6 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -632,21 +632,14 @@ public class FolderFactoryImpl extends FolderFactory {
     return successOperation.getValue();
   }
 
-  private void updateOtherFolderReferences(final String newFolderInode, final String oldFolderInode) {
-    final DotConnect dotConnect = new DotConnect();
-    try {
-      dotConnect.executeStatement("update structure set folder = '" + newFolderInode
-          + "' where folder = '" + oldFolderInode + "'");
-      dotConnect.executeStatement("update permission set inode_id = '" + newFolderInode
-          + "' where inode_id = '" + oldFolderInode + "'");
-      dotConnect.executeStatement("update permission_reference set asset_id = '"
-          + newFolderInode + "' where asset_id = '" + oldFolderInode + "'");
-
-
-    } catch (SQLException e) {
-      Logger.error(FolderFactoryImpl.class, e.getMessage(), e);
-      throw new DotRuntimeException(e.getMessage(), e);
-    }
+  private void updateOtherFolderReferences(final String newFolderInode, final String oldFolderInode)
+      throws DotDataException {
+    new DotConnect().executeUpdate(
+        "UPDATE structure SET folder = ? WHERE folder = ?", newFolderInode, oldFolderInode);
+    new DotConnect().executeUpdate(
+        "UPDATE permission SET inode_id = ? WHERE inode_id = ?", newFolderInode, oldFolderInode);
+    new DotConnect().executeUpdate(
+        "UPDATE permission_reference SET asset_id = ? WHERE asset_id = ?", newFolderInode, oldFolderInode);
   }
 
   /**
@@ -778,6 +771,7 @@ public class FolderFactoryImpl extends FolderFactory {
 		}
   }
 
+  @WrapInTransaction
   @Override
   protected boolean renameFolder(final Folder folder, final String newName, final User user,
       final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
@@ -816,7 +810,7 @@ public class FolderFactoryImpl extends FolderFactory {
     // based on assetType:hostname:parentPath:folderName — changing the URL changes the identity.
     final Folder newFolder;
     try {
-      newFolder = getNewFolderRecord(folder, APILocator.systemUser(), parentPath, hostId);
+      newFolder = getNewFolderRecord(folder, user, parentPath, hostId);
     } catch (final DotDataException | RuntimeException e) {
       folder.setName(ident.getAssetName()); // restore original name
       // A concurrent rename to the same destination path can race past the collision check and
@@ -864,6 +858,12 @@ public class FolderFactoryImpl extends FolderFactory {
     // folder.getName() was already set to newName above.
     folder.setInode(newFolder.getInode());
     folder.setIdentifier(newFolder.getIdentifier());
+
+    // Evict the new folder's own identifier cache entry. clearIdentifierCacheForSubtree()
+    // only covers items whose parent_path starts with newPath (the folder's children), not the
+    // folder itself (whose parent_path is parentPath). Without this eviction, a prior URI-keyed
+    // entry for the same path could be served until natural LRU expiry.
+    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(newFolder.getIdentifier());
 
     return true;
   }
