@@ -521,29 +521,29 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         if (UtilMethods.isSet(id.getId())) {
             if (isIdentifier(id.getId())) {
                 query = "UPDATE identifier set parent_path=?, asset_name=?, host_inode=?, asset_type=?, syspublish_date=?, sysexpire_date=?, owner=?, create_date=?, asset_subtype=?, base_type=? where id=?";
+                // Guard against stale cached Identifiers (loaded before base_type was
+                // denormalized) writing null back and temporarily undoing the backfill.
+                // Only needed on UPDATE — INSERT callers must always supply base_type.
+                if (id.getBaseType() == null && UtilMethods.isSet(id.getAssetSubType())) {
+                    final Integer resolvedBaseType = Try.of(() ->
+                            APILocator.getContentTypeAPI(APILocator.systemUser())
+                                    .find(id.getAssetSubType())
+                                    .baseType()
+                                    .getType())
+                            .onFailure(e -> Logger.warn(IdentifierFactoryImpl.class,
+                                    "Could not resolve base_type for asset_subtype=" + id.getAssetSubType()
+                                    + " on identifier=" + id.getId() + ": " + e.getMessage()))
+                            .getOrNull();
+                    if (resolvedBaseType != null) {
+                        id.setBaseType(resolvedBaseType);
+                    }
+                }
             } else {
                 query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,base_type,id) values (?,?,?,?,?,?,?,?,?,?,?)";
             }
         } else {
             id.setId(UUIDGenerator.generateUuid());
             query = "INSERT INTO identifier (parent_path,asset_name,host_inode,asset_type,syspublish_date,sysexpire_date,owner,create_date,asset_subtype,base_type,id) values (?,?,?,?,?,?,?,?,?,?,?)";
-        }
-
-        // Guard against stale cached Identifiers (loaded before base_type was denormalized)
-        // writing null back and temporarily undoing the backfill for this row.
-        if (id.getBaseType() == null && UtilMethods.isSet(id.getAssetSubType())) {
-            final Integer resolvedBaseType = Try.of(() ->
-                    APILocator.getContentTypeAPI(APILocator.systemUser())
-                            .find(id.getAssetSubType())
-                            .baseType()
-                            .getType())
-                    .onFailure(e -> Logger.warn(IdentifierFactoryImpl.class,
-                            "Could not resolve base_type for asset_subtype=" + id.getAssetSubType()
-                            + " on identifier=" + id.getId() + ": " + e.getMessage()))
-                    .getOrNull();
-            if (resolvedBaseType != null) {
-                id.setBaseType(resolvedBaseType);
-            }
         }
 
         DotConnect dc = new DotConnect();
