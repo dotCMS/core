@@ -187,8 +187,9 @@ export function shouldReportIframeHeightToParent(): boolean {
     }
 
     try {
-        void window.parent.document;
-        return false;
+        const parentDocument = window.parent.document;
+
+        return !parentDocument;
     } catch {
         return true;
     }
