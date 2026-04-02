@@ -1,7 +1,7 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { Component, forwardRef } from '@angular/core';
+import { Component, forwardRef, signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import {
     ControlValueAccessor,
@@ -42,6 +42,7 @@ import { SearchParams } from '../../../../models/search.model';
 })
 class MockLanguageFieldComponent implements ControlValueAccessor {
     languageControl = new FormControl({ isoCode: 'en-US', id: 1 });
+    $selectedLanguageLabel = signal('en-US');
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     writeValue(): void {}
@@ -67,6 +68,7 @@ class MockSiteFieldComponent implements ControlValueAccessor {
         label: 'demo.dotcms.com',
         data: { id: 'site123', type: 'site' }
     });
+    $selectedNodeLabel = signal('demo.dotcms.com');
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     writeValue(): void {}

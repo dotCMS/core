@@ -6,7 +6,10 @@
 <div class="flex justify-between items-center w-full mb-2">
     <div class="flex items-center gap-2">
         <div class="flex-none">
-            <dot-search (onSearch)="store.search($event)" [isLoading]="store.isLoading()" />
+            <dot-search
+                (onSearch)="store.search($event)"
+                [isLoading]="store.isLoading()"
+                [initialFilters]="store.initialFilters()" />
         </div>
 
         <div class="grow">

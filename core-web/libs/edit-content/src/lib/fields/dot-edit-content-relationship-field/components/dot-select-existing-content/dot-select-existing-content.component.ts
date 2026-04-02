@@ -31,18 +31,10 @@ import { ExistingContentStore } from './store/existing-content.store';
 
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
-import { SelectionMode } from '../../models/relationship.models';
+import { InitLoadParams } from '../../models/relationship.models';
 
-type DialogData = {
-    contentTypeId: string;
-    selectionMode: SelectionMode;
+type DialogData = Omit<InitLoadParams, 'selectedItemsIds'> & {
     currentItemsIds: string[];
-    showFields?: string[] | null;
-    cardinality?: number;
-    parentContentTypeId?: string;
-    fieldVariable?: string;
-    isParentField?: boolean;
-    currentContentIdentifier?: string;
 };
 
 const STATIC_COLUMNS = 6;
@@ -132,7 +124,8 @@ export class DotSelectExistingContentComponent implements OnInit {
             parentContentTypeId: data.parentContentTypeId,
             fieldVariable: data.fieldVariable,
             isParentField: data.isParentField,
-            currentContentIdentifier: data.currentContentIdentifier
+            currentContentIdentifier: data.currentContentIdentifier,
+            contentletContext: data.contentletContext
         });
     }
 

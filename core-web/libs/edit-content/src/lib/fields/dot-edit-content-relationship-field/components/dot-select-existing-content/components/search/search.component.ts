@@ -1,5 +1,6 @@
 import {
     Component,
+    effect,
     inject,
     input,
     output,
@@ -27,6 +28,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 
+import { ContentletFilterContext } from '../../../../models/relationship.models';
 import { SearchParams } from '../../../../models/search.model';
 
 export const DEBOUNCE_TIME = 300;
@@ -91,10 +93,32 @@ export class SearchComponent {
     $isLoading = input.required<boolean>({ alias: 'isLoading' });
 
     /**
+     * Input signal for initial filter context from the contentlet being edited.
+     * Used to pre-populate form fields and show chips on dialog open.
+     */
+    $initialFilters = input<ContentletFilterContext | null>(null, { alias: 'initialFilters' });
+
+    /**
      * Signal that stores the currently active search parameters.
      * Updated only when a search is actually performed.
      */
     $activeSearchParams = signal<SearchParams>({});
+
+    /**
+     * Computed site context for the SiteFieldComponent.
+     * Provides hostname and folder path for label display.
+     */
+    $siteContext = computed(() => {
+        const filters = this.$initialFilters();
+        if (!filters?.hostName) {
+            return null;
+        }
+
+        return {
+            hostName: filters.hostName,
+            folderPath: filters.folderPath ?? ''
+        };
+    });
 
     /**
      * Computed property that returns active filters based on the last executed search.
@@ -157,6 +181,12 @@ export class SearchComponent {
     #isDestroyed = false;
 
     /**
+     * Flag to prevent multiple pre-population runs.
+     * @private
+     */
+    #prePopulated = false;
+
+    /**
      * Reactive form group containing search parameters:
      * - query: The search text
      * - languageId: Selected language ID (-1 for all languages)
@@ -187,6 +217,37 @@ export class SearchComponent {
             .subscribe(() => {
                 this.doSearch();
             });
+
+        // Pre-populate form from initial filters (runs once)
+        effect(() => {
+            const filters = this.$initialFilters();
+            if (!filters || this.#prePopulated) {
+                return;
+            }
+
+            this.#prePopulated = true;
+
+            // Pre-populate language
+            if (filters.languageId && filters.languageId !== -1) {
+                this.form
+                    .get('systemSearchableFields.languageId')
+                    ?.setValue(filters.languageId, { emitEvent: false });
+            }
+
+            // Pre-populate site or folder
+            if (filters.folderId) {
+                this.form
+                    .get('systemSearchableFields.siteOrFolderId')
+                    ?.setValue(`folder:${filters.folderId}`, { emitEvent: false });
+            } else if (filters.hostId) {
+                this.form
+                    .get('systemSearchableFields.siteOrFolderId')
+                    ?.setValue(`site:${filters.hostId}`, { emitEvent: false });
+            }
+
+            // Set active search params so chips display immediately
+            this.$activeSearchParams.set(this.getValues());
+        });
     }
 
     /**
@@ -311,6 +372,13 @@ export class SearchComponent {
      * @returns A formatted label for display
      */
     private getLanguageDisplayLabel(languageId: number): string {
+        // Use reactive signal first (updates when languages load)
+        const signalLabel = this.$languageField()?.$selectedLanguageLabel?.();
+        if (signalLabel) {
+            return signalLabel;
+        }
+
+        // Fallback to form control value
         const languageValue = this.$languageField()?.languageControl?.value;
 
         return languageValue?.isoCode || `Language Id: ${languageId}`;
@@ -323,18 +391,32 @@ export class SearchComponent {
      * @returns A formatted label for display, truncated to 45 characters with ellipsis if needed
      */
     private getSiteDisplayLabel(siteOrFolderId: string): string {
-        const siteFieldValue = this.$siteField()?.siteControl?.value as TreeNodeItem;
-        let label: string;
-
-        // Try to get the site/folder name from the child component if available
-        if (siteFieldValue) {
-            label = siteFieldValue.label;
-        } else {
-            // Fallback to ID only
-            label = siteOrFolderId;
+        // Use reactive signal first (updates when selection changes)
+        const signalLabel = this.$siteField()?.$selectedNodeLabel();
+        if (signalLabel) {
+            return this.truncateLabel(signalLabel);
         }
 
-        // Truncate if 45 characters or longer
+        // Fallback to form control value
+        const siteFieldValue = this.$siteField()?.siteControl?.value as TreeNodeItem;
+        if (siteFieldValue?.label) {
+            return this.truncateLabel(siteFieldValue.label);
+        }
+
+        // Fallback to initialFilters context
+        const filters = this.$initialFilters();
+        if (filters?.hostName) {
+            const ctxLabel = filters.folderPath
+                ? `${filters.hostName}${filters.folderPath}`
+                : filters.hostName;
+
+            return this.truncateLabel(ctxLabel);
+        }
+
+        return this.truncateLabel(siteOrFolderId);
+    }
+
+    private truncateLabel(label: string): string {
         return label.length >= 45 ? label.substring(0, 45) + '...' : label;
     }
 }

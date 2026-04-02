@@ -136,6 +136,38 @@ export const SiteFieldStore = signalStore(
              */
             clearSelection: () => {
                 patchState(store, { nodeSelected: null });
+            },
+            /**
+             * Sets an initial selection from a pre-populated value (e.g., from contentlet context).
+             * Creates a synthetic TreeNodeItem to display immediately while the tree loads.
+             * @method setInitialSelection
+             */
+            setInitialSelection: (params: {
+                id: string;
+                type: 'site' | 'folder';
+                hostname: string;
+                path: string;
+            }) => {
+                const isSite = params.type === 'site';
+                // Label without '//' prefix — the TreeSelect template adds it
+                const label = isSite
+                    ? params.hostname
+                    : `${params.hostname}${params.path}`;
+
+                const nodeSelected: TreeNodeItem = {
+                    label,
+                    data: {
+                        id: params.id,
+                        type: params.type,
+                        hostname: params.hostname,
+                        path: params.path
+                    },
+                    icon: isSite ? 'pi pi-globe' : 'pi pi-folder',
+                    leaf: !isSite,
+                    children: []
+                };
+
+                patchState(store, { nodeSelected });
             }
         };
     })

@@ -74,13 +74,12 @@ describe('LanguageFieldComponent', () => {
             expect(spySetSelectedLanguage).toHaveBeenCalledWith(null);
         });
 
-        it('should handle non-existent language id in writeValue', () => {
-            const spySetSelectedLanguage = jest.spyOn(store, 'setSelectedLanguage');
+        it('should handle non-existent language id in writeValue by setting pending', () => {
+            const spySetPending = jest.spyOn(store, 'setPendingLanguageId');
             spectator.detectChanges();
             component.writeValue(999);
 
-            expect(component.languageControl.value).toBeNull();
-            expect(spySetSelectedLanguage).toHaveBeenCalledWith(null);
+            expect(spySetPending).toHaveBeenCalledWith(999);
         });
 
         it('should register onChange callback', () => {

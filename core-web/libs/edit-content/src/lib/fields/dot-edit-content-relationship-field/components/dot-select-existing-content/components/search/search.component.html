@@ -34,7 +34,7 @@
         <div class="flex flex-col gap-6">
             <div class="flex flex-col gap-6" formGroupName="systemSearchableFields">
                 <dot-language-field formControlName="languageId" />
-                <dot-site-field formControlName="siteOrFolderId" />
+                <dot-site-field formControlName="siteOrFolderId" [siteContext]="$siteContext()" />
             </div>
 
             <div class="flex justify-end gap-2">

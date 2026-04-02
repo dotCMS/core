@@ -2,9 +2,11 @@ import {
     ChangeDetectionStrategy,
     Component,
     OnInit,
+    computed,
     effect,
     forwardRef,
     inject,
+    input,
     viewChild
 } from '@angular/core';
 import {
@@ -59,6 +61,26 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     $treeSelect = viewChild<TreeSelect>(TreeSelect);
 
     /**
+     * Context for pre-populating the site field (hostname and folder path).
+     * Provided when the dialog is opened with initial filter context.
+     */
+    $siteContext = input<{ hostName: string; folderPath: string } | null>(null, {
+        alias: 'siteContext'
+    });
+
+    /**
+     * Reactive label of the currently selected node.
+     * Used by the parent to compute chip labels reactively.
+     */
+    readonly $selectedNodeLabel = computed(() => this.store.nodeSelected()?.label ?? null);
+
+    /**
+     * Pending writeValue that couldn't be processed because $siteContext wasn't available yet.
+     * Will be applied when $siteContext becomes available via effect.
+     */
+    #pendingWriteValue: string | null = null;
+
+    /**
      * Creates an instance of SiteFieldComponent.
      * Sets up an effect to handle value changes and propagate them through the ControlValueAccessor.
      */
@@ -75,6 +97,31 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
             if (treeSelect.treeViewChild) {
                 treeSelect.treeViewChild.updateSerializedValue();
                 treeSelect.cd.detectChanges();
+            }
+        });
+
+        // Sync TreeSelect display when nodeSelected changes (e.g., pre-population from writeValue).
+        // The popover lazily renders content, so writeValue may fire before TreeSelect exists.
+        // This effect retries once the TreeSelect ViewChild is available.
+        effect(() => {
+            const node = this.store.nodeSelected();
+            const treeSelect = this.$treeSelect();
+
+            if (node && treeSelect) {
+                treeSelect.writeValue(node);
+                treeSelect.cd.markForCheck();
+            }
+        });
+
+        // Process pending writeValue when $siteContext becomes available.
+        // The form directive may call writeValue before Angular binds the input.
+        effect(() => {
+            const ctx = this.$siteContext();
+            const pending = this.#pendingWriteValue;
+
+            if (ctx && pending) {
+                this.#pendingWriteValue = null;
+                this.#applyInitialSelection(pending, ctx);
             }
         });
     }
@@ -106,11 +153,45 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     /**
      * Writes a new value to the form control.
      * Implements ControlValueAccessor method to update the control's value programmatically.
+     * Handles pre-populated values in "site:{id}" or "folder:{id}" format.
      */
     writeValue(value: string): void {
         if (!value) {
             this.siteControl.setValue('');
             this.store.clearSelection();
+            this.#pendingWriteValue = null;
+
+            return;
+        }
+
+        if (value.includes(':')) {
+            const ctx = this.$siteContext();
+
+            if (ctx) {
+                this.#applyInitialSelection(value, ctx);
+            } else {
+                // $siteContext not available yet — store for later processing via effect
+                this.#pendingWriteValue = value;
+            }
+        }
+    }
+
+    /**
+     * Parses a "site:{id}" or "folder:{id}" value and sets the initial selection.
+     */
+    #applyInitialSelection(
+        value: string,
+        ctx: { hostName: string; folderPath: string }
+    ): void {
+        const [type, id] = value.split(':');
+
+        if (id && (type === 'site' || type === 'folder')) {
+            this.store.setInitialSelection({
+                id,
+                type,
+                hostname: ctx.hostName,
+                path: ctx.folderPath ?? ''
+            });
         }
     }
 

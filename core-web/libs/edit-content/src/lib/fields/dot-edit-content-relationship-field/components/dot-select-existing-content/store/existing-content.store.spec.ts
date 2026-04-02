@@ -77,7 +77,7 @@ describe('ExistingContentStore', () => {
             expect(store.status()).toBe(ComponentStatus.LOADED);
             expect(store.columns()).toEqual(mockColumns);
             expect(store.data()).toEqual(mockData.contentlets);
-            expect(service.getColumnsAndContent).toHaveBeenCalledWith('123');
+            expect(service.getColumnsAndContent).toHaveBeenCalledWith('123', undefined);
         }));
 
         it('should handle error when loading content', fakeAsync(() => {
@@ -90,7 +90,7 @@ describe('ExistingContentStore', () => {
             expect(store.errorMessage()).toBe(
                 'dot.file.relationship.dialog.content.request.failed'
             );
-            expect(service.getColumnsAndContent).toHaveBeenCalledWith('123');
+            expect(service.getColumnsAndContent).toHaveBeenCalledWith('123', undefined);
         }));
     });
 
