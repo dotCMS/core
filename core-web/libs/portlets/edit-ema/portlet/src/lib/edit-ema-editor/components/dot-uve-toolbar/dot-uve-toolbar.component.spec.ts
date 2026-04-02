@@ -1110,23 +1110,13 @@ describe('DotUveToolbarComponent', () => {
                 liveSocialMediaSignal.set(null);
                 spectator.detectChanges();
 
-                const datepicker = spectator.query('p-datepicker');
-                // Verify the datepicker is rendered
-                expect(datepicker).toBeTruthy();
-
                 const expectedMinDate = new Date();
 
                 expectedMinDate.setHours(0, 0, 0, 0);
 
-                // In Angular 20, ng-reflect-* attributes may not be available
-                // Check if calendar exists and has minDate property
-                expect(datepicker).toBeTruthy();
-                if (datepicker) {
-                    const minDateAttr = datepicker.getAttribute('ng-reflect-min-date');
-                    if (minDateAttr) {
-                        expect(new Date(minDateAttr)).toEqual(expectedMinDate);
-                    }
-                }
+                const minDate = spectator.component['$MIN_DATE']();
+
+                expect(minDate).toEqual(expectedMinDate);
             });
 
             it('should load page on date when date is selected', () => {
@@ -1134,42 +1124,21 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageLoad');
+                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageReload');
 
                 const calendar = spectator.debugElement.query(
                     By.css('[data-testId="uve-toolbar-calendar"]')
                 );
 
-                if (!calendar) {
-                    // Calendar not rendered, skip test
-                    return;
-                }
+                expect(calendar).toBeTruthy();
 
                 const date = new Date();
 
                 spectator.triggerEventHandler(calendar, 'ngModelChange', date);
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
-                    mode: UVE_MODE.LIVE,
                     publishDate: convertLocalTimeToUTC(date)
                 });
-            });
-
-            it('should change the date to today when button "Today" is clicked', () => {
-                pageParamsSignal.set({ ...params, mode: UVE_MODE.LIVE });
-                liveBaseUveState.socialMedia.set(null);
-                spectator.detectChanges();
-
-                const calendar = spectator.query('p-datepicker');
-
-                if (!calendar) {
-                    // Calendar not rendered, skip test
-                    return;
-                }
-
-                // This test may not work as expected with PrimeNG calendar
-                // The calendar component handles date changes internally
-                expect(calendar).toBeTruthy();
             });
 
             it('should track event on date when date is selected', () => {
@@ -1186,10 +1155,7 @@ describe('DotUveToolbarComponent', () => {
                     By.css('[data-testId="uve-toolbar-calendar"]')
                 );
 
-                if (!calendar) {
-                    // Calendar not rendered, skip test
-                    return;
-                }
+                expect(calendar).toBeTruthy();
 
                 const date = new Date();
 
@@ -1205,18 +1171,14 @@ describe('DotUveToolbarComponent', () => {
                 liveBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageLoad');
+                const spyLoadPageAsset = jest.spyOn(liveBaseUveState, 'pageReload');
                 const todayButton = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
 
-                if (!todayButton) {
-                    // Button not rendered, skip test
-                    return;
-                }
+                expect(todayButton).toBeTruthy();
 
                 spectator.click(todayButton);
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
-                    mode: UVE_MODE.LIVE,
                     publishDate: expect.any(String)
                 });
             });
@@ -1233,10 +1195,7 @@ describe('DotUveToolbarComponent', () => {
 
                 const todayButton = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
 
-                if (!todayButton) {
-                    // Button not rendered, skip test
-                    return;
-                }
+                expect(todayButton).toBeTruthy();
 
                 spectator.click(todayButton);
 

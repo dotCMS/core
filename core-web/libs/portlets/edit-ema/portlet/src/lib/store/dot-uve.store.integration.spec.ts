@@ -10,6 +10,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import {
     DotAnalyticsTrackerService,
     DotContentletLockerService,
+    DotContentTypeService,
     DotExperimentsService,
     DotLanguagesService,
     DotMessageService,
@@ -128,6 +129,9 @@ describe('UVEStore - Integration Tests ', () => {
             }),
             mockProvider(DotWorkflowActionsFireService, {
                 saveContentlet: jest.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotContentTypeService, {
+                getContentType: jest.fn().mockReturnValue(of({}))
             }),
             {
                 provide: GlobalStore,

@@ -60,6 +60,7 @@ import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { StyleEditorFormSchema } from '@dotcms/uve';
+import { getContentletsInContainer } from '@dotcms/uve/internal';
 
 import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
@@ -74,7 +75,6 @@ import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-too
 import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { EmaDragItem } from './components/ema-page-dropzone/types';
-import { getQuickEditFields, parseFieldValues } from './utils';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
@@ -186,9 +186,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     protected readonly uveStore = inject(UVEStore);
-    protected readonly dotPaletteListStore = inject(DotPaletteListStore);
-
-    protected readonly $contenttypes = this.dotPaletteListStore.contenttypes;
 
     /**
      * Right sidebar tab management using NgRx signalState (similar to palette component).
@@ -207,41 +204,33 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected readonly $contentletEditData = computed(() => {
         const { container, contentlet: contentletPayload } =
             this.uveStore.editorActiveContentlet() ?? {};
-        // Removed pageAPIResponse - use normalized accessors
 
-        const contentType = this.$contenttypes().find(
-            (ct) => ct.variable === contentletPayload?.contentType
-        );
-
-        const fields = contentType?.layout ? getQuickEditFields(contentType.layout) : [];
-
-        // Parse values for each field
-        const fieldsWithOptions = fields.map((field) => ({
-            ...field,
-            options: parseFieldValues(field.values)
-        }));
-
-        // Get the full contentlet from containers using container identifier and uuid
+        // Get the full contentlet from containers using the SDK utility.
+        // It handles both uuid-${uuid} and uuid-dotParser_${uuid} key formats.
         let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
-        const containers = this.uveStore.pageAsset()?.containers;
+        const pageAsset = this.uveStore.pageAsset();
+
         if (
             container?.identifier &&
             container?.uuid &&
             contentletPayload?.identifier &&
-            containers
+            pageAsset?.containers?.[container.identifier]
         ) {
-            const containerData = containers[container.identifier];
-            const contentletUuid = `uuid-${container.uuid}`;
-            const contentlets = containerData?.contentlets?.[contentletUuid] || [];
+            const contentlets = getContentletsInContainer(pageAsset, {
+                identifier: container.identifier,
+                uuid: container.uuid,
+                historyUUIDs: []
+            });
             const foundContentlet = contentlets.find(
                 (c) => c.identifier === contentletPayload.identifier
             );
+
             if (foundContentlet) {
                 contentlet = foundContentlet as DotCMSContentlet;
             }
         }
 
-        return { container, contentlet, fields: fieldsWithOptions };
+        return { container, contentlet };
     });
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -492,7 +481,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         fromEvent<MessageEvent>(this.window, 'message')
-            .pipe(takeUntilDestroyed(this.destroyRef))
+            .pipe(
+                takeUntilDestroyed(this.destroyRef),
+                filter((event) => this.#isMessageFromUvePreviewFrame(event))
+            )
             .subscribe((event) => {
                 const data = event.data;
                 if (this.#isUvePostMessage(data)) {
@@ -547,8 +539,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     private handleUveMessage(message: PostMessage): void {
         if (
-            message.action === DotCMSUVEAction.IFRAME_HEIGHT &&
-            this.uveStore.iframeAccessMode() === IframeAccessMode.LOCAL
+            !this.#isUvePostMessage(message) ||
+            (message.action === DotCMSUVEAction.IFRAME_HEIGHT &&
+                this.uveStore.iframeAccessMode() === IframeAccessMode.LOCAL)
         ) {
             return;
         }
@@ -561,7 +554,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             dotPageApiService: this.dotPageApiService,
             contentWindow: this.contentWindow,
             host: this.host,
-            onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode)
+            onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
+            clampScrollWithinBounds: () => this.#clampScrollWithinBounds()
         });
 
         if (message.action === DotCMSUVEAction.IFRAME_HEIGHT) {
@@ -1037,6 +1031,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     private sendMessageToIframe(message: unknown, host = '*'): void {
         this.iframe?.nativeElement.contentWindow?.postMessage(message, host);
+    }
+
+    /**
+     * Only handle postMessage events sent from the UVE preview iframe (or a nested frame
+     * inside it). Ignores same-window messages (e.g. dot-html-to-image thumbnail iframes).
+     */
+    #isMessageFromUvePreviewFrame(event: MessageEvent): boolean {
+        const previewWindow = this.iframe?.nativeElement?.contentWindow;
+        const source = event.source as Window;
+        if (!previewWindow || !source) {
+            return false;
+        }
+        return source === previewWindow || source === previewWindow.parent;
     }
 
     #isUvePostMessage(data: unknown): data is PostMessage {

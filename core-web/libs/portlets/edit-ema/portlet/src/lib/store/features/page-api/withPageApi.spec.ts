@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { signalStore, withFeature, withState } from '@ngrx/signals';
+import { patchState, signalStore, withFeature, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { ActivatedRoute, Router } from '@angular/router';
@@ -21,7 +21,7 @@ import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.s
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
-import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
+import { MOCK_RESPONSE_HEADLESS, ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
 import { IframeAccessMode, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
 import { withFlags } from '../flags/withFlags';
@@ -188,6 +188,15 @@ describe('withPageApi', () => {
             const response = store.pageAssetResponse();
             expect(response?.pageAsset).toEqual(MOCK_RESPONSE_HEADLESS);
             expect(response?.content).toEqual({ source: 'graphql' });
+        });
+
+        it('should reset editorActiveContentlet when loading a new page', () => {
+            patchState(store, { editorActiveContentlet: ACTION_PAYLOAD_MOCK });
+            expect(store.editorActiveContentlet()).not.toBeNull();
+
+            store.pageLoad({ language_id: '1' });
+
+            expect(store.editorActiveContentlet()).toBeNull();
         });
     });
 

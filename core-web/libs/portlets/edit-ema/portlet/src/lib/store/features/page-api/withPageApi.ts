@@ -154,7 +154,8 @@ export function withPageApi(deps: WithPageApiDeps) {
                             deps.resetClientConfiguration();
                             patchState(store, {
                                 uveStatus: UVE_STATUS.LOADING,
-                                pageParams
+                                pageParams,
+                                editorActiveContentlet: null
                             });
                         }),
                         switchMap((pageParams) => {
