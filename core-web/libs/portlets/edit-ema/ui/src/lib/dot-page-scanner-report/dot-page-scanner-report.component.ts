@@ -1,3 +1,4 @@
+import { patchState, signalState } from '@ngrx/signals';
 import { Subject } from 'rxjs';
 
 import {
@@ -5,8 +6,7 @@ import {
     ChangeDetectorRef,
     Component,
     inject,
-    OnDestroy,
-    signal
+    OnDestroy
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -26,6 +26,18 @@ import {
 } from './dot-page-scanner.service';
 import { ReportType } from './models';
 
+type ScanStatus = 'idle' | 'pending' | 'done';
+
+interface DotPageScannerState {
+    visible: boolean;
+    status: ScanStatus;
+    error: string | null;
+    reportType: ReportType;
+    pageUrl: string;
+    a11yData: PageScannerA11yResponse | null;
+    geoData: PageScannerGeoResponse | null;
+}
+
 @Component({
     selector: 'dot-page-scanner-report',
     standalone: true,
@@ -42,13 +54,15 @@ import { ReportType } from './models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPageScannerReportComponent implements OnDestroy {
-    protected visible = signal(false);
-    protected loading = signal(false);
-    protected error = signal<string | null>(null);
-    protected reportType = signal<ReportType>('a11y');
-    protected pageUrl = signal<string>('');
-    protected a11yData = signal<PageScannerA11yResponse | null>(null);
-    protected geoData = signal<PageScannerGeoResponse | null>(null);
+    protected readonly $state = signalState<DotPageScannerState>({
+        visible: false,
+        status: 'idle',
+        error: null,
+        reportType: 'a11y',
+        pageUrl: '',
+        a11yData: null,
+        geoData: null
+    });
 
     private readonly scanner = inject(DotPageScannerService);
     private readonly cdr = inject(ChangeDetectorRef);
@@ -58,19 +72,26 @@ export class DotPageScannerReportComponent implements OnDestroy {
      * Open the scanner report dialog for the given type and page URL.
      */
     open(type: ReportType, url: string): void {
-        this.reportType.set(type);
-        this.pageUrl.set(url);
-        this.visible.set(true);
-        this.error.set(null);
-        this.a11yData.set(null);
-        this.geoData.set(null);
-        this.loading.set(true);
+        patchState(this.$state, {
+            reportType: type,
+            pageUrl: url,
+            visible: true,
+            status: 'pending',
+            error: null,
+            a11yData: null,
+            geoData: null
+        });
+
         this.runScan();
     }
 
     onDialogHide(): void {
         this.cancel$.next();
-        this.loading.set(false);
+        patchState(this.$state, { status: 'idle' });
+    }
+
+    onVisibleChange(value: boolean): void {
+        patchState(this.$state, { visible: value });
     }
 
     ngOnDestroy(): void {
@@ -79,8 +100,8 @@ export class DotPageScannerReportComponent implements OnDestroy {
     }
 
     private runScan(): void {
-        const url = this.pageUrl();
-        const type = this.reportType();
+        const url = this.$state.pageUrl();
+        const type = this.$state.reportType();
 
         if (type === 'a11y') {
             this.scanner
@@ -88,15 +109,14 @@ export class DotPageScannerReportComponent implements OnDestroy {
                 .pipe(takeUntil(this.cancel$))
                 .subscribe({
                     next: (data) => {
-                        this.a11yData.set(data);
-                        this.loading.set(false);
+                        patchState(this.$state, { a11yData: data, status: 'done' });
                         this.cdr.markForCheck();
                     },
                     error: (err) => {
-                        this.error.set(
-                            err?.message ?? 'An error occurred while scanning the page.'
-                        );
-                        this.loading.set(false);
+                        patchState(this.$state, {
+                            error: err?.message ?? 'An error occurred while scanning the page.',
+                            status: 'done'
+                        });
                         this.cdr.markForCheck();
                     }
                 });
@@ -106,15 +126,14 @@ export class DotPageScannerReportComponent implements OnDestroy {
                 .pipe(takeUntil(this.cancel$))
                 .subscribe({
                     next: (data) => {
-                        this.geoData.set(data);
-                        this.loading.set(false);
+                        patchState(this.$state, { geoData: data, status: 'done' });
                         this.cdr.markForCheck();
                     },
                     error: (err) => {
-                        this.error.set(
-                            err?.message ?? 'An error occurred while scanning the page.'
-                        );
-                        this.loading.set(false);
+                        patchState(this.$state, {
+                            error: err?.message ?? 'An error occurred while scanning the page.',
+                            status: 'done'
+                        });
                         this.cdr.markForCheck();
                     }
                 });

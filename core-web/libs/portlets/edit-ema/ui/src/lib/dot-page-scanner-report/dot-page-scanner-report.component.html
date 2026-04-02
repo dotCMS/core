@@ -1,5 +1,5 @@
 <p-dialog
-    [visible]="visible()"
+    [visible]="$state.visible()"
     [modal]="true"
     [closable]="true"
     [closeOnEscape]="true"
@@ -8,10 +8,10 @@
     [style]="{ height: '90vh', width: '860px' }"
     [appendTo]="'body'"
     (onHide)="onDialogHide()"
-    (visibleChange)="visible.set($event)">
+    (visibleChange)="onVisibleChange($event)">
     <ng-template pTemplate="header">
         <div class="flex items-center gap-2">
-            @if (reportType() === 'a11y') {
+            @if ($state.reportType() === 'a11y') {
                 <span class="material-icons text-primary">accessibility</span>
                 <span class="font-semibold text-lg">
                     {{ 'page.scanner.a11y.dialog.title' | dm }}
@@ -26,28 +26,31 @@
     </ng-template>
 
     <div class="p-4">
-        @if (loading()) {
-            <!-- Skeleton loading state -->
-            <div class="flex gap-3 mb-6">
-                @for (i of [1, 2, 3, 4]; track i) {
-                    <div class="flex-1">
-                        <p-skeleton height="80px" borderRadius="8px" />
-                    </div>
+        @switch ($state.status()) {
+            @case ('pending') {
+                <div class="flex gap-3 mb-6">
+                    @for (i of [1, 2, 3, 4]; track i) {
+                        <div class="flex-1">
+                            <p-skeleton height="80px" borderRadius="8px" />
+                        </div>
+                    }
+                </div>
+                @for (i of [1, 2, 3]; track i) {
+                    <p-skeleton height="48px" borderRadius="8px" class="mb-2 block" />
                 }
-            </div>
-            @for (i of [1, 2, 3]; track i) {
-                <p-skeleton height="48px" borderRadius="8px" styleClass="mb-2" />
             }
-        } @else if (error()) {
-            <!-- Error state -->
-            <div class="flex flex-col items-center justify-center py-12 gap-4">
-                <span class="material-icons text-5xl text-red-500">error_outline</span>
-                <p class="text-center">{{ error() }}</p>
-            </div>
-        } @else if (reportType() === 'a11y' && a11yData()) {
-            <dot-page-scanner-a11y-report [a11yData]="a11yData()!" />
-        } @else if (reportType() === 'geo' && geoData()) {
-            <dot-page-scanner-geo-report [geoData]="geoData()!" />
+            @case ('done') {
+                @if ($state.error()) {
+                    <div class="flex flex-col items-center justify-center py-12 gap-4">
+                        <span class="material-icons text-5xl text-red-500">error_outline</span>
+                        <p class="text-center">{{ $state.error() }}</p>
+                    </div>
+                } @else if ($state.reportType() === 'a11y') {
+                    <dot-page-scanner-a11y-report [a11yData]="$state.a11yData()!" />
+                } @else {
+                    <dot-page-scanner-geo-report [geoData]="$state.geoData()!" />
+                }
+            }
         }
     </div>
 </p-dialog>
