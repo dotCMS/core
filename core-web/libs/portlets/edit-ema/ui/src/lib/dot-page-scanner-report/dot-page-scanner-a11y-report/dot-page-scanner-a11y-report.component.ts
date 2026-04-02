@@ -19,6 +19,15 @@ export class DotPageScannerA11yReportComponent {
     a11yData = input.required<PageScannerA11yResponse>();
 
     protected a11yGroups = computed(() => this.buildA11yGroups(this.a11yData()));
+    protected readonly accordionPt = {
+        motion: {
+            root: {
+                style: {
+                    overflow: 'hidden'
+                }
+            }
+        }
+    };
 
     private buildA11yGroups(data: PageScannerA11yResponse): A11yGroup[] {
         const items: PageScannerA11yItem[] = data.findings?.items ?? data.issues ?? [];
@@ -26,8 +35,14 @@ export class DotPageScannerA11yReportComponent {
 
         for (const item of items) {
             if (map.has(item.code)) {
-                map.get(item.code)!.items.push(item);
-                map.get(item.code)!.count++;
+                const existingGroup = map.get(item.code);
+
+                if (!existingGroup) {
+                    continue;
+                }
+
+                existingGroup.items.push(item);
+                existingGroup.count++;
             } else {
                 const impact = item.runnerExtras?.impact ?? '';
                 const type = item.type;
