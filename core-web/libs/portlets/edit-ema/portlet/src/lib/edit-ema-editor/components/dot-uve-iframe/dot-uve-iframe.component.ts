@@ -5,6 +5,7 @@ import {
     Component,
     DestroyRef,
     ElementRef,
+    OnDestroy,
     ViewChild,
     effect,
     inject,
@@ -17,10 +18,11 @@ import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SafeUrlPipe } from '@dotcms/ui';
+import { DocumentHeightObserverHandle, observeDocumentHeight } from '@dotcms/uve/internal';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { PageType } from '../../../store/models';
+import { IframeAccessMode, PageType } from '../../../store/models';
 import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
 
 /**
@@ -38,7 +40,7 @@ import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection'
     imports: [SafeUrlPipe],
     host: { class: 'block relative' }
 })
-export class DotUveIframeComponent {
+export class DotUveIframeComponent implements OnDestroy {
     /**
      * Reference to the iframe element.
      * @type {ElementRef<HTMLIFrameElement>}
@@ -70,6 +72,7 @@ export class DotUveIframeComponent {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly destroyRef = inject(DestroyRef);
+    private iframeHeightObserverHandle: DocumentHeightObserverHandle | null = null;
 
     /**
      * Current height of the iframe document content.
@@ -130,18 +133,18 @@ export class DotUveIframeComponent {
     /**
      * Handles the iframe load event.
      *
-     * For headless pages, emits load immediately. For traditional pages, injects
-     * content, sets SEO data, then emits load.
+     * For headless pages, emits load without rewriting the document. For traditional
+     * pages, injects content and SEO data before emitting load. Local iframe height
+     * tracking is started for any locally accessible iframe regardless of page type.
      * @returns {void}
      */
     onIframeLoad(): void {
-        if (this.uveStore.pageType() === PageType.HEADLESS) {
-            this.load.emit();
-            return;
+        if (this.uveStore.pageType() !== PageType.HEADLESS) {
+            this.insertPageContent(this.$pageRender(), this.$enableInlineEdit());
+            this.setSeoData();
         }
 
-        this.insertPageContent(this.$pageRender(), this.$enableInlineEdit());
-        this.setSeoData();
+        this.startIframeHeightTracking();
         this.load.emit();
     }
 
@@ -237,5 +240,50 @@ export class DotUveIframeComponent {
                 const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
                 this.uveStore.setSeoData({ ogTags, ogTagsResults: results });
             });
+    }
+
+    ngOnDestroy(): void {
+        this.stopIframeHeightTracking();
+    }
+
+    private startIframeHeightTracking(): void {
+        this.stopIframeHeightTracking();
+
+        if (this.uveStore.iframeAccessMode() !== IframeAccessMode.LOCAL) {
+            return;
+        }
+
+        const iframeElement = this.iframe?.nativeElement;
+
+        if (!iframeElement) {
+            return;
+        }
+
+        let doc: Document | null = null;
+        let win: Window | null = null;
+
+        try {
+            doc = iframeElement.contentDocument;
+            win = iframeElement.contentWindow;
+        } catch {
+            return;
+        }
+
+        if (!doc || !win) {
+            return;
+        }
+
+        this.iframeHeightObserverHandle = observeDocumentHeight({
+            documentRef: doc,
+            windowRef: win,
+            onHeightChange: (height) => {
+                this.iframeDocHeightChange.emit(height);
+            }
+        });
+    }
+
+    private stopIframeHeightTracking(): void {
+        this.iframeHeightObserverHandle?.destroy();
+        this.iframeHeightObserverHandle = null;
     }
 }

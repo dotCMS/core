@@ -42,6 +42,7 @@ describe('UVE Public Functions', () => {
                 { unsubscribe: jest.fn(), event: 'test2' }
             ]
         });
+        jest.spyOn(utils, 'shouldReportIframeHeightToParent').mockReturnValue(true);
         jest.spyOn(utils, 'reportIframeHeight').mockReturnValue({
             destroyHeightReporter: jest.fn()
         });
@@ -153,6 +154,15 @@ describe('UVE Public Functions', () => {
             const config = { params: { depth: '1' } } as unknown as DotCMSPageResponse;
             initUVE(config);
             expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
+        });
+
+        it('should skip iframe height reporting when the parent is same-origin', () => {
+            jest.spyOn(utils, 'shouldReportIframeHeightToParent').mockReturnValue(false);
+
+            const { destroyUVESubscriptions } = initUVE();
+
+            expect(utils.reportIframeHeight).not.toHaveBeenCalled();
+            expect(() => destroyUVESubscriptions()).not.toThrow();
         });
 
         it('should return destroy function that unsubscribes all subscriptions', () => {

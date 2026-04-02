@@ -101,7 +101,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { PageType } from '../store/models';
+import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     areContainersEquals,
@@ -113,6 +113,7 @@ import {
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
+
 // Message keys constants
 const MESSAGE_KEY = {
     DUPLICATE_CONTENT: {
@@ -481,10 +482,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         fromEvent<MessageEvent>(this.window, 'message')
             .pipe(
-                filter((event) => this.#isMessageFromUvePreviewFrame(event)),
-                takeUntilDestroyed(this.destroyRef)
+                takeUntilDestroyed(this.destroyRef),
+                filter((event) => this.#isMessageFromUvePreviewFrame(event))
             )
-            .subscribe((event) => this.handleUveMessage(event.data));
+            .subscribe((event) => {
+                const data = event.data;
+                if (this.#isUvePostMessage(data)) {
+                    this.handleUveMessage(data);
+                }
+            });
 
         this.setupDragDrop();
     }
@@ -531,12 +537,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         );
     }
 
-    private handleUveMessage(data: unknown): void {
-        if (!this.#isUvePostMessage(data)) {
+    private handleUveMessage(message: PostMessage): void {
+        if (
+            !this.#isUvePostMessage(message) ||
+            (message.action === DotCMSUVEAction.IFRAME_HEIGHT &&
+                this.uveStore.iframeAccessMode() === IframeAccessMode.LOCAL)
+        ) {
             return;
         }
 
-        this.actionsHandler.handleAction(data, {
+        this.actionsHandler.handleAction(message, {
             uveStore: this.uveStore,
             dialog: this.dialog,
             blockSidebar: this.blockSidebar,
@@ -547,6 +557,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
             clampScrollWithinBounds: () => this.#clampScrollWithinBounds()
         });
+
+        if (message.action === DotCMSUVEAction.IFRAME_HEIGHT) {
+            this.#clampScrollWithinBounds();
+        }
     }
 
     private handleDrop(event: DragEvent): void {
