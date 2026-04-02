@@ -634,12 +634,15 @@ public class FolderFactoryImpl extends FolderFactory {
 
   private void updateOtherFolderReferences(final String newFolderInode, final String oldFolderInode)
       throws DotDataException {
-    new DotConnect().executeUpdate(
+    final DotConnect dc = new DotConnect();
+    dc.executeUpdate(
         "UPDATE structure SET folder = ? WHERE folder = ?", newFolderInode, oldFolderInode);
-    new DotConnect().executeUpdate(
+    dc.executeUpdate(
         "UPDATE permission SET inode_id = ? WHERE inode_id = ?", newFolderInode, oldFolderInode);
-    new DotConnect().executeUpdate(
+    dc.executeUpdate(
         "UPDATE permission_reference SET asset_id = ? WHERE asset_id = ?", newFolderInode, oldFolderInode);
+    CacheLocator.getPermissionCache().remove(oldFolderInode);
+    CacheLocator.getPermissionCache().remove(newFolderInode);
   }
 
   /**
