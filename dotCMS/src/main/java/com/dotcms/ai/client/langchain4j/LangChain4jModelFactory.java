@@ -29,7 +29,8 @@ public class LangChain4jModelFactory {
      * Builds a {@link ChatModel} for the given provider configuration.
      *
      * @param config provider-specific configuration for the chat section
-     * @return a configured {@link ChatModel}, or {@code null} if config is null
+     * @return a configured {@link ChatModel}
+     * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
      */
     public static ChatModel buildChatModel(final ProviderConfig config) {
         return build(config, "chat", LangChain4jModelFactory::buildOpenAiChatModel);
@@ -39,7 +40,8 @@ public class LangChain4jModelFactory {
      * Builds an {@link EmbeddingModel} for the given provider configuration.
      *
      * @param config provider-specific configuration for the embeddings section
-     * @return a configured {@link EmbeddingModel}, or {@code null} if config is null
+     * @return a configured {@link EmbeddingModel}
+     * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
      */
     public static EmbeddingModel buildEmbeddingModel(final ProviderConfig config) {
         return build(config, "embeddings", LangChain4jModelFactory::buildOpenAiEmbeddingModel);
@@ -49,7 +51,8 @@ public class LangChain4jModelFactory {
      * Builds an {@link ImageModel} for the given provider configuration.
      *
      * @param config provider-specific configuration for the image section
-     * @return a configured {@link ImageModel}, or {@code null} if config is null
+     * @return a configured {@link ImageModel}
+     * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
      */
     public static ImageModel buildImageModel(final ProviderConfig config) {
         return build(config, "image", LangChain4jModelFactory::buildOpenAiImageModel);
@@ -59,7 +62,7 @@ public class LangChain4jModelFactory {
                                 final String modelType,
                                 final Function<ProviderConfig, T> openAiFn) {
         if (config == null || config.provider() == null) {
-            return null;
+            throw new IllegalArgumentException("ProviderConfig or provider name is null for model type: " + modelType);
         }
         switch (config.provider().toLowerCase()) {
             case "openai":

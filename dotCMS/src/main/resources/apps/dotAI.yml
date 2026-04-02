@@ -10,7 +10,7 @@ description: |
 params:
   providerConfig:
     value: ""
-    hidden: false
+    hidden: true
     type: "STRING"
     label: "Provider Config (JSON)"
     hint: |
@@ -21,7 +21,7 @@ params:
         "embeddings": { "provider": "openai", "apiKey": "sk-...", "model": "text-embedding-ada-002" },
         "image": { "provider": "openai", "apiKey": "sk-...", "model": "dall-e-3", "size": "1024x1024" }
       }
-    required: false
+    required: true
   rolePrompt:
     value: "You are dotCMSbot, and AI assistant to help content creators generate and rewrite content in their content management system."
     hidden: false

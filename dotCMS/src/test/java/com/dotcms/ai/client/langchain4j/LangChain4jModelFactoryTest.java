@@ -6,14 +6,13 @@ import dev.langchain4j.model.image.ImageModel;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 public class LangChain4jModelFactoryTest {
 
     @Test
-    public void test_buildChatModel_nullConfig_returnsNull() {
-        assertNull(LangChain4jModelFactory.buildChatModel(null));
+    public void test_buildChatModel_nullConfig_throws() {
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(null));
     }
 
     @Test
@@ -33,8 +32,8 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
-    public void test_buildEmbeddingModel_nullConfig_returnsNull() {
-        assertNull(LangChain4jModelFactory.buildEmbeddingModel(null));
+    public void test_buildEmbeddingModel_nullConfig_throws() {
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildEmbeddingModel(null));
     }
 
     @Test
@@ -54,8 +53,8 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
-    public void test_buildImageModel_nullConfig_returnsNull() {
-        assertNull(LangChain4jModelFactory.buildImageModel(null));
+    public void test_buildImageModel_nullConfig_throws() {
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(null));
     }
 
     @Test

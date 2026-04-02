@@ -53,16 +53,4 @@ public class AIModels {
         return findModel(host, type).orElse(AIModel.NOOP_MODEL);
     }
 
-    /**
-     * Resets the internal models cache for the specified host.
-     *
-     * @param host the host for which the models are being reset
-     */
-    public void resetModels(final String host) {
-        Optional.ofNullable(internalModels.get(host)).ifPresent(models -> {
-            models.clear();
-            internalModels.remove(host);
-        });
-    }
-
 }

@@ -172,7 +172,10 @@ public class CompletionsResource {
 
         final String providerConfig = appConfig.getProviderConfig();
         if (StringUtils.isNotBlank(providerConfig)) {
-            map.put(AppKeys.PROVIDER_CONFIG.key, providerConfig.replaceAll("\"apiKey\"\\s*:\\s*\"[^\"]+\"", "\"apiKey\":\"*****\""));
+            map.put(AppKeys.PROVIDER_CONFIG.key, providerConfig
+                    .replaceAll("\"apiKey\"\\s*:\\s*\"[^\"]+\"", "\"apiKey\":\"*****\"")
+                    .replaceAll("\"secretAccessKey\"\\s*:\\s*\"[^\"]+\"", "\"secretAccessKey\":\"*****\"")
+                    .replaceAll("\"accessKeyId\"\\s*:\\s*\"[^\"]+\"", "\"accessKeyId\":\"*****\""));
         }
 
         map.put("model", appConfig.getModel().getCurrentModel());

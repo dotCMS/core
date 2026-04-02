@@ -8,11 +8,15 @@ import com.dotcms.ai.client.AIRequest;
 import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.AIProvider;
 import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
+import com.dotcms.ai.exception.DotAIClientConnectException;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.data.message.AiMessage;
@@ -34,8 +38,8 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@link AIClient} implementation backed by LangChain4J.
@@ -54,16 +58,37 @@ import java.util.concurrent.ConcurrentMap;
 public class LangChain4jAIClient implements AIClient {
 
     private static final Lazy<LangChain4jAIClient> INSTANCE = Lazy.of(LangChain4jAIClient::new);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
+    private static final int MODEL_CACHE_MAX_SIZE = 200;
+    private static final long MODEL_CACHE_TTL_HOURS = 1;
 
-    private final ConcurrentMap<String, ChatModel> chatModelCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, EmbeddingModel> embeddingModelCache = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ImageModel> imageModelCache = new ConcurrentHashMap<>();
+    private final Cache<String, ChatModel> chatModelCache = CacheBuilder.newBuilder()
+            .maximumSize(MODEL_CACHE_MAX_SIZE)
+            .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
+            .build();
+    private final Cache<String, EmbeddingModel> embeddingModelCache = CacheBuilder.newBuilder()
+            .maximumSize(MODEL_CACHE_MAX_SIZE)
+            .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
+            .build();
+    private final Cache<String, ImageModel> imageModelCache = CacheBuilder.newBuilder()
+            .maximumSize(MODEL_CACHE_MAX_SIZE)
+            .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
+            .build();
 
     private LangChain4jAIClient() {}
 
     public static LangChain4jAIClient get() {
         return INSTANCE.get();
+    }
+
+    /**
+     * Evicts all cached model instances. Should be called when the provider config changes
+     * (e.g., API key rotation) to ensure stale credentials are not reused.
+     */
+    public void flushAllCaches() {
+        chatModelCache.invalidateAll();
+        embeddingModelCache.invalidateAll();
+        imageModelCache.invalidateAll();
     }
 
     @Override
@@ -110,14 +135,19 @@ public class LangChain4jAIClient implements AIClient {
             output.write(responseJson.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             Logger.error(this, "Failed to write AI response to output stream: " + e.getMessage(), e);
-            throw new RuntimeException("Failed to write AI response to output stream", e);
+            throw new DotAIClientConnectException("Failed to write AI response to output stream: " + e.getMessage(), e);
         }
     }
 
     private String executeChatRequest(final String providerConfigJson, final JSONObject payload) {
-        final ChatModel model = chatModelCache.computeIfAbsent(
-                providerConfigJson + ":chat",
-                k -> LangChain4jModelFactory.buildChatModel(parseSection(providerConfigJson, "chat")));
+        final ChatModel model;
+        try {
+            model = chatModelCache.get(
+                    providerConfigJson + ":chat",
+                    () -> LangChain4jModelFactory.buildChatModel(parseSection(providerConfigJson, "chat")));
+        } catch (ExecutionException e) {
+            throw new IllegalArgumentException("Failed to initialize chat model: " + e.getCause().getMessage(), e.getCause());
+        }
 
         final List<ChatMessage> messages = toMessages(payload.optJSONArray(AiKeys.MESSAGES));
 
@@ -137,9 +167,14 @@ public class LangChain4jAIClient implements AIClient {
     }
 
     private String executeEmbeddingRequest(final String providerConfigJson, final JSONObject payload) {
-        final EmbeddingModel model = embeddingModelCache.computeIfAbsent(
-                providerConfigJson + ":embeddings",
-                k -> LangChain4jModelFactory.buildEmbeddingModel(parseSection(providerConfigJson, "embeddings")));
+        final EmbeddingModel model;
+        try {
+            model = embeddingModelCache.get(
+                    providerConfigJson + ":embeddings",
+                    () -> LangChain4jModelFactory.buildEmbeddingModel(parseSection(providerConfigJson, "embeddings")));
+        } catch (ExecutionException e) {
+            throw new IllegalArgumentException("Failed to initialize embedding model: " + e.getCause().getMessage(), e.getCause());
+        }
 
         final String input = payload.getString(AiKeys.INPUT);
         final Response<Embedding> response = model.embed(TextSegment.from(input));
@@ -147,9 +182,14 @@ public class LangChain4jAIClient implements AIClient {
     }
 
     private String executeImageRequest(final String providerConfigJson, final JSONObject payload) {
-        final ImageModel model = imageModelCache.computeIfAbsent(
-                providerConfigJson + ":image",
-                k -> LangChain4jModelFactory.buildImageModel(parseSection(providerConfigJson, "image")));
+        final ImageModel model;
+        try {
+            model = imageModelCache.get(
+                    providerConfigJson + ":image",
+                    () -> LangChain4jModelFactory.buildImageModel(parseSection(providerConfigJson, "image")));
+        } catch (ExecutionException e) {
+            throw new IllegalArgumentException("Failed to initialize image model: " + e.getCause().getMessage(), e.getCause());
+        }
 
         final String prompt = payload.getString(AiKeys.PROMPT);
         final Response<Image> response = model.generate(prompt);

@@ -316,8 +316,7 @@ public class AppConfig implements Serializable {
 
     /**
      * Checks if the configuration is enabled.
-     * Returns true when either a {@code providerConfig} JSON is present (new path)
-     * or all legacy URL + API key fields are populated (old path).
+     * Returns true when a non-blank {@code providerConfig} JSON is present.
      *
      * @return true if the configuration is enabled, false otherwise
      */
