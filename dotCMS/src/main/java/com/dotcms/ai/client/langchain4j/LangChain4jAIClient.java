@@ -59,19 +59,15 @@ public class LangChain4jAIClient implements AIClient {
 
     private static final Lazy<LangChain4jAIClient> INSTANCE = Lazy.of(LangChain4jAIClient::new);
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
-    private static final int MODEL_CACHE_MAX_SIZE = 200;
     private static final long MODEL_CACHE_TTL_HOURS = 1;
 
     private final Cache<String, ChatModel> chatModelCache = CacheBuilder.newBuilder()
-            .maximumSize(MODEL_CACHE_MAX_SIZE)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
     private final Cache<String, EmbeddingModel> embeddingModelCache = CacheBuilder.newBuilder()
-            .maximumSize(MODEL_CACHE_MAX_SIZE)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
     private final Cache<String, ImageModel> imageModelCache = CacheBuilder.newBuilder()
-            .maximumSize(MODEL_CACHE_MAX_SIZE)
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
 
