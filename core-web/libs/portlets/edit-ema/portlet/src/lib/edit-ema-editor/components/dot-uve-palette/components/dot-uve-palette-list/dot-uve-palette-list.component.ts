@@ -9,7 +9,6 @@ import {
     effect,
     inject,
     input,
-    linkedSignal,
     OnInit,
     signal,
     untracked,
@@ -138,6 +137,7 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $skipNextSearch = signal(false);
     protected readonly $contextMenuItems = signal<MenuItem[]>([]);
     protected readonly $isSearching = signal<boolean>(false);
+    protected readonly $shouldHideControls = signal<boolean>(true);
     protected readonly $siteId = this.#globalStore.currentSiteId;
     protected readonly $contenttypes = this.#paletteListStore.contenttypes;
     protected readonly $contentlets = this.#paletteListStore.contentlets;
@@ -151,11 +151,6 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isContentTypesView = this.#paletteListStore.$isContentTypesView;
     protected readonly $isFavoritesList = this.#paletteListStore.$isFavoritesList;
     protected readonly status$ = toObservable(this.#paletteListStore.status);
-
-    protected readonly $shouldHideControls = linkedSignal({
-        source: this.$contenttypes,
-        computation: (contenttypes) => contenttypes.length === 0
-    });
 
     /**
      * Computed signal to determine the start index for the pagination.
@@ -298,7 +293,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Handles the selection of a content type to view its contentlets.
      * Store handles query building, filter reset, and page reset automatically.
      *
-     * @param contentTypeName - The name of the content type to drill into
+     * @param selectedContentType - The name of the content type to drill into
      */
     protected onSelectContentType(selectedContentType: string) {
         this.#paletteListStore.getContentlets({ ...EMPTY_SEARCH_PARAMS, selectedContentType });
@@ -427,6 +422,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * @private
      */
     #updateControlsVisibility() {
+        this.$shouldHideControls.set(false);
         this.status$
             .pipe(
                 filter(
