@@ -25,10 +25,10 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { FeaturedFlags, DotPageToolUrlParams } from '@dotcms/dotcms-models';
+import { DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
-    DotPageToolsSeoComponent,
     DotPageScannerReportComponent,
+    DotPageToolsSeoComponent,
     PageScannerToolType
 } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -132,21 +132,21 @@ export class DotEmaShellComponent implements OnInit {
                     : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
             },
             {
-                materialIcon: 'rule',
+                materialIcon: 'fork_left',
                 label: 'editema.editor.navbar.rules',
                 id: 'rules',
                 href: `rules/${page?.identifier}`,
                 isDisabled: (canSeeRulesExists && !page.canSeeRules) || !page?.canEdit
             },
             {
-                materialIcon: 'call_split',
+                materialIcon: 'science',
                 label: 'editema.editor.navbar.experiments',
                 href: `experiments/${page?.identifier}`,
                 id: 'experiments',
                 isDisabled: !page?.canEdit
             },
             {
-                materialIcon: 'bar_chart',
+                materialIcon: 'handyman',
                 label: 'editema.editor.navbar.page-tools',
                 id: 'page-tools'
             },

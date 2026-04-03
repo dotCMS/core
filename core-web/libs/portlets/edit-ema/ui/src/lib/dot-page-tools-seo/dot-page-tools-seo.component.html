@@ -11,62 +11,85 @@
     maskStyleClass="page-tools-dialog"
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}">
     @if (tools$ | async; as tools) {
-        <div class="w-[26.3rem] py-4 space-y-6">
+        <div class="w-[30rem] py-6 px-2">
             @if (showPageScanner()) {
-                <!-- <p class="text-sm font-semibold mb-2">
-                    {{ 'page.tools.scanner.section.title' | dm }}
-                </p> -->
-                <div class="flex gap-2">
+                <div class="flex flex-col gap-3 mb-10">
                     <button
                         type="button"
-                        class="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-solid border-gray-200 flex-1 cursor-pointer bg-white hover:bg-primary-50 transition-colors"
+                        class="flex items-center gap-3 p-4 pr-6 rounded-xl bg-blue-50 border-none cursor-pointer hover:bg-blue-100 transition-colors w-full text-left"
                         data-testid="page-scanner-a11y-btn"
                         (click)="onScannerToolClick('a11y')">
-                        <span class="material-icons text-3xl text-primary">accessibility</span>
-                        <span class="text-sm font-medium">
-                            {{ 'page.tools.scanner.a11y.title' | dm }}
+                        <div
+                            class="w-14 h-14 rounded-xl bg-blue-500 flex items-center justify-center shrink-0">
+                            <span class="material-icons text-4xl text-white">accessibility</span>
+                        </div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-bold text-xl text-blue-900">
+                                {{ 'page.tools.scanner.a11y.title' | dm }}
+                            </span>
+                            <span class="text-sm text-blue-600">
+                                {{ 'page.tools.scanner.a11y.subtitle' | dm }}
+                            </span>
+                        </div>
+                        <span class="font-semibold text-lg text-blue-600 shrink-0">
+                            {{ 'page.tools.scanner.a11y.run' | dm }} →
                         </span>
                     </button>
                     <button
                         type="button"
-                        class="flex flex-col items-center justify-center gap-2 p-3 rounded-lg border border-solid border-gray-200 flex-1 cursor-pointer bg-white hover:bg-primary-50 transition-colors"
+                        class="flex items-center gap-3 p-4 pr-6 rounded-xl bg-green-50 border-none cursor-pointer hover:bg-green-100 transition-colors w-full text-left"
                         data-testid="page-scanner-geo-btn"
                         (click)="onScannerToolClick('geo')">
-                        <span class="material-icons text-3xl text-primary">language</span>
-                        <span class="text-sm font-medium">
-                            {{ 'page.tools.scanner.geo.title' | dm }}
+                        <div
+                            class="w-14 h-14 rounded-xl bg-green-500 flex items-center justify-center shrink-0">
+                            <span class="material-icons text-4xl text-white">smart_toy</span>
+                        </div>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-bold text-xl text-green-900">
+                                {{ 'page.tools.scanner.geo.title' | dm }}
+                            </span>
+                            <span class="text-sm text-green-600">
+                                {{ 'page.tools.scanner.geo.subtitle' | dm }}
+                            </span>
+                        </div>
+                        <span class="font-semibold text-lg text-green-600 shrink-0">
+                            {{ 'page.tools.scanner.geo.run' | dm }} →
                         </span>
                     </button>
                 </div>
             }
-            <ul class="list-none p-0 m-0">
-                @for (tool of tools.pageTools; track tool) {
-                    <li (click)="toggleDialog()" data-testId="page-tools-list-item">
-                        <a
-                            class="flex flex-row p-3 rounded-md hover:bg-primary-50 text-black no-underline! items-center"
-                            data-testId="page-tools-list-link"
-                            href="{{ tool.runnableLink }}"
-                            target="_blank"
-                            rel="noopener">
-                            <img
-                                src="{{ tool.icon }}"
-                                alt="{{ tool.title }}"
-                                class="w-10 aspect-square object-contain shrink-0" />
-                            <div class="flex flex-col justify-center pl-3">
-                                <span
-                                    class="font-semibold leading-snug mb-1 inline-flex items-center gap-2">
-                                    {{ tool.title }}
-                                    <i class="pi pi-external-link text-xs! text-blue-500"></i>
-                                </span>
-                                <p
-                                    class="m-0 leading-snug break-normal line-clamp-2 text-gray-500 text-sm">
-                                    {{ tool.description }}
-                                </p>
-                            </div>
-                        </a>
-                    </li>
-                }
-            </ul>
+
+            <div class="flex flex-col gap-2">
+                <h4 class="text-md font-semibold text-gray-500 mb-2">{{ 'page.tools.external.section.title' | dm }}</h4>
+                <ul class="list-none p-0 m-0 space-y-2">
+                    @for (tool of tools.pageTools; track tool) {
+                        <li (click)="toggleDialog()" data-testId="page-tools-list-item">
+                            <a
+                                class="flex flex-row p-3 rounded-md hover:bg-primary-50 text-black no-underline! items-center"
+                                data-testId="page-tools-list-link"
+                                href="{{ tool.runnableLink }}"
+                                target="_blank"
+                                rel="noopener">
+                                <img
+                                    src="{{ tool.icon }}"
+                                    alt="{{ tool.title }}"
+                                    class="w-10 aspect-square object-contain shrink-0" />
+                                <div class="flex flex-col justify-center pl-3">
+                                    <span
+                                        class="font-semibold leading-snug mb-1 inline-flex items-center gap-2">
+                                        {{ tool.title }}
+                                        <i class="pi pi-external-link text-xs! text-blue-500"></i>
+                                    </span>
+                                    <p
+                                        class="m-0 leading-snug break-normal line-clamp-2 text-gray-500 text-sm">
+                                        {{ tool.description }}
+                                    </p>
+                                </div>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
         </div>
     }
 </p-dialog>
