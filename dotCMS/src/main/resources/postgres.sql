@@ -535,7 +535,7 @@ create table user_comments (
    communication_id varchar(36),
    primary key (inode)
 );
-create table permission_reference (
+create unlogged table permission_reference (
    id int8 not null,
    asset_id varchar(36),
    reference_id varchar(36),
@@ -2597,3 +2597,105 @@ CREATE TABLE IF NOT EXISTS unique_fields
     unique_key_val VARCHAR PRIMARY KEY,
     supporting_values JSONB
 );
+
+-- ---------------------------------------------------------------------------
+-- LZ4 compression on variable-length (TOAST-eligible) columns
+-- Requires PostgreSQL 14+. SET COMPRESSION only affects future writes;
+-- existing TOASTed values are rewritten lazily on next UPDATE.
+-- For upgrades this is applied by Task260403SetLz4CompressionOnTextColumns.
+-- ---------------------------------------------------------------------------
+ALTER TABLE AdminConfig ALTER COLUMN config SET COMPRESSION lz4;
+ALTER TABLE Company ALTER COLUMN key_ SET COMPRESSION lz4;
+ALTER TABLE Image ALTER COLUMN text_ SET COMPRESSION lz4;
+ALTER TABLE PollsChoice ALTER COLUMN description SET COMPRESSION lz4;
+ALTER TABLE PollsQuestion ALTER COLUMN description SET COMPRESSION lz4;
+ALTER TABLE Portlet ALTER COLUMN defaultPreferences SET COMPRESSION lz4;
+ALTER TABLE Portlet ALTER COLUMN roles SET COMPRESSION lz4;
+ALTER TABLE PortletPreferences ALTER COLUMN preferences SET COMPRESSION lz4;
+ALTER TABLE User_ ALTER COLUMN password_ SET COMPRESSION lz4;
+ALTER TABLE User_ ALTER COLUMN comments SET COMPRESSION lz4;
+ALTER TABLE User_ ALTER COLUMN additional_info SET COMPRESSION lz4;
+ALTER TABLE UserTrackerPath ALTER COLUMN path SET COMPRESSION lz4;
+ALTER TABLE api_token_issued ALTER COLUMN claims SET COMPRESSION lz4;
+ALTER TABLE campaign ALTER COLUMN message SET COMPRESSION lz4;
+ALTER TABLE category ALTER COLUMN keywords SET COMPRESSION lz4;
+ALTER TABLE chain_link_code ALTER COLUMN code SET COMPRESSION lz4;
+ALTER TABLE clickstream_404 ALTER COLUMN query_string SET COMPRESSION lz4;
+ALTER TABLE clickstream_request ALTER COLUMN query_string SET COMPRESSION lz4;
+ALTER TABLE cms_role ALTER COLUMN description SET COMPRESSION lz4;
+ALTER TABLE communication ALTER COLUMN text_message SET COMPRESSION lz4;
+ALTER TABLE container_structures ALTER COLUMN code SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN contentlet_as_json SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area1 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area2 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area3 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area4 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area5 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area6 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area7 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area8 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area9 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area10 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area11 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area12 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area13 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area14 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area15 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area16 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area17 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area18 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area19 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area20 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area21 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area22 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area23 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area24 SET COMPRESSION lz4;
+ALTER TABLE contentlet ALTER COLUMN text_area25 SET COMPRESSION lz4;
+ALTER TABLE dot_containers ALTER COLUMN code SET COMPRESSION lz4;
+ALTER TABLE dot_containers ALTER COLUMN pre_loop SET COMPRESSION lz4;
+ALTER TABLE dot_containers ALTER COLUMN post_loop SET COMPRESSION lz4;
+ALTER TABLE dot_containers ALTER COLUMN lucene_query SET COMPRESSION lz4;
+ALTER TABLE experiment ALTER COLUMN traffic_proportion SET COMPRESSION lz4;
+ALTER TABLE experiment ALTER COLUMN scheduling SET COMPRESSION lz4;
+ALTER TABLE experiment ALTER COLUMN goals SET COMPRESSION lz4;
+ALTER TABLE experiment ALTER COLUMN running_ids SET COMPRESSION lz4;
+ALTER TABLE field ALTER COLUMN field_values SET COMPRESSION lz4;
+ALTER TABLE field_variable ALTER COLUMN variable_value SET COMPRESSION lz4;
+ALTER TABLE job ALTER COLUMN parameters SET COMPRESSION lz4;
+ALTER TABLE job ALTER COLUMN result SET COMPRESSION lz4;
+ALTER TABLE job_history ALTER COLUMN result SET COMPRESSION lz4;
+ALTER TABLE links ALTER COLUMN link_code SET COMPRESSION lz4;
+ALTER TABLE multi_tree ALTER COLUMN style_properties SET COMPRESSION lz4;
+ALTER TABLE notification ALTER COLUMN message SET COMPRESSION lz4;
+ALTER TABLE publishing_end_point ALTER COLUMN auth_key SET COMPRESSION lz4;
+ALTER TABLE publishing_pushed_assets ALTER COLUMN endpoint_ids SET COMPRESSION lz4;
+ALTER TABLE publishing_pushed_assets ALTER COLUMN publisher SET COMPRESSION lz4;
+ALTER TABLE publishing_queue_audit ALTER COLUMN status_pojo SET COMPRESSION lz4;
+ALTER TABLE QRTZ_EXCL_blob_triggers ALTER COLUMN BLOB_DATA SET COMPRESSION lz4;
+ALTER TABLE QRTZ_EXCL_calendars ALTER COLUMN CALENDAR SET COMPRESSION lz4;
+ALTER TABLE QRTZ_EXCL_job_details ALTER COLUMN JOB_DATA SET COMPRESSION lz4;
+ALTER TABLE QRTZ_EXCL_triggers ALTER COLUMN JOB_DATA SET COMPRESSION lz4;
+ALTER TABLE qrtz_blob_triggers ALTER COLUMN BLOB_DATA SET COMPRESSION lz4;
+ALTER TABLE qrtz_calendars ALTER COLUMN CALENDAR SET COMPRESSION lz4;
+ALTER TABLE qrtz_job_details ALTER COLUMN JOB_DATA SET COMPRESSION lz4;
+ALTER TABLE qrtz_triggers ALTER COLUMN JOB_DATA SET COMPRESSION lz4;
+ALTER TABLE storage_data ALTER COLUMN data SET COMPRESSION lz4;
+ALTER TABLE structure ALTER COLUMN metadata SET COMPRESSION lz4;
+ALTER TABLE system_event ALTER COLUMN payload SET COMPRESSION lz4;
+ALTER TABLE template ALTER COLUMN body SET COMPRESSION lz4;
+ALTER TABLE template ALTER COLUMN header SET COMPRESSION lz4;
+ALTER TABLE template ALTER COLUMN footer SET COMPRESSION lz4;
+ALTER TABLE template ALTER COLUMN drawed_body SET COMPRESSION lz4;
+ALTER TABLE template ALTER COLUMN head_code SET COMPRESSION lz4;
+ALTER TABLE unique_fields ALTER COLUMN supporting_values SET COMPRESSION lz4;
+ALTER TABLE user_comments ALTER COLUMN ucomment SET COMPRESSION lz4;
+ALTER TABLE user_preferences ALTER COLUMN pref_value SET COMPRESSION lz4;
+ALTER TABLE web_form ALTER COLUMN custom_fields SET COMPRESSION lz4;
+ALTER TABLE workflow_action ALTER COLUMN condition_to_progress SET COMPRESSION lz4;
+ALTER TABLE workflow_action ALTER COLUMN metadata SET COMPRESSION lz4;
+ALTER TABLE workflow_action_class ALTER COLUMN clazz SET COMPRESSION lz4;
+ALTER TABLE workflow_action_class_pars ALTER COLUMN value SET COMPRESSION lz4;
+ALTER TABLE workflow_comment ALTER COLUMN wf_comment SET COMPRESSION lz4;
+ALTER TABLE workflow_history ALTER COLUMN change_desc SET COMPRESSION lz4;
+ALTER TABLE workflow_scheme ALTER COLUMN description SET COMPRESSION lz4;
+ALTER TABLE workflow_task ALTER COLUMN description SET COMPRESSION lz4;
