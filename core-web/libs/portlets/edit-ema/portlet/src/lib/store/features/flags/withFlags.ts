@@ -27,7 +27,9 @@ export function withFlags(flags: FeaturedFlags[]) {
                 propertiesService
                     .getFeatureFlags(flags)
                     .pipe(take(1))
-                    .subscribe((flags) => patchState(store, { flags: { ...flags } }));
+                    .subscribe((flags) => {
+                        patchState(store, { flags });
+                    });
             }
         })
     );

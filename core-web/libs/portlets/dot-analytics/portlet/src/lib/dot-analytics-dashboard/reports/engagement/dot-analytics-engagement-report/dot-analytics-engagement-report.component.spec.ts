@@ -17,7 +17,6 @@ import type {
 } from '@dotcms/portlets/dot-analytics/data-access';
 // eslint-disable-next-line no-duplicate-imports
 import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import DotAnalyticsEngagementReportComponent from './dot-analytics-engagement-report.component';
@@ -31,13 +30,14 @@ const MOCK_KPIS: EngagementKPIs = {
     totalSessions: { value: 45000, trend: 5, label: 'Total Sessions' },
     engagementRate: {
         value: 45,
+        format: 'percentage',
         trend: 8,
         subtitle: '29,203 Engaged Sessions',
         label: 'Engagement Rate'
     },
     avgInteractions: { value: 6.4, trend: 18, label: 'Avg Interactions (Engaged)' },
-    avgSessionTime: { value: '2m 34s', trend: 12, label: 'Average Session Time' },
-    conversionRate: { value: '3.2%', trend: -0.3, label: 'Conversion Rate' }
+    avgSessionTime: { value: 154, format: 'time', trend: 12, label: 'Average Session Time' },
+    conversionRate: { value: 3.2, format: 'percentage', trend: -0.3, label: 'Conversion Rate' }
 };
 
 const MOCK_BREAKDOWN: ChartData = {
@@ -84,10 +84,6 @@ describe('DotAnalyticsEngagementReportComponent', () => {
         error: null
     });
 
-    const mockGlobalStore = {
-        addNewBreadcrumb: jest.fn()
-    };
-
     const createComponent = createComponentFactory({
         component: DotAnalyticsEngagementReportComponent,
         imports: [
@@ -106,15 +102,16 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                     engagementKpis: mockKpis,
                     engagementBreakdown: mockBreakdown,
                     engagementPlatforms: mockPlatforms,
-                    engagementSparkline: mockSparkline
+                    engagementSparkline: mockSparkline,
+                    timeRange: signal('last7days')
                 }
             },
-            {
-                provide: GlobalStore,
-                useValue: mockGlobalStore
-            },
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Engagement')
+                get: jest
+                    .fn()
+                    .mockImplementation((key: string, ...args: string[]) =>
+                        args.length ? `${key}[${args.join(',')}]` : key
+                    )
             })
         ]
     });
@@ -148,15 +145,6 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             spectator = createComponent();
             spectator.detectChanges();
             expect(spectator.component).toBeTruthy();
-        });
-
-        it('should add breadcrumb on init', () => {
-            spectator = createComponent();
-            spectator.detectChanges();
-            expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith({
-                id: 'engagement',
-                label: 'Engagement'
-            });
         });
     });
 

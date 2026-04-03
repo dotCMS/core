@@ -1,9 +1,11 @@
 <p-drawer
+    #drawerRef
     [blockScroll]="true"
     [closeOnEscape]="false"
     [dismissible]="false"
     [closable]="false"
     [visible]="!!contentlet()"
+    (onHide)="onDrawerHide()"
     data-testId="sidebar"
     position="right">
     <div class="container" (keydown.escape)="$event.stopPropagation()" data-testId="dot-container">
@@ -17,7 +19,7 @@
         }
         <footer>
             <p-button
-                (click)="close()"
+                (click)="closeCallback($event)"
                 [label]="'Cancel' | dm"
                 [disabled]="loading()"
                 [outlined]="true"

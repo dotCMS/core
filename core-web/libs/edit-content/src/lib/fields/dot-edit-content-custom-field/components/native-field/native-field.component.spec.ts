@@ -7,6 +7,8 @@ import { createFakeContentlet, createFakeCustomField } from '@dotcms/utils-testi
 
 import { NativeFieldComponent } from './native-field.component';
 
+import { DotEditContentStore } from '../../../../store/edit-content.store';
+
 const MOCK_INODE = 'test-inode';
 
 describe('NativeFieldComponent', () => {
@@ -20,6 +22,12 @@ describe('NativeFieldComponent', () => {
             {
                 provide: WINDOW,
                 useValue: window
+            },
+            {
+                provide: DotEditContentStore,
+                useValue: {
+                    setFieldVisibility: jest.fn()
+                }
             }
         ]
     });
@@ -256,6 +264,26 @@ describe('NativeFieldComponent', () => {
             spectator.fixture.destroy();
 
             expect(destroySpy).toHaveBeenCalled();
+        });
+
+        it('should call store.setFieldVisibility(variable, true) when bridge show() is called', () => {
+            const store = spectator.inject(DotEditContentStore);
+            const api = window['DotCustomFieldApi'];
+            const targetVariable = 'someField';
+
+            api.getField(targetVariable).show();
+
+            expect(store.setFieldVisibility).toHaveBeenCalledWith(targetVariable, true);
+        });
+
+        it('should call store.setFieldVisibility(variable, false) when bridge hide() is called', () => {
+            const store = spectator.inject(DotEditContentStore);
+            const api = window['DotCustomFieldApi'];
+            const targetVariable = 'anotherField';
+
+            api.getField(targetVariable).hide();
+
+            expect(store.setFieldVisibility).toHaveBeenCalledWith(targetVariable, false);
         });
     });
 

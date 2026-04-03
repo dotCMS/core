@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -31,7 +32,6 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -45,7 +45,6 @@ import {
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     MockDotRouterService
@@ -89,7 +88,6 @@ describe('DotCustomEventHandlerService', () => {
                 DotRouterService,
                 DotContentletEditorService,
                 PushPublishService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 ApiRoot,
@@ -121,9 +119,11 @@ describe('DotCustomEventHandlerService', () => {
                 DotLicenseService,
                 { provide: DotPropertiesService, useValue: dotPropertiesMock },
                 Router,
-                DotContentTypeService
+                DotContentTypeService,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ],
-            imports: [RouterTestingModule, HttpClientTestingModule]
+            imports: [RouterTestingModule]
         });
 
         service = TestBed.inject(DotCustomEventHandlerService);

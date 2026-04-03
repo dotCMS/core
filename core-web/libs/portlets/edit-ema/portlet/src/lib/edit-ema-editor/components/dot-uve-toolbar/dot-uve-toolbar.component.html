@@ -4,7 +4,7 @@
 
 <p-toolbar>
     <ng-template #start>
-        <div class="flex items-center gap-1" [ngClass]="{ 'p-0': preview || live }">
+        <div class="flex items-center gap-1" [class.p-0]="preview || live">
             @if ($isEditMode() && $canEditPage()) {
                 <p-button
                     [text]="true"

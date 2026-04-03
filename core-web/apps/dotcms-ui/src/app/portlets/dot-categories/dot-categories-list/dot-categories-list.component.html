@@ -89,7 +89,7 @@
                         </th>
                         @for (col of columns; track col) {
                             <th
-                                [ngStyle]="{ width: col.width }"
+                                [style.width]="col.width"
                                 [pSortableColumn]="col.fieldName"
                                 class="tableHeader">
                                 {{ col.header }}
@@ -117,7 +117,7 @@
                             <p-tableCheckbox [value]="category" />
                         </td>
                         @for (col of columns; track col) {
-                            <td [ngStyle]="{ width: col.width }">
+                            <td [style.width]="col.width">
                                 @if (col.fieldName === 'sortOrder') {
                                     <p-inplace
                                         (click)="$event.stopPropagation()"

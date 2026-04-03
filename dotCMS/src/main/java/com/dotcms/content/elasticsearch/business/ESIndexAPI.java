@@ -100,8 +100,6 @@ public class ESIndexAPI implements IndexAPI {
 
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
-    private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "path.repo";
 
@@ -465,7 +463,6 @@ public class ESIndexAPI implements IndexAPI {
 
 		String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
 
-
 		map.put("number_of_shards", shards);
 		map.put("index.auto_expand_replicas", autoExpandReplicas);
 
@@ -781,24 +778,6 @@ public class ESIndexAPI implements IndexAPI {
 	    
 
     }
-
-    /**
-     * Given an alias or index name that might contain a cluster id prefix
-     * (format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>),
-     * this method will return the name without the prefix. In case of name is null, an empty string
-     * will be returned
-     * @param name Index name or alias with the cluster id prefix
-     * @return Index name or alias without the cluster id prefix
-     */
-    public String removeClusterIdFromName(final String name) {
-        if(name==null) return "";
-        return name.indexOf(".")>-1 
-                        ? name.substring(name.lastIndexOf(".")+1, name.length()) 
-                        : name;
-
-	}
-
-
 
 	public List<String> getClosedIndexes() {
 

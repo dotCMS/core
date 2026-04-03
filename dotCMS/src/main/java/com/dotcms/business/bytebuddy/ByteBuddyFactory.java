@@ -10,6 +10,11 @@ import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.ExternalTransaction;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.business.interceptor.CoreDatabaseConnectionOps;
+import com.dotcms.business.interceptor.CoreInterceptorLogger;
+import com.dotcms.business.interceptor.CoreLicenseOps;
+import com.dotcms.business.interceptor.CoreTransactionOps;
+import com.dotcms.business.interceptor.InterceptorServiceProvider;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestCostAdvice;
 import com.dotcms.util.EnterpriseFeature;
@@ -74,6 +79,14 @@ public class ByteBuddyFactory {
     }
 
     public static void init() {
+        // Register core SPI implementations so that handlers/advice delegate to the
+        // real DbConnectionFactory, HibernateUtil, LicenseUtil, and Logger.
+        InterceptorServiceProvider.init(
+                CoreDatabaseConnectionOps.INSTANCE,
+                CoreTransactionOps.INSTANCE,
+                CoreLicenseOps.INSTANCE,
+                CoreInterceptorLogger.INSTANCE);
+
         if (!agentLoaded.get()) {
             try {
                 premain(null, ByteBuddyAgent.install());

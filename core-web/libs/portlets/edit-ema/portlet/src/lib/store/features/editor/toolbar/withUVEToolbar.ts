@@ -1,10 +1,10 @@
 import {
+    patchState,
     signalStoreFeature,
-    withMethods,
-    withComputed,
-    withState,
     type,
-    patchState
+    withComputed,
+    withMethods,
+    withState
 } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
@@ -12,7 +12,7 @@ import { computed } from '@angular/core';
 import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
-import { DEFAULT_DEVICE, DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../../shared/consts';
+import { DEFAULT_DEVICE, DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions, ToggleLockOptions, UnlockOptions } from '../../../../shared/models';
 import {
@@ -23,7 +23,7 @@ import {
     getOrientation
 } from '../../../../utils';
 import { Orientation, UVEState } from '../../../models';
-import { withFlags } from '../../flags/withFlags';
+import { WithFlagsState } from '../../flags/models';
 import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
 
 /**
@@ -47,10 +47,9 @@ const initialState: EditorToolbarState = {
 export function withUVEToolbar() {
     return signalStoreFeature(
         {
-            state: type<UVEState>()
+            state: type<UVEState & WithFlagsState>()
         },
         withState<EditorToolbarState>(initialState),
-        withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => ({
             $uveToolbar: computed<UVEToolbarProps>(() => {
                 const params = store.pageParams();

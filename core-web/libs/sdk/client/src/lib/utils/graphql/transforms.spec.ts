@@ -72,6 +72,7 @@ const GRAPHQL_RESPONSE_MOCK = {
         viewAs: {
             mode: 'LIVE'
         },
+        numberContents: 5,
         runningExperimentId: '123',
         vanityUrl: {
             action: 200,
@@ -146,6 +147,7 @@ const MOCK_PAGE_ENTITY = {
     viewAs: {
         mode: 'LIVE'
     },
+    numberContents: 5,
     site: {
         hostName: 'demo.dotcms.com'
     },

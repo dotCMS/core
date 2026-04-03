@@ -55,8 +55,11 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     private elRef = inject(ElementRef);
     private rendered = inject(Renderer2);
 
+    /** Tab index for the Overview (field properties) tab. */
     readonly OVERVIEW_TAB_INDEX = 0;
-    readonly BLOCK_EDITOR_SETTINGS_TAB_INDEX = 1;
+
+    /** Tab index for the Settings tab (block-editor, binary, custom-field specific options). */
+    readonly SETTINGS_TAB_INDEX = 1;
 
     displayDialog = false;
     currentField: DotCMSContentTypeField;
@@ -67,14 +70,25 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     hideButtons = false;
     activeTab = 0;
 
+    private overviewFormChanged = false;
+
+    /** Reference to the field-properties form rendered inside the dialog. */
     readonly $propertiesForm =
         viewChild.required<ContentTypeFieldsPropertiesFormComponent>('fieldPropertiesForm');
 
+    /** Layout rows used to render the drop-zone. Changes trigger a structural clone. */
     readonly $layout = input<DotCMSContentTypeLayoutRow[]>(undefined, { alias: 'layout' });
+
+    /** Content type that owns the fields being edited. */
     readonly $contentType = input<DotCMSContentType>(undefined, { alias: 'contentType' });
 
+    /** Emits the updated layout after a field is saved or a drag-drop reorder occurs. */
     readonly saveFields = output<DotCMSContentTypeLayoutRow[]>();
+
+    /** Emits the field after it has been updated (edit with existing id). */
     readonly editField = output<DotCMSContentTypeField>();
+
+    /** Emits the list of fields to be deleted. */
     readonly removeFields = output<DotCMSContentTypeField[]>();
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -85,13 +99,29 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         return this._loading;
     }
 
+    /** When `true`, shows the global loading indicator over the drop-zone. */
     readonly $loading = input<boolean>(false, { alias: 'loading' });
 
+    /**
+     * Whether the currently selected field type has a dedicated Settings tab
+     * (Block Editor, Binary, or Custom Field).
+     */
     get isFieldWithSettings() {
-        return [
-            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-            'com.dotcms.contenttype.model.field.ImmutableBinaryField'
-        ].includes(this.currentFieldType?.clazz);
+        return (
+            [
+                DotCMSClazzes.BLOCK_EDITOR,
+                DotCMSClazzes.BINARY,
+                DotCMSClazzes.CUSTOM_FIELD
+            ] as string[]
+        ).includes(this.currentFieldType?.clazz);
+    }
+
+    /**
+     * Returns the tab index for the "Variables" tab.
+     * Shifts to index 2 when a Settings tab is present for the current field type.
+     */
+    get variablesTabIndex(): number {
+        return !!this.currentField?.id && this.isFieldWithSettings ? 2 : 1;
     }
 
     private static findColumnBreakIndex(fields: DotCMSContentTypeField[]): number {
@@ -379,6 +409,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     setDialogOkButtonState(formChanged: boolean): void {
+        if (this.activeTab === this.OVERVIEW_TAB_INDEX) {
+            this.overviewFormChanged = formChanged;
+        }
+
         this.dialogActions = {
             ...this.dialogActions,
             accept: {
@@ -395,12 +429,18 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     handleTabChange(index: number): void {
         if (index === this.OVERVIEW_TAB_INDEX) {
-            this.dialogActions = this.defaultDialogActions;
+            this.dialogActions = {
+                ...this.defaultDialogActions,
+                accept: {
+                    ...this.defaultDialogActions.accept,
+                    disabled: !this.overviewFormChanged
+                }
+            };
         }
 
         this.hideButtons =
             index !== this.OVERVIEW_TAB_INDEX &&
-            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isFieldWithSettings);
+            !(index === this.SETTINGS_TAB_INDEX && this.isFieldWithSettings);
     }
 
     /**
@@ -419,24 +459,38 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     /**
-     * Change dialogActions
+     * Change dialogActions (used by block-editor and binary settings tabs)
      *
      * @param {DotDialogActions} controls
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     changesDialogActions(controls: DotDialogActions) {
-        this.dialogActions = controls;
+        this.dialogActions = {
+            ...controls,
+            cancel: this.defaultDialogActions.cancel
+        };
     }
 
+    /**
+     * Called when the dialog's visibility changes.
+     * Cleans up unsaved fields when the dialog is closed without saving.
+     *
+     * @param isVisible - `false` when the dialog has been dismissed.
+     */
     handleDialogVisibleChange(isVisible: boolean): void {
         if (!isVisible) {
             this.removeFieldsWithoutId();
         }
     }
 
+    /**
+     * Toggles the field-properties dialog open/closed.
+     * Resets dialog actions and the active tab to their default state on each toggle.
+     */
     protected toggleDialog(): void {
         this.dialogActions = this.defaultDialogActions;
         this.activeTab = this.OVERVIEW_TAB_INDEX;
+        this.overviewFormChanged = false;
         this.displayDialog = !this.displayDialog;
     }
 

@@ -29,17 +29,17 @@ export DB_PASSWORD=${DB_PASSWORD:-"password"}
 export DB_HOST=${DB_HOST:-"db.dotcms.site"}
 export DB_NAME=${DB_NAME:-"dotcms"}
 
-# Max Connection Lifetime 15m
-export DB_MAX_WAIT=${DB_MAX_WAIT:-"900000"}
+# Max Connection Lifetime 30m
+export DB_MAX_WAIT=${DB_MAX_WAIT:-"1800000"}
 
 # Min Idle Connections
-export DB_MIN_IDLE=${DB_MIN_IDLE:-"3"}
+export DB_MIN_IDLE=${DB_MIN_IDLE:-"1"}
 
 # Max Connections
 export DB_MAX_TOTAL=${DB_MAX_TOTAL:-"200"}
 
-# Try new Connection Timeout - 5s
-export DB_CONNECTION_TIMEOUT=${DB_CONNECTION_TIMEOUT:-"5000"}
+# Try new Connection Timeout - 30s
+export DB_CONNECTION_TIMEOUT=${DB_CONNECTION_TIMEOUT:-"30000"}
 
 # remove idle connections after 5m
 export DB_IDLE_TIMEOUT=${DB_IDLE_TIMEOUT:-"300000"}

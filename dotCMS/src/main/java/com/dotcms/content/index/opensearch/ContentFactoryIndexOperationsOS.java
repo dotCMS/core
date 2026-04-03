@@ -9,9 +9,10 @@ import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -56,15 +57,13 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             .maxScore(0F));
 
     public static final int OS_TRACK_TOTAL_HITS_DEFAULT = 10000000;
-    public static final String OS_TRACK_TOTAL_HITS = "OS_TRACK_TOTAL_HITS";
     private static final String[] OS_FIELDS = {"inode", "identifier"};
 
     private final OSQueryCache queryCache;
     private final OSClientProvider clientProvider;
 
     public ContentFactoryIndexOperationsOS() {
-        this.queryCache = new OSQueryCache();
-        this.clientProvider = CDIUtils.getBeanThrows(OSClientProvider.class);
+        this(CacheLocator.getOSQueryCache(), CDIUtils.getBeanThrows(OSClientProvider.class));
     }
 
     public ContentFactoryIndexOperationsOS(OSQueryCache queryCache, OSClientProvider clientProvider) {
@@ -72,8 +71,8 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         this.clientProvider = clientProvider;
     }
 
-    private final boolean useQueryCache = Lazy.of(()->Config.getBooleanProperty(
-            "OS_CACHE_SEARCH_QUERIES", true)).get();
+    private final boolean useQueryCache = Lazy.of(
+            () -> IndexConfigHelper.getBoolean(OSIndexProperty.CACHE_SEARCH_QUERIES, true)).get();
 
     private boolean shouldQueryCache() {
         return useQueryCache;
@@ -145,7 +144,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     @VisibleForTesting
     @CanIgnoreReturnValue
     public SearchRequest.Builder setTrackHits(final SearchRequest.Builder searchRequestBuilder){
-        final int trackTotalHits = Config.getIntProperty(OS_TRACK_TOTAL_HITS, OS_TRACK_TOTAL_HITS_DEFAULT);
+        final int trackTotalHits = IndexConfigHelper.getInt(OSIndexProperty.TRACK_TOTAL_HITS, OS_TRACK_TOTAL_HITS_DEFAULT);
         searchRequestBuilder.trackTotalHits(th -> th.count(trackTotalHits));
         return searchRequestBuilder;
     }
@@ -291,7 +290,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
      */
     private Query createQuery(final String query, final String sortBy) {
 
-        if(Config.getBooleanProperty("OPENSEARCH_USE_FILTERS_FOR_SEARCHING", false)
+        if(IndexConfigHelper.getBoolean(OSIndexProperty.USE_FILTERS_FOR_SEARCHING, false)
                 && sortBy != null && !sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){

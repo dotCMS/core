@@ -1,29 +1,46 @@
 @reference 'tailwindcss';
 @reference 'tailwindcss-primeui';
 
+/* Host does not create a box; panel is hidden when inside host (Tippy moves it when open, so it’s no longer under :host). */
 :host {
+    display: contents;
+}
+
+/* When the panel is still in the host, hide it so it doesn’t take layout space. */
+:host .link-editor-popover__panel {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    margin: -1px;
+    padding: 0;
+    border: 0;
+}
+
+.link-editor-popover__panel {
     @apply flex flex-col gap-6 w-72 p-3 bg-white rounded-lg shadow-md;
 }
 
-:host ::ng-deep p-listbox {
+.link-editor-popover__panel ::ng-deep p-listbox {
     @apply w-full;
 }
 
-:host ::ng-deep .p-listbox-items {
+.link-editor-popover__panel ::ng-deep .p-listbox-items {
     @apply flex flex-col gap-2;
 }
 
-:host ::ng-deep .p-listbox-item {
+.link-editor-popover__panel ::ng-deep .p-listbox-item {
     @apply w-full h-full p-2;
 }
 
-:host ::ng-deep .p-listbox-item.p-highlight,
-:host ::ng-deep .p-listbox-item.p-focus,
-:host ::ng-deep .p-listbox-item:hover {
+.link-editor-popover__panel ::ng-deep .p-listbox-item.p-highlight,
+.link-editor-popover__panel ::ng-deep .p-listbox-item.p-focus,
+.link-editor-popover__panel ::ng-deep .p-listbox-item:hover {
     @apply bg-gray-300;
 }
 
-:host ::ng-deep .p-listbox-empty-message {
+.link-editor-popover__panel ::ng-deep .p-listbox-empty-message {
     @apply flex items-center justify-center min-h-[15.625rem] py-10;
 }
 

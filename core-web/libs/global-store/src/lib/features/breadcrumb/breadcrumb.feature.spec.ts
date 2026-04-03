@@ -213,6 +213,16 @@ describe('withBreadcrumbs Feature', () => {
             const parsedData = JSON.parse(savedData);
             expect(parsedData).toEqual(expectedBreadcrumbs);
         });
+
+        it('should not break when sessionStorage.setItem throws (e.g. private browsing, quota)', () => {
+            sessionStorageSetItemSpy.mockImplementation(() => {
+                throw new DOMException('QuotaExceededError');
+            });
+
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(() => TestBed.flushEffects()).not.toThrow();
+            expect(store.breadcrumbs().length).toBe(3);
+        });
     });
 
     describe('Set Breadcrumbs', () => {
@@ -367,6 +377,7 @@ describe('withBreadcrumbs Feature', () => {
                 { label: 'List', url: '/dotAdmin/#/c/content', target: '_self' }
             ]);
             const before = store.breadcrumbs().length;
+            expect(before).toBe(3); // Home + Content + List
 
             store.addNewBreadcrumb({
                 label: 'Edit Content',
@@ -402,6 +413,7 @@ describe('withBreadcrumbs Feature', () => {
                 { label: 'List', url: '/dotAdmin/#/c/content', target: '_self' }
             ]);
             const before = store.breadcrumbs().length;
+            expect(before).toBe(3); // Home + Content + List
 
             store.addNewBreadcrumb({
                 label: 'New Page',
@@ -488,6 +500,42 @@ describe('withBreadcrumbs Feature', () => {
 
             expect(store.breadcrumbs().length).toBe(3); // Home + Content + Special Encoded (replaced)
             expect(store.selectLastBreadcrumbLabel()).toBe('Special Encoded');
+        });
+
+        it('should replace last breadcrumb when both items are analytics tabs', () => {
+            store.setBreadcrumbs([
+                { label: 'Marketing', disabled: true },
+                {
+                    label: 'Analytics Dashboard',
+                    url: '/dotAdmin/#/analytics/dashboard',
+                    target: '_self'
+                }
+            ]);
+            store.appendCrumb({ label: 'Engagement', id: 'analytics-engagement' });
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({ label: 'Conversions', id: 'analytics-conversions' });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Conversions');
+            expect(store.lastBreadcrumb()?.id).toBe('analytics-conversions');
+        });
+
+        it('should append analytics tab crumb when last breadcrumb is not an analytics tab', () => {
+            store.setBreadcrumbs([
+                { label: 'Marketing', disabled: true },
+                {
+                    label: 'Analytics Dashboard',
+                    url: '/dotAdmin/#/analytics/dashboard',
+                    target: '_self'
+                }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({ label: 'Engagement', id: 'analytics-engagement' });
+
+            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Engagement');
         });
 
         it('should safely handle empty and null URLs when adding new breadcrumbs', () => {
@@ -1163,6 +1211,37 @@ describe('withBreadcrumbs Feature', () => {
 
                 expect(storeWithRouter.breadcrumbs().length).toBe(0);
             });
+        });
+
+        it('should preserve analytics tab crumb appended before menuItems loaded (reload fix)', () => {
+            // Simulate child component appending analytics tab crumb before menu loads
+            storeWithRouter.appendCrumb({ label: 'Conversions', id: 'analytics-conversions' });
+            TestBed.flushEffects();
+
+            expect(storeWithRouter.breadcrumbs().length).toBe(1);
+
+            // Trigger menuItems effect: add the analytics route to the menu
+            menuItemsSignal.set([
+                ...menuItemsSignal(),
+                {
+                    id: 'analytics',
+                    label: 'Analytics Dashboard',
+                    labelParent: 'Marketing',
+                    menuLink: '/analytics/dashboard',
+                    url: '/analytics/dashboard',
+                    angular: true,
+                    active: false,
+                    ajax: false,
+                    parentMenuId: 'marketing-8959',
+                    parentMenuLabel: 'Marketing',
+                    parentMenuIcon: 'pi pi-chart-bar'
+                } as MenuItemEntity
+            ]);
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+            // The analytics tab crumb should survive the base breadcrumb reset
+            expect(breadcrumbs.some((c) => c.id === 'analytics-conversions')).toBe(true);
         });
     });
 });

@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -11,7 +10,6 @@ import {
     transformConversionTrendData,
     transformTrafficVsConversionsData
 } from '@dotcms/portlets/dot-analytics/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
@@ -20,6 +18,14 @@ import { TIME_PERIOD_OPTIONS } from '../../../shared/constants';
 import { ChartData } from '../../../shared/types';
 import DotAnalyticsContentConversionsTableComponent from '../dot-analytics-content-conversions-table/dot-analytics-content-conversions-table.component';
 import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conversions-overview-table/dot-analytics-conversions-overview-table.component';
+
+/** Safely parse a string to integer, returning null for NaN/undefined/null */
+function safeParseInt(value: string | undefined | null): number | null {
+    if (value == null) return null;
+    const n = parseInt(value, 10);
+
+    return Number.isFinite(n) ? n : null;
+}
 
 /**
  * Conversions Report Component
@@ -34,7 +40,6 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
 @Component({
     selector: 'dot-analytics-conversions-report',
     imports: [
-        CommonModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
         DotAnalyticsContentConversionsTableComponent,
@@ -48,18 +53,10 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
         class: 'flex flex-col gap-6 w-full'
     }
 })
-export default class DotAnalyticsConversionsReportComponent implements OnInit {
+export default class DotAnalyticsConversionsReportComponent {
     /** Analytics dashboard store providing conversions data and actions */
     protected readonly store = inject(DotAnalyticsDashboardStore);
-    readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
-
-    ngOnInit(): void {
-        this.#globalStore.addNewBreadcrumb({
-            id: 'conversions',
-            label: this.#messageService.get('analytics.section.conversions')
-        });
-    }
 
     /** Dynamic chart title including the active time range label */
     protected readonly $trafficVsConversionsTitle = computed(() => {
@@ -108,28 +105,29 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
         const totalConversions = this.store.totalConversions();
         const convertingVisitors = this.store.convertingVisitors();
 
-        const totalConversionsRaw = totalConversions.data
-            ? parseInt(totalConversions.data['EventSummary.totalEvents'], 10)
-            : null;
+        const totalConversionsRaw = safeParseInt(
+            totalConversions.data?.['EventSummary.totalEvents']
+        );
         const totalConversionsValue = totalConversionsRaw === 0 ? null : totalConversionsRaw;
 
-        const uniqueVisitors = convertingVisitors.data
-            ? parseInt(convertingVisitors.data['EventSummary.uniqueVisitors'], 10)
-            : null;
-
-        const uniqueConvertingVisitors = convertingVisitors.data
-            ? parseInt(convertingVisitors.data['EventSummary.uniqueConvertingVisitors'], 10)
-            : null;
+        const uniqueVisitors = safeParseInt(
+            convertingVisitors.data?.['EventSummary.uniqueVisitors']
+        );
+        const uniqueConvertingVisitors = safeParseInt(
+            convertingVisitors.data?.['EventSummary.uniqueConvertingVisitors']
+        );
 
         const hasVisitorData = uniqueVisitors != null && uniqueVisitors > 0;
 
-        const conversionRate = hasVisitorData
-            ? `${Math.round(((uniqueConvertingVisitors ?? 0) / uniqueVisitors) * 10000) / 100}%`
-            : null;
+        const conversionRate =
+            hasVisitorData && uniqueConvertingVisitors != null
+                ? Math.round((uniqueConvertingVisitors / uniqueVisitors) * 10000) / 100
+                : null;
 
-        const convertingVisitorsValue = hasVisitorData
-            ? `${uniqueConvertingVisitors ?? 0}/${uniqueVisitors}`
-            : null;
+        const convertingVisitorsValue =
+            hasVisitorData && uniqueConvertingVisitors != null
+                ? `${uniqueConvertingVisitors}/${uniqueVisitors}`
+                : null;
 
         return [
             {
@@ -151,6 +149,7 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
             {
                 name: 'analytics.metrics.site-conversion-rate',
                 value: conversionRate,
+                format: 'percentage',
                 subtitle: 'analytics.metrics.site-conversion-rate.subtitle',
                 icon: 'pi-chart-line',
                 status: convertingVisitors.status,

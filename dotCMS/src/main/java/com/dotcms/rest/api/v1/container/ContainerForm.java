@@ -2,8 +2,10 @@ package com.dotcms.rest.api.v1.container;
 
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.beans.ContainerStructure;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
@@ -11,28 +13,66 @@ import java.util.List;
  * @author jsanca
  */
 @JsonDeserialize(builder = ContainerForm.Builder.class)
+@Schema(description = "Form used to create or update a Container in dotCMS")
 public class ContainerForm  extends Validated {
 
+    @Schema(description = "Identifier of the container. Required for updates, ignored on creation.")
     private final String identifier;
+
+    @Schema(description = "Title of the container", requiredMode = Schema.RequiredMode.REQUIRED)
     private final String title;
-    // description
+
+    @Schema(description = "Description of the container (displayed as 'Description' in the UI). "
+            + "Also accepts 'description' as an alias field name in JSON.")
     private final String friendlyName;
-    /** nullable persistent field */
+
+    @Schema(description = "Maximum number of contentlets this container can hold. Set to 0 for no limit.")
     private final int maxContentlets;
-    /** nullable persistent field */
+
+    @Schema(description = "Velocity/code used to render the container's content. Used when maxContentlets is 0.")
     private final String code;
+
+    @Schema(description = "Internal notes about this container (not displayed to end users)")
     private final String notes;
+
+    @Schema(description = "Velocity code executed before the content loop")
     private final String preLoop;
+
+    @Schema(description = "Velocity code executed after the content loop")
     private final String postLoop;
+
+    @Schema(description = "Whether this container should appear in navigation menus")
     private final boolean showOnMenu;
+
+    @Schema(description = "Sort order for display purposes")
     private final int sortOrder;
+
+    @Schema(description = "Field name used to sort contentlets within this container")
     private final String sortContentletsBy;
+
+    @Schema(description = "Inode of the content type (structure) associated with this container. "
+            + "This is a legacy field; prefer using containerStructures for multiple content type associations.")
     private final String structureInode;
+
+    @Schema(description = "List of content type associations for this container. Each entry maps a content type "
+            + "to rendering code. The 'id' field is ignored on input and auto-generated server-side. "
+            + "Only 'structureId' and 'code' are required.")
     private final List<ContainerStructure> containerStructures;
-    private final String owner; // dotcms 472
+
+    @Schema(description = "Owner user ID of the container")
+    private final String owner;
+
+    @Schema(description = "Identifier of the site (host) where this container should be created or moved to. "
+            + "If not provided, the container is assigned to the site resolved from the current HTTP request context.")
     private final String hostId;
+
+    @Schema(description = "Whether the container output should be staticified (cached as static HTML)")
     private final boolean staticify;
+
+    @Schema(description = "Whether to wrap content in a div element")
     private final boolean useDiv;
+
+    @Schema(description = "Whether this container uses dynamic content type resolution")
     private final boolean dynamic;
 
     private ContainerForm(final ContainerForm.Builder builder) {
@@ -138,15 +178,13 @@ public class ContainerForm  extends Validated {
         @JsonProperty
         private  String title;
 
-        // description
         @JsonProperty
+        @JsonAlias("description")
         private  String friendlyName;
 
-        /** nullable persistent field */
         @JsonProperty
         private int maxContentlets;
 
-        /** nullable persistent field */
         @JsonProperty
         private String code;
 
@@ -175,15 +213,17 @@ public class ContainerForm  extends Validated {
         private List<ContainerStructure> containerStructures;
 
         @JsonProperty
-        private String owner; // dotcms 472
+        private String owner;
 
 
         @JsonProperty
         private String hostId;
 
-        // todo: what is that?
+        @JsonProperty
         private boolean staticify;
+        @JsonProperty
         private boolean useDiv;
+        @JsonProperty
         private boolean dynamic;
 
         public ContainerForm.Builder identifier (final String identifier) {
@@ -220,7 +260,7 @@ public class ContainerForm  extends Validated {
             return this;
         }
 
-        public ContainerForm.Builder sortContentletsBy (final String showOnMenu) {
+        public ContainerForm.Builder sortContentletsBy (final String sortContentletsBy) {
             this.sortContentletsBy = sortContentletsBy;
             return this;
         }

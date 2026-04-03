@@ -23,10 +23,12 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.PermissionsUtil;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -120,6 +122,7 @@ import org.glassfish.jersey.server.JSONP;
  * @author Will Ezell
  * @since Sep 11th, 2016
  */
+@SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/contenttype")
 @Tag(name = "Content Type",
 		description = "Endpoints that perform operations related to content types.",
@@ -166,7 +169,7 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			operationId = "postContentTypeCopy",
 			summary = "Copies a content type",
@@ -231,7 +234,8 @@ public class ContentTypeResource implements Serializable {
 															"  }\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeOperationView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -305,7 +309,7 @@ public class ContentTypeResource implements Serializable {
 				session.removeAttribute(SELECTED_STRUCTURE_KEY);
 			}
 
-			response = Response.ok(new ResponseEntityView<>(responseMap)).build();
+			response = Response.ok(new ResponseEntityContentTypeOperationView(responseMap)).build();
 		} catch (final IllegalArgumentException e) {
 			final String errorMsg = String.format("Missing required information when copying Content Type " +
 					"'%s': %s", baseVariableName, ExceptionUtil.getErrorMessage(e));
@@ -419,7 +423,7 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			operationId = "postContentTypeCreate",
 			summary = "Creates one or more content types",
@@ -468,7 +472,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityListMapView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -549,7 +554,7 @@ public class ContentTypeResource implements Serializable {
 			Logger.debug(this, ()->String.format("Creating Content Type(s): %s", form.getRequestJson()));
 			final HttpSession session = req.getSession(false);
 			final Iterable<ContentTypeForm.ContentTypeFormEntry> typesToSave = form.getIterable();
-			final List<Map<Object, Object>> savedContentTypes = new ArrayList<>();
+			final List<Map<String, Object>> savedContentTypes = new ArrayList<>();
 
 			for (final ContentTypeForm.ContentTypeFormEntry entry : typesToSave) {
 				final ContentType type = contentTypeHelper.evaluateContentTypeRequest(
@@ -566,7 +571,7 @@ public class ContentTypeResource implements Serializable {
 								entry.workflows,
 							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
 				final ContentType contentTypeSaved = tuple2._1;
-				final ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
+				final ImmutableMap<String, Object> responseMap = ImmutableMap.<String, Object>builder()
 						.putAll(contentTypeHelper.contentTypeToMap(contentTypeSaved, user))
 						.put(MAP_KEY_WORKFLOWS,
 								this.workflowHelper.findSchemesByContentType(contentTypeSaved.id(),
@@ -580,7 +585,7 @@ public class ContentTypeResource implements Serializable {
                   session.removeAttribute(SELECTED_STRUCTURE_KEY);
 				}
 			}
-			return Response.ok(new ResponseEntityView<>(savedContentTypes)).build();
+			return Response.ok(new ResponseEntityListMapView(savedContentTypes)).build();
 		} catch (final IllegalArgumentException e) {
 			final String errorMsg = String.format("Missing required information when creating Content Type(s): " +
 					"%s", ExceptionUtil.getErrorMessage(e));
@@ -618,7 +623,7 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
+	@Produces({ MediaType.APPLICATION_JSON })
 	@Operation(
 			operationId = "putContentTypeUpdate",
 			summary = "Updates a content type",
@@ -666,7 +671,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeDetailView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -743,8 +749,8 @@ public class ContentTypeResource implements Serializable {
 					this.saveContentTypeAndDependencies(contentType, user,
 							form.getWorkflows(), form.getSystemActions(),
 							contentTypeAPI, false);
-			final ImmutableMap.Builder<Object, Object> builderMap =
-					ImmutableMap.builder()
+			final ImmutableMap.Builder<String, Object> builderMap =
+					ImmutableMap.<String, Object>builder()
 							.putAll(contentTypeHelper.contentTypeToMap(tuple2._1, user))
 							.put(MAP_KEY_WORKFLOWS,
 									this.workflowHelper.findSchemesByContentType(
@@ -753,7 +759,7 @@ public class ContentTypeResource implements Serializable {
 									.collect(Collectors.toMap(
 											SystemActionWorkflowActionMapping::getSystemAction,
 											mapping -> mapping)));
-			return Response.ok(new ResponseEntityView<>(builderMap.build())).build();
+			return Response.ok(new ResponseEntityContentTypeDetailView(builderMap.build())).build();
 		} catch (final NotFoundInDbException e) {
 			Logger.error(this, String.format("Content Type with ID or var name '%s' was not found", idOrVar), e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
@@ -979,7 +985,7 @@ public class ContentTypeResource implements Serializable {
 	@Path("/id/{idOrVar}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			operationId = "deleteContentType",
 			summary = "Deletes a content type",
@@ -1000,7 +1006,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeJsonView.class)
 							)
 					),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
@@ -1033,7 +1040,7 @@ public class ContentTypeResource implements Serializable {
 			JSONObject joe = new JSONObject();
 			joe.put("deleted", type.id());
 
-			return Response.ok(new ResponseEntityView<>(joe.toString())).build();
+			return Response.ok(new ResponseEntityContentTypeJsonView(joe.toString())).build();
 		} catch (final DotSecurityException e) {
 			throw new ForbiddenException(e);
 		} catch (final Exception e) {
@@ -1046,14 +1053,14 @@ public class ContentTypeResource implements Serializable {
 	@Path("/id/{idOrVar}")
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			operationId = "getContentTypeIdVar",
-			summary = "Retrieves a single Content Type",
-			description = "Returns a Content Type based on the provided ID or Velocity variable name.",
+			summary = "Retrieves a single content type",
+			description = "Returns one content type based on the provided ID or Velocity variable name.",
 			tags = {"Content Type"},
 			responses = {
-					@ApiResponse(responseCode = "200", description = "Content Type retrieved successfully",
+					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
 							content = @Content(mediaType = "application/json",
 									examples = {
 											@ExampleObject(
@@ -1098,7 +1105,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}\n"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityContentTypeDetailView.class)
 							)
 					),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
@@ -1109,8 +1117,8 @@ public class ContentTypeResource implements Serializable {
 	public Response getType(
 			@PathParam("idOrVar") @Parameter(
 					required = true,
-					description = "The ID or Velocity variable name of the Content Type to retrieve.\n\n" +
-								  "Variable name example: `htmlpageasset` (Default page Content Type)",
+					description = "The ID or Velocity variable name of the content type to retrieve.\n\n" +
+								  "Variable name example: `htmlpageasset` (Default page content type)",
 					schema = @Schema(type = "string")) final String idOrVar,
 			@Context final HttpServletRequest req,
 			@Context final HttpServletResponse res,
@@ -1129,13 +1137,13 @@ public class ContentTypeResource implements Serializable {
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	@Operation(
-			operationId = "getContentTypeIdVar",
-			summary = "Retrieves a single Content Type with their rendered Custom Fields",
-			description = "Returns a Content Type based on the provided ID or Velocity variable " +
-					"name. Additionally, the Velocity code in all of its Custom Fields will be parsed.",
+			operationId = "getContentTypeRenderedCustomFieldIdVar",
+			summary = "Retrieves a single content type with their rendered custom fields",
+			description = "Returns a content type based on the provided ID or Velocity variable " +
+					"name. Additionally, the Velocity code in all of its custom fields will be parsed.",
 			tags = {"Content Type"},
 			responses = {
-					@ApiResponse(responseCode = "200", description = "Content Type retrieved successfully",
+					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
 							content = @Content(mediaType = "application/json",
 									examples = {
 											@ExampleObject(
@@ -1191,8 +1199,8 @@ public class ContentTypeResource implements Serializable {
 	public Response getTypeWithRenderedCustomFields(
 			@PathParam("idOrVar") @Parameter(
 					required = true,
-					description = "The ID or Velocity variable name of the Content Type to retrieve.\n\n" +
-								  "Variable name example: `htmlpageasset` (Default page Content Type)",
+					description = "The ID or Velocity variable name of the content type to retrieve.\n\n" +
+								  "Variable name example: `htmlpageasset` (Default page content type)",
 					schema = @Schema(type = "string")) final String idOrVar,
 			@Context final HttpServletRequest req,
 			@Context final HttpServletResponse res,
@@ -1239,7 +1247,7 @@ public class ContentTypeResource implements Serializable {
 				// Humoring sonarlint, this block should never be reached as the find method will
 				// throw an exception if the type is not found.
 				throw new NotFoundInDbException(
-						String.format("Content Type with ID or var name '%s' was not found", idOrVar));
+						String.format("Content type with ID or var name '%s' was not found", idOrVar));
 			}
 			if (null != session) {
 				session.setAttribute(SELECTED_STRUCTURE_KEY, type.inode());
@@ -1251,7 +1259,7 @@ public class ContentTypeResource implements Serializable {
 			final ContentTypeInternationalization contentTypeInternationalization =
 					languageId != null ?
 					new ContentTypeInternationalization(languageId, live, user) : null;
-			final ImmutableMap<Object, Object> resultMap = ImmutableMap.builder()
+			final ImmutableMap<String, Object> resultMap = ImmutableMap.<String, Object>builder()
 					.putAll(contentTypeHelper.contentTypeToMap(type,
 							contentTypeInternationalization, renderCustomFields, user))
 					.put(MAP_KEY_WORKFLOWS, this.workflowHelper.findSchemesByContentType(
@@ -1309,7 +1317,7 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			operationId = "postContentTypeFilter",
 			summary = "Filters content types",
@@ -1359,7 +1367,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}\n"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityListContentTypeView.class)
 							)
 					),
 					@ApiResponse(responseCode = "400", description = "Bad Request"),
@@ -1455,7 +1464,7 @@ public class ContentTypeResource implements Serializable {
 	@JSONP
 	@InitRequestRequired
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			operationId = "getContentTypeBaseTypes",
 			summary = "Retrieves base content types",
@@ -1482,7 +1491,8 @@ public class ContentTypeResource implements Serializable {
 															"  \"permissions\": []\n" +
 															"}"
 											)
-									}
+									},
+									schema = @Schema(implementation = ResponseEntityBaseContentTypesView.class)
 							)
 					),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
@@ -1492,7 +1502,7 @@ public class ContentTypeResource implements Serializable {
 		Response response;
 		try {
 			final List<BaseContentTypesView> types = contentTypeHelper.getTypes(request);
-			response = Response.ok(new ResponseEntityView<>(types)).build();
+			response = Response.ok(new ResponseEntityBaseContentTypesView(types)).build();
 		} catch (Exception e) { // this is an unknown error, so we report as a 500.
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
@@ -1536,7 +1546,7 @@ public class ContentTypeResource implements Serializable {
 	@GET
 	@JSONP
 	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(
 			operationId = "getContentType",
 			summary = "Retrieves a list of content types",
@@ -1767,8 +1777,7 @@ public class ContentTypeResource implements Serializable {
 	@Path("/page")
 	@JSONP
 	@NoCache
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Produces({MediaType.APPLICATION_JSON})
 	@Tag(name = "getPagesContentTypes", description = "Returns the content types valid for a page based on the container/types on the layout")
 	@Operation(
 			operationId = "getPagesContentTypes",
@@ -1903,6 +1912,8 @@ public class ContentTypeResource implements Serializable {
         //Curated list of varNames ensures they belong into the passed BaseTypes
         List<String> typeVarNames = contentTypes.stream()
                 .filter(contentType -> baseContentTypes.contains(contentType.baseType()))
+                // Excludes system contentTypes
+                .filter(contentType -> !contentType.system())
                 .map(ContentType::variable)
                 .collect(Collectors.toList());
 

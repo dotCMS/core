@@ -66,7 +66,7 @@
                             icon="pi pi-palette"
                             [rounded]="true"
                             variant="text"
-                            size="small"></p-button>
+                            size="small" />
                     }
 
                     @if (actions.includes('delete')) {
@@ -74,7 +74,7 @@
                             (deleteConfirmed)="requestColumnDelete()"
                             (deleteRejected)="deleteColumnRejected.emit()"
                             [skipConfirmation]="items.length === 0"
-                            data-testId="btn-delete-column"></dotcms-remove-confirm-dialog>
+                            data-testId="btn-delete-column" />
                     }
                 </div>
             </div>
@@ -108,7 +108,7 @@
                 [rounded]="true"
                 variant="text"
                 size="small"
-                data-testId="btn-plus-small"></p-button>
+                data-testId="btn-plus-small" />
         }
         @if (actions.includes('edit')) {
             <p-button
@@ -117,7 +117,7 @@
                 icon="pi pi-palette"
                 [rounded]="true"
                 variant="text"
-                size="small"></p-button>
+                size="small" />
         }
         @if (actions.includes('delete')) {
             <dotcms-remove-confirm-dialog
