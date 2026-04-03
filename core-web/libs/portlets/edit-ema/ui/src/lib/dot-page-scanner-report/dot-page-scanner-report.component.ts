@@ -33,6 +33,7 @@ interface DotPageScannerState {
     status: ScanStatus;
     error: string | null;
     isPrivateUrlError: boolean;
+    tunnelConsentAccepted: boolean;
     reportType: ReportType;
     pageUrl: string;
     a11yData: PageScannerA11yResponse | null;
@@ -60,6 +61,7 @@ export class DotPageScannerReportComponent implements OnDestroy {
         status: 'idle',
         error: null,
         isPrivateUrlError: false,
+        tunnelConsentAccepted: false,
         reportType: 'a11y',
         pageUrl: '',
         a11yData: null,
@@ -110,9 +112,13 @@ export class DotPageScannerReportComponent implements OnDestroy {
         }
     }
 
+    acceptTunnelConsent(): void {
+        patchState(this.$state, { tunnelConsentAccepted: true });
+    }
+
     onDialogHide(): void {
         this.cancel$.next();
-        patchState(this.$state, { status: 'idle' });
+        patchState(this.$state, { status: 'idle', tunnelConsentAccepted: false });
     }
 
     onVisibleChange(value: boolean): void {
