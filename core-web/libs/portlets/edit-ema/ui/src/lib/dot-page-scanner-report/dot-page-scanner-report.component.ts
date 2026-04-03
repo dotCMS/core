@@ -32,6 +32,7 @@ interface DotPageScannerState {
     visible: boolean;
     status: ScanStatus;
     error: string | null;
+    isPrivateUrlError: boolean;
     reportType: ReportType;
     pageUrl: string;
     a11yData: PageScannerA11yResponse | null;
@@ -58,6 +59,7 @@ export class DotPageScannerReportComponent implements OnDestroy {
         visible: false,
         status: 'idle',
         error: null,
+        isPrivateUrlError: false,
         reportType: 'a11y',
         pageUrl: '',
         a11yData: null,
@@ -72,17 +74,40 @@ export class DotPageScannerReportComponent implements OnDestroy {
      * Open the scanner report dialog for the given type and page URL.
      */
     open(type: ReportType, url: string): void {
+        const isPrivateUrlError = this.isPrivateUrl(url);
+
         patchState(this.$state, {
             reportType: type,
             pageUrl: url,
             visible: true,
-            status: 'pending',
+            status: 'done',
             error: null,
+            isPrivateUrlError,
             a11yData: null,
             geoData: null
         });
 
-        this.runScan();
+        if (!isPrivateUrlError) {
+            patchState(this.$state, { status: 'pending' });
+            this.runScan();
+        }
+    }
+
+    private isPrivateUrl(url: string): boolean {
+        try {
+            const { hostname } = new URL(url);
+            return (
+                hostname === 'localhost' ||
+                hostname === '127.0.0.1' ||
+                hostname === '::1' ||
+                hostname.endsWith('.local') ||
+                /^10\./.test(hostname) ||
+                /^192\.168\./.test(hostname) ||
+                /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+            );
+        } catch {
+            return false;
+        }
     }
 
     onDialogHide(): void {
@@ -113,8 +138,17 @@ export class DotPageScannerReportComponent implements OnDestroy {
                         this.cdr.markForCheck();
                     },
                     error: (err) => {
+                        const errorBody = err?.error;
+                        const isPrivateUrlError =
+                            errorBody?.ok === false &&
+                            typeof errorBody?.error === 'string' &&
+                            errorBody.error.toLowerCase().includes('private');
                         patchState(this.$state, {
-                            error: err?.message ?? 'An error occurred while scanning the page.',
+                            error:
+                                errorBody?.error ??
+                                err?.message ??
+                                'An error occurred while scanning the page.',
+                            isPrivateUrlError,
                             status: 'done'
                         });
                         this.cdr.markForCheck();
@@ -130,8 +164,17 @@ export class DotPageScannerReportComponent implements OnDestroy {
                         this.cdr.markForCheck();
                     },
                     error: (err) => {
+                        const errorBody = err?.error;
+                        const isPrivateUrlError =
+                            errorBody?.ok === false &&
+                            typeof errorBody?.error === 'string' &&
+                            errorBody.error.toLowerCase().includes('private');
                         patchState(this.$state, {
-                            error: err?.message ?? 'An error occurred while scanning the page.',
+                            error:
+                                errorBody?.error ??
+                                err?.message ??
+                                'An error occurred while scanning the page.',
+                            isPrivateUrlError,
                             status: 'done'
                         });
                         this.cdr.markForCheck();
