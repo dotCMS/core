@@ -1,15 +1,11 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Converts the {@code permission_reference} table to UNLOGGED.
@@ -39,30 +35,11 @@ public class Task260403SetPermissionReferenceUnlogged implements StartupTask {
 
     @Override
     public boolean forceRun() {
-        if (!DbConnectionFactory.isPostgres()) {
-            return false;
-        }
-        try {
-            // relpersistence = 'u' means UNLOGGED; 'p' means permanent (logged)
-            final List<Map<String, Object>> result = new DotConnect()
-                    .setSQL("SELECT 1 FROM pg_class WHERE relname = ? AND relpersistence = 'u'")
-                    .addParam(TABLE_NAME)
-                    .loadObjectResults();
-            return result.isEmpty(); // run if NOT already unlogged
-        } catch (final DotDataException e) {
-            // Fail open — idempotent DDL, safe to re-run
-            Logger.error(this, "Error in forceRun() for " + TABLE_NAME + ", defaulting to run: "
-                    + e.getMessage(), e);
-            return true;
-        }
+        return true;
     }
 
     @Override
     public void executeUpgrade() throws DotDataException {
-        if (!DbConnectionFactory.isPostgres()) {
-            Logger.info(this, "Skipping SET UNLOGGED for " + TABLE_NAME + " (not PostgreSQL)");
-            return;
-        }
         try {
             Logger.info(this, "Converting " + TABLE_NAME + " to UNLOGGED");
             new DotConnect().executeStatement(
