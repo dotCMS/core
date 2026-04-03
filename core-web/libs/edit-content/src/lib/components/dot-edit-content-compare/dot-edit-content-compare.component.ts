@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -10,7 +9,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 
 @Component({
     selector: 'dot-edit-content-compare',
-    imports: [NgClass, ButtonModule, DotContentCompareComponent, DotMessagePipe],
+    imports: [ButtonModule, DotContentCompareComponent, DotMessagePipe],
     templateUrl: './dot-edit-content-compare.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
