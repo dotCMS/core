@@ -25,19 +25,10 @@
         </div>
     </ng-template>
 
-    <div class="p-4">
+    <div class="p-4 h-full">
         @switch ($state.status()) {
             @case ('pending') {
-                <div class="flex gap-3 mb-6">
-                    @for (i of [1, 2, 3, 4]; track i) {
-                        <div class="flex-1">
-                            <p-skeleton height="80px" borderRadius="8px" />
-                        </div>
-                    }
-                </div>
-                @for (i of [1, 2, 3]; track i) {
-                    <p-skeleton height="48px" borderRadius="8px" class="mb-2 block" />
-                }
+                <dot-page-scan-loading />
             }
             @case ('done') {
                 @if ($state.isPrivateUrlError()) {

@@ -11,12 +11,12 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { SkeletonModule } from 'primeng/skeleton';
 
 import { takeUntil } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotPageScanLoadingComponent } from './dot-page-scan-loading/dot-page-scan-loading.component';
 import { DotPageScannerA11yReportComponent } from './dot-page-scanner-a11y-report/dot-page-scanner-a11y-report.component';
 import { DotPageScannerGeoReportComponent } from './dot-page-scanner-geo-report/dot-page-scanner-geo-report.component';
 import {
@@ -47,10 +47,10 @@ interface DotPageScannerState {
     imports: [
         DialogModule,
         ButtonModule,
-        SkeletonModule,
         DotMessagePipe,
         DotPageScannerA11yReportComponent,
-        DotPageScannerGeoReportComponent
+        DotPageScannerGeoReportComponent,
+        DotPageScanLoadingComponent
     ],
     templateUrl: './dot-page-scanner-report.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -82,7 +82,7 @@ export class DotPageScannerReportComponent implements OnDestroy {
             reportType: type,
             pageUrl: url,
             visible: true,
-            status: 'done',
+            status: isPrivateUrlError ? 'done' : 'pending',
             error: null,
             isPrivateUrlError,
             a11yData: null,
@@ -90,7 +90,6 @@ export class DotPageScannerReportComponent implements OnDestroy {
         });
 
         if (!isPrivateUrlError) {
-            patchState(this.$state, { status: 'pending' });
             this.runScan();
         }
     }
