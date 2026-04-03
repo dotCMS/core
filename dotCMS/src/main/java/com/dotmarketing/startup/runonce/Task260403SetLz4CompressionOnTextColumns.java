@@ -49,6 +49,7 @@ public class Task260403SetLz4CompressionOnTextColumns implements StartupTask {
             "  JOIN pg_namespace n ON n.oid = c.relnamespace " +
             "  JOIN pg_type t ON t.oid = a.atttypid " +
             " WHERE n.nspname = 'public' " +
+            "   AND c.relkind = 'r' " +
             "   AND a.attnum > 0 " +
             "   AND NOT a.attisdropped " +
             "   AND t.typname IN ('text', 'bytea', 'jsonb', 'json') " +
