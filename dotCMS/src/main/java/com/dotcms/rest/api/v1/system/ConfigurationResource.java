@@ -70,24 +70,12 @@ public class ConfigurationResource implements Serializable {
                             FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES,
 							FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
 							PageScannerResource.API_URL_PROPERTY,
-							PageScannerResource.API_AUTH_TOKEN_PROPERTY,
                             FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION }));
 
-	/**
-	 * Keys that are explicitly whitelisted but whose names happen to match the
-	 * obfuscate pattern (e.g. contain "token" or "key"). These are intentionally
-	 * exposed and must not be suppressed by the blacklist check.
-	 */
-	private static final Set<String> BLACKLIST_EXEMPTIONS = ImmutableSet.of(
-			PageScannerResource.API_AUTH_TOKEN_PROPERTY);
-
 	private boolean isOnBlackList(final String key) {
-
-		if (BLACKLIST_EXEMPTIONS.contains(key)) {
-			return false;
-		}
 		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;
 	}
+
 	/**
 	 * Default constructor.
 	 */

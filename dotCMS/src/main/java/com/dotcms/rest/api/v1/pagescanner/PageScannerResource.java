@@ -43,8 +43,6 @@ public class PageScannerResource {
 
     static final String DEFAULT_API_URL =
             "https://a11y.api.dotcms.site";
-    static final String DEFAULT_API_AUTH_TOKEN =
-            "AYddCh9S6YHW_t_HUNAA1oKevRdyjZCnn5A_asvqXTkca6IdVRfnR_LydQzeaDgR";
 
     private static final String NOT_CONFIGURED_MSG =
             "Page Scanner is not configured. Environment variables "
@@ -120,7 +118,7 @@ public class PageScannerResource {
                 .init();
 
         final String apiUrl       = Config.getStringProperty(API_URL_PROPERTY, DEFAULT_API_URL);
-        final String apiAuthToken = Config.getStringProperty(API_AUTH_TOKEN_PROPERTY, DEFAULT_API_AUTH_TOKEN);
+        final String apiAuthToken = Config.getStringProperty(API_AUTH_TOKEN_PROPERTY, null);
 
         if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
             Logger.warn(PageScannerResource.class,
