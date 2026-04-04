@@ -292,12 +292,15 @@ export class DotBubbleMenuComponent implements OnInit {
     }
 
     protected setImageTextAlign(align: string) {
+        const isToggleOff = this.imageTextAlign() === align;
+        const resolvedAlign = isToggleOff ? null : align;
+
         this.editor()
             .chain()
             .focus()
-            .updateAttributes('dotImage', { textAlign: align, textWrap: null })
+            .updateAttributes('dotImage', { textAlign: resolvedAlign, textWrap: null })
             .run();
-        this.imageTextAlign.set(align);
+        this.imageTextAlign.set(resolvedAlign);
         this.imageTextWrap.set('none');
     }
     protected goToContentlet() {

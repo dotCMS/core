@@ -7,8 +7,8 @@ import { addImageLanguageId, getImageAttr, imageElement, imageLinkElement } from
 import { contentletToJSON } from '../../shared';
 
 const FLOAT_STYLES: Record<'left' | 'right', string> = {
-    left: 'float: left; margin: 0 1rem 1rem 0;',
-    right: 'float: right; margin: 0 0 1rem 1rem;'
+    left: 'float: left; width: 50%; margin: 0 1rem 1rem 0;',
+    right: 'float: right; width: 50%; margin: 0 0 1rem 1rem;'
 };
 
 const IMG_ONLY_ATTRS = new Set(['textWrap', 'textAlign']);
@@ -75,13 +75,13 @@ export const ImageNode = Image.extend({
             },
             textWrap: {
                 default: null,
-                parseHTML: (element) => element.getAttribute('textWrap'),
-                renderHTML: (attributes) => ({ textWrap: attributes.textWrap })
+                parseHTML: (element) => element.getAttribute('textwrap'),
+                renderHTML: (attributes) => ({ textwrap: attributes.textWrap })
             },
             textAlign: {
                 default: null,
-                parseHTML: (element) => element.getAttribute('textAlign'),
-                renderHTML: (attributes) => ({ textAlign: attributes.textAlign })
+                parseHTML: (element) => element.getAttribute('textalign'),
+                renderHTML: (attributes) => ({ textalign: attributes.textAlign })
             }
         };
     },
@@ -148,7 +148,7 @@ export const ImageNode = Image.extend({
         }
 
         return [
-            'div',
+            'figure',
             { style: divStyle },
             href
                 ? imageLinkElement(this.options.HTMLAttributes, HTMLAttributes)
@@ -195,8 +195,10 @@ export const ImageNode = Image.extend({
                 wrapper.style.textAlign = textAlign;
             }
 
-            const align = textWrap ?? textAlign ?? 'left';
-            wrapper.classList.add(`dot-node-${align}`);
+            const align = textWrap ?? textAlign;
+            if (align) {
+                wrapper.classList.add(`dot-node-${align}`);
+            }
             wrapper.appendChild(inner);
 
             node.toJSON = contentletToJSON.bind({ node });
