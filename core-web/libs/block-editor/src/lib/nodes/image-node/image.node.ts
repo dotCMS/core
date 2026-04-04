@@ -6,12 +6,20 @@ import { addImageLanguageId, getImageAttr, imageElement, imageLinkElement } from
 
 import { contentletToJSON } from '../../shared';
 
+const FLOAT_STYLES: Record<'left' | 'right', string> = {
+    left: 'float: left; margin: 0 1rem 1rem 0;',
+    right: 'float: right; margin: 0 0 1rem 1rem;'
+};
+
+const IMG_ONLY_ATTRS = new Set(['textWrap', 'textAlign']);
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         ImageBlock: {
             setImageLink: (attributes: { href: string; target?: string }) => ReturnType;
             unsetImageLink: () => ReturnType;
             insertImage: (attrs: DotCMSContentlet | string, position?: number) => ReturnType;
+            setImageTextWrap: (value: 'left' | 'right' | 'none') => ReturnType;
         };
     }
 }
@@ -64,6 +72,16 @@ export const ImageNode = Image.extend({
                 default: null,
                 parseHTML: (element) => element.getAttribute('target'),
                 renderHTML: (attributes) => ({ target: attributes.target })
+            },
+            textWrap: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('textWrap'),
+                renderHTML: (attributes) => ({ textWrap: attributes.textWrap })
+            },
+            textAlign: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('textAlign'),
+                renderHTML: (attributes) => ({ textAlign: attributes.textAlign })
             }
         };
     },
@@ -102,65 +120,89 @@ export const ImageNode = Image.extend({
                     return chain()
                         .insertContentAt(position ?? head, node)
                         .run();
+                },
+            setImageTextWrap:
+                (value) =>
+                ({ commands, editor }) => {
+                    const currentTextWrap = editor.getAttributes(ImageNode.name).textWrap;
+                    const isToggleOff = currentTextWrap === value;
+                    const resolvedWrap = isToggleOff || value === 'none' ? null : value;
+
+                    return commands.updateAttributes(ImageNode.name, {
+                        textWrap: resolvedWrap,
+                        textAlign: null
+                    });
                 }
         };
     },
 
-    /**
-     * Return the node for the renderHTML method
-     *
-     * @param {*} { HTMLAttributes }
-     * @return {*}
-     */
     renderHTML({ HTMLAttributes }) {
-        const { href = null, style } = HTMLAttributes || {};
+        const { href = null, textWrap, textAlign } = HTMLAttributes || {};
+
+        let divStyle: string | undefined;
+
+        if (textWrap === 'left' || textWrap === 'right') {
+            divStyle = FLOAT_STYLES[textWrap];
+        } else if (textAlign) {
+            divStyle = `text-align: ${textAlign};`;
+        }
 
         return [
             'div',
-            { style },
+            { style: divStyle },
             href
                 ? imageLinkElement(this.options.HTMLAttributes, HTMLAttributes)
                 : imageElement(this.options.HTMLAttributes, HTMLAttributes)
         ];
     },
 
-    /**
-     * Return the node view for Block Editor in Development mode
-     *
-     * @return {*}
-     */
     addNodeView() {
         return ({ node, HTMLAttributes }) => {
             const hasImageLink = !!HTMLAttributes.href;
             const img = document.createElement('img');
             img.classList.add(`dot-image`);
             Object.entries(HTMLAttributes).forEach(([key, value]) => {
+                if (IMG_ONLY_ATTRS.has(key)) {
+                    return;
+                }
+
                 if (typeof value === 'object' && value !== null) {
                     value = JSON.stringify(value);
                 }
 
-                img.setAttribute(key, value);
+                img.setAttribute(key, value as string);
             });
 
-            let dom;
+            let inner: HTMLElement;
             if (hasImageLink) {
                 const a = document.createElement('a');
                 a.setAttribute('href', HTMLAttributes.href);
                 a.setAttribute('target', HTMLAttributes.target);
                 a.appendChild(img);
-                dom = a;
+                inner = a;
             } else {
-                dom = img;
+                inner = img;
             }
 
-            const align = img.style.textAlign || 'left';
-            dom.classList.add(`dot-node-${align}`);
+            const wrapper = document.createElement('div');
+            const textWrap = HTMLAttributes.textWrap;
+            const textAlign = HTMLAttributes.textAlign;
 
-            // Override toJSON method to include the contentlet data
+            if (textWrap === 'left' || textWrap === 'right') {
+                wrapper.style.cssText = FLOAT_STYLES[textWrap];
+                wrapper.classList.add('has-float');
+            } else if (textAlign) {
+                wrapper.style.textAlign = textAlign;
+            }
+
+            const align = textWrap ?? textAlign ?? 'left';
+            wrapper.classList.add(`dot-node-${align}`);
+            wrapper.appendChild(inner);
+
             node.toJSON = contentletToJSON.bind({ node });
 
             return {
-                dom,
+                dom: wrapper,
                 node
             };
         };

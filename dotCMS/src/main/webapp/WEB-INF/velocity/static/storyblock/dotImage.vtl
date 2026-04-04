@@ -1,4 +1,4 @@
-<div#if($item.attrs.textAlign) style="text-align: $item.attrs.textAlign;"#end>
+<figure#if($item.attrs.textWrap == "left") style="float: left; width: 50%; margin: 0 1rem 1rem 0;"#elseif($item.attrs.textWrap == "right") style="float: right; width: 50%; margin: 0 0 1rem 1rem;"#elseif($item.attrs.textAlign) style="text-align: $item.attrs.textAlign;"#end>
 
     #if ($!item.attrs.href != "null")
     <a href="$!item.attrs.href">
@@ -12,5 +12,5 @@
     </a>
     #end
 
-</div>
+</figure>
 

@@ -99,6 +99,8 @@ export class DotBubbleMenuComponent implements OnInit {
     protected readonly showShould = signal<boolean>(true);
     protected readonly showImageMenu = computed(() => this.currentNodeType() === 'dotImage');
     protected readonly showContentMenu = computed(() => this.currentNodeType() === 'dotContent');
+    protected readonly imageTextWrap = signal<string>('none');
+    protected readonly imageTextAlign = signal<string | null>(null);
 
     protected nodeTypeOptions: NodeTypeOption[] = [
         {
@@ -281,6 +283,23 @@ export class DotBubbleMenuComponent implements OnInit {
 
         return !!image?.href;
     }
+
+    protected setImageTextWrap(value: 'left' | 'right') {
+        this.editor().chain().focus().setImageTextWrap(value).run();
+        const currentWrap = this.imageTextWrap();
+        this.imageTextWrap.set(currentWrap === value ? 'none' : value);
+        this.imageTextAlign.set(null);
+    }
+
+    protected setImageTextAlign(align: string) {
+        this.editor()
+            .chain()
+            .focus()
+            .updateAttributes('dotImage', { textAlign: align, textWrap: null })
+            .run();
+        this.imageTextAlign.set(align);
+        this.imageTextWrap.set('none');
+    }
     protected goToContentlet() {
         // Validate selection exists before proceeding
 
@@ -373,6 +392,12 @@ export class DotBubbleMenuComponent implements OnInit {
         this.dropdownItem.set(foundOption ?? this.nodeTypeOptions[0]);
         this.currentNodeType.set(baseNodeType);
         this.showShould.set(BUBBLE_MENU_VISIBLE_NODES[baseNodeType]);
+
+        if (baseNodeType === 'dotImage') {
+            const attrs = this.editor().getAttributes('dotImage');
+            this.imageTextWrap.set(attrs?.textWrap ?? 'none');
+            this.imageTextAlign.set(attrs?.textAlign ?? null);
+        }
     }
 
     /**
