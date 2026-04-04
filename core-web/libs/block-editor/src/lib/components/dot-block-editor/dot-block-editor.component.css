@@ -448,11 +448,11 @@ tiptap-editor::ng-deep .ProseMirror pre code {
 }
 
 tiptap-editor::ng-deep .ProseMirror img.dot-image {
-    @apply block p-0 max-w-[50%] h-auto rounded;
+    @apply block p-0 max-w-[50%] h-auto rounded max-h-[300px];
 }
 
-tiptap-editor::ng-deep .ProseMirror :not(.has-float) img.dot-image {
-    @apply max-h-[300px];
+tiptap-editor::ng-deep .ProseMirror .has-float img.dot-image {
+    @apply max-h-none max-w-full;
 }
 
 tiptap-editor::ng-deep .ProseMirror .grid-block__column img.dot-image {

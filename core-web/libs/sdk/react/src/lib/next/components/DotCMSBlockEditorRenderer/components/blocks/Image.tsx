@@ -28,7 +28,11 @@ export const DotCMSImage = ({ node }: { node: BlockEditorNode }) => {
 
     return (
         <figure style={wrapperStyle}>
-            <img alt={alt} src={src} />
+            <img
+                alt={alt}
+                src={src}
+                style={textWrap ? { maxWidth: '100%', height: 'auto' } : undefined}
+            />
         </figure>
     );
 };
