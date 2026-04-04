@@ -1,13 +1,8 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { Subject } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    inject,
-    OnDestroy
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -55,7 +50,7 @@ interface DotPageScannerState {
     templateUrl: './dot-page-scanner-report.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotPageScannerReportComponent implements OnDestroy {
+export class DotPageScannerReportComponent {
     protected readonly $state = signalState<DotPageScannerState>({
         visible: false,
         status: 'idle',
@@ -69,12 +64,10 @@ export class DotPageScannerReportComponent implements OnDestroy {
     });
 
     private readonly scanner = inject(DotPageScannerService);
-    private readonly cdr = inject(ChangeDetectorRef);
-    private cancel$ = new Subject<void>();
+    private readonly destroyRef = inject(DestroyRef);
+    // cancel$ cancels in-flight requests when the dialog closes mid-scan
+    private readonly cancel$ = new Subject<void>();
 
-    /**
-     * Open the scanner report dialog for the given type and page URL.
-     */
     open(type: ReportType, url: string): void {
         const isPrivateUrlError = this.isPrivateUrl(url);
 
@@ -94,6 +87,54 @@ export class DotPageScannerReportComponent implements OnDestroy {
         }
     }
 
+    acceptTunnelConsent(): void {
+        patchState(this.$state, { tunnelConsentAccepted: true });
+    }
+
+    onDialogHide(): void {
+        this.cancel$.next();
+        patchState(this.$state, { status: 'idle', tunnelConsentAccepted: false });
+    }
+
+    onVisibleChange(value: boolean): void {
+        patchState(this.$state, { visible: value });
+    }
+
+    private runScan(): void {
+        const url = this.$state.pageUrl();
+        const type = this.$state.reportType();
+        const scan$ = type === 'a11y' ? this.scanner.checkA11y(url) : this.scanner.checkGeo(url);
+
+        scan$.pipe(takeUntil(this.cancel$), takeUntilDestroyed(this.destroyRef)).subscribe({
+            next: (data) => {
+                const update =
+                    type === 'a11y'
+                        ? { a11yData: data as PageScannerA11yResponse }
+                        : { geoData: data as PageScannerGeoResponse };
+                patchState(this.$state, { ...update, status: 'done' });
+            },
+            error: (err) => {
+                patchState(this.$state, { ...this.parseScanError(err), status: 'done' });
+            }
+        });
+    }
+
+    private parseScanError(err: unknown): { error: string; isPrivateUrlError: boolean } {
+        const errorBody = (err as { error?: { ok?: boolean; error?: string } })?.error;
+        const isPrivateUrlError =
+            errorBody?.ok === false &&
+            typeof errorBody?.error === 'string' &&
+            errorBody.error.toLowerCase().includes('private');
+
+        return {
+            error:
+                errorBody?.error ??
+                (err as { message?: string })?.message ??
+                'An error occurred while scanning the page.',
+            isPrivateUrlError
+        };
+    }
+
     private isPrivateUrl(url: string): boolean {
         try {
             const { hostname } = new URL(url);
@@ -108,83 +149,6 @@ export class DotPageScannerReportComponent implements OnDestroy {
             );
         } catch {
             return false;
-        }
-    }
-
-    acceptTunnelConsent(): void {
-        patchState(this.$state, { tunnelConsentAccepted: true });
-    }
-
-    onDialogHide(): void {
-        this.cancel$.next();
-        patchState(this.$state, { status: 'idle', tunnelConsentAccepted: false });
-    }
-
-    onVisibleChange(value: boolean): void {
-        patchState(this.$state, { visible: value });
-    }
-
-    ngOnDestroy(): void {
-        this.cancel$.next();
-        this.cancel$.complete();
-    }
-
-    private runScan(): void {
-        const url = this.$state.pageUrl();
-        const type = this.$state.reportType();
-
-        if (type === 'a11y') {
-            this.scanner
-                .checkA11y(url)
-                .pipe(takeUntil(this.cancel$))
-                .subscribe({
-                    next: (data) => {
-                        patchState(this.$state, { a11yData: data, status: 'done' });
-                        this.cdr.markForCheck();
-                    },
-                    error: (err) => {
-                        const errorBody = err?.error;
-                        const isPrivateUrlError =
-                            errorBody?.ok === false &&
-                            typeof errorBody?.error === 'string' &&
-                            errorBody.error.toLowerCase().includes('private');
-                        patchState(this.$state, {
-                            error:
-                                errorBody?.error ??
-                                err?.message ??
-                                'An error occurred while scanning the page.',
-                            isPrivateUrlError,
-                            status: 'done'
-                        });
-                        this.cdr.markForCheck();
-                    }
-                });
-        } else {
-            this.scanner
-                .checkGeo(url)
-                .pipe(takeUntil(this.cancel$))
-                .subscribe({
-                    next: (data) => {
-                        patchState(this.$state, { geoData: data, status: 'done' });
-                        this.cdr.markForCheck();
-                    },
-                    error: (err) => {
-                        const errorBody = err?.error;
-                        const isPrivateUrlError =
-                            errorBody?.ok === false &&
-                            typeof errorBody?.error === 'string' &&
-                            errorBody.error.toLowerCase().includes('private');
-                        patchState(this.$state, {
-                            error:
-                                errorBody?.error ??
-                                err?.message ??
-                                'An error occurred while scanning the page.',
-                            isPrivateUrlError,
-                            status: 'done'
-                        });
-                        this.cdr.markForCheck();
-                    }
-                });
         }
     }
 }

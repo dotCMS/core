@@ -1,12 +1,12 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
 import { AccordionModule } from 'primeng/accordion';
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
 import { ChipModule } from 'primeng/chip';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotMessageService } from '@dotcms/ui';
 
 import { PageScannerGeoResponse } from '../dot-page-scanner.service';
 import { GeoCategory } from '../models';
@@ -21,14 +21,16 @@ import { GeoCategory } from '../models';
 export class DotPageScannerGeoReportComponent {
     geoData = input.required<PageScannerGeoResponse>();
 
+    private readonly dotMessage = inject(DotMessageService);
+
     protected geoCategories = computed(() => this.buildGeoCategories(this.geoData()));
     protected geoChartData = computed(() => this.buildGeoChartData(this.geoData().score));
 
     protected scoreLabel = computed(() => {
         const score = this.geoData().score;
-        if (score >= 80) return 'Excellent';
-        if (score >= 50) return 'Good';
-        return 'Needs Work';
+        if (score >= 80) return this.dotMessage.get('page.scanner.geo.score.label.excellent');
+        if (score >= 50) return this.dotMessage.get('page.scanner.geo.score.label.good');
+        return this.dotMessage.get('page.scanner.geo.score.label.needs.work');
     });
 
     protected scoreLabelClass = computed(() => {
