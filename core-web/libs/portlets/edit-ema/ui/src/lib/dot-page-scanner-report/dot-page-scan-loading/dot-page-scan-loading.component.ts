@@ -7,7 +7,24 @@ import { DotMessagePipe } from '@dotcms/ui';
     standalone: true,
     imports: [DotMessagePipe],
     templateUrl: './dot-page-scan-loading.component.html',
-    styleUrl: './dot-page-scan-loading.component.scss',
+    styles: [
+        `
+            .scan-line {
+                animation: scan 3s ease-in-out infinite;
+            }
+            @keyframes scan {
+                0% {
+                    top: 32px;
+                }
+                50% {
+                    top: calc(100% - 2px);
+                }
+                100% {
+                    top: 32px;
+                }
+            }
+        `
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPageScanLoadingComponent {}
