@@ -6,7 +6,8 @@ import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
 import { ChipModule } from 'primeng/chip';
 
-import { DotMessagePipe, DotMessageService } from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { PageScannerGeoResponse } from '../dot-page-scanner.service';
 import { GeoCategory } from '../models';

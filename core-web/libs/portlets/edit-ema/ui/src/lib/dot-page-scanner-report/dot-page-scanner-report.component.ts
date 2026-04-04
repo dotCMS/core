@@ -1,13 +1,12 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-
-import { takeUntil } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -64,9 +63,9 @@ export class DotPageScannerReportComponent {
     });
 
     private readonly scanner = inject(DotPageScannerService);
-    private readonly destroyRef = inject(DestroyRef);
-    // cancel$ cancels in-flight requests when the dialog closes mid-scan
     private readonly cancel$ = new Subject<void>();
+    // Created in injection context so takeUntilDestroyed works correctly
+    private readonly takeUntilDestroyed = takeUntilDestroyed();
 
     open(type: ReportType, url: string): void {
         const isPrivateUrlError = this.isPrivateUrl(url);
@@ -103,9 +102,10 @@ export class DotPageScannerReportComponent {
     private runScan(): void {
         const url = this.$state.pageUrl();
         const type = this.$state.reportType();
-        const scan$ = type === 'a11y' ? this.scanner.checkA11y(url) : this.scanner.checkGeo(url);
+        const scan$: Observable<PageScannerA11yResponse | PageScannerGeoResponse> =
+            type === 'a11y' ? this.scanner.checkA11y(url) : this.scanner.checkGeo(url);
 
-        scan$.pipe(takeUntil(this.cancel$), takeUntilDestroyed(this.destroyRef)).subscribe({
+        scan$.pipe(takeUntil(this.cancel$), this.takeUntilDestroyed).subscribe({
             next: (data) => {
                 const update =
                     type === 'a11y'
