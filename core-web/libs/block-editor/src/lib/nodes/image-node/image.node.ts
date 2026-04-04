@@ -185,8 +185,9 @@ export const ImageNode = Image.extend({
             }
 
             const wrapper = document.createElement('div');
-            const textWrap = HTMLAttributes.textWrap;
-            const textAlign = HTMLAttributes.textAlign;
+            // Use node.attrs (camelCase) not HTMLAttributes — renderHTML lowercases keys to textwrap/textalign
+            const textWrap = node.attrs['textWrap'];
+            const textAlign = node.attrs['textAlign'];
 
             if (textWrap === 'left' || textWrap === 'right') {
                 wrapper.style.cssText = FLOAT_STYLES[textWrap];
