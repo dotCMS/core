@@ -3,7 +3,6 @@ import { Observable } from 'rxjs';
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output, inject } from '@angular/core';
 
-import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
 
 import { DotPageToolsService } from '@dotcms/data-access';
@@ -17,7 +16,7 @@ export type PageScannerToolType = 'a11y' | 'geo';
 @Component({
     selector: 'dot-page-tools-seo',
     providers: [DotPageToolsService, DotPageToolsSeoStore],
-    imports: [AsyncPipe, DialogModule, DotMessagePipe, ChipModule],
+    imports: [AsyncPipe, DialogModule, DotMessagePipe],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

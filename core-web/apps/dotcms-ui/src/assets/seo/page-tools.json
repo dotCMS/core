@@ -15,7 +15,8 @@
         {
             "icon": "assets/seo/security-headers.png",
             "title": "Security Headers",
-            "description": "Security Headers tool enhances website security."
+            "description": "Security Headers tool enhances website security.",
+            "runnableLink": "https://securityheaders.com/?q={domainName}&followRedirects=on"
         }
     ]
 }
