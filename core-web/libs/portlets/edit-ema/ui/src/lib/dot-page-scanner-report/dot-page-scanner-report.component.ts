@@ -70,22 +70,19 @@ export class DotPageScannerReportComponent {
     private readonly takeUntilDestroyed = takeUntilDestroyed();
 
     open(type: ReportType, url: string): void {
-        const isPrivateUrlError = this.isPrivateUrl(url);
-
         patchState(this.$state, {
             reportType: type,
             pageUrl: url,
             visible: true,
-            status: isPrivateUrlError ? 'done' : 'pending',
+            status: 'pending',
             error: null,
-            isPrivateUrlError,
+            isPrivateUrlError: false,
+            isNotConfiguredError: false,
             a11yData: null,
             geoData: null
         });
 
-        if (!isPrivateUrlError) {
-            this.runScan();
-        }
+        this.runScan();
     }
 
     acceptTunnelConsent(): void {
@@ -146,20 +143,4 @@ export class DotPageScannerReportComponent {
         };
     }
 
-    private isPrivateUrl(url: string): boolean {
-        try {
-            const { hostname } = new URL(url);
-            return (
-                hostname === 'localhost' ||
-                hostname === '127.0.0.1' ||
-                hostname === '::1' ||
-                hostname.endsWith('.local') ||
-                /^10\./.test(hostname) ||
-                /^192\.168\./.test(hostname) ||
-                /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
-            );
-        } catch {
-            return false;
-        }
-    }
 }
