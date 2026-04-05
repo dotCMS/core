@@ -27,6 +27,7 @@ interface DotPageScannerState {
     status: ScanStatus;
     error: string | null;
     isPrivateUrlError: boolean;
+    isNotConfiguredError: boolean;
     tunnelConsentAccepted: boolean;
     reportType: ReportType;
     pageUrl: string;
@@ -55,6 +56,7 @@ export class DotPageScannerReportComponent {
         status: 'idle',
         error: null,
         isPrivateUrlError: false,
+        isNotConfiguredError: false,
         tunnelConsentAccepted: false,
         reportType: 'a11y',
         pageUrl: '',
@@ -119,8 +121,16 @@ export class DotPageScannerReportComponent {
         });
     }
 
-    private parseScanError(err: unknown): { error: string; isPrivateUrlError: boolean } {
-        const errorBody = (err as { error?: { ok?: boolean; error?: string } })?.error;
+    private parseScanError(
+        err: unknown
+    ): { error: string; isPrivateUrlError: boolean; isNotConfiguredError: boolean } {
+        const httpErr = err as {
+            error?: { entity?: { errorCode?: string }; ok?: boolean; error?: string };
+        };
+        const errorCode = httpErr?.error?.entity?.errorCode;
+        const isNotConfiguredError = errorCode === 'PAGE_SCANNER_NOT_CONFIGURED';
+
+        const errorBody = httpErr?.error;
         const isPrivateUrlError =
             errorBody?.ok === false &&
             typeof errorBody?.error === 'string' &&
@@ -131,7 +141,8 @@ export class DotPageScannerReportComponent {
                 errorBody?.error ??
                 (err as { message?: string })?.message ??
                 'An error occurred while scanning the page.',
-            isPrivateUrlError
+            isPrivateUrlError,
+            isNotConfiguredError
         };
     }
 
