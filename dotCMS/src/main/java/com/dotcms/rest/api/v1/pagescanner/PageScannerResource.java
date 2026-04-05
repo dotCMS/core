@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.pagescanner;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
@@ -123,7 +125,7 @@ public class PageScannerResource {
             Logger.warn(PageScannerResource.class,
                     "Page Scanner not configured: DOT_PAGE_SCANNER_API_URL and DOT_PAGE_SCANNER_API_AUTH_TOKEN must be set");
             return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                    .entity(NOT_CONFIGURED_MSG)
+                    .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_NOT_CONFIGURED", NOT_CONFIGURED_MSG)))
                     .build();
         }
 
@@ -137,7 +139,7 @@ public class PageScannerResource {
             Logger.error(PageScannerResource.class,
                     "Failed to generate short-lived token for user: " + user.getUserId());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Unable to generate authentication token.")
+                    .entity(new ResponseEntityView<>(new ErrorEntity("TOKEN_GENERATION_FAILED", "Unable to generate authentication token.")))
                     .build();
         }
 
@@ -214,7 +216,7 @@ public class PageScannerResource {
             Logger.error(PageScannerResource.class,
                     "Network error forwarding to upstream Page Scanner: " + e.getMessage(), e);
             return Response.status(Response.Status.BAD_GATEWAY)
-                    .entity("Unable to reach the Page Scanner service: " + e.getMessage())
+                    .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_UNREACHABLE", "Unable to reach the Page Scanner service.")))
                     .build();
         }
     }
