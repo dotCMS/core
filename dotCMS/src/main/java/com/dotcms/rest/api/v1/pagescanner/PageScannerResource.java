@@ -45,8 +45,7 @@ public class PageScannerResource {
             "https://a11y.api.dotcms.site";
 
     private static final String NOT_CONFIGURED_MSG =
-            "Page Scanner is not configured. Environment variables "
-            + "DOT_PAGE_SCANNER_API_URL and DOT_PAGE_SCANNER_API_AUTH_TOKEN are required.";
+            "Page Scanner service is not available.";
 
     /** Short-lived token TTL: 5 minutes */
     private static final long TOKEN_TTL_MS = 5L * 60L * 1000L;
@@ -122,7 +121,7 @@ public class PageScannerResource {
 
         if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
             Logger.warn(PageScannerResource.class,
-                    "Page Scanner not configured: missing DOT_PAGE_SCANNER_API_URL or DOT_PAGE_SCANNER_API_AUTH_TOKEN");
+                    "Page Scanner not configured: DOT_PAGE_SCANNER_API_URL and DOT_PAGE_SCANNER_API_AUTH_TOKEN must be set");
             return Response.status(Response.Status.SERVICE_UNAVAILABLE)
                     .entity(NOT_CONFIGURED_MSG)
                     .build();
