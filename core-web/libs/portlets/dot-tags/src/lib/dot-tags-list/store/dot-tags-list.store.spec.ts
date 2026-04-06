@@ -114,7 +114,7 @@ describe('DotTagsListStore', () => {
         });
 
         it('should handle error and set status to error', () => {
-            tagsService.getTagsPaginated.mockReturnValue(throwError(new Error('fail')));
+            tagsService.getTagsPaginated.mockReturnValue(throwError(() => new Error('fail')));
             store.loadTags();
 
             expect(store.status()).toBe('error');
@@ -179,7 +179,7 @@ describe('DotTagsListStore', () => {
         });
 
         it('should handle create error', () => {
-            tagsService.createTag.mockReturnValue(throwError(new Error('create fail')));
+            tagsService.createTag.mockReturnValue(throwError(() => new Error('create fail')));
 
             store.createTag({ name: 'new-tag', siteId: 'site1' });
 
@@ -213,7 +213,7 @@ describe('DotTagsListStore', () => {
         });
 
         it('should handle update error', () => {
-            tagsService.updateTag.mockReturnValue(throwError(new Error('update fail')));
+            tagsService.updateTag.mockReturnValue(throwError(() => new Error('update fail')));
 
             store.updateTag(MOCK_TAGS[0], { name: 'updated-tag', siteId: 'site1' });
 
@@ -235,7 +235,7 @@ describe('DotTagsListStore', () => {
         });
 
         it('should handle delete error', () => {
-            tagsService.deleteTags.mockReturnValue(throwError(new Error('delete fail')));
+            tagsService.deleteTags.mockReturnValue(throwError(() => new Error('delete fail')));
             store.setSelectedTags(MOCK_TAGS);
 
             store.deleteTags();

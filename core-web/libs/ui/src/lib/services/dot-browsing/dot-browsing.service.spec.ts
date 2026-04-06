@@ -106,7 +106,7 @@ describe('DotBrowsingService', () => {
 
         it('should handle errors from getSites', (done) => {
             const error = new Error('Failed to fetch sites');
-            dotSiteService.getSites.mockReturnValue(throwError(error));
+            dotSiteService.getSites.mockReturnValue(throwError(() => error));
 
             spectator.service.getSitesTreePath({ filter: 'test' }).subscribe({
                 next: () => fail('should have thrown an error'),
@@ -156,7 +156,7 @@ describe('DotBrowsingService', () => {
 
         it('should handle errors from folderService', (done) => {
             const error = new Error('Failed to fetch folders');
-            dotFolderService.getFolders.mockReturnValue(throwError(error));
+            dotFolderService.getFolders.mockReturnValue(throwError(() => error));
 
             spectator.service.getFolders('/example.com').subscribe({
                 next: () => fail('should have thrown an error'),
@@ -254,7 +254,7 @@ describe('DotBrowsingService', () => {
 
         it('should handle errors from folderService', (done) => {
             const error = new Error('Failed to fetch folders');
-            dotFolderService.getFolders.mockReturnValue(throwError(error));
+            dotFolderService.getFolders.mockReturnValue(throwError(() => error));
 
             spectator.service.getFoldersTreeNode('example.com').subscribe({
                 next: () => fail('should have thrown an error'),
@@ -408,7 +408,7 @@ describe('DotBrowsingService', () => {
             const path = 'example.com/level1';
             const error = new Error('Failed to fetch folders');
 
-            dotFolderService.getFolders.mockReturnValue(throwError(error));
+            dotFolderService.getFolders.mockReturnValue(throwError(() => error));
 
             spectator.service.buildTreeByPaths(path).subscribe({
                 next: () => fail('should have thrown an error'),
@@ -634,7 +634,7 @@ describe('DotBrowsingService', () => {
 
         it('should handle errors from getCurrentSite', (done) => {
             const error = new Error('Failed to fetch current site');
-            dotSiteService.getCurrentSite.mockReturnValue(throwError(error));
+            dotSiteService.getCurrentSite.mockReturnValue(throwError(() => error));
 
             spectator.service.getCurrentSiteAsTreeNodeItem().subscribe({
                 next: () => fail('should have thrown an error'),
@@ -719,7 +719,7 @@ describe('DotBrowsingService', () => {
             const params: ContentByFolderParams = {
                 hostFolderId: '123'
             };
-            dotSiteService.getContentByFolder.mockReturnValue(throwError(error));
+            dotSiteService.getContentByFolder.mockReturnValue(throwError(() => error));
 
             spectator.service.getContentByFolder(params).subscribe({
                 next: () => {

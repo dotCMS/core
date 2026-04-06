@@ -865,7 +865,7 @@ describe('DotContentTypeComponent', () => {
 
         it('should reset loading state on service error', () => {
             contentTypeService.getContentTypesWithPagination.mockReturnValue(
-                throwError(new Error('API Error'))
+                throwError(() => new Error('API Error'))
             );
 
             spectator.detectChanges();

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotPagination, DotSite } from '@dotcms/dotcms-models';
 import { hasValidValue } from '@dotcms/utils';
@@ -119,7 +119,7 @@ export class DotSiteService {
      */
     getCurrentSite(): Observable<DotSite> {
         return this.#http.get<{ entity: SiteEntity }>(`${BASE_SITE_URL}/currentSite`).pipe(
-            pluck('entity'),
+            map((x) => x?.entity),
             map((site) => this.normalizeSiteEntity(site))
         );
     }
@@ -133,7 +133,7 @@ export class DotSiteService {
      */
     getSiteById(siteId: string): Observable<DotSite> {
         return this.#http.get<{ entity: SiteDetailEntity }>(`${BASE_SITE_URL}/${siteId}`).pipe(
-            pluck('entity'),
+            map((x) => x?.entity),
             map((site) => this.normalizeSiteDetailEntity(site))
         );
     }
@@ -148,7 +148,7 @@ export class DotSiteService {
     getContentByFolder(params: ContentByFolderParams) {
         return this.#http
             .post<{ entity: { list: DotCMSContentlet[] } }>('/api/v1/browser', params)
-            .pipe(pluck('entity', 'list'));
+            .pipe(map((x) => x?.entity?.list));
     }
 
     /**
@@ -164,7 +164,7 @@ export class DotSiteService {
         const url = identifier
             ? `${BASE_SITE_URL}/switch/${identifier}`
             : `${BASE_SITE_URL}/switch`;
-        return this.#http.put<{ entity: DotSite }>(url, null).pipe(pluck('entity'));
+        return this.#http.put<{ entity: DotSite }>(url, null).pipe(map((x) => x?.entity));
     }
 
     /**

@@ -217,10 +217,10 @@ describe('DotLoginComponent', () => {
         it('should show error messages if error comes from the server', () => {
             component.loginForm.setValue(credentials);
             jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
-                throwError({
+                throwError(() => ({
                     status: 400,
                     error: { errors: [{ message: 'error message' }] }
-                })
+                }))
             );
             component.logInUser();
             spectator.detectChanges();
