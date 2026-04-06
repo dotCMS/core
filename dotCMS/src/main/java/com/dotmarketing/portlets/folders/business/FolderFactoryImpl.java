@@ -637,6 +637,9 @@ public class FolderFactoryImpl extends FolderFactory {
     final DotConnect dc = new DotConnect();
     dc.executeUpdate(
         "UPDATE structure SET folder = ? WHERE folder = ?", newFolderInode, oldFolderInode);
+    APILocator.getContentTypeAPI(APILocator.systemUser())
+        .search("folder='" + newFolderInode + "'", "mod_date", -1, 0)
+        .forEach(CacheLocator.getContentTypeCache2()::remove);
     dc.executeUpdate(
         "UPDATE permission SET inode_id = ? WHERE inode_id = ?", newFolderInode, oldFolderInode);
     dc.executeUpdate(
