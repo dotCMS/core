@@ -52,8 +52,6 @@
     (action)="handleItemAction($event)"
     data-testId="ema-nav-bar" />
 <p-toast position="top-center" data-testId="ema-toast" />
-<dot-page-tools-seo (scannerToolClick)="handleScannerToolClick($event)" [showPageScanner]="$showPageScanner()" [currentPageUrlParams]="$seoParams()" #pageTools />
-
 <dot-page-tools-seo
     [currentPageUrlParams]="$seoParams()"
     [showPageScanner]="$showPageScanner()"
