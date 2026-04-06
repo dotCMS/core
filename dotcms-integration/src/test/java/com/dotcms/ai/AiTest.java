@@ -33,44 +33,6 @@ public interface AiTest {
         return wireMockServer;
     }
 
-    static Map<String, Secret> aiAppSecrets(final Host host,
-                                            final String apiKey,
-                                            final String textModels,
-                                            final String imageModels,
-                                            final String embeddingsModel) throws Exception {
-        final AppSecrets.Builder builder = new AppSecrets.Builder()
-                .withKey(AppKeys.APP_KEY)
-                .withSecret(AppKeys.API_URL.key, String.format(API_URL, PORT))
-                .withSecret(AppKeys.API_IMAGE_URL.key, String.format(API_IMAGE_URL, PORT))
-                .withSecret(AppKeys.API_EMBEDDINGS_URL.key, String.format(API_EMBEDDINGS_URL, PORT))
-                .withHiddenSecret(AppKeys.API_KEY.key, apiKey)
-                .withSecret(AppKeys.IMAGE_SIZE.key, IMAGE_SIZE)
-                .withSecret(AppKeys.LISTENER_INDEXER.key, "{\"default\":\"blog\"}")
-                .withSecret(AppKeys.COMPLETION_ROLE_PROMPT.key, AppKeys.COMPLETION_ROLE_PROMPT.defaultValue)
-                .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue);
-
-        final AppSecrets appSecrets = builder.build();
-        APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
-        await().atMost(5, SECONDS).until(() -> ConfigService.INSTANCE.config(host).isEnabled());
-        return appSecrets.getSecrets();
-    }
-
-    static Map<String, Secret> aiAppSecrets(final Host host, final String apiKey) throws Exception {
-        return aiAppSecrets(host, apiKey, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
-    }
-
-    static Map<String, Secret> aiAppSecrets(final Host host,
-                                            final String textModels,
-                                            final String imageModels,
-                                            final String embeddingsModel) throws Exception {
-        return aiAppSecrets(host, API_KEY, textModels, imageModels, embeddingsModel);
-    }
-
-    static Map<String, Secret> aiAppSecrets(final Host host) throws Exception {
-
-        return aiAppSecrets(host, MODEL, IMAGE_MODEL, EMBEDDINGS_MODEL);
-    }
-
     static void removeAiAppSecrets(final Host host) throws Exception {
         APILocator.getAppsAPI().deleteSecrets(AppKeys.APP_KEY, host, APILocator.systemUser());
     }

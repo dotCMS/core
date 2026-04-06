@@ -55,8 +55,8 @@ public class CompletionsToolTest {
         IPUtils.disabledIpPrivateSubnet(true);
         host = new SiteDataGen().nextPersisted();
         wireMockServer = AiTest.prepareWireMock();
-        AiTest.aiAppSecrets(APILocator.systemHost(), "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
-        AiTest.aiAppSecrets(host, "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
+        AiTest.aiAppSecretsWithProviderConfig(APILocator.systemHost(), AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
+        AiTest.aiAppSecretsWithProviderConfig(host, AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
         appConfig = ConfigService.INSTANCE.config(host);
         user = new UserDataGen().nextPersisted();
     }
