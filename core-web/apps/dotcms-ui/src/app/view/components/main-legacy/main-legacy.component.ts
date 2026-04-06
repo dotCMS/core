@@ -1,8 +1,11 @@
-import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+
+import { DrawerModule } from 'primeng/drawer';
 
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
 
+import { HashbrownChatComponent } from '../../../../../../../libs/dot-ai-chat/src/lib/hashbrown-poc/hashbrown-chat.component';
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotAlertConfirmComponent } from '../_common/dot-alert-confirm/dot-alert-confirm';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
@@ -26,6 +29,8 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
         DotMessageDisplayComponent,
         DotNavigationComponent,
         DotToolbarComponent,
+        DrawerModule,
+        HashbrownChatComponent,
         DotLargeMessageDisplayComponent,
         DotAlertConfirmComponent,
         DotPushPublishDialogComponent,
@@ -37,6 +42,7 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
 })
 export class MainComponentLegacyComponent implements OnInit {
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    readonly aiChatVisible = signal(false);
 
     ngOnInit(): void {
         document.body.style.backgroundColor = '';
@@ -54,5 +60,13 @@ export class MainComponentLegacyComponent implements OnInit {
      */
     onCustomEvent($event: CustomEvent): void {
         this.dotCustomEventHandlerService.handle($event);
+    }
+
+    onAiChatVisibleChange(visible: boolean): void {
+        this.aiChatVisible.set(visible);
+    }
+
+    closeAiChat(): void {
+        this.aiChatVisible.set(false);
     }
 }

@@ -18,6 +18,16 @@
                 <dot-toolbar-announcements />
             </ng-container>
             <dot-toolbar-notifications />
+            <button
+                pButton
+                type="button"
+                icon="pi pi-sparkles"
+                class="p-button-text"
+                data-testid="toolbar-ai-chat-button"
+                aria-label="Open AI Chat"
+                [attr.aria-expanded]="aiChatVisible()"
+                [attr.aria-controls]="'layout-ai-chat-drawer'"
+                (click)="openAiChat()"></button>
         </div>
         <div class="flex items-center gap-0">
             <p-divider layout="vertical" styleClass="ml-0 text-gray-500" />
